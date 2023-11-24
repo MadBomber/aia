@@ -43,7 +43,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "cli_helper"
   spec.add_dependency "prompt_manager"
-  spec.add_dependency "word_wrap"
 
   spec.add_development_dependency 'amazing_print'
   spec.add_development_dependency 'debug_me'
