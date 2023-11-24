@@ -8,14 +8,16 @@ Gem::Specification.new do |spec|
   spec.authors  = ["Dewayne VanHoozer"]
   spec.email    = ["dvanhoozer@gmail.com"]
 
-  spec.summary      = "AI Assistant (aia) a command-ling utility"
+  spec.summary      = "AI Assistant (aia) a command-line (CLI) utility"
   spec.description  = <<~EOS
     A command-line AI Assistante (aia) that provides
     parameterized prompt management (via the prompt_manager gem) to
-    various backend gen-AI processes.  Currently supports the `mods`
-    CLI tool.  `aia`uses `ripgrep` and `fzf` command-line utilities 
+    various backend gen-AI processes.  aia currently supports the "mods"
+    CLI tool.  aia uses "ripgrep" and "fzf" CLI utilities 
     to search for and select prompt files to send to the backend gen-AI
-    tool along with supported context files.
+    tool along with supported context files.  Example usage: "aia refactor my_class.rb" 
+    where "refactor" is the prompt ID for the file "refactor.txt" from your
+    RPROMPTS_DIR
   EOS
 
   spec.homepage     = "https://github.com/MadBomber/aia"
