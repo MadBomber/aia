@@ -3,6 +3,8 @@
 require 'amazing_print'
 require 'pathname'
 require 'readline'
+require 'tempfile'
+
 
 require 'debug_me'
 include DebugMe
@@ -256,6 +258,46 @@ module AIA
       found_prompts = PromptManager::Prompt.search(prompt_id)
       prompt_id     = found_prompts.size == 1 ? found_prompts.first : handle_multiple_prompts(found_prompts, prompt_id)
       @prompt       = PromptManager::Prompt.get(id: prompt_id)
+    end
+
+
+    def handle_multiple_prompts(found_these, while_looking_for_this)
+      raise ArgumentError, "Argument is not an Array" unless found_these.is_a?(Array)
+      
+      # TODO: Make this a class constant for defaults; make the header content
+      #       a parameter so it can be varied.
+      fzf_options       = [
+        "--tabstop=2",  # 2 soaces for a tab
+        "--header='Prompt IDs which contain: #{while_looking_for_this}\nPress ESC to cancel.'",
+        "--header-first",
+        "--prompt='Search term: '",
+        '--delimiter :',
+        "--preview 'cat $PROMPTS_DIR/{1}.txt'",
+        "--preview-window=down:50%:wrap"
+      ].join(' ') 
+
+
+      # Create a temporary file to hold the list of strings
+      temp_file = Tempfile.new('fzf-input')
+
+      begin
+        # Write all strings to the temp file
+        temp_file.puts(found_these)
+        temp_file.close
+
+        # Execute fzf command-line utility to allow selection
+        selected = `cat #{temp_file.path} | fzf #{fzf_options}`.strip
+
+        # Check if fzf actually returned a string; if not, return nil
+        result = selected.empty? ? nil : selected
+      ensure
+        # Ensure that the tempfile is closed and unlinked
+        temp_file.unlink
+      end
+
+      exit unless result
+
+      result
     end
 
 
