@@ -2,7 +2,11 @@
 # Setup a prompt completion for use with
 # aia (a Ruby program) AI Assistant
 #
-# Requires the $PROMPTS_DIR envar be set 
+
+if [ -z "$PROMPTS_DIR" ]; then
+    echo "Error: PROMPTS_DIR environment variable is not set"
+    exit 1
+fi
 
 # SMELL: Is this BASH-only or will it work with other shells?
 
