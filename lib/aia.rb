@@ -228,6 +228,8 @@ module AIA
 
 
     def replace_keywords
+      print "\nQuit #{MY_NAME} with a CNTL-D or a CNTL-C\n\n"
+      
       defaults = @prompt.parameters
 
       @prompt.keywords.each do |kw|
@@ -242,10 +244,23 @@ module AIA
     # reuse of the previous value shown as the default
     def keyword_value(kw, default)
       label = "Default: "
-      puts "#{kw} ..."
-      print label 
-      puts default.wrap.split("\n").join("\n"+" "*label.length)
-      a_string = Readline.readline("\n-=> ", false)
+      puts "Parameter #{kw} ..."
+      default_wrapped = default.wrap(indent: label.size)
+      default_wrapped[0..label.size] = label
+      puts default_wrapped
+
+      begin
+        a_string = Readline.readline("\n-=> ", false)
+      rescue Interrupt
+        a_string = nil
+      end
+
+      if a_string.nil?
+        puts "okay. Come back soon."
+        exit
+      end
+
+
       puts
       a_string.empty? ? default : a_string
     end
