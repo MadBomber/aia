@@ -6,6 +6,8 @@
 
 Uses the gem "prompt_manager" to manage the prompts sent to the `mods` command-line utility.  Uses the command line tools "ripgrep" to search for prompts to send and "fzf" to select the prompts that match the search term.
 
+
+
 ## Installation
 
 Install the gem by executing:
@@ -25,6 +27,8 @@ You will also need to source the completion script.
 
 TODO: May want to add a `setup` function to the command-line options that will create the directory, and do something with the completion function.
 
+TODO: don't forget to mention have access token (API keys) setup as envars for the various backend services like OpenAI... if they are still in business.
+
 ## Usage
 
 `aia prompt_id [context_file]*`
@@ -36,7 +40,38 @@ TODO: consider a --no-log option to turn off logging
 
 The `_prompts.log` file is also located in the `$PROMPTS_DIR`
 
-TODO: show the usage help text
+The default output file is `temp.md` which is written to the current directory from which `aia` was executed.
+
+
+```text
+$ aia -h
+Use generative AI with saved parameterized prompts
+
+Usage: aia [options] ...
+
+Where:
+
+  Common Options Are:
+    -h, --help     show this message
+    -v, --verbose  enable verbose mode
+    -d, --debug    enable debug mode
+    --version      print the version: 1.2.0
+
+  Program Options Are:
+    -f, --fuzzy    Allow fuzzy matching
+    -o, --output   The output file
+
+AI Assistant (aia)
+==================
+
+The AI cli program being used is: mods
+
+The defaul options to mods are:
+  "-m gpt-4-1106-preview --no-limit -f"
+
+You can pass additional CLI options to mods like this:
+  "aia my options -- options for mods"
+```
 
 ## Development
 

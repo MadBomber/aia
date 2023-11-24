@@ -4,7 +4,7 @@ require_relative "lib/aia/version"
 
 Gem::Specification.new do |spec|
   spec.name     = "aia"
-  spec.version  = Aia::VERSION
+  spec.version  = AIA::VERSION
   spec.authors  = ["Dewayne VanHoozer"]
   spec.email    = ["dvanhoozer@gmail.com"]
 
