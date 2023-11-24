@@ -41,6 +41,7 @@ Gem::Specification.new do |spec|
   spec.executables    = %w[ aia aia_completion.sh ]
   spec.require_paths  = %w[ lib ]
 
+  spec.add_dependency "cli_helper"
   spec.add_dependency "prompt_manager"
   spec.add_dependency "word_wrap"
 
