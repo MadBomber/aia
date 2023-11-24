@@ -42,9 +42,9 @@ module AIA
     EOUSAGE
 
 
-    def initialize
+    def initialize(args= ARGV)
       @prompt     = nil
-      @arguments  = ARGV
+      @arguments  = args
       @options    = {
         edit?:      false,
         debug?:     false,
