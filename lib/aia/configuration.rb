@@ -12,7 +12,7 @@ PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
 
 
 module AIA::Configuration
-  def setup_defaults 
+  def setup_configuration
     @prompt     = nil
 
     PromptManager::Prompt.storage_adapter = 

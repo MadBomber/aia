@@ -34,45 +34,109 @@ TODO: don't forget to mention have access token (API keys) setup as envars for t
 ```text
 $ aia --help
 
-configuration v0.0.5
+aia v0.0.5
 
 Usage:  aia [options] prompt_id [context_file]* [-- external_options+]
 
 Options
 -------
 
--e --edit Edit the Prompt File
--d --debug  Turn On Debugging
--v --verbose  Be Verbose
---version Print Version
--h --help Show Usage
---fuzzy Use Fuzzy Matching
--o --output --no-output Out FILENAME
--l --log --no-log Log FILEPATH
--m --markdown --no-markdown --md --no-md  Format with Markdown
+Edit the Prompt File  -e --edit
+ default: false
 
-Notes
------
+Turn On Debugging     -d --debug
+ default: false
 
-To install the external CLI programs used by configuration:
-  brew install mods ripgrep fzf
+Be Verbose            -v --verbose
+ default: false
 
-fzf      Command-line fuzzy finder written in Go
-         |__ https://github.com/junegunn/fzf
+Print Version         --version
+ default: false
 
-mods     AI on the command-line
-         |__ https://github.com/charmbracelet/mods
+Show Usage            -h --help
+ default: false
 
-ripgrep  Search tool like grep and The Silver Searcher
-         |__ https://github.com/BurntSushi/ripgrep
+Use Fuzzy Matching    --fuzzy
+ default: false
 
+Out FILENAME          -o --output --no-output
+ default: ./temp.md
+
+Log FILEPATH          -l --log --no-log
+ default: $HOME/.prompts/_prompts.log
+
+Format with Markdown  -m --markdown --no-markdown --md --no-md
+ default: true
 ```
 
-TODO: Put default values ins usage text.
+Turn on `verbose` with `help` to see more usage information that includes system environment variables and external CLI tools that are used.
 
-The `_prompts.log` file is also located in the `$PROMPTS_DIR`
+```text
+$ aia --help --verbose
+```
 
-The default output file is `temp.md` which is written to the current directory from which `aia` was executed.
+## System Environment Variables (envars)
+
+From the verbose help text ...
+
+```text
+
+System Environment Variables Used
+---------------------------------
+
+The OUTPUT and PROMPT_LOG envars can be overridden
+by cooresponding options on the command line.
+
+Name            Default Value
+--------------  -------------------------
+PROMPTS_DIR     $HOME/.prompts_dir
+AI_CLI_PROGRAM  mods
+EDITOR          edit
+MODS_MODEL      gpt-4-1106-preview
+OUTPUT          ./temp.md
+PROMPT_LOG      $PROMPTS_DIR/_prompts.log
+
+These two are required for access the OpenAI
+services.  The have the same value but different
+programs use different envar names.
+
+To get an OpenAI access key/token (same thing)
+you must first create an account at OpenAI.
+Here is the link:  https://platform.openai.com/docs/overview
+
+OPENAI_ACCESS_TOKEN
+OPENAI_API_KEY
+```
+
+## External CLI Tools Used
+
+From the verbose help text ...
+
+```text
+External Tools Used
+-------------------
+
+To install the external CLI programs used by aia:
+  brew install fzf mods rg
+
+fzf
+  Command-line fuzzy finder written in Go
+  https://github.com/junegunn/fzf
+
+mods
+  AI on the command-line
+  https://github.com/charmbracelet/mods
+
+rg
+  Search tool like grep and The Silver Searcher
+  https://github.com/BurntSushi/ripgrep
+
+A text editor whose executable is setup in the
+system environment variable 'EDITOR' like this:
+
+export EDITOR="subl -w"
+
+```
 
 
 ## Development

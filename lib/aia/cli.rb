@@ -1,7 +1,7 @@
 # lib/aia/cli.rb
 
 module AIA::Cli
-  def setup_options(args)
+  def setup_cli_options(args)
     @arguments  = args
     @options    = {
       #           Value
@@ -31,7 +31,7 @@ module AIA::Cli
     usage +=  "Usage:  #{MY_NAME} [options] prompt_id [context_file]* [-- external_options+]\n\n"
     usage +=  usage_options
     usage += "\n"
-    usage += usage_notes
+    usage += usage_notes if verbose?
     
     usage
   end
@@ -43,8 +43,18 @@ module AIA::Cli
       "-------",
       ""
     ]
+
+    max_size = @options.values.map{|o| o[2].size}.max + 2
+
     @options.values.each do |o|
-      options << o[1] + "\t" + o[2]
+      pad_size = max_size - o[2].size
+      options << o[2] + (" "*pad_size) + o[1]
+
+      default = o[0]
+      default = "./" + default.basename.to_s if o[1].include?('output')
+      default = default.is_a?(Pathname) ? "$HOME/" + default.relative_path_from(HOME).to_s : default
+
+      options << " default: #{default}\n"
     end
 
     options.join("\n")
@@ -53,14 +63,40 @@ module AIA::Cli
 
   def usage_notes
     <<~EOS
-
-      Notes
-      -----
-
-      To install the external CLI programs used by #{MY_NAME}:
-        brew install mods ripgrep fzf
-
+      #{usage_envars}
       #{AIA::ExternalCommands::HELP}
+    EOS
+  end
+
+
+  def usage_envars
+    <<~EOS
+      System Environment Variables Used
+      ---------------------------------
+
+      The OUTPUT and PROMPT_LOG envars can be overridden
+      by cooresponding options on the command line.
+
+      Name            Default Value
+      --------------  -------------------------
+      PROMPTS_DIR     $HOME/.prompts_dir
+      AI_CLI_PROGRAM  mods
+      EDITOR          edit
+      MODS_MODEL      gpt-4-1106-preview
+      OUTPUT          ./temp.md
+      PROMPT_LOG      $PROMPTS_DIR/_prompts.log
+
+      These two are required for access the OpenAI
+      services.  The have the same value but different
+      programs use different envar names.
+
+      To get an OpenAI access key/token (same thing)
+      you must first create an account at OpenAI.
+      Here is the link:  https://platform.openai.com/docs/overview
+
+      OPENAI_ACCESS_TOKEN
+      OPENAI_API_KEY
+
     EOS
   end
 
@@ -127,9 +163,11 @@ module AIA::Cli
 
 
   def show_usage
+    @options[:help?][0] = false 
     puts usage
     exit
   end
+  alias_method :show_help, :show_usage
 
 
   def show_version
