@@ -394,4 +394,4 @@ if File.exist?('.history')
   end
 end
 
-
+require_relative 'aia/main'
