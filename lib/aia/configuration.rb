@@ -1,16 +1,17 @@
 # lib/aia/configuration.rb
 
-module AIA::Configuration
-  HOME            = Pathname.new(ENV['HOME'])
-  PROMPTS_DIR     = Pathname.new(ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir"))
-  
-  AI_CLI_PROGRAM  = "mods"
-  EDITOR          = ENV['EDITOR'] || 'edit'
-  MY_NAME         = Pathname.new(__FILE__).basename.to_s.split('.')[0]
-  MODS_MODEL      = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
-  OUTPUT          = Pathname.pwd + "temp.md"
-  PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
+HOME            = Pathname.new(ENV['HOME'])
+PROMPTS_DIR     = Pathname.new(ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir"))
 
+AI_CLI_PROGRAM  = "mods"
+EDITOR          = ENV['EDITOR'] || 'edit'
+MY_NAME         = Pathname.new(__FILE__).basename.to_s.split('.')[0]
+MODS_MODEL      = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
+OUTPUT          = Pathname.pwd + "temp.md"
+PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
+
+
+module AIA::Configuration
   def setup_defaults 
     @prompt     = nil
 

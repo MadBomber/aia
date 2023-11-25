@@ -31,47 +31,49 @@ TODO: don't forget to mention have access token (API keys) setup as envars for t
 
 ## Usage
 
-`aia prompt_id [context_file]*`
+```text
+$ aia --help
 
-`prompt_id` is the basename of the `prompt_id.txt` file that is located in the `$PROMPTS_DIR` directory.  There is also a `prompt_id.json` file saved in the same place to hold the last-used values (parameters) for the keywords (if any) found in your prompt file.
+configuration v0.0.5
 
-TODO: consider a config file.
-TODO: consider a --no-log option to turn off logging
+Usage:  aia [options] prompt_id [context_file]* [-- external_options+]
+
+Options
+-------
+
+-e --edit Edit the Prompt File
+-d --debug  Turn On Debugging
+-v --verbose  Be Verbose
+--version Print Version
+-h --help Show Usage
+--fuzzy Use Fuzzy Matching
+-o --output --no-output Out FILENAME
+-l --log --no-log Log FILEPATH
+-m --markdown --no-markdown --md --no-md  Format with Markdown
+
+Notes
+-----
+
+To install the external CLI programs used by configuration:
+  brew install mods ripgrep fzf
+
+fzf      Command-line fuzzy finder written in Go
+         |__ https://github.com/junegunn/fzf
+
+mods     AI on the command-line
+         |__ https://github.com/charmbracelet/mods
+
+ripgrep  Search tool like grep and The Silver Searcher
+         |__ https://github.com/BurntSushi/ripgrep
+
+```
+
+TODO: Put default values ins usage text.
 
 The `_prompts.log` file is also located in the `$PROMPTS_DIR`
 
 The default output file is `temp.md` which is written to the current directory from which `aia` was executed.
 
-
-```text
-$ aia -h
-Use generative AI with saved parameterized prompts
-
-Usage: aia [options] ...
-
-Where:
-
-  Common Options Are:
-    -h, --help     show this message
-    -v, --verbose  enable verbose mode
-    -d, --debug    enable debug mode
-    --version      print the version: 1.2.0
-
-  Program Options Are:
-    -f, --fuzzy    Allow fuzzy matching
-    -o, --output   The output file
-
-AI Assistant (aia)
-==================
-
-The AI cli program being used is: mods
-
-The defaul options to mods are:
-  "-m gpt-4-1106-preview --no-limit -f"
-
-You can pass additional CLI options to mods like this:
-  "aia my options -- options for mods"
-```
 
 ## Development
 

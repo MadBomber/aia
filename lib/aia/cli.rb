@@ -11,10 +11,12 @@ module AIA::Cli
       version?:   [false, "--version",    "Print Version"],
       help?:      [false, "-h --help",    "Show Usage"],
       fuzzy?:     [false, "--fuzzy",      "Use Fuzzy Matching"],
-      output:     [OUTPUT,"-o --output",  "Out FILENAME"],
-      log:        [PROMPT_LOG,"-l --log", "Log FILEPATH"],
+      # TODO: Consider dropping output in favor of always
+      #       going to STDOUT so user can redirect or pipe somewhere else
+      output:     [OUTPUT,"-o --output --no-output",  "Out FILENAME"],
+      log:        [PROMPT_LOG,"-l --log --no-log", "Log FILEPATH"],
       markdown?:  [true,  "-m --markdown --no-markdown --md --no-md", "Format with Markdown"],
-    }[
+    }
     
     # Array(String)
     @extra_options = [] # intended for the backend AI processor
@@ -25,8 +27,8 @@ module AIA::Cli
 
 
   def usage
-    usage =   "\n#{MY_NAME} v#{VERSION}\n\n"
-    usage +=  "Usage:  #{MY_NAME} [options] prompt_id [context_file]* [--] [external_options]\n\n"
+    usage =   "\n#{MY_NAME} v#{AIA::VERSION}\n\n"
+    usage +=  "Usage:  #{MY_NAME} [options] prompt_id [context_file]* [-- external_options+]\n\n"
     usage +=  usage_options
     usage += "\n"
     usage += usage_notes
@@ -58,7 +60,8 @@ module AIA::Cli
       To install the external CLI programs used by #{MY_NAME}:
         brew install mods ripgrep fzf
 
-      TODO: get list of external command from ExternalCommands
+      #{AIA::ExternalCommand::HELP}
+
     EOS
   end
 
@@ -98,7 +101,7 @@ module AIA::Cli
 
   def check_for(option_sym)
     boolean = option_sym.to_s.end_with?('?')
-    switches = @options[option_sym][1]
+    switches = @options[option_sym][1].split
 
     switches.each do |switch|
       if @arguments.include?(switch)

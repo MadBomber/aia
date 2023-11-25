@@ -1,5 +1,31 @@
 # lib/aia/main.rb
 
+
+###################################################
+## Temporary Stuff for manual testing
+#
+
+require 'amazing_print'
+require 'pathname'
+require 'readline'
+require 'tempfile'
+
+
+require 'debug_me'
+include DebugMe
+
+$DEBUG_ME = true # ARGV.include?("--debug") || ARGV.include?("-d")
+
+require 'prompt_manager'
+require 'prompt_manager/storage/file_system_adapter'
+
+require_relative "version"
+require_relative "../core_ext/string_wrap"
+
+#
+## Temporary Stuff for manual testing
+###################################################
+
 module AIA
 end
 
