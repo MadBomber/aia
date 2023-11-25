@@ -12,8 +12,9 @@ require_relative "aia/main"
 require_relative "core_ext/string_wrap"
 
 module AIA
-  def self.run
-    AIA::Main.new.call
+  def self.run(args=ARGV)
+    args = args.split(' ') if args.is_a?(String)
+    AIA::Main.new(args).call
   end
 end
 
