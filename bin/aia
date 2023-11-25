@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
-# aia
+# bin/aia
 
 require 'aia'
-
-# Create an instance of the Main class and run the program
-AIA::Main.new.call
+AIA.run

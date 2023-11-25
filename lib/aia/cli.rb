@@ -174,6 +174,36 @@ module AIA::Cli
     puts AIA::VERSION
     exit
   end
-
-
 end
+
+
+__END__
+
+
+# TODO: Consider using this history process to preload the default
+#       so that an up arrow will bring the previous answer into
+#       the read buffer for line editing.
+#       Instead of usin the .history file just push the default
+#       value from the JSON file.
+
+while input = Readline.readline('> ', true)
+  # Skip empty entries and duplicates
+  if input.empty? || Readline::HISTORY.to_a[-2] == input
+    Readline::HISTORY.pop
+  end
+  break if input == 'exit'
+
+  # Do something with the input
+  puts "You entered: #{input}"
+
+  # Save the history in case you want to preserve it for the next sessions
+  File.open('.history', 'a') { |f| f.puts(input) }
+end
+
+# Load history from file at the beginning of the program
+if File.exist?('.history')
+  File.readlines('.history').each do |line|
+    Readline::HISTORY.push(line.chomp)
+  end
+end
+

@@ -86,7 +86,14 @@ module AIA::PromptProcessing
         create_prompt(prompt_id)
         edit_prompt
       else
-        abort "No prompts where found for: #{prompt_id}"
+        abort <<~EOS
+          
+          No prompts where found for: #{prompt_id}
+          To create a prompt with this ID use the --edit option
+          like this:
+            #{MY_NAME} #{prompt_id} --edit
+
+        EOS
       end
     else    
       prompt_id     = 1 == found_prompts.size ? found_prompts.first : handle_multiple_prompts(found_prompts, prompt_id)
