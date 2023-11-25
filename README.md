@@ -31,47 +31,113 @@ TODO: don't forget to mention have access token (API keys) setup as envars for t
 
 ## Usage
 
-`aia prompt_id [context_file]*`
+```text
+$ aia --help
 
-`prompt_id` is the basename of the `prompt_id.txt` file that is located in the `$PROMPTS_DIR` directory.  There is also a `prompt_id.json` file saved in the same place to hold the last-used values (parameters) for the keywords (if any) found in your prompt file.
+aia v0.0.5
 
-TODO: consider a config file.
-TODO: consider a --no-log option to turn off logging
+Usage:  aia [options] prompt_id [context_file]* [-- external_options+]
 
-The `_prompts.log` file is also located in the `$PROMPTS_DIR`
+Options
+-------
 
-The default output file is `temp.md` which is written to the current directory from which `aia` was executed.
+Edit the Prompt File  -e --edit
+ default: false
 
+Turn On Debugging     -d --debug
+ default: false
+
+Be Verbose            -v --verbose
+ default: false
+
+Print Version         --version
+ default: false
+
+Show Usage            -h --help
+ default: false
+
+Use Fuzzy Matching    --fuzzy
+ default: false
+
+Out FILENAME          -o --output --no-output
+ default: ./temp.md
+
+Log FILEPATH          -l --log --no-log
+ default: $HOME/.prompts/_prompts.log
+
+Format with Markdown  -m --markdown --no-markdown --md --no-md
+ default: true
+```
+
+Turn on `verbose` with `help` to see more usage information that includes system environment variables and external CLI tools that are used.
 
 ```text
-$ aia -h
-Use generative AI with saved parameterized prompts
-
-Usage: aia [options] ...
-
-Where:
-
-  Common Options Are:
-    -h, --help     show this message
-    -v, --verbose  enable verbose mode
-    -d, --debug    enable debug mode
-    --version      print the version: 1.2.0
-
-  Program Options Are:
-    -f, --fuzzy    Allow fuzzy matching
-    -o, --output   The output file
-
-AI Assistant (aia)
-==================
-
-The AI cli program being used is: mods
-
-The defaul options to mods are:
-  "-m gpt-4-1106-preview --no-limit -f"
-
-You can pass additional CLI options to mods like this:
-  "aia my options -- options for mods"
+$ aia --help --verbose
 ```
+
+## System Environment Variables (envars)
+
+From the verbose help text ...
+
+```text
+
+System Environment Variables Used
+---------------------------------
+
+The OUTPUT and PROMPT_LOG envars can be overridden
+by cooresponding options on the command line.
+
+Name            Default Value
+--------------  -------------------------
+PROMPTS_DIR     $HOME/.prompts_dir
+AI_CLI_PROGRAM  mods
+EDITOR          edit
+MODS_MODEL      gpt-4-1106-preview
+OUTPUT          ./temp.md
+PROMPT_LOG      $PROMPTS_DIR/_prompts.log
+
+These two are required for access the OpenAI
+services.  The have the same value but different
+programs use different envar names.
+
+To get an OpenAI access key/token (same thing)
+you must first create an account at OpenAI.
+Here is the link:  https://platform.openai.com/docs/overview
+
+OPENAI_ACCESS_TOKEN
+OPENAI_API_KEY
+```
+
+## External CLI Tools Used
+
+From the verbose help text ...
+
+```text
+External Tools Used
+-------------------
+
+To install the external CLI programs used by aia:
+  brew install fzf mods rg
+
+fzf
+  Command-line fuzzy finder written in Go
+  https://github.com/junegunn/fzf
+
+mods
+  AI on the command-line
+  https://github.com/charmbracelet/mods
+
+rg
+  Search tool like grep and The Silver Searcher
+  https://github.com/BurntSushi/ripgrep
+
+A text editor whose executable is setup in the
+system environment variable 'EDITOR' like this:
+
+export EDITOR="subl -w"
+
+```
+
 
 ## Development
 
