@@ -1,6 +1,6 @@
-# lib/aia/external_command.rb
+# lib/aia/external_commands.rb
 
-module AIA::ExternalCommand
+module AIA::ExternalCommands
   HELP = <<~EOS
 fzf      Command-line fuzzy finder written in Go
          |__ https://github.com/junegunn/fzf

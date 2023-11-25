@@ -43,7 +43,7 @@ require_relative 'logging'
 class AIA::RememberTheMain
   include AIA::Configuration
   include AIA::Cli
-  # include AIA::ExternalCommands
+  include AIA::ExternalCommands
   # include AIA::PromptProcessing
   # include AIA::Logging
 
@@ -57,7 +57,6 @@ class AIA::RememberTheMain
 
   # Setup the AI CLI program with necessary variables
   def setup_external_programs
-
     ai_default_opts = "-m #{MODS_MODEL} --no-limit "
     ai_default_opts += "-f " if markdown?
     @ai_options     = ai_default_opts.dup
@@ -67,9 +66,6 @@ class AIA::RememberTheMain
 
     @ai_command     = "#{AI_CLI_PROGRAM} #{@ai_options} "
   end
-
-
-
 
 
   def call
@@ -220,7 +216,12 @@ class AIA::RememberTheMain
   def execute_and_log_command(command)
     puts command if verbose?
     result = `#{command}`
-    output.write result
+
+    if output.nil?
+      puts result
+    else
+      output.write result
+    end
 
     write_to_log(result) unless log.nil?
   end

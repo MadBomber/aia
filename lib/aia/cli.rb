@@ -60,8 +60,7 @@ module AIA::Cli
       To install the external CLI programs used by #{MY_NAME}:
         brew install mods ripgrep fzf
 
-      #{AIA::ExternalCommand::HELP}
-
+      #{AIA::ExternalCommands::HELP}
     EOS
   end
 
@@ -69,7 +68,7 @@ module AIA::Cli
   def build_reader_methods
     @options.keys.each do |key|
       define_singleton_method(key) do
-        @options[key]
+        @options[key][0]
       end
     end
   end
@@ -112,10 +111,10 @@ module AIA::Cli
           @arguments.slice!(index,1)
         else
           if switch.include?('-no-')
-            @option[option_sym][0] = nil
+            @options[option_sym][0] = nil
             @arguments.slice!(index,1)
           else
-            @option[option_sym][0] = @arguments[index + 1]
+            @options[option_sym][0] = @arguments[index + 1]
             @arguments.slice!(index,2)
           end
         end

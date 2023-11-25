@@ -5,7 +5,7 @@ PROMPTS_DIR     = Pathname.new(ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir"))
 
 AI_CLI_PROGRAM  = "mods"
 EDITOR          = ENV['EDITOR'] || 'edit'
-MY_NAME         = Pathname.new(__FILE__).basename.to_s.split('.')[0]
+MY_NAME         = "aia"
 MODS_MODEL      = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
 OUTPUT          = Pathname.pwd + "temp.md"
 PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
