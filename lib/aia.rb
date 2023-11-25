@@ -394,4 +394,5 @@ if File.exist?('.history')
   end
 end
 
-require_relative 'aia/main'
+# TODO: uncomment this line after moving day
+# require_relative 'aia/main'
