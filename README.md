@@ -1,3 +1,19 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [AI Assistant (AIA)](#ai-assistant-aia)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [System Environment Variables (envars)](#system-environment-variables-envars)
+  - [External CLI Tools Used](#external-cli-tools-used)
+  - [Shell Completion](#shell-completion)
+  - [Development](#development)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # AI Assistant (AIA)
 
 **Under Development**
@@ -137,6 +153,12 @@ system environment variable 'EDITOR' like this:
 export EDITOR="subl -w"
 
 ```
+
+## Shell Completion
+
+One of the executables with this gem is `aia_completion.sh` which contains a completion script for hte `aia` such that you specify the first few characters of a prompt ID on the command line and the shell will complete the rest of the ID for you.  It works with the `bash` shell but do not know whether it works with the other shells.
+
+To set the completion you can execute aia_completion.sh` in your `.bashrc`  however, the PROMPTS_DIR environment variable must be set in order for prompt ID to work correctly.
 
 
 ## Development
