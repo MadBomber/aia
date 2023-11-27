@@ -3,6 +3,7 @@
 module AIA::Cli
   def setup_cli_options(args)
     @arguments  = args
+    # TODO: consider a fixed config file: ~/,aia
     @options    = {
       #           Value
       edit?:      [false, "-e --edit",    "Edit the Prompt File"],
@@ -16,6 +17,7 @@ module AIA::Cli
       output:     [OUTPUT,"-o --output --no-output",  "Out FILENAME"],
       log:        [PROMPT_LOG,"-l --log --no-log", "Log FILEPATH"],
       markdown?:  [true,  "-m --markdown --no-markdown --md --no-md", "Format with Markdown"],
+      backend:    [:mods, "-b --be --backend --no-backend", "Specify the backend prompt resolver"],
     }
     
     # Array(String)

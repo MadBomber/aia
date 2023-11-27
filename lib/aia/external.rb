@@ -11,8 +11,10 @@ There are at least 4 processes handled by external tools:
   search .......... default PromptManager::Prompt or search_proc
   review/select ... using fzf either exact or fuzzy
   edit ............ ENV['EDITOR']
-  execute ......... mods or plz or ???
+  execute ......... mods or sgpt or ???
                       with different models / settings
+
+  sgpt is the executable for "shell-gpt" a python project
 
 =end
 
