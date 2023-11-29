@@ -1,6 +1,7 @@
 # lib/aia/prompt_processing.rb
 
 module AIA::PromptProcessing
+  KW_HISTORY_MAX = 5
 
   # Fetch the first argument which should be the prompt id
   def get_prompt
@@ -18,6 +19,19 @@ module AIA::PromptProcessing
   # Check if a prompt with the given id already exists
   def existing_prompt?(prompt_id)
     @prompt = PromptManager::Prompt.get(id: prompt_id)
+  
+    # FIXME:  Kludge until prompt_manager is changed
+    #         prompt_manager v0.3.0 now supports this feature.
+    #         keeping the kludge in for legacy JSON files
+    #         files which have not yet been reformatted.
+    @prompt.keywords.each do |kw|
+      if @prompt.parameters[kw].nil? || @prompt.parameters[kw].empty?
+        @prompt.parameters[kw] = []
+      else
+        @prompt.parameters[kw] = Array(@prompt.parameters[kw])
+      end
+    end
+
     true
   rescue ArgumentError
     false
@@ -36,31 +50,45 @@ module AIA::PromptProcessing
 
 
   def replace_keywords
-    print "\nQuit #{MY_NAME} with a CNTL-D or a CNTL-C\n\n"
+    puts
+    puts "ID: #{@prompt.id}"
     
-    defaults = @prompt.parameters
+    show_prompt_without_comments
 
+    puts "\nPress up/down arrow to scroll through history."
+    puts "Type new input or edit the current input."
+    puts  "Quit #{MY_NAME} with a CNTL-D or a CNTL-C"
+    puts
     @prompt.keywords.each do |kw|
-      defaults[kw] = keyword_value(kw, defaults[kw])
+      value = keyword_value(kw, @prompt.parameters[kw])
+      
+      unless value.nil? || value.strip.empty?
+        value_inx = @prompt.parameters[kw].index(value)
+        
+        if value_inx
+          @prompt.parameters[kw].delete_at(value_inx)
+        end
+
+        # The most recent value for this kw will always be
+        # in the last position
+        @prompt.parameters[kw] << value
+        @prompt.parameters[kw].shift if @prompt.parameters[kw].size > KW_HISTORY_MAX
+      end
     end
-
-    @prompt.parameters = defaults
   end
-
-
 
 
   # query the user for a value to the keyword allow the
   # reuse of the previous value shown as the default
-  def keyword_value(kw, default)
-    label = "Default: "
+  def keyword_value(kw, history_array)
+
+    Readline::HISTORY.clear
+    Array(history_array).each { |entry| Readline::HISTORY.push(entry) unless entry.nil? || entry.empty? }
+
     puts "Parameter #{kw} ..."
-    default_wrapped = default.wrap(indent: label.size)
-    default_wrapped[0..label.size] = label
-    puts default_wrapped
 
     begin
-      a_string = Readline.readline("\n-=> ", false)
+      a_string = Readline.readline("\n-=> ", true)
     rescue Interrupt
       a_string = nil
     end
@@ -155,4 +183,30 @@ module AIA::PromptProcessing
     @prompt = PromptManager::Prompt.get(id: @prompt.id)
   end
 
+
+  def show_prompt_without_comments
+    puts remove_comments.wrap(indent: 4)
+  end
+
+
+  def remove_comments
+    lines           = @prompt.text
+                        .split("\n")
+                        .reject{|a_line| a_line.strip.start_with?('#')}
+
+    # Remove empty lines at the start of the prompt
+    #
+    lines = lines.drop_while(&:empty?)
+
+    # Drop all the lines at __END__ and after
+    #
+    logical_end_inx = lines.index("__END__")
+
+    if logical_end_inx
+      lines[0...logical_end_inx] # NOTE: ... means to not include last index
+    else
+      lines
+    end.join("\n") 
+  end
 end
+

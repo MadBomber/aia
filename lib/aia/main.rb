@@ -6,7 +6,7 @@ require_relative 'configuration'
 
 require_relative 'cli'
 require_relative 'prompt_processing'
-require_relative 'external_commands'
+require_relative 'external'
 require_relative 'logging'
 
 # Everything is being handled within the context
@@ -16,7 +16,7 @@ class AIA::Main
   include AIA::Configuration
   include AIA::Cli
   include AIA::PromptProcessing
-  include AIA::ExternalCommands
+  include AIA::External
   include AIA::Logging
 
 

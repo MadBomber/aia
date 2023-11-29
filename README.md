@@ -16,12 +16,28 @@
 
 # AI Assistant (AIA)
 
-**Under Development**
-
 `aia` is a command-line utility that integrates prameterized prompt management with generative AI (gen-AI) execution.
 
 Uses the gem "prompt_manager" to manage the prompts sent to the `mods` command-line utility.  Uses the command line tools "ripgrep" to search for prompts to send and "fzf" to select the prompts that match the search term.
 
+**Most Recent Change**
+
+v0.3.0 - Matching version to [prompt_manager](https://github.com/prompt_manager) This version allows for the user of history in the entery of values to prompt keywords.  KW_HISTORY_MAX is set at 5.  Changed CLI enteraction to use historical selection and editing of prior keyword values.
+
+
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [System Environment Variables (envars)](#system-environment-variables-envars)
+  - [External CLI Tools Used](#external-cli-tools-used)
+  - [Development](#development)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
 
 
 ## Installation
