@@ -1,19 +1,3 @@
-<!-- Tocer[start]: Auto-generated, don't remove. -->
-
-## Table of Contents
-
-- [AI Assistant (AIA)](#ai-assistant-aia)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [System Environment Variables (envars)](#system-environment-variables-envars)
-  - [External CLI Tools Used](#external-cli-tools-used)
-  - [Shell Completion](#shell-completion)
-  - [Development](#development)
-  - [Contributing](#contributing)
-  - [License](#license)
-
-<!-- Tocer[finish]: Auto-generated, don't remove. -->
-
 # AI Assistant (AIA)
 
 `aia` is a command-line utility that integrates prameterized prompt management with generative AI (gen-AI) execution.
