@@ -2,5 +2,5 @@
 # frozen_string_literal: true
 
 module AIA
-  VERSION = "0.0.6"
+  VERSION = "0.1.0"
 end
