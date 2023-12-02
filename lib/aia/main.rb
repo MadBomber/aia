@@ -5,6 +5,7 @@ module AIA ; end
 require_relative 'configuration'
 
 require_relative 'cli'
+require_relative 'config'
 require_relative 'prompt_processing'
 require_relative 'external'
 require_relative 'logging'

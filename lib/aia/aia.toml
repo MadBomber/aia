@@ -1,0 +1,38 @@
+# aia.toml
+
+editor  = "<%= ENV['EDITOR'] || 'vim' =>"
+backend = 'mods' # sgpt
+
+# If you want a value to be nil, just comment it out.
+# search_proc  = '->(q) {`echo "Hello World"`}'
+
+prompts_dir     = <%= ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir").to_s =>
+output_filename = "temp.md"
+log_filename    = "_prompts.log"
+
+
+##########################
+[mods]
+
+model       = 'gpt-4-1106-preview'
+max-retrys  = 5
+no-limit    = true
+temp        = 1.0
+topp        = 1.0
+status-text = '"Generating"'
+fanciness   = 10
+
+
+##########################
+[sgpt]
+
+
+##########################
+[subl]
+w = true
+
+
+##########################
+[vim]
+
+

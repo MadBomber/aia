@@ -44,6 +44,7 @@ Gem::Specification.new do |spec|
   spec.require_paths  = %w[ lib ]
 
   spec.add_dependency "prompt_manager"
+  spec.add_dependency "toml-rb"
 
   spec.add_development_dependency 'amazing_print'
   spec.add_development_dependency 'debug_me'

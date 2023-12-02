@@ -3,7 +3,6 @@
 module AIA::Cli
   def setup_cli_options(args)
     @arguments  = args
-    # TODO: consider a fixed config file: ~/,aia
     @options    = {
       #           Value
       edit?:      [false, "-e --edit",    "Edit the Prompt File"],
@@ -19,6 +18,9 @@ module AIA::Cli
       log:        [PROMPT_LOG,"-l --log --no-log", "Log FILEPATH"],
       markdown?:  [true,  "-m --markdown --no-markdown --md --no-md", "Format with Markdown"],
       backend:    [:mods, "-b --be --backend --no-backend", "Specify the backend prompt resolver"],
+      dump?:      [false, "--dump-config",  "Dump the default config file"],
+      config:     [nil,   "-c --config",    "Config file (*.toml)"],
+      quite?:     [false, "-q --quite",     "Silence warnings"],
     }
     
     # Array(String)
@@ -139,7 +141,10 @@ module AIA::Cli
       check_for option
     end
 
-    show_completion unless @options[:completion].first.nil?
+    show_completion           unless @options[:completion].first.nil?
+    AIA::Config.dunp_default  if dump?
+
+    @config = AIA::Config.new( @options[:config].first )
 
     # get the options meant for the backend AI command
     extract_extra_options
