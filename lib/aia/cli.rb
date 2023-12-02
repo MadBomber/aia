@@ -12,6 +12,7 @@ module AIA::Cli
       version?:   [false, "--version",    "Print Version"],
       help?:      [false, "-h --help",    "Show Usage"],
       fuzzy?:     [false, "--fuzzy",      "Use Fuzzy Matching"],
+      completion: [nil,   "--completion", "Show completion script for bash|zsh|fish"],
       # TODO: Consider dropping output in favor of always
       #       going to STDOUT so user can redirect or pipe somewhere else
       output:     [OUTPUT,"-o --output --no-output",  "Out FILENAME"],
@@ -32,8 +33,9 @@ module AIA::Cli
     usage =   "\n#{MY_NAME} v#{AIA::VERSION}\n\n"
     usage +=  "Usage:  #{MY_NAME} [options] prompt_id [context_file]* [-- external_options+]\n\n"
     usage +=  usage_options
-    usage += "\n"
-    usage += usage_notes if verbose?
+    usage +=  usage_options_details
+    usage +=  "\n"
+    usage +=  usage_notes if verbose?
     
     usage
   end
@@ -63,10 +65,30 @@ module AIA::Cli
   end
 
 
+  def usage_options_details
+    <<~EOS
+
+      Details
+      -------
+
+      Use (--help --verbose) or (-h -v) for verbose usage text.
+
+      Use --completion bash|zsh|fish to show a script
+      that will add prompt ID completion to your desired shell.
+      You must copy the output from this option into a
+      place where the function will be executed for
+      your shell.
+
+    EOS
+  end
+
+
   def usage_notes
     <<~EOS
+
       #{usage_envars}
-      #{AIA::ExternalCommands::HELP}
+      #{AIA::External::HELP}
+
     EOS
   end
 
@@ -117,6 +139,8 @@ module AIA::Cli
       check_for option
     end
 
+    show_completion unless @options[:completion].nil?
+
     # get the options meant for the backend AI command
     extract_extra_options
 
@@ -163,13 +187,33 @@ module AIA::Cli
   end
 
 
-
   def show_usage
     @options[:help?][0] = false 
     puts usage
     exit
   end
   alias_method :show_help, :show_usage
+
+
+  def show_completion
+    shell   = @options[:completion].first
+    script  = Pathname.new(__dir__) + "aia_completion.#{shell}"
+
+    if script.exist?
+      puts
+      puts script.read
+      puts
+    else
+      STDERR.puts <<~EOS
+
+        ERRORL The shell '#{shell}' is not supported.
+
+      EOS
+    end
+
+
+    exit    
+  end
 
 
   def show_version
