@@ -36,9 +36,4 @@ module AIA::Configuration
       @extra_options = @arguments.slice!(extra_index..-1)[1..]
     end
   end
-
-
-
-
-
 end

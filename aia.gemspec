@@ -40,7 +40,7 @@ Gem::Specification.new do |spec|
     end
   end
   spec.bindir         = "bin"
-  spec.executables    = %w[ aia aia_completion.sh ]
+  spec.executables    = %w[ aia ]
   spec.require_paths  = %w[ lib ]
 
   spec.add_dependency "prompt_manager"
