@@ -16,14 +16,13 @@ class AIA::Main
   include AIA::Configuration
   include AIA::Cli
   include AIA::PromptProcessing
-  include AIA::External
   include AIA::Logging
 
 
   def initialize(args= ARGV)
     setup_configuration
     setup_cli_options(args)
-    setup_external_programs
+    AIA::External::Tool.setup
   end
 
 

@@ -20,8 +20,11 @@ class AIA::External::Tool
   end
 
 
+  # SMELL:  Why is this method here instead of under the
+  #         eigen class?
+  #
   def self.tools
-    @@subclasses.map(&:name)
+    @@subclasses.map(&:new).map(&:name)
   end
 
 
@@ -37,6 +40,24 @@ class AIA::External::Tool
 
   ###################################################
   class << self
+    def help
+      <<~HELP
+
+        Available External Tools
+        ------------------------
+
+        The following external tools are available:
+        #{tools.join(', ')}
+        
+      HELP
+    end
+
+
+    def setup
+      puts "TODO: what should Tool.setup do?"
+    end
+
+
     def verify_tools(tools)
       missing_tools = tools.reject(&:installed?)
       unless missing_tools.empty?

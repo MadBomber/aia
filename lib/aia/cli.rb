@@ -87,7 +87,7 @@ module AIA::Cli
     <<~EOS
 
       #{usage_envars}
-      #{AIA::External::HELP}
+      #{AIA::External::Tool.help}
 
     EOS
   end
@@ -139,7 +139,7 @@ module AIA::Cli
       check_for option
     end
 
-    show_completion unless @options[:completion].nil?
+    show_completion unless @options[:completion].first.nil?
 
     # get the options meant for the backend AI command
     extract_extra_options
