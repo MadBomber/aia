@@ -127,6 +127,9 @@ module AIA::Cli
   end
 
 
+  # SMELL:  These methods are ONLY defined within the class context
+  # that includes this module.  Need to make these global
+  # throughout the AIA namespace.
   def build_reader_methods
     @options.keys.each do |key|
       define_singleton_method(key) do
