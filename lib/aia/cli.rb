@@ -87,7 +87,6 @@ module AIA::Cli
     <<~EOS
 
       #{usage_envars}
-      #{AIA::External::HELP}
 
     EOS
   end

@@ -9,6 +9,12 @@ module AIA::PromptProcessing
 
     # TODO: or maybe go to a generic search and select process
 
+    # TODO: if external options were provided but no prompt id
+    #       then by pass prompt process and send the extra
+    #       options to the backend.  For example:
+    #         aia -- --settings
+    #       should send --settings to mods and nothing else
+    
     abort("Please provide a prompt id") unless prompt_id
 
     search_for_a_matching_prompt(prompt_id) unless existing_prompt?(prompt_id)
