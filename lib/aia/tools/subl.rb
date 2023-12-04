@@ -1,6 +1,6 @@
-# lib/aia/external/subl.rb
+# lib/aia/tools/subl.rb
 
-class AIA::External::Subl < AIA::External::Tool
+class AIA::Subl < AIA::Tools
   def initialize
     super
     @role     = :editor

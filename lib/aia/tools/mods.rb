@@ -1,6 +1,6 @@
-# lib/aia/external/mods.rb
+# lib/aia/tools/mods.rb
 
-class AIA::External::Mods < AIA::External::Tool
+class AIA::Mods < AIA::Tools
   def initialize
     super
     @role = :search

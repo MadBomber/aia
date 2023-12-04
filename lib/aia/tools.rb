@@ -1,27 +1,21 @@
-# lib/aia/external/tool.rb
+# lib/aia/tools.rb
 
-class AIA::External::Tool
+class AIA::Tools
   @@subclasses = []
 
-  # This method is called whenever a subclass is created
   def self.inherited(subclass)
     @@subclasses << subclass
   end
 
+  attr_reader :role, :name, :description, :url, :install
+  
 
-  attr_reader :name, :description, :url
-
-  def initialize
-    @role     = :role
-    @name     = self.class.name.split('::').last.downcase
-    @desc     = "description"
-    @url      = "URL"
-    @install  = "brew install #{name}"
-  end
-
-
-  def self.tools
-    @@subclasses.map(&:name)
+  def initialize(*)
+    @role         = :role
+    @name         = self.class.name.split('::').last.downcase
+    @description  = "description"
+    @url          = "URL"
+    @install      = "brew install #{name}"
   end
 
 
@@ -31,14 +25,25 @@ class AIA::External::Tool
   end
 
 
-  def help    = `#{name} --help`
-  def version = `#{name} --version`
+  def help
+    `#{name} --help`
+  end
+  
+
+  def version
+    `#{name} --version`
+  end
 
 
-  ###################################################
+  #########################################
   class << self
-    def verify_tools(tools)
-      missing_tools = tools.reject(&:installed?)
+    def tools
+      @@subclasses.map(&:name)
+    end
+
+
+    def verify_tools
+      missing_tools = @@subclasses.map(&:new).reject(&:installed?)
       unless missing_tools.empty?
         puts format_missing_tools_response(missing_tools)
       end
@@ -64,10 +69,9 @@ class AIA::External::Tool
 end
 
 
-Pathname.new(__dir__)
+(Pathname.new(__dir__)+"tools")
   .glob('*.rb')
-  .reject{|f| f.basename.to_s.end_with?('tool.rb') }
   .each do |tool|
-    require_relative tool.basename.to_s 
+    require_relative "tools/#{tool.basename.to_s}" 
   end
 
