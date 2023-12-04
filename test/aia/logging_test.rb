@@ -45,12 +45,22 @@ class LoggingTest < Minitest::Test
 
 
   def test_configure_logger_formatter
-    message = "Test message"
-    severity = "INFO"
-    timestamp = Time.new(2023, 1, 1, 12, 0, 0)
+    message           = "Test message"
+    severity          = "INFO"
+    timestamp         = Time.new(2023, 1, 1, 12, 0, 0)
     formatted_message = @logging.send(:configure_logger)
-    formatted_log = @logging.logger.formatter.call(severity, timestamp, nil, message)
-    assert_match /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] INFO: Test message\n/, formatted_log, "Log formatter should properly format the message"
+    formatted_log     = @logging.logger.formatter.call(severity, timestamp, nil, message)
+    
+    # puts formatted_message
+
+    # debug_me{[ :formatted_log, :formatted_message ]}
+
+    assert_match (/^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] INFO: Test message\n/), formatted_log, "Log formatter should properly format the message"
+    
+    # assert false
+    # assert formatted_log.include?(severity)
+    # assert formatted_log.include?(message)
+
   end
 
 
@@ -62,11 +72,11 @@ class LoggingTest < Minitest::Test
 
     # Check if the log file contains the proper formatted message
     log_content = File.read(@log_file_path)
-    assert_match /PROMPT ID 1/, log_content
-    assert_match /PATH:     test_path/, log_content
-    assert_match /KEYWORDS: keyword1, keyword2/, log_content
-    assert_match /prompt_string/, log_content
-    assert_match /RESULT:\nTest Result/, log_content
+    assert_match (/PROMPT ID 1/), log_content
+    assert_match (/PATH:     test_path/), log_content
+    assert_match (/KEYWORDS: keyword1, keyword2/), log_content
+    assert_match (/prompt_string/), log_content
+    assert_match (/RESULT:\nTest Result/), log_content
   end
 end
 

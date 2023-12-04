@@ -7,7 +7,7 @@ class AIA::Tools
     @@subclasses << subclass
   end
 
-  attr_reader :role, :name, :description, :url, :install
+  attr_accessor :role, :name, :description, :url, :install
   
 
   def initialize(*)
