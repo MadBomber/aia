@@ -1,6 +1,8 @@
 # lib/aia/version.rb
 # frozen_string_literal: true
 
+require 'semver'
+
 module AIA
-  VERSION = "0.3.10"
+  VERSION = SemVer.find.to_s[1..]
 end

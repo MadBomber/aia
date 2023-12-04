@@ -36,14 +36,16 @@ Gem::Specification.new do |spec|
   spec.files = Dir.chdir(__dir__) do
     `git ls-files -z`.split("\x0").reject do |f|
       (File.expand_path(f) == __FILE__) ||
-        f.start_with?(*%w[bin/ test/ spec/ features/ .git appveyor Gemfile])
-    end
+        f.start_with?(*%w[bin/ test/ spec/ features/ .git Gemfile])
+    end + ['.semver']
   end
+
   spec.bindir         = "bin"
   spec.executables    = %w[ aia ]
   spec.require_paths  = %w[ lib ]
 
   spec.add_dependency "prompt_manager"
+  spec.add_dependency "semver2"
 
   spec.add_development_dependency 'amazing_print'
   spec.add_development_dependency 'debug_me'
