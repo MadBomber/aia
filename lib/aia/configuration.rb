@@ -4,7 +4,6 @@ HOME            = Pathname.new(ENV['HOME'])
 PROMPTS_DIR     = Pathname.new(ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir"))
 
 AI_CLI_PROGRAM  = "mods"
-EDITOR          = ENV['EDITOR'] || 'edit'
 MY_NAME         = "aia"
 MODS_MODEL      = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
 OUTPUT          = Pathname.pwd + "temp.md"

@@ -1,17 +1,35 @@
 # lib/aia/tools/subl.rb
 
 class AIA::Subl < AIA::Tools
-  def initialize
+  DEFAULT_PARAMETERS = [
+    "--new-window",   # Open a new window
+    "--wait",         # Wait for the files to be closed before returning
+  ].join(' ')
+  
+  attr_accessor :command
+
+
+  def initialize(file: "")
     super
+    
     @role     = :editor
     @desc     = "Sublime Text Editor"
     @url      = "https://www.sublimetext.com/"
     @install  = "echo 'Download from website'"
+
+    @file     = file
+
+    build_command
+  end
+
+
+  def build_command
+    @command = "#{name} #{DEFAULT_PARAMETERS} #{@file}"
   end
 
   
-  def open(file)
-    `#{name} #{file}`
+  def run
+    `#{command}`
   end
 end
 

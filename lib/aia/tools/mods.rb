@@ -46,12 +46,6 @@ class AIA::Mods < AIA::Tools
 
 
   def run
-
-    debug_me{[
-      :command
-    ]}
-
-
     `#{command}`
   end
 end
