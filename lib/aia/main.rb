@@ -17,13 +17,15 @@ class AIA::Main
   include AIA::Cli
   include AIA::PromptProcessing
   include AIA::External
-  include AIA::Logging
 
+
+  attr_accessor :logger
 
   def initialize(args= ARGV)
     setup_configuration
     setup_cli_options(args)
     setup_external_programs
+    @logger = AIA::Logging.new(log)
   end
 
 
@@ -34,6 +36,6 @@ class AIA::Main
     get_prompt
     process_prompt
     send_prompt_to_external_command
-    log_result unless log.nil?
+    logger.prompt_result(@prompt, @result)
   end
 end

@@ -1,5 +1,9 @@
 # lib/aia.rb
 
+require 'debug_me'
+include DebugMe
+
+
 require 'pathname'
 require 'readline'
 require 'tempfile'
