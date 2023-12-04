@@ -11,10 +11,10 @@ class AIA::Vim < AIA::Tools
   def initialize(file: "")
     super
     
-    @role     = :editor
-    @desc     = "Vi IMproved (VIM)"
-    @url      = "https://www.vim.org"
-    @install  = "brew install vim"
+    @role         = :editor
+    @description  = "Vi IMproved (VIM)"
+    @url          = "https://www.vim.org"
+    @install      = "brew install vim"
 
     @file     = file
 

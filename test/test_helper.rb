@@ -7,3 +7,5 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "aia"
 
 require "minitest/autorun"
+require "minitest/mock"
+

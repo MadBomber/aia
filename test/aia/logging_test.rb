@@ -48,7 +48,7 @@ class LoggingTest < Minitest::Test
     message           = "Test message"
     severity          = "INFO"
     timestamp         = Time.new(2023, 1, 1, 12, 0, 0)
-    formatted_message = @logging.send(:configure_logger)
+    @logging.send(:configure_logger)
     formatted_log     = @logging.logger.formatter.call(severity, timestamp, nil, message)
     
     # puts formatted_message

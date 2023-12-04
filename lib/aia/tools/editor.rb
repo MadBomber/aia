@@ -12,10 +12,10 @@ class AIA::Editor < AIA::Tools
   def initialize(file: "")
     super
     
-    @role     = :editor
-    @desc     = "Your default system $EDITOR"
-    @url      = "unknown"
-    @install  = "should already be installed"
+    @role         = :editor
+    @description  = "Your default system $EDITOR"
+    @url          = "unknown"
+    @install      = "should already be installed"
 
     @file     = file
 
@@ -29,9 +29,9 @@ class AIA::Editor < AIA::Tools
     editor = ENV['EDITOR']  # This might be nil
 
     if editor.nil?
-      @name     = "echo"
-      @desc     = "You have no default editor"
-      @install  = "Set your system environment variable EDITOR"
+      @name         = "echo"
+      @description  = "You have no default editor"
+      @install      = "Set your system environment variable EDITOR"
     else
       @name = editor
     end    
