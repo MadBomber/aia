@@ -41,7 +41,6 @@ class AIA::Logging
   def debug(msg)    = logger.debug(msg)
   def info(msg)     = logger.info(msg)
   def warn(msg)     = logger.warn(msg)
-  def warning(msg)  = logger.warn(msg)
   def error(msg)    = logger.error(msg)
   def fatal(msg)    = logger.fatal(msg)
 
