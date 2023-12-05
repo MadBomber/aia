@@ -7,7 +7,7 @@ class AIA::Mods < AIA::Tools
     "--no-limit"        # no limit on input context
   ].join(' ').freeze
 
-  attr_accessor :command
+  attr_accessor :command, :extra_options, :text, :files
 
   # TODO: put the prompt text to be resolved into a 
   #       temporary text file then cat that file into mods.
@@ -21,9 +21,9 @@ class AIA::Mods < AIA::Tools
       files:          []  # context file paths (Array of Pathname)
     )
     super
-    @role = :gen_ai
-    @desc = 'AI on the command-line'
-    @url  = 'https://github.com/charmbracelet/mods'
+    @role         = :gen_ai
+    @description  = 'AI on the command-line'
+    @url          = 'https://github.com/charmbracelet/mods'
   
     @extra_options  = extra_options
     @text           = text
