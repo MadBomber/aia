@@ -4,5 +4,7 @@
 require 'semver'
 
 module AIA
-  VERSION = SemVer.find.to_s[1..]
+  # .semver is located at the gem's root directory
+  version_file_path = File.join(__dir__, '..', '..')
+  VERSION = SemVer.find(version_file_path).to_s[1..]
 end
