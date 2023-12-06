@@ -37,7 +37,7 @@ Gem::Specification.new do |spec|
     `git ls-files -z`.split("\x0").reject do |f|
       (File.expand_path(f) == __FILE__) ||
         f.start_with?(*%w[bin/ test/ spec/ features/ .git Gemfile])
-    end + ['man/**/*','.semver']
+    end + ['man/', '.semver']
   end
 
   spec.bindir         = "bin"
