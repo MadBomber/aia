@@ -44,8 +44,10 @@ Gem::Specification.new do |spec|
   spec.executables    = %w[ aia ]
   spec.require_paths  = %w[ lib ]
 
+  spec.add_dependency "hashie"
   spec.add_dependency "prompt_manager"
   spec.add_dependency "semver2"
+  spec.add_dependency "toml-rb"
 
   spec.add_development_dependency "minitest"
   spec.add_development_dependency 'amazing_print'

@@ -26,6 +26,8 @@ module AIA::Cli
 
     build_reader_methods # for the @options keys      
     process_arguments
+
+    AIA.config = Hashie::Mash.new(@options.transform_values { |values| values.first })
   end
 
 
