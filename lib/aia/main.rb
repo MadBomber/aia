@@ -2,8 +2,6 @@
 
 module AIA ; end
 
-require_relative 'configuration'
-
 require_relative 'cli'
 require_relative 'prompt_processing'
 require_relative 'logging'
@@ -13,18 +11,14 @@ require_relative 'tools'
 # of a single class.
 
 class AIA::Main
-  include AIA::Configuration
-  include AIA::Cli
   include AIA::PromptProcessing
-
 
   attr_accessor :logger, :tools
 
   def initialize(args= ARGV)
-    setup_configuration
-    setup_cli_options(args)
-    # setup_external_programs
-    @logger = AIA::Logging.new(log)
+    AIA::Cli.new(args)
+
+    @logger = AIA::Logging.new(AIA.config.log)
     @tools  = AIA::Tools.new
 
     tools.class.verify_tools
@@ -32,11 +26,9 @@ class AIA::Main
 
 
   def call
-    show_usage    if help?
-    show_version  if version?
-
     get_prompt
     process_prompt
+    
     # send_prompt_to_external_command
 
     # TODO: the context_files left in the @arguments array
@@ -46,15 +38,14 @@ class AIA::Main
 
 
     mods    = AIA::Mods.new(
-                extra_options:  @extra_options,
+                extra_options:  AIA.config.extra,
                 text:           @prompt.to_s,
-                files:          @arguments    # FIXME: want validated context files
+                files:          AIA.config.arguments    # FIXME: want validated context files
               )
 
     result  = mods.run
 
-    @options[:output].first.write result
-
+    AIA.config.output.write result
 
     logger.prompt_result(@prompt, result)
   end

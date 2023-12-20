@@ -5,7 +5,7 @@ module AIA::PromptProcessing
 
   # Fetch the first argument which should be the prompt id
   def get_prompt
-    prompt_id = @arguments.shift
+    prompt_id = AIA.config.arguments.shift
 
     # TODO: or maybe go to a generic search and select process
 
@@ -18,7 +18,7 @@ module AIA::PromptProcessing
     abort("Please provide a prompt id") unless prompt_id
 
     search_for_a_matching_prompt(prompt_id) unless existing_prompt?(prompt_id)
-    edit_prompt if edit?
+    edit_prompt if AIA.config.edit?
   end
 
 

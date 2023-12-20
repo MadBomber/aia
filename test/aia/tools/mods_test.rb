@@ -7,7 +7,7 @@ require_relative '../../../lib/aia/tools/mods'
 class TestMods < Minitest::Test
   def setup
     @mods = AIA::Mods.new(
-      extra_options:  [],
+      extra_options:  "",
       text:           "summarize this text",
       files:          []
     )
@@ -18,14 +18,14 @@ class TestMods < Minitest::Test
     assert_equal :gen_ai,                   @mods.role
     assert_equal 'AI on the command-line',  @mods.description
     assert_equal 'https://github.com/charmbracelet/mods', @mods.url
-    assert_equal [],                    @mods.extra_options
+    assert_equal "",                    @mods.extra_options
     assert_equal "summarize this text", @mods.text
     assert_equal [],                    @mods.files
   end
 
 
   def test_command_with_extra_options
-    @mods.extra_options = ['--max-tokens 100', '--temp 0.7']
+    @mods.extra_options = '--max-tokens 100 --temp 0.7'
     start_text  = "mods -f -m"
     end_text    = '--no-limit --max-tokens 100 --temp 0.7 "summarize this text"'
     

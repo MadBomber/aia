@@ -1,11 +1,49 @@
 # lib/aia/cli.rb
 
-module AIA::Cli
+
+HOME            = Pathname.new(ENV['HOME'])
+PROMPTS_DIR     = Pathname.new(ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir"))
+
+AI_CLI_PROGRAM  = "mods"
+MY_NAME         = "aia"
+MODS_MODEL      = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
+OUTPUT          = Pathname.pwd + "temp.md"
+PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
+
+
+require 'pathname'
+require 'yaml'
+require 'toml-rb'
+
+
+class AIA::Cli
+  attr_accessor :config
+  attr_accessor :options
+
+  def initialize(args)
+    setup_cli_options(args)
+    config_file_path = @options[:config].first
+
+    debug_me{[
+      "@options",
+      :config_file_path
+    ]}
+
+    @config = parse_config_file(config_file_path) unless config_file_path.nil?
+    
+    setup_configuration
+
+    process_immediate_commands
+  end
+
+
   def setup_cli_options(args)
-    @arguments  = args
     # TODO: consider a fixed config file: ~/,aia
     @options    = {
       #           Value
+      arguments:  [args],
+      extra:      [''],
+      config:     [nil,   "-c --config",  "Load Config File"],
       edit?:      [false, "-e --edit",    "Edit the Prompt File"],
       debug?:     [false, "-d --debug",   "Turn On Debugging"],
       verbose?:   [false, "-v --verbose", "Be Verbose"],
@@ -21,13 +59,21 @@ module AIA::Cli
       backend:    [:mods, "-b --be --backend --no-backend", "Specify the backend prompt resolver"],
     }
     
-    # Array(String)
-    @extra_options = [] # intended for the backend AI processor
-
     build_reader_methods # for the @options keys      
     process_arguments
 
     AIA.config = Hashie::Mash.new(@options.transform_values { |values| values.first })
+  end
+
+
+  def arguments
+    @options[:arguments].first
+  end
+
+
+  def process_immediate_commands
+    show_usage    if AIA.config.help?
+    show_version  if AIA.config.version?
   end
 
 
@@ -50,9 +96,11 @@ module AIA::Cli
       ""
     ]
 
-    max_size = @options.values.map{|o| o[2].size}.max + 2
+    max_size = @options.values.map{|o| o.size >= 3 ? o[2].size : 0}.max + 2
 
     @options.values.each do |o|
+      next if o.size < 3
+      
       pad_size = max_size - o[2].size
       options << o[2] + (" "*pad_size) + o[1]
 
@@ -145,7 +193,7 @@ module AIA::Cli
     # get the options meant for the backend AI command
     extract_extra_options
 
-    bad_options = @arguments.select{|a| a.start_with?('-')}
+    bad_options = arguments.select{|a| a.start_with?('-')}
 
     unless bad_options.empty?
       puts <<~EOS
@@ -162,23 +210,26 @@ module AIA::Cli
 
 
   def check_for(option_sym)
-    boolean = option_sym.to_s.end_with?('?')
-    switches = @options[option_sym][1].split
+    # sometimes @options has stuff that is not a command line option
+    return if @options[option_sym].nil? || @options[option_sym].size <= 1
+
+    boolean   = option_sym.to_s.end_with?('?')
+    switches  = @options[option_sym][1].split
 
     switches.each do |switch|
-      if @arguments.include?(switch)
-        index = @arguments.index(switch)
+      if arguments.include?(switch)
+        index = arguments.index(switch)
 
         if boolean
           @options[option_sym][0] = switch.include?('-no-') ? false : true
-          @arguments.slice!(index,1)
+          arguments.slice!(index,1)
         else
           if switch.include?('-no-')
             @options[option_sym][0] = nil
-            @arguments.slice!(index,1)
+            arguments.slice!(index,1)
           else
-            @options[option_sym][0] = @arguments[index + 1]
-            @arguments.slice!(index,2)
+            @options[option_sym][0] = arguments[index + 1]
+            arguments.slice!(index,2)
           end
         end
         
@@ -221,4 +272,43 @@ module AIA::Cli
     puts AIA::VERSION
     exit
   end
+
+
+  def setup_configuration
+    @prompt     = nil
+
+    PromptManager::Prompt.storage_adapter = 
+      PromptManager::Storage::FileSystemAdapter.config do |config|
+        config.prompts_dir        = PROMPTS_DIR
+        config.prompt_extension   = '.txt'
+        config.params_extension   = '.json'
+        config.search_proc        = nil
+        # TODO: add the rgfzz script for search_proc
+      end.new
+  end
+
+
+  # Get the additional CLI arguments intended for the
+  # backend gen-AI processor.
+  def extract_extra_options
+    extra_index = arguments.index('--')
+    if extra_index
+      @options[:extra] = [ arguments.slice!(extra_index..-1)[1..].join(' ') ]
+    end
+  end
+
+
+  def parse_config_file(config_file_path)
+    case config_file_path.extname.downcase
+    when '.yaml', '.yml'
+      YAML.safe_load(config_file_path.read)
+    when '.toml'
+      TomlRB.parse(config_file_path.read)
+    else
+      raise "Unsupported config file type: #{config_file_path.extname}"
+    end
+  end
+
+
+
 end

@@ -16,7 +16,7 @@ class AIA::Mods < AIA::Tools
 
 
   def initialize(
-      extra_options:  [], # everything after -- on command line
+      extra_options:  "", # everything after -- on command line
       text:           "", # prompt text after keyword replacement
       files:          []  # context file paths (Array of Pathname)
     )
@@ -35,7 +35,7 @@ class AIA::Mods < AIA::Tools
 
   def build_command
     parameters  = DEFAULT_PARAMETERS.dup + " "
-    parameters += @extra_options.join(' ') 
+    parameters += @extra_options
     @command    = "mods #{parameters} "
     @command   += %Q["#{@text}"]        # TODO: consider using the pipeline
 
