@@ -44,6 +44,7 @@ class AIA::Cli
       arguments:  [args],
       extra:      [''],
       config:     [nil,   "-c --config",  "Load Config File"],
+      dump?:      [false, "--dump",       "Dump to Config File"],
       edit?:      [false, "-e --edit",    "Edit the Prompt File"],
       debug?:     [false, "-d --debug",   "Turn On Debugging"],
       verbose?:   [false, "-v --verbose", "Be Verbose"],
@@ -72,8 +73,23 @@ class AIA::Cli
 
 
   def process_immediate_commands
-    show_usage    if AIA.config.help?
-    show_version  if AIA.config.version?
+    show_usage        if AIA.config.help?
+    show_version      if AIA.config.version?
+    dump_config_file  if AIA.config.dump?
+  end
+
+
+  def dump_config_file
+    puts <<~EOS
+      
+      TODO: dump the @options hash to a
+      config file.  Should it be TOML or YAML
+      or either?  Should it go to STDOUT or to
+      a specific file location.
+
+    EOS
+
+    exit
   end
 
 
