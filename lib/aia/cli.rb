@@ -11,56 +11,60 @@ OUTPUT          = Pathname.pwd + "temp.md"
 PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
 
 
+require 'hashie'
 require 'pathname'
 require 'yaml'
 require 'toml-rb'
 
 
 class AIA::Cli
+  MAN_PAGE_PATH = Pathname.new(__dir__) + '../../man/aia.1'
   attr_accessor :config
   attr_accessor :options
 
   def initialize(args)
     setup_cli_options(args)
-    config_file_path = @options[:config].first
 
-    debug_me{[
-      "@options",
-      :config_file_path
-    ]}
+    load_config_file unless AIA.config.config_file.nil?
 
-    @config = parse_config_file(config_file_path) unless config_file_path.nil?
-    
-    setup_configuration
+    setup_prompt_manager
 
     process_immediate_commands
   end
 
 
+  def load_config_file
+    AIA.config.config_file = Pathname.new(AIA.config.config_file)
+    if AIA.config.config_file.exist?
+      AIA.config.merge! parse_config_file
+    else
+      abort "Config file does not exist: #{AIA.config.config_file}"
+    end
+  end
+
+
   def setup_cli_options(args)
-    # TODO: consider a fixed config file: ~/,aia
     @options    = {
-      #           Value
+      #           Default
+      # Key       Value,      switches
       arguments:  [args],
       extra:      [''],
-      config:     [nil,   "-c --config",  "Load Config File"],
-      dump?:      [false, "--dump",       "Dump to Config File"],
-      edit?:      [false, "-e --edit",    "Edit the Prompt File"],
-      debug?:     [false, "-d --debug",   "Turn On Debugging"],
-      verbose?:   [false, "-v --verbose", "Be Verbose"],
-      version?:   [false, "--version",    "Print Version"],
-      help?:      [false, "-h --help",    "Show Usage"],
-      fuzzy?:     [false, "--fuzzy",      "Use Fuzzy Matching"],
-      completion: [nil,   "--completion", "Show completion script for bash|zsh|fish"],
-      # TODO: Consider dropping output in favor of always
-      #       going to STDOUT so user can redirect or pipe somewhere else
-      output:     [OUTPUT,"-o --output --no-output",  "Out FILENAME"],
-      log:        [PROMPT_LOG,"-l --log --no-log", "Log FILEPATH"],
-      markdown?:  [true,  "-m --markdown --no-markdown --md --no-md", "Format with Markdown"],
-      backend:    [:mods, "-b --be --backend --no-backend", "Specify the backend prompt resolver"],
+      config_file:[nil,       "-c --config"],
+      dump?:      [false,     "--dump"],
+      edit?:      [false,     "-e --edit"],
+      debug?:     [false,     "-d --debug"],
+      verbose?:   [false,     "-v --verbose"],
+      version?:   [false,     "--version"],
+      help?:      [false,     "-h --help"],
+      fuzzy?:     [false,     "--fuzzy"],
+      completion: [nil,       "--completion"],
+      output:     [OUTPUT,    "-o --output --no-output"],
+      log:        [PROMPT_LOG,"-l --log --no-log"],
+      markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
+      backend:    ['mods',    "-b --be --backend --no-backend"],
     }
     
-    build_reader_methods # for the @options keys      
+    # build_reader_methods # for the @options keys      
     process_arguments
 
     AIA.config = Hashie::Mash.new(@options.transform_values { |values| values.first })
@@ -90,103 +94,6 @@ class AIA::Cli
     EOS
 
     exit
-  end
-
-
-  def usage
-    usage =   "\n#{MY_NAME} v#{AIA::VERSION}\n\n"
-    usage +=  "Usage:  #{MY_NAME} [options] prompt_id [context_file]* [-- external_options+]\n\n"
-    usage +=  usage_options
-    usage +=  usage_options_details
-    usage +=  "\n"
-    usage +=  usage_notes if verbose?
-    
-    usage
-  end
- 
-
-  def usage_options
-    options = [
-      "Options",
-      "-------",
-      ""
-    ]
-
-    max_size = @options.values.map{|o| o.size >= 3 ? o[2].size : 0}.max + 2
-
-    @options.values.each do |o|
-      next if o.size < 3
-      
-      pad_size = max_size - o[2].size
-      options << o[2] + (" "*pad_size) + o[1]
-
-      default = o[0]
-      default = "./" + default.basename.to_s if o[1].include?('output')
-      default = default.is_a?(Pathname) ? "$HOME/" + default.relative_path_from(HOME).to_s : default
-
-      options << " default: #{default}\n"
-    end
-
-    options.join("\n")
-  end
-
-
-  def usage_options_details
-    <<~EOS
-
-      Details
-      -------
-
-      Use (--help --verbose) or (-h -v) for verbose usage text.
-
-      Use --completion bash|zsh|fish to show a script
-      that will add prompt ID completion to your desired shell.
-      You must copy the output from this option into a
-      place where the function will be executed for
-      your shell.
-
-    EOS
-  end
-
-
-  def usage_notes
-    <<~EOS
-
-      #{usage_envars}
-
-    EOS
-  end
-
-
-  def usage_envars
-    <<~EOS
-      System Environment Variables Used
-      ---------------------------------
-
-      The OUTPUT and PROMPT_LOG envars can be overridden
-      by cooresponding options on the command line.
-
-      Name            Default Value
-      --------------  -------------------------
-      PROMPTS_DIR     $HOME/.prompts_dir
-      AI_CLI_PROGRAM  mods
-      EDITOR          edit
-      MODS_MODEL      gpt-4-1106-preview
-      OUTPUT          ./temp.md
-      PROMPT_LOG      $PROMPTS_DIR/_prompts.log
-
-      These two are required for access the OpenAI
-      services.  The have the same value but different
-      programs use different envar names.
-
-      To get an OpenAI access key/token (same thing)
-      you must first create an account at OpenAI.
-      Here is the link:  https://platform.openai.com/docs/overview
-
-      OPENAI_ACCESS_TOKEN
-      OPENAI_API_KEY
-
-    EOS
   end
 
 
@@ -254,13 +161,29 @@ class AIA::Cli
     end
   end
 
-
+  # aia usage is maintained in a man page
   def show_usage
     @options[:help?][0] = false 
-    puts usage
+    puts `man #{MAN_PAGE_PATH}`
+    show_verbose_usage if AIA.config.verbose?
     exit
   end
   alias_method :show_help, :show_usage
+
+
+  def show_verbose_usage
+    puts <<~EOS
+
+      ======================================
+      == Currently selected Backend: #{AIA.config.backend} ==
+      ======================================
+
+    EOS
+    puts `mods --help` if "mods" == AIA.config.backend
+    puts `sgpt --help` if "sgpt" == AIA.config.backend
+    puts
+  end
+  alias_method :show_verbise_help, :show_verbose_usage
 
 
   def show_completion
@@ -290,7 +213,7 @@ class AIA::Cli
   end
 
 
-  def setup_configuration
+  def setup_prompt_manager
     @prompt     = nil
 
     PromptManager::Prompt.storage_adapter = 
@@ -299,7 +222,7 @@ class AIA::Cli
         config.prompt_extension   = '.txt'
         config.params_extension   = '.json'
         config.search_proc        = nil
-        # TODO: add the rgfzz script for search_proc
+        # TODO: add the rgfzf script for search_proc
       end.new
   end
 
@@ -314,14 +237,14 @@ class AIA::Cli
   end
 
 
-  def parse_config_file(config_file_path)
-    case config_file_path.extname.downcase
+  def parse_config_file
+    case AIA.config.config_file.extname.downcase
     when '.yaml', '.yml'
-      YAML.safe_load(config_file_path.read)
+      YAML.safe_load(AIA.config.config_file.read)
     when '.toml'
-      TomlRB.parse(config_file_path.read)
+      TomlRB.parse(AIA.config.config_file.read)
     else
-      raise "Unsupported config file type: #{config_file_path.extname}"
+      abort "Unsupported config file type: #{AIA.config.config_file.extname}"
     end
   end
 
