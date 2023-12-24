@@ -29,13 +29,6 @@ module AIA
       #       conversation REPL?
       
       AIA::Main.new(args).call
-
-      debug_me{[
-        "AIA.config",
-        "AIA.config.edit?",
-        "AIA.config.debug?",
-        "AIA.config.verbose?"
-      ]}
     end
   end
 end

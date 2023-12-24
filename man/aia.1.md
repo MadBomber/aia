@@ -26,8 +26,8 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-c`, `--config` *PATH_TO_CONFIG_FILE*
 : Load Config File - default: nil
 
-`--dump`
-: Dump to Config File - default: false
+`--dump` *FORMAT*
+: Dump a Config File in [yaml | toml] to STDOUT - default: nil
 
 `-e`, `--edit`
 : Edit the Prompt File - default: false

@@ -18,18 +18,37 @@ require 'toml-rb'
 
 
 class AIA::Cli
+  CF_FORMATS    = %w[yml yaml toml]
+  ENV_PREFIX    = self.name.split('::').first.upcase + "_"
   MAN_PAGE_PATH = Pathname.new(__dir__) + '../../man/aia.1'
-  attr_accessor :config
-  attr_accessor :options
+  
+
+  # attr_accessor :config
+  # attr_accessor :options
 
   def initialize(args)
-    setup_cli_options(args)
+    setup_options_with_defaults(args) # 1. defaults
+    load_env_options                  # 2. over-ride with envars
+    process_command_line_arguments    # 3. over-ride with command line options
 
+    # 4. over-ride everything with config file
     load_config_file unless AIA.config.config_file.nil?
 
     setup_prompt_manager
 
     process_immediate_commands
+  end
+
+
+  def load_env_options
+    keys  = ENV.keys
+              .select{|k| k.start_with?(ENV_PREFIX)}
+              .map{|k| k.gsub(ENV_PREFIX,'').downcase.to_sym}
+
+    keys.each do |key|
+      envar_key       = ENV_PREFIX + key.to_s.upcase
+      AIA.config[key] = ENV[envar_key]
+    end
   end
 
 
@@ -43,14 +62,14 @@ class AIA::Cli
   end
 
 
-  def setup_cli_options(args)
+  def setup_options_with_defaults(args)
     @options    = {
       #           Default
       # Key       Value,      switches
       arguments:  [args],
       extra:      [''],
       config_file:[nil,       "-c --config"],
-      dump?:      [false,     "--dump"],
+      dump:       [nil,       "--dump"],
       edit?:      [false,     "-e --edit"],
       debug?:     [false,     "-d --debug"],
       verbose?:   [false,     "-v --verbose"],
@@ -64,54 +83,58 @@ class AIA::Cli
       backend:    ['mods',    "-b --be --backend --no-backend"],
     }
     
-    # build_reader_methods # for the @options keys      
-    process_arguments
-
     AIA.config = Hashie::Mash.new(@options.transform_values { |values| values.first })
   end
 
 
   def arguments
-    @options[:arguments].first
+    AIA.config.arguments
   end
 
 
   def process_immediate_commands
     show_usage        if AIA.config.help?
     show_version      if AIA.config.version?
-    dump_config_file  if AIA.config.dump?
+    dump_config_file  if AIA.config.dump
+    show_completion   if AIA.config.completion
   end
 
 
   def dump_config_file
-    puts <<~EOS
-      
-      TODO: dump the @options hash to a
-      config file.  Should it be TOML or YAML
-      or either?  Should it go to STDOUT or to
-      a specific file location.
+    a_hash = prepare_config_as_hash
 
-    EOS
+    case AIA.config.dump.downcase
+    when 'yml', 'yaml'
+      puts YAML.dump(a_hash)
+    when 'toml'
+      puts TomlRB.dump(a_hash)
+    else
+      abort "Invalid config file format request.  Only #{CF_FORMATS.join(', ')} are supported."
+    end
 
     exit
   end
 
 
-  def build_reader_methods
-    @options.keys.each do |key|
-      define_singleton_method(key) do
-        @options[key][0]
-      end
+  def prepare_config_as_hash
+    a_hash          = AIA.config.to_h
+    a_hash['dump']  = nil
+
+    # convert Pathname objects to Strings
+    %w[log output].each do |key|
+      a_hash[key] = a_hash[key].to_s
     end
+
+    a_hash.delete('arguments')
+
+    a_hash
   end
 
 
-  def process_arguments
+  def process_command_line_arguments
     @options.keys.each do |option|
       check_for option
     end
-
-    show_completion unless @options[:completion].first.nil?
 
     # get the options meant for the backend AI command
     extract_extra_options
@@ -144,14 +167,14 @@ class AIA::Cli
         index = arguments.index(switch)
 
         if boolean
-          @options[option_sym][0] = switch.include?('-no-') ? false : true
+          AIA.config[option_sym] = switch.include?('-no-') ? false : true
           arguments.slice!(index,1)
         else
           if switch.include?('-no-')
-            @options[option_sym][0] = nil
+            AIA.config[option_sym] = switch.include?('output') ? STDOUT : nil
             arguments.slice!(index,1)
           else
-            @options[option_sym][0] = arguments[index + 1]
+            AIA.config[option_sym] = arguments[index + 1]
             arguments.slice!(index,2)
           end
         end
@@ -183,11 +206,11 @@ class AIA::Cli
     puts `sgpt --help` if "sgpt" == AIA.config.backend
     puts
   end
-  alias_method :show_verbise_help, :show_verbose_usage
+  # alias_method :show_verbose_help, :show_verbose_usage
 
 
   def show_completion
-    shell   = @options[:completion].first
+    shell   = AIA.config.completion
     script  = Pathname.new(__dir__) + "aia_completion.#{shell}"
 
     if script.exist?
@@ -197,11 +220,10 @@ class AIA::Cli
     else
       STDERR.puts <<~EOS
 
-        ERRORL The shell '#{shell}' is not supported.
+        ERROR: The shell '#{shell}' is not supported.
 
       EOS
     end
-
 
     exit    
   end
@@ -247,7 +269,74 @@ class AIA::Cli
       abort "Unsupported config file type: #{AIA.config.config_file.extname}"
     end
   end
-
-
-
 end
+
+__END__
+
+```markdown
+In the `AIA::Cli` class, methods are currently ordered in a mostly procedural 
+manner. However, making a few adjustments could improve readability and 
+maintainability. Here's an updated organization that helps to group relevant 
+methods together, and ensure that crucial lifecycle methods like `initialize` 
+are easily found:
+
+1. **Initialization and Setup Methods:**
+   These methods initialize the CLI and perform initial configuration. 
+   It's useful to keep them at the top as they provide an overview of 
+   the CLI setup sequence.
+
+   - `initialize(args)`
+   - `setup_options_with_defaults(args)`
+   - `load_env_options`
+   - `process_command_line_arguments`
+   - `load_config_file`
+   - `setup_prompt_manager`
+   - `process_immediate_commands`
+
+2. **Primary Public Methods:**
+   These are the methods that form the primary public interface of the class, 
+   aside from `initialize`, which is already listed above.
+
+   - None in the current implementation, but this is where you would list them 
+   if they were present.
+
+3. **Config Processing Methods:**
+   These methods are involved in handling and processing CLI and configuration 
+   options.
+
+   - `arguments`
+   - `check_for(option_sym)`
+   - `dump_config_file`
+   - `prepare_config_as_hash`
+   - `extract_extra_options`
+   - `parse_config_file`
+
+4. **Immediate Command Methods:**
+   These methods handle immediate actions and are called directly from `
+   initialize`, such as showing usage or version.
+
+   - `show_usage` (and the `show_help` alias)
+   - `show_verbose_usage`
+   - `show_completion`
+   - `show_version`
+
+5. **Utility and Private Methods:**
+   Any further utility or private helper methods would come here, aiding the 
+   primary public methods.
+
+   - Currently, there are no explicit utility/private methods defined, but if 
+   present, they would be positioned here.
+
+By grouping methods in this way, it becomes clearer to see the execution flow and lifecycle of the `AIA::Cli` class. It also makes it easier to understand the dependencies between methods and to follow the logic for someone maintaining the code or for a new developer coming onto the project.
+
+Furthermore, it is a common Ruby convention to have the `initialize` method at 
+the top of the class definition, followed by other lifecycle methods, public 
+methods, and finally private or protected methods.
+
+Note that this is a refactoring focused on method order and does not include 
+scrutinizing the internals of the methods themselves. There's also an assumption 
+made that there's no direct dependency on the order for the current runtime 
+behavior; changing the order shouldn't affect the runtime if all methods are 
+designed to be independent.
+```
+
