@@ -6,13 +6,13 @@
 aia \- command\-line interface for an AI assistant
 .SH SYNOPSIS
 .PP
-aia \[lB]options\[rB]* prompt\[ru]id \[lB]context\[ru]file\[rB]* \[lB]\-\- external\[ru]options\[pl]\[rB]
+aia \[lB]options\[rB]* PROMPT\[ru]ID \[lB]CONTEXT\[ru]FILE\[rB]* \[lB]\-\- EXTERNAL\[ru]OPTIONS\[pl]\[rB]
 .SH DESCRIPTION
 .PP
 The aia command\-line tool is an interface for interacting with an AI model backend, providing a simple way to send prompts and receive responses\. The CLI supports various options to customize the interaction, load a configuration file, edit prompts, set debugging levels, and more\.
 .SH ARGUMENTS
 .TP
-\fIPROMPT\[ru]NAME\fP
+\fIPROMPT\[ru]ID\fP
 This is a required argument\.
 .TP
 \fICONTEXT\[ru]FILES\fP
@@ -42,7 +42,10 @@ Print Version \- default: false
 \fB\-h\fR, \fB\-\-help\fR
 Show Usage \- default: false
 .TP
-\fB\-\-fuzzy\fR
+\fB\-s\fR, \fB\-\-search\fR \fITERM\fP
+Search for prompts contain TERM \- default: nil
+.TP
+\fB\-f\fR, \-\-fuzzy\`
 Use Fuzzy Matching when searching for a prompt \- default: false
 .TP
 \fB\-\-completion\fR \fISHELL\[ru]NAME\fP
@@ -56,6 +59,12 @@ Log FILEPATH \- default: \[Do]HOME\[sl]\.prompts\[sl]prompts\.log
 \fB\-m\fR, \fB\-\-\[lB]no\[rB]\-markdown\fR
 Format with Markdown \- default: true
 .TP
+\fB\-\-model\fR \fINAME\fP
+Name of the LLM model to use \- default: gpt\-4\-1106\-preview
+.TP
+\fB\-p\fR, \fB\-\-prompts\fR \fIPATH\[ru]TO\[ru]DIRECTORY\fP
+Directory containing the prompt files \- default: \[ti]\[sl]\.prompts
+.TP
 \fB\-b\fR, \fB\-\-\[lB]no\[rB]\-backend\fR \fILLM TOOL\fP
 Specify the backend prompt resolver \- default: :mods
 .SH ENVIRONMENT
@@ -65,15 +74,15 @@ The aia CLI uses the following environment variables:
 .IP \(bu 2
 \fBAIA\[ru]PROMPTS\[ru]DIR\fR: Path to the directory containing prompts files \- default: \fB\[Do]HOME\[sl]\.prompts\[ru]dir\fR
 .IP \(bu 2
-\fBAIA\[ru]AI\[ru]CLI\[ru]PROGRAM\fR: The AI command\-line program used \- default: \fBmods\fR
+\fBAIA\[ru]BACKEND\fR: The AI command\-line program used \- default: \fBmods\fR
 .IP \(bu 2
 \fBEDITOR\fR: The text editor used by the edit option \- default: edit
 .IP \(bu 2
-\fBAIA\[ru]MODS\[ru]MODEL\fR: The AI model specification \- default: \fBgpt\-4\-1106\-preview\fR
+\fBAIA\[ru]MODEL\fR: The AI model specification \- default: \fBgpt\-4\-1106\-preview\fR
 .IP \(bu 2
 \fBAIA\[ru]OUTPUT\fR: The default filename for output \- default: \fB\.\[sl]temp\.md\fR
 .IP \(bu 2
-\fBAIA\[ru]PROMPT\[ru]LOG\fR: The default filepath for the prompts log \- default: \fB\[Do]HOME\[sl]\.prompts\[ru]dir\[sl]\[ru]prompts\.log\fR
+\fBAIA\[ru]PROMPT\[ru]LOG\fR: The default filepath for the prompts log \- default: \fB\[Do]HOME\[sl]\.prompts\[sl]\[ru]prompts\.log\fR
 .RE
 .PP
 Additionally, the program requires an OpenAI access key, which can be specified using one of the following environment variables:

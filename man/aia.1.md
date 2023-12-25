@@ -4,7 +4,7 @@
 aia - command-line interface for an AI assistant  
 
 ## SYNOPSIS
-aia [options]* prompt_id [context_file]* [-- external_options+]  
+aia [options]* PROMPT_ID [CONTEXT_FILE]* [-- EXTERNAL_OPTIONS+]  
 
 ## DESCRIPTION
 
@@ -12,7 +12,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 
 ## ARGUMENTS
 
-*PROMPT_NAME*
+*PROMPT_ID*
 : This is a required argument.
 
 *CONTEXT_FILES*
@@ -44,7 +44,10 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-h`, `--help`
 : Show Usage - default: false
 
-`--fuzzy`
+`-s`, `--search` *TERM*
+: Search for prompts contain TERM - default: nil
+
+`-f`, --fuzzy`
 : Use Fuzzy Matching when searching for a prompt - default: false
 
 `--completion` *SHELL_NAME*
@@ -59,6 +62,12 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-m`, `--[no]-markdown`
 : Format with Markdown - default: true
 
+`--model` *NAME*
+: Name of the LLM model to use - default: gpt-4-1106-preview
+
+`-p`, `--prompts` *PATH_TO_DIRECTORY*
+: Directory containing the prompt files - default: ~/.prompts
+
 `-b`, `--[no]-backend` *LLM TOOL*
 : Specify the backend prompt resolver - default: :mods
 
@@ -66,11 +75,11 @@ The aia command-line tool is an interface for interacting with an AI model backe
 The aia CLI uses the following environment variables:
 
 - `AIA_PROMPTS_DIR`: Path to the directory containing prompts files - default: `$HOME/.prompts_dir`
-- `AIA_AI_CLI_PROGRAM`: The AI command-line program used - default: `mods`
+- `AIA_BACKEND`: The AI command-line program used - default: `mods`
 - `EDITOR`: The text editor used by the edit option - default: edit
-- `AIA_MODS_MODEL`: The AI model specification - default: `gpt-4-1106-preview`
+- `AIA_MODEL`: The AI model specification - default: `gpt-4-1106-preview`
 - `AIA_OUTPUT`: The default filename for output - default: `./temp.md`
-- `AIA_PROMPT_LOG`: The default filepath for the prompts log - default: `$HOME/.prompts_dir/_prompts.log`
+- `AIA_PROMPT_LOG`: The default filepath for the prompts log - default: `$HOME/.prompts/_prompts.log`
 
 Additionally, the program requires an OpenAI access key, which can be specified using one of the following environment variables:
 

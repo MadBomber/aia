@@ -1,13 +1,25 @@
 # lib/aia/cli.rb
 
-
 HOME            = Pathname.new(ENV['HOME'])
+
+
+# TODO: These top-level constants need to be added to the
+#       AIA.config hash with their defaults.... AND the prefix
+#       on the envar needs to be set to AIA_
+
+# -p --prompts_dir
 PROMPTS_DIR     = Pathname.new(ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir"))
 
+# -b --backend
 AI_CLI_PROGRAM  = "mods"
-MY_NAME         = "aia"
+
+# --model
 MODS_MODEL      = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
+
+# --output
 OUTPUT          = Pathname.pwd + "temp.md"
+
+# --log
 PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
 
 
@@ -36,7 +48,7 @@ class AIA::Cli
 
     setup_prompt_manager
 
-    process_immediate_commands
+    execute_immediate_commands
   end
 
 
@@ -63,23 +75,42 @@ class AIA::Cli
 
 
   def setup_options_with_defaults(args)
+    # TODO: This structure if flat; consider making it
+    #       at least two levels totake advantage of
+    #       YAML and TOML capabilities to isolate
+    #       common options within a section.
+    #
     @options    = {
       #           Default
       # Key       Value,      switches
-      arguments:  [args],
-      extra:      [''],
+      arguments:  [args], # NOTE: after process, prompt_id and context_files will be left
+      extra:      [''],   # SMELL: should be nil?
+      #
+      model:      ["gpt-4-1106-preview",  "--llm --model"],
+      #
       config_file:[nil,       "-c --config"],
       dump:       [nil,       "--dump"],
+      completion: [nil,       "--completion"],
+      #
       edit?:      [false,     "-e --edit"],
       debug?:     [false,     "-d --debug"],
       verbose?:   [false,     "-v --verbose"],
       version?:   [false,     "--version"],
       help?:      [false,     "-h --help"],
-      fuzzy?:     [false,     "--fuzzy"],
-      completion: [nil,       "--completion"],
-      output:     [OUTPUT,    "-o --output --no-output"],
-      log:        [PROMPT_LOG,"-l --log --no-log"],
+      fuzzy?:     [false,     "-f --fuzzy"],
+      search:     [nil,       "-s --search"],
       markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
+      #
+      # TODO: May have to process the
+      #       "~" character and replace it with HOME
+      #
+      # TODO: Consider using standard suffix of _dif and _file
+      #       to signal Pathname objects fo validation
+      #
+      prompts_dir:["~/.prompts",              "-p --prompts"],
+      output:     ["temp.md",                 "-o --output --no-output"],
+      log:        ["~/.prompts/_prompts.log", "-l --log --no-log"],
+      #
       backend:    ['mods',    "-b --be --backend --no-backend"],
     }
     
@@ -92,7 +123,7 @@ class AIA::Cli
   end
 
 
-  def process_immediate_commands
+  def execute_immediate_commands
     show_usage        if AIA.config.help?
     show_version      if AIA.config.version?
     dump_config_file  if AIA.config.dump
