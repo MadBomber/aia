@@ -76,13 +76,23 @@ class AIA::Cli
 
 
   def load_env_options
+    known_keys = @options.keys
+
     keys  = ENV.keys
               .select{|k| k.start_with?(ENV_PREFIX)}
               .map{|k| k.gsub(ENV_PREFIX,'').downcase.to_sym}
 
     keys.each do |key|
       envar_key       = ENV_PREFIX + key.to_s.upcase
-      AIA.config[key] = ENV[envar_key]
+      if known_keys.include?(key)
+        AIA.config[key] = ENV[envar_key]
+      elsif known_keys.include?("#{key}?".to_sym)
+        key = "#{key}?".to_sym
+        AIA.config[key] = %w[true t yes yea y 1].include?(ENV[envar_key].strip.downcase) ? true : false
+      else
+        # This is a new config key
+        AIA.config[key] = ENV[envar_key]
+      end
     end
   end
 

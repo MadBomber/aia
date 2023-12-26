@@ -73,10 +73,20 @@ class CliTest < Minitest::Test
 
   # Test `load_env_options` method
   def test_load_env_options
+    cli = AIA::Cli.new("")
+
     ENV['AIA_LOG_FILE'] = '/env/specific.log'
-    @cli.load_env_options
+    cli.load_env_options
 
     assert_equal '/env/specific.log', AIA.config.log_file
+  
+    # boolean case ...
+    assert_equal false, AIA.config.fuzzy?
+
+    ENV['AIA_FUZZY'] = 'yes'
+    cli.load_env_options
+
+    assert_equal true, AIA.config.fuzzy?
   end
 
 
@@ -94,7 +104,7 @@ class CliTest < Minitest::Test
   # Test `setup_options_with_defaults` method
   def test_setup_options_with_defaults
     args = ['--model', 'gpt-3']
-    cli = AIA::Cli.new(args)
+    AIA::Cli.new(args)
     assert_equal 'gpt-3', AIA.config.model
   end
 
@@ -212,15 +222,14 @@ class CliTest < Minitest::Test
 
   # Test `setup_prompt_manager` method
   def test_setup_prompt_manager
-    cli = AIA::Cli.new("")
-
+    AIA::Cli.new("")
     assert PromptManager::Prompt.storage_adapter.is_a?(PromptManager::Storage::FileSystemAdapter)
   end
 
 
   # Test `extract_extra_options` method
   def test_extract_extra_options
-    cli = AIA::Cli.new('arg1 -- extra-flag')
+    AIA::Cli.new('arg1 -- extra-flag')
     
     assert_equal 'arg1', AIA.config.arguments[-1]
     assert_equal 1, AIA.config.arguments.size
