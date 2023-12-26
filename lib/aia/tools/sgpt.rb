@@ -1,6 +1,6 @@
-# lib/aia/external/sgpt.rb
+# lib/aia/tools/sgpt.rb
 
-class AIA::External::Sgpt < AIA::External::Tool
+class AIA::Sgpt < AIA::Tools
   def initialize
     super
     @role     = :backend

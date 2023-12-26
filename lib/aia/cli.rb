@@ -1,149 +1,197 @@
 # lib/aia/cli.rb
 
-module AIA::Cli
-  def setup_cli_options(args)
-    @arguments  = args
-    # TODO: consider a fixed config file: ~/,aia
-    @options    = {
-      #           Value
-      edit?:      [false, "-e --edit",    "Edit the Prompt File"],
-      debug?:     [false, "-d --debug",   "Turn On Debugging"],
-      verbose?:   [false, "-v --verbose", "Be Verbose"],
-      version?:   [false, "--version",    "Print Version"],
-      help?:      [false, "-h --help",    "Show Usage"],
-      fuzzy?:     [false, "--fuzzy",      "Use Fuzzy Matching"],
-      completion: [nil,   "--completion", "Show completion script for bash|zsh|fish"],
-      # TODO: Consider dropping output in favor of always
-      #       going to STDOUT so user can redirect or pipe somewhere else
-      output:     [OUTPUT,"-o --output --no-output",  "Out FILENAME"],
-      log:        [PROMPT_LOG,"-l --log --no-log", "Log FILEPATH"],
-      markdown?:  [true,  "-m --markdown --no-markdown --md --no-md", "Format with Markdown"],
-      backend:    [:mods, "-b --be --backend --no-backend", "Specify the backend prompt resolver"],
-    }
-    
-    # Array(String)
-    @extra_options = [] # intended for the backend AI processor
+HOME    = Pathname.new(ENV['HOME'])
+MY_NAME = 'aia'
 
-    build_reader_methods # for the @options keys      
-    process_arguments
+
+require 'hashie'
+require 'pathname'
+require 'yaml'
+require 'toml-rb'
+
+
+class AIA::Cli
+  CF_FORMATS    = %w[yml yaml toml]
+  ENV_PREFIX    = self.name.split('::').first.upcase + "_"
+  MAN_PAGE_PATH = Pathname.new(__dir__) + '../../man/aia.1'
+  
+
+  def initialize(args)
+    args = args.split(' ') if args.is_a? String
+
+    setup_options_with_defaults(args) # 1. defaults
+    load_env_options                  # 2. over-ride with envars
+    process_command_line_arguments    # 3. over-ride with command line options
+
+    # 4. over-ride everything with config file
+    load_config_file unless AIA.config.config_file.nil?
+
+    convert_to_pathname_objects
+
+    setup_prompt_manager
+
+    execute_immediate_commands
   end
 
 
-  def usage
-    usage =   "\n#{MY_NAME} v#{AIA::VERSION}\n\n"
-    usage +=  "Usage:  #{MY_NAME} [options] prompt_id [context_file]* [-- external_options+]\n\n"
-    usage +=  usage_options
-    usage +=  usage_options_details
-    usage +=  "\n"
-    usage +=  usage_notes if verbose?
-    
-    usage
-  end
- 
-
-  def usage_options
-    options = [
-      "Options",
-      "-------",
-      ""
-    ]
-
-    max_size = @options.values.map{|o| o[2].size}.max + 2
-
-    @options.values.each do |o|
-      pad_size = max_size - o[2].size
-      options << o[2] + (" "*pad_size) + o[1]
-
-      default = o[0]
-      default = "./" + default.basename.to_s if o[1].include?('output')
-      default = default.is_a?(Pathname) ? "$HOME/" + default.relative_path_from(HOME).to_s : default
-
-      options << " default: #{default}\n"
-    end
-
-    options.join("\n")
-  end
-
-
-  def usage_options_details
-    <<~EOS
-
-      Details
-      -------
-
-      Use (--help --verbose) or (-h -v) for verbose usage text.
-
-      Use --completion bash|zsh|fish to show a script
-      that will add prompt ID completion to your desired shell.
-      You must copy the output from this option into a
-      place where the function will be executed for
-      your shell.
-
-    EOS
-  end
-
-
-  def usage_notes
-    <<~EOS
-
-      #{usage_envars}
-
-    EOS
-  end
-
-
-  def usage_envars
-    <<~EOS
-      System Environment Variables Used
-      ---------------------------------
-
-      The OUTPUT and PROMPT_LOG envars can be overridden
-      by cooresponding options on the command line.
-
-      Name            Default Value
-      --------------  -------------------------
-      PROMPTS_DIR     $HOME/.prompts_dir
-      AI_CLI_PROGRAM  mods
-      EDITOR          edit
-      MODS_MODEL      gpt-4-1106-preview
-      OUTPUT          ./temp.md
-      PROMPT_LOG      $PROMPTS_DIR/_prompts.log
-
-      These two are required for access the OpenAI
-      services.  The have the same value but different
-      programs use different envar names.
-
-      To get an OpenAI access key/token (same thing)
-      you must first create an account at OpenAI.
-      Here is the link:  https://platform.openai.com/docs/overview
-
-      OPENAI_ACCESS_TOKEN
-      OPENAI_API_KEY
-
-    EOS
-  end
-
-
-  def build_reader_methods
-    @options.keys.each do |key|
-      define_singleton_method(key) do
-        @options[key][0]
+  def convert_pathname_objects!(converting_to_pathname: true)
+    path_keys = AIA.config.keys.grep(/_(dir|file)\z/)
+    path_keys.each do |key|
+      case AIA.config[key]
+      when String
+        AIA.config[key] = string_to_pathname(AIA.config[key])
+      when Pathname
+        AIA.config[key] = pathname_to_string(AIA.config[key]) unless converting_to_pathname
       end
     end
   end
 
 
-  def process_arguments
+  def string_to_pathname(string)
+    ['~/', '$HOME/'].each do |prefix|
+      if string.start_with? prefix
+        string = string.gsub(prefix, HOME.to_s+'/')
+        break
+      end
+    end
+
+    pathname = Pathname.new(string)
+    pathname.relative? ? Pathname.pwd + pathname : pathname
+  end
+
+
+  def pathname_to_string(pathname)
+    pathname.to_s
+  end
+
+
+  def convert_to_pathname_objects
+    convert_pathname_objects!(converting_to_pathname: true)
+  end
+
+
+  def convert_from_pathname_objects
+    convert_pathname_objects!(converting_to_pathname: false)
+  end
+
+
+  def load_env_options
+    keys  = ENV.keys
+              .select{|k| k.start_with?(ENV_PREFIX)}
+              .map{|k| k.gsub(ENV_PREFIX,'').downcase.to_sym}
+
+    keys.each do |key|
+      envar_key       = ENV_PREFIX + key.to_s.upcase
+      AIA.config[key] = ENV[envar_key]
+    end
+  end
+
+
+  def load_config_file
+    AIA.config.config_file = Pathname.new(AIA.config.config_file)
+    if AIA.config.config_file.exist?
+      AIA.config.merge! parse_config_file
+    else
+      abort "Config file does not exist: #{AIA.config.config_file}"
+    end
+  end
+
+
+  def setup_options_with_defaults(args)
+    # TODO: This structure if flat; consider making it
+    #       at least two levels totake advantage of
+    #       YAML and TOML capabilities to isolate
+    #       common options within a section.
+    #
+    @options    = {
+      #           Default
+      # Key       Value,      switches
+      arguments:  [args], # NOTE: after process, prompt_id and context_files will be left
+      extra:      [''],   # SMELL: should be nil?
+      #
+      model:      ["gpt-4-1106-preview",  "--llm --model"],
+      #
+      dump:       [nil,       "--dump"],
+      completion: [nil,       "--completion"],
+      #
+      edit?:      [false,     "-e --edit"],
+      debug?:     [false,     "-d --debug"],
+      verbose?:   [false,     "-v --verbose"],
+      version?:   [false,     "--version"],
+      help?:      [false,     "-h --help"],
+      fuzzy?:     [false,     "-f --fuzzy"],
+      search:     [nil,       "-s --search"],
+      markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
+      #
+      # TODO: May have to process the
+      #       "~" character and replace it with HOME
+      #
+      # TODO: Consider using standard suffix of _dif and _file
+      #       to signal Pathname objects fo validation
+      #
+      config_file:[nil,                       "-c --config"],
+      prompts_dir:["~/.prompts",              "-p --prompts"],
+      output_file:["temp.md",                 "-o --output --no-output"],
+      log_file:   ["~/.prompts/_prompts.log", "-l --log --no-log"],
+      #
+      backend:    ['mods',    "-b --be --backend --no-backend"],
+    }
+    
+    AIA.config = AIA::Config.new(@options.transform_values { |values| values.first })
+  end
+
+
+  def arguments
+    AIA.config.arguments
+  end
+
+
+  def execute_immediate_commands
+    show_usage        if AIA.config.help?
+    show_version      if AIA.config.version?
+    dump_config_file  if AIA.config.dump
+    show_completion   if AIA.config.completion
+  end
+
+
+  def dump_config_file
+    a_hash = prepare_config_as_hash
+
+    case AIA.config.dump.downcase
+    when 'yml', 'yaml'
+      puts YAML.dump(a_hash)
+    when 'toml'
+      puts TomlRB.dump(a_hash)
+    else
+      abort "Invalid config file format request.  Only #{CF_FORMATS.join(', ')} are supported."
+    end
+
+    exit
+  end
+
+
+  def prepare_config_as_hash
+    convert_from_pathname_objects
+    
+    a_hash          = AIA.config.to_h
+    a_hash['dump']  = nil
+
+    a_hash.delete('arguments')
+    a_hash.delete('config_file')
+
+    a_hash
+  end
+
+
+  def process_command_line_arguments
     @options.keys.each do |option|
       check_for option
     end
 
-    show_completion unless @options[:completion].first.nil?
-
     # get the options meant for the backend AI command
     extract_extra_options
 
-    bad_options = @arguments.select{|a| a.start_with?('-')}
+    bad_options = arguments.select{|a| a.start_with?('-')}
 
     unless bad_options.empty?
       puts <<~EOS
@@ -160,23 +208,26 @@ module AIA::Cli
 
 
   def check_for(option_sym)
-    boolean = option_sym.to_s.end_with?('?')
-    switches = @options[option_sym][1].split
+    # sometimes @options has stuff that is not a command line option
+    return if @options[option_sym].nil? || @options[option_sym].size <= 1
+
+    boolean   = option_sym.to_s.end_with?('?')
+    switches  = @options[option_sym][1].split
 
     switches.each do |switch|
-      if @arguments.include?(switch)
-        index = @arguments.index(switch)
+      if arguments.include?(switch)
+        index = arguments.index(switch)
 
         if boolean
-          @options[option_sym][0] = switch.include?('-no-') ? false : true
-          @arguments.slice!(index,1)
+          AIA.config[option_sym] = switch.include?('-no-') ? false : true
+          arguments.slice!(index,1)
         else
           if switch.include?('-no-')
-            @options[option_sym][0] = nil
-            @arguments.slice!(index,1)
+            AIA.config[option_sym] = switch.include?('output') ? STDOUT : nil
+            arguments.slice!(index,1)
           else
-            @options[option_sym][0] = @arguments[index + 1]
-            @arguments.slice!(index,2)
+            AIA.config[option_sym] = arguments[index + 1]
+            arguments.slice!(index,2)
           end
         end
         
@@ -185,17 +236,33 @@ module AIA::Cli
     end
   end
 
-
+  # aia usage is maintained in a man page
   def show_usage
     @options[:help?][0] = false 
-    puts usage
+    puts `man #{MAN_PAGE_PATH}`
+    show_verbose_usage if AIA.config.verbose?
     exit
   end
   alias_method :show_help, :show_usage
 
 
+  def show_verbose_usage
+    puts <<~EOS
+
+      ======================================
+      == Currently selected Backend: #{AIA.config.backend} ==
+      ======================================
+
+    EOS
+    puts `mods --help` if "mods" == AIA.config.backend
+    puts `sgpt --help` if "sgpt" == AIA.config.backend
+    puts
+  end
+  # alias_method :show_verbose_help, :show_verbose_usage
+
+
   def show_completion
-    shell   = @options[:completion].first
+    shell   = AIA.config.completion
     script  = Pathname.new(__dir__) + "aia_completion.#{shell}"
 
     if script.exist?
@@ -205,11 +272,10 @@ module AIA::Cli
     else
       STDERR.puts <<~EOS
 
-        ERRORL The shell '#{shell}' is not supported.
+        ERROR: The shell '#{shell}' is not supported.
 
       EOS
     end
-
 
     exit    
   end
@@ -219,4 +285,42 @@ module AIA::Cli
     puts AIA::VERSION
     exit
   end
+
+
+  def setup_prompt_manager
+    @prompt     = nil
+
+    PromptManager::Prompt.storage_adapter = 
+      PromptManager::Storage::FileSystemAdapter.config do |config|
+        config.prompts_dir        = AIA.config.prompts_dir
+        config.prompt_extension   = '.txt'
+        config.params_extension   = '.json'
+        config.search_proc        = nil
+        # TODO: add the rgfzf script for search_proc
+      end.new
+  end
+
+
+  # Get the additional CLI arguments intended for the
+  # backend gen-AI processor.
+  def extract_extra_options
+    extra_index = arguments.index('--')
+
+    if extra_index
+      AIA.config.extra = arguments.slice!(extra_index..-1)[1..].join(' ')
+    end
+  end
+
+
+  def parse_config_file
+    case AIA.config.config_file.extname.downcase
+    when '.yaml', '.yml'
+      YAML.safe_load(AIA.config.config_file.read)
+    when '.toml'
+      TomlRB.parse(AIA.config.config_file.read)
+    else
+      abort "Unsupported config file type: #{AIA.config.config_file.extname}"
+    end
+  end
 end
+

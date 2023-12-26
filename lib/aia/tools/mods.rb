@@ -1,21 +1,80 @@
-# lib/aia/external/mods.rb
+# lib/aia/tools/mods.rb
 
-class AIA::External::Mods < AIA::External::Tool
-  def initialize
+class AIA::Mods < AIA::Tools
+  DEFAULT_PARAMETERS = [
+    "--no-limit"              # no limit on input context
+  ].join(' ').freeze
+
+  attr_accessor :command, :extra_options, :text, :files
+
+  # TODO: put the prompt text to be resolved into a 
+  #       temporary text file then cat that file into mods.
+  #       This will keep from polluting the CLI history with
+  #       lots of text
+
+
+  def initialize(
+      extra_options:  "", # everything after -- on command line
+      text:           "", # prompt text after keyword replacement
+      files:          []  # context file paths (Array of Pathname)
+    )
     super
-    @role = :search
-    @desc = 'AI on the command-line'
-    @url  = 'https://github.com/charmbracelet/mods'
+    @role         = :gen_ai
+    @description  = 'AI on the command-line'
+    @url          = 'https://github.com/charmbracelet/mods'
+  
+    @extra_options  = extra_options
+    @text           = text
+    @files          = files
+
+    build_command
   end
 
-  def command(extra_options = [])
-    model = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
-    ai_default_opts = "-m #{model} --no-limit -f"
-    "#{name} #{ai_default_opts} #{extra_options.join(' ')}"
+
+  def build_command
+    parameters  = DEFAULT_PARAMETERS.dup + " "
+    parameters += "-f "                     if ::AIA.config.markdown?
+    parameters += "-m #{AIA.config.model} " if ::AIA.config.model
+    parameters += @extra_options
+    @command    = "mods #{parameters} "
+    @command   += %Q["#{@text}"]        # TODO: consider using the pipeline
+
+    @files.each {|f| @command += " < #{f}" }
+
+    @command
+  end
+
+
+  def run
+    `#{command}`
   end
 end
 
 __END__
+
+
+  # Execute the command and log the results
+  def send_prompt_to_external_command
+    command = build_command
+
+    puts command if verbose?
+    @result = `#{command}`
+
+    if @output.nil?
+      puts @result
+    else
+      @output.write @result
+    end
+
+    @result
+  end
+
+
+
+
+
+##########################################################
+
 
 GPT on the command line. Built for pipelines.
 

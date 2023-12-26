@@ -8,6 +8,8 @@ end
 
 Tocer::Rake::Register.call
 
+require 'kramdown/man/task'
+Kramdown::Man::Task.new
 
 require "bundler/gem_tasks"
 require "rake/testtask"

@@ -1,5 +1,9 @@
 # lib/aia.rb
 
+require 'debug_me'
+include DebugMe
+
+require 'hashie'
 require 'pathname'
 require 'readline'
 require 'tempfile'
@@ -12,9 +16,19 @@ require_relative "aia/main"
 require_relative "core_ext/string_wrap"
 
 module AIA
-  def self.run(args=ARGV)
-    args = args.split(' ') if args.is_a?(String)
-    AIA::Main.new(args).call
+  class << self
+    attr_accessor :config
+
+    def run(args=ARGV)
+      args = args.split(' ') if args.is_a?(String)
+
+      # TODO: Currently this is a one and done architecture.
+      #       If the args contain an "-i" or and "--interactive"
+      #       flag could this turn into some kind of
+      #       conversation REPL?
+      
+      AIA::Main.new(args).call
+    end
   end
 end
 
