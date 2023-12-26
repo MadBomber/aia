@@ -18,7 +18,7 @@ class AIA::Main
   def initialize(args= ARGV)
     AIA::Cli.new(args)
 
-    @logger = AIA::Logging.new(AIA.config.log)
+    @logger = AIA::Logging.new(AIA.config.log_file)
     @tools  = AIA::Tools.new
 
     tools.class.verify_tools
@@ -45,7 +45,7 @@ class AIA::Main
 
     result  = mods.run
 
-    AIA.config.output.write result
+    AIA.config.output_file.write result
 
     logger.prompt_result(@prompt, result)
   end

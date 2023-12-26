@@ -1,26 +1,7 @@
 # lib/aia/cli.rb
 
-HOME            = Pathname.new(ENV['HOME'])
-
-
-# TODO: These top-level constants need to be added to the
-#       AIA.config hash with their defaults.... AND the prefix
-#       on the envar needs to be set to AIA_
-
-# -p --prompts_dir
-PROMPTS_DIR     = Pathname.new(ENV['PROMPTS_DIR'] || (HOME + ".prompts_dir"))
-
-# -b --backend
-AI_CLI_PROGRAM  = "mods"
-
-# --model
-MODS_MODEL      = ENV['MODS_MODEL'] || 'gpt-4-1106-preview'
-
-# --output
-OUTPUT          = Pathname.pwd + "temp.md"
-
-# --log
-PROMPT_LOG      = PROMPTS_DIR  + "_prompts.log"
+HOME    = Pathname.new(ENV['HOME'])
+MY_NAME = 'aia'
 
 
 require 'hashie'
@@ -35,10 +16,9 @@ class AIA::Cli
   MAN_PAGE_PATH = Pathname.new(__dir__) + '../../man/aia.1'
   
 
-  # attr_accessor :config
-  # attr_accessor :options
-
   def initialize(args)
+    args = args.split(' ') if args.is_a? String
+
     setup_options_with_defaults(args) # 1. defaults
     load_env_options                  # 2. over-ride with envars
     process_command_line_arguments    # 3. over-ride with command line options
@@ -46,9 +26,52 @@ class AIA::Cli
     # 4. over-ride everything with config file
     load_config_file unless AIA.config.config_file.nil?
 
+    convert_to_pathname_objects
+
     setup_prompt_manager
 
     execute_immediate_commands
+  end
+
+
+  def convert_pathname_objects!(converting_to_pathname: true)
+    path_keys = AIA.config.keys.grep(/_(dir|file)\z/)
+    path_keys.each do |key|
+      case AIA.config[key]
+      when String
+        AIA.config[key] = string_to_pathname(AIA.config[key])
+      when Pathname
+        AIA.config[key] = pathname_to_string(AIA.config[key]) unless converting_to_pathname
+      end
+    end
+  end
+
+
+  def string_to_pathname(string)
+    ['~/', '$HOME/'].each do |prefix|
+      if string.start_with? prefix
+        string = string.gsub(prefix, HOME.to_s+'/')
+        break
+      end
+    end
+
+    pathname = Pathname.new(string)
+    pathname.relative? ? Pathname.pwd + pathname : pathname
+  end
+
+
+  def pathname_to_string(pathname)
+    pathname.to_s
+  end
+
+
+  def convert_to_pathname_objects
+    convert_pathname_objects!(converting_to_pathname: true)
+  end
+
+
+  def convert_from_pathname_objects
+    convert_pathname_objects!(converting_to_pathname: false)
   end
 
 
@@ -88,7 +111,6 @@ class AIA::Cli
       #
       model:      ["gpt-4-1106-preview",  "--llm --model"],
       #
-      config_file:[nil,       "-c --config"],
       dump:       [nil,       "--dump"],
       completion: [nil,       "--completion"],
       #
@@ -107,9 +129,10 @@ class AIA::Cli
       # TODO: Consider using standard suffix of _dif and _file
       #       to signal Pathname objects fo validation
       #
+      config_file:[nil,                       "-c --config"],
       prompts_dir:["~/.prompts",              "-p --prompts"],
-      output:     ["temp.md",                 "-o --output --no-output"],
-      log:        ["~/.prompts/_prompts.log", "-l --log --no-log"],
+      output_file:["temp.md",                 "-o --output --no-output"],
+      log_file:   ["~/.prompts/_prompts.log", "-l --log --no-log"],
       #
       backend:    ['mods',    "-b --be --backend --no-backend"],
     }
@@ -148,15 +171,13 @@ class AIA::Cli
 
 
   def prepare_config_as_hash
+    convert_from_pathname_objects
+    
     a_hash          = AIA.config.to_h
     a_hash['dump']  = nil
 
-    # convert Pathname objects to Strings
-    %w[log output].each do |key|
-      a_hash[key] = a_hash[key].to_s
-    end
-
     a_hash.delete('arguments')
+    a_hash.delete('config_file')
 
     a_hash
   end
@@ -271,7 +292,7 @@ class AIA::Cli
 
     PromptManager::Prompt.storage_adapter = 
       PromptManager::Storage::FileSystemAdapter.config do |config|
-        config.prompts_dir        = PROMPTS_DIR
+        config.prompts_dir        = AIA.config.prompts_dir
         config.prompt_extension   = '.txt'
         config.params_extension   = '.json'
         config.search_proc        = nil
@@ -284,8 +305,9 @@ class AIA::Cli
   # backend gen-AI processor.
   def extract_extra_options
     extra_index = arguments.index('--')
+
     if extra_index
-      @options[:extra] = [ arguments.slice!(extra_index..-1)[1..].join(' ') ]
+      AIA.config.extra = arguments.slice!(extra_index..-1)[1..].join(' ')
     end
   end
 

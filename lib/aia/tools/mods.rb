@@ -2,9 +2,7 @@
 
 class AIA::Mods < AIA::Tools
   DEFAULT_PARAMETERS = [
-    "-f",               # format result as markdown
-    "-m #{MODS_MODEL}", # current an envar will come from config
-    "--no-limit"        # no limit on input context
+    "--no-limit"              # no limit on input context
   ].join(' ').freeze
 
   attr_accessor :command, :extra_options, :text, :files
@@ -29,12 +27,18 @@ class AIA::Mods < AIA::Tools
     @text           = text
     @files          = files
 
+    debug_me{[
+      "AIA.config"
+    ]}
+
     build_command
   end
 
 
   def build_command
     parameters  = DEFAULT_PARAMETERS.dup + " "
+    parameters += "-f "                     if ::AIA.config.markdown?
+    parameters += "-m #{AIA.config.model} " if ::AIA.config.model
     parameters += @extra_options
     @command    = "mods #{parameters} "
     @command   += %Q["#{@text}"]        # TODO: consider using the pipeline
