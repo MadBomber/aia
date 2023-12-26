@@ -20,8 +20,7 @@ module AIA
     attr_accessor :config
 
     def run(args=ARGV)
-      self.config = Hashie::Mash.new
-      args        = args.split(' ') if args.is_a?(String)
+      args = args.split(' ') if args.is_a?(String)
 
       # TODO: Currently this is a one and done architecture.
       #       If the args contain an "-i" or and "--interactive"
