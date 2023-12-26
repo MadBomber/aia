@@ -166,6 +166,40 @@ class CliTest < Minitest::Test
 
   # Test `parse_config_file` method
   def test_parse_config_file
-    skip 'Test for `parse_config_file` should simulate reading various config file types.'
+    # setup
+    config_dir = Pathname.new(__dir__) + 'config_files'
+
+    @yml_config_file  = config_dir + 'sample_config.yml'
+    @yaml_config_file = config_dir + 'sample_config.yaml'
+    @toml_config_file = config_dir + 'sample_config.toml'
+    @json_config_file = config_dir + 'sample_config.json'
+
+    @cli = AIA::Cli.new('')
+
+    assert_raises(SystemExit) do
+      AIA.config.config_file = @json_config_file
+      @cli.parse_config_file
+    end
+
+    # test_parse_yml_config
+    [
+      @yml_config_file,
+      @yaml_config_file
+    ].each do |config_file|
+      AIA.config.config_file = config_file
+      assert_equal YAML.safe_load(config_file.read), @cli.parse_config_file
+    end
+
+    
+    # test_parse_toml_config
+    AIA.config.config_file = @toml_config_file
+    assert_equal TomlRB.parse(@toml_config_file.read), @cli.parse_config_file
+  
+  
+    # test_parse_json_config
+    AIA.config.config_file = @json_config_file
+    
+    # output = capture_io { @cli.parse_config_file }
+    # assert_includes output.first, 'Unsupported config file type: .json'
   end
 end
