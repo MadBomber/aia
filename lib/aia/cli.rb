@@ -137,7 +137,7 @@ class AIA::Cli
       backend:    ['mods',    "-b --be --backend --no-backend"],
     }
     
-    AIA.config = Hashie::Mash.new(@options.transform_values { |values| values.first })
+    AIA.config = AIA::Config.new(@options.transform_values { |values| values.first })
   end
 
 

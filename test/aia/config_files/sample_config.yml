@@ -2,4 +2,5 @@ backend: "mods"
 prompts_dir: "~/.prompts"
 output_file: "temp.md"
 log_file: "~/.prompts/_prompts.log"
-markdown: true
+markdown?: true
+xyzzy: "magic"

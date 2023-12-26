@@ -2,6 +2,7 @@
 
 module AIA ; end
 
+require_relative 'config'
 require_relative 'cli'
 require_relative 'prompt_processing'
 require_relative 'logging'

@@ -83,7 +83,11 @@ class CliTest < Minitest::Test
   # Test `load_config_file` method
   # This test should mock the filesystem operations
   def test_load_config_file
-    skip 'Test for `load_config_file` should simulate config file presence.'
+    cli = AIA::Cli.new ""
+    assert_equal nil, AIA.config.xyzzy
+    AIA.config.config_file = Pathname.new(__dir__) + "config_files/sample_config.yml"
+    cli.load_config_file
+    assert_equal "magic", AIA.config.xyzzy
   end
 
 
@@ -97,19 +101,38 @@ class CliTest < Minitest::Test
 
   # Test `execute_immediate_commands` behavior
   def test_execute_immediate_commands
-    skip 'Test for `execute_immediate_commands` requires mocking terminal output.'
+    @cli = AIA::Cli.new("")
+    
+    AIA.config[:help?] = true
+
+    assert_raises(SystemExit) do
+      @cli.execute_immediate_commands 
+    end
   end
 
 
   # Test `dump_config_file` method
   def test_dump_config_file
-    skip 'Test for `dump_config_file` should simulate different dump scenarios.'
+    @cli = AIA::Cli.new("")
+    
+    AIA.config.dump   = "yml"
+    AIA.config.model  = "magic"
+
+    output = capture_io do
+      assert_raises(SystemExit) do
+        @cli.dump_config_file 
+      end
+    end
+    
+    assert_includes output.first, 'model: magic'
   end
 
 
   # Test `prepare_config_as_hash` method
   def test_prepare_config_as_hash
-    skip 'Test for `prepare_config_as_hash` requires setup for expected config hash.'
+    cli = AIA::Cli.new("")
+    result = cli.prepare_config_as_hash
+    assert result.is_a?(Hash)
   end
 
 
@@ -124,37 +147,79 @@ class CliTest < Minitest::Test
 
   # Test `check_for` method
   def test_check_for
-    skip 'Test for `check_for` method could check CLI behavior for specific switches.'
+    cli = AIA::Cli.new("")
+    AIA.config.arguments = %w[--verbose --backend sgpt]
+    assert_equal false, AIA.config.verbose?
+    assert_equal "mods", AIA.config.backend
+
+    cli.check_for :backend
+    assert_equal "sgpt", AIA.config.backend
+    assert_equal ["--verbose"], AIA.config.arguments
+
+    cli.check_for :verbose?
+    assert_equal true, AIA.config.verbose?
+    assert AIA.config.arguments.empty?
   end
 
 
   # Test `show_usage` and aliases behavior
   def test_show_usage
-    skip 'Test for `show_usage` requires mocking terminal output.'
+    @cli = AIA::Cli.new("")
+
+    output = capture_io do
+      assert_raises(SystemExit) do
+        @cli.show_usage 
+      end
+    end
+    
+    first_line = output.first.split("\n").first
+
+    assert_includes first_line, 'User Manuals'
   end
 
 
   # Test `show_completion` behavior
-  def test_show_completion
-    skip 'Test for `show_completion` should simulate shell auto-completion script output.'
+  def test_show_completion  
+    @cli = AIA::Cli.new("")
+    AIA.config.completion = "bash"
+
+    output = capture_io do
+      assert_raises(SystemExit) do
+        @cli.show_completion
+      end
+    end
+
+    assert_includes output.first, 'aia_completion.bash'
   end
 
 
   # Test `show_version` behavior
   def test_show_version
-    skip 'Test for `show_version` requires known version output.'
+    @cli = AIA::Cli.new("")
+    AIA.config.completion = "bash"
+
+    output = capture_io do
+      assert_raises(SystemExit) do
+        @cli.show_version
+      end
+    end
+    
+    first_line = output.first.split("\n").first
+
+    assert_includes first_line, AIA::VERSION
   end
 
 
   # Test `setup_prompt_manager` method
   def test_setup_prompt_manager
-    skip 'Test for `setup_prompt_manager` would ensure correct adapter configuration.'
+    cli = AIA::Cli.new("")
+
+    assert PromptManager::Prompt.storage_adapter.is_a?(PromptManager::Storage::FileSystemAdapter)
   end
 
 
   # Test `extract_extra_options` method
   def test_extract_extra_options
-    skips = AIA.config.arguments.size - 1
     cli = AIA::Cli.new('arg1 -- extra-flag')
     
     assert_equal 'arg1', AIA.config.arguments[-1]

@@ -27,10 +27,6 @@ class AIA::Mods < AIA::Tools
     @text           = text
     @files          = files
 
-    debug_me{[
-      "AIA.config"
-    ]}
-
     build_command
   end
 
