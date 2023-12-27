@@ -1,6 +1,16 @@
 # lib/aia/tools/subl.rb
 
 class AIA::Subl < AIA::Tools
+
+  meta(
+    name:     'subl',
+    role:     :editor,
+    desc:     "Sublime Text Editor",
+    url:      "https://www.sublimetext.com/",
+    install:  "echo 'Download from website'",
+  )
+
+
   DEFAULT_PARAMETERS = [
     "--new-window",   # Open a new window
     "--wait",         # Wait for the files to be closed before returning
@@ -10,13 +20,6 @@ class AIA::Subl < AIA::Tools
 
 
   def initialize(file: "")
-    super
-    
-    @role     = :editor
-    @desc     = "Sublime Text Editor"
-    @url      = "https://www.sublimetext.com/"
-    @install  = "echo 'Download from website'"
-
     @file     = file
 
     build_command
@@ -24,7 +27,7 @@ class AIA::Subl < AIA::Tools
 
 
   def build_command
-    @command = "#{name} #{DEFAULT_PARAMETERS} #{@file}"
+    @command = "#{meta.name} #{DEFAULT_PARAMETERS} #{@file}"
   end
 
   

@@ -4,19 +4,21 @@
 
 
 class AIA::Editor < AIA::Tools
+
+  meta(
+    name:     'editor',
+    role:     :editor,
+    desc:     "Your default system $EDITOR",
+    url:      "unknown",
+    install:  "should already be installed",
+  )
+
   DEFAULT_PARAMETERS = ""
   
   attr_accessor :command
 
 
-  def initialize(file: "")
-    super
-    
-    @role         = :editor
-    @description  = "Your default system $EDITOR"
-    @url          = "unknown"
-    @install      = "should already be installed"
-
+  def initialize(file: "")    
     @file     = file
 
     discover_editor
@@ -39,7 +41,7 @@ class AIA::Editor < AIA::Tools
 
 
   def build_command
-    @command = "#{name} #{DEFAULT_PARAMETERS} #{@file}"
+    @command = "#{meta.name} #{DEFAULT_PARAMETERS} #{@file}"
   end
 
   

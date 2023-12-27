@@ -1,6 +1,16 @@
 # lib/aia/tools/mods.rb
 
 class AIA::Mods < AIA::Tools
+
+  meta(
+    name:     'mods',
+    role:     :backend,
+    desc:     'AI on the command-line',
+    url:      'https://github.com/charmbracelet/mods',
+    install:  'brew install mods',
+  )
+
+  
   DEFAULT_PARAMETERS = [
     "--no-limit"              # no limit on input context
   ].join(' ').freeze
@@ -13,16 +23,13 @@ class AIA::Mods < AIA::Tools
   #       lots of text
 
 
+  # TODO: simplify this interface; make use of AIA.config
   def initialize(
       extra_options:  "", # everything after -- on command line
       text:           "", # prompt text after keyword replacement
       files:          []  # context file paths (Array of Pathname)
     )
-    super
-    @role         = :gen_ai
-    @description  = 'AI on the command-line'
-    @url          = 'https://github.com/charmbracelet/mods'
-  
+
     @extra_options  = extra_options
     @text           = text
     @files          = files

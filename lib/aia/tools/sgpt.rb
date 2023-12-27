@@ -1,12 +1,17 @@
 # lib/aia/tools/sgpt.rb
 
 class AIA::Sgpt < AIA::Tools
+
+  meta(
+    name:     'sgpt',
+    role:     :backend,
+    desc:     "shell-gpt",
+    url:      "https://github.com/TheR1D/shell_gpt",
+    install:  "pip install shell-gpt",
+  )
+
   def initialize
-    super
-    @role     = :backend
-    @desc     = "shell-gpt"
-    @url      = "https://github.com/TheR1D/shell_gpt"
-    @install  = "pip install shell-gpt"
+    # TODO: something
   end
 end
 
