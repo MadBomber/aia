@@ -1,4 +1,8 @@
 ## [Unreleased]
+## [0.3.20] 2023-12-28
+- added work around to issue with multiple context files going to the `mods` backend
+- added shellwords gem to santize prompt text on the command line
+
 ## [0.3.19] 2023-12-26
 - major code refactoring.
 - supports config files \*.yml, \*.yaml and \*.toml
