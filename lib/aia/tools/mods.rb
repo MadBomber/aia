@@ -36,13 +36,22 @@ class AIA::Mods < AIA::Tools
   end
 
 
+  def sanitize(input)
+    # Escape all potentially dangerous characters
+    safe_input = input.gsub(/([^A-Za-z0-9_\-.,:\/@\n])/) { |match| "\\#{match}" }
+    
+    # Return the sanitized input enclosed in quotes
+    return %Q("#{safe_input}")
+  end
+
+
   def build_command
     parameters  = DEFAULT_PARAMETERS.dup + " "
     parameters += "-f "                     if ::AIA.config.markdown?
     parameters += "-m #{AIA.config.model} " if ::AIA.config.model
     parameters += AIA.config.extra
     @command    = "mods #{parameters} "
-    @command   += %Q["#{@text}"]        # TODO: consider using the pipeline
+    @command   += sanitize(@text)
 
     context = @files.join(' ')
 
