@@ -44,7 +44,18 @@ class AIA::Mods < AIA::Tools
     @command    = "mods #{parameters} "
     @command   += %Q["#{@text}"]        # TODO: consider using the pipeline
 
-    @files.each {|f| @command += " < #{f}" }
+    context = @files.join(' ')
+
+    unless context.empty?
+      if @files.size > 1
+        # FIXME:  This syntax breaks mods which does not know how
+        #         to read the temporary file descriptor created
+        #         by the shell
+        @command += " <(cat #{context})"
+      else
+        @command += " < #{context}"
+      end
+    end
 
     @command
   end
