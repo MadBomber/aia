@@ -1,6 +1,15 @@
 # lib/aia/tools/vim.rb
 
 class AIA::Vim < AIA::Tools
+
+  meta(
+    name:     'vim',
+    role:     :editor,
+    desc:     "Vi IMproved (VIM)",
+    url:      "https://www.vim.org",
+    install:  "brew install vim",
+  )
+
   DEFAULT_PARAMETERS = [
     " ", # no parameters 
   ].join(' ')
@@ -9,13 +18,6 @@ class AIA::Vim < AIA::Tools
 
 
   def initialize(file: "")
-    super
-    
-    @role         = :editor
-    @description  = "Vi IMproved (VIM)"
-    @url          = "https://www.vim.org"
-    @install      = "brew install vim"
-
     @file     = file
 
     build_command
@@ -23,7 +25,7 @@ class AIA::Vim < AIA::Tools
 
 
   def build_command
-    @command = "#{name} #{DEFAULT_PARAMETERS} #{@file}"
+    @command = "#{meta.name} #{DEFAULT_PARAMETERS} #{@file}"
   end
 
   

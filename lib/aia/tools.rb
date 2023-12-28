@@ -1,77 +1,50 @@
 # lib/aia/tools.rb
 
+require 'hashie'
+
 class AIA::Tools
-  @@subclasses = []
+  @@catalog = []
 
-  def self.inherited(subclass)
-    @@subclasses << subclass
-  end
-
-  attr_accessor :role, :name, :description, :url, :install
-  
-
-  def initialize(*)
-    @role         = :role
-    @name         = self.class.name.split('::').last.downcase
-    @description  = "description"
-    @url          = "URL"
-    @install      = "brew install #{name}"
-  end
-
-
-  def installed?
-    path = `which #{name}`.chomp
-    !path.empty? && File.executable?(path)
-  end
-
-
-  def help
-    `#{name} --help`
-  end
-  
-
-  def version
-    `#{name} --version`
-  end
-
-
-  #########################################
   class << self
-    def tools
-      @@subclasses.map(&:name)
+    def inherited(subclass)
+      subclass_meta = Hashie::Mash.new(klass: subclass)
+      subclass.instance_variable_set(:@_metadata, subclass_meta)
+
+      @@catalog << subclass_meta
     end
 
 
-    def verify_tools
-      missing_tools = @@subclasses.map(&:new).reject(&:installed?)
-      unless missing_tools.empty?
-        puts format_missing_tools_response(missing_tools)
+    def meta(metadata = nil)
+      return @_metadata if metadata.nil?
+
+      @_metadata  = Hashie::Mash.new(metadata)
+      entry       = @@catalog.detect { |item| item[:klass] == self }
+      
+      entry.merge!(metadata) if entry
+    end
+
+
+    def get_meta
+      @_metadata
+    end
+
+
+    def search_for(criteria = {})
+      @@catalog.select do |meta|
+        criteria.all? { |k, v| meta[k] == v }
       end
     end
 
 
-    def format_missing_tools_response(missing_tools)
-      response = <<~EOS
+    def catalog
+      @@catalog
+    end
 
-        WARNING: AIA makes use of external CLI tools that are missing.
 
-        Please install the following tools:
-
-      EOS
-
-      missing_tools.each do |tool|
-        response << "  #{tool.name}: install from #{tool.url}\n"
+    def load_tools
+      Dir.glob(File.join(File.dirname(__FILE__), 'tools', '*.rb')).each do |file|
+        require file
       end
-
-      response
     end
   end
 end
-
-
-(Pathname.new(__dir__)+"tools")
-  .glob('*.rb')
-  .each do |tool|
-    require_relative "tools/#{tool.basename.to_s}" 
-  end
-

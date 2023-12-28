@@ -1,29 +1,28 @@
 # lib/aia/tools/mods.rb
 
 class AIA::Mods < AIA::Tools
+
+  meta(
+    name:     'mods',
+    role:     :backend,
+    desc:     'AI on the command-line',
+    url:      'https://github.com/charmbracelet/mods',
+    install:  'brew install mods',
+  )
+
+  
   DEFAULT_PARAMETERS = [
     "--no-limit"              # no limit on input context
   ].join(' ').freeze
 
-  attr_accessor :command, :extra_options, :text, :files
-
-  # TODO: put the prompt text to be resolved into a 
-  #       temporary text file then cat that file into mods.
-  #       This will keep from polluting the CLI history with
-  #       lots of text
+  attr_accessor :command, :text, :files
 
 
   def initialize(
-      extra_options:  "", # everything after -- on command line
       text:           "", # prompt text after keyword replacement
       files:          []  # context file paths (Array of Pathname)
     )
-    super
-    @role         = :gen_ai
-    @description  = 'AI on the command-line'
-    @url          = 'https://github.com/charmbracelet/mods'
-  
-    @extra_options  = extra_options
+
     @text           = text
     @files          = files
 
@@ -31,46 +30,84 @@ class AIA::Mods < AIA::Tools
   end
 
 
+  def sanitize(input)
+    Shellwords.escape(input)
+  end
+
+
   def build_command
     parameters  = DEFAULT_PARAMETERS.dup + " "
-    parameters += "-f "                     if ::AIA.config.markdown?
-    parameters += "-m #{AIA.config.model} " if ::AIA.config.model
-    parameters += @extra_options
+    parameters += "-f "                     if AIA.config.markdown?
+    parameters += "-m #{AIA.config.model} " if AIA.config.model
+    parameters += AIA.config.extra
     @command    = "mods #{parameters} "
-    @command   += %Q["#{@text}"]        # TODO: consider using the pipeline
+    @command   += sanitize(@text)
 
-    @files.each {|f| @command += " < #{f}" }
+    # context = @files.join(' ')
+    #
+    # unless context.empty?
+    #   if @files.size > 1
+    #     # FIXME:  This syntax breaks mods which does not know how
+    #     #         to read the temporary file descriptor created
+    #     #         by the shell
+    #     @command += " <(cat #{context})"
+    #   else
+    #     @command += " < #{context}"
+    #   end
+    # end
 
     @command
   end
 
 
   def run
-    `#{command}`
+    case @files.size
+    when 0
+      @result = `#{build_command}`
+    when 1
+      @result = `#{build_command} < #{@files.first}`
+    else
+      create_temp_file_with_contexts
+      run_mods_with_temp_file
+      clean_up_temp_file
+    end
+    
+    @result
+  end
+  
+  
+  # Create a temporary file that concatenates all contexts,
+  # to be used as STDIN for the 'mods' utility
+  def create_temp_file_with_contexts
+    @temp_file = Tempfile.new('mods-context')
+
+    @files.each do |file|
+      content = File.read(file)
+      @temp_file.write(content)
+      @temp_file.write("\n")
+    end
+
+    @temp_file.close
+  end
+  
+
+  # Run 'mods' with the temporary file as STDIN
+  def run_mods_with_temp_file
+    command = "#{build_command} < #{@temp_file.path}"
+    @result = `#{command}`
+  end
+  
+
+  # Clean up the temporary file after use
+  def clean_up_temp_file
+    @temp_file.unlink if @temp_file
   end
 end
 
 __END__
 
 
-  # Execute the command and log the results
-  def send_prompt_to_external_command
-    command = build_command
-
-    puts command if verbose?
-    @result = `#{command}`
-
-    if @output.nil?
-      puts @result
-    else
-      @output.write @result
-    end
-
-    @result
-  end
-
-
-
+    
 
 
 ##########################################################
