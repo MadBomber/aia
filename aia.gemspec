@@ -47,6 +47,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "hashie"
   spec.add_dependency "prompt_manager"
   spec.add_dependency "semver2"
+  spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"
 
   spec.add_development_dependency "minitest"

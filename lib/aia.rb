@@ -6,6 +6,7 @@ include DebugMe
 require 'hashie'
 require 'pathname'
 require 'readline'
+require 'shellwords'
 require 'tempfile'
 
 require 'prompt_manager'
