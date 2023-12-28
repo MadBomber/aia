@@ -57,7 +57,6 @@ class AIA::Main
     abort "backend not found: #{AIA.config.backend}" if backend_klass.nil?
 
     backend = backend_klass.new(
-                extra_options:  AIA.config.extra,
                 text:           @prompt.to_s,
                 files:          AIA.config.arguments    # FIXME: want validated context files
               )

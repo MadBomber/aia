@@ -15,7 +15,7 @@ class AIA::Mods < AIA::Tools
     "--no-limit"              # no limit on input context
   ].join(' ').freeze
 
-  attr_accessor :command, :extra_options, :text, :files
+  attr_accessor :command, :text, :files
 
   # TODO: put the prompt text to be resolved into a 
   #       temporary text file then cat that file into mods.
@@ -25,12 +25,10 @@ class AIA::Mods < AIA::Tools
 
   # TODO: simplify this interface; make use of AIA.config
   def initialize(
-      extra_options:  "", # everything after -- on command line
       text:           "", # prompt text after keyword replacement
       files:          []  # context file paths (Array of Pathname)
     )
 
-    @extra_options  = extra_options
     @text           = text
     @files          = files
 
@@ -42,7 +40,7 @@ class AIA::Mods < AIA::Tools
     parameters  = DEFAULT_PARAMETERS.dup + " "
     parameters += "-f "                     if ::AIA.config.markdown?
     parameters += "-m #{AIA.config.model} " if ::AIA.config.model
-    parameters += @extra_options
+    parameters += AIA.config.extra
     @command    = "mods #{parameters} "
     @command   += %Q["#{@text}"]        # TODO: consider using the pipeline
 
