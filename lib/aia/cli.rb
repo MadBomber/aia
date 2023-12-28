@@ -194,12 +194,14 @@ class AIA::Cli
 
 
   def process_command_line_arguments
+    # get the options meant for the backend AI command
+    # doing this first in case there are any options that conflict
+    # between frontend and backend.
+    extract_extra_options
+
     @options.keys.each do |option|
       check_for option
     end
-
-    # get the options meant for the backend AI command
-    extract_extra_options
 
     bad_options = arguments.select{|a| a.start_with?('-')}
 

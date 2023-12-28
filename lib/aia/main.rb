@@ -4,7 +4,7 @@ module AIA ; end
 
 require_relative 'config'
 require_relative 'cli'
-require_relative 'prompt_processing'
+require_relative 'prompt'
 require_relative 'logging'
 require_relative 'tools'
 
@@ -12,7 +12,6 @@ require_relative 'tools'
 # of a single class.
 
 class AIA::Main
-  include AIA::PromptProcessing
 
   attr_accessor :logger, :tools
 
@@ -20,6 +19,11 @@ class AIA::Main
     AIA::Cli.new(args)
 
     @logger = AIA::Logging.new(AIA.config.log_file)
+    
+    @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
+
+    @prompt = AIA::Prompt.new.prompt
+
     AIA::Tools.load_tools
 
     # TODO: still should verify that the tools are ion the $PATH
@@ -28,10 +32,6 @@ class AIA::Main
 
 
   def call
-    get_prompt
-    process_prompt
-    
-    # send_prompt_to_external_command
 
     # TODO: the context_files left in the @arguments array
     #       should be verified BEFORE asking the user for a
