@@ -18,28 +18,34 @@ class AIA::Prompt
 
   attr_reader :prompt
 
-  # setting do_no_process: true supports unit testing.
-  def initialize(do_not_process: false)
+  # setting build: false supports unit testing.
+  def initialize(build: true)
     get_prompt
 
-    unless do_not_process
-      process_prompt unless @prompt.is_a?(AIA::Prompt::Fake)
-    end
+    process_prompt if build
 
-    process_directives unless @prompt.directives.empty?
+    execute_directives unless @prompt.directives.empty?
   end
 
 
-  def process_directives
-    @prompt.directives.each_pair do |directive, parameters|
+  def execute_directives
+    puts
+    puts "="*64
+    @prompt.directives.each do |entry|
+      directive   = entry[0]
+      parameters  = entry[1]
+
       case directive
       when 'echo'
         # FIXME:  directives are being saved before keyword substitution
         puts "as string: #{parameters}"
       else
-        # TODO: unsupported directive
+        # TODO: ignore unknown directives?
       end
     end
+
+    puts "="*64
+    puts
   end
 
 
@@ -111,6 +117,12 @@ class AIA::Prompt
 
   # query the user for a value to the keyword allow the
   # reuse of the previous value shown as the default
+  #
+  # FIXME:  Ruby v3.3.0 drops readline in favor or reline
+  #         internally it redirects "require 'readline'" to Reline
+  #         puts lipstick on the pig so that you can continue to
+  #         use the Readline namespace
+  #
   def keyword_value(kw, history_array)
 
     Readline::HISTORY.clear
