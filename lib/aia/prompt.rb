@@ -25,6 +25,21 @@ class AIA::Prompt
     unless do_not_process
       process_prompt unless @prompt.is_a?(AIA::Prompt::Fake)
     end
+
+    process_directives unless @prompt.directives.empty?
+  end
+
+
+  def process_directives
+    @prompt.directives.each_pair do |directive, parameters|
+      case directive
+      when 'echo'
+        # FIXME:  directives are being saved before keyword substitution
+        puts "as string: #{parameters}"
+      else
+        # TODO: unsupported directive
+      end
+    end
   end
 
 
@@ -214,10 +229,14 @@ class AIA::Prompt
   end
 
 
+  # removes comments and directives
   def remove_comments
     lines           = @prompt.text
                         .split("\n")
-                        .reject{|a_line| a_line.strip.start_with?('#')}
+                        .reject{|a_line| 
+                          a_line.strip.start_with?('#') ||
+                          a_line.strip.start_with?('//')
+                        }
 
     # Remove empty lines at the start of the prompt
     #
