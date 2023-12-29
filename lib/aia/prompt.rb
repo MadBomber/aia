@@ -18,9 +18,13 @@ class AIA::Prompt
 
   attr_reader :prompt
 
-  def initialize
+  # setting do_no_process: true supports unit testing.
+  def initialize(do_not_process: false)
     get_prompt
-    process_prompt unless @prompt.is_a?(AIA::Prompt::Fake)
+
+    unless do_not_process
+      process_prompt unless @prompt.is_a?(AIA::Prompt::Fake)
+    end
   end
 
 
