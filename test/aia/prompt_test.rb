@@ -22,6 +22,7 @@ class PromptTest < Minitest::Test
     assert_equal '_fake_',  fake.path
     assert_equal '',        fake.to_s
     assert_equal [],        fake.keywords
+    assert_equal [],        fake.directives
   end
 
 
@@ -37,7 +38,7 @@ class PromptTest < Minitest::Test
 
   def test_happy_path
     AIA.config.arguments = ['test']
-    result = AIA::Prompt.new(do_not_process: true).prompt
+    result = AIA::Prompt.new(build: false).prompt
 
     assert result.is_a?(PromptManager::Prompt)
     assert_equal 'test',        result.id
@@ -103,7 +104,7 @@ class PromptTest < Minitest::Test
 
   def test_show_prompt_without_comments
     AIA.config.arguments = ['test']
-    apc = AIA::Prompt.new(do_not_process: true)
+    apc = AIA::Prompt.new(build: false)
     expected  = ["    What does [ANIMAL] say?\n", ""]
 
     result = capture_io do
@@ -116,7 +117,7 @@ class PromptTest < Minitest::Test
 
   def test_remove_comments
     AIA.config.arguments = ['test']
-    apc = AIA::Prompt.new(do_not_process: true)
+    apc = AIA::Prompt.new(build: false)
 
     result    = apc.remove_comments
     expected  = "What does [ANIMAL] say?\n"

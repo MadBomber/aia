@@ -8,10 +8,11 @@ class AIA::Prompt
   # to the backend.  For example "aia -- --settings"
   #
   class Fake
-    def id        = '_fake_'
-    def path      = '_fake_'
-    def keywords  = []
-    def to_s      = ''
+    def id          = '_fake_'
+    def path        = '_fake_'
+    def keywords    = []
+    def directives  = []
+    def to_s        = ''
   end
 
   KW_HISTORY_MAX = 5
