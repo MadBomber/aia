@@ -77,6 +77,8 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `--terse`
 : Add a clause to the prompt text that instructs the backend to be terse in its response.
 
+`--speak`
+: Simple implementation. Uses the "say" command to speak the response.  Fun with --chat
 
 ## ENVIRONMENT  
 The aia CLI uses the following environment variables:

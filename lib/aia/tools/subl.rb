@@ -25,6 +25,7 @@ class AIA::Subl < AIA::Tools
     build_command
   end
 
+  def meta = self.class::meta
 
   def build_command
     @command = "#{meta.name} #{DEFAULT_PARAMETERS} #{@file}"

@@ -252,7 +252,7 @@ class AIA::Prompt
     
     @editor.run # blocks until file is closed
 
-    @options[:edit?][0] = false # turn off the --edit switch
+    AIA.config[:edit?] = false # turn off the --edit switch
 
     # reload the edited prompt
     @prompt = PromptManager::Prompt.get(id: @prompt.id)

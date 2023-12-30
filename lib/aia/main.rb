@@ -16,7 +16,9 @@ class AIA::Main
 
   attr_accessor :logger, :tools, :backend
 
-  def initialize(args= ARGV)
+  def initialize(args= ARGV)    
+    AIA::Tools.load_tools
+
     AIA::Cli.new(args)
 
     @logger = AIA::Logging.new(AIA.config.log_file)
@@ -27,10 +29,15 @@ class AIA::Main
 
     @engine = AIA::Directives.new(prompt: @prompt)
 
-    AIA::Tools.load_tools
-
     # TODO: still should verify that the tools are ion the $PATH
     # tools.class.verify_tools
+  end
+
+
+  def speak(what)
+    return unless AIA.config.speak?
+    # MacOS uses the say command
+    system "say #{Shellwords.escape(what)}"
   end
 
 
@@ -109,6 +116,7 @@ class AIA::Main
 
     if AIA.config.chat?
       setup_reline_history
+      speak result
       lets_chat 
     end
   end
@@ -128,6 +136,9 @@ class AIA::Main
       
       logger.info "Follow Up: #{backend.text}"
       response = backend.run
+      
+      speak response
+
       puts "\nResponse: #{response}"
       logger.info "Response: #{backend.run}"
   
@@ -136,6 +147,9 @@ class AIA::Main
       #
       # while !directive do
       backend.text = ask_question_with_reline("\nFollow Up: ")
+      
+      speak backend.text
+
       # execute the directive
       # end
     end
