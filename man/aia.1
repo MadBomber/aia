@@ -67,6 +67,12 @@ Directory containing the prompt files \- default: \[ti]\[sl]\.prompts
 .TP
 \fB\-b\fR, \fB\-\-\[lB]no\[rB]\-backend\fR \fILLM TOOL\fP
 Specify the backend prompt resolver \- default: :mods
+.TP
+\fB\-\-chat\fR
+begin a chat session with the backend after the initial prompt response;  will set \-\-no\-output so that the backend response comes to STDOUT\.
+.TP
+\fB\-\-terse\fR
+Add a clause to the prompt text that instructs the backend to be terse in its response\.
 .SH ENVIRONMENT
 .PP
 The aia CLI uses the following environment variables:

@@ -12,6 +12,7 @@ class AIA::Mods < AIA::Tools
 
   
   DEFAULT_PARAMETERS = [
+    # "--no-cache",           # do not save prompt and response
     "--no-limit"              # no limit on input context
   ].join(' ').freeze
 

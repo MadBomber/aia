@@ -132,6 +132,9 @@ class AIA::Cli
       fuzzy?:     [false,     "-f --fuzzy"],
       search:     [nil,       "-s --search"],
       markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
+      chat?:      [false,     "--chat"],
+      terse?:     [false,     "--terse"],
+
       #
       # TODO: May have to process the
       #       "~" character and replace it with HOME

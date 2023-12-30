@@ -71,6 +71,13 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-b`, `--[no]-backend` *LLM TOOL*
 : Specify the backend prompt resolver - default: :mods
 
+`--chat`
+: begin a chat session with the backend after the initial prompt response;  will set --no-output so that the backend response comes to STDOUT.
+
+`--terse`
+: Add a clause to the prompt text that instructs the backend to be terse in its response.
+
+
 ## ENVIRONMENT  
 The aia CLI uses the following environment variables:
 
