@@ -77,6 +77,8 @@ class AIA::Mods < AIA::Tools
     #   end
     # end
 
+    puts @command if AIA.config.debug?
+
     @command
   end
 
@@ -100,7 +102,7 @@ class AIA::Mods < AIA::Tools
       @result = `#{build_command} < #{@files.first}`
     else
       create_temp_file_with_contexts
-      run_mods_with_temp_file
+      run_with_temp_file
       clean_up_temp_file
     end
     
@@ -123,8 +125,8 @@ class AIA::Mods < AIA::Tools
   end
   
 
-  # Run 'mods' with the temporary file as STDIN
-  def run_mods_with_temp_file
+  # Run with the temporary file as STDIN
+  def run_with_temp_file
     command = "#{build_command} < #{@temp_file.path}"
     @result = `#{command}`
   end

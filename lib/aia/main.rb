@@ -37,7 +37,7 @@ class AIA::Main
   def call
     if AIA.config.chat?
       AIA.config.output_file = STDOUT 
-      AIA.config.extra = "--quiet"
+      AIA.config.extra = "--quiet" if 'mods' == AIA.config.backend
     end
 
     @engine.execute_my_directives
