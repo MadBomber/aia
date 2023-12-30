@@ -1,5 +1,6 @@
 # lib/aia/prompt.rb
 
+require 'reline'
 
 class AIA::Prompt
   #
@@ -116,6 +117,23 @@ class AIA::Prompt
   end
 
 
+  # Function to setup the Reline history with a maximum depth
+  def setup_reline_history(max_history_size=5)
+    Reline::HISTORY.clear
+    # Reline::HISTORY.max_size = max_history_size
+  end
+
+
+  # Function to prompt the user with a question using reline
+  def ask_question_with_reline(prompt)
+    answer = Reline.readline(prompt)
+    Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
+    answer
+    rescue Interrupt
+      ''
+  end
+
+
   # query the user for a value to the keyword allow the
   # reuse of the previous value shown as the default
   #
@@ -125,17 +143,21 @@ class AIA::Prompt
   #         use the Readline namespace
   #
   def keyword_value(kw, history_array)
+    setup_reline_history
+    
+    default = history_array.last
 
-    Readline::HISTORY.clear
-    Array(history_array).each { |entry| Readline::HISTORY.push(entry) unless entry.nil? || entry.empty? }
+    Array(history_array).each { |entry| Reline::HISTORY.push(entry) unless entry.nil? || entry.empty? }
 
     puts "Parameter #{kw} ..."
 
-    begin
-      a_string = Readline.readline("\n-=> ", true)
-    rescue Interrupt
-      a_string = nil
+    if default.empty?
+      user_prompt = "\n-=> "
+    else
+      user_prompt = "\n(#{default}) -=>"
     end
+
+    a_string = ask_question_with_reline(user_prompt)
 
     if a_string.nil?
       puts "okay. Come back soon."

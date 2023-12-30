@@ -46,6 +46,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "hashie"
   spec.add_dependency "prompt_manager", '>= 0.4.1' # needs the directives functionality
+  spec.add_dependency "reline"
   spec.add_dependency "semver2"
   spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"

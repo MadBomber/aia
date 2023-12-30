@@ -5,7 +5,7 @@ include DebugMe
 
 require 'hashie'
 require 'pathname'
-require 'readline'
+require 'reline'
 require 'shellwords'
 require 'tempfile'
 

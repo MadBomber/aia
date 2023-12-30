@@ -34,13 +34,36 @@ class AIA::Main
   end
 
 
+  # Function to setup the Reline history with a maximum depth
+  def setup_reline_history(max_history_size=5)
+    Reline::HISTORY.clear
+    # Reline::HISTORY.max_size = max_history_size
+  end
+
+
+  # Function to prompt the user with a question using reline
+  def ask_question_with_reline(prompt)
+    answer = Reline.readline(prompt)
+    Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
+    answer
+    rescue Interrupt
+      ''
+  end
+
+
   def call
+    @engine.execute_my_directives
+
     if AIA.config.chat?
       AIA.config.output_file = STDOUT 
       AIA.config.extra = "--quiet" if 'mods' == AIA.config.backend
     end
 
-    @engine.execute_my_directives
+    if AIA.config.debug?
+      debug_me{[
+        'AIA.config'
+      ]}
+    end
 
     # TODO: the context_files left in the @arguments array
     #       should be verified BEFORE asking the user for a
@@ -83,7 +106,11 @@ class AIA::Main
 
     logger.prompt_result(@prompt, result)
 
-    lets_chat if AIA.config.chat?
+
+    if AIA.config.chat?
+      setup_reline_history
+      lets_chat 
+    end
   end
 
 
@@ -92,10 +119,8 @@ class AIA::Main
       AIA.config.extra += " -C"
     end
     
-    # replace gets with Reline
-    print "\nFollow Up: "
-    backend.text = STDIN.gets.chomp
-
+    backend.text = ask_question_with_reline("\nFollow Up: ")
+    
     until backend.text.empty?
       if AIA.config.terse?
         backend.text.prepend "Be terse in your response. "
@@ -105,9 +130,14 @@ class AIA::Main
       response = backend.run
       puts "\nResponse: #{response}"
       logger.info "Response: #{backend.run}"
-
-      print "\nFollow Up: "
-      backend.text = STDIN.gets.chomp
+  
+      # TODO: Allow user to enter a directive; loop
+      #       until answer is not a directive
+      #
+      # while !directive do
+      backend.text = ask_question_with_reline("\nFollow Up: ")
+      # execute the directive
+      # end
     end
   end
 end

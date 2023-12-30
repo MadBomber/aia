@@ -12,18 +12,21 @@ class AIA::Directives
 
   def execute_my_directives
     return if AIA.config.directives.nil? || AIA.config.directives.empty?
-  
-    AIA.config.directives.each_with_index do |entry, inx|
+    
+    not_mine = []
+
+    AIA.config.directives.each do |entry|
       directive   = entry[0].to_sym
       parameters  = entry[1]
 
       if respond_to? directive
         send(directive, parameters)
-        AIA.config.directives[inx] = nil
+      else
+        not_mine << entry
       end
     end
 
-    AIA.config.directives.compact!
+    AIA.config.directives = not_mine
   end
 
 
@@ -54,7 +57,11 @@ class AIA::Directives
       end
     else
       value = parts.join
-      AIA.config[item] = value
+      if item.end_with?('?')
+        AIA.config[item] = %w[1 y yea yes t true].include?(value.downcase)
+      else
+        AIA.config[item] = "STDOUT" == value ? STDOUT : value
+      end
     end
   end
 end
