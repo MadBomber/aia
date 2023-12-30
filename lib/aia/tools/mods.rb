@@ -1,6 +1,9 @@
 # lib/aia/tools/mods.rb
 
+require_relative 'backend_common'
+
 class AIA::Mods < AIA::Tools
+  include AIA::BackendCommon
 
   meta(
     name:     'mods',
@@ -32,110 +35,6 @@ class AIA::Mods < AIA::Tools
     title      
     topp       
   ]
-
-  attr_accessor :command, :text, :files, :parameters
-
-
-  def initialize(
-      text:           "", # prompt text after keyword replacement
-      files:          []  # context file paths (Array of Pathname)
-    )
-
-    @text           = text
-    @files          = files
-
-    build_command
-  end
-
-
-  def sanitize(input)
-    Shellwords.escape(input)
-  end
-
-
-  def build_command
-    @parameters  = DEFAULT_PARAMETERS.dup + " "
-    @parameters += "-f "                     if AIA.config.markdown?
-    @parameters += "-m #{AIA.config.model} " if AIA.config.model
-    @parameters += AIA.config.extra
-
-    set_parameter_from_directives
-
-    @command    = "mods #{@parameters} "
-    @command   += sanitize(@text)
-
-    # context = @files.join(' ')
-    #
-    # unless context.empty?
-    #   if @files.size > 1
-    #     # FIXME:  This syntax breaks mods which does not know how
-    #     #         to read the temporary file descriptor created
-    #     #         by the shell
-    #     @command += " <(cat #{context})"
-    #   else
-    #     @command += " < #{context}"
-    #   end
-    # end
-
-    puts @command if AIA.config.debug?
-
-    @command
-  end
-
-
-  def set_parameter_from_directives
-    AIA.config.directives.each_with_index do |entry|
-      param, value = entry
-
-      if DIRECTIVES.include? param
-        @parameters += " --#{param} #{value}" unless @parameters.include? param
-      end
-    end
-  end
-
-
-  def run
-    case @files.size
-    when 0
-      @result = `#{build_command}`
-    when 1
-      @result = `#{build_command} < #{@files.first}`
-    else
-      create_temp_file_with_contexts
-      run_with_temp_file
-      clean_up_temp_file
-    end
-    
-    @result
-  end
-  
-  
-  # Create a temporary file that concatenates all contexts,
-  # to be used as STDIN for the 'mods' utility
-  def create_temp_file_with_contexts
-    @temp_file = Tempfile.new('mods-context')
-
-    @files.each do |file|
-      content = File.read(file)
-      @temp_file.write(content)
-      @temp_file.write("\n")
-    end
-
-    @temp_file.close
-  end
-  
-
-  # Run with the temporary file as STDIN
-  def run_with_temp_file
-    command = "#{build_command} < #{@temp_file.path}"
-    @result = `#{command}`
-  end
-  
-
-  # Clean up the temporary file after use
-  def clean_up_temp_file
-    @temp_file.unlink if @temp_file
-  end
 end
 
 __END__
