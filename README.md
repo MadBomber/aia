@@ -6,6 +6,7 @@ Uses the gem "prompt_manager" to manage the prompts sent to the `mods` command-l
 
 **Most Recent Change**
 
+v0.4.2 = Added a role option to be prepended to a primary prompt.
 v0.4.1 - Added a chat mode.  Prompt directives are now supported.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
@@ -16,8 +17,11 @@ v0.4.1 - Added a chat mode.  Prompt directives are now supported.
   - [Usage](#usage)
   - [System Environment Variables (envar)](#system-environment-variables-envar)
   - [Prompt Directives](#prompt-directives)
+  - [All About ROLES](#all-about-roles)
+    - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
   - [Shell Completion](#shell-completion)
+  - [Ny Most Powerful Prompt](#ny-most-powerful-prompt)
   - [Development](#development)
   - [Contributing](#contributing)
   - [License](#license)
@@ -134,6 +138,11 @@ OPTIONS
        -p, --prompts PATH_TO_DIRECTORY
               Directory containing the prompt files - default is ~/.prompts
 
+       -r, --role ROLE_ID
+              A role ID is the same as a prompt ID.  A “role” is a specialized prompt that
+              gets pre-pended to another prompt.  It’s purpose is to configure the LLM into a
+              certain orientation within which to resolve its primary prompt.
+
        -v, --verbose
               Be Verbose - default is false
 
@@ -218,7 +227,6 @@ AUTHOR
        Dewayne VanHoozer <dvanhoozer@gmail.com>
 
 AIA                                       2024-01-01                                   aia(1)
-
 ```
 
 ## System Environment Variables (envar)
@@ -263,6 +271,27 @@ See the [AIA::Mods](lib/aia/tools/mods.rb) class to for directives that are avai
 
 See the [AIA::Sgpt](lib/aia/tools/sgpt.rb) class to for directives that are available to the `sgpt` backend.
 
+## All About ROLES
+
+`aia` provides the "-r --role" CLI option to identify a prompt ID within your prompts directory which defines the context within which the LLM is to provide its response.  The text of the role ID is pre-pended to the text of the primary prompt to form a complete prompt to be processed by the backend.
+
+For example consider:
+
+> aia -r ruby refactor my_class.rb
+
+Within the prompts directory the contents of the text file `ruby.txt` will be pre-pre-pended to the contents of the refactor.txt file to produce a complete prompt.  That complete prompt will have any parameters then directives processed before sending the prompt text to the backend.
+
+Note that "role" is just a way of saying add this prompt to the front of this other prompt.  The contents of the "role" prompt could be anything.  It does not necessarily have be an actual role.
+
+### Other Ways to Insert Roles into Prompts
+
+Since `aia` supports parameterized prompts you could make a keyword like "[ROLE]" be part of your prompt.  For example consider this prompt:
+
+```text
+As a [ROLE] tell me what you think about [SUBJECT]
+```
+
+When this prompt is processed, `aia` will ask you for a value for the keyword "ROLE" and the keyword "SUBJECT" to complete the prompt.  Since `aia` maintains a history your previous answers, you could just choose something that you used in the past or answer with a completely new value.
 
 ## External CLI Tools Used
 
@@ -302,6 +331,22 @@ If you're not a fan of "born again" replace `bash` with one of the others.
 
 Copy the function to a place where it can be installed in your shell's instance.  This might be a `.profile` or `.bashrc` file, etc.
 
+## Ny Most Powerful Prompt
+
+This is just between you and me so don't go blabbing this around to everyone.  My most power prompt is in a file named `ad_hoc.txt`. It looks like this:
+
+> [WHAT NOW HUMAN]
+
+Yep.  Just a single parameter for which I can provide a value of anything that is on my mind at the time.  Its advantage is that I do not pollute my shell's command history with lots of text.
+
+Which do you think is better to have in your shell's history file?
+
+> mods "As a certified public accountant specializing in forensic audit and analysis of public company financial statements, what do you think of mine?  What is the best way to hide the millions dracma that I've skimmed?"  < financial_statement.txt
+
+> aia ad_hoc financial_statement.txt
+
+Both do the same thing; however, aia does not put the text of the prompt into the shell's history file.... of course the keyword/parameter value is saved in the prompt's JSON file and the prompt with the response are logged unless --no-log is specified; but, its not messing up the shell history!
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
@@ -309,6 +354,21 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/MadBomber/aia.
+
+I've designed `aia` so that it should be easy to integrate other backend LLM processors.  If you've found one that you like, send me a pull request or a feature request.
+
+When you find problems with `aia` please note them as an issue.  This thing was written mostly by a human and you know how error prone humans are.  There should be plenty of errors to find.
+
+Also I'm interested in doing more with the prompt directives.  I'm thinking that there is a way to include dynamic content into the prompt computationally.  Maybe something like tjos wpi;d be easu tp dp:
+
+> //insert url https://www.whitehouse.gov/briefing-room/
+> //insert file path_to_file.txt
+
+or maybe incorporating the contents of system environment variables into prompts using $UPPERCASE or $(command) or ${envar_name} patterns.
+
+I've also been thinking that the REGEX used to identify a keyword within a prompt could be a configuration item.  I chose to use square brackets and uppercase in the default regex; maybe, you have a collection of prompt files that use some other regex.  Why should it be one way and not the other.
+
+Also I'm not happy with the way where I hve some command line options for external command hard coded.  I think they should be part of the configuration as well.  For example the way I'm using `rg` and `fzf` may not be the way that you want to use them.
 
 ## License
 

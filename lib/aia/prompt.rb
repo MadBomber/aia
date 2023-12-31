@@ -22,7 +22,19 @@ class AIA::Prompt
 
   # setting build: false supports unit testing.
   def initialize(build: true)
+    if AIA.config.role.empty?
+      @role = nil
+    else
+      AIA.config.arguments.prepend AIA.config.role
+      get_prompt
+      @role = @prompt.dup
+    end
+
     get_prompt
+
+    unless @role.nil?
+      @prompt.text.prepend @role.text
+    end
 
     process_prompt if build
   end
@@ -128,7 +140,7 @@ class AIA::Prompt
 
     puts "Parameter #{kw} ..."
 
-    if default.empty?
+    if default&.empty?
       user_prompt = "\n-=> "
     else
       user_prompt = "\n(#{default}) -=>"
