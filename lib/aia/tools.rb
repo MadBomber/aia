@@ -5,6 +5,8 @@ require 'hashie'
 class AIA::Tools
   @@catalog = []
 
+  def meta = self.class::meta
+
   class << self
     def inherited(subclass)
       subclass_meta = Hashie::Mash.new(klass: subclass)

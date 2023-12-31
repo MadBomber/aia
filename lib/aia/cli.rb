@@ -117,7 +117,8 @@ class AIA::Cli
       #           Default
       # Key       Value,      switches
       arguments:  [args], # NOTE: after process, prompt_id and context_files will be left
-      extra:      [''],   # SMELL: should be nil?
+      directives: [[]],   # an empty Array as the default value
+      extra:      [''],   # 
       #
       model:      ["gpt-4-1106-preview",  "--llm --model"],
       #
@@ -130,7 +131,6 @@ class AIA::Cli
       version?:   [false,     "--version"],
       help?:      [false,     "-h --help"],
       fuzzy?:     [false,     "-f --fuzzy"],
-      search:     [nil,       "-s --search"],
       markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
       chat?:      [false,     "--chat"],
       terse?:     [false,     "--terse"],

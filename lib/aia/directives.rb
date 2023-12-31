@@ -5,7 +5,6 @@ require 'hashie'
 class AIA::Directives
   def initialize( prompt: )
     @prompt = prompt  # PromptManager::Prompt instance
-  
     AIA.config.directives = @prompt.directives
   end
 

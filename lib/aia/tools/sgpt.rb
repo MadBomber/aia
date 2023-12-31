@@ -28,7 +28,6 @@ class AIA::Sgpt < AIA::Tools
     presence_penalty
     stop_sequence
     api_key
-    # Add more directives if needed
   ]
 end
 

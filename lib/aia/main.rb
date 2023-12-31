@@ -22,7 +22,7 @@ class AIA::Main
     AIA::Cli.new(args)
 
     @logger = AIA::Logging.new(AIA.config.log_file)
-    
+
     @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
 
     @prompt = AIA::Prompt.new.prompt
@@ -64,12 +64,6 @@ class AIA::Main
     if AIA.config.chat?
       AIA.config.output_file = STDOUT 
       AIA.config.extra = "--quiet" if 'mods' == AIA.config.backend
-    end
-
-    if AIA.config.debug?
-      debug_me{[
-        'AIA.config'
-      ]}
     end
 
     # TODO: the context_files left in the @arguments array

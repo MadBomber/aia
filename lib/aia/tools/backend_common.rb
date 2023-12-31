@@ -15,14 +15,13 @@ module AIA::BackendCommon
   def sanitize(input)
     Shellwords.escape(input)
   end
-
   def build_command
     @parameters += " --model #{AIA.config.model} " if AIA.config.model
     @parameters += AIA.config.extra
 
     set_parameter_from_directives
 
-    @command = "#{self.class::meta.name} #{@parameters} "
+    @command = "#{meta.name} #{@parameters} "
     @command += sanitize(text)
 
     puts @command if AIA.config.debug?
@@ -31,7 +30,8 @@ module AIA::BackendCommon
   end
 
   def set_parameter_from_directives
-    AIA.config.directives.each do |directive, value|
+    AIA.config.directives.each do |entry|
+      directive, value = entry
       if self.class::DIRECTIVES.include?(directive)
         @parameters += " --#{directive} #{sanitize(value)}" unless @parameters.include?(directive)
       end

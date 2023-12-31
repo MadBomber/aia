@@ -25,29 +25,6 @@ class AIA::Prompt
     get_prompt
 
     process_prompt if build
-
-    execute_directives unless @prompt.directives.empty?
-  end
-
-
-  def execute_directives
-    puts
-    puts "="*64
-    @prompt.directives.each do |entry|
-      directive   = entry[0]
-      parameters  = entry[1]
-
-      case directive
-      when 'echo'
-        # FIXME:  directives are being saved before keyword substitution
-        puts "as string: #{parameters}"
-      else
-        # TODO: ignore unknown directives?
-      end
-    end
-
-    puts "="*64
-    puts
   end
 
 
@@ -176,7 +153,7 @@ class AIA::Prompt
     found_prompts = PromptManager::Prompt.search(prompt_id)
 
     if found_prompts.empty?
-      if edit?
+      if AIA.config.edit?
         create_prompt(prompt_id)
         edit_prompt
       else
