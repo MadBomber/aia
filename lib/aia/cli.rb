@@ -136,11 +136,7 @@ class AIA::Cli
       terse?:     [false,     "--terse"],
       speak?:     [false,     "--speak"],
       #
-      # TODO: May have to process the
-      #       "~" character and replace it with HOME
-      #
-      # TODO: Consider using standard suffix of _dif and _file
-      #       to signal Pathname objects fo validation
+      role:       ['',        "-r --role"],
       #
       config_file:[nil,                       "-c --config"],
       prompts_dir:["~/.prompts",              "-p --prompts"],

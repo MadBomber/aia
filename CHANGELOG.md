@@ -1,5 +1,8 @@
 ## [Unreleased]
-## [0.4.1] 2023-31
+## [0.4.2] 2023-12-31
+- added the --role CLI option to pre-pend a "role" prompt to the front of a primary prompt.
+
+## [0.4.1] 2023-12-31
 - added a chat mode
 - prompt directives now supported
 - version bumped to match the `prompt_manager` gem

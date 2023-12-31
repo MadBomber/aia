@@ -76,6 +76,9 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-p`, `--prompts` *PATH_TO_DIRECTORY*
 : Directory containing the prompt files - default is ~/.prompts
 
+`-r`, `--role` *ROLE_ID*
+: A role ID is the same as a prompt ID.  A "role" is a specialized prompt that gets pre-pended to another prompt.  It's purpose is to configure the LLM into a certain orientation within which to resolve its primary prompt.
+
 `-v`, `--verbose`
 : Be Verbose - default is false
 
