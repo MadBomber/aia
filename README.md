@@ -38,13 +38,14 @@ Install the command-line utilities by executing:
 
 You will also need to establish a directory in your file system where your prompt text files, last used parameters and usage log files are kept.
 
-Setup a system environment variable named "PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts_dir"
+Setup a system environment variable named "AIA_PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts_dir"
 
-You will also need to source the completion script.
+You may also want to install the completion script for your shell.  To get a copy of the completion script do:
 
-TODO: May want to add a `setup` function to the command-line options that will create the directory, and do something with the completion function.
+`aia --completion bash`
 
-TODO: don't forget to mention have access token (API keys) setup as envars for the various backend services like OpenAI... if they are still in business.
+`fish` and `zsh` are also available.
+
 
 ## Usage
 
@@ -256,9 +257,14 @@ That prompt will enter the chat loop regardles of the presents of a "--chat" CLI
 
 BTW did I mention that `aia` supports a chat mode where you can send an initial prompt to the backend and then followup the backend's reponse with additional keyboard entered questions, instructions, prompts etc.
 
-## External CLI Tools Used
+See the [AIA::Directives](lib/aia/directives.rb) class to see what directives are available on the fromend within `aia`.
 
-From the verbose help text ...
+See the [AIA::Mods](lib/aia/tools/mods.rb) class to for directives that are available to the `mods` backend.
+
+See the [AIA::Sgpt](lib/aia/tools/sgpt.rb) class to for directives that are available to the `sgpt` backend.
+
+
+## External CLI Tools Used
 
 ```text
 External Tools Used
