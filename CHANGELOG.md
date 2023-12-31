@@ -1,4 +1,9 @@
 ## [Unreleased]
+## [0.4.1] 2023-31
+- added a chat mode
+- prompt directives now supported
+- version bumped to match the `prompt_manager` gem
+
 ## [0.3.20] 2023-12-28
 - added work around to issue with multiple context files going to the `mods` backend
 - added shellwords gem to santize prompt text on the command line
