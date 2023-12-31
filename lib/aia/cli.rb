@@ -117,7 +117,8 @@ class AIA::Cli
       #           Default
       # Key       Value,      switches
       arguments:  [args], # NOTE: after process, prompt_id and context_files will be left
-      extra:      [''],   # SMELL: should be nil?
+      directives: [[]],   # an empty Array as the default value
+      extra:      [''],   # 
       #
       model:      ["gpt-4-1106-preview",  "--llm --model"],
       #
@@ -130,8 +131,10 @@ class AIA::Cli
       version?:   [false,     "--version"],
       help?:      [false,     "-h --help"],
       fuzzy?:     [false,     "-f --fuzzy"],
-      search:     [nil,       "-s --search"],
       markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
+      chat?:      [false,     "--chat"],
+      terse?:     [false,     "--terse"],
+      speak?:     [false,     "--speak"],
       #
       # TODO: May have to process the
       #       "~" character and replace it with HOME
@@ -194,12 +197,14 @@ class AIA::Cli
 
 
   def process_command_line_arguments
+    # get the options meant for the backend AI command
+    # doing this first in case there are any options that conflict
+    # between frontend and backend.
+    extract_extra_options
+
     @options.keys.each do |option|
       check_for option
     end
-
-    # get the options meant for the backend AI command
-    extract_extra_options
 
     bad_options = arguments.select{|a| a.start_with?('-')}
 

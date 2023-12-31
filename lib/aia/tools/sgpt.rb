@@ -1,6 +1,9 @@
 # lib/aia/tools/sgpt.rb
 
+require_relative 'backend_common'
+
 class AIA::Sgpt < AIA::Tools
+  include AIA::BackendCommon
 
   meta(
     name:     'sgpt',
@@ -10,9 +13,22 @@ class AIA::Sgpt < AIA::Tools
     install:  "pip install shell-gpt",
   )
 
-  def initialize
-    # TODO: something
-  end
+
+  DEFAULT_PARAMETERS = [
+    # "--verbose",          # enable verbose logging (if applicable)
+    # Add default parameters here
+  ].join(' ').freeze
+
+  DIRECTIVES = %w[
+    model
+    temperature
+    max_tokens
+    top_p
+    frequency_penalty
+    presence_penalty
+    stop_sequence
+    api_key
+  ]
 end
 
 __END__

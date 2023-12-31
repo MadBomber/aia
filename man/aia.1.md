@@ -1,9 +1,11 @@
 # aia 1 "2024-01-01" AIA "User Manuals"
 
 ## NAME
+
 aia - command-line interface for an AI assistant  
 
 ## SYNOPSIS
+
 aia [options]* PROMPT_ID [CONTEXT_FILE]* [-- EXTERNAL_OPTIONS+]  
 
 ## DESCRIPTION
@@ -23,63 +25,72 @@ The aia command-line tool is an interface for interacting with an AI model backe
 
 ## OPTIONS
 
-`-c`, `--config` *PATH_TO_CONFIG_FILE*
-: Load Config File - default: nil
-
-`--dump` *FORMAT*
-: Dump a Config File in [yaml | toml] to STDOUT - default: nil
-
-`-e`, `--edit`
-: Edit the Prompt File - default: false
-
-`-d`, `--debug`
-: Turn On Debugging - default: false
-
-`-v`, `--verbose`
-: Be Verbose - default: false
-
-`--version`
-: Print Version - default: false
-
-`-h`, `--help`
-: Show Usage - default: false
-
-`-s`, `--search` *TERM*
-: Search for prompts contain TERM - default: nil
-
-`-f`, --fuzzy`
-: Use Fuzzy Matching when searching for a prompt - default: false
+`--chat`
+: begin a chat session with the backend after the initial prompt response;  will set --no-output so that the backend response comes to STDOUT.
 
 `--completion` *SHELL_NAME*
-: Show completion script for bash|zsh|fish - default: nil
+: Show completion script for bash|zsh|fish - default is nil
 
-`-o`, `--[no]-output` *PATH_TO_OUTPUT_FILE*
-: Out FILENAME - default: ./temp.md
-
-`-l`, `--[no]-log` *PATH_TO_LOG_FILE*
-: Log FILEPATH - default: $HOME/.prompts/prompts.log
-
-`-m`, `--[no]-markdown`
-: Format with Markdown - default: true
+`--dump` *FORMAT*
+: Dump a Config File in [yaml | toml] to STDOUT - default is nil
 
 `--model` *NAME*
-: Name of the LLM model to use - default: gpt-4-1106-preview
+: Name of the LLM model to use - default is gpt-4-1106-preview
 
-`-p`, `--prompts` *PATH_TO_DIRECTORY*
-: Directory containing the prompt files - default: ~/.prompts
+`--speak`
+: Simple implementation. Uses the "say" command to speak the response.  Fun with --chat
+
+`--terse`
+: Add a clause to the prompt text that instructs the backend to be terse in its response.
+
+`--version`
+: Print Version - default is false
 
 `-b`, `--[no]-backend` *LLM TOOL*
-: Specify the backend prompt resolver - default: :mods
+: Specify the backend prompt resolver - default is mods
 
-## ENVIRONMENT  
-The aia CLI uses the following environment variables:
+`-c`, `--config` *PATH_TO_CONFIG_FILE*
+: Load Config File - default is nil
 
-- `AIA_PROMPTS_DIR`: Path to the directory containing prompts files - default: `$HOME/.prompts_dir`
-- `AIA_BACKEND`: The AI command-line program used - default: `mods`
-- `EDITOR`: The text editor used by the edit option - default: edit
-- `AIA_MODEL`: The AI model specification - default: `gpt-4-1106-preview`
-- `AIA_OUTPUT`: The default filename for output - default: `./temp.md`
-- `AIA_PROMPT_LOG`: The default filepath for the prompts log - default: `$HOME/.prompts/_prompts.log`
+`-d`, `--debug`
+: Turn On Debugging - default is false
+
+`-e`, `--edit`
+: Edit the Prompt File - default is false
+
+`-f`, --fuzzy`
+: Use Fuzzy Matching when searching for a prompt - default is false
+
+`-h`, `--help`
+: Show Usage - default is false
+
+`-l`, `--[no]-log` *PATH_TO_LOG_FILE*
+: Log FILEPATH - default is $HOME/.prompts/prompts.log
+
+`-m`, `--[no]-markdown`
+: Format with Markdown - default is true
+
+`-o`, `--[no]-output` *PATH_TO_OUTPUT_FILE*
+: Out FILENAME - default is ./temp.md
+
+`-p`, `--prompts` *PATH_TO_DIRECTORY*
+: Directory containing the prompt files - default is ~/.prompts
+
+`-v`, `--verbose`
+: Be Verbose - default is false
+
+
+## CONFIGURATION HIERARCHY
+
+System Environment Variables (envars) that are all uppercase and begin with "AIA_" can be used to over-ride the default configuration settings.  For example setting "export AIA_PROMPTS_DIR=~/Documents/prompts" will over-ride the default configuration; however, a config value provided by a command line options will over-ride an envar setting.
+
+Configuration values found in a config file will over-ride all other values set for a config item.
+
+"//config" directives found inside a prompt file over-rides that config item regardless of where the value was set.
+
+For example "//config chat? = true" within a prompt will setup the chat back and forth chat session for that specific prompt regardless of the command line options or the envar AIA_CHAT settings
+
+## OpenAI ACCOUNT IS REQUIRED
 
 Additionally, the program requires an OpenAI access key, which can be specified using one of the following environment variables:
 
@@ -90,12 +101,22 @@ Currently there is not specific standard for name of the OpenAI key.  Some progr
 
 To acquire an OpenAI access key, first create an account on the OpenAI platform, where further documentation is available.
 
-## USAGE NOTES  
-`aia` is designed for flexibility, allowing users to pass prompt ids and context files as arguments. Some options change the behavior of the output, such as `--output` for specifying a file or `--no-output` for disabling file output in favor of standard output.
+## USAGE NOTES
+
+`aia` is designed for flexibility, allowing users to pass prompt ids and context files as arguments. Some options change the behavior of the output, such as `--output` for specifying a file or `--no-output` for disabling file output in favor of standard output (STDPIT).
 
 The `--completion` option displays a script that enables prompt ID auto-completion for bash, zsh, or fish shells. It's crucial to integrate the script into the shell's runtime to take effect.
 
-## SEE ALSO  
+The `--dump` options will send the current configuration to STDOUT in the format requested.  Both YAML and TOML formats are supported.
+
+## PROMPT DIRECTIVES
+
+Within a prompt text file any line that begins with "//" is considered a prompt directive.  There are numerious prompt directives available.  In the discussion above on the configuration you learned about the "//config" directive.
+
+Detail discussion on individual prompt directives is TBD.  Most likely it will be handled in the [github wiki](https://github.com/MadBomber/aia).
+
+## SEE ALSO
+
 - [OpenAI Platform Documentation](https://platform.openai.com/docs/overview) for more information on [obtaining access tokens](https://platform.openai.com/account/api-keys) and working with OpenAI models.
 
 - [mods](https://github.com/charmbracelet/mods) for more information on `mods` - AI for the command line, built for pipelines.  LLM based AI is really good at interpreting the output of commands and returning the results in CLI friendly text formats like Markdown. Mods is a simple tool that makes it super easy to use AI on the command line and in your pipelines. Mods works with [OpenAI](https://platform.openai.com/account/api-keys) and [LocalAI](https://github.com/go-skynet/LocalAI)
