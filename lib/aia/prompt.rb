@@ -14,6 +14,7 @@ class AIA::Prompt
     def path        = '_fake_'
     def keywords    = []
     def directives  = []
+    def text        = ''
     def to_s        = ''
   end
 

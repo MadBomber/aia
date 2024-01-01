@@ -1,4 +1,7 @@
 ## [Unreleased]
+## [0.4.4] 2023-01-01
+- fixed first issue of the year.  Issue 14 with te --role option actually writing the role content into the prime prompts file.
+
 ## [0.4.3] 2023-12-31
 - added --env to process embedded system environment variables and shell commands within a prompt.
 - added --erb to process Embedded RuBy within a prompt because have embedded shell commands will only get you in a trouble.  Having ERB will really get you into trouble.  Remember the simple prompt is usually the best prompt.
