@@ -32,6 +32,8 @@ class AIA::Prompt
     end
 
     get_prompt
+    
+    @prompt_text_before_role = @prompt.text.dup
 
     unless @role.nil?
       @prompt.text.prepend @role.text
@@ -77,8 +79,16 @@ class AIA::Prompt
     unless @prompt.keywords.empty?
       replace_keywords
       @prompt.build
-      @prompt.save
+      save(@prompt_text_before_role)
     end
+  end
+
+
+  def save(original_text)
+    temp_text     = @prompt.text
+    @prompt.text  = original_text
+    @prompt.save
+    @prompt.text  = temp_text
   end
 
 
