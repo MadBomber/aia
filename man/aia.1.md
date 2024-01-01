@@ -34,6 +34,15 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `--dump` *FORMAT*
 : Dump a Config File in [yaml | toml] to STDOUT - default is nil
 
+`-e`, `--edit`
+: Invokes an editor on the prompt file.  You can make changes to the prompt file, save it and the newly saved prompt will be processed by the backend.
+
+`--env`
+: This option tells `aia` to replace references to system environment variables in the prompt with the value of the envar.  envars are like $HOME and ${HOME} in this example their occurance will be replaced by the value of ENV['HOME'].  Also the dynamic shell command in the pattern $(shell command) will be executed and its output replaces its pattern.  It does not matter if your shell uses different patters than BASH since the replacement is being done within a Ruby context.
+
+`--erb`
+: If dynamic prompt content using $(...) wasn't enough here is ERB.  Embedded RUby.  <%= ruby code %> within a prompt will have its ruby code executed and the results of that execution will be inserted into the prompt.  I'm sure we will find a way to truly misuse this capability.  Remember, some say that the simple prompt is the best prompt.
+
 `--model` *NAME*
 : Name of the LLM model to use - default is gpt-4-1106-preview
 

@@ -126,6 +126,8 @@ class AIA::Cli
       completion: [nil,       "--completion"],
       #
       edit?:      [false,     "-e --edit"],
+      env?:       [false,     "--env"],
+      erb?:       [false,     "--erb"],
       debug?:     [false,     "-d --debug"],
       verbose?:   [false,     "-v --verbose"],
       version?:   [false,     "--version"],
