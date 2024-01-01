@@ -6,8 +6,9 @@ Uses the gem "prompt_manager" to manage the prompts sent to the `mods` command-l
 
 **Most Recent Change**
 
-v0.4.2 = Added a role option to be prepended to a primary prompt.
-v0.4.1 - Added a chat mode.  Prompt directives are now supported.
+v0.4.3 - Added the --env and --erb options.  Prompts can now be dynamic.
+v0.4.2 - Added a --role option to be prepended to a primary prompt.
+v0.4.1 - Added --chat and --speak options.  Prompt directives are now supported.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -16,6 +17,8 @@ v0.4.1 - Added a chat mode.  Prompt directives are now supported.
   - [Installation](#installation)
   - [Usage](#usage)
   - [System Environment Variables (envar)](#system-environment-variables-envar)
+    - [System Environment Variables inside of a Prompt](#system-environment-variables-inside-of-a-prompt)
+  - [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
   - [Prompt Directives](#prompt-directives)
   - [All About ROLES](#all-about-roles)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
@@ -93,6 +96,24 @@ OPTIONS
        --completion SHELL_NAME
 
        --dump FORMAT
+
+       -e, --edit
+              Invokes an editor on the prompt file.  You can make changes to the prompt file,
+              save it and the newly saved prompt will be processed by the backend.
+
+       --env  This option tells aia to replace references to system environment variables in
+              the prompt with the value of the envar.  envars are like $HOME and ${HOME} in
+              this example their occurance will be replaced by the value of ENV[‘HOME’].
+              Also the dynamic shell command in the pattern $(shell command) will be executed
+              and its output replaces its pattern.  It does not matter if your shell uses
+              different patters than BASH since the replacement is being done within a Ruby
+              context.
+
+       --erb  If dynamic prompt content using $(...) wasn’t enough here is ERB.  Embedded
+              RUby.  <%= ruby code %> within a prompt will have its ruby code executed and
+              the results of that execution will be inserted into the prompt.  I’m sure we
+              will find a way to truly misuse this capability.  Remember, some say that the
+              simple prompt is the best prompt.
 
        --model NAME
               Name of the LLM model to use - default is gpt-4-1106-preview
@@ -252,6 +273,20 @@ The `aia` configuration defaults can be over-ridden by envars with the prefix "A
 See the `@options` hash in the `cli.rb` file for a complete list.  There are some config items that do not necessarily make sense for use as an envar over-ride.  For example if you set `export AIA_DUMP=yaml` then `aia` would dump a config file in HAML format and exit every time it is ran until you finally did `unset AIA_DUMP`
 
 In addition to these config items for `aia` the optional command line parameters for the backend prompt processing utilities (mods and sgpt) can also be set using envars with the "AIA_" prefix.  For example "export AIA_TOPP=1.0" will set the "--topp 1.0" command line option for the `mods` utility when its used as the backend processor.
+
+### System Environment Variables inside of a Prompt
+
+The cpmmand line option "--env" instructs `aia` to replace any system environment variable references in the prompt text with the value of the system envornment variable.  So patterns like $HOME and ${HOME} in the prompt will be replaced with the value of ENV['HOME'].
+
+As an added bonus, dynamic content can be inserted into the prompt using the pattern $(shell command) where the output of the shell command will replace the $(...) pattern.
+
+That's enough power to get anyone into deep trouble.  Wait there's more coming.  Do you want a full programming language in your prompt?  Feel like running the prompt through ERB before sending it to the backend?  I've been thinking about it.  Should be a simple thing to do. Yes it was.
+
+## *E*mbedded *R*u*B*y (ERB)
+
+The --erb options now submits the prompt text through the ERB parser for execution before environment variable, keyword and dynamic shell replace take place.  With this much dynamic prompt manipulation we should really be able to get into trouble!
+
+If you are not a Rubyist and do not know about ERB see this [webpage](https://ruby-doc.org/stdlib-3.0.0/libdoc/erb/rdoc/ERB.html) for some information about the power of embedded Ruby.
 
 ## Prompt Directives
 

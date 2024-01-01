@@ -1,6 +1,7 @@
 # lib/aia/prompt.rb
 
 require 'reline'
+require 'erb'
 
 class AIA::Prompt
   #
@@ -36,7 +37,11 @@ class AIA::Prompt
       @prompt.text.prepend @role.text
     end
 
-    process_prompt if build
+    if build
+      @prompt.text = render_erb(@prompt.text)   if AIA.config.erb?
+      @prompt.text = replace_env(@prompt.text)  if AIA.config.env?
+      process_prompt 
+    end
   end
 
 
@@ -74,6 +79,25 @@ class AIA::Prompt
       @prompt.build
       @prompt.save
     end
+  end
+
+
+  # inserts environmant variables and dynamic content into a prompt
+  # replaces patterns like $HOME and ${HOME} with the value of ENV['HOME']
+  # replaces patterns like $(shell command) with the output of the shell command
+  #
+  def replace_env(a_string)
+    a_string.gsub(/\$(\w+|\{\w+\})/) do |match|
+      ENV[match.tr('$', '').tr('{}', '')]
+    end.gsub(/\$\((.*?)\)/) do |match|
+      `#{match[2..-2]}`.chomp
+    end
+  end
+
+
+  # You are just asking for trouble!
+  def render_erb(a_string)
+    ERB.new(a_string).result(binding)
   end
 
 
