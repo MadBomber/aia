@@ -1,14 +1,15 @@
 # AI Assistant (AIA)
 
-`aia` is a command-line utility that integrates prameterized prompt management with generative AI (gen-AI) execution.
+`aia` is a command-line utility that facilitates interaction with AI models. It automates the management of pre-compositional prompts and executes generative AI (Gen-AI) commands on those prompts.
 
-Uses the gem "prompt_manager" to manage the prompts sent to the `mods` command-line utility.  Uses the command line tools "ripgrep" to search for prompts to send and "fzf" to select the prompts that match the search term.
+It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt` CLI utilities. It utilizes "ripgrep" for searching for prompt files.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
-**Most Recent Change**
+**Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
-v0.4.3 - Added the --env and --erb options.  Prompts can now be dynamic.
-v0.4.2 - Added a --role option to be prepended to a primary prompt.
-v0.4.1 - Added --chat and --speak options.  Prompt directives are now supported.
+v0.5.0 - Breaking changes: 
+- `--config` is now `--config_file`
+- `--env` is now `--shell`
+- `--output` is now `--out_file`
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -16,15 +17,20 @@ v0.4.1 - Added --chat and --speak options.  Prompt directives are now supported.
 
   - [Installation](#installation)
   - [Usage](#usage)
-  - [System Environment Variables (envar)](#system-environment-variables-envar)
-    - [System Environment Variables inside of a Prompt](#system-environment-variables-inside-of-a-prompt)
+  - [Configuration Using Envars](#configuration-using-envars)
+  - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
+      - [Access to System Environment Variables](#access-to-system-environment-variables)
+      - [Dynamic Shell Commands](#dynamic-shell-commands)
   - [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
   - [Prompt Directives](#prompt-directives)
+    - [`aia` Specific Directive Commands](#aia-specific-directive-commands)
+      - [//config](#config)
+    - [Backend Directive Commands](#backend-directive-commands)
   - [All About ROLES](#all-about-roles)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
   - [Shell Completion](#shell-completion)
-  - [Ny Most Powerful Prompt](#ny-most-powerful-prompt)
+  - [My Most Powerful Prompt](#my-most-powerful-prompt)
   - [Development](#development)
   - [Contributing](#contributing)
   - [License](#license)
@@ -91,7 +97,7 @@ ARGUMENTS
 
 OPTIONS
        --chat begin a chat session with the backend after the initial prompt response;  will
-              set --no-output so that the backend response comes to STDOUT.
+              set --no-out_file so that the backend response comes to STDOUT.
 
        --completion SHELL_NAME
 
@@ -101,7 +107,7 @@ OPTIONS
               Invokes an editor on the prompt file.  You can make changes to the prompt file,
               save it and the newly saved prompt will be processed by the backend.
 
-       --env  This option tells aia to replace references to system environment variables in
+       --shell  This option tells aia to replace references to system environment variables in
               the prompt with the value of the envar.  envars are like $HOME and ${HOME} in
               this example their occurance will be replaced by the value of ENV[‘HOME’].
               Also the dynamic shell command in the pattern $(shell command) will be executed
@@ -153,7 +159,7 @@ OPTIONS
        -m, --[no]-markdown
               Format with Markdown - default is true
 
-       -o, --[no]-output PATH_TO_OUTPUT_FILE
+       -o, --[no]-out_file PATH_TO_OUTPUT_FILE
               Out FILENAME - default is ./temp.md
 
        -p, --prompts PATH_TO_DIRECTORY
@@ -202,8 +208,8 @@ OpenAI ACCOUNT IS REQUIRED
 
 USAGE NOTES
        aia is designed for flexibility, allowing users to pass prompt ids and context files
-       as arguments. Some options change the behavior of the output, such as --output for
-       specifying a file or --no-output for disabling file output in favor of standard output
+       as arguments. Some options change the behavior of the output, such as ---out_file for
+       specifying a file or --no-out_file for disabling file output in favor of standard output
        (STDPIT).
 
        The --completion option displays a script that enables prompt ID auto-completion for
@@ -250,9 +256,9 @@ AUTHOR
 AIA                                       2024-01-01                                   aia(1)
 ```
 
-## System Environment Variables (envar)
+## Configuration Using Envars
 
-The `aia` configuration defaults can be over-ridden by envars with the prefix "AIA_" followed by the config item name also in uppercase. All configuration items can be over-ridden in this way by an envar.  The following table show a few examples.
+The `aia` configuration defaults can be over-ridden by system environment variables *(envars)* with the prefix "AIA_" followed by the config item name also in uppercase. All configuration items can be over-ridden in this way by an envar.  The following table show a few examples.
 
 | Config Item   | Default Value | envar key |
 | ------------- | ------------- | --------- |
@@ -265,58 +271,123 @@ The `aia` configuration defaults can be over-ridden by envars with the prefix "A
 | log_file      | ~/.prompts/_prompts.log | AIA_LOG_FILE |
 | markdown      | true          | AIA_MARKDOWN |
 | model         | gpt-4-1106-preview | AIA_MODEL |
-| output_file   | temp.md       | AIA_OUTPUT_FILE |
+| out_file       | STDOUT        | AIA_OUT_FILE |
 | prompts_dir   | ~/.prompts    | AIA_PROMPTS_DIR |
 | VERBOSE       | FALSE         | AIA_VERBOSE |
 
 
-See the `@options` hash in the `cli.rb` file for a complete list.  There are some config items that do not necessarily make sense for use as an envar over-ride.  For example if you set `export AIA_DUMP=yaml` then `aia` would dump a config file in HAML format and exit every time it is ran until you finally did `unset AIA_DUMP`
+See the `@options` hash in the `cli.rb` file for a complete list.  There are some config items that do not necessarily make sense for use as an envar over-ride.  For example if you set `export AIA_DUMP=yaml` then `aia` would dump a config file in YAML format and exit every time it is ran until you finally did `unset AIA_DUMP`
 
 In addition to these config items for `aia` the optional command line parameters for the backend prompt processing utilities (mods and sgpt) can also be set using envars with the "AIA_" prefix.  For example "export AIA_TOPP=1.0" will set the "--topp 1.0" command line option for the `mods` utility when its used as the backend processor.
 
-### System Environment Variables inside of a Prompt
+## Shell Integration inside of a Prompt
 
-The cpmmand line option "--env" instructs `aia` to replace any system environment variable references in the prompt text with the value of the system envornment variable.  So patterns like $HOME and ${HOME} in the prompt will be replaced with the value of ENV['HOME'].
+Using the option `--shell` enables `aia` to access your terminal's shell environment from inside the prompt text.
 
-As an added bonus, dynamic content can be inserted into the prompt using the pattern $(shell command) where the output of the shell command will replace the $(...) pattern.
+#### Access to System Environment Variables
 
-That's enough power to get anyone into deep trouble.  Wait there's more coming.  Do you want a full programming language in your prompt?  Feel like running the prompt through ERB before sending it to the backend?  I've been thinking about it.  Should be a simple thing to do. Yes it was.
+`aia` can replace any system environment variable (envar) references in the prompt text with the value of the envar.  Patterns like $USER and ${USER} in the prompt will be replaced with that envar's value - the name of the user's account.  Any envar can be used.
+
+#### Dynamic Shell Commands
+
+Dynamic content can be inserted into the prompt using the pattern $(shell command) where the output of the shell command will replace the $(...) pattern.
+
+Consider the power to tailoring a prompt to your specific operating system:
+
+```
+As a system administration on a $(uname -v) platform what is the best way to [DO_SOMETHING]
+```
+
+or insert content from a file in your home directory:
+
+```
+Given the following constraints $(cat ~/3_laws_of_robotics.txt) determine the best way to instruct my roomba to clean my kids room.
+```
+
 
 ## *E*mbedded *R*u*B*y (ERB)
 
-The --erb options now submits the prompt text through the ERB parser for execution before environment variable, keyword and dynamic shell replace take place.  With this much dynamic prompt manipulation we should really be able to get into trouble!
+The inclusion of dynamic content through the shell integration provided by the `--shell` option is significant.  `aia` also provides the full power of embedded Ruby code processing within the prompt text.
 
-If you are not a Rubyist and do not know about ERB see this [webpage](https://ruby-doc.org/stdlib-3.0.0/libdoc/erb/rdoc/ERB.html) for some information about the power of embedded Ruby.
+The `--erb` option turns the prompt text file into a fully functioning ERB template. The [Embedded Ruby (ERB) template syntax (2024)](https://bophin-com.ngontinh24.com/article/language-embedded-ruby-erb-template-syntax) provides a good overview of the syntax and power of ERB.
+
+Most websites that have information about ERB will give examples of how to use ERB to generate dynamice HTML content for web-based applications.  That is a common use case for ERB.  `aia` on the other hand uses ERB to generate dynamic prompt text.
+
 
 ## Prompt Directives
 
-Downstream processing directives were added to the `prompt_manager` gem at version 0.4.1.  These directives are lines in the prompt text file that begin with "//"
+Downstream processing directives were added to the `prompt_manager` gem used by `au` at version 0.4.1.  These directives are lines in the prompt text file that begin with "//" having this pattern:
 
-For example if a prompt text file has this line:
+```
+//command parameters
+```
 
-> //config chat? = true
+There is no space between the "//" and the command.
 
-That prompt will enter the chat loop regardles of the presents of a "--chat" CLI option or the setting of the envar AIA_CHAT.
+### `aia` Specific Directive Commands
 
-BTW did I mention that `aia` supports a chat mode where you can send an initial prompt to the backend and then followup the backend's reponse with additional keyboard entered questions, instructions, prompts etc.
+At this time `aia` only has one directive command `//config`
 
-See the [AIA::Directives](lib/aia/directives.rb) class to see what directives are available on the fromend within `aia`.
+#### //config
 
-See the [AIA::Mods](lib/aia/tools/mods.rb) class to for directives that are available to the `mods` backend.
+The `//config` directive within a prompt text file is used to tailor the specific configuration environment for the prompt.  All configuration items are available to have their values changed.  The order of value assignment for a configuration item starts with the default value which is replaced by the envar value which is replaced by the command line option value which is replaced by the value from the config file.
 
-See the [AIA::Sgpt](lib/aia/tools/sgpt.rb) class to for directives that are available to the `sgpt` backend.
+The `//config` is the last and final way of changing the value for a configuration item for a specific prompt.
+
+The switch options are treated like booleans.  They are either `true` or `false`. Their name within the context of a `//config` directive always ends with a "?" character - question mark.
+
+To set the value of a switch using ``//config` for example `--terse` or `--chat` to this:
+
+```
+//config chat? = true
+//config terse? = true
+```
+
+A configuration item such as `--out_file` or `--model` has an associated value on the command line.  To set that value with the `//config` directive do it like this:
+
+```
+//config model = gpt-3.5-turbo
+//config out_file = temp.md
+//config backend = mods
+```
+
+### Backend Directive Commands
+
+See the source code for the directives supported by the backends which at this time are configuration-based as well.
+
+- [mods](lib/aia/tools/mods.rb)
+- [sgpt](lib/aia/tools/sgpt.rb)
+
+FOr example `mods` has a configuration item `topp` which can be set by a directive in a prompt text file directly.
+
+```
+//topp 1.5
+```
+
+If `mods` is not the backend the `//topp` direcive is ignored.
 
 ## All About ROLES
 
-`aia` provides the "-r --role" CLI option to identify a prompt ID within your prompts directory which defines the context within which the LLM is to provide its response.  The text of the role ID is pre-pended to the text of the primary prompt to form a complete prompt to be processed by the backend.
+`aia` provides the `--role` CLI option to identify a prompt ID within your prompts directory which defines the context within which the LLM is to provide its response.  The text of the role ID is pre-pended to the text of the primary prompt to form a complete prompt to be processed by the backend.
 
 For example consider:
 
-> aia -r ruby refactor my_class.rb
+```shell
+aia -r ruby refactor my_class.rb
+```
 
-Within the prompts directory the contents of the text file `ruby.txt` will be pre-pre-pended to the contents of the refactor.txt file to produce a complete prompt.  That complete prompt will have any parameters then directives processed before sending the prompt text to the backend.
+Within the prompts directory the contents of the text file `ruby.txt` will be pre-pre-pended to the contents of the `refactor.txt` file to produce a complete prompt.  That complete prompt will have any parameters then directives processed before sending the prompt text to the backend.
 
-Note that "role" is just a way of saying add this prompt to the front of this other prompt.  The contents of the "role" prompt could be anything.  It does not necessarily have be an actual role.
+Note that `--role` is just a way of saying add this prompt text file to the front of this other prompt text file.  The contents of the "role" prompt could be anything.  It does not necessarily have be an actual role.
+
+You might consider have a sub-directory of your `prompts_dir` name `role` in which you put the prompt files that describe the various roles that you commonly use with your prompts.  `aia` fully supports a directory tree within the `prompts_dir` as a way of organization or classification of your different prompt text files.
+
+```shell
+aia -r roles/sw_eng doc_the_methods my_class.rb
+```
+
+In this example the prompt text file `$AIA_PROMPTS_DIR/roles/sw_eng.txt` is prepended to the prompt text file `$AIA_PROMPTS_DIR/doc_the_methods.txt`
+
 
 ### Other Ways to Insert Roles into Prompts
 
@@ -360,13 +431,15 @@ export EDITOR="subl -w"
 
 You can setup a completion function in your shell that will complete on the prompt_id saved in your `prompts_dir` - functions for `bash`, `fish` and `zsh` are available.  To get a copy of these functions do this:
 
-> `aia --completion bash`
+```shell
+aia --completion bash
+```
 
 If you're not a fan of "born again" replace `bash` with one of the others.
 
 Copy the function to a place where it can be installed in your shell's instance.  This might be a `.profile` or `.bashrc` file, etc.
 
-## Ny Most Powerful Prompt
+## My Most Powerful Prompt
 
 This is just between you and me so don't go blabbing this around to everyone.  My most power prompt is in a file named `ad_hoc.txt`. It looks like this:
 
@@ -376,11 +449,17 @@ Yep.  Just a single parameter for which I can provide a value of anything that i
 
 Which do you think is better to have in your shell's history file?
 
-> mods "As a certified public accountant specializing in forensic audit and analysis of public company financial statements, what do you think of mine?  What is the best way to hide the millions dracma that I've skimmed?"  < financial_statement.txt
+```shell
+mods "As a certified public accountant specializing in forensic audit and analysis of public company financial statements, what do you think of mine?  What is the best way to hide the millions dracma that I've skimmed?"  < financial_statement.txt
+```
 
-> aia ad_hoc financial_statement.txt
+or
 
-Both do the same thing; however, aia does not put the text of the prompt into the shell's history file.... of course the keyword/parameter value is saved in the prompt's JSON file and the prompt with the response are logged unless --no-log is specified; but, its not messing up the shell history!
+```shell
+aia ad_hoc financial_statement.txt
+```
+
+Both do the same thing; however, `aia` does not put the text of the prompt into the shell's history file.... of course the keyword/parameter value is saved in the prompt's JSON file and the prompt with the response are logged unless `--no-log` is specified; but, its not messing up the shell history!
 
 ## Development
 
@@ -394,16 +473,9 @@ I've designed `aia` so that it should be easy to integrate other backend LLM pro
 
 When you find problems with `aia` please note them as an issue.  This thing was written mostly by a human and you know how error prone humans are.  There should be plenty of errors to find.
 
-Also I'm interested in doing more with the prompt directives.  I'm thinking that there is a way to include dynamic content into the prompt computationally.  Maybe something like tjos wpi;d be easu tp dp:
+I've been thinking that the REGEX used to identify a keyword within a prompt could be a configuration item.  I chose to use square brackets and uppercase in the default regex; maybe, you have a collection of prompt files that use some other regex.  Why should it be one way and not the other.
 
-> //insert url https://www.whitehouse.gov/briefing-room/
-> //insert file path_to_file.txt
-
-or maybe incorporating the contents of system environment variables into prompts using $UPPERCASE or $(command) or ${envar_name} patterns.
-
-I've also been thinking that the REGEX used to identify a keyword within a prompt could be a configuration item.  I chose to use square brackets and uppercase in the default regex; maybe, you have a collection of prompt files that use some other regex.  Why should it be one way and not the other.
-
-Also I'm not happy with the way where I hve some command line options for external command hard coded.  I think they should be part of the configuration as well.  For example the way I'm using `rg` and `fzf` may not be the way that you want to use them.
+Also I'm not happy with the way where I a some command line options for external command hard coded.  I think they should be part of the configuration as well.  For example the way I'm using `rg` and `fzf` may not be the way that you want to use them.
 
 ## License
 

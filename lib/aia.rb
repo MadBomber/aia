@@ -1,7 +1,24 @@
 # lib/aia.rb
 
-require 'debug_me'
-include DebugMe
+def tramp_require(what, &block)
+  loaded, require_result = false, nil
+
+  begin
+    require_result = require what
+    loaded = true
+    puts "Loaded"
+  rescue Exception => ex
+    # Do nothing
+  end
+
+  yield if loaded and block_given?
+
+  require_result
+end
+
+tramp_require('debug_me') {
+  include DebugMe
+}
 
 require 'hashie'
 require 'pathname'

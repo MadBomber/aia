@@ -26,6 +26,7 @@ class AIA::Mods < AIA::Tools
     http-proxy 
     max-retries
     max-tokens 
+    model
     no-cache
     no-limit  
     quiet      

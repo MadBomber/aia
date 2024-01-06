@@ -12,6 +12,7 @@ class AIA::Prompt
   class Fake
     def id          = '_fake_'
     def path        = '_fake_'
+    def text        = ''
     def keywords    = []
     def directives  = []
     def to_s        = ''
@@ -41,7 +42,7 @@ class AIA::Prompt
 
     if build
       @prompt.text = render_erb(@prompt.text)   if AIA.config.erb?
-      @prompt.text = replace_env(@prompt.text)  if AIA.config.env?
+      @prompt.text = replace_env(@prompt.text)  if AIA.config.shell?
       process_prompt 
     end
   end
@@ -230,7 +231,7 @@ class AIA::Prompt
       "--header-first",
       "--prompt='Search term: '",
       '--delimiter :',
-      "--preview 'cat $PROMPTS_DIR/{1}.txt'",
+      "--preview 'cat #{AIA.config.prompts_dir}/{1}.txt'",
       "--preview-window=down:50%:wrap"
     ].join(' ') 
 

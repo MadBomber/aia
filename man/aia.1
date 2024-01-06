@@ -23,7 +23,7 @@ External options are optional\.  Anything that follow \[lq] \-\- \[lq] will be s
 .SH OPTIONS
 .TP
 \fB\-\-chat\fR
-begin a chat session with the backend after the initial prompt response;  will set \-\-no\-output so that the backend response comes to STDOUT\.
+begin a chat session with the backend after the initial prompt response;  will set \-\-no\-out\[ru]file so that the backend response comes to STDOUT\.
 .TP
 \fB\-\-completion\fR \fISHELL\[ru]NAME\fP
 .TP
@@ -32,7 +32,7 @@ begin a chat session with the backend after the initial prompt response;  will s
 \fB\-e\fR, \fB\-\-edit\fR
 Invokes an editor on the prompt file\.  You can make changes to the prompt file, save it and the newly saved prompt will be processed by the backend\.
 .TP
-\fB\-\-env\fR
+\fB\-\-shell\fR
 This option tells \fBaia\fR to replace references to system environment variables in the prompt with the value of the envar\.  envars are like \[Do]HOME and \[Do]\[lC]HOME\[rC] in this example their occurance will be replaced by the value of ENV\[lB]\[oq]HOME\[cq]\[rB]\.  Also the dynamic shell command in the pattern \[Do](shell command) will be executed and its output replaces its pattern\.  It does not matter if your shell uses different patters than BASH since the replacement is being done within a Ruby context\.
 .TP
 \fB\-\-erb\fR
@@ -53,7 +53,7 @@ Print Version \- default is false
 \fB\-b\fR, \fB\-\-\[lB]no\[rB]\-backend\fR \fILLM TOOL\fP
 Specify the backend prompt resolver \- default is mods
 .TP
-\fB\-c\fR, \fB\-\-config\fR \fIPATH\[ru]TO\[ru]CONFIG\[ru]FILE\fP
+\fB\-c\fR, \fB\-\-config\[ru]file\fR \fIPATH\[ru]TO\[ru]CONFIG\[ru]FILE\fP
 Load Config File \- default is nil
 .TP
 \fB\-d\fR, \fB\-\-debug\fR
@@ -74,7 +74,7 @@ Log FILEPATH \- default is \[Do]HOME\[sl]\.prompts\[sl]prompts\.log
 \fB\-m\fR, \fB\-\-\[lB]no\[rB]\-markdown\fR
 Format with Markdown \- default is true
 .TP
-\fB\-o\fR, \fB\-\-\[lB]no\[rB]\-output\fR \fIPATH\[ru]TO\[ru]OUTPUT\[ru]FILE\fP
+\fB\-o\fR, \fB\-\-\[lB]no\[rB]\-out\[ru]file\fR \fIPATH\[ru]TO\[ru]OUTPUT\[ru]FILE\fP
 Out FILENAME \- default is \.\[sl]temp\.md
 .TP
 \fB\-p\fR, \fB\-\-prompts\fR \fIPATH\[ru]TO\[ru]DIRECTORY\fP
@@ -109,7 +109,7 @@ Currently there is not specific standard for name of the OpenAI key\.  Some prog
 To acquire an OpenAI access key, first create an account on the OpenAI platform, where further documentation is available\.
 .SH USAGE NOTES
 .PP
-\fBaia\fR is designed for flexibility, allowing users to pass prompt ids and context files as arguments\. Some options change the behavior of the output, such as \fB\-\-output\fR for specifying a file or \fB\-\-no\-output\fR for disabling file output in favor of standard output (STDPIT)\.
+\fBaia\fR is designed for flexibility, allowing users to pass prompt ids and context files as arguments\. Some options change the behavior of the output, such as \fB\-\-out\[ru]file\fR for specifying a file or \fB\-\-no\-out\[ru]file\fR for disabling file output in favor of standard output (STDPIT)\.
 .PP
 The \fB\-\-completion\fR option displays a script that enables prompt ID auto\-completion for bash, zsh, or fish shells\. It\[cq]s crucial to integrate the script into the shell\[cq]s runtime to take effect\.
 .PP

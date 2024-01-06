@@ -1,4 +1,11 @@
 ## [Unreleased]
+## [0.5.0] 2024-01-05
+- breaking changes:
+    - changed `--config` to `--config_file`
+    - changed `--env` to `--shell`
+    - changed `--output` to `--out_file`
+        - changed default `out_file` to `STDOUT`
+
 ## [0.4.3] 2023-12-31
 - added --env to process embedded system environment variables and shell commands within a prompt.
 - added --erb to process Embedded RuBy within a prompt because have embedded shell commands will only get you in a trouble.  Having ERB will really get you into trouble.  Remember the simple prompt is usually the best prompt.

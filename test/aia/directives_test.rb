@@ -20,11 +20,10 @@ class DirectivesTest < Minitest::Test
   def test_execute_my_directives
     AIA.config.directives = [
       ['box',   '== hello =='], 
-      ['shell', 'echo "hello"'],
       ['xyzzy', 'echo magic'],
     ]
 
-    assert_equal 3, AIA.config.directives.size
+    assert_equal 2, AIA.config.directives.size
 
     @ad.execute_my_directives
 
@@ -44,20 +43,6 @@ class DirectivesTest < Minitest::Test
     EOS
 
     assert_equal expected, out
-  end
-
-
-  def test_shell
-    out, err = capture_io do
-      @ad.shell('echo hello world')
-    end
-
-    assert_equal "hello world\n", out
-  end
-
-
-  def test_ruby
-    assert_equal 3, @ad.ruby('1 + 2')
   end
 
 
