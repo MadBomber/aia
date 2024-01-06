@@ -21,6 +21,12 @@ class AIA::Main
 
     AIA::Cli.new(args)
 
+    if AIA.config.debug?
+      debug_me('== CONFIG AFTER CLI =='){[
+        "AIA.config"
+      ]}
+    end
+
     @logger = AIA::Logging.new(AIA.config.log_file)
 
     @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
@@ -62,7 +68,7 @@ class AIA::Main
     @engine.execute_my_directives
 
     if AIA.config.chat?
-      AIA.config.output_file = STDOUT 
+      AIA.config.out_file = STDOUT 
       AIA.config.extra = "--quiet" if 'mods' == AIA.config.backend
     end
 
@@ -103,7 +109,7 @@ class AIA::Main
 
     result  = backend.run
 
-    AIA.config.output_file.write result
+    AIA.config.out_file.write result
 
     logger.prompt_result(@prompt, result)
 

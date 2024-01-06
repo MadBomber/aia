@@ -26,7 +26,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 ## OPTIONS
 
 `--chat`
-: begin a chat session with the backend after the initial prompt response;  will set --no-output so that the backend response comes to STDOUT.
+: begin a chat session with the backend after the initial prompt response;  will set --no-out_file so that the backend response comes to STDOUT.
 
 `--completion` *SHELL_NAME*
 : Show completion script for bash|zsh|fish - default is nil
@@ -37,7 +37,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-e`, `--edit`
 : Invokes an editor on the prompt file.  You can make changes to the prompt file, save it and the newly saved prompt will be processed by the backend.
 
-`--env`
+`--shell`
 : This option tells `aia` to replace references to system environment variables in the prompt with the value of the envar.  envars are like $HOME and ${HOME} in this example their occurance will be replaced by the value of ENV['HOME'].  Also the dynamic shell command in the pattern $(shell command) will be executed and its output replaces its pattern.  It does not matter if your shell uses different patters than BASH since the replacement is being done within a Ruby context.
 
 `--erb`
@@ -58,7 +58,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-b`, `--[no]-backend` *LLM TOOL*
 : Specify the backend prompt resolver - default is mods
 
-`-c`, `--config` *PATH_TO_CONFIG_FILE*
+`-c`, `--config_file` *PATH_TO_CONFIG_FILE*
 : Load Config File - default is nil
 
 `-d`, `--debug`
@@ -79,7 +79,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-m`, `--[no]-markdown`
 : Format with Markdown - default is true
 
-`-o`, `--[no]-output` *PATH_TO_OUTPUT_FILE*
+`-o`, `--[no]-out_file` *PATH_TO_OUTPUT_FILE*
 : Out FILENAME - default is ./temp.md
 
 `-p`, `--prompts` *PATH_TO_DIRECTORY*
@@ -115,7 +115,7 @@ To acquire an OpenAI access key, first create an account on the OpenAI platform,
 
 ## USAGE NOTES
 
-`aia` is designed for flexibility, allowing users to pass prompt ids and context files as arguments. Some options change the behavior of the output, such as `--output` for specifying a file or `--no-output` for disabling file output in favor of standard output (STDPIT).
+`aia` is designed for flexibility, allowing users to pass prompt ids and context files as arguments. Some options change the behavior of the output, such as `--out_file` for specifying a file or `--no-out_file` for disabling file output in favor of standard output (STDPIT).
 
 The `--completion` option displays a script that enables prompt ID auto-completion for bash, zsh, or fish shells. It's crucial to integrate the script into the shell's runtime to take effect.
 

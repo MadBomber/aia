@@ -36,10 +36,6 @@ class AIA::Directives
   end
 
 
-  def shell(what) = puts `#{what}`
-  def ruby(what)  = eval what
-
-
   # Allows a prompt to change its configuration environment
   def config(what)
     parts = what.split(' ')

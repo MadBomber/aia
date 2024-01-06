@@ -126,7 +126,7 @@ class AIA::Cli
       completion: [nil,       "--completion"],
       #
       edit?:      [false,     "-e --edit"],
-      env?:       [false,     "--env"],
+      shell?:     [false,     "--shell"],
       erb?:       [false,     "--erb"],
       debug?:     [false,     "-d --debug"],
       verbose?:   [false,     "-v --verbose"],
@@ -140,9 +140,9 @@ class AIA::Cli
       #
       role:       ['',        "-r --role"],
       #
-      config_file:[nil,                       "-c --config"],
+      config_file:[nil,                       "-c --config_file"],
       prompts_dir:["~/.prompts",              "-p --prompts"],
-      output_file:["temp.md",                 "-o --output --no-output"],
+      out_file:   [STDOUT,                    "-o --out_file --no-out_file"],
       log_file:   ["~/.prompts/_prompts.log", "-l --log --no-log"],
       #
       backend:    ['mods',    "-b --be --backend --no-backend"],

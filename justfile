@@ -109,10 +109,25 @@ module_gem := "/Users/dewayne/sandbox/git_repos/gem.just"
 module_version := "/Users/dewayne/just_modules/version.just"
 
 
+# Install Locally
+install: update_toc_in_readmen create_man_page test
+  rake install
+
+
+# Create the TOC
+update_toc_in_readmen:
+  rake toc
+
+
 # Preview man page
 preview_man_page:
   kramdown-man {{RR}}/man/aia.1.md
 
+
+# Run Unit Tests
+test:
+  rake test
+  
 
 # View man page
 view_man_page: create_man_page
