@@ -30,9 +30,19 @@ class AIA::Directives
 
 
   def box(what)
-    f   = what[0]
-    bar = "#{f}"*what.size
-    puts "#{bar}\n#{what}\n#{bar}"
+    STDERR.puts "== DEBUG == at box"
+
+    frame   = what[0]
+    bar     = "#{frame}"*what.size
+    result  = "#{bar}\n#{what}\n#{bar}\n"
+
+    STDERR.puts result
+    result
+  end
+
+
+  def show(what)
+    STDERR.puts "#{what} -=> #{AIA.config[what.to_s]}"
   end
 
 

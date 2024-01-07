@@ -30,6 +30,7 @@ require 'prompt_manager'
 require 'prompt_manager/storage/file_system_adapter'
 
 require_relative "aia/version"
+require_relative "aia/clause"
 require_relative "aia/main"
 require_relative "core_ext/string_wrap"
 

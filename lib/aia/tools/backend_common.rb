@@ -15,6 +15,8 @@ module AIA::BackendCommon
   def sanitize(input)
     Shellwords.escape(input)
   end
+
+
   def build_command
     @parameters += " --model #{AIA.config.model} " if AIA.config.model
     @parameters += AIA.config.extra
@@ -29,6 +31,10 @@ module AIA::BackendCommon
     @command
   end
 
+
+  # SMELL:  this limits backend directives to only
+  #         setting backend specific options
+  
   def set_parameter_from_directives
     AIA.config.directives.each do |entry|
       directive, value = entry
@@ -38,12 +44,23 @@ module AIA::BackendCommon
     end
   end
 
+
+  def chat_directive?
+    AIA.config.chat? && directive?
+  end
+
+
+  def directive?
+    text.split("\n").last.start_with? AIA::Prompt::DIRECTIVE_SIGNAL
+  end
+
+
   def run
     case @files.size
     when 0
-      @result = `#{build_command}`
+      @result = chat_directive? ? "okay" : `#{build_command}`
     when 1
-      @result = `#{build_command} < #{@files.first}`
+      @result = chat_directive? ? "okay" : `#{build_command} < #{@files.first}`
     else
       create_temp_file_with_contexts
       run_with_temp_file
@@ -53,8 +70,9 @@ module AIA::BackendCommon
     @result
   end
 
+
   def create_temp_file_with_contexts
-    @temp_file = Tempfile.new("#{self.class::COMMAND_NAME}-context")
+    @temp_file = Tempfile.new("#{meta.name}-context")
 
     @files.each do |file|
       content = File.read(file)
@@ -65,10 +83,12 @@ module AIA::BackendCommon
     @temp_file.close
   end
 
+
   def run_with_temp_file
     command = "#{build_command} < #{@temp_file.path}"
-    @result = `#{command}`
+    @result = chat_directive? ? "okay" : `#{command}`
   end
+
 
   def clean_up_temp_file
     @temp_file.unlink if @temp_file

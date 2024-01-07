@@ -124,14 +124,17 @@ class AIA::Main
 
   def lets_chat
     if 'mods' == AIA.config.backend
-      AIA.config.extra += " -C"
+      AIA.config.extra += " -C" unless AIA.config.extra.include?('-c')
     end
     
-    backend.text = ask_question_with_reline("\nFollow Up: ")
-    
+    backend.text = ask_question_with_reline("Follow Up: ")
+
+
     until backend.text.empty?
+      @engine.execute_my_directives
+
       if AIA.config.terse?
-        backend.text.prepend "Be terse in your response. "
+        backend.text.prepend "\nBe terse in your response.\n"
       end
       
       logger.info "Follow Up: #{backend.text}"
@@ -139,14 +142,15 @@ class AIA::Main
       
       speak response
 
-      puts "\nResponse: #{response}"
-      logger.info "Response: #{backend.run}"
+      puts "\nResponse:\n#{response.wrap(indent: 2)}"
+      
+      logger.info "\nResponse:\n#{backend.run}"
   
       # TODO: Allow user to enter a directive; loop
       #       until answer is not a directive
       #
       # while !directive do
-      backend.text = ask_question_with_reline("\nFollow Up: ")
+      backend.text = ask_question_with_reline("Follow Up: ")
       
       speak backend.text
 

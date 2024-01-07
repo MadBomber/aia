@@ -1,4 +1,7 @@
 ## [Unreleased]
+## [0.5.1]
+- under development. refactoring chat session.
+
 ## [0.5.0] 2024-01-05
 - breaking changes:
     - changed `--config` to `--config_file`

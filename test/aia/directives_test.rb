@@ -32,17 +32,15 @@ class DirectivesTest < Minitest::Test
 
 
   def test_box
-    out, err = capture_io do
-      @ad.box('== hello ==')
-    end
-
+    result = @ad.box('== hello ==')
+    
     expected = <<~EOS
       ===========
       == hello ==
       ===========
     EOS
 
-    assert_equal expected, out
+    assert_equal expected, result
   end
 
 

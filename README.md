@@ -37,6 +37,9 @@ v0.5.0 - Breaking changes:
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
 
+## WIki
+
+FYI [aia wiki](https://github.com/MadBomber/aia/wiki/home) is under development.  It will be the primary documentation source.  When completed this README file will be edited to take advantage of the greater power available in the wiki.
 
 ## Installation
 

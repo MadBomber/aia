@@ -18,7 +18,9 @@ class AIA::Prompt
     def to_s        = ''
   end
 
-  KW_HISTORY_MAX = 5
+  KW_HISTORY_MAX    = 5
+  COMMENT_SIGNAL    = '#'
+  DIRECTIVE_SIGNAL  = "//"
 
   attr_reader :prompt
 
@@ -293,8 +295,8 @@ class AIA::Prompt
     lines           = @prompt.text
                         .split("\n")
                         .reject{|a_line| 
-                          a_line.strip.start_with?('#') ||
-                          a_line.strip.start_with?('//')
+                          a_line.strip.start_with?(COMMENT_SIGNAL) ||
+                          a_line.strip.start_with?(DIRECTIVE_SIGNAL)
                         }
 
     # Remove empty lines at the start of the prompt
