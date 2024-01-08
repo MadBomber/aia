@@ -18,7 +18,6 @@ module AIA::BackendCommon
 
 
   def build_command
-    @parameters += " --model #{AIA.config.model} " if AIA.config.model
     @parameters += AIA.config.extra
 
     set_parameter_from_directives
@@ -51,7 +50,17 @@ module AIA::BackendCommon
 
 
   def directive?
-    text.split("\n").last.start_with? AIA::Prompt::DIRECTIVE_SIGNAL
+    debug_me{[
+      :text
+    ]}
+
+    if text.is_a?(Array)
+      t_array = text
+    else
+      t_array = text.split("\n")
+    end
+
+    t_array.last.start_with? AIA::Prompt::DIRECTIVE_SIGNAL
   end
 
 

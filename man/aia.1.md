@@ -43,9 +43,6 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `--erb`
 : If dynamic prompt content using $(...) wasn't enough here is ERB.  Embedded RUby.  <%= ruby code %> within a prompt will have its ruby code executed and the results of that execution will be inserted into the prompt.  I'm sure we will find a way to truly misuse this capability.  Remember, some say that the simple prompt is the best prompt.
 
-`--model` *NAME*
-: Name of the LLM model to use - default is gpt-4-1106-preview
-
 `--speak`
 : Simple implementation. Uses the "say" command to speak the response.  Fun with --chat
 

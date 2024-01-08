@@ -17,6 +17,8 @@ class AIA::Logging
               end
 
     configure_logger
+
+    AIA.config.tools.logger = self
   end
 
   def prompt_result(prompt, result)

@@ -120,8 +120,6 @@ class AIA::Cli
       directives: [[]],   # an empty Array as the default value
       extra:      [''],   # 
       #
-      model:      ["gpt-4-1106-preview",  "--llm --model"],
-      #
       dump:       [nil,       "--dump"],
       completion: [nil,       "--completion"],
       #

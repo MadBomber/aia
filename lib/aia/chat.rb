@@ -4,14 +4,16 @@ class AIA::Chat
   attr_accessor :prompt, :backend, :logger, :response
 
   def initialize(
-        prompt:,
-        backend:,
-        logger:
+        prompt:
       )
     @prompt   = prompt
-    @backend  = backend
-    @logger   = logger
+    @backend  = AIA.config.tools.backend
+    @logger   = AIA.config.tools.logger
+    @engine   = AIA::Directives.new(prompt: prompt)
     @response = ""
+
+    AIA.config.out_file = STDOUT 
+    AIA.config.extra = "--quiet" if 'mods' == AIA.config.backend
 
     Reline::HISTORY.clear
   end

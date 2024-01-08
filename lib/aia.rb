@@ -21,6 +21,7 @@ tramp_require('debug_me') {
 }
 
 require 'hashie'
+require 'os'
 require 'pathname'
 require 'reline'
 require 'shellwords'
@@ -32,6 +33,7 @@ require 'prompt_manager/storage/file_system_adapter'
 require_relative "aia/version"
 require_relative "aia/clause"
 require_relative "aia/main"
+require_relative "aia/chow_main"
 require_relative "core_ext/string_wrap"
 
 module AIA
@@ -46,7 +48,13 @@ module AIA
       #       flag could this turn into some kind of
       #       conversation REPL?
       
-      AIA::Main.new(args).call
+      AIA::ChowMain.new(args).call
+    end
+
+
+    def speak(what)
+      return unless AIA.config.speak?
+      system "say #{Shellwords.escape(what)}" if OS.osx?
     end
   end
 end

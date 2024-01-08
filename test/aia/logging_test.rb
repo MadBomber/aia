@@ -6,11 +6,16 @@ require 'logging'
 
 class LoggingTest < Minitest::Test
   def setup
+    AIA::Cli.new("--log_file test.log")
+    AIA.config.tools = {}
+
     @log_file_path = 'test.log'
     File.delete(@log_file_path) if File.exist?(@log_file_path)
 
     # Use an instance variable to store our Logging instance
     @logging = AIA::Logging.new(@log_file_path)
+
+    AIA.config.tools.logger = @logging
   end
 
 

@@ -21,6 +21,9 @@ class AIA::Main
 
     AIA::Cli.new(args)
 
+    AIA.config.tools = {}
+    
+
     if AIA.config.debug?
       debug_me('== CONFIG AFTER CLI =='){[
         "AIA.config"
@@ -40,37 +43,11 @@ class AIA::Main
   end
 
 
-  def speak(what)
-    return unless AIA.config.speak?
-    # MacOS uses the say command
-    system "say #{Shellwords.escape(what)}"
-  end
-
-
-  # Function to setup the Reline history with a maximum depth
-  def setup_reline_history(max_history_size=5)
-    Reline::HISTORY.clear
-    # Reline::HISTORY.max_size = max_history_size
-  end
-
-
-  # Function to prompt the user with a question using reline
-  def ask_question_with_reline(prompt)
-    answer = Reline.readline(prompt)
-    Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
-    answer
-    rescue Interrupt
-      ''
-  end
 
 
   def call
     @engine.execute_my_directives
 
-    if AIA.config.chat?
-      AIA.config.out_file = STDOUT 
-      AIA.config.extra = "--quiet" if 'mods' == AIA.config.backend
-    end
 
     # TODO: the context_files left in the @arguments array
     #       should be verified BEFORE asking the user for a
@@ -96,10 +73,8 @@ class AIA::Main
     abort "backend not found: #{AIA.config.backend}" if backend_klass.nil?
 
     the_prompt = @prompt.to_s
-
-    if AIA.config.terse?
-      the_prompt.prepend "Be terse in your response. "
-    end
+    
+    the_prompt.prepend AIA::Clause::Terse if AIA.config.terse?
 
     @backend  = backend_klass.new(
                   text:           the_prompt,
@@ -112,50 +87,5 @@ class AIA::Main
     AIA.config.out_file.write result
 
     logger.prompt_result(@prompt, result)
-
-
-    if AIA.config.chat?
-      setup_reline_history
-      speak result
-      lets_chat 
-    end
-  end
-
-
-  def lets_chat
-    if 'mods' == AIA.config.backend
-      AIA.config.extra += " -C" unless AIA.config.extra.include?('-c')
-    end
-    
-    backend.text = ask_question_with_reline("Follow Up: ")
-
-
-    until backend.text.empty?
-      @engine.execute_my_directives
-
-      if AIA.config.terse?
-        backend.text.prepend "\nBe terse in your response.\n"
-      end
-      
-      logger.info "Follow Up: #{backend.text}"
-      response = backend.run
-      
-      speak response
-
-      puts "\nResponse:\n#{response.wrap(indent: 2)}"
-      
-      logger.info "\nResponse:\n#{backend.run}"
-  
-      # TODO: Allow user to enter a directive; loop
-      #       until answer is not a directive
-      #
-      # while !directive do
-      backend.text = ask_question_with_reline("Follow Up: ")
-      
-      speak backend.text
-
-      # execute the directive
-      # end
-    end
   end
 end
