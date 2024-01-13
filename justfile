@@ -112,6 +112,7 @@ mods_delete_all:
 module_repo := "/Users/dewayne/sandbox/git_repos/repo.just"
 module_gem := "/Users/dewayne/sandbox/git_repos/gem.just"
 module_version := "/Users/dewayne/just_modules/version.just"
+module_git := "/Users/dewayne/just_modules/git.just"
 
 
 # Install Locally
@@ -184,4 +185,10 @@ alias inc := bump
 # Module version
 @version what='' args='':
   just -d . -f {{module_version}} {{what}} {{args}}
+
+
+
+# Module git
+@git what='' args='':
+  just -d . -f {{module_git}} {{what}} {{args}}
 

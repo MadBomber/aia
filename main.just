@@ -14,6 +14,7 @@ with ~/.justfile
 module repo /Users/dewayne/sandbox/git_repos/repo.just
 module gem /Users/dewayne/sandbox/git_repos/gem.just
 module version /Users/dewayne/just_modules/version.just
+module git /Users/dewayne/just_modules/git.just
 
 
 # Install Locally
