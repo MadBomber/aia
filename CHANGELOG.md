@@ -1,5 +1,9 @@
 ## [Unreleased]
-- Fixed completion functions by updating $PROMPT_DIR to $AIA_PROMPTS_DIR to match the documentation.
+
+## [0.5.1] 2024-01-12
+- removed a wicked puts "loaded" statement
+- fixed missed code when the options were changed to --out_file and --log_file
+- fixed completion functions by updating $PROMPT_DIR to $AIA_PROMPTS_DIR to match the documentation.
 
 ## [0.5.0] 2024-01-05
 - breaking changes:

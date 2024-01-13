@@ -143,7 +143,7 @@ class AIA::Cli
       config_file:[nil,                       "-c --config_file"],
       prompts_dir:["~/.prompts",              "-p --prompts"],
       out_file:   [STDOUT,                    "-o --out_file --no-out_file"],
-      log_file:   ["~/.prompts/_prompts.log", "-l --log --no-log"],
+      log_file:   ["~/.prompts/_prompts.log", "-l --log_file --no-log_file"],
       #
       backend:    ['mods',    "-b --be --backend --no-backend"],
     }

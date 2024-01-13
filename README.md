@@ -107,7 +107,8 @@ OPTIONS
               Invokes an editor on the prompt file.  You can make changes to the prompt file,
               save it and the newly saved prompt will be processed by the backend.
 
-       --shell  This option tells aia to replace references to system environment variables in
+       --shell
+              This option tells aia to replace references to system environment variables in
               the prompt with the value of the envar.  envars are like $HOME and ${HOME} in
               this example their occurance will be replaced by the value of ENV[‘HOME’].
               Also the dynamic shell command in the pattern $(shell command) will be executed
@@ -138,7 +139,7 @@ OPTIONS
        -b, --[no]-backend LLM TOOL
               Specify the backend prompt resolver - default is mods
 
-       -c, --config PATH_TO_CONFIG_FILE
+       -c, --config_file PATH_TO_CONFIG_FILE
               Load Config File - default is nil
 
        -d, --debug
@@ -153,7 +154,7 @@ OPTIONS
        -h, --help
               Show Usage - default is false
 
-       -l, --[no]-log PATH_TO_LOG_FILE
+       -l, --[no]-log_file PATH_TO_LOG_FILE
               Log FILEPATH - default is $HOME/.prompts/prompts.log
 
        -m, --[no]-markdown
@@ -208,9 +209,9 @@ OpenAI ACCOUNT IS REQUIRED
 
 USAGE NOTES
        aia is designed for flexibility, allowing users to pass prompt ids and context files
-       as arguments. Some options change the behavior of the output, such as ---out_file for
-       specifying a file or --no-out_file for disabling file output in favor of standard output
-       (STDPIT).
+       as arguments. Some options change the behavior of the output, such as --out_file for
+       specifying a file or --no-out_file for disabling file output in favor of standard
+       output (STDPIT).
 
        The --completion option displays a script that enables prompt ID auto-completion for
        bash, zsh, or fish shells. It’s crucial to integrate the script into the shell’s
