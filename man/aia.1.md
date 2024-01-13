@@ -73,7 +73,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-h`, `--help`
 : Show Usage - default is false
 
-`-l`, `--[no]-log` *PATH_TO_LOG_FILE*
+`-l`, `--[no]-log_file` *PATH_TO_LOG_FILE*
 : Log FILEPATH - default is $HOME/.prompts/prompts.log
 
 `-m`, `--[no]-markdown`
