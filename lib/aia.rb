@@ -6,7 +6,6 @@ def tramp_require(what, &block)
   begin
     require_result = require what
     loaded = true
-    puts "Loaded"
   rescue Exception => ex
     # Do nothing
   end
