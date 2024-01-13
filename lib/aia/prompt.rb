@@ -150,6 +150,11 @@ class AIA::Prompt
 
   # Function to prompt the user with a question using reline
   def ask_question_with_reline(prompt)
+    if prompt.start_with?("\n")
+      puts
+      prompt = prompt[1..]
+    end
+
     answer = Reline.readline(prompt)
     Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
     answer
@@ -178,7 +183,7 @@ class AIA::Prompt
     if default&.empty?
       user_prompt = "\n-=> "
     else
-      user_prompt = "\n(#{default}) -=>"
+      user_prompt = "\n(#{default}) -=> "
     end
 
     a_string = ask_question_with_reline(user_prompt)
