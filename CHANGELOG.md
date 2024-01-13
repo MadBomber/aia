@@ -1,4 +1,7 @@
 ## [Unreleased]
+## [0.5.?] 2024-01-12
+- fixing screwed up branch
+
 ## [0.5.0] 2024-01-05
 - breaking changes:
     - changed `--config` to `--config_file`
