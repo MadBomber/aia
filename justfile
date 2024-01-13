@@ -69,6 +69,11 @@ project     := "`basename $RR`"
   backup_envrc.rb
 
 
+# Delete all mods saved conversations
+mods_delete_all:
+  mods -l | awk '{print $1}' | xargs -I {} mods -d {}
+
+
 #################################################
 ## Private recipes
 
