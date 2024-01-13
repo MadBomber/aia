@@ -1,4 +1,6 @@
 ## [Unreleased]
+- Fixed completion functions by updating $PROMPT_DIR to $AIA_PROMPTS_DIR to match the documentation.
+
 ## [0.5.0] 2024-01-05
 - breaking changes:
     - changed `--config` to `--config_file`
