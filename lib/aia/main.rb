@@ -56,6 +56,11 @@ class AIA::Main
 
   # Function to prompt the user with a question using reline
   def ask_question_with_reline(prompt)
+    if prompt.start_with?("\n")
+      puts
+      prompt = prompt[1..]
+    end
+
     answer = Reline.readline(prompt)
     Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
     answer
@@ -109,6 +114,12 @@ class AIA::Main
 
     result  = backend.run
 
+    if STDOUT == AIA.config.out_file
+      result  = result.wrap(indent: 2)
+    end
+
+    # TODO: consider using glow to render markdown to
+    #       terminal `brew install glow`
     AIA.config.out_file.write result
 
     logger.prompt_result(@prompt, result)
@@ -139,7 +150,7 @@ class AIA::Main
       
       speak response
 
-      puts "\nResponse: #{response}"
+      puts "\nResponse:\n#{response.wrap(indent: 2)}"
       logger.info "Response: #{backend.run}"
   
       # TODO: Allow user to enter a directive; loop
