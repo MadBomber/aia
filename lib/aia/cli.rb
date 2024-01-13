@@ -236,7 +236,7 @@ class AIA::Cli
           arguments.slice!(index,1)
         else
           if switch.include?('-no-')
-            AIA.config[option_sym] = switch.include?('output') ? STDOUT : nil
+            AIA.config[option_sym] = switch.include?('out_file') ? STDOUT : nil
             arguments.slice!(index,1)
           else
             AIA.config[option_sym] = arguments[index + 1]
