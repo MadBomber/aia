@@ -44,29 +44,6 @@ class AIA::Glow < AIA::Tools
 
 
   def run
-    markdown_content = ""
-    return markdown_content unless content || file_path
-
-    # Determine whether to use a temporary file or an existing file
-    if @file_path && File.exist?(@file_path)
-      # Using the existing file, so don't delete it afterward
-      command = build_command(@file_path)
-      markdown_content = `#{command}`
-    else
-      # Use a temporary file
-      Tempfile.create(['glow', '.md']) do |file|
-        file.write(@content)
-        file.close
-        command = build_command(file.path)
-        markdown_content = `#{command}`
-      end
-    end
-
-    markdown_content
-  end
-
-
-  def run_now
     return unless content || file_path
 
     if @file_path && File.exist?(@file_path)

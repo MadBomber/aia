@@ -132,7 +132,7 @@ class AIA::Main
 
     if STDOUT == AIA.config.out_file
       if AIA.config.render?
-        AIA::Glow.new(content: result).run_now
+        AIA::Glow.new(content: result).run
       else
         result  = result.wrap(indent: 2)
         AIA.config.out_file.write result
@@ -140,7 +140,7 @@ class AIA::Main
     else
       AIA.config.out_file.write result
       if AIA.config.render?
-        AIA::Glow.new(file_path: AIA.config.out_file).run_now
+        AIA::Glow.new(file_path: AIA.config.out_file).run
       end
     end
 
