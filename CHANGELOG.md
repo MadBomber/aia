@@ -1,4 +1,5 @@
 ## [Unreleased]
+- adding ability to render markdown to the terminal
 
 ## [0.5.2] 2024-01-13
 - wrap response when its going to the terminal

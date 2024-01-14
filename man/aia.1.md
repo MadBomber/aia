@@ -46,6 +46,9 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `--model` *NAME*
 : Name of the LLM model to use - default is gpt-4-1106-preview
 
+`--render`
+: Render markdown to the terminal using the external tool "glow" - default: false
+
 `--speak`
 : Simple implementation. Uses the "say" command to speak the response.  Fun with --chat
 
@@ -134,6 +137,13 @@ Detail discussion on individual prompt directives is TBD.  Most likely it will b
 - [mods](https://github.com/charmbracelet/mods) for more information on `mods` - AI for the command line, built for pipelines.  LLM based AI is really good at interpreting the output of commands and returning the results in CLI friendly text formats like Markdown. Mods is a simple tool that makes it super easy to use AI on the command line and in your pipelines. Mods works with [OpenAI](https://platform.openai.com/account/api-keys) and [LocalAI](https://github.com/go-skynet/LocalAI)
 
 - [sgpt](https://github.com/tbckr/sgpt) (aka shell-gpt) is a powerful command-line interface (CLI) tool designed for seamless interaction with OpenAI models directly from your terminal. Effortlessly run queries, generate shell commands or code, create images from text, and more, using simple commands. Streamline your workflow and enhance productivity with this powerful and user-friendly CLI tool.
+
+- [fzf](https://github.com/junegunn/fzf) fzf is a general-purpose command-line fuzzy finder.  It's an interactive Unix filter for command-line that can be used with any list; files, command history, processes, hostnames, bookmarks, git commits, etc.
+
+- [ripgrep](https://github.com/BurntSushi/ripgrep) Search tool like grep and The Silver Searcher. It is a line-oriented search tool that recursively searches a directory tree for a regex pattern. By default, ripgrep will respect gitignore rules and automatically skip hidden files/directories and binary files. (To disable all automatic filtering by default, use rg -uuu.) ripgrep has first class support on Windows, macOS and Linux, with binary downloads available for every release. 
+
+- [glow](https://github.com/charmbracelet/glow) Render markdown on the CLI
+
 
 ## AUTHOR
 

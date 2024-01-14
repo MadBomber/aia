@@ -125,6 +125,9 @@ OPTIONS
        --model NAME
               Name of the LLM model to use - default is gpt-4-1106-preview
 
+       --render
+              Render markdown to the terminal using the external tool “glow” - default: false
+
        --speak
               Simple implementation. Uses the “say” command to speak the response.  Fun with
               --chat
@@ -250,6 +253,22 @@ SEE ALSO
                 Effortlessly run queries, generate shell commands or code, create images from
                 text, and more, using simple commands. Streamline your workflow and enhance
                 productivity with this powerful and user-friendly CLI tool.
+
+              • fzf <https://github.com/junegunn/fzf>
+                 fzf is a general-purpose command-line fuzzy finder.  It’s an interactive
+                Unix filter for command-line that can be used with any list; files, command
+                history, processes, hostnames, bookmarks, git commits, etc.
+
+              • ripgrep <https://github.com/BurntSushi/ripgrep>
+                 Search tool like grep and The Silver Searcher. It is a line-oriented search
+                tool that recursively searches a directory tree for a regex pattern. By
+                default, ripgrep will respect gitignore rules and automatically skip hidden
+                files/directories and binary files. (To disable all automatic filtering by
+                default, use rg -uuu.) ripgrep has first class support on Windows, macOS and
+                Linux, with binary downloads available for every release.
+
+              • glow <https://github.com/charmbracelet/glow>
+                 Render markdown on the CLI
 
 AUTHOR
        Dewayne VanHoozer <dvanhoozer@gmail.com>
@@ -402,31 +421,32 @@ When this prompt is processed, `aia` will ask you for a value for the keyword "R
 
 ## External CLI Tools Used
 
-```text
-External Tools Used
--------------------
-
 To install the external CLI programs used by aia:
-  brew install fzf mods rg
+  
+  brew install fzf mods rg glow
 
 fzf
   Command-line fuzzy finder written in Go
-  https://github.com/junegunn/fzf
+  [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf)
 
 mods
   AI on the command-line
-  https://github.com/charmbracelet/mods
+  [https://github.com/charmbracelet/mods](https://github.com/charmbracelet/mods)
 
 rg
   Search tool like grep and The Silver Searcher
-  https://github.com/BurntSushi/ripgrep
+  [https://github.com/BurntSushi/ripgrep](https://github.com/BurntSushi/ripgrep)
+
+glow
+  Render markdown on the CLI
+  [https://github.com/charmbracelet/glow](https://github.com/charmbracelet/glow)
 
 A text editor whose executable is setup in the
 system environment variable 'EDITOR' like this:
 
-export EDITOR="subl -w"
+  export EDITOR="subl -w"
 
-```
+
 
 ## Shell Completion
 
