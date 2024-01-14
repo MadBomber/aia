@@ -58,6 +58,7 @@ class AIA::Main
   def ask_question_with_reline(prompt)
     if prompt.start_with?("\n")
       puts
+      puts
       prompt = prompt[1..]
     end
 
@@ -111,19 +112,9 @@ class AIA::Main
                   files:          AIA.config.arguments    # FIXME: want validated context files
                 )
 
-
-    result  = backend.run
-
-    if STDOUT == AIA.config.out_file
-      result  = result.wrap(indent: 2)
-    end
-
-    # TODO: consider using glow to render markdown to
-    #       terminal `brew install glow`
-    AIA.config.out_file.write result
+    result = get_and_display_result(the_prompt)
 
     logger.prompt_result(@prompt, result)
-
 
     if AIA.config.chat?
       setup_reline_history
@@ -133,34 +124,75 @@ class AIA::Main
   end
 
 
-  def lets_chat
-    if 'mods' == AIA.config.backend
-      AIA.config.extra += " -C"
-    end
-    
-    backend.text = ask_question_with_reline("\nFollow Up: ")
-    
-    until backend.text.empty?
-      if AIA.config.terse?
-        backend.text.prepend "Be terse in your response. "
-      end
-      
-      logger.info "Follow Up: #{backend.text}"
-      response = backend.run
-      
-      speak response
+  def get_and_display_result(the_prompt_text)
+    backend.text  = the_prompt_text
+    result        = backend.run
 
-      puts "\nResponse:\n#{response.wrap(indent: 2)}"
-      logger.info "Response: #{backend.run}"
-  
+    AIA.config.out_file.write "\nResponse:\n"
+
+    if STDOUT == AIA.config.out_file
+      if AIA.config.render?
+        AIA::Glow.new(content: result).run
+      else
+        result  = result.wrap(indent: 2)
+        AIA.config.out_file.write result
+      end
+    else
+      AIA.config.out_file.write result
+      if AIA.config.render?
+        AIA::Glow.new(file_path: AIA.config.out_file).run
+      end
+    end
+
+    result
+  end
+
+
+  def log_the_follow_up(the_prompt_text, result)
+    logger.info "Follow Up:\n#{the_prompt_text}"
+    logger.info "Response:\n#{result}"
+  end
+
+
+  def add_continue_option
+    if 'mods' == AIA.config.backend
+      continue_option   = " -C"
+      AIA.config.extra += continue_option unless AIA.config.extra.include?(continue_option)
+    end
+  end
+
+
+  def insert_terse_phrase(a_string)
+    if AIA.config.terse?
+      a_string.prepend "Be terse in your response. "
+    end
+
+    a_string
+  end
+
+
+  def lets_chat
+    add_continue_option    
+
+    the_prompt_text = ask_question_with_reline("\nFollow Up: ")
+    
+    until the_prompt_text.empty?
+      the_prompt_text = insert_terse_phrase(the_prompt_text)
+      
+      result = get_and_display_result(the_prompt_text)
+
+      log_the_follow_up(the_prompt_text, result)
+
+      speak result
+
+
       # TODO: Allow user to enter a directive; loop
       #       until answer is not a directive
       #
       # while !directive do
-      backend.text = ask_question_with_reline("\nFollow Up: ")
       
-      speak backend.text
-
+      the_prompt_text = ask_question_with_reline("\nFollow Up: ")
+      
       # execute the directive
       # end
     end

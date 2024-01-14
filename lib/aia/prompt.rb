@@ -152,6 +152,7 @@ class AIA::Prompt
   def ask_question_with_reline(prompt)
     if prompt.start_with?("\n")
       puts
+      puts
       prompt = prompt[1..]
     end
 

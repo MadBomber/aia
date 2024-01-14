@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+## [0.5.3] 2024-01-14
+- adding ability to render markdown to the terminal using the "glow" CLI utility
+
 ## [0.5.2] 2024-01-13
 - wrap response when its going to the terminal
 

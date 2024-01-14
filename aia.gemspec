@@ -10,14 +10,17 @@ Gem::Specification.new do |spec|
 
   spec.summary      = "AI Assistant (aia) a command-line (CLI) utility"
   spec.description  = <<~EOS
-    A command-line AI Assistante (aia) that provides
-    parameterized prompt management (via the prompt_manager gem) to
-    various backend gen-AI processes.  aia currently supports the "mods"
-    CLI tool.  aia uses "ripgrep" and "fzf" CLI utilities 
-    to search for and select prompt files to send to the backend gen-AI
-    tool along with supported context files.  Example usage: "aia refactor my_class.rb" 
-    where "refactor" is the prompt ID for the file "refactor.txt" from your
-    RPROMPTS_DIR
+    `aia` - the AI Assistant - is a command-line (CLI) tool for
+    interfacing with generative AI (gen-AI/GPT) backends.  Its designed
+    to provide developers with the ability to issue prompts, receive
+    AI-generated responses, and incorporate additional context from files
+    such as Ruby source code. It supports configuration and customization
+    for different environments, includes options for output formats like
+    markdown rendering or spoken responses, and allows dynamic content
+    generation within prompts such as shell integration and embedded
+    Ruby. With `aia`, users benefit from a simplified setup process and
+    an extendable interaction model with AI, suitable for a range of
+    command-line tasks.
   EOS
 
   spec.homepage     = "https://github.com/MadBomber/aia"
@@ -50,6 +53,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "semver2"
   spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"
+  spec.add_dependency "tty-screen"
+  spec.add_dependency "tty-spinner"
 
   spec.add_development_dependency "minitest"
   spec.add_development_dependency 'amazing_print'
