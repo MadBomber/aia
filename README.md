@@ -5,6 +5,10 @@
 It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt` CLI utilities. It utilizes "ripgrep" for searching for prompt files.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
+v0.5.3
+- `--render` will render markdown formatted content to the terminal using the `glow` CLI utility.
+- fixes to some terminal UI stuff like AI response is not being wrapped to the terminal width to make for easier reading.
+- fixed the completion functions to use the correct $AIA_PROMPTS_DIR envar
 
 v0.5.0 - Breaking changes: 
 - `--config` is now `--config_file`
