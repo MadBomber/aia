@@ -5,6 +5,11 @@
 It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt` CLI utilities. It utilizes "ripgrep" for searching for prompt files.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
+v0.5.6
+- Directives within a chat session follow up are now available
+- when the `--shell` option is set access to envars and shell scripts are availabe in a chat session follow up prompt
+- when the `--erb` option is set, access to ERB-based dynamic content is available in a chat session follow up prompt.
+
 v0.5.3
 - `--render` will render markdown formatted content to the terminal using the `glow` CLI utility.
 - fixes to some terminal UI stuff like AI response is not being wrapped to the terminal width to make for easier reading.
@@ -25,11 +30,14 @@ v0.5.0 - Breaking changes:
   - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
       - [Access to System Environment Variables](#access-to-system-environment-variables)
       - [Dynamic Shell Commands](#dynamic-shell-commands)
+      - [Chat Session Use](#chat-session-use)
   - [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
+    - [Chat Session Behavior](#chat-session-behavior)
   - [Prompt Directives](#prompt-directives)
     - [`aia` Specific Directive Commands](#aia-specific-directive-commands)
       - [//config](#config)
     - [Backend Directive Commands](#backend-directive-commands)
+    - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
   - [All About ROLES](#all-about-roles)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
@@ -101,7 +109,15 @@ ARGUMENTS
 
 OPTIONS
        --chat begin a chat session with the backend after the initial prompt response;  will
-              set --no-out_file so that the backend response comes to STDOUT.
+              set --no-out_file so that the backend response comes to STDOUT.  After the
+              initial prompt is processed, you will be asked to provide a follow up.  Just
+              enter whatever is appropriate terminating your input with a RETURN.  The
+              backend will provide a response to you follow up and ask you again if you have
+              another follow up. This back and forth chatting will continue until you enter a
+              RETURN without any other content - an empty follow up prompt.  You may also
+              enter a directive to be processed after which another follow up is requested.
+              If you have the --shell and/or the --erb options set you may use those tools
+              within your follow up to provide dynamic content.
 
        --completion SHELL_NAME
 
@@ -280,6 +296,7 @@ AUTHOR
 AIA                                       2024-01-01                                   aia(1)
 ```
 
+
 ## Configuration Using Envars
 
 The `aia` configuration defaults can be over-ridden by system environment variables *(envars)* with the prefix "AIA_" followed by the config item name also in uppercase. All configuration items can be over-ridden in this way by an envar.  The following table show a few examples.
@@ -328,6 +345,15 @@ or insert content from a file in your home directory:
 Given the following constraints $(cat ~/3_laws_of_robotics.txt) determine the best way to instruct my roomba to clean my kids room.
 ```
 
+#### Chat Session Use
+
+When you use the `--shell` option to start a chat session, shell integration is available in your follow up prompts.  Suppose you started up a chat session using a roll of "Ruby Expert" expecting to chat about changes that could be made to a specific class BUT you forgot to include the class source file as part of the context when you got started.  You could enter this as your follow up prompt to this to keep going:
+
+```
+The class I want to chat about refactoring is this one: $(cat my_class.rb)
+```
+
+That inserts the entire class source file into your follow up prompt.  You can continue chatting with you AI Assistant avout changes to the class.
 
 ## *E*mbedded *R*u*B*y (ERB)
 
@@ -337,6 +363,11 @@ The `--erb` option turns the prompt text file into a fully functioning ERB templ
 
 Most websites that have information about ERB will give examples of how to use ERB to generate dynamice HTML content for web-based applications.  That is a common use case for ERB.  `aia` on the other hand uses ERB to generate dynamic prompt text.
 
+### Chat Session Behavior
+
+In a chat session whether started by the `--chat` option or its equivalent with a directive within a prompt text file behaves a little differently w/r/t its binding and local variable assignments.  Since a chat session by definition has multiple prompts, setting a local variable in one prompt and expecting it to be available in a subsequent prompt does not work.  You need to use instance variables to accomplish this prompt to prompt carry over of information.
+
+Also since follow up prompts are expected to be a single thing - sentence or paragraph - terminated by a single return, its likely that ERB enhance will be of benefit; but, you may find a use for it.
 
 ## Prompt Directives
 
@@ -389,6 +420,17 @@ FOr example `mods` has a configuration item `topp` which can be set by a directi
 ```
 
 If `mods` is not the backend the `//topp` direcive is ignored.
+
+### Using Directives in Chat Sessions
+
+Whe you are in a chat session, you may use a directive as a follow up prompt.  For example if you started the chat session with the option `--terse` expecting to get short answers from the backend; but, then you decide that you want more comprehensive answers you may do this:
+
+```
+//config terse? false
+```
+
+The directive is executed and a new follow up prompt can be entered with a more lengthy response generated from the backend.
+
 
 ## All About ROLES
 

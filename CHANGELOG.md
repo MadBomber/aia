@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.5.6] 2024-01-15
+- Adding processing for directives, shell integration and erb to the follow up prompt in a chat session
+- some code refactoring.
+
 ## [0.5.3] 2024-01-14
 - adding ability to render markdown to the terminal using the "glow" CLI utility
 

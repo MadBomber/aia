@@ -5,6 +5,7 @@ module AIA ; end
 require_relative 'config'
 require_relative 'cli'
 require_relative 'directives'
+require_relative 'dynamic_content'
 require_relative 'prompt'
 require_relative 'logging'
 require_relative 'tools'
@@ -13,6 +14,7 @@ require_relative 'tools'
 # of a single class.
 
 class AIA::Main
+  include AIA::DynamicContent
 
   attr_accessor :logger, :tools, :backend
 
@@ -33,7 +35,8 @@ class AIA::Main
 
     @prompt = AIA::Prompt.new.prompt
 
-    @engine = AIA::Directives.new(prompt: @prompt)
+
+    @directives_processor = AIA::Directives.new 
 
     # TODO: still should verify that the tools are ion the $PATH
     # tools.class.verify_tools
@@ -71,7 +74,7 @@ class AIA::Main
 
 
   def call
-    @engine.execute_my_directives
+    @directives_processor.execute_my_directives
 
     if AIA.config.chat?
       AIA.config.out_file = STDOUT 
@@ -170,31 +173,41 @@ class AIA::Main
     a_string
   end
 
+  
+  def handle_directives(the_prompt_text)
+    signal = PromptManager::Prompt::DIRECTIVE_SIGNAL
+    result = the_prompt_text.start_with?(signal)
+
+    if result
+      parts       = the_prompt_text[signal.size..].split(' ')
+      directive   = parts.shift
+      parameters  = parts.join(' ')
+      AIA.config.directives << [directive, parameters]
+      @directives_processor.execute_my_directives
+    end
+
+    result
+  end
+
 
   def lets_chat
     add_continue_option    
 
     the_prompt_text = ask_question_with_reline("\nFollow Up: ")
-    
+
     until the_prompt_text.empty?
-      the_prompt_text = insert_terse_phrase(the_prompt_text)
-      
-      result = get_and_display_result(the_prompt_text)
+      the_prompt_text   = render_erb(the_prompt_text) if AIA.config.erb?
+      the_prompt_text   = render_env(the_prompt_text) if AIA.config.shell?
 
-      log_the_follow_up(the_prompt_text, result)
+      unless handle_directives(the_prompt_text)
+        the_prompt_text = insert_terse_phrase(the_prompt_text)
+        result          = get_and_display_result(the_prompt_text)
 
-      speak result
+        log_the_follow_up(the_prompt_text, result)
+        speak result
+      end
 
-
-      # TODO: Allow user to enter a directive; loop
-      #       until answer is not a directive
-      #
-      # while !directive do
-      
       the_prompt_text = ask_question_with_reline("\nFollow Up: ")
-      
-      # execute the directive
-      # end
     end
   end
 end

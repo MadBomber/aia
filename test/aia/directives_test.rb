@@ -3,17 +3,9 @@
 require_relative  '../test_helper'
 
 class DirectivesTest < Minitest::Test
-  # Utility Class for a Prompt Mock
-  class MockPrompt
-    def directives
-      []
-    end
-  end
-
-
   def setup
     AIA::Cli.new("")
-    @ad = AIA::Directives.new(prompt: MockPrompt.new)
+    @ad = AIA::Directives.new
   end
 
 
