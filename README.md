@@ -6,7 +6,7 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 v0.5.6
-- Directives within a chat session follow up are not available
+- Directives within a chat session follow up are now available
 - when the `--shell` option is set access to envars and shell scripts are availabe in a chat session follow up prompt
 - when the `--erb` option is set, access to ERB-based dynamic content is available in a chat session follow up prompt.
 
