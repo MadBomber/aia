@@ -172,18 +172,12 @@ class AIA::Main
   end
 
 
-  def handle_erb(the_prompt_text)
-    # TODO: evaluate ERB within the string.  don't worry about
-    #       being dry and using a method in a different class
-    # NOTE: The binding context may change completely.  will need
-    #       to test that be setting a variable in one follow up and
-    #       accessing it in another.
-
-    the_prompt_text
+  def render_erb(the_prompt_text)
+    ERB.new(the_prompt_text).result(binding)
   end
 
 
-  def handle_shall(the_prompt_text)
+  def handle_shell(the_prompt_text)
     # TODO: process the shell integration
 
     the_prompt_text
@@ -212,7 +206,7 @@ class AIA::Main
     the_prompt_text = ask_question_with_reline("\nFollow Up: ")
 
     until the_prompt_text.empty?
-      the_prompt_text   = handle_erb(   the_prompt_text) if AIA.config.erb?
+      the_prompt_text   = render_erb(   the_prompt_text) if AIA.config.erb?
       the_prompt_text   = handle_shell( the_prompt_text) if AIA.config.shell?
 
       unless handle_directives(the_prompt_text)
