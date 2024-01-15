@@ -26,7 +26,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 ## OPTIONS
 
 `--chat`
-: begin a chat session with the backend after the initial prompt response;  will set --no-out_file so that the backend response comes to STDOUT.
+: begin a chat session with the backend after the initial prompt response;  will set --no-out_file so that the backend response comes to STDOUT.  After the initial prompt is processed, you will be asked to provide a follow up.  Just enter whatever is appropriate terminating your input with a RETURN.  The backend will provide a response to you follow up and ask you again if you have another follow up. This back and forth chatting will continue until you enter a RETURN without any other content - an empty follow up prompt.  You may also enter a directive to be processed after which another follow up is requested.  If you have the `--shell` and/or the `--erb` options set you may use those tools within your follow up to provide dynamic content.
 
 `--completion` *SHELL_NAME*
 : Show completion script for bash|zsh|fish - default is nil
