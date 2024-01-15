@@ -1,9 +1,12 @@
 # lib/aia/prompt.rb
 
 require 'reline'
-require 'erb'
+
+require_relative 'dynamic_content'
 
 class AIA::Prompt
+  include AIA::DynamicContent
+
   #
   # used when no prompt_id is provided but there
   # are extra parameters that need to be passed
@@ -92,25 +95,6 @@ class AIA::Prompt
     @prompt.text  = original_text
     @prompt.save
     @prompt.text  = temp_text
-  end
-
-
-  # inserts environment variables (envars) and dynamic content into a prompt
-  # replaces patterns like $HOME and ${HOME} with the value of ENV['HOME']
-  # replaces patterns like $(shell command) with the output of the shell command
-  #
-  def render_env(a_string)
-    a_string.gsub(/\$(\w+|\{\w+\})/) do |match|
-      ENV[match.tr('$', '').tr('{}', '')]
-    end.gsub(/\$\((.*?)\)/) do |match|
-      `#{match[2..-2]}`.chomp
-    end
-  end
-
-
-  # You are just asking for trouble!
-  def render_erb(a_string)
-    ERB.new(a_string).result(binding)
   end
 
 

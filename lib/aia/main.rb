@@ -5,6 +5,7 @@ module AIA ; end
 require_relative 'config'
 require_relative 'cli'
 require_relative 'directives'
+require_relative 'dynamic_content'
 require_relative 'prompt'
 require_relative 'logging'
 require_relative 'tools'
@@ -13,6 +14,7 @@ require_relative 'tools'
 # of a single class.
 
 class AIA::Main
+  include AIA::DynamicContent
 
   attr_accessor :logger, :tools, :backend
 
@@ -169,27 +171,6 @@ class AIA::Main
     end
 
     a_string
-  end
-
-
-  # Need to use instance variables in assignments
-  # to maintain binding from one follow up prompt
-  # to another.
-  def render_erb(the_prompt_text)
-    ERB.new(the_prompt_text).result(binding)
-  end
-
-
-  # inserts environment variables (envars) and dynamic content into a prompt
-  # replaces patterns like $HOME and ${HOME} with the value of ENV['HOME']
-  # replaces patterns like $(shell command) with the output of the shell command
-  #
-  def render_env(a_string)
-    a_string.gsub(/\$(\w+|\{\w+\})/) do |match|
-      ENV[match.tr('$', '').tr('{}', '')]
-    end.gsub(/\$\((.*?)\)/) do |match|
-      `#{match[2..-2]}`.chomp
-    end
   end
 
   
