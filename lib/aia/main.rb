@@ -171,30 +171,50 @@ class AIA::Main
   end
 
 
+  def handle_erb(the_prompt_text)
+    # TODO: evaluate ERB
+    
+    the_prompt_text
+  end
+
+
+  def handle_shall(the_prompt_text)
+    # TODO: process the shell integration
+
+    the_prompt_text
+  end
+
+  
+  def handle_directives(the_prompt_text)
+    result = the_prompt_text.start_with?(AIA::Prompt::DIRECTIVE_SIGNAL)
+
+    if result
+      # TODO: get the directives class to handle this directive
+      # TODO: if its still here pass the directive to the backend for handling
+    end
+  
+    result
+  end
+
+
   def lets_chat
     add_continue_option    
 
     the_prompt_text = ask_question_with_reline("\nFollow Up: ")
-    
+
     until the_prompt_text.empty?
-      the_prompt_text = insert_terse_phrase(the_prompt_text)
-      
-      result = get_and_display_result(the_prompt_text)
+      the_prompt_text   = handle_erb(   the_prompt_text) if AIA.config.erb?
+      the_prompt_text   = handle_shell( the_prompt_text) if AIA.config.shell?
 
-      log_the_follow_up(the_prompt_text, result)
+      unless handle_directives(the_prompt_text)
+        the_prompt_text = insert_terse_phrase(the_prompt_text)
+        result          = get_and_display_result(the_prompt_text)
 
-      speak result
+        log_the_follow_up(the_prompt_text, result)
+        speak result
+      end
 
-
-      # TODO: Allow user to enter a directive; loop
-      #       until answer is not a directive
-      #
-      # while !directive do
-      
       the_prompt_text = ask_question_with_reline("\nFollow Up: ")
-      
-      # execute the directive
-      # end
     end
   end
 end

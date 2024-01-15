@@ -12,9 +12,12 @@ module AIA::BackendCommon
     build_command
   end
 
+
   def sanitize(input)
     Shellwords.escape(input)
   end
+
+
   def build_command
     @parameters += " --model #{AIA.config.model} " if AIA.config.model
     @parameters += AIA.config.extra
@@ -29,6 +32,7 @@ module AIA::BackendCommon
     @command
   end
 
+
   def set_parameter_from_directives
     AIA.config.directives.each do |entry|
       directive, value = entry
@@ -38,6 +42,7 @@ module AIA::BackendCommon
     end
   end
 
+
   def run
     case @files.size
     when 0
@@ -45,32 +50,9 @@ module AIA::BackendCommon
     when 1
       @result = `#{build_command} < #{@files.first}`
     else
-      create_temp_file_with_contexts
-      run_with_temp_file
-      clean_up_temp_file
+      @result = %x[cat #{@files.join(' ')} | #{build_command}]
     end
 
     @result
-  end
-
-  def create_temp_file_with_contexts
-    @temp_file = Tempfile.new("#{self.class::COMMAND_NAME}-context")
-
-    @files.each do |file|
-      content = File.read(file)
-      @temp_file.write(content)
-      @temp_file.write("\n")
-    end
-
-    @temp_file.close
-  end
-
-  def run_with_temp_file
-    command = "#{build_command} < #{@temp_file.path}"
-    @result = `#{command}`
-  end
-
-  def clean_up_temp_file
-    @temp_file.unlink if @temp_file
   end
 end
