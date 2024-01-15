@@ -33,7 +33,8 @@ class AIA::Main
 
     @prompt = AIA::Prompt.new.prompt
 
-    @engine = AIA::Directives.new(prompt: @prompt)
+
+    @directives_processor = AIA::Directives.new 
 
     # TODO: still should verify that the tools are ion the $PATH
     # tools.class.verify_tools
@@ -71,7 +72,7 @@ class AIA::Main
 
 
   def call
-    @engine.execute_my_directives
+    @directives_processor.execute_my_directives
 
     if AIA.config.chat?
       AIA.config.out_file = STDOUT 
@@ -172,8 +173,12 @@ class AIA::Main
 
 
   def handle_erb(the_prompt_text)
-    # TODO: evaluate ERB
-    
+    # TODO: evaluate ERB within the string.  don't worry about
+    #       being dry and using a method in a different class
+    # NOTE: The binding context may change completely.  will need
+    #       to test that be setting a variable in one follow up and
+    #       accessing it in another.
+
     the_prompt_text
   end
 
@@ -186,13 +191,17 @@ class AIA::Main
 
   
   def handle_directives(the_prompt_text)
-    result = the_prompt_text.start_with?(AIA::Prompt::DIRECTIVE_SIGNAL)
+    signal = PromptManager::Prompt::DIRECTIVE_SIGNAL
+    result = the_prompt_text.start_with?(signal)
 
     if result
-      # TODO: get the directives class to handle this directive
-      # TODO: if its still here pass the directive to the backend for handling
+      parts       = the_prompt_text[signal.size..].split(' ')
+      directive   = parts.shift
+      parameters  = parts.join(' ')
+      AIA.config.directives << [directive, parameters]
+      @directives_processor.execute_my_directives
     end
-  
+
     result
   end
 

@@ -45,6 +45,8 @@ class AIA::Prompt
       @prompt.text = replace_env(@prompt.text)  if AIA.config.shell?
       process_prompt 
     end
+
+    AIA.config.directives = @prompt.directives
   end
 
 

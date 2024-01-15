@@ -2,13 +2,15 @@
 
 require 'hashie'
 
+=begin
+  AIA.config.directives is an Array of Arrays.  An
+  entry looks like this:
+    [directive, parameters]
+  where both are String objects
+=end
+
+
 class AIA::Directives
-  def initialize( prompt: )
-    @prompt = prompt  # PromptManager::Prompt instance
-    AIA.config.directives = @prompt.directives
-  end
-
-
   def execute_my_directives
     return if AIA.config.directives.nil? || AIA.config.directives.empty?
     
