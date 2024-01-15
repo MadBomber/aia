@@ -42,7 +42,7 @@ class AIA::Prompt
 
     if build
       @prompt.text = render_erb(@prompt.text)   if AIA.config.erb?
-      @prompt.text = replace_env(@prompt.text)  if AIA.config.shell?
+      @prompt.text = render_env(@prompt.text)   if AIA.config.shell?
       process_prompt 
     end
 
@@ -95,11 +95,11 @@ class AIA::Prompt
   end
 
 
-  # inserts environmant variables and dynamic content into a prompt
+  # inserts environment variables (envars) and dynamic content into a prompt
   # replaces patterns like $HOME and ${HOME} with the value of ENV['HOME']
   # replaces patterns like $(shell command) with the output of the shell command
   #
-  def replace_env(a_string)
+  def render_env(a_string)
     a_string.gsub(/\$(\w+|\{\w+\})/) do |match|
       ENV[match.tr('$', '').tr('{}', '')]
     end.gsub(/\$\((.*?)\)/) do |match|

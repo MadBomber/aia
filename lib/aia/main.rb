@@ -172,15 +172,24 @@ class AIA::Main
   end
 
 
+  # Need to use instance variables in assignments
+  # to maintain binding from one follow up prompt
+  # to another.
   def render_erb(the_prompt_text)
     ERB.new(the_prompt_text).result(binding)
   end
 
 
-  def handle_shell(the_prompt_text)
-    # TODO: process the shell integration
-
-    the_prompt_text
+  # inserts environment variables (envars) and dynamic content into a prompt
+  # replaces patterns like $HOME and ${HOME} with the value of ENV['HOME']
+  # replaces patterns like $(shell command) with the output of the shell command
+  #
+  def render_env(a_string)
+    a_string.gsub(/\$(\w+|\{\w+\})/) do |match|
+      ENV[match.tr('$', '').tr('{}', '')]
+    end.gsub(/\$\((.*?)\)/) do |match|
+      `#{match[2..-2]}`.chomp
+    end
   end
 
   
@@ -206,8 +215,8 @@ class AIA::Main
     the_prompt_text = ask_question_with_reline("\nFollow Up: ")
 
     until the_prompt_text.empty?
-      the_prompt_text   = render_erb(   the_prompt_text) if AIA.config.erb?
-      the_prompt_text   = handle_shell( the_prompt_text) if AIA.config.shell?
+      the_prompt_text   = render_erb(the_prompt_text) if AIA.config.erb?
+      the_prompt_text   = render_env(the_prompt_text) if AIA.config.shell?
 
       unless handle_directives(the_prompt_text)
         the_prompt_text = insert_terse_phrase(the_prompt_text)
