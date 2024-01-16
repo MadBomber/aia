@@ -57,7 +57,7 @@ Print Version \- default is false
 Specify the backend prompt resolver \- default is mods
 .TP
 \fB\-c\fR, \fB\-\-config\[ru]file\fR \fIPATH\[ru]TO\[ru]CONFIG\[ru]FILE\fP
-Load Config File \- default is nil
+Load Config File\. both YAML and TOML formats are supported\.  Also ERB is supported\.  For example \[ti]\[sl]aia\[ru]config\.yml\.erb will be processed through ERB and then through YAML\.  The result will be written out to \[ti]\[sl]aia\[ru]config\.yml so that you can manually verify that you got what you wanted from the ERB processing\.
 .TP
 \fB\-d\fR, \fB\-\-debug\fR
 Turn On Debugging \- default is false
