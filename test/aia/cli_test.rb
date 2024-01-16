@@ -1,6 +1,8 @@
 # test/aia/cli_test.rb
 # frozen_string_literal: true
 
+require 'stringio'
+
 require_relative '../test_helper'
 require_relative '../../lib/aia/cli'
 
@@ -90,6 +92,26 @@ class CliTest < Minitest::Test
   end
 
 
+  def test_replace_erb_in_config_file
+    expected_result = "configuration: value"
+
+    erb_path = Pathname.new(__dir__) + "config_files/test_config.yml.erb"
+    yml_path = Pathname.new(__dir__) + "config_files/test_config.yml"
+
+    yml_path.delete if yml_path.exist?
+
+    AIA.config.config_file = erb_path
+
+    @cli.replace_erb_in_config_file
+    
+    # Read the content of the resulting file
+    result_content = yml_path.read
+    
+    assert_equal expected_result,         result_content.strip
+    assert_equal AIA.config.config_file,  yml_path.to_s
+  end
+
+
   # Test `load_config_file` method
   # This test should mock the filesystem operations
   def test_load_config_file
@@ -169,6 +191,25 @@ class CliTest < Minitest::Test
     cli.check_for :verbose?
     assert_equal true, AIA.config.verbose?
     assert AIA.config.arguments.empty?
+  end
+
+
+  # Test `show_verbose_usage` method
+  def test_show_verbose_usage
+    cli = AIA::Cli.new('-v')
+
+    # Mocking backend calls
+    backend_output = "Currently selected Backend"
+    AIA::Cli.stub(:`, backend_output) do
+      output = capture_io { cli.show_verbose_usage }.first.strip
+      
+      debug_me{[
+        :output,
+        :backend_output
+      ]}
+
+      assert output.include?(backend_output)
+    end
   end
 
 

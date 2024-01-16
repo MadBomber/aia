@@ -1,4 +1,6 @@
 ## [Unreleased]
+## [0.5.7] 2024-01-15
+- Added ERB processing to the config_file
 
 ## [0.5.6] 2024-01-15
 - Adding processing for directives, shell integration and erb to the follow up prompt in a chat session

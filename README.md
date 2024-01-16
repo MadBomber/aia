@@ -5,6 +5,9 @@
 It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt` CLI utilities. It utilizes "ripgrep" for searching for prompt files.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
+v0.5.7
+- Added ERB processing to config files that have the pattern any_file.ext.erb where ext is the real extension of the file.
+
 v0.5.6
 - Directives within a chat session follow up are now available
 - when the `--shell` option is set access to envars and shell scripts are availabe in a chat session follow up prompt
@@ -163,7 +166,10 @@ OPTIONS
               Specify the backend prompt resolver - default is mods
 
        -c, --config_file PATH_TO_CONFIG_FILE
-              Load Config File - default is nil
+              Load Config File. both YAML and TOML formats are supported.  Also ERB is
+              supported.  For example ~/aia_config.yml.erb will be processed through ERB and
+              then through YAML.  The result will be written out to ~/aia_config.yml so that
+              you can manually verify that you got what you wanted from the ERB processing.
 
        -d, --debug
               Turn On Debugging - default is false

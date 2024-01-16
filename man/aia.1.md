@@ -62,7 +62,7 @@ The aia command-line tool is an interface for interacting with an AI model backe
 : Specify the backend prompt resolver - default is mods
 
 `-c`, `--config_file` *PATH_TO_CONFIG_FILE*
-: Load Config File - default is nil
+: Load Config File. both YAML and TOML formats are supported.  Also ERB is supported.  For example ~/aia_config.yml.erb will be processed through ERB and then through YAML.  The result will be written out to ~/aia_config.yml so that you can manually verify that you got what you wanted from the ERB processing.
 
 `-d`, `--debug`
 : Turn On Debugging - default is false

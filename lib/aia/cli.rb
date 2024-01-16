@@ -97,7 +97,19 @@ class AIA::Cli
   end
 
 
+  def replace_erb_in_config_file
+    content = Pathname.new(AIA.config.config_file).read
+    content = ERB.new(content).result(binding)
+    AIA.config.config_file  = AIA.config.config_file.to_s.gsub('.erb', '')
+    Pathname.new(AIA.config.config_file).write content
+  end
+
+
   def load_config_file
+    if AIA.config.config_file.to_s.end_with?(".erb")
+      replace_erb_in_config_file
+    end
+
     AIA.config.config_file = Pathname.new(AIA.config.config_file)
     if AIA.config.config_file.exist?
       AIA.config.merge! parse_config_file
