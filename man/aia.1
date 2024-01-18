@@ -27,7 +27,8 @@ begin a chat session with the backend after the initial prompt response;  will s
 .TP
 \fB\-\-completion\fR \fISHELL\[ru]NAME\fP
 .TP
-\fB\-\-dump\fR \fIFORMAT\fP
+\fB\-\-dump\fR \fIPATH\[sl]TO\[sl]FILE\.ext\fP
+Dump the current configuration to a file in the format denoted by the file\[cq]s extension\.  Currently only \.yml, \.yaml and \.toml are acceptable file extensions\.  \fIIf the file exists, it will be over\-written without warning\.\fP
 .TP
 \fB\-e\fR, \fB\-\-edit\fR
 Invokes an editor on the prompt file\.  You can make changes to the prompt file, save it and the newly saved prompt will be processed by the backend\.
@@ -116,7 +117,7 @@ To acquire an OpenAI access key, first create an account on the OpenAI platform,
 .PP
 The \fB\-\-completion\fR option displays a script that enables prompt ID auto\-completion for bash, zsh, or fish shells\. It\[cq]s crucial to integrate the script into the shell\[cq]s runtime to take effect\.
 .PP
-The \fB\-\-dump\fR options will send the current configuration to STDOUT in the format requested\.  Both YAML and TOML formats are supported\.
+The \fB\-\-dump path\[sl]to\[sl]file\.ext\fR option will write the current configuration to a file in the format requested by the file\[cq]s extension\.  The following extensions are supported:  \.yml, \.yaml and \.toml
 .SH PROMPT DIRECTIVES
 .PP
 Within a prompt text file any line that begins with \[lq]\[sl]\[sl]\[rq] is considered a prompt directive\.  There are numerious prompt directives available\.  In the discussion above on the configuration you learned about the \[lq]\[sl]\[sl]config\[rq] directive\.

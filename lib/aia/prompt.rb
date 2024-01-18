@@ -3,10 +3,12 @@
 require 'reline'
 
 require_relative 'dynamic_content'
+require_relative 'user_query'
 
 class AIA::Prompt
   include AIA::DynamicContent
-
+  include AIA::UserQuery
+  
   #
   # used when no prompt_id is provided but there
   # are extra parameters that need to be passed
@@ -131,22 +133,6 @@ class AIA::Prompt
   def setup_reline_history(max_history_size=5)
     Reline::HISTORY.clear
     # Reline::HISTORY.max_size = max_history_size
-  end
-
-
-  # Function to prompt the user with a question using reline
-  def ask_question_with_reline(prompt)
-    if prompt.start_with?("\n")
-      puts
-      puts
-      prompt = prompt[1..]
-    end
-
-    answer = Reline.readline(prompt)
-    Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
-    answer
-    rescue Interrupt
-      ''
   end
 
 

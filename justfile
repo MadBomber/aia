@@ -116,7 +116,7 @@ module_git := "/Users/dewayne/just_modules/git.just"
 
 
 # Install Locally
-install: update_toc_in_readmen create_man_page test
+install: update_toc_in_readmen create_man_page flay
   rake install
 
 
@@ -128,6 +128,15 @@ update_toc_in_readmen:
 # Preview man page
 preview_man_page:
   kramdown-man {{RR}}/man/aia.1.md
+
+# Static Code Check
+flay: coverage
+  flay {{RR}}
+
+
+# View coverage report
+coverage: test
+  open {{RR}}/coverage/index.html
 
 
 # Run Unit Tests

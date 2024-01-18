@@ -1,4 +1,8 @@
 ## [Unreleased]
+
+## [0.5.8] 2024-01-17
+- Changed the behavior of the --dump option.  It must now be followed by path/to/file.ext where ext is a supported config file format: yml, yaml, toml
+
 ## [0.5.7] 2024-01-15
 - Added ERB processing to the config_file
 

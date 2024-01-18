@@ -31,8 +31,8 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `--completion` *SHELL_NAME*
 : Show completion script for bash|zsh|fish - default is nil
 
-`--dump` *FORMAT*
-: Dump a Config File in [yaml | toml] to STDOUT - default is nil
+`--dump` *PATH/TO/FILE.ext*
+: Dump the current configuration to a file in the format denoted by the file's extension.  Currently only .yml, .yaml and .toml are acceptable file extensions.  *If the file exists, it will be over-written without warning.*
 
 `-e`, `--edit`
 : Invokes an editor on the prompt file.  You can make changes to the prompt file, save it and the newly saved prompt will be processed by the backend.
@@ -122,7 +122,8 @@ To acquire an OpenAI access key, first create an account on the OpenAI platform,
 
 The `--completion` option displays a script that enables prompt ID auto-completion for bash, zsh, or fish shells. It's crucial to integrate the script into the shell's runtime to take effect.
 
-The `--dump` options will send the current configuration to STDOUT in the format requested.  Both YAML and TOML formats are supported.
+The `--dump path/to/file.ext` option will write the current configuration to a file in the format requested by the file's extension.  The following extensions are supported:  .yml, .yaml and .toml
+
 
 ## PROMPT DIRECTIVES
 

@@ -9,13 +9,15 @@ require_relative 'dynamic_content'
 require_relative 'prompt'
 require_relative 'logging'
 require_relative 'tools'
+require_relative 'user_query'
 
 # Everything is being handled within the context
 # of a single class.
 
 class AIA::Main
   include AIA::DynamicContent
-
+  include AIA::UserQuery
+  
   attr_accessor :logger, :tools, :backend
 
   def initialize(args= ARGV)    
@@ -44,9 +46,13 @@ class AIA::Main
 
 
   def speak(what)
-    return unless AIA.config.speak?
+    return false unless AIA.config.speak?
+    # TODO: Consider putting this into a thread
+    #       so that it can speak at the same time
+    #       the output is going to the screen
     # MacOS uses the say command
     system "say #{Shellwords.escape(what)}"
+    true
   end
 
 
@@ -54,22 +60,6 @@ class AIA::Main
   def setup_reline_history(max_history_size=5)
     Reline::HISTORY.clear
     # Reline::HISTORY.max_size = max_history_size
-  end
-
-
-  # Function to prompt the user with a question using reline
-  def ask_question_with_reline(prompt)
-    if prompt.start_with?("\n")
-      puts
-      puts
-      prompt = prompt[1..]
-    end
-
-    answer = Reline.readline(prompt)
-    Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
-    answer
-    rescue Interrupt
-      ''
   end
 
 

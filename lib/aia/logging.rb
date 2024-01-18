@@ -13,6 +13,9 @@ class AIA::Logging
                   'a'             # append to existing file
                 )
               else
+                # SMELL: Looks like you get logging whether you want it or not
+                # TODO: when path is nil create a fake logger
+                #       that does nothing
                 Logger.new(STDOUT) # Fall back to standard output if path is nil or invalid
               end
 

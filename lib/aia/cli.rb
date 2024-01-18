@@ -134,7 +134,7 @@ class AIA::Cli
       #
       model:      ["gpt-4-1106-preview",  "--llm --model"],
       #
-      dump:       [nil,       "--dump"],
+      dump_file:  [nil,       "--dump"],
       completion: [nil,       "--completion"],
       #
       chat?:      [false,     "--chat"],
@@ -173,7 +173,7 @@ class AIA::Cli
   def execute_immediate_commands
     show_usage        if AIA.config.help?
     show_version      if AIA.config.version?
-    dump_config_file  if AIA.config.dump
+    dump_config_file  if AIA.config.dump_file
     show_completion   if AIA.config.completion
   end
 
@@ -181,13 +181,16 @@ class AIA::Cli
   def dump_config_file
     a_hash = prepare_config_as_hash
 
-    case AIA.config.dump.downcase
-    when 'yml', 'yaml'
-      puts YAML.dump(a_hash)
-    when 'toml'
-      puts TomlRB.dump(a_hash)
+    dump_file = Pathname.new AIA.config.dump_file
+    extname   = dump_file.extname.to_s.downcase
+
+    case extname
+    when '.yml', '.yaml'
+      dump_file.write YAML.dump(a_hash)
+    when '.toml'
+      dump_file.write TomlRB.dump(a_hash)
     else
-      abort "Invalid config file format request.  Only #{CF_FORMATS.join(', ')} are supported."
+      abort "Invalid config file format (#{extname}) request.  Only #{CF_FORMATS.join(', ')} are supported."
     end
 
     exit
@@ -200,9 +203,10 @@ class AIA::Cli
     a_hash          = AIA.config.to_h
     a_hash['dump']  = nil
 
-    a_hash.delete('arguments')
-    a_hash.delete('config_file')
-
+    %w[ arguments config_file dump_file ].each do |unwanted_key|
+      a_hash.delete(unwanted_key)
+    end
+    
     a_hash
   end
 
@@ -252,8 +256,14 @@ class AIA::Cli
             AIA.config[option_sym] = switch.include?('out_file') ? STDOUT : nil
             arguments.slice!(index,1)
           else
-            AIA.config[option_sym] = arguments[index + 1]
-            arguments.slice!(index,2)
+            value = arguments[index + 1]
+            if value.nil? || value.start_with?('-')
+              STDERR.puts "ERROR: #{option_sym} requires a parameter value"
+              exit(1)
+            else
+              AIA.config[option_sym] = value
+              arguments.slice!(index,2)
+            end
           end
         end
         
@@ -349,4 +359,3 @@ class AIA::Cli
     end
   end
 end
-
