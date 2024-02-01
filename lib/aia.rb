@@ -23,7 +23,15 @@ require 'hashie'
 require 'pathname'
 require 'reline'
 require 'shellwords'
-require 'tempfile'
+require 'tempfile'    # SMELL: is this still being used?
+
+require 'tty-spinner'
+
+unless TTY::Spinner.new.respond_to?(:log)
+  # Allows messages to be sent to the console while
+  # the spinner is still spinning.
+  require_relative './core_ext/tty-spinner_log'
+end
 
 require 'prompt_manager'
 require 'prompt_manager/storage/file_system_adapter'
