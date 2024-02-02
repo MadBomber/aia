@@ -30,7 +30,11 @@ set dotenv-load             := false
 pwd         := env_var('PWD')
 
 me          := justfile()
-home        := env_var('HOME')
+
+home          := env_var('HOME')
+downloads_dir := env_var('HOME') + "/Downloads/"
+documents_dir := env_var('HOME') + "/Documents/"
+
 backup_dir  := env_var('JUST_BACKUP_DIR')
 backup_file := trim_start_match(me, home)
 my_backup   := backup_dir + backup_file

@@ -15,10 +15,14 @@ require_relative 'user_query'
 # of a single class.
 
 class AIA::Main
+  SPINNER_FORMAT = :bouncing_ball
+
   include AIA::DynamicContent
   include AIA::UserQuery
   
   attr_accessor :logger, :tools, :backend
+
+  attr_reader :spinner
 
   def initialize(args= ARGV)    
     AIA::Tools.load_tools
@@ -30,6 +34,9 @@ class AIA::Main
         "AIA.config"
       ]}
     end
+
+    @spinner  = TTY::Spinner.new(":spinner :title", format: SPINNER_FORMAT)
+    spinner.update(title: "composing response ... ")
 
     @logger = AIA::Logging.new(AIA.config.log_file)
 
@@ -118,8 +125,14 @@ class AIA::Main
 
 
   def get_and_display_result(the_prompt_text)
+    spinner.auto_spin if AIA.config.verbose?
+
     backend.text  = the_prompt_text
     result        = backend.run
+
+    if AIA.config.verbose?
+      spinner.success "Done." 
+    end
 
     AIA.config.out_file.write "\nResponse:\n"
 
