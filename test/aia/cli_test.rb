@@ -180,9 +180,17 @@ class CliTest < Minitest::Test
 
   # Test `check_for` method
   def test_check_for
-    cli = AIA::Cli.new("")
+    AIA.config  = nil
+    cli         = AIA::Cli.new("")
+
     AIA.config.arguments = %w[--verbose --backend sgpt]
-    assert_equal false, AIA.config.verbose?
+    
+    if ENV['AIA_VERBOSE']
+      assert_equal true, AIA.config.verbose?
+    else
+      assert_equal false, AIA.config.verbose?
+    end
+
     assert_equal "mods", AIA.config.backend
 
     cli.check_for :backend
