@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+## [0.5.9] 2024-02-01
+- Added a "I'm working" spinner thing when "--verbose" is used as an indication that the backend is in the process of composing its response to the prompt.
+
 ## [0.5.8] 2024-01-17
 - Changed the behavior of the --dump option.  It must now be followed by path/to/file.ext where ext is a supported config file format: yml, yaml, toml
 

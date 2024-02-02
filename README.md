@@ -5,23 +5,12 @@
 It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt` CLI utilities. It utilizes "ripgrep" for searching for prompt files.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
-v0.5.7
-- Added ERB processing to config files that have the pattern any_file.ext.erb where ext is the real extension of the file.
 
-v0.5.6
-- Directives within a chat session follow up are now available
-- when the `--shell` option is set access to envars and shell scripts are availabe in a chat session follow up prompt
-- when the `--erb` option is set, access to ERB-based dynamic content is available in a chat session follow up prompt.
-
-v0.5.3
-- `--render` will render markdown formatted content to the terminal using the `glow` CLI utility.
-- fixes to some terminal UI stuff like AI response is not being wrapped to the terminal width to make for easier reading.
-- fixed the completion functions to use the correct $AIA_PROMPTS_DIR envar
-
-v0.5.0 - Breaking changes: 
-- `--config` is now `--config_file`
-- `--env` is now `--shell`
-- `--output` is now `--out_file`
+> v0.5.9
+> - When "--verbose" is used, an animation is shown while the backend is composing its response to the prompt.
+> 
+> v0.5.7
+> - Added ERB processing to config files that have the pattern any_file.ext.erb where ext is the real extension of the file.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -46,6 +35,7 @@ v0.5.0 - Breaking changes:
   - [External CLI Tools Used](#external-cli-tools-used)
   - [Shell Completion](#shell-completion)
   - [My Most Powerful Prompt](#my-most-powerful-prompt)
+  - [My Configuration](#my-configuration)
   - [Development](#development)
   - [Contributing](#contributing)
   - [License](#license)
@@ -537,6 +527,40 @@ aia ad_hoc financial_statement.txt
 ```
 
 Both do the same thing; however, `aia` does not put the text of the prompt into the shell's history file.... of course the keyword/parameter value is saved in the prompt's JSON file and the prompt with the response are logged unless `--no-log` is specified; but, its not messing up the shell history!
+
+## My Configuration
+
+I use the `bash` shell.  In my `.bashrc` file I source another file named `.bashrc__aia` which looks like this:
+
+```shell
+# ~/.bashic_aia
+# AI Assistant
+
+# These are the defaults:
+export AIA_PROMPTS_DIR=~/.prompts
+export AIA_OUT_FILE=./temp.md
+export AIA_LOG_FILE=$AIA_PROMPTS_DIR/_prompts.log
+export AIA_BACKEND=mods
+export AIA_MODEL=gpt-4-1106-preview
+
+# Not a default.  Invokes spinner.
+export AIA_VERBOSE=true
+
+alias chat='aia chat --terse'
+
+# rest of the file is the completion function
+```
+
+Here is what my `chat` prompt file looks like:
+
+```shell
+# ~/.prompts/chat.txt
+# Desc: Start a chat session
+
+//config chat? = true
+
+[WHAT]
+```
 
 ## Development
 
