@@ -6,7 +6,7 @@ class PromptTest < Minitest::Test
   def setup
     @original_env = ENV.select { |k, _v| k.start_with?('AIA_') }
     @original_env.each_key { |key| ENV.delete key }
-    AIA::Cli.new("--prompts #{__dir__}/prompts_dir")
+    AIA::Cli.new("--prompts_dir #{__dir__}/prompts_dir")
   end
   
 

@@ -154,7 +154,8 @@ class AIA::Cli
       role:       ['',        "-r --role"],
       #
       config_file:[nil,                       "-c --config_file"],
-      prompts_dir:["~/.prompts",              "-p --prompts"],
+      prompts_dir:["~/.prompts",              "-p --prompts_dir"],
+      roles_dir:  ["~/.prompts/roles",        "--roles_dir"],
       out_file:   [STDOUT,                    "-o --out_file --no-out_file"],
       log_file:   ["~/.prompts/_prompts.log", "-l --log_file --no-log_file"],
       #
@@ -230,10 +231,14 @@ class AIA::Cli
 
       EOS
       
-      show_usage
+      show_error_usage
 
       exit
     end
+  
+    # After all other arguments 
+    # are processed, check for role parameter.
+    check_for_role_parameter
   end
 
 
@@ -271,6 +276,56 @@ class AIA::Cli
       end
     end
   end
+
+
+  def check_for_role_parameter
+    role = AIA.config.role
+    return if role.empty?
+
+    role_path = string_to_pathname(AIA.config.roles_dir) + "#{role}.txt"
+
+    unless role_path.exist?
+      puts "Role prompt '#{role}' not found. Invoking fzf to choose a role..."
+      invoke_fzf_to_choose_role
+    end
+  end
+
+
+  def invoke_fzf_to_choose_role
+    roles_path = string_to_pathname AIA.config.roles_dir
+
+    available_roles = roles_path
+                        .children
+                        .select { |f| '.txt' == f.extname}
+                        .map{|role| role.basename.to_s.gsub('.txt','')}
+    
+    fzf = AIA::Fzf.new(
+      list:       available_roles,
+      directory:  roles_path,
+      prompt:     'Select Role:',
+      extension:  '.txt'
+    )
+
+    chosen_role = fzf.run
+
+    if chosen_role.nil?
+      abort("No role selected. Exiting...")
+    else
+      AIA.config.role = chosen_role
+      puts "Role changed to '#{chosen_role}'."
+    end
+  end
+
+
+  def show_error_usage
+    puts <<~ERROR_USAGE
+
+      Usage: aia [options] PROMPT_ID [CONTEXT_FILE(s)] [-- EXTERNAL_OPTIONS]"
+      Try 'aia --help' for more information."
+    
+    ERROR_USAGE
+  end
+
 
   # aia usage is maintained in a man page
   def show_usage
