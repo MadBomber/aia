@@ -6,6 +6,11 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
+> v0.5.10
+> - Added --roles_dir
+> - Changed --prompts to --prompts_dir
+> - Fixed Issue 33
+>
 > v0.5.9
 > - When "--verbose" is used, an animation is shown while the backend is composing its response to the prompt.
 > 
@@ -31,6 +36,8 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
     - [Backend Directive Commands](#backend-directive-commands)
     - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
   - [All About ROLES](#all-about-roles)
+    - [The --roles_dir (AIA_ROLES_DIR)](#the---roles_dir-aia_roles_dir)
+    - [The --role Option](#the---role-option)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
   - [Shell Completion](#shell-completion)
@@ -56,7 +63,7 @@ Install the command-line utilities by executing:
 
 You will also need to establish a directory in your file system where your prompt text files, last used parameters and usage log files are kept.
 
-Setup a system environment variable named "AIA_PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts_dir"
+Setup a system environment variable (envar) named "AIA_PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts". The envar "AIA_ROLES_DIR" points to your role directory where you have prompts that define the different roles you want the LLM to assume when it is doing its work.  The default roles directory is inside the prompts directory.  Its name is "roles".
 
 You may also want to install the completion script for your shell.  To get a copy of the completion script do:
 
@@ -72,97 +79,126 @@ The usage report obtained using either `-h` or `--help` is implemented as a stan
 ```text
 $ aia --help
 
-aia(1)                                   User Manuals                                  aia(1)
+aia(1)                    User Manuals                    aia(1)
 
 NAME
        aia - command-line interface for an AI assistant
 
 SYNOPSIS
-       aia [options]* PROMPT_ID [CONTEXT_FILE]* [-- EXTERNAL_OPTIONS+]
+       aia [options]* PROMPT_ID [CONTEXT_FILE]* [--
+       EXTERNAL_OPTIONS+]
 
 DESCRIPTION
-       The aia command-line tool is an interface for interacting with an AI model backend,
-       providing a simple way to send prompts and receive responses. The CLI supports various
-       options to customize the interaction, load a configuration file, edit prompts, set
-       debugging levels, and more.
+       The aia command-line tool is an interface for interacting
+       with an AI model backend, providing a simple way to send
+       prompts and receive responses. The CLI supports various
+       options to customize the interaction, load a
+       configuration file, edit prompts, set debugging levels,
+       and more.
 
 ARGUMENTS
        PROMPT_ID
               This is a required argument.
 
        CONTEXT_FILES
-              This is an optional argument.  One or more files can be added to the prompt as
-              context for the backend gen-AI tool to process.
+              This is an optional argument.  One or more files
+              can be added to the prompt as context for the
+              backend gen-AI tool to process.
 
        EXTERNAL_OPTIONS
-              External options are optional.  Anything that follow “ -- “ will be sent to the
-              backend gen-AI tool.  For example “-- -C -m gpt4-128k” will send the options
-              “-C -m gpt4-128k” to the backend gen-AI tool.  aia will not validate these
-              external options before sending them to the backend gen-AI tool.
+              External options are optional.  Anything that
+              follow “ -- “ will be sent to the backend gen-AI
+              tool.  For example “-- -C -m gpt4-128k” will send
+              the options “-C -m gpt4-128k” to the backend
+              gen-AI tool.  aia will not validate these external
+              options before sending them to the backend gen-AI
+              tool.
 
 OPTIONS
-       --chat begin a chat session with the backend after the initial prompt response;  will
-              set --no-out_file so that the backend response comes to STDOUT.  After the
-              initial prompt is processed, you will be asked to provide a follow up.  Just
-              enter whatever is appropriate terminating your input with a RETURN.  The
-              backend will provide a response to you follow up and ask you again if you have
-              another follow up. This back and forth chatting will continue until you enter a
-              RETURN without any other content - an empty follow up prompt.  You may also
-              enter a directive to be processed after which another follow up is requested.
-              If you have the --shell and/or the --erb options set you may use those tools
-              within your follow up to provide dynamic content.
+       --chat begin a chat session with the backend after the
+              initial prompt response;  will set --no-out_file
+              so that the backend response comes to STDOUT.
+              After the initial prompt is processed, you will be
+              asked to provide a follow up.  Just enter whatever
+              is appropriate terminating your input with a
+              RETURN.  The backend will provide a response to
+              you follow up and ask you again if you have
+              another follow up. This back and forth chatting
+              will continue until you enter a RETURN without any
+              other content - an empty follow up prompt.  You
+              may also enter a directive to be processed after
+              which another follow up is requested.  If you have
+              the --shell and/or the --erb options set you may
+              use those tools within your follow up to provide
+              dynamic content.
 
        --completion SHELL_NAME
 
        --dump PATH/TO/FILE.ext
-              Dump the current configuration to a file in the format denoted by the file’s
-              extension.  Currently only .yml, .yaml and .toml are acceptable file
-              extensions.  If the file exists, it will be over-written without warning.
+              Dump the current configuration to a file in the
+              format denoted by the file’s extension.  Currently
+              only .yml, .yaml and .toml are acceptable file
+              extensions.  If the file exists, it will be
+              over-written without warning.
 
        -e, --edit
-              Invokes an editor on the prompt file.  You can make changes to the prompt file,
-              save it and the newly saved prompt will be processed by the backend.
+              Invokes an editor on the prompt file.  You can
+              make changes to the prompt file, save it and the
+              newly saved prompt will be processed by the
+              backend.
 
        --shell
-              This option tells aia to replace references to system environment variables in
-              the prompt with the value of the envar.  envars are like $HOME and ${HOME} in
-              this example their occurance will be replaced by the value of ENV[‘HOME’].
-              Also the dynamic shell command in the pattern $(shell command) will be executed
-              and its output replaces its pattern.  It does not matter if your shell uses
-              different patters than BASH since the replacement is being done within a Ruby
-              context.
+              This option tells aia to replace references to
+              system environment variables in the prompt with
+              the value of the envar.  envars are like $HOME and
+              ${HOME} in this example their occurance will be
+              replaced by the value of ENV[‘HOME’].  Also the
+              dynamic shell command in the pattern $(shell
+              command) will be executed and its output replaces
+              its pattern.  It does not matter if your shell
+              uses different patters than BASH since the
+              replacement is being done within a Ruby context.
 
-       --erb  If dynamic prompt content using $(...) wasn’t enough here is ERB.  Embedded
-              RUby.  <%= ruby code %> within a prompt will have its ruby code executed and
-              the results of that execution will be inserted into the prompt.  I’m sure we
-              will find a way to truly misuse this capability.  Remember, some say that the
-              simple prompt is the best prompt.
+       --erb  If dynamic prompt content using $(...) wasn’t
+              enough here is ERB.  Embedded RUby.  <%= ruby code
+              %> within a prompt will have its ruby code
+              executed and the results of that execution will be
+              inserted into the prompt.  I’m sure we will find a
+              way to truly misuse this capability.  Remember,
+              some say that the simple prompt is the best
+              prompt.
 
        --model NAME
-              Name of the LLM model to use - default is gpt-4-1106-preview
+              Name of the LLM model to use - default is
+              gpt-4-1106-preview
 
        --render
-              Render markdown to the terminal using the external tool “glow” - default: false
+              Render markdown to the terminal using the external
+              tool “glow” - default: false
 
        --speak
-              Simple implementation. Uses the “say” command to speak the response.  Fun with
-              --chat
+              Simple implementation. Uses the “say” command to
+              speak the response.  Fun with --chat
 
        --terse
-              Add a clause to the prompt text that instructs the backend to be terse in its
-              response.
+              Add a clause to the prompt text that instructs the
+              backend to be terse in its response.
 
        --version
               Print Version - default is false
 
        -b, --[no]-backend LLM TOOL
-              Specify the backend prompt resolver - default is mods
+              Specify the backend prompt resolver - default is
+              mods
 
        -c, --config_file PATH_TO_CONFIG_FILE
-              Load Config File. both YAML and TOML formats are supported.  Also ERB is
-              supported.  For example ~/aia_config.yml.erb will be processed through ERB and
-              then through YAML.  The result will be written out to ~/aia_config.yml so that
-              you can manually verify that you got what you wanted from the ERB processing.
+              Load Config File. both YAML and TOML formats are
+              supported.  Also ERB is supported.  For example
+              ~/aia_config.yml.erb will be processed through ERB
+              and then through YAML.  The result will be written
+              out to ~/aia_config.yml so that you can manually
+              verify that you got what you wanted from the ERB
+              processing.
 
        -d, --debug
               Turn On Debugging - default is false
@@ -171,13 +207,15 @@ OPTIONS
               Edit the Prompt File - default is false
 
        -f, --fuzzy`
-              Use Fuzzy Matching when searching for a prompt - default is false
+              Use Fuzzy Matching when searching for a prompt -
+              default is false
 
        -h, --help
               Show Usage - default is false
 
        -l, --[no]-log_file PATH_TO_LOG_FILE
-              Log FILEPATH - default is $HOME/.prompts/prompts.log
+              Log FILEPATH - default is
+              $HOME/.prompts/prompts.log
 
        -m, --[no]-markdown
               Format with Markdown - default is true
@@ -185,107 +223,143 @@ OPTIONS
        -o, --[no]-out_file PATH_TO_OUTPUT_FILE
               Out FILENAME - default is ./temp.md
 
-       -p, --prompts PATH_TO_DIRECTORY
-              Directory containing the prompt files - default is ~/.prompts
+       -p, --prompts_dir PATH_TO_DIRECTORY
+              Directory containing the prompt files - default is
+              ~/.prompts
+
+       --roles_dir PATH_TO_DIRECTORY
+              Directory containing the personification prompt
+              files - default is ~/.prompts/roles
 
        -r, --role ROLE_ID
-              A role ID is the same as a prompt ID.  A “role” is a specialized prompt that
-              gets pre-pended to another prompt.  It’s purpose is to configure the LLM into a
-              certain orientation within which to resolve its primary prompt.
+              A role ID is the same as a prompt ID.  A “role” is
+              a specialized prompt that gets pre-pended to
+              another prompt.  It’s purpose is to configure the
+              LLM into a certain orientation within which to
+              resolve its primary prompt.
 
        -v, --verbose
               Be Verbose - default is false
 
 CONFIGURATION HIERARCHY
-       System Environment Variables (envars) that are all uppercase and begin with “AIA_” can
-       be used to over-ride the default configuration settings.  For example setting “export
-       AIA_PROMPTS_DIR=~/Documents/prompts” will over-ride the default configuration;
-       however, a config value provided by a command line options will over-ride an envar
-       setting.
+       System Environment Variables (envars) that are all
+       uppercase and begin with “AIA_” can be used to over-ride
+       the default configuration settings.  For example setting
+       “export AIA_PROMPTS_DIR=~/Documents/prompts” will
+       over-ride the default configuration; however, a config
+       value provided by a command line options will over-ride
+       an envar setting.
 
-       Configuration values found in a config file will over-ride all other values set for a
-       config item.
+       Configuration values found in a config file will
+       over-ride all other values set for a config item.
 
-       ”//config” directives found inside a prompt file over-rides that config item
-       regardless of where the value was set.
+       ”//config” directives found inside a prompt file
+       over-rides that config item regardless of where the value
+       was set.
 
-       For example “//config chat? = true” within a prompt will setup the chat back and forth
-       chat session for that specific prompt regardless of the command line options or the
-       envar AIA_CHAT settings
+       For example “//config chat? = true” within a prompt will
+       setup the chat back and forth chat session for that
+       specific prompt regardless of the command line options or
+       the envar AIA_CHAT settings
 
 OpenAI ACCOUNT IS REQUIRED
-       Additionally, the program requires an OpenAI access key, which can be specified using
-       one of the following environment variables:
+       Additionally, the program requires an OpenAI access key,
+       which can be specified using one of the following
+       environment variables:
 
               • OPENAI_ACCESS_TOKEN
 
               • OPENAI_API_KEY
 
-       Currently there is not specific standard for name of the OpenAI key.  Some programs
-       use one name, while others use a different name.  Both of the envars listed above mean
-       the same thing.  If you use more than one tool to access OpenAI resources, you may
-       have to set several envars to the same key value.
+       Currently there is not specific standard for name of the
+       OpenAI key.  Some programs use one name, while others use
+       a different name.  Both of the envars listed above mean
+       the same thing.  If you use more than one tool to access
+       OpenAI resources, you may have to set several envars to
+       the same key value.
 
-       To acquire an OpenAI access key, first create an account on the OpenAI platform, where
-       further documentation is available.
+       To acquire an OpenAI access key, first create an account
+       on the OpenAI platform, where further documentation is
+       available.
 
 USAGE NOTES
-       aia is designed for flexibility, allowing users to pass prompt ids and context files
-       as arguments. Some options change the behavior of the output, such as --out_file for
-       specifying a file or --no-out_file for disabling file output in favor of standard
-       output (STDPIT).
+       aia is designed for flexibility, allowing users to pass
+       prompt ids and context files as arguments. Some options
+       change the behavior of the output, such as --out_file for
+       specifying a file or --no-out_file for disabling file
+       output in favor of standard output (STDPIT).
 
-       The --completion option displays a script that enables prompt ID auto-completion for
-       bash, zsh, or fish shells. It’s crucial to integrate the script into the shell’s
+       The --completion option displays a script that enables
+       prompt ID auto-completion for bash, zsh, or fish shells.
+       It’s crucial to integrate the script into the shell’s
        runtime to take effect.
 
-       The --dump path/to/file.ext option will write the current configuration to a file in
-       the format requested by the file’s extension.  The following extensions are supported:
-       .yml, .yaml and .toml
+       The --dump path/to/file.ext option will write the current
+       configuration to a file in the format requested by the
+       file’s extension.  The following extensions are
+       supported:  .yml, .yaml and .toml
 
 PROMPT DIRECTIVES
-       Within a prompt text file any line that begins with “//” is considered a prompt
-       directive.  There are numerious prompt directives available.  In the discussion above
-       on the configuration you learned about the “//config” directive.
+       Within a prompt text file any line that begins with “//”
+       is considered a prompt directive.  There are numerious
+       prompt directives available.  In the discussion above on
+       the configuration you learned about the “//config”
+       directive.
 
-       Detail discussion on individual prompt directives is TBD.  Most likely it will be
-       handled in the github wiki <https://github.com/MadBomber/aia>
+       Detail discussion on individual prompt directives is TBD.
+       Most likely it will be handled in the github wiki
+       <https://github.com/MadBomber/aia>
 
 SEE ALSO
 
-              • OpenAI Platform Documentation <https://platform.openai.com/docs/overview>
+              • OpenAI Platform Documentation
+                <https://platform.openai.com/docs/overview>
                  for more information on obtaining access tokens
                 <https://platform.openai.com/account/api-keys>
                  and working with OpenAI models.
 
               • mods <https://github.com/charmbracelet/mods>
-                 for more information on mods - AI for the command line, built for pipelines.
-                LLM based AI is really good at interpreting the output of commands and
-                returning the results in CLI friendly text formats like Markdown. Mods is a
-                simple tool that makes it super easy to use AI on the command line and in
-                your pipelines. Mods works with OpenAI
+                 for more information on mods - AI for the
+                command line, built for pipelines.  LLM based AI
+                is really good at interpreting the output of
+                commands and returning the results in CLI
+                friendly text formats like Markdown. Mods is a
+                simple tool that makes it super easy to use AI
+                on the command line and in your pipelines. Mods
+                works with OpenAI
                 <https://platform.openai.com/account/api-keys>
-                 and LocalAI <https://github.com/go-skynet/LocalAI>
+                 and LocalAI
+                <https://github.com/go-skynet/LocalAI>
 
               • sgpt <https://github.com/tbckr/sgpt>
-                 (aka shell-gpt) is a powerful command-line interface (CLI) tool designed for
-                seamless interaction with OpenAI models directly from your terminal.
-                Effortlessly run queries, generate shell commands or code, create images from
-                text, and more, using simple commands. Streamline your workflow and enhance
-                productivity with this powerful and user-friendly CLI tool.
+                 (aka shell-gpt) is a powerful command-line
+                interface (CLI) tool designed for seamless
+                interaction with OpenAI models directly from
+                your terminal. Effortlessly run queries,
+                generate shell commands or code, create images
+                from text, and more, using simple commands.
+                Streamline your workflow and enhance
+                productivity with this powerful and
+                user-friendly CLI tool.
 
               • fzf <https://github.com/junegunn/fzf>
-                 fzf is a general-purpose command-line fuzzy finder.  It’s an interactive
-                Unix filter for command-line that can be used with any list; files, command
-                history, processes, hostnames, bookmarks, git commits, etc.
+                 fzf is a general-purpose command-line fuzzy
+                finder.  It’s an interactive Unix filter for
+                command-line that can be used with any list;
+                files, command history, processes, hostnames,
+                bookmarks, git commits, etc.
 
               • ripgrep <https://github.com/BurntSushi/ripgrep>
-                 Search tool like grep and The Silver Searcher. It is a line-oriented search
-                tool that recursively searches a directory tree for a regex pattern. By
-                default, ripgrep will respect gitignore rules and automatically skip hidden
-                files/directories and binary files. (To disable all automatic filtering by
-                default, use rg -uuu.) ripgrep has first class support on Windows, macOS and
-                Linux, with binary downloads available for every release.
+                 Search tool like grep and The Silver Searcher.
+                It is a line-oriented search tool that
+                recursively searches a directory tree for a
+                regex pattern. By default, ripgrep will respect
+                gitignore rules and automatically skip hidden
+                files/directories and binary files. (To disable
+                all automatic filtering by default, use rg
+                -uuu.) ripgrep has first class support on
+                Windows, macOS and Linux, with binary downloads
+                available for every release.
 
               • glow <https://github.com/charmbracelet/glow>
                  Render markdown on the CLI
@@ -293,9 +367,8 @@ SEE ALSO
 AUTHOR
        Dewayne VanHoozer <dvanhoozer@gmail.com>
 
-AIA                                       2024-01-01                                   aia(1)
+AIA                          v0.5.10                      aia(1)
 ```
-
 
 ## Configuration Using Envars
 
@@ -434,7 +507,19 @@ The directive is executed and a new follow up prompt can be entered with a more 
 
 ## All About ROLES
 
-`aia` provides the `--role` CLI option to identify a prompt ID within your prompts directory which defines the context within which the LLM is to provide its response.  The text of the role ID is pre-pended to the text of the primary prompt to form a complete prompt to be processed by the backend.
+### The --roles_dir (AIA_ROLES_DIR)
+
+There are two kinds of prompts
+1. instructional - tells the LLM what to do
+2. personification - tells the LLM who it should pretend to be when it does its transformational work.
+
+That second kind of prompt is called a role.  Sometimes the role is incorporated into the instruction.  For example "As a magician make a rabbit appear out of a hat."  To reuse the same role in multiple prompts `aia` encourages you to designate a special `roles_dir` into which you put prompts that are specific to personification - roles.
+
+The default `roles_dir` is a sub-directory of the `prompts_dir` named roles.  You can, however, put your `roles_dir` anywhere that makes sense to you.
+
+### The --role Option
+
+The `--role` option is used to identify a personification prompt within your roles directory which defines the context within which the LLM is to provide its response.  The text of the role ID is pre-pended to the text of the primary prompt to form a complete prompt to be processed by the backend.
 
 For example consider:
 
@@ -442,17 +527,17 @@ For example consider:
 aia -r ruby refactor my_class.rb
 ```
 
-Within the prompts directory the contents of the text file `ruby.txt` will be pre-pre-pended to the contents of the `refactor.txt` file to produce a complete prompt.  That complete prompt will have any parameters then directives processed before sending the prompt text to the backend.
+Within the roles directory the contents of the text file `ruby.txt` will be pre-pre-pended to the contents of the `refactor.txt` file from the prompts directory to produce a complete prompt.  That complete prompt will have any parameters followed by directives processed before sending the combined prompt text to the backend.
 
 Note that `--role` is just a way of saying add this prompt text file to the front of this other prompt text file.  The contents of the "role" prompt could be anything.  It does not necessarily have be an actual role.
 
-You might consider have a sub-directory of your `prompts_dir` name `role` in which you put the prompt files that describe the various roles that you commonly use with your prompts.  `aia` fully supports a directory tree within the `prompts_dir` as a way of organization or classification of your different prompt text files.
+`aia` fully supports a directory tree within the `prompts_dir` as a way of organization or classification of your different prompt text files.
 
 ```shell
-aia -r roles/sw_eng doc_the_methods my_class.rb
+aia -r sw_eng doc_the_methods my_class.rb
 ```
 
-In this example the prompt text file `$AIA_PROMPTS_DIR/roles/sw_eng.txt` is prepended to the prompt text file `$AIA_PROMPTS_DIR/doc_the_methods.txt`
+In this example the prompt text file `$AIA_ROLES_DIR/sw_eng.txt` is prepended to the prompt text file `$AIA_PROMPTS_DIR/doc_the_methods.txt`
 
 
 ### Other Ways to Insert Roles into Prompts
@@ -463,7 +548,7 @@ Since `aia` supports parameterized prompts you could make a keyword like "[ROLE]
 As a [ROLE] tell me what you think about [SUBJECT]
 ```
 
-When this prompt is processed, `aia` will ask you for a value for the keyword "ROLE" and the keyword "SUBJECT" to complete the prompt.  Since `aia` maintains a history your previous answers, you could just choose something that you used in the past or answer with a completely new value.
+When this prompt is processed, `aia` will ask you for a value for the keyword "ROLE" and the keyword "SUBJECT" to complete the prompt.  Since `aia` maintains a history of your previous answers, you could just choose something that you used in the past or answer with a completely new value.
 
 ## External CLI Tools Used
 

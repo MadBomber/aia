@@ -1,4 +1,4 @@
-# aia 1 "2024-01-01" AIA "User Manuals"
+# aia 1 "v0.5.10" AIA "User Manuals"
 
 ## NAME
 
@@ -85,8 +85,11 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-o`, `--[no]-out_file` *PATH_TO_OUTPUT_FILE*
 : Out FILENAME - default is ./temp.md
 
-`-p`, `--prompts` *PATH_TO_DIRECTORY*
+`-p`, `--prompts_dir` *PATH_TO_DIRECTORY*
 : Directory containing the prompt files - default is ~/.prompts
+
+`--roles_dir` *PATH_TO_DIRECTORY*
+: Directory containing the personification prompt files - default is ~/.prompts/roles
 
 `-r`, `--role` *ROLE_ID*
 : A role ID is the same as a prompt ID.  A "role" is a specialized prompt that gets pre-pended to another prompt.  It's purpose is to configure the LLM into a certain orientation within which to resolve its primary prompt.

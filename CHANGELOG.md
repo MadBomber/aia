@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.5.10] 2024-02-03
+- Added --roles_dir to isolate roles from other prompts if desired
+- Changed --prompts to --prompts_dir to be consistent
+- Refactored common fzf usage into its own tool class
+
 ## [0.5.9] 2024-02-01
 - Added a "I'm working" spinner thing when "--verbose" is used as an indication that the backend is in the process of composing its response to the prompt.
 

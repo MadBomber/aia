@@ -116,7 +116,7 @@ class CliTest < Minitest::Test
   # This test should mock the filesystem operations
   def test_load_config_file
     cli = AIA::Cli.new ""
-    assert_equal nil, AIA.config.xyzzy
+    assert_nil AIA.config.xyzzy
     AIA.config.config_file = Pathname.new(__dir__) + "config_files/sample_config.yml"
     cli.load_config_file
     assert_equal "magic", AIA.config.xyzzy
@@ -203,6 +203,34 @@ class CliTest < Minitest::Test
   end
 
 
+
+
+  # Test when `--role` is not followed by a string, it should exit with an error
+  def test_role_flag_requires_argument
+    assert_raises(SystemExit) do
+      AIA::Cli.new(['--role'])
+    end
+
+    original_stderr = $stderr
+    fake_stderr     = StringIO.new
+    $stderr         = fake_stderr
+
+    expected = "ERROR: role requires a parameter value"
+
+    begin
+      # AIA::Cli.new(['--role'])
+      STDERR.puts "hello world"
+      exit
+    rescue SystemExit
+    end
+
+    assert_equal expected, error_output
+
+  rescue
+    $stderr = original_stderr
+  end
+
+
   # Test `show_verbose_usage` method
   def test_show_verbose_usage
     cli = AIA::Cli.new('-v')
@@ -211,11 +239,6 @@ class CliTest < Minitest::Test
     backend_output = "Currently selected Backend"
     AIA::Cli.stub(:`, backend_output) do
       output = capture_io { cli.show_verbose_usage }.first.strip
-      
-      debug_me{[
-        :output,
-        :backend_output
-      ]}
 
       assert output.include?(backend_output)
     end
