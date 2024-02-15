@@ -20,6 +20,7 @@ tramp_require('debug_me') {
 }
 
 require 'hashie'
+require 'os'
 require 'pathname'
 require 'reline'
 require 'shellwords'
@@ -37,6 +38,7 @@ require 'prompt_manager'
 require 'prompt_manager/storage/file_system_adapter'
 
 require_relative "aia/version"
+require_relative "aia/clause"
 require_relative "aia/main"
 require_relative "core_ext/string_wrap"
 
@@ -53,6 +55,12 @@ module AIA
       #       conversation REPL?
       
       AIA::Main.new(args).call
+    end
+
+
+    def speak(what)
+      return unless AIA.config.speak?
+      system "say #{Shellwords.escape(what)}" if OS.osx?
     end
   end
 end

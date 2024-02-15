@@ -23,7 +23,9 @@ class AIA::Prompt
     def to_s        = ''
   end
 
-  KW_HISTORY_MAX = 5
+  KW_HISTORY_MAX    = 5
+  COMMENT_SIGNAL    = '#'
+  DIRECTIVE_SIGNAL  = "//"
 
   attr_reader :prompt
 
