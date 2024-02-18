@@ -14,20 +14,24 @@ class AIA::Directives
   def execute_my_directives
     return if AIA.config.directives.nil? || AIA.config.directives.empty?
     
-    not_mine = []
+    result    = ""
+    not_mine  = []
 
     AIA.config.directives.each do |entry|
       directive   = entry[0].to_sym
       parameters  = entry[1]
 
       if respond_to? directive
-        send(directive, parameters)
+        output  = send(directive, parameters)
+        result << "#{output}\n" unless output.nil?
       else
         not_mine << entry
       end
     end
 
     AIA.config.directives = not_mine
+
+    result.empty? ? nil : result
   end
 
 
@@ -60,5 +64,40 @@ class AIA::Directives
         AIA.config[item] = "STDOUT" == value ? STDOUT : value
       end
     end
+
+    nil
+  end
+
+
+  # when path_to_file is relative it will be
+  # relative to the PWD.
+  #
+  # TODO: Consider an AIA_INCLUDE_DIR --include_dir
+  # option to be used for all relative include paths
+  #
+  def include(path_to_file)
+    path = Pathname.new path_to_file
+    if path.exist? && path.readable?
+      content = path.readlines.reject do |a_line|
+        a_line.strip.start_with?(AIA::Prompt::COMMENT_SIGNAL) ||
+        a_line.strip.start_with?(AIA::Prompt::DIRECTIVE_SIGNAL)
+      end.join("\n")
+    else
+      abort "ERROR: could not include #{path_to_file}"
+    end
+
+    content
+  end
+
+
+  def shell(command)
+    `#{command}`
+  end
+
+
+  def ruby(code)
+    output = eval(code)
+
+    output.is_a?(String) ? output : nil
   end
 end
