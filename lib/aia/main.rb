@@ -20,11 +20,12 @@ class AIA::Main
   include AIA::DynamicContent
   include AIA::UserQuery
   
-  attr_accessor :logger, :tools, :backend
+  attr_accessor :logger, :tools, :backend, :directive_output
 
   attr_reader :spinner
 
-  def initialize(args= ARGV)    
+  def initialize(args= ARGV)
+    @directive_output = ""
     AIA::Tools.load_tools
 
     AIA::Cli.new(args)
@@ -71,7 +72,7 @@ class AIA::Main
 
 
   def call
-    @directives_processor.execute_my_directives
+    directive_output = @directives_processor.execute_my_directives
 
     if AIA.config.chat?
       AIA.config.out_file = STDOUT 
@@ -102,6 +103,8 @@ class AIA::Main
     abort "backend not found: #{AIA.config.backend}" if backend_klass.nil?
 
     the_prompt = @prompt.to_s
+
+    the_prompt.prepend(directive_output + "\n") unless directive_output.nil? || directive_output.empty?
 
     if AIA.config.terse?
       the_prompt.prepend "Be terse in your response. "
@@ -186,7 +189,9 @@ class AIA::Main
       directive   = parts.shift
       parameters  = parts.join(' ')
       AIA.config.directives << [directive, parameters]
-      @directives_processor.execute_my_directives
+      directive_output = @directives_processor.execute_my_directives
+    else
+      directive_output = ""
     end
 
     result
@@ -202,7 +207,16 @@ class AIA::Main
       the_prompt_text   = render_erb(the_prompt_text) if AIA.config.erb?
       the_prompt_text   = render_env(the_prompt_text) if AIA.config.shell?
 
-      unless handle_directives(the_prompt_text)
+      if handle_directives(the_prompt_text)
+        unless directive_output.nil?
+          the_prompt_text = insert_terse_phrase(the_prompt_text)
+          the_prompt_text << directive_output 
+          result          = get_and_display_result(the_prompt_text)
+
+          log_the_follow_up(the_prompt_text, result)
+          speak result
+        end
+      else
         the_prompt_text = insert_terse_phrase(the_prompt_text)
         result          = get_and_display_result(the_prompt_text)
 

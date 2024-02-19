@@ -1,4 +1,4 @@
-# aia 1 "v0.5.10" AIA "User Manuals"
+# aia 1 "v0.5.11" AIA "User Manuals"
 
 ## NAME
 
@@ -133,6 +133,14 @@ The `--dump path/to/file.ext` option will write the current configuration to a f
 Within a prompt text file any line that begins with "//" is considered a prompt directive.  There are numerious prompt directives available.  In the discussion above on the configuration you learned about the "//config" directive.
 
 Detail discussion on individual prompt directives is TBD.  Most likely it will be handled in the [github wiki](https://github.com/MadBomber/aia).
+
+Some directives are:
+
+- //config item value
+- //include path_to_file
+- //ruby ruby_code
+- //shell shell_command
+
 
 ## SEE ALSO
 

@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.5.11] 2024-02-18
+- allow directives to return information that is inserted into the prompt text
+- added //shell command directive
+- added //ruby ruby_code directive
+- added //include path_to_file directive
+
 ## [0.5.10] 2024-02-03
 - Added --roles_dir to isolate roles from other prompts if desired
 - Changed --prompts to --prompts_dir to be consistent
