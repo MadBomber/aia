@@ -1,4 +1,5 @@
 ## [Unreleased]
+v0.5.12 working Issue 44 the --next and --pipeline options
 
 ## [0.5.11] 2024-02-18
 - allow directives to return information that is inserted into the prompt text
