@@ -6,18 +6,16 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
+> v0.5.12
+> - Supports Prompt Sequencing
+> - Added --next option
+> - Added --pipeline option
+>
 > v0.5.11
 > - Allow directives to prepend content into the prompt text
 > - Added //include  path_to_file
 > - Added //shell    shell_command
 > - Added //ruby     ruby code
->
-> v0.5.10
-> - Added --roles_dir
-> - Changed --prompts to --prompts_dir
-> - Fixed Issue 33
->
-
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -41,6 +39,10 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
       - [//shell](#shell)
     - [Backend Directive Commands](#backend-directive-commands)
     - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
+  - [Prompt Sequences](#prompt-sequences)
+    - [--next](#--next)
+    - [--pipeline](#--pipeline)
+    - [Best Practices ??](#best-practices-)
   - [All About ROLES](#all-about-roles)
     - [The --roles_dir (AIA_ROLES_DIR)](#the---roles_dir-aia_roles_dir)
     - [The --role Option](#the---role-option)
@@ -297,6 +299,65 @@ Whe you are in a chat session, you may use a directive as a follow up prompt.  F
 
 The directive is executed and a new follow up prompt can be entered with a more lengthy response generated from the backend.
 
+
+## Prompt Sequences
+
+Why would you need/want to use a sequence of prompts in a batch situation.  Maybe you have a complex prompt which exceeds the token limitations of your model for input so you need to break it up into multiple parts.  Or suppose its a simple prompt but the number of tokens on the output is limited and you do not get exactly the kind of full response for which you were looking.
+
+Sometimes it takes a series of prompts to get the kind of response that you want.  The reponse from one prompt becomes a context for the next prompt.  This is easy to do within a `chat` session were you are manually entering and adjusting your prompts until you get the kind of response that you want.
+
+If you need to do this on a regular basis or within a batch you can use `aia` and the `--next` and `--pipeline` command line options.
+
+These two options specify the sequence of prompt IDs to be processed. Both options are available to be used within a prompt file using the `//config` directive.  Like all embedded directives you can take advantage of parameterization shell integration and Ruby.  I'm start to feel like TIm Tool man - more power!
+
+Consider the condition in which you have 4 prompt IDs that need to be processed in sequence.  The IDs and associated prompt file names are:
+
+| Promt ID | Prompt File |
+| -------- | ----------- |
+| one.     | one.txt     |
+| two.     | two.txt     |
+| three.   | three.txt   |
+| four.    | four.txt    |
+
+
+### --next
+
+```shell
+export AIA_OUT_FILE=temp.md 
+aia one --next two
+aia three --next four temp.md
+```
+
+or within each of the prompt files you use the config directive:
+
+```
+one.txt contains //config next two
+two.txt contains //config next three
+three.txt contains //config next four
+```
+BUT if you have more than two prompts in your sequence then consider using the --pipeline option.
+
+### --pipeline
+
+`aia one --pipeline two,three,four`
+
+or inside of the `one.txt` prompt file use this directive:
+
+`//config pipeline two,three,four`
+
+### Best Practices ??
+
+Since the response of one prompt is fed into the next prompt within the sequence instead of having all prompts write their response to the same out file, use these directives inside the associated prompt files:
+
+
+| Prompt File | Directive |
+| --- | --- |
+| one.txt | //config out_file one.md |
+| two.txt | //config out_file two.md |
+| three.txt | //config out_file three.md |
+| four.txt | //config out_file four.md |
+
+This way you can see the response that was generated for each prompt in the sequence.
 
 ## All About ROLES
 

@@ -1,4 +1,4 @@
-# aia 1 "v0.5.11" AIA "User Manuals"
+# aia 1 "v0.5.12" AIA "User Manuals"
 
 ## NAME
 
@@ -82,8 +82,14 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-m`, `--[no]-markdown`
 : Format with Markdown - default is true
 
+`-n`, `--next PROMPT_ID`
+: Specifies the next prompt ID to be processed using the response for the previous prompt ID's processing as a context within which to process the next prompt - default is an empty string
+
 `-o`, `--[no]-out_file` *PATH_TO_OUTPUT_FILE*
 : Out FILENAME - default is ./temp.md
+
+`--pipeline PID1,PID2,PID3`
+: Specifies a pipeline of prompt IDs (PID) in which the respone the first prompt is fed into the second prompt as context whose response is fed into the third as context, etc.  It is a comma seperated list.  There is no artificial limit to the number of prompt IDs in the pipeline - default is an empty list
 
 `-p`, `--prompts_dir` *PATH_TO_DIRECTORY*
 : Directory containing the prompt files - default is ~/.prompts
@@ -140,6 +146,30 @@ Some directives are:
 - //include path_to_file
 - //ruby ruby_code
 - //shell shell_command
+
+## Prompt Sequences
+
+The `--next` and `--pipeline` command line options allow for the sequencing of prompts such that the first prompt's response feeds into the second prompt's context and so on.  Suppose you had a complex sequence of prompts with IDs one, two, three and four.  You would use the following `aia` command to process them in sequence:
+
+`aia one --pipeline two,three,four`
+
+Notice that the value for the pipelined prompt IDs has no spaces.  This is so that the command line parser does not mistake one of the promp IDs as a CLI option and issue an error.
+
+### Prompt Sequences Inside of a Prompt File
+
+You can also use the `config` directive inside of a prompt file to specify a sequence.  Given the example above of 4 prompt IDs you could add this directive to the prompt file `one.txt`
+
+`//config next two`
+
+Then inside the prompt file `two.txt` you could use this directive:
+
+`//config pipeline three,four`
+
+or just
+
+`//config next three`
+
+if you want to specify them one at a time.
 
 
 ## SEE ALSO
