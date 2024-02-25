@@ -60,8 +60,18 @@ class AIA::Directives
       value = parts.join
       if item.end_with?('?')
         AIA.config[item] = %w[1 y yea yes t true].include?(value.downcase)
+      elsif item.end_with?('_file')
+        if "STDOUT" == value.upcase
+          AIA.config[item] = STDOUT
+        elsif "STDERR" == value.upcase
+          AIA.config[item] = STDERR
+        else
+          AIA.config[item] = value.start_with?('/') ? 
+            Pathname.new(value) :
+            Pathname.pwd + value
+        end
       else
-        AIA.config[item] = "STDOUT" == value ? STDOUT : value
+        AIA.config[item] = value
       end
     end
 
