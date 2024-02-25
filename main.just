@@ -55,6 +55,11 @@ view_man_page: create_man_page
 create_man_page:
   rake man
 
+
+# Generate the Documentation
+gen_doc: create_man_page update_toc_in_readmen
+
+
 ##########################################
 
 # Tag the current commit, push it, then bump the version

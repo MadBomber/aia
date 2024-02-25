@@ -27,9 +27,8 @@ class AIA::Cli
     load_config_file unless AIA.config.config_file.nil?
 
     convert_to_pathname_objects
-
+    error_on_invalid_option_combinations
     setup_prompt_manager
-
     execute_immediate_commands
   end
 
@@ -46,6 +45,29 @@ class AIA::Cli
     end
   end
 
+
+  def error_on_invalid_option_combinations
+    # --chat is intended as an interactive exchange
+    if AIA.config.chat?
+      unless AIA.config.next.empty?
+        abort "ERROR: Cannot use --next with --chat"
+      end
+      unless STDOUT == AIA.config.out_file
+        abort "ERROR: Cannot use --out_file with --chat"
+      end
+      unless AIA.config.pipeline.empty?
+        abort "ERROR: Cannot use --pipeline with --chat"
+      end
+    end
+
+    # --next says which prompt to process next
+    # but --pipeline gives an entire sequence of prompts for processing
+    unless AIA.config.next.empty?
+      unless AIA.config.pipeline.empty?
+        abort "ERROR: Cannot use --pipeline with --next"
+      end
+    end
+  end
 
   def string_to_pathname(string)
     ['~/', '$HOME/'].each do |prefix|
@@ -151,6 +173,8 @@ class AIA::Cli
       verbose?:   [false,     "-v --verbose"],
       version?:   [false,     "--version"],
       #
+      next:       ['',        "-n --next"],
+      pipeline:   [[],        "--pipeline"],
       role:       ['',        "-r --role"],
       #
       config_file:[nil,                       "-c --config_file"],
@@ -263,8 +287,11 @@ class AIA::Cli
           else
             value = arguments[index + 1]
             if value.nil? || value.start_with?('-')
-              STDERR.puts "ERROR: #{option_sym} requires a parameter value"
-              exit(1)
+              abort "ERROR: #{option_sym} requires a parameter value"
+            elsif "--pipeline" == switch
+              prompt_sequence = value.split(',')
+              AIA.config[option_sym] = prompt_sequence
+              arguments.slice!(index,2)
             else
               AIA.config[option_sym] = value
               arguments.slice!(index,2)

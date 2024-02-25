@@ -43,10 +43,10 @@ class AIA::Main
 
     @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
 
-    @prompt = AIA::Prompt.new.prompt
-
 
     @directives_processor = AIA::Directives.new 
+
+    @prompt = AIA::Prompt.new.prompt
 
     # TODO: still should verify that the tools are ion the $PATH
     # tools.class.verify_tools
@@ -71,6 +71,8 @@ class AIA::Main
   end
 
 
+  # This will be recursive with the new options
+  # --next and --pipeline
   def call
     directive_output = @directives_processor.execute_my_directives
 
@@ -124,6 +126,17 @@ class AIA::Main
       speak result
       lets_chat 
     end
+
+    return if AIA.config.next.empty? && AIA.config.pipeline.empty?
+
+    # Reset some config items to defaults
+    AIA.config.directives = []
+    AIA.config.next       = AIA.config.pipeline.shift
+    AIA.config.arguments  = [AIA.config.next, AIA.config.out_file.to_s]
+    AIA.config.next       = ""
+
+    @prompt = AIA::Prompt.new.prompt
+    call # Recurse!
   end
 
 
