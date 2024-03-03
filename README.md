@@ -8,7 +8,7 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 > v0.5.13
 > - Added an initial integration for CLI-tool `llm` as a backend processor
->   Its primary feature is its ability to use local LLMs and APIs to keep all processing within your local workstation.
+>   Its primary feature is its **ability to use local LLMs and APIs to keep all processing within your local workstation.**
 > 
 > v0.5.12
 > - Supports Prompt Sequencing
