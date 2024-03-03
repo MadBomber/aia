@@ -1,4 +1,4 @@
-# aia 1 "v0.5.12" AIA "User Manuals"
+# aia 1 "v0.5.13" AIA "User Manuals"
 
 ## NAME
 
@@ -175,6 +175,8 @@ if you want to specify them one at a time.
 ## SEE ALSO
 
 - [OpenAI Platform Documentation](https://platform.openai.com/docs/overview) for more information on [obtaining access tokens](https://platform.openai.com/account/api-keys) and working with OpenAI models.
+
+- [llm](https://llm.datasette.io/) for more information on `llm` - A CLI utility and Python library for interacting with Large Language Models, both via remote APIs and models that can be installed and run on your own machine.
 
 - [mods](https://github.com/charmbracelet/mods) for more information on `mods` - AI for the command line, built for pipelines.  LLM based AI is really good at interpreting the output of commands and returning the results in CLI friendly text formats like Markdown. Mods is a simple tool that makes it super easy to use AI on the command line and in your pipelines. Mods works with [OpenAI](https://platform.openai.com/account/api-keys) and [LocalAI](https://github.com/go-skynet/LocalAI)
 

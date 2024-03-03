@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+## [0.5.13] 2024-03-03
+- Added CLI-utility `llm` as a backend processor
+
 ## [0.5.12] 2024-02-24
 - Happy Birthday Ruby!
 - Added --next CLI option
