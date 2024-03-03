@@ -9,9 +9,12 @@ Gem::Specification.new do |spec|
   spec.email    = ["dvanhoozer@gmail.com"]
 
   spec.summary      = "AI Assistant (aia) a command-line (CLI) utility"
-  spec.description  = <<~EOS
+  spec.description  = <<~EOS.split("\n").map(&:strip).join(' ')
     A command-line AI Assistante (aia) that provides pre-compositional
-    template prompt management to various backend gen-AI processes.
+    template prompt management to various backend gen-AI processes such
+    as llm, mods and sgpt support processing of prompts both via remote
+    API calls as well as keeping everything local through the use of locally
+    managed models and the LocalAI API.
     Complete shell integration allows a prompt to access system
     environment variables and execut shell commands as part of the
     prompt content.  In addition full embedded Ruby support is provided

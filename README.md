@@ -6,16 +6,15 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
+> v0.5.13
+> - Added an initial integration for CLI-tool `llm` as a backend processor
+>   Its primary feature is its **ability to use local LLMs and APIs to keep all processing within your local workstation.**
+> 
 > v0.5.12
 > - Supports Prompt Sequencing
 > - Added --next option
 > - Added --pipeline option
->
-> v0.5.11
-> - Allow directives to prepend content into the prompt text
-> - Added //include  path_to_file
-> - Added //shell    shell_command
-> - Added //ruby     ruby code
+
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -48,6 +47,10 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
     - [The --role Option](#the---role-option)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
+    - [Optional External CLI-tools](#optional-external-cli-tools)
+      - [Backend Processor `llm`](#backend-processor-llm)
+      - [Backend Processor `sgpt`](#backend-processor-sgpt)
+      - [Occassionally Useful Tool `plz`](#occassionally-useful-tool-plz)
   - [Shell Completion](#shell-completion)
   - [My Most Powerful Prompt](#my-most-powerful-prompt)
   - [My Configuration](#my-configuration)
@@ -431,7 +434,28 @@ system environment variable 'EDITOR' like this:
 
   export EDITOR="subl -w"
 
+### Optional External CLI-tools
 
+#### Backend Processor `llm`
+
+```
+llm  Access large language models from the command-line
+     |   brew install llm
+     |__ https://llm.datasette.io/
+```
+
+As of `aia v0.5.13` the `llm` backend processor is available in a limited integration.  It is a very powerful python-based implementation that has its own prompt templating system.  The reason that it is be included within the `aia` environment is for its ability to make use of local LLM models.
+
+
+#### Backend Processor `sgpt`
+
+`shell-gpt` aka `sgpt` is also a python implementation of a CLI-tool that processes prompts through OpenAI.  It has less features than both `mods` and `llm` and is less flexible.
+
+#### Occassionally Useful Tool `plz`
+
+`plz-cli` aka `plz` is not integrated with `aia` however, it gets an honorable mention for its ability to except a prompt that tailored to doing something on the command line.  Its response is a CLI command (sometimes a piped sequence) that accomplishes the task set forth in the prompt.  It will return the commands to be executed agaist the data files you specified with a query to execute the command.
+
+- brew install plz-cli
 
 ## Shell Completion
 
