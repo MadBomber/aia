@@ -1,4 +1,4 @@
-# aia 1 "v0.5.13" AIA "User Manuals"
+# aia 1 "v0.5.14" AIA "User Manuals"
 
 ## NAME
 
@@ -103,6 +103,11 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `-v`, `--verbose`
 : Be Verbose - default is false
 
+`--voice`
+: The voice to use when the option `--speak` is used.  If you are on a Mac, then setting voice to "siri" will use your Mac's default siri voice and not access OpenAI - default is "alloy" from OpenAI
+
+`--sm`, `--speech_model`
+: The OpenAI speech model to use when converting text into speech - default is "tts-1"
 
 ## CONFIGURATION HIERARCHY
 

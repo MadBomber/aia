@@ -53,17 +53,6 @@ class AIA::Main
   end
 
 
-  def speak(what)
-    return false unless AIA.config.speak?
-    # TODO: Consider putting this into a thread
-    #       so that it can speak at the same time
-    #       the output is going to the screen
-    # MacOS uses the say command
-    system "say #{Shellwords.escape(what)}"
-    true
-  end
-
-
   # Function to setup the Reline history with a maximum depth
   def setup_reline_history(max_history_size=5)
     Reline::HISTORY.clear
@@ -123,7 +112,7 @@ class AIA::Main
 
     if AIA.config.chat?
       setup_reline_history
-      speak result
+      AIA.speak result
       lets_chat 
     end
 
@@ -227,14 +216,14 @@ class AIA::Main
           result          = get_and_display_result(the_prompt_text)
 
           log_the_follow_up(the_prompt_text, result)
-          speak result
+          AIA.speak result
         end
       else
         the_prompt_text = insert_terse_phrase(the_prompt_text)
         result          = get_and_display_result(the_prompt_text)
 
         log_the_follow_up(the_prompt_text, result)
-        speak result
+        AIA.speak result
       end
 
       the_prompt_text = ask_question_with_reline("\nFollow Up: ")
