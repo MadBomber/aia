@@ -20,11 +20,12 @@ tramp_require('debug_me') {
 }
 
 require 'hashie'
+require 'openai'
 require 'os'
 require 'pathname'
 require 'reline'
 require 'shellwords'
-require 'tempfile'    # SMELL: is this still being used?
+require 'tempfile'
 
 require 'tty-spinner'
 
@@ -45,8 +46,15 @@ require_relative "core_ext/string_wrap"
 module AIA
   class << self
     attr_accessor :config
+    attr_accessor :client
 
     def run(args=ARGV)
+      begin
+        @client = OpenAI::Client.new(access_token: ENV["OPENAI_API_KEY"])
+      rescue OpenAI::ConfigurationError
+        @client = nil
+      end
+
       args = args.split(' ') if args.is_a?(String)
 
       # TODO: Currently this is a one and done architecture.
@@ -59,8 +67,47 @@ module AIA
 
 
     def speak(what)
-      return unless AIA.config.speak?
-      system "say #{Shellwords.escape(what)}" if OS.osx?
+      return unless config.speak?
+
+      if OS.osx? && 'siri' == config.voice.downcase
+        system "say #{Shellwords.escape(what)}"
+      else
+        use_openai_tts(what)
+      end
+    end
+
+
+    def use_openai_tts(what)
+      if client.nil?
+        puts "\nWARNING: OpenAI's text to speech capability is not available at this time."
+        return
+      end
+
+      player = if OS.osx?
+                  'afplay'
+                elsif OS.linux?
+                  'mpg123'
+                elsif OS.windows?
+                  'cmdmp3'
+                else
+                  puts "\nWARNING: There is no MP3 player available"
+                  return
+                end
+
+      response = client.audio.speech(
+        parameters: {
+          model: config.speech_model,
+          input: what,
+          voice: config.voice
+        }
+      )
+
+      Tempfile.create(['speech', '.mp3']) do |f|
+        f.binmode
+        f.write(response)
+        f.close
+        `#{player} #{f.path}`
+      end
     end
   end
 end

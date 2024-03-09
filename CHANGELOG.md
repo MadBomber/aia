@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.5.14] 2024-03-09
+- Directly access OpenAI to do text to speech when using the `--speak` option
+- Added --voice to specify which voice to use
+- Added --speech_model to specify which TTS model to use
+
 ## [0.5.13] 2024-03-03
 - Added CLI-utility `llm` as a backend processor
 

@@ -6,15 +6,15 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
+> v0.5.14
+> - Directly access OpenAI to do text to speech when using the `--speak` option
+> - Added --voice to specify which voice to use
+> - Added --speech_model to specify which TTS model to use
+>
 > v0.5.13
 > - Added an initial integration for CLI-tool `llm` as a backend processor
 >   Its primary feature is its **ability to use local LLMs and APIs to keep all processing within your local workstation.**
 > 
-> v0.5.12
-> - Supports Prompt Sequencing
-> - Added --next option
-> - Added --pipeline option
-
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -106,9 +106,12 @@ The `aia` configuration defaults can be over-ridden by system environment variab
 | log_file      | ~/.prompts/_prompts.log | AIA_LOG_FILE |
 | markdown      | true          | AIA_MARKDOWN |
 | model         | gpt-4-1106-preview | AIA_MODEL |
-| out_file       | STDOUT        | AIA_OUT_FILE |
+| out_file      | STDOUT        | AIA_OUT_FILE |
 | prompts_dir   | ~/.prompts    | AIA_PROMPTS_DIR |
-| VERBOSE       | FALSE         | AIA_VERBOSE |
+| speech_model. | tts-1         | AIA_SPEECH_MODEL |
+| verbose       | FALSE         | AIA_VERBOSE |
+| voice         | alloy         | AIA_VOICE |
+
 
 
 See the `@options` hash in the `cli.rb` file for a complete list.  There are some config items that do not necessarily make sense for use as an envar over-ride.  For example if you set `export AIA_DUMP_FILE=config.yaml` then `aia` would dump the current configuration config.yaml and exit every time it is ran until you finally `unset AIA_DUMP_FILE`
