@@ -20,11 +20,16 @@ class AIA::Main
   include AIA::DynamicContent
   include AIA::UserQuery
   
-  attr_accessor :logger, :tools, :backend, :directive_output
+  attr_accessor :logger, :tools, :backend, :directive_output, :piped_content
 
   attr_reader :spinner
 
   def initialize(args= ARGV)
+    unless $stdin.tty?
+      @piped_content = $stdin.readlines.join.chomp
+      $stdin.reopen("/dev/tty")
+    end
+
     @directive_output = ""
     AIA::Tools.load_tools
 
@@ -48,6 +53,8 @@ class AIA::Main
 
     @prompt = AIA::Prompt.new.prompt
 
+    @prompt.text += piped_content unless piped_content.nil?
+
     # TODO: still should verify that the tools are ion the $PATH
     # tools.class.verify_tools
   end
@@ -63,7 +70,7 @@ class AIA::Main
   # This will be recursive with the new options
   # --next and --pipeline
   def call
-    directive_output = @directives_processor.execute_my_directives
+    @directive_output = @directives_processor.execute_my_directives
 
     if AIA.config.chat?
       AIA.config.out_file = STDOUT 
@@ -95,7 +102,7 @@ class AIA::Main
 
     the_prompt = @prompt.to_s
 
-    the_prompt.prepend(directive_output + "\n") unless directive_output.nil? || directive_output.empty?
+    the_prompt.prepend(@directive_output + "\n") unless @directive_output.nil? || @directive_output.empty?
 
     if AIA.config.terse?
       the_prompt.prepend "Be terse in your response. "
@@ -191,9 +198,10 @@ class AIA::Main
       directive   = parts.shift
       parameters  = parts.join(' ')
       AIA.config.directives << [directive, parameters]
-      directive_output = @directives_processor.execute_my_directives
+
+      @directive_output = @directives_processor.execute_my_directives
     else
-      directive_output = ""
+      @directive_output = ""
     end
 
     result
@@ -210,18 +218,19 @@ class AIA::Main
       the_prompt_text   = render_env(the_prompt_text) if AIA.config.shell?
 
       if handle_directives(the_prompt_text)
-        unless directive_output.nil?
-          the_prompt_text = insert_terse_phrase(the_prompt_text)
-          the_prompt_text << directive_output 
+        if @directive_output.nil? || @directive_output.empty?
+          # Do nothing
+        else
+          the_prompt_text = @directive_output 
+          the_prompt_text = render_erb(the_prompt_text) if AIA.config.erb?
+          the_prompt_text = render_env(the_prompt_text) if AIA.config.shell?
           result          = get_and_display_result(the_prompt_text)
-
           log_the_follow_up(the_prompt_text, result)
           AIA.speak result
         end
       else
         the_prompt_text = insert_terse_phrase(the_prompt_text)
         result          = get_and_display_result(the_prompt_text)
-
         log_the_follow_up(the_prompt_text, result)
         AIA.speak result
       end

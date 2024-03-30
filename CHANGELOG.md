@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.5.15] 2024-03-30
+- Added the ability to accept piped in text to be appeded to the end of the prompt text: curl $URL | aia ad_hoc
+- Fixed bugs with entering directives as follow-up prompts during a chat session
+
 ## [0.5.14] 2024-03-09
 - Directly access OpenAI to do text to speech when using the `--speak` option
 - Added --voice to specify which voice to use
