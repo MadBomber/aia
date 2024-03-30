@@ -6,15 +6,16 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
+> v0.5.15
+> - Support piped content by appending to end of prompt text
+> - fixed bugs with directives entered as follow-up while in chat mode
+>
 > v0.5.14
 > - Directly access OpenAI to do text to speech when using the `--speak` option
 > - Added --voice to specify which voice to use
 > - Added --speech_model to specify which TTS model to use
 >
-> v0.5.13
-> - Added an initial integration for CLI-tool `llm` as a backend processor
->   Its primary feature is its **ability to use local LLMs and APIs to keep all processing within your local workstation.**
-> 
+
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
