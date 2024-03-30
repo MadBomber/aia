@@ -50,8 +50,9 @@ module AIA
 
     def run(args=ARGV)
       begin
-        @client = OpenAI::Client.new(access_token: ENV["OPENAI_API_KEY"])
-      rescue OpenAI::ConfigurationError
+        @client = AIA::Client.new
+      rescue => e
+        debug_me('== ERROR =='){[ :e ]}
         @client = nil
       end
 
@@ -72,41 +73,7 @@ module AIA
       if OS.osx? && 'siri' == config.voice.downcase
         system "say #{Shellwords.escape(what)}"
       else
-        use_openai_tts(what)
-      end
-    end
-
-
-    def use_openai_tts(what)
-      if client.nil?
-        puts "\nWARNING: OpenAI's text to speech capability is not available at this time."
-        return
-      end
-
-      player = if OS.osx?
-                  'afplay'
-                elsif OS.linux?
-                  'mpg123'
-                elsif OS.windows?
-                  'cmdmp3'
-                else
-                  puts "\nWARNING: There is no MP3 player available"
-                  return
-                end
-
-      response = client.audio.speech(
-        parameters: {
-          model: config.speech_model,
-          input: what,
-          voice: config.voice
-        }
-      )
-
-      Tempfile.create(['speech', '.mp3']) do |f|
-        f.binmode
-        f.write(response)
-        f.close
-        `#{player} #{f.path}`
+        client.speak(what)
       end
     end
   end
