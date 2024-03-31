@@ -155,8 +155,10 @@ class AIA::Cli
       extra:      [''],   # 
       #
       model:      ["gpt-4-1106-preview",  "--llm --model"],
-      speech_model: ["tts-1", "--sm --spech_model"],
+      speech_model: ["tts-1", "--sm --speech_model"],
       voice:        ["alloy", "--voice"],
+      #
+      transcription_model:  ["wisper-1", "--tm --transcription_model"],
       #
       dump_file:  [nil,       "--dump"],
       completion: [nil,       "--completion"],

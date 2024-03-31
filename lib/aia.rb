@@ -49,13 +49,6 @@ module AIA
     attr_accessor :client
 
     def run(args=ARGV)
-      begin
-        @client = AIA::Client.new
-      rescue => e
-        debug_me('== ERROR =='){[ :e ]}
-        @client = nil
-      end
-
       args = args.split(' ') if args.is_a?(String)
 
       # TODO: Currently this is a one and done architecture.

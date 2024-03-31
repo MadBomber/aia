@@ -1,12 +1,13 @@
 # lib/aia/tools/client.rb
 
-require 'openai'
+require_relative 'backend_common'
 
 OpenAI.configure do |config|
   config.access_token = ENV.fetch("OPENAI_ACCESS_TOKEN")
 end
 
 class AIA::Client < AIA::Tools
+  include AIA::BackendCommon
 
   meta(
     name:     'client',
@@ -22,9 +23,20 @@ class AIA::Client < AIA::Tools
   DIRECTIVES          = []
 
   def initialize(text: "", files: [])
-    @text       = text
-    @files      = files
+    super
+
     @client     = OpenAI::Client.new
+  end
+
+  def build_command; end
+
+
+  # TODO: need to figure out a way to switch between
+  #       the generic text-based prompt and the two
+  #       specialized methods speak and transcript.
+  #
+  def run
+    transcribe    
   end
 
 

@@ -70,6 +70,8 @@ class AIA::Directives
             Pathname.new(value) :
             Pathname.pwd + value
         end
+      elsif %w[next pipeline].include? item.downcase
+        pipeline(value)
       else
         AIA.config[item] = value
       end
@@ -78,6 +80,33 @@ class AIA::Directives
     nil
   end
 
+
+  # TODO: we need a way to submit CLI arguments into
+  #       the next prompt(s) from the main prompt.
+  #       currently the config for subsequent prompts
+  #       is expected to be set within those prompts.
+  #       Maybe something like:
+  #         //next prompt_id CLI args
+  #       This would mean that the pipeline would be:
+  #         //pipeline id1 cli args, id2 cli args, id3 cli args
+  #
+  
+  # TODO: Change AIA.config.pipline Array to be an Array of arrays
+  #       where each entry is:
+  #         [prompt_id, cli_args]
+  #       This means that:
+  #         entry = AIA.config.pipeline.shift
+  #         entry.is_A?(Sring) ? 'old format' : 'new format'
+  #
+
+  # //next id
+  # //pipeline id1,id2, id3   ,   id4
+  def pipeline(what)
+    return if what.empty?
+    AIA.config.pipeline << what.split(',').map(&:strip)
+    AIA.config.pipeline.flatten!
+  end
+  alias_method :next, :pipeline
 
   # when path_to_file is relative it will be
   # relative to the PWD.
