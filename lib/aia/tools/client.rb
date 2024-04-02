@@ -17,7 +17,7 @@ class AIA::Client < AIA::Tools
     install:  'gem install ruby-openai',
   )
 
-  attr_reader :client
+  attr_reader :client, :raw_response
   
   DEFAULT_PARAMETERS  = ''
   DIRECTIVES          = []
@@ -28,34 +28,77 @@ class AIA::Client < AIA::Tools
     @client     = OpenAI::Client.new
   end
 
-  def build_command; end
-
-
-  # TODO: need to figure out a way to switch between
-  #       the generic text-based prompt and the two
-  #       specialized methods speak and transcript.
-  #
-  def run
-    transcribe    
+  def build_command
+    # No-Op
   end
 
 
-  def speak(what)
-    if client.nil?
-      puts "\nWARNING: OpenAI's text to speech capability is not available at this time."
-      return
-    end
+  def run
+    handle_model(AIA.config.model)
+  rescue => e
+    puts "Error handling model #{AIA.config.model}: #{e.message}"
+  end
 
-    player = if OS.osx?
-                'afplay'
-              elsif OS.linux?
-                'mpg123'
-              elsif OS.windows?
-                'cmdmp3'
-              else
-                puts "\nWARNING: There is no MP3 player available"
-                return
-              end
+
+  ###########################################################
+  private
+
+  # Handling different models more abstractly
+  def handle_model(model_name)
+    case model_name
+    when /vision/
+      image2text
+
+    when /^gpt.*$/, /^babbage.*$/, /^davinci.*$/
+      text2text
+
+    when /^dall-e.*$/
+      text2image
+
+    when /^tts.*$/
+      text2audio
+
+    when /^whisper.*$/
+      audio2text
+
+    else
+      raise "Unsupported model: #{model_name}"
+    end
+  end
+
+
+  def image2text
+    # TODO: Implement
+  end
+
+
+  def text2text
+    @raw_response = client.chat(
+      parameters: {
+          model:        AIA.config.model, # Required.
+          messages:     [{ role: "user", content: text}], # Required.
+          temperature:  AIA.config.temp,
+          # stream: proc do |chunk, _bytesize|
+          #     print chunk.dig("choices", 0, "delta", "content")
+          # end
+      }
+    )
+
+    response = raw_response.dig('choices', 0, 'message', 'content')
+
+    response
+  end
+
+
+  def text2image
+    # TODO: Implementation
+  end
+
+
+  def text2audio(what = @text, save: false, play: true)
+    raise "OpenAI's text to speech capability is not available" unless client
+
+    player = select_audio_player
 
     response = client.audio.speech(
       parameters: {
@@ -65,31 +108,63 @@ class AIA::Client < AIA::Tools
       }
     )
 
+    handle_audio_response(response, player, save, play)
+  end
+
+
+  def audio2text(path_to_audio_file = @files.first)
+    response = client.audio.transcribe(
+      parameters: {
+        model: AIA.config.model,
+        file: File.open(path_to_audio_file, "rb")
+      }
+    )
+
+    response["text"]
+  rescue => e
+    "An error occurred: #{e.message}"
+  end
+
+
+  # Helper methods
+  def select_audio_player
+    case OS.host_os
+    when /mac|darwin/
+      'afplay'
+    when /linux/
+      'mpg123'
+    when /mswin|mingw|cygwin/
+      'cmdmp3'
+    else
+      raise "No MP3 player available"
+    end
+  end
+
+
+  def handle_audio_response(response, player, save, play)
     Tempfile.create(['speech', '.mp3']) do |f|
       f.binmode
       f.write(response)
       f.close
-      `#{player} #{f.path}`
+      `cp #{f.path} #{Pathname.pwd + "speech.mp3"}` if save
+      `#{player} #{f.path}` if play
     end
   end
 
 
-  def transcribe(path_to_audio_file=@files.first)
-    begin
-      response = client.audio.transcribe(
-        parameters: {
-          model:  AIA.config.model, # "whisper-1 || whisper-2",
-          file:   File.open(path_to_audio_file, "rb")
-        }
-      )
-      
-      response["text"]
-    rescue => e
-      "An error occurred: #{e.message}"
+  ###########################################################
+  public
+
+  class << self
+
+    def list_models
+      new.client.model.list      
     end
+
   end
 
 end
+
 
 __END__
 
