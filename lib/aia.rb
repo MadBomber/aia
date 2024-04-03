@@ -66,9 +66,13 @@ module AIA
       if OS.osx? && 'siri' == config.voice.downcase
         system "say #{Shellwords.escape(what)}"
       else
-        client.speak(what)
+        Client.speak(what)
       end
     end
+
+
+    def verbose?  = AIA.config.verbose?
+    def debug?    = AIA.config.debug?
   end
 end
 

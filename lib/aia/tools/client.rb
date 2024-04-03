@@ -39,6 +39,12 @@ class AIA::Client < AIA::Tools
     puts "Error handling model #{AIA.config.model}: #{e.message}"
   end
 
+  def speak(what = @text)
+    print "Speaking ... " if AIA.verbose?
+    text2audio(what)
+    puts "Done."          if AIA.verbose?
+  end
+
 
   ###########################################################
   private
@@ -78,9 +84,6 @@ class AIA::Client < AIA::Tools
           model:        AIA.config.model, # Required.
           messages:     [{ role: "user", content: text}], # Required.
           temperature:  AIA.config.temp,
-          # stream: proc do |chunk, _bytesize|
-          #     print chunk.dig("choices", 0, "delta", "content")
-          # end
       }
     )
 
@@ -89,9 +92,21 @@ class AIA::Client < AIA::Tools
     response
   end
 
-
+  
   def text2image
-    # TODO: Implementation
+    parameters = {
+      model:    AIA.config.model,
+      prompt:   text
+    }
+
+    parameters[:size]     = AIA.config.image_size     unless AIA.config.image_size.empty?
+    parameters[:quality]  = AIA.config.image_quality  unless AIA.config.image_quality.empty?
+
+    raw_response  = client.images.generate(parameters:)
+
+    response = raw_response.dig("data", 0, "url")
+
+    response
   end
 
 
@@ -159,6 +174,16 @@ class AIA::Client < AIA::Tools
 
     def list_models
       new.client.model.list      
+    end
+
+
+    def speak(what)
+      save_model = AIA.config.model
+      AIA.config.model = AIA.config.speech_model
+
+      new(text: what).speak
+
+      AIA.config.model = save_model
     end
 
   end

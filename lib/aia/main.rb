@@ -117,6 +117,8 @@ class AIA::Main
 
     result = get_and_display_result(the_prompt)
 
+    AIA.speak(result) if AIA.config.speak?
+
     logger.prompt_result(@prompt, result)
 
     if AIA.config.chat?

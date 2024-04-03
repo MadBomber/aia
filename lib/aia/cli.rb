@@ -188,6 +188,11 @@ class AIA::Cli
       log_file:   ["~/.prompts/_prompts.log", "-l --log_file --no-log_file"],
       #
       backend:    ['mods',    "-b --be --backend --no-backend"],
+      #
+      # text2image related ...
+      #
+      image_size:     ['', '--is --image_size'],
+      image_quality:  ['', '--iq --image_quality'],
     }
     
     AIA.config = AIA::Config.new(@options.transform_values { |values| values.first })

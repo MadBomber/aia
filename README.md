@@ -6,14 +6,15 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
+
+> v0.5.16
+> - fixed bugs with the prompt pipeline
+> - Added new backend "client" which is an `aia` internal client to the OpenAI API that allows both text-to-speech and speech-to-text
+> - Added --image_size and --image_quality to support image generation with the dall-e-2 and dall-e-3 models using the new internal `aia` OpenAI client.
+>
 > v0.5.15
 > - Support piped content by appending to end of prompt text
 > - fixed bugs with directives entered as follow-up while in chat mode
->
-> v0.5.14
-> - Directly access OpenAI to do text to speech when using the `--speak` option
-> - Added --voice to specify which voice to use
-> - Added --speech_model to specify which TTS model to use
 >
 
 
@@ -43,6 +44,7 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
     - [--next](#--next)
     - [--pipeline](#--pipeline)
     - [Best Practices ??](#best-practices-)
+    - [Example pipline](#example-pipline)
   - [All About ROLES](#all-about-roles)
     - [The --roles_dir (AIA_ROLES_DIR)](#the---roles_dir-aia_roles_dir)
     - [The --role Option](#the---role-option)
@@ -344,6 +346,8 @@ three.txt contains //config next four
 ```
 BUT if you have more than two prompts in your sequence then consider using the --pipeline option.
 
+**The directive //next is short for //config next**
+
 ### --pipeline
 
 `aia one --pipeline two,three,four`
@@ -351,6 +355,8 @@ BUT if you have more than two prompts in your sequence then consider using the -
 or inside of the `one.txt` prompt file use this directive:
 
 `//config pipeline two,three,four`
+
+**The directive //pipeline is short for //config pipeline**
 
 ### Best Practices ??
 
@@ -365,6 +371,47 @@ Since the response of one prompt is fed into the next prompt within the sequence
 | four.txt | //config out_file four.md |
 
 This way you can see the response that was generated for each prompt in the sequence.
+
+### Example pipline
+
+TODO: the audio-to-text is still under development.
+
+Suppose you have an audio file of a meeting.  You what to get a transcription of what was said in that meeting.  Sometimes raw transcriptions hide the real value of the recording so you have crafted a pompt that takes the raw transcriptions and does a technical summary with a list of action items.
+
+Create two prompts named transcribe.txt and tech_summary.txt
+
+```
+# transcribe.txt
+# Desc: takes one audio file
+# note that there is no "prompt" text only the directive
+
+//config backend  client
+//config model    whisper-1
+//next            tech_summary
+```
+and
+
+```
+# tech_summary.txt
+
+//config model    gpt-4-turbo
+//config out_file meeting_summary.md
+
+Review the raw transcript of a technical meeting, 
+summarize the discussion and
+note any action items that were generated.
+
+Format your response in markdown.
+```
+
+Now you can do this:
+
+```
+aia transcribe my_tech_meeting.m4a
+```
+
+You summary of the meeting is in the file `meeting_summary.md`
+
 
 ## All About ROLES
 

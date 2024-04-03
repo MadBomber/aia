@@ -1,4 +1,4 @@
-# aia 1 "v0.5.14" AIA "User Manuals"
+# aia 1 "v0.5.16" AIA "User Manuals"
 
 ## NAME
 
@@ -43,6 +43,12 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `--erb`
 : If dynamic prompt content using $(...) wasn't enough here is ERB.  Embedded RUby.  <%= ruby code %> within a prompt will have its ruby code executed and the results of that execution will be inserted into the prompt.  I'm sure we will find a way to truly misuse this capability.  Remember, some say that the simple prompt is the best prompt.
 
+`--iq`, `--image_quality` *VALUE*
+: (Used with backend 'client' only) See the OpenAI docs for valid values (depends on model) - default: ''
+
+`--is`, `--image_size` *VALUE*
+: (Used with backend 'client' only) See the OpenAI docs for valid values (depends on model) - default: ''
+
 `--model` *NAME*
 : Name of the LLM model to use - default is gpt-4-1106-preview
 
@@ -52,8 +58,17 @@ The aia command-line tool is an interface for interacting with an AI model backe
 `--speak`
 : Simple implementation. Uses the "say" command to speak the response.  Fun with --chat
 
+`--sm`, `--speech_model` *MODEL NAME*
+: Which OpenAI LLM to use for text-to-speech (TTS) - default: tts-1
+
+`--voice` *VOICE NAME*
+: Which voice to use when speaking text.  If its "siri" and the platform is a Mac, then the CLI utility "say" is used.  Any other name will be used with OpenAI - default: alloy
+
 `--terse`
 : Add a clause to the prompt text that instructs the backend to be terse in its response.
+
+`--tm`, `--transcription_model` *MODEL NAME*
+: Which OpenAI LLM to use for audio-to-text - default: whisper-1
 
 `--version`
 : Print Version - default is false
@@ -176,6 +191,21 @@ or just
 
 if you want to specify them one at a time.
 
+You can also use the shortcuts `//next` and `//pipeline`
+
+```
+//next two
+//next three
+//next four
+//next five
+```
+
+Is the same thing as
+
+```
+//pipeline two,three,four
+//next five
+```
 
 ## SEE ALSO
 
@@ -193,6 +223,13 @@ if you want to specify them one at a time.
 
 - [glow](https://github.com/charmbracelet/glow) Render markdown on the CLI
 
+## Image Generation
+
+The --backend "client" is the only back end that supports image generation using the `dall-e-2` and `dall-e-3` models through OpenAI.  The result of your prompt will be a URL that points to the OpenAI storage space where your image is placed.
+
+Use --image_size and --image_quality to specified the desired size and quality of the generated image.  The valid values are available at the OpenAI website.
+
+https://platform.openai.com/docs/guides/images/usage?context=node
 
 ## AUTHOR
 
