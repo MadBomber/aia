@@ -155,8 +155,10 @@ class AIA::Cli
       extra:      [''],   # 
       #
       model:      ["gpt-4-1106-preview",  "--llm --model"],
-      speech_model: ["tts-1", "--sm --spech_model"],
+      speech_model: ["tts-1", "--sm --speech_model"],
       voice:        ["alloy", "--voice"],
+      #
+      transcription_model:  ["wisper-1", "--tm --transcription_model"],
       #
       dump_file:  [nil,       "--dump"],
       completion: [nil,       "--completion"],
@@ -186,6 +188,11 @@ class AIA::Cli
       log_file:   ["~/.prompts/_prompts.log", "-l --log_file --no-log_file"],
       #
       backend:    ['mods',    "-b --be --backend --no-backend"],
+      #
+      # text2image related ...
+      #
+      image_size:     ['', '--is --image_size'],
+      image_quality:  ['', '--iq --image_quality'],
     }
     
     AIA.config = AIA::Config.new(@options.transform_values { |values| values.first })

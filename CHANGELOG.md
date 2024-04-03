@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [0.5.16] 2024-04-02
+- fixed prompt pipelines
+- added //next and //pipeline directives as shortcuts to //config [next,pipeline]
+- Added new backend "client" as an internal OpenAI client
+- Added --sm, --speech_model default: tts-1
+- Added --tm, --transcription_model default: whisper-1
+- Added --voice default: alloy (if "siri" and Mac? then uses cli tool "say")
+- Added --image_size and --image_quality (--is --iq)
+
+
 ## [0.5.15] 2024-03-30
 - Added the ability to accept piped in text to be appeded to the end of the prompt text: curl $URL | aia ad_hoc
 - Fixed bugs with entering directives as follow-up prompts during a chat session

@@ -33,6 +33,8 @@ class AIA::Main
     @directive_output = ""
     AIA::Tools.load_tools
 
+    AIA.client = AIA::Client.new
+
     AIA::Cli.new(args)
 
     if AIA.config.debug?
@@ -115,6 +117,8 @@ class AIA::Main
 
     result = get_and_display_result(the_prompt)
 
+    AIA.speak(result) if AIA.config.speak?
+
     logger.prompt_result(@prompt, result)
 
     if AIA.config.chat?
@@ -125,14 +129,34 @@ class AIA::Main
 
     return if AIA.config.next.empty? && AIA.config.pipeline.empty?
 
-    # Reset some config items to defaults
+    keep_going(result) unless AIA.config.pipeline.empty?
+  end
+
+
+  # The AIA.config.pipeline is NOT empty, so feed this result
+  # into the next prompt within the pipeline.
+  #
+  def keep_going(result)
+    temp_file = Tempfile.new('aia_pipeline')
+    temp_file.write(result)
+    temp_file.close
+
     AIA.config.directives = []
-    AIA.config.next       = AIA.config.pipeline.shift
-    AIA.config.arguments  = [AIA.config.next, AIA.config.out_file.to_s]
+    AIA.config.model      = ""
+    AIA.config.arguments  = [
+                              AIA.config.pipeline.shift, 
+                              temp_file.path,
+                              # TODO: additional arguments from the pipeline
+                            ] 
     AIA.config.next       = ""
 
+    AIA.config.files = [temp_file.path]
+
     @prompt = AIA::Prompt.new.prompt
-    call # Recurse!
+    call # Recurse! until the AIA.config.pipeline is emplty
+    puts
+  ensure
+    temp_file.unlink
   end
 
 
