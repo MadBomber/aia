@@ -6,16 +6,15 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
-
+> v0.5.17
+> - replaced gem semver with versionaire
+>
 > v0.5.16
 > - fixed bugs with the prompt pipeline
 > - Added new backend "client" which is an `aia` internal client to the OpenAI API that allows both text-to-speech and speech-to-text
 > - Added --image_size and --image_quality to support image generation with the dall-e-2 and dall-e-3 models using the new internal `aia` OpenAI client.
 >
-> v0.5.15
-> - Support piped content by appending to end of prompt text
-> - fixed bugs with directives entered as follow-up while in chat mode
->
+
 
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->

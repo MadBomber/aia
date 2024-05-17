@@ -1,7 +1,7 @@
 # aia/main.just
 #
 # Support man pages with ...
-# gem install kramdown-man
+# gem install kramdown-man versionaire
 #
 
 RR := env_var('RR')
@@ -115,7 +115,7 @@ mods_delete_all:
 
 module_repo := "/Users/dewayne/sandbox/git_repos/repo.just"
 module_gem := "/Users/dewayne/sandbox/git_repos/gem.just"
-module_version := "/Users/dewayne/just_modules/version.just"
+module_version := "/Users/dewayne/just_modules/version_versionaire.just"
 module_git := "/Users/dewayne/just_modules/git.just"
 
 

@@ -1,7 +1,7 @@
 # aia/main.just
 #
 # Support man pages with ...
-# gem install kramdown-man
+# gem install kramdown-man versionaire
 #
 
 RR := env_var('RR')
@@ -13,7 +13,7 @@ with ~/.justfile
 
 module repo /Users/dewayne/sandbox/git_repos/repo.just
 module gem /Users/dewayne/sandbox/git_repos/gem.just
-module version /Users/dewayne/just_modules/version.just
+module version /Users/dewayne/just_modules/version_versionaire.just
 module git /Users/dewayne/just_modules/git.just
 
 

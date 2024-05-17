@@ -1,10 +1,10 @@
 # lib/aia/version.rb
 # frozen_string_literal: true
 
-require 'semver'
+require 'versionaire'
 
 module AIA
-  # .semver is located at the gem's root directory
-  version_file_path = File.join(__dir__, '..', '..')
-  VERSION = SemVer.find(version_file_path).to_s[1..]
+  VERSION_FILEPATH  = "#{__dir__}/../../.version"
+  VERSION           = Versionaire::Version File.read(VERSION_FILEPATH).strip
+  def self.version  = VERSION
 end
