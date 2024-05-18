@@ -91,8 +91,8 @@ alias inc := bump
   File.open("{{version_filepath}}", 'w')
   .write(new_version.to_s + "\n")
   #
-  content = File.read({{man_filepath}}).sub(old_version, new_version)
+  content = File.read("{{man_filepath}}").sub(old_version, new_version)
   #
-  File.write({{man_filepath}}, content)
+  File.write("{{man_filepath}}", content)
   #
   `git add {{version_filepath}} {{man_filepath}}`
