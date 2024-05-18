@@ -43,7 +43,7 @@ Gem::Specification.new do |spec|
     `git ls-files -z`.split("\x0").reject do |f|
       (File.expand_path(f) == __FILE__) ||
         f.start_with?(*%w[bin/ test/ spec/ features/ .git Gemfile])
-    end + ['man/', '.semver']
+    end + ['man/', '.version']
   end
 
   spec.bindir         = "bin"
@@ -55,11 +55,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency "prompt_manager", '>= 0.4.1' # needs the directives functionality
   spec.add_dependency "reline"
   spec.add_dependency "ruby-openai"
-  spec.add_dependency "semver2"
   spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"
   spec.add_dependency "tty-screen"
   spec.add_dependency "tty-spinner"
+  spec.add_dependency "versionaire"
 
 
 

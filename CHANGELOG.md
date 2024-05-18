@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+## [0.5.17] 2024-05-17
+- removed replaced `semver` with `versionaire`
+
 ## [0.5.16] 2024-04-02
 - fixed prompt pipelines
 - added //next and //pipeline directives as shortcuts to //config [next,pipeline]

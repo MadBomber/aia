@@ -1,10 +1,11 @@
 # aia/main.just
 #
 # Support man pages with ...
-# gem install kramdown-man
+# gem install kramdown-man versionaire
 #
 
 RR := env_var('RR')
+version_filepath := env_var('RR') + "/.version"
 
 # with ~/.justfile
 
@@ -115,7 +116,7 @@ mods_delete_all:
 
 module_repo := "/Users/dewayne/sandbox/git_repos/repo.just"
 module_gem := "/Users/dewayne/sandbox/git_repos/gem.just"
-module_version := "/Users/dewayne/just_modules/version.just"
+module_version := "/Users/dewayne/just_modules/version_versionaire.just"
 module_git := "/Users/dewayne/just_modules/git.just"
 
 
@@ -170,7 +171,7 @@ tag_push_and_bump: tag push bump
 
 # Create a git tag for the current version
 tag:
-  git tag $(semver)
+  git tag v`head -1 {{version_filepath}}`
 
 # Push the git current working directory and all tags
 push:
@@ -180,11 +181,17 @@ push:
 
 alias inc := bump
 
-# Increament version's level: major.minor.patch
+# Increment version's level: major.minor.patch
 @bump level='patch':
-  semver increment {{level}}
-  echo "Now working on: $(semver)"
-  git add {{RR}}/.semver
+  #!/usr/bin/env ruby
+  require 'versionaire'
+  old_version = Versionaire::Version File.read("{{version_filepath}}").strip
+  level = "{{level}}".to_sym
+  new_version = old_version.bump level
+  puts "Bumping #{level}:  #{old_version} to #{new_version}"
+  File.open("{{version_filepath}}", 'w')
+  .write(new_version.to_s + "\n")
+  `git add {{version_filepath}}`
 
 
 
