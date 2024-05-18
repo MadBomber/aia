@@ -4,8 +4,9 @@
 # gem install kramdown-man versionaire
 #
 
-RR := env_var('RR')
-version_filepath := env_var('RR') + "/.version"
+RR                := env_var('RR')
+version_filepath  := env_var('RR') + "/.version"
+man_filepath      := env_var('RR') + "/man/aia.1.md"
 
 with ~/.justfile
 
@@ -89,5 +90,9 @@ alias inc := bump
   puts "Bumping #{level}:  #{old_version} to #{new_version}"
   File.open("{{version_filepath}}", 'w')
   .write(new_version.to_s + "\n")
-  `git add {{version_filepath}}`
-
+  #
+  content = File.read({{man_filepath}}).sub(old_version, new_version)
+  #
+  File.write({{man_filepath}}, content)
+  #
+  `git add {{version_filepath}} {{man_filepath}}`
