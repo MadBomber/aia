@@ -1,5 +1,7 @@
 # test/aia/logging_test.rb
 
+require 'ostruct'
+
 require_relative  '../test_helper'
 
 require 'logging'
