@@ -68,7 +68,7 @@ tag_push_and_bump: tag push bump
 
 # Create a git tag for the current version
 tag:
-  git tag $(semver)
+  git tag v`head -1 {{version_filepath}}`
 
 # Push the git current working directory and all tags
 push:
@@ -78,9 +78,15 @@ push:
 
 alias inc := bump
 
-# Increament version's level: major.minor.patch
+# Increment version's level: major.minor.patch
 @bump level='patch':
-  semver increment {{level}}
-  echo "Now working on: $(semver)"
-  git add {{RR}}/.semver
+  #!/usr/bin/env ruby
+  require 'versionaire'
+  old_version = Versionaire::Version File.read("{{version_filepath}}").strip
+  level = "{{level}}".to_sym
+  new_version = old_version.bump level
+  puts "Bumping #{level}:  #{old_version} to #{new_version}"
+  File.open("{{version_filepath}}", 'w')
+  .write(new_version.to_s + "\n")
+  `git add {{version_filepath}}`
 
