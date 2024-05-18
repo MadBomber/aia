@@ -5,6 +5,7 @@
 #
 
 RR := env_var('RR')
+version_filepath := env_var('RR') + "/.version"
 
 with ~/.justfile
 
