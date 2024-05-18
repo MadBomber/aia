@@ -62,7 +62,9 @@ end
 
 __END__
 
-$ glow --help
+#########################################################
+
+glow, version 1.5.1
 
   Render markdown on the CLI, with pizzazz!
 
@@ -87,4 +89,3 @@ Flags:
   -w, --width uint      word-wrap at width
 
 Use "glow [command] --help" for more information about a command.
-

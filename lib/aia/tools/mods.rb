@@ -1,5 +1,39 @@
 # lib/aia/tools/mods.rb
 
+=begin
+  The mods --role parameter is much different than the
+  aia usage of --role which inserts a prompt in front
+  of the given prompt.
+
+  What mods does is within its settings file it has
+  different "system prompts" defined by name under
+  the "roles" section of its YAML file.  The standard
+  values for this section are empty - e.g. none
+  are predefined.  If you choose to add a role
+  to the mods settings, it will be sent in the
+  request as a "system" prompt in addition to the
+  normal "user" prompt.
+
+  To use the mods role with aia do this:
+
+      aia prompt_name -b mods -- --role role_name
+
+  Where role_name is the name you gave your system
+  prompt in the mods settings YAML file.
+
+  You can use both the aia --role and the mods --role
+  option at the same time.
+
+    aia --role role_file_name prompt_name -b mods -- --role mods_role_name
+
+  The content of role_file_name will be prepended to
+  the content of the prompt_name file and used as
+  the "user" prompt.  The content associated with
+  with the mods_role_name will be used as the "system"
+  prompt in the request.
+
+=end
+
 require_relative 'backend_common'
 
 class AIA::Mods < AIA::Tools
@@ -53,7 +87,7 @@ __END__
 
 ##########################################################
 
-mods version 1.2.1 (Homebre)
+mods version 1.3.1 (Homebre)
 
 GPT on the command line. Built for pipelines.
 
@@ -86,6 +120,7 @@ Options:
   --max-tokens          Maximum number of tokens in response.
   --word-wrap           Wrap formatted output at specific width (default is 80)
   --temp                Temperature (randomness) of results, from 0.0 to 2.0.
+  --stop                Up to 4 sequences where the API will stop generating further tokens.
   --topp                TopP, an alternative to temperature that narrows response, from 0.0 to 1.0.
   --fanciness           Your desired level of fanciness.
   --status-text         Text to show while generating.
@@ -93,8 +128,8 @@ Options:
   --reset-settings      Backup your old settings file and reset everything to the defaults.
   --settings            Open settings in your $EDITOR.
   --dirs                Print the directories in which mods store its data
+  --role                System role to use.
 
 Example:
-  # Editorialize your video files
-  ls ~/vids | mods -f "summarize each of these titles, group them by decade" | glow
-
+  # Write new sections for a readme
+  cat README.md | mods "write a new section to this README documenting a pdf sharing feature"

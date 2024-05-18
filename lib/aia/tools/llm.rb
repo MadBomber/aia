@@ -35,7 +35,7 @@ __END__
 
 #########################################################
 
-llm, version 0.13.1
+llm, version 0.14
 
 Usage: llm [OPTIONS] COMMAND [ARGS]...
 
@@ -73,5 +73,3 @@ Commands:
   similar       Return top N similar IDs from a collection
   templates     Manage stored prompt templates
   uninstall     Uninstall Python packages from the LLM environment
-
-  
