@@ -1,4 +1,27 @@
 # lib/aia/tools/client.rb
+=begin
+  The idea is to create a collection of clients
+  for which there are valid API keys.  Then use
+  that collection to choose the correct
+  processor to use based upon the model
+  that is specified for the prompt.
+=end
+
+require "omniai"
+require "omniai/anthropic"
+require "omniai/mistral"
+require "omniai/google"
+require "omniai/openai"
+
+AIA.config.processors = {
+  anthropic:  OmniAI::Anthropic::Client.new,
+  mistral:    OmniAI::Mistral::Client.new,
+  google:     OmniAI::Google::Client.new,
+  #
+  localai:    OmniAI::OpenAI::Client.new,
+  ollama:     OmniAI::OpenAI::Client.new,
+  openai:     OmniAI::OpenAI::Client.new,
+}
 
 require_relative 'backend_common'
 
@@ -12,9 +35,9 @@ class AIA::Client < AIA::Tools
   meta(
     name:     'client',
     role:     :backend,
-    desc:     'Ruby implementation of the OpenAI API',
-    url:      'https://github.com/alexrudall/ruby-openai',
-    install:  'gem install ruby-openai',
+    desc:     'Ruby implementation of the OmniAI API',
+    url:      'https://github.com/ksylvest/omniai',
+    install:  'gem install omniai omniai-anthropic omniai-mistral omniai-google omniai-openai'
   )
 
   attr_reader :client, :raw_response

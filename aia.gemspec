@@ -51,6 +51,11 @@ Gem::Specification.new do |spec|
   spec.require_paths  = %w[ lib ]
 
   spec.add_dependency "hashie"
+  spec.add_dependency "omniai"
+  spec.add_dependency "omniai-anthropic"
+  spec.add_dependency "omniai-mistral"
+  spec.add_dependency "omniai-google"
+  spec.add_dependency "omniai-openai"
   spec.add_dependency "os"
   spec.add_dependency "prompt_manager", '>= 0.4.1' # needs the directives functionality
   spec.add_dependency "reline"
@@ -60,8 +65,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "tty-screen"
   spec.add_dependency "tty-spinner"
   spec.add_dependency "versionaire"
-
-
 
   spec.add_development_dependency "minitest"
   spec.add_development_dependency 'amazing_print'
