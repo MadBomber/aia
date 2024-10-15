@@ -1,4 +1,4 @@
-# aia 1 "v0.5.17" AIA "User Manuals"
+# aia 1 "v0.6.0" AIA "User Manuals"
 
 ## NAME
 
@@ -72,9 +72,6 @@ The aia command-line tool is an interface for interacting with an AI model backe
 
 `--version`
 : Print Version - default is false
-
-`-b`, `--[no]-backend` *LLM TOOL*
-: Specify the backend prompt resolver - default is mods
 
 `-c`, `--config_file` *PATH_TO_CONFIG_FILE*
 : Load Config File. both YAML and TOML formats are supported.  Also ERB is supported.  For example ~/aia_config.yml.erb will be processed through ERB and then through YAML.  The result will be written out to ~/aia_config.yml so that you can manually verify that you got what you wanted from the ERB processing.
@@ -209,14 +206,6 @@ Is the same thing as
 
 ## SEE ALSO
 
-- [OpenAI Platform Documentation](https://platform.openai.com/docs/overview) for more information on [obtaining access tokens](https://platform.openai.com/account/api-keys) and working with OpenAI models.
-
-- [llm](https://llm.datasette.io/) for more information on `llm` - A CLI utility and Python library for interacting with Large Language Models, both via remote APIs and models that can be installed and run on your own machine.
-
-- [mods](https://github.com/charmbracelet/mods) for more information on `mods` - AI for the command line, built for pipelines.  LLM based AI is really good at interpreting the output of commands and returning the results in CLI friendly text formats like Markdown. Mods is a simple tool that makes it super easy to use AI on the command line and in your pipelines. Mods works with [OpenAI](https://platform.openai.com/account/api-keys) and [LocalAI](https://github.com/go-skynet/LocalAI)
-
-- [sgpt](https://github.com/tbckr/sgpt) (aka shell-gpt) is a powerful command-line interface (CLI) tool designed for seamless interaction with OpenAI models directly from your terminal. Effortlessly run queries, generate shell commands or code, create images from text, and more, using simple commands. Streamline your workflow and enhance productivity with this powerful and user-friendly CLI tool.
-
 - [fzf](https://github.com/junegunn/fzf) fzf is a general-purpose command-line fuzzy finder.  It's an interactive Unix filter for command-line that can be used with any list; files, command history, processes, hostnames, bookmarks, git commits, etc.
 
 - [ripgrep](https://github.com/BurntSushi/ripgrep) Search tool like grep and The Silver Searcher. It is a line-oriented search tool that recursively searches a directory tree for a regex pattern. By default, ripgrep will respect gitignore rules and automatically skip hidden files/directories and binary files. (To disable all automatic filtering by default, use rg -uuu.) ripgrep has first class support on Windows, macOS and Linux, with binary downloads available for every release. 
@@ -225,7 +214,7 @@ Is the same thing as
 
 ## Image Generation
 
-The --backend "client" is the only back end that supports image generation using the `dall-e-2` and `dall-e-3` models through OpenAI.  The result of your prompt will be a URL that points to the OpenAI storage space where your image is placed.
+aia supports image generation using the `dall-e-2` and `dall-e-3` models through OpenAI.  The result of your prompt will be a URL that points to the OpenAI storage space where your image is placed.
 
 Use --image_size and --image_quality to specified the desired size and quality of the generated image.  The valid values are available at the OpenAI website.
 

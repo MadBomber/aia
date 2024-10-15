@@ -15,8 +15,6 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 > - Added --image_size and --image_quality to support image generation with the dall-e-2 and dall-e-3 models using the new internal `aia` OpenAI client.
 >
 
-
-
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
 ## Table of Contents
@@ -49,10 +47,6 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
     - [The --role Option](#the---role-option)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
-    - [Optional External CLI-tools](#optional-external-cli-tools)
-      - [Backend Processor `llm`](#backend-processor-llm)
-      - [Backend Processor `sgpt`](#backend-processor-sgpt)
-      - [Occassionally Useful Tool `plz`](#occassionally-useful-tool-plz)
   - [Shell Completion](#shell-completion)
   - [My Most Powerful Prompt](#my-most-powerful-prompt)
   - [My Configuration](#my-configuration)
@@ -99,7 +93,6 @@ The `aia` configuration defaults can be over-ridden by system environment variab
 
 | Config Item   | Default Value | envar key |
 | ------------- | ------------- | --------- |
-| backend       | mods          | AIA_BACKEND |
 | config_file   | nil           | AIA_CONFIG_FILE |
 | debug         | false         | AIA_DEBUG |
 | edit          | false         | AIA_EDIT |
@@ -117,8 +110,6 @@ The `aia` configuration defaults can be over-ridden by system environment variab
 
 
 See the `@options` hash in the `cli.rb` file for a complete list.  There are some config items that do not necessarily make sense for use as an envar over-ride.  For example if you set `export AIA_DUMP_FILE=config.yaml` then `aia` would dump the current configuration config.yaml and exit every time it is ran until you finally `unset AIA_DUMP_FILE`
-
-In addition to these config items for `aia` the optional command line parameters for the backend prompt processing utilities (mods and sgpt) can also be set using envars with the "AIA_" prefix.  For example "export AIA_TOPP=1.0" will set the "--topp 1.0" command line option for the `mods` utility when its used as the backend processor.
 
 ## Shell Integration inside of a Prompt
 
@@ -229,7 +220,6 @@ BTW: the "=" is completely options.  Its actuall ignored as is ":=" if you were 
 ```
 //config model       gpt-3.5-turbo
 //config out_file    temp.md
-//config backend     mods
 //config chat?       true
 //config terse?      true
 //config model       gpt-4
@@ -295,7 +285,6 @@ For example `mods` has a configuration item `topp` which can be set by a directi
 //topp 1.5
 ```
 
-If `mods` is not the backend the `//topp` direcive is ignored.
 
 ### Using Directives in Chat Sessions
 
@@ -461,15 +450,12 @@ When this prompt is processed, `aia` will ask you for a value for the keyword "R
 
 To install the external CLI programs used by aia:
   
-  brew install fzf mods rg glow
+  brew install fzf rg glow
 
 fzf
   Command-line fuzzy finder written in Go
   [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf)
 
-mods
-  AI on the command-line
-  [https://github.com/charmbracelet/mods](https://github.com/charmbracelet/mods)
 
 rg
   Search tool like grep and The Silver Searcher
@@ -484,28 +470,6 @@ system environment variable 'EDITOR' like this:
 
   export EDITOR="subl -w"
 
-### Optional External CLI-tools
-
-#### Backend Processor `llm`
-
-```
-llm  Access large language models from the command-line
-     |   brew install llm
-     |__ https://llm.datasette.io/
-```
-
-As of `aia v0.5.13` the `llm` backend processor is available in a limited integration.  It is a very powerful python-based implementation that has its own prompt templating system.  The reason that it is be included within the `aia` environment is for its ability to make use of local LLM models.
-
-
-#### Backend Processor `sgpt`
-
-`shell-gpt` aka `sgpt` is also a python implementation of a CLI-tool that processes prompts through OpenAI.  It has less features than both `mods` and `llm` and is less flexible.
-
-#### Occassionally Useful Tool `plz`
-
-`plz-cli` aka `plz` is not integrated with `aia` however, it gets an honorable mention for its ability to except a prompt that tailored to doing something on the command line.  Its response is a CLI command (sometimes a piped sequence) that accomplishes the task set forth in the prompt.  It will return the commands to be executed agaist the data files you specified with a query to execute the command.
-
-- brew install plz-cli
 
 ## Shell Completion
 
@@ -527,20 +491,6 @@ This is just between you and me so don't go blabbing this around to everyone.  M
 
 Yep.  Just a single parameter for which I can provide a value of anything that is on my mind at the time.  Its advantage is that I do not pollute my shell's command history with lots of text.
 
-Which do you think is better to have in your shell's history file?
-
-```shell
-mods "As a certified public accountant specializing in forensic audit and analysis of public company financial statements, what do you think of mine?  What is the best way to hide the millions dracma that I've skimmed?"  < financial_statement.txt
-```
-
-or
-
-```shell
-aia ad_hoc financial_statement.txt
-```
-
-Both do the same thing; however, `aia` does not put the text of the prompt into the shell's history file.... of course the keyword/parameter value is saved in the prompt's JSON file and the prompt with the response are logged unless `--no-log` is specified; but, its not messing up the shell history!
-
 ## My Configuration
 
 I use the `bash` shell.  In my `.bashrc` file I source another file named `.bashrc__aia` which looks like this:
@@ -553,8 +503,7 @@ I use the `bash` shell.  In my `.bashrc` file I source another file named `.bash
 export AIA_PROMPTS_DIR=~/.prompts
 export AIA_OUT_FILE=./temp.md
 export AIA_LOG_FILE=$AIA_PROMPTS_DIR/_prompts.log
-export AIA_BACKEND=mods
-export AIA_MODEL=gpt-4-1106-preview
+export AIA_MODEL=gpt-4o
 
 # Not a default.  Invokes spinner.
 export AIA_VERBOSE=true

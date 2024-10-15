@@ -57,14 +57,13 @@ gem install aia
 For the full potential of `AIA`, these CLI utilities are also needed:
 
 ```shell
-brew install ripgrep fzf mods
+brew install ripgrep fzf
 ```
 
 For operating systems other than macOS, such as Linux or Windows, use their respective package managers (`apt`, `yum`, `dnf`, `scoop`, `choco`, etc.) to install the following tools:
 
 - `ripgrep`: An advanced search tool akin to `grep`.
 - `fzf`: A versatile command-line fuzzy finder.
-- `mods`: An AI-enhanced command-line tool for processing the outputs of other commands.
 
 ### Large Language Models (LLM)
 

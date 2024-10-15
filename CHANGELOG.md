@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 ## [0.6.0] WIP
+- breaking change; dependency on backend CLI tools like mods, llm, etc has been removed.
 - replaced all of the backend LLM processors with AiClient
 
 
