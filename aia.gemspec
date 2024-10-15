@@ -64,6 +64,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'amazing_print'
   spec.add_development_dependency 'debug_me'
   spec.add_development_dependency 'kramdown-man'
+  spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'tocer'
 end

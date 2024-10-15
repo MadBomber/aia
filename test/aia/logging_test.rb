@@ -4,7 +4,7 @@ require 'ostruct'
 
 require_relative  '../test_helper'
 
-require 'logging'
+require 'aia/logging'
 
 class LoggingTest < Minitest::Test
   def setup

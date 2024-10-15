@@ -15,7 +15,7 @@ module AIA::UserQuery
     answer = Reline.readline(prompt)
     Reline::HISTORY.push(answer) unless answer.nil? || Reline::HISTORY.to_a.include?(answer)
     answer
-    rescue Interrupt
-      ''
+  rescue Interrupt
+    ''
   end
 end
