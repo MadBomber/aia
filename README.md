@@ -6,6 +6,11 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
+> Just an FYI ... I am working in the `develop` branch to drop the
+> dependency on backend LLM processers like mods and llm.  I'm refactor aia
+> to use my own universal client gem called ai_client which gives access
+> to all models and all providers.
+>
 > v0.5.17
 > - replaced gem semver with versionaire
 >
