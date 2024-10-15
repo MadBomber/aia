@@ -19,8 +19,7 @@ tramp_require('debug_me') {
   include DebugMe
 }
 
-require 'hashie'
-require 'openai'
+require 'ai_client'
 require 'os'
 require 'pathname'
 require 'reline'

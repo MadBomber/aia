@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.6.0] WIP
+- replaced all of the backend LLM processors with AiClient
+
+
 ## [0.5.17] 2024-05-17
 - removed replaced `semver` with `versionaire`
 
