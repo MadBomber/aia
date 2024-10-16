@@ -183,7 +183,7 @@ class CliTest < Minitest::Test
     AIA.config  = nil
     cli         = AIA::Cli.new("")
 
-    AIA.config.arguments = %w[--verbose --backend sgpt]
+    AIA.config.arguments = %w[--verbose]
     
     if ENV['AIA_VERBOSE']
       assert_equal true, AIA.config.verbose?
@@ -191,10 +191,6 @@ class CliTest < Minitest::Test
       assert_equal false, AIA.config.verbose?
     end
 
-    assert_equal "mods", AIA.config.backend
-
-    cli.check_for :backend
-    assert_equal "sgpt", AIA.config.backend
     assert_equal ["--verbose"], AIA.config.arguments
 
     cli.check_for :verbose?
@@ -228,20 +224,6 @@ class CliTest < Minitest::Test
 
   rescue
     $stderr = original_stderr
-  end
-
-
-  # Test `show_verbose_usage` method
-  def test_show_verbose_usage
-    cli = AIA::Cli.new('-v')
-
-    # Mocking backend calls
-    backend_output = "Currently selected Backend"
-    AIA::Cli.stub(:`, backend_output) do
-      output = capture_io { cli.show_verbose_usage }.first.strip
-
-      assert output.include?(backend_output)
-    end
   end
 
 
