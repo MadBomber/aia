@@ -154,9 +154,9 @@ class AIA::Cli
       directives: [[]],   # an empty Array as the default value
       extra:      [''],   # 
       #
-      model:      ["gpt-4-1106-preview",  "--llm --model"],
-      speech_model: ["tts-1", "--sm --speech_model"],
-      voice:        ["alloy", "--voice"],
+      model:        ["gpt-4o",  "--llm --model"],
+      speech_model: ["tts-1",   "--sm --speech_model"],
+      voice:        ["alloy",   "--voice"],
       #
       transcription_model:  ["wisper-1", "--tm --transcription_model"],
       #
@@ -187,12 +187,17 @@ class AIA::Cli
       out_file:   [STDOUT,                    "-o --out_file --no-out_file"],
       log_file:   ["~/.prompts/_prompts.log", "-l --log_file --no-log_file"],
       #
-      backend:    ['mods',    "-b --be --backend --no-backend"],
-      #
       # text2image related ...
       #
-      image_size:     ['', '--is --image_size'],
-      image_quality:  ['', '--iq --image_quality'],
+      image_model:    ['dalle-2', '--im --image_model'],
+      image_size:     ['',        '--is --image_size'],
+      image_quality:  ['',        '--iq --image_quality'],
+      #
+      # audio related ...
+      #
+      audio_model:    ['wisper-1',  '--am --audio_model'],
+      audio_size:     ['',          '--as --audio_size'],
+      audio_quality:  ['',          '--aq --audio_quality'],
     }
     
     AIA.config = AIA::Config.new(@options.transform_values { |values| values.first })
@@ -213,7 +218,7 @@ class AIA::Cli
 
 
   def dump_config_file
-    a_hash = prepare_config_as_hash
+    a_hash    = prepare_config_as_hash
 
     dump_file = Pathname.new AIA.config.dump_file
     extname   = dump_file.extname.to_s.downcase
@@ -367,25 +372,9 @@ class AIA::Cli
   def show_usage
     @options[:help?][0] = false 
     puts `man #{MAN_PAGE_PATH}`
-    show_verbose_usage if AIA.config.verbose?
     exit
   end
   alias_method :show_help, :show_usage
-
-
-  def show_verbose_usage
-    puts <<~EOS
-
-      ======================================
-      == Currently selected Backend: #{AIA.config.backend} ==
-      ======================================
-
-    EOS
-    puts `mods --help` if "mods" == AIA.config.backend
-    puts `sgpt --help` if "sgpt" == AIA.config.backend
-    puts
-  end
-  # alias_method :show_verbose_help, :show_verbose_usage
 
 
   def show_completion

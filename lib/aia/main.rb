@@ -33,6 +33,7 @@ class AIA::Main
     @directive_output = ""
     AIA::Tools.load_tools
 
+    # FIXME:
     AIA.client = AIA::Client.new
 
     AIA::Cli.new(args)
@@ -76,7 +77,6 @@ class AIA::Main
 
     if AIA.config.chat?
       AIA.config.out_file = STDOUT 
-      AIA.config.extra = "--quiet" if 'mods' == AIA.config.backend
     end
 
     # TODO: the context_files left in the @arguments array
@@ -84,23 +84,24 @@ class AIA::Main
     #       prompt keyword or process the prompt.  Do not
     #       want invalid files to make it this far.
 
-    found = AIA::Tools
-              .search_for(
-                name: AIA.config.backend, 
-                role: :backend
-              )
+    # found = AIA::Tools
+    #           .search_for(
+    #             name: AIA.config.backend, 
+    #             role: :backend
+    #           )
 
-    if found.empty?
-      abort "There are no :backend tools named #{AIA.config.backend}"
-    end
+    # if found.empty?
+    #   abort "There are no :backend tools named #{AIA.config.backend}"
+    # end
 
-    if found.size > 1
-      abort "There are #{found.size} :backend tools with the name #{AIAA.config.backend}"
-    end
+    # if found.size > 1
+    #   abort "There are #{found.size} :backend tools with the name #{AIAA.config.backend}"
+    # end
 
+    # FIXME: backend_klass is the client to use
     backend_klass = found.first.klass
 
-    abort "backend not found: #{AIA.config.backend}" if backend_klass.nil?
+    # abort "backend not found: #{AIA.config.backend}" if backend_klass.nil?
 
     the_prompt = @prompt.to_s
 
@@ -110,9 +111,10 @@ class AIA::Main
       the_prompt.prepend "Be terse in your response. "
     end
 
+    # FIXME: @backend is the client 
     @backend  = backend_klass.new(
                   text:           the_prompt,
-                  files:          AIA.config.arguments    # FIXME: want validated context files
+                  files:          AIA.config.arguments # FIXME: want validated context files
                 )
 
     result = get_and_display_result(the_prompt)
@@ -163,8 +165,11 @@ class AIA::Main
   def get_and_display_result(the_prompt_text)
     spinner.auto_spin if AIA.config.verbose?
 
-    backend.text  = the_prompt_text
-    result        = backend.run
+    result = AI.chat(the_prompt_text)
+    # Replaces ...
+    # backend.text  = the_prompt_text
+    # result        = backend.run 
+
 
     if AIA.config.verbose?
       spinner.success "Done." 
@@ -195,12 +200,17 @@ class AIA::Main
     logger.info "Response:\n#{result}"
   end
 
-
+  # FIXME:  if we are in chat model then need
+  #         to keep a context to be added to the
+  #         prompt.
+  #
+  # TODO: Add //clear directive to clear the context
+  #
   def add_continue_option
-    if 'mods' == AIA.config.backend
-      continue_option   = " -C"
-      AIA.config.extra += continue_option unless AIA.config.extra.include?(continue_option)
-    end
+    # if 'mods' == AIA.config.backend
+    #   continue_option   = " -C"
+    #   AIA.config.extra += continue_option unless AIA.config.extra.include?(continue_option)
+    # end
   end
 
 
@@ -233,7 +243,9 @@ class AIA::Main
 
 
   def lets_chat
-    add_continue_option    
+    # FIXME:  If we are chatting then we need to
+    #         keep a context.  Could do that here.
+    add_continue_option
 
     the_prompt_text = ask_question_with_reline("\nFollow Up: ")
 

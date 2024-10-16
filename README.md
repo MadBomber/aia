@@ -2,17 +2,12 @@
 
 `aia` is a command-line utility that facilitates interaction with AI models. It automates the management of pre-compositional prompts and executes generative AI (Gen-AI) commands on those prompts.
 
-It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt` CLI utilities. It utilizes "ripgrep" for searching for prompt files.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
+It leverages the `prompt_manager` gem to manage prompts for the `ai_client` gem.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
 > v0.5.17
 > - replaced gem semver with versionaire
->
-> v0.5.16
-> - fixed bugs with the prompt pipeline
-> - Added new backend "client" which is an `aia` internal client to the OpenAI API that allows both text-to-speech and speech-to-text
-> - Added --image_size and --image_quality to support image generation with the dall-e-2 and dall-e-3 models using the new internal `aia` OpenAI client.
 >
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
@@ -35,7 +30,6 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
       - [//include](#include)
       - [//ruby](#ruby)
       - [//shell](#shell)
-    - [Backend Directive Commands](#backend-directive-commands)
     - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
   - [Prompt Sequences](#prompt-sequences)
     - [--next](#--next)
@@ -66,7 +60,7 @@ Install the gem by executing:
 
 Install the command-line utilities by executing:
 
-    brew install mods fzf ripgrep
+    brew install fzf ripgrep
 
 You will also need to establish a directory in your file system where your prompt text files, last used parameters and usage log files are kept.
 
@@ -81,7 +75,7 @@ You may also want to install the completion script for your shell.  To get a cop
 
 ## Usage
 
-The usage report obtained using either `-h` or `--help` is implemented as a standard `man` page.  You can use both `--help --verbose` of `-h -v` together to get not only the `aia` man page but also the usage report from the `backend` LLM processing tool.
+The usage report obtained using either `-h` or `--help` is implemented as a standard `man` page.  
 
 ```shell
 $ aia --help
@@ -212,7 +206,6 @@ A configuration item such as `--out_file` or `--model` has an associated value o
 ```
 //config model = gpt-3.5-turbo
 //config out_file = temp.md
-//config backend = mods
 ```
 
 BTW: the "=" is completely options.  Its actuall ignored as is ":=" if you were to choose that as your assignment operator.  Also the number of spaces between the item and the value is complete arbitrary.  I like to line things up so this syntax is just as valie:
@@ -272,29 +265,18 @@ Which does basically the same thing as the `//include` directive, except it uses
 
 
 
-### Backend Directive Commands
 
-See the source code for the directives supported by the backends which at this time are configuration-based as well.
-
-- [mods](lib/aia/tools/mods.rb)
-- [sgpt](lib/aia/tools/sgpt.rb)
-
-For example `mods` has a configuration item `topp` which can be set by a directive in a prompt text file directly.
-
-```
-//topp 1.5
-```
 
 
 ### Using Directives in Chat Sessions
 
-Whe you are in a chat session, you may use a directive as a follow up prompt.  For example if you started the chat session with the option `--terse` expecting to get short answers from the backend; but, then you decide that you want more comprehensive answers you may do this:
+When you are in a chat session, you may use a directive as a follow up prompt.  For example if you started the chat session with the option `--terse` expecting to get short answers from the LLM; but, then you decide that you want more comprehensive answers you may do this:
 
 ```
 //config terse? false
 ```
 
-The directive is executed and a new follow up prompt can be entered with a more lengthy response generated from the backend.
+The directive is executed and a new follow up prompt can be entered with a more lengthy response generated from the LLM.
 
 
 ## Prompt Sequences
@@ -373,7 +355,6 @@ Create two prompts named transcribe.txt and tech_summary.txt
 # Desc: takes one audio file
 # note that there is no "prompt" text only the directive
 
-//config backend  client
 //config model    whisper-1
 //next            tech_summary
 ```
@@ -415,7 +396,7 @@ The default `roles_dir` is a sub-directory of the `prompts_dir` named roles.  Yo
 
 ### The --role Option
 
-The `--role` option is used to identify a personification prompt within your roles directory which defines the context within which the LLM is to provide its response.  The text of the role ID is pre-pended to the text of the primary prompt to form a complete prompt to be processed by the backend.
+The `--role` option is used to identify a personification prompt within your roles directory which defines the context within which the LLM is to provide its response.  The text of the role ID is pre-pended to the text of the primary prompt to form a complete prompt to be processed by the LLM.
 
 For example consider:
 
@@ -423,7 +404,7 @@ For example consider:
 aia -r ruby refactor my_class.rb
 ```
 
-Within the roles directory the contents of the text file `ruby.txt` will be pre-pre-pended to the contents of the `refactor.txt` file from the prompts directory to produce a complete prompt.  That complete prompt will have any parameters followed by directives processed before sending the combined prompt text to the backend.
+Within the roles directory the contents of the text file `ruby.txt` will be pre-pre-pended to the contents of the `refactor.txt` file from the prompts directory to produce a complete prompt.  That complete prompt will have any parameters followed by directives processed before sending the combined prompt text to the LLM.
 
 Note that `--role` is just a way of saying add this prompt text file to the front of this other prompt text file.  The contents of the "role" prompt could be anything.  It does not necessarily have be an actual role.
 
@@ -531,8 +512,6 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/MadBomber/aia.
-
-I've designed `aia` so that it should be easy to integrate other backend LLM processors.  If you've found one that you like, send me a pull request or a feature request.
 
 When you find problems with `aia` please note them as an issue.  This thing was written mostly by a human and you know how error prone humans are.  There should be plenty of errors to find.
 
