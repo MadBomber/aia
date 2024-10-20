@@ -2,6 +2,7 @@
 
 require_relative 'config'
 require_relative 'cli'
+require_relative 'client'
 require_relative 'directives'
 require_relative 'dynamic_content'
 require_relative 'prompt'
@@ -27,7 +28,6 @@ module AIA
 
     def call
       process_directives
-      setup_backend
       result = process_prompt
       handle_output(result)
       continue_processing(result) if continue?
@@ -44,8 +44,8 @@ module AIA
 
     def initialize_components(args)
       Tools.load_tools
-      AIA.client = Client.new
       Cli.new(args)
+      AIA.client = AIA::Client.chat
       setup_spinner
       setup_logger
       setup_directives_processor
@@ -75,17 +75,9 @@ module AIA
       @directive_output = @directives_processor.execute_my_directives
     end
 
-    def setup_backend
-      backend_klass = Tools.find_backend(AIA.config.backend)
-      @backend = backend_klass.new(
-        text: build_prompt,
-        files: AIA.config.arguments
-      )
-    end
-
     def build_prompt
       prompt = @prompt.to_s
-      prompt.prepend("#{@directive_output}\n") unless @directive_output.empty?
+      prompt.prepend("#{@directive_output}\n") unless @directive_output&.empty?
       prompt.prepend("Be terse in your response. ") if AIA.config.terse?
       prompt
     end
@@ -110,7 +102,7 @@ module AIA
 
     def get_and_display_result(prompt_text)
       spinner.auto_spin if AIA.config.verbose?
-      result = AI.chat(prompt_text)
+      result = AIA.client.chat(prompt_text)
       spinner.success("Done.") if AIA.config.verbose?
       display_result(result)
       result
@@ -149,6 +141,11 @@ module AIA
         break if prompt.empty?
         process_chat_prompt(prompt)
       end
+    end
+
+    def log_the_follow_up(the_prompt_text, result)
+      logger.info "Follow Up:\n#{the_prompt_text}"
+      logger.info "Response:\n#{result}"
     end
 
     def process_chat_prompt(prompt)

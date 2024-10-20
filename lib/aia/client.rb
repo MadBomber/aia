@@ -2,13 +2,16 @@
 
 require "ai_client"
 
-# FIXME:  This does not allow for the model names
-#         to change during a pipeline or chat
-#
-TTS   = AiClient.new(AIA.config.speech_model)
-AI    = AiClient.new(AIA.config.model)
-IMAGE = AiClient.new(AIA.config.image_model)
-AUDIO = AiClient.new(AIA.config.audio_model)
+module AIA
+  class Client
+    class << self
+      def tts   = AiClient.new(AIA.config.speech_model)
+      def chat  = AiClient.new(AIA.config.model)
+      def image = AiClient.new(AIA.config.image_model)
+      def audio = AiClient.new(AIA.config.audio_model)
+    end
+  end
+end
 
 # class AIA::Client
 #   attr_accessor :command, :text, :files, :parameters
