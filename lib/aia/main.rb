@@ -1,7 +1,5 @@
 # lib/aia/main.rb
 
-module AIA ; end
-
 require_relative 'config'
 require_relative 'cli'
 require_relative 'directives'
@@ -11,267 +9,221 @@ require_relative 'logging'
 require_relative 'tools'
 require_relative 'user_query'
 
-# Everything is being handled within the context
-# of a single class.
+module AIA
+  class Main
+    SPINNER_FORMAT = :bouncing_ball
 
-class AIA::Main
-  SPINNER_FORMAT = :bouncing_ball
+    include DynamicContent
+    include UserQuery
+    
+    attr_accessor :logger, :tools, :backend, :directive_output, :piped_content
+    attr_reader :spinner
 
-  include AIA::DynamicContent
-  include AIA::UserQuery
-  
-  attr_accessor :logger, :tools, :backend, :directive_output, :piped_content
+    def initialize(args = ARGV)
+      @piped_content = read_piped_content
+      @directive_output = ""
+      initialize_components(args)
+    end
 
-  attr_reader :spinner
+    def call
+      process_directives
+      setup_backend
+      result = process_prompt
+      handle_output(result)
+      continue_processing(result) if continue?
+    end
 
-  def initialize(args= ARGV)
-    unless $stdin.tty?
-      @piped_content = $stdin.readlines.join.chomp
+    private
+
+    def read_piped_content
+      return nil if $stdin.tty?
+      content = $stdin.readlines.join.chomp
       $stdin.reopen("/dev/tty")
+      content
     end
 
-    @directive_output = ""
-    AIA::Tools.load_tools
-
-    # FIXME:
-    AIA.client = AIA::Client.new
-
-    AIA::Cli.new(args)
-
-    if AIA.config.debug?
-      debug_me('== CONFIG AFTER CLI =='){[
-        "AIA.config"
-      ]}
+    def initialize_components(args)
+      Tools.load_tools
+      AIA.client = Client.new
+      Cli.new(args)
+      setup_spinner
+      setup_logger
+      setup_directives_processor
+      setup_prompt
     end
 
-    @spinner  = TTY::Spinner.new(":spinner :title", format: SPINNER_FORMAT)
-    spinner.update(title: "composing response ... ")
-
-    @logger = AIA::Logging.new(AIA.config.log_file)
-
-    @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
-
-
-    @directives_processor = AIA::Directives.new 
-
-    @prompt = AIA::Prompt.new.prompt
-
-    @prompt.text += piped_content unless piped_content.nil?
-
-    # TODO: still should verify that the tools are ion the $PATH
-    # tools.class.verify_tools
-  end
-
-
-  # Function to setup the Reline history with a maximum depth
-  def setup_reline_history(max_history_size=5)
-    Reline::HISTORY.clear
-    # Reline::HISTORY.max_size = max_history_size
-  end
-
-
-  # This will be recursive with the new options
-  # --next and --pipeline
-  def call
-    @directive_output = @directives_processor.execute_my_directives
-
-    if AIA.config.chat?
-      AIA.config.out_file = STDOUT 
+    def setup_spinner
+      @spinner = TTY::Spinner.new(":spinner :title", format: SPINNER_FORMAT)
+      spinner.update(title: "composing response ... ")
     end
 
-    # TODO: the context_files left in the @arguments array
-    #       should be verified BEFORE asking the user for a
-    #       prompt keyword or process the prompt.  Do not
-    #       want invalid files to make it this far.
-
-    # found = AIA::Tools
-    #           .search_for(
-    #             name: AIA.config.backend, 
-    #             role: :backend
-    #           )
-
-    # if found.empty?
-    #   abort "There are no :backend tools named #{AIA.config.backend}"
-    # end
-
-    # if found.size > 1
-    #   abort "There are #{found.size} :backend tools with the name #{AIAA.config.backend}"
-    # end
-
-    # FIXME: backend_klass is the client to use
-    backend_klass = found.first.klass
-
-    # abort "backend not found: #{AIA.config.backend}" if backend_klass.nil?
-
-    the_prompt = @prompt.to_s
-
-    the_prompt.prepend(@directive_output + "\n") unless @directive_output.nil? || @directive_output.empty?
-
-    if AIA.config.terse?
-      the_prompt.prepend "Be terse in your response. "
+    def setup_logger
+      @logger = Logging.new(AIA.config.log_file)
+      @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
     end
 
-    # FIXME: @backend is the client 
-    @backend  = backend_klass.new(
-                  text:           the_prompt,
-                  files:          AIA.config.arguments # FIXME: want validated context files
-                )
-
-    result = get_and_display_result(the_prompt)
-
-    AIA.speak(result) if AIA.config.speak?
-
-    logger.prompt_result(@prompt, result)
-
-    if AIA.config.chat?
-      setup_reline_history
-      AIA.speak result
-      lets_chat 
+    def setup_directives_processor
+      @directives_processor = Directives.new
     end
 
-    return if AIA.config.next.empty? && AIA.config.pipeline.empty?
-
-    keep_going(result) unless AIA.config.pipeline.empty?
-  end
-
-
-  # The AIA.config.pipeline is NOT empty, so feed this result
-  # into the next prompt within the pipeline.
-  #
-  def keep_going(result)
-    temp_file = Tempfile.new('aia_pipeline')
-    temp_file.write(result)
-    temp_file.close
-
-    AIA.config.directives = []
-    AIA.config.model      = ""
-    AIA.config.arguments  = [
-                              AIA.config.pipeline.shift, 
-                              temp_file.path,
-                              # TODO: additional arguments from the pipeline
-                            ] 
-    AIA.config.next       = ""
-
-    AIA.config.files = [temp_file.path]
-
-    @prompt = AIA::Prompt.new.prompt
-    call # Recurse! until the AIA.config.pipeline is emplty
-    puts
-  ensure
-    temp_file.unlink
-  end
-
-
-  def get_and_display_result(the_prompt_text)
-    spinner.auto_spin if AIA.config.verbose?
-
-    result = AI.chat(the_prompt_text)
-    # Replaces ...
-    # backend.text  = the_prompt_text
-    # result        = backend.run 
-
-
-    if AIA.config.verbose?
-      spinner.success "Done." 
+    def setup_prompt
+      @prompt = Prompt.new.prompt
+      @prompt.text += piped_content if piped_content
     end
 
-    AIA.config.out_file.write "\nResponse:\n"
+    def process_directives
+      @directive_output = @directives_processor.execute_my_directives
+    end
 
-    if STDOUT == AIA.config.out_file
-      if AIA.config.render?
-        AIA::Glow.new(content: result).run
+    def setup_backend
+      backend_klass = Tools.find_backend(AIA.config.backend)
+      @backend = backend_klass.new(
+        text: build_prompt,
+        files: AIA.config.arguments
+      )
+    end
+
+    def build_prompt
+      prompt = @prompt.to_s
+      prompt.prepend("#{@directive_output}\n") unless @directive_output.empty?
+      prompt.prepend("Be terse in your response. ") if AIA.config.terse?
+      prompt
+    end
+
+    def process_prompt
+      get_and_display_result(build_prompt)
+    end
+
+    def handle_output(result)
+      AIA.speak(result) if AIA.config.speak?
+      logger.prompt_result(@prompt, result)
+      start_chat if AIA.config.chat?
+    end
+
+    def continue?
+      !AIA.config.next.empty? || !AIA.config.pipeline.empty?
+    end
+
+    def continue_processing(result)
+      keep_going(result) unless AIA.config.pipeline.empty?
+    end
+
+    def get_and_display_result(prompt_text)
+      spinner.auto_spin if AIA.config.verbose?
+      result = AI.chat(prompt_text)
+      spinner.success("Done.") if AIA.config.verbose?
+      display_result(result)
+      result
+    end
+
+    def display_result(result)
+      AIA.config.out_file.write("\nResponse:\n")
+      if STDOUT == AIA.config.out_file
+        AIA.config.render? ? render_glow(result) : write_wrapped(result)
       else
-        result  = result.wrap(indent: 2)
-        AIA.config.out_file.write result
-      end
-    else
-      AIA.config.out_file.write result
-      if AIA.config.render?
-        AIA::Glow.new(file_path: AIA.config.out_file).run
+        write_to_file(result)
       end
     end
 
-    result
-  end
-
-
-  def log_the_follow_up(the_prompt_text, result)
-    logger.info "Follow Up:\n#{the_prompt_text}"
-    logger.info "Response:\n#{result}"
-  end
-
-  # FIXME:  if we are in chat model then need
-  #         to keep a context to be added to the
-  #         prompt.
-  #
-  # TODO: Add //clear directive to clear the context
-  #
-  def add_continue_option
-    # if 'mods' == AIA.config.backend
-    #   continue_option   = " -C"
-    #   AIA.config.extra += continue_option unless AIA.config.extra.include?(continue_option)
-    # end
-  end
-
-
-  def insert_terse_phrase(a_string)
-    if AIA.config.terse?
-      a_string.prepend "Be terse in your response. "
+    def render_glow(content)
+      Glow.new(content: content).run
     end
 
-    a_string
-  end
+    def write_wrapped(content)
+      AIA.config.out_file.write(content.wrap(indent: 2))
+    end
 
-  
-  def handle_directives(the_prompt_text)
-    signal = PromptManager::Prompt::DIRECTIVE_SIGNAL
-    result = the_prompt_text.start_with?(signal)
+    def write_to_file(content)
+      AIA.config.out_file.write(content)
+      render_glow(AIA.config.out_file) if AIA.config.render?
+    end
 
-    if result
-      parts       = the_prompt_text[signal.size..].split(' ')
-      directive   = parts.shift
-      parameters  = parts.join(' ')
+    def start_chat
+      setup_reline_history
+      lets_chat
+    end
+
+    def lets_chat
+      loop do
+        prompt = ask_question_with_reline("\nFollow Up: ")
+        break if prompt.empty?
+        process_chat_prompt(prompt)
+      end
+    end
+
+    def process_chat_prompt(prompt)
+      prompt = preprocess_prompt(prompt)
+      if handle_directives(prompt)
+        process_directive_output
+      else
+        process_regular_prompt(prompt)
+      end
+    end
+
+    def preprocess_prompt(prompt)
+      prompt = render_erb(prompt) if AIA.config.erb?
+      prompt = render_env(prompt) if AIA.config.shell?
+      prompt
+    end
+
+    def process_directive_output
+      return if @directive_output.empty?
+      prompt = preprocess_prompt(@directive_output)
+      result = get_and_display_result(prompt)
+      log_and_speak(prompt, result)
+    end
+
+    def process_regular_prompt(prompt)
+      prompt = insert_terse_phrase(prompt)
+      result = get_and_display_result(prompt)
+      log_and_speak(prompt, result)
+    end
+
+    def log_and_speak(prompt, result)
+      log_the_follow_up(prompt, result)
+      AIA.speak(result)
+    end
+
+    def setup_reline_history(max_history_size = 5)
+      Reline::HISTORY.clear
+    end
+
+    def keep_going(result)
+      temp_file = Tempfile.new('aia_pipeline')
+      temp_file.write(result)
+      temp_file.close
+
+      update_config_for_pipeline(temp_file.path)
+      @prompt = Prompt.new.prompt
+      call
+      puts
+    ensure
+      temp_file.unlink
+    end
+
+    def update_config_for_pipeline(temp_file_path)
+      AIA.config.directives = []
+      AIA.config.model = ""
+      AIA.config.arguments = [AIA.config.pipeline.shift, temp_file_path]
+      AIA.config.next = ""
+      AIA.config.files = [temp_file_path]
+    end
+
+    def handle_directives(prompt)
+      signal = PromptManager::Prompt::DIRECTIVE_SIGNAL
+      return false unless prompt.start_with?(signal)
+
+      parts = prompt[signal.size..].split(' ')
+      directive = parts.shift
+      parameters = parts.join(' ')
       AIA.config.directives << [directive, parameters]
 
       @directive_output = @directives_processor.execute_my_directives
-    else
-      @directive_output = ""
+      true
     end
 
-    result
-  end
-
-
-  def lets_chat
-    # FIXME:  If we are chatting then we need to
-    #         keep a context.  Could do that here.
-    add_continue_option
-
-    the_prompt_text = ask_question_with_reline("\nFollow Up: ")
-
-    until the_prompt_text.empty?
-      the_prompt_text   = render_erb(the_prompt_text) if AIA.config.erb?
-      the_prompt_text   = render_env(the_prompt_text) if AIA.config.shell?
-
-      if handle_directives(the_prompt_text)
-        if @directive_output.nil? || @directive_output.empty?
-          # Do nothing
-        else
-          the_prompt_text = @directive_output 
-          the_prompt_text = render_erb(the_prompt_text) if AIA.config.erb?
-          the_prompt_text = render_env(the_prompt_text) if AIA.config.shell?
-          result          = get_and_display_result(the_prompt_text)
-          log_the_follow_up(the_prompt_text, result)
-          AIA.speak result
-        end
-      else
-        the_prompt_text = insert_terse_phrase(the_prompt_text)
-        result          = get_and_display_result(the_prompt_text)
-        log_the_follow_up(the_prompt_text, result)
-        AIA.speak result
-      end
-
-      the_prompt_text = ask_question_with_reline("\nFollow Up: ")
+    def insert_terse_phrase(string)
+      AIA.config.terse? ? "Be terse in your response. #{string}" : string
     end
   end
 end

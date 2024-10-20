@@ -73,6 +73,11 @@ class AIA::Directives
       elsif %w[next pipeline].include? item.downcase
         pipeline(value)
       else
+        # TODO: need to handle the case where the item is one of
+        #       the following:
+        #         model, image_model, speech_model, audio_model
+        #       since they are AiClient objects.
+        #
         AIA.config[item] = value
       end
     end
@@ -89,16 +94,11 @@ class AIA::Directives
   #         //next prompt_id CLI args
   #       This would mean that the pipeline would be:
   #         //pipeline id1 cli args, id2 cli args, id3 cli args
-  #
+  # On Second Thought: Since we are getting rid of the external
+  #   backend CLI tools, the next prompt in the pipeline is
+  #   still being handled by the AiClient
   
-  # TODO: Change AIA.config.pipline Array to be an Array of arrays
-  #       where each entry is:
-  #         [prompt_id, cli_args]
-  #       This means that:
-  #         entry = AIA.config.pipeline.shift
-  #         entry.is_A?(Sring) ? 'old format' : 'new format'
-  #
-
+  
   # //next id
   # //pipeline id1,id2, id3   ,   id4
   def pipeline(what)

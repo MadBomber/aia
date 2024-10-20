@@ -19,13 +19,12 @@ tramp_require('debug_me') {
   include DebugMe
 }
 
-require 'ai_client'
+require 'ai_client' 
 require 'os'
 require 'pathname'
 require 'reline'
 require 'shellwords'
 require 'tempfile'
-
 require 'tty-spinner'
 
 unless TTY::Spinner.new.respond_to?(:log)
