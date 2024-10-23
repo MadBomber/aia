@@ -17,7 +17,7 @@ module AIA
     include DynamicContent
     include UserQuery
     
-    attr_accessor :logger, :tools, :backend, :directive_output, :piped_content
+    attr_accessor :logger, :tools, :directive_output, :piped_content
     attr_reader :spinner
 
     def initialize(args = ARGV)
