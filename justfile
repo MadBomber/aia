@@ -23,9 +23,10 @@ man_filepath      := env_var('RR') + "/man/aia.1.md"
 
 set fallback # search up for recipe name if not found locally.
 
-set positional-arguments    := true
-set allow-duplicate-recipes := true
-set dotenv-load             := false
+set positional-arguments      := true
+set allow-duplicate-recipes   := true
+set allow-duplicate-variables := true
+set dotenv-load               := false
 
 # my common variables
 
@@ -79,6 +80,18 @@ project     := "`basename $RR`"
 mods_delete_all:
   mods -l | awk '{print $1}' | xargs -I {} mods -d {}
 
+
+#############################################
+## iTerm2-related
+
+# Fix half-duplex terminal
+fix:
+  stty sane
+
+  
+# Clear the scroll-back buffer
+@clear_buffer:
+  printf "\e[3J"
 
 #################################################
 ## Private recipes
