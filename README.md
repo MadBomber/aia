@@ -1,24 +1,12 @@
 # AI Assistant (AIA)
 
-`aia` is a command-line utility that facilitates interaction with AI models. It automates the management of pre-compositional prompts and executes generative AI (Gen-AI) commands on those prompts.
+`aia` is a command-line utility that facilitates interaction with AI models. It automates the management of pre-compositional prompts and executes generative AI (Gen-AI) commands on those prompts taking advantage of modern LLMs increased context window size.
 
 It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt` CLI utilities. It utilizes "ripgrep" for searching for prompt files.  It uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
-> Just an FYI ... I am working in the `develop` branch to drop the
-> dependency on backend LLM processers like mods and llm.  I'm refactor aia
-> to use my own universal client gem called ai_client which gives access
-> to all models and all providers.
->
-> v0.5.17
-> - replaced gem semver with versionaire
->
-> v0.5.16
-> - fixed bugs with the prompt pipeline
-> - Added new backend "client" which is an `aia` internal client to the OpenAI API that allows both text-to-speech and speech-to-text
-> - Added --image_size and --image_quality to support image generation with the dall-e-2 and dall-e-3 models using the new internal `aia` OpenAI client.
->
+> Just an FYI ... I am working in the `develop` branch to **drop the dependency on backend LLM processors like mods and llm.**  I'm refactor aia to use my own universal client gem called ai_client which gives access to all models and all providers.
 
 
 
@@ -582,19 +570,17 @@ Here is what my `chat` prompt file looks like:
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+This CLI tool started life as a few lines of ruby in a file in my scripts repo.  I just kep growing as I decided to add more capability and more backend tools.  There was no real architecture to guide the design.  What was left is a large code mess which is slowly being refactored into something more maintainable.  That work is taking place in the `develop` branch.  I welcome you help.  Take a look at what is going on in that branch and send me a PR against it.
+
+Of course if you see something in the main branch send me a PR against that one so that we can fix the problem for all.
 
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/MadBomber/aia.
 
-I've designed `aia` so that it should be easy to integrate other backend LLM processors.  If you've found one that you like, send me a pull request or a feature request.
-
 When you find problems with `aia` please note them as an issue.  This thing was written mostly by a human and you know how error prone humans are.  There should be plenty of errors to find.
 
-I've been thinking that the REGEX used to identify a keyword within a prompt could be a configuration item.  I chose to use square brackets and uppercase in the default regex; maybe, you have a collection of prompt files that use some other regex.  Why should it be one way and not the other.
-
-Also I'm not happy with the way where I a some command line options for external command hard coded.  I think they should be part of the configuration as well.  For example the way I'm using `rg` and `fzf` may not be the way that you want to use them.
+I'm not happy with the way where some command line options for external command are hard coded.  I'm specific talking about the way in which the `rg` and `fzf` tools are used.  There options decide the basic look and feel of the search capability on the command line.  Maybe they should be part of the overall configuration so that users can tune their UI to the way they like.
 
 ## License
 
