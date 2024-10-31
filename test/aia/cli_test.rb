@@ -77,10 +77,10 @@ class CliTest < Minitest::Test
   def test_load_env_options
     cli = AIA::Cli.new("")
 
-    ENV['AIA_LOG_FILE'] = '/env/specific.log'
+    ENV['AIA_LOG_FILE'] = 'specific.log'
     cli.load_env_options
 
-    assert_equal '/env/specific.log', AIA.config.log_file
+    assert_equal 'specific.log', AIA.config.log_file
   
     # boolean case ...
     assert_equal false, AIA.config.fuzzy?
