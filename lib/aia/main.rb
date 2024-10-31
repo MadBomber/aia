@@ -90,7 +90,8 @@ module AIA
     end
 
     def continue?
-      !AIA.config.next.empty? || !AIA.config.pipeline.empty?
+      return true unless AIA.config.next.empty? && AIA.config.pipeline.empty?
+      false
     end
 
     def continue_processing(result)
@@ -129,10 +130,10 @@ module AIA
 
     def start_chat
       setup_reline_history
-      lets_chat
+      start_interactive_chat
     end
 
-    def lets_chat
+    def start_interactive_chat
       loop do
         prompt = ask_question_with_reline("\nFollow Up: ")
         break if prompt.empty?
@@ -178,7 +179,11 @@ module AIA
       AIA.speak(result)
     end
 
-    def setup_reline_history(max_history_size = 5)
+    def setup_reline_history
+      clear_reline_history
+    end
+
+    def clear_reline_history
       Reline::HISTORY.clear
     end
 
