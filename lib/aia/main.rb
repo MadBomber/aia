@@ -46,13 +46,25 @@ module AIA
     end
 
     def initialize_components(args)
-      Tools.load_tools
-      Cli.new(args)
-      AIA.client = AIA::Client.chat
+      load_tools
+      initialize_cli(args)
+      initialize_client
       setup_spinner
       setup_logger
       setup_directives_processor
       setup_prompt
+    end
+
+    def load_tools
+      Tools.load_tools
+    end
+
+    def initialize_cli(args)
+      Cli.new(args)
+    end
+
+    def initialize_client
+      AIA.client = AIA::Client.chat
     end
 
 
