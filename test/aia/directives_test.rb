@@ -24,7 +24,7 @@ class DirectivesTest < Minitest::Test
 
 
   def test_box
-    out, err = capture_io do
+    out = capture_io do
       @ad.box('== hello ==')
     end
 
@@ -34,17 +34,13 @@ class DirectivesTest < Minitest::Test
       ===========
     EOS
 
-    assert_equal expected, out
+    assert_equal expected, out[0]
   end
 
 
   def test_config
-    initial_directives_count = AIA.config.directives.count
-    
     @ad.config('xyzzy := magic')
     
     assert_equal 'magic', AIA.config.xyzzy
   end
 end
-
-

@@ -1,0 +1,12 @@
+# ~/.prompts/ad_hoc.txt
+# Desc: An Ad Hoc prompt for on the fly consultations
+# 
+# Useful alias:
+#   alias chat='aia ad_hoc --terse --chat'
+#
+
+[WHAT_NOW_HUMAN]
+
+__END__
+
+Everything after the __END__ line is ignored.

@@ -189,15 +189,15 @@ class AIA::Cli
       #
       # text2image related ...
       #
-      image_model:    ['dalle-2', '--im --image_model'],
-      image_size:     ['',        '--is --image_size'],
-      image_quality:  ['',        '--iq --image_quality'],
+      image_model:    ['dall-e-3',  '--im --image_model'],
+      image_size:     ['',          '--is --image_size'],
+      image_quality:  ['',          '--iq --image_quality'],
       #
       # audio related ...
       #
-      audio_model:    ['wisper-1',  '--am --audio_model'],
-      audio_size:     ['',          '--as --audio_size'],
-      audio_quality:  ['',          '--aq --audio_quality'],
+      audio_model:    ['whisper-1',   '--am --audio_model'],
+      audio_size:     ['',            '--as --audio_size'],
+      audio_quality:  ['',            '--aq --audio_quality'],
     }
     
     AIA.config = AIA::Config.new(@options.transform_values { |values| values.first })

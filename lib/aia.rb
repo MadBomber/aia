@@ -7,7 +7,7 @@ def tramp_require(what, &block)
     require_result = require what
     loaded = true
   rescue Exception => ex
-    # Do nothing
+    puts ex
   end
 
   yield if loaded and block_given?
