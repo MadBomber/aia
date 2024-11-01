@@ -33,5 +33,12 @@ require 'minitest/reporters'
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'aia'
 
+# Configure test execution order and reporters
+Minitest::Test.make_my_diffs_pretty!
+Minitest::Test.parallelize_setup
+Minitest::Test.parallelize_teardown
+Minitest.autorun
+Minitest::Test.i_suck_and_my_tests_are_order_dependent!
+
 # Configure Minitest reporters
 Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]
