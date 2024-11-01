@@ -22,3 +22,13 @@ def setup_test_environment
 end
 
 setup_test_environment
+require 'minitest/autorun'
+require 'minitest/pride'
+require 'minitest/reporters'
+
+# Add lib to load path
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'aia'
+
+# Configure Minitest reporters
+Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]

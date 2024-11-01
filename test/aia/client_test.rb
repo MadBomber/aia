@@ -54,3 +54,30 @@ class ClientTest < Minitest::Test
     end
   end
 end
+require 'test_helper'
+
+class AIA::ClientTest < Minitest::Test
+  def setup
+    @client = AIA::Client
+  end
+
+  def test_has_tts_client
+    assert_respond_to @client, :tts
+    assert_instance_of AiClient, @client.tts
+  end
+
+  def test_has_chat_client
+    assert_respond_to @client, :chat
+    assert_instance_of AiClient, @client.chat
+  end
+
+  def test_has_image_client
+    assert_respond_to @client, :image
+    assert_instance_of AiClient, @client.image
+  end
+
+  def test_has_audio_client
+    assert_respond_to @client, :audio
+    assert_instance_of AiClient, @client.audio
+  end
+end
