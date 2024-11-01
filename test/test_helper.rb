@@ -4,18 +4,22 @@ require 'debug_me'
 include DebugMe
 
 require 'simplecov'
-require 'codecov'
 
 SimpleCov.start do
   enable_coverage :branch
   add_filter '/test/'
   
   if ENV['CI']
-    require 'codecov'
-    formatter SimpleCov::Formatter::MultiFormatter.new([
-      SimpleCov::Formatter::SimpleFormatter,
-      SimpleCov::Formatter::Codecov
-    ])
+    begin
+      require 'codecov'
+      formatter SimpleCov::Formatter::MultiFormatter.new([
+        SimpleCov::Formatter::SimpleFormatter,
+        SimpleCov::Formatter::Codecov
+      ])
+    rescue LoadError
+      puts "Codecov not loaded - continuing without it"
+      formatter SimpleCov::Formatter::SimpleFormatter
+    end
   end
 end
 
