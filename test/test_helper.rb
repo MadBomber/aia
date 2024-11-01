@@ -4,23 +4,10 @@ require 'debug_me'
 include DebugMe
 
 require 'simplecov'
-
 SimpleCov.start do
   enable_coverage :branch
   add_filter '/test/'
-  
-  if ENV['CI']
-    begin
-      require 'codecov'
-      formatter SimpleCov::Formatter::MultiFormatter.new([
-        SimpleCov::Formatter::SimpleFormatter,
-        SimpleCov::Formatter::Codecov
-      ])
-    rescue LoadError
-      puts "Codecov not loaded - continuing without it"
-      formatter SimpleCov::Formatter::SimpleFormatter
-    end
-  end
+  formatter SimpleCov::Formatter::SimpleFormatter
 end
 
 ENV['AIA_PROMTS_DIR'] = __dir__ + '/aia/prompts_dir'
