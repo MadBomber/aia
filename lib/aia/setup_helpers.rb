@@ -1,5 +1,7 @@
 module AIA
   module SetupHelpers
+    SPINNER_FORMAT = :classic
+
     def setup_spinner
       @spinner = TTY::Spinner.new(":spinner :title", format: SPINNER_FORMAT)
       spinner.update(title: "composing response ... ")
