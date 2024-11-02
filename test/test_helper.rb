@@ -10,7 +10,7 @@ SimpleCov.start do
   formatter SimpleCov::Formatter::SimpleFormatter
 end
 
-ENV['AIA_PROMTS_DIR'] = __dir__ + '/aia/prompts_dir'
+ENV['AIA_PROMPTS_DIR'] = __dir__ + '/aia/prompts_dir'
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "aia"
@@ -18,6 +18,12 @@ require "aia"
 require "minitest/autorun"
 require "minitest/mock"
 require 'mocha/minitest'
+require 'minitest/pride'
+require 'minitest/reporters'
+
+# Configure test execution order and reporters
+Minitest::Test.make_my_diffs_pretty!
+Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]
 
 # Setup default test environment
 def setup_test_environment
@@ -25,18 +31,3 @@ def setup_test_environment
 end
 
 setup_test_environment
-require 'minitest/autorun'
-require 'minitest/pride'
-require 'minitest/reporters'
-
-# Add lib to load path
-$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
-require 'aia'
-
-# Configure test execution order and reporters
-Minitest::Test.make_my_diffs_pretty!
-Minitest.autorun
-Minitest::Test.i_suck_and_my_tests_are_order_dependent!
-
-# Configure Minitest reporters
-Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]
