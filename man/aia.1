@@ -6,7 +6,7 @@
 aia \- command\-line interface for an AI assistant
 .SH SYNOPSIS
 .PP
-aia \[lB]options\[rB]* PROMPT\[ru]ID \[lB]CONTEXT\[ru]FILE\[rB]* \[lB]\-\- EXTERNAL\[ru]OPTIONS\[pl]\[rB]
+aia \[lB]options\[rB]* PROMPT\[ru]ID \[lB]CONTEXT\[ru]FILE\[rB]*
 .SH DESCRIPTION
 .PP
 The aia command\-line tool is an interface for interacting with an AI model backend, providing a simple way to send prompts and receive responses\. The CLI supports various options to customize the interaction, load a configuration file, edit prompts, set debugging levels, and more\.
@@ -17,9 +17,6 @@ This is a required argument\.
 .TP
 \fICONTEXT\[ru]FILES\fP
 This is an optional argument\.  One or more files can be added to the prompt as context for the backend gen\-AI tool to process\.
-.TP
-\fIEXTERNAL\[ru]OPTIONS\fP
-External options are optional\.  Anything that follow \[lq] \-\- \[lq] will be sent to the backend gen\-AI tool\.  For example \[lq]\-\- \-C \-m gpt4\-128k\[rq] will send the options \[lq]\-C \-m gpt4\-128k\[rq] to the backend gen\-AI tool\.  \fBaia\fR will not validate these external options before sending them to the backend gen\-AI tool\.
 .SH OPTIONS
 .TP
 \fB\-\-chat\fR

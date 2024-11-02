@@ -9,20 +9,6 @@ class AIA::Prompt
   include AIA::DynamicContent
   include AIA::UserQuery
   
-  #
-  # used when no prompt_id is provided but there
-  # are extra parameters that need to be passed
-  # to the backend.  For example "aia -- --settings"
-  #
-  class Fake
-    def id          = '_fake_'
-    def path        = '_fake_'
-    def text        = ''
-    def keywords    = []
-    def directives  = []
-    def to_s        = ''
-  end
-
   KW_HISTORY_MAX    = 5
   COMMENT_SIGNAL    = '#'
   DIRECTIVE_SIGNAL  = "//"
@@ -31,14 +17,24 @@ class AIA::Prompt
 
   # setting build: false supports unit testing.
   def initialize(build: true)
+    debug_me{[
+      :build
+    ]}
+
     if AIA.config.role.empty?
       @role = nil
     else
       @role = (AIA.config.roles_dir + "#{AIA.config.role}.txt").read
     end
 
+    debug_me{[
+      '@role'
+    ]}
+
     get_prompt
     
+    debug_me
+
     @prompt_text_before_role = @prompt.text.dup
 
     unless @role.nil?
@@ -57,19 +53,17 @@ class AIA::Prompt
 
   # Fetch the first argument which should be the prompt id
   def get_prompt
+    debug_me{[
+      'AIA.config.arguments',
+    ]}
+
     prompt_id = AIA.config.arguments.shift
 
-    unless prompt_id
-      if AIA.config.extra.empty?
-        abort("Please provide a prompt id") 
-      else
-        @prompt = Fake.new
-        return
-      end
-    end
+    debug_me{[
+      :prompt_id
+    ]}
 
     search_for_a_matching_prompt(prompt_id) unless existing_prompt?(prompt_id)
-    edit_prompt if AIA.config.edit?
   end
 
 
@@ -178,19 +172,14 @@ class AIA::Prompt
     found_prompts = PromptManager::Prompt.search(prompt_id)
 
     if found_prompts.empty?
-      if AIA.config.edit?
-        create_prompt(prompt_id)
-        edit_prompt
-      else
-        abort <<~EOS
-          
-          No prompts where found for: #{prompt_id}
-          To create a prompt with this ID use the --edit option
-          like this:
-            #{MY_NAME} #{prompt_id} --edit
+      abort <<~EOS
+        
+        No prompts where found for: #{prompt_id}
+        You need to creat a a text file for this prompt:
+          #{AIA.config.editor} #{AIA.config.prompts_dir}/#{prompt_id}.txt
+        }
 
-        EOS
-      end
+      EOS
     else    
       prompt_id     = 1 == found_prompts.size ? found_prompts.first : handle_multiple_prompts(found_prompts, prompt_id)
       @prompt       = PromptManager::Prompt.get(id: prompt_id)
@@ -225,22 +214,6 @@ class AIA::Prompt
     @prompt = PromptManager::Prompt.create(id: prompt_id)
     # TODO: consider a configurable prompt template
     #       ERB ???
-  end
-
-
-  def edit_prompt
-    # FIXME: replace with the editor from the configuration
-    
-    @editor   = AIA::Subl.new(
-                  file: @prompt.path
-                )
-    
-    @editor.run # blocks until file is closed
-
-    AIA.config[:edit?] = false # turn off the --edit switch
-
-    # reload the edited prompt
-    @prompt = PromptManager::Prompt.get(id: @prompt.id)
   end
 
 

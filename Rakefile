@@ -12,12 +12,22 @@ require 'kramdown/man/task'
 Kramdown::Man::Task.new
 
 require "bundler/gem_tasks"
-require "rake/testtask"
+# require "rake/testtask"
 
-Rake::TestTask.new(:test) do |t|
-  t.libs << "test"
-  t.libs << "lib"
-  t.test_files = FileList["test/**/*_test.rb"]
+require 'minitest'
+require "minitest/test_task"
+
+Minitest::TestTask.create(:test) do |t|
+  t.libs        << "test"
+  t.libs        << "lib"
+  t.warning     = false
+  t.test_globs  = ["test/**/*_test.rb"]
 end
+
+# Rake::TestTask.new(:test) do |t|
+#   t.libs << "test"
+#   t.libs << "lib"
+#   t.test_files = FileList["test/**/*_test.rb"]
+# end
 
 task default: :test

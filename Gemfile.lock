@@ -40,8 +40,10 @@ GEM
       omniai-openai (>= 1.8.3)
       open_router
     amazing_print (1.6.0)
+    ansi (1.5.0)
     base64 (0.2.0)
     bigdecimal (3.1.8)
+    builder (3.3.0)
     citrus (3.0.2)
     cogger (0.28.0)
       core (~> 1.7)
@@ -148,6 +150,11 @@ GEM
       refinements (~> 12.9)
       zeitwerk (~> 2.7)
     minitest (5.25.1)
+    minitest-reporters (1.7.1)
+      ansi
+      builder
+      minitest (>= 5.0)
+      ruby-progressbar
     mocha (2.5.0)
       ruby2_keywords (>= 0.0.5)
     multipart-post (2.4.1)
@@ -180,8 +187,7 @@ GEM
       faraday-multipart (>= 1)
     optparse (0.5.0)
     os (1.1.4)
-    ostruct (0.6.0)
-    prompt_manager (0.4.1)
+    prompt_manager (0.4.2)
     public_suffix (6.0.1)
     racc (1.8.1)
     rake (13.2.1)
@@ -189,6 +195,7 @@ GEM
     reline (0.5.10)
       io-console (~> 0.5)
     rexml (3.3.9)
+    ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     runcom (11.8.0)
       refinements (~> 12.9)
@@ -263,12 +270,12 @@ DEPENDENCIES
   amazing_print
   debug_me
   kramdown-man
-  minitest (~> 5.0)
+  minitest
+  minitest-reporters
   mocha
-  ostruct (~> 0.6.0)
-  rake (~> 13.0)
+  rake
   simplecov
   tocer
 
 BUNDLED WITH
-   2.5.21
+   2.5.22

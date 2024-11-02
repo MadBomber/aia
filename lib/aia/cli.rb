@@ -152,7 +152,7 @@ class AIA::Cli
       # Key       Value,      switches
       arguments:  [args], # NOTE: after process, prompt_id and context_files will be left
       directives: [[]],   # an empty Array as the default value
-      extra:      [''],   # 
+      editor:     [ENV['EDITOR'], ""],
       #
       model:        ["gpt-4o",  "--llm --model"],
       speech_model: ["tts-1",   "--sm --speech_model"],
@@ -165,7 +165,6 @@ class AIA::Cli
       #
       chat?:      [false,     "--chat"],
       debug?:     [false,     "-d --debug"],
-      edit?:      [false,     "-e --edit"],
       erb?:       [false,     "--erb"],
       fuzzy?:     [false,     "-f --fuzzy"],
       help?:      [false,     "-h --help"],
@@ -251,11 +250,6 @@ class AIA::Cli
 
 
   def process_command_line_arguments
-    # get the options meant for the backend AI command
-    # doing this first in case there are any options that conflict
-    # between frontend and backend.
-    extract_extra_options
-
     @options.keys.each do |option|
       check_for option
     end
@@ -414,17 +408,6 @@ class AIA::Cli
         config.search_proc        = nil
         # TODO: add the rgfzf script for search_proc
       end.new
-  end
-
-
-  # Get the additional CLI arguments intended for the
-  # backend gen-AI processor.
-  def extract_extra_options
-    extra_index = arguments.index('--')
-
-    if extra_index
-      AIA.config.extra = arguments.slice!(extra_index..-1)[1..].join(' ')
-    end
   end
 
 

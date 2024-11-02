@@ -60,11 +60,14 @@ Gem::Specification.new do |spec|
   spec.add_dependency "tty-spinner"
   spec.add_dependency "versionaire"
 
-  spec.add_development_dependency "minitest"
   spec.add_development_dependency 'amazing_print'
   spec.add_development_dependency 'debug_me'
   spec.add_development_dependency 'kramdown-man'
+  spec.add_development_dependency 'minitest'
+  spec.add_development_dependency 'minitest-reporters'
   spec.add_development_dependency 'mocha'
+  spec.add_development_dependency 'rake'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'tocer'
+
 end

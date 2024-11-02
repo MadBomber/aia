@@ -6,11 +6,11 @@ aia - command-line interface for an AI assistant
 
 ## SYNOPSIS
 
-aia [options]* PROMPT_ID [CONTEXT_FILE]* [-- EXTERNAL_OPTIONS+]  
+aia [options]* PROMPT_ID [CONTEXT_FILE]*  
 
 ## DESCRIPTION
 
-The aia command-line tool is an interface for interacting with an AI model backend, providing a simple way to send prompts and receive responses. The CLI supports various options to customize the interaction, load a configuration file, edit prompts, set debugging levels, and more.
+The aia command-line tool is an interface for interacting with an AI model, providing a simple way to send prompts and receive responses. The CLI supports various options to customize the interaction, load a configuration file, set debugging levels, and more.
 
 ## ARGUMENTS
 
@@ -19,9 +19,6 @@ The aia command-line tool is an interface for interacting with an AI model backe
 
 *CONTEXT_FILES*
 : This is an optional argument.  One or more files can be added to the prompt as context for the backend gen-AI tool to process.
-
-*EXTERNAL_OPTIONS*
-: External options are optional.  Anything that follow " -- " will be sent to the backend gen-AI tool.  For example "-- -C -m gpt4-128k" will send the options "-C -m gpt4-128k" to the backend gen-AI tool.  `aia` will not validate these external options before sending them to the backend gen-AI tool.
 
 ## OPTIONS
 
@@ -33,9 +30,6 @@ The aia command-line tool is an interface for interacting with an AI model backe
 
 `--dump` *PATH/TO/FILE.ext*
 : Dump the current configuration to a file in the format denoted by the file's extension.  Currently only .yml, .yaml and .toml are acceptable file extensions.  *If the file exists, it will be over-written without warning.*
-
-`-e`, `--edit`
-: Invokes an editor on the prompt file.  You can make changes to the prompt file, save it and the newly saved prompt will be processed by the backend.
 
 `--shell`
 : This option tells `aia` to replace references to system environment variables in the prompt with the value of the envar.  envars are like $HOME and ${HOME} in this example their occurance will be replaced by the value of ENV['HOME'].  Also the dynamic shell command in the pattern $(shell command) will be executed and its output replaces its pattern.  It does not matter if your shell uses different patters than BASH since the replacement is being done within a Ruby context.
@@ -78,9 +72,6 @@ The aia command-line tool is an interface for interacting with an AI model backe
 
 `-d`, `--debug`
 : Turn On Debugging - default is false
-
-`-e`, `--edit`
-: Edit the Prompt File - default is false
 
 `-f`, --fuzzy`
 : Use Fuzzy Matching when searching for a prompt - default is false
