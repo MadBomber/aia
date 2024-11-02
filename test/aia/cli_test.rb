@@ -2,14 +2,7 @@
 
 require_relative '../test_helper'
 
-require_relative '../test_helper'
-
 class AIA::CliTest < Minitest::Test
-  def run_test_case(test_name)
-    puts "Running #{test_name}"
-    yield if block_given?
-  end
-  
   def setup
     # Initialize `@cli` before each test
     @args = "arg1 arg2"  # You can modify this based on your requirements
@@ -20,14 +13,12 @@ class AIA::CliTest < Minitest::Test
     assert_instance_of AIA::Cli, @cli
     refute_nil AIA.config
     assert_equal ["arg1", "arg2"], AIA.config.arguments.first
-    run_test_case(__method__)
   end
 
   def test_load_env_options
     ENV['AIA_CONFIG_FILE'] = 'test_config.yml'
     @cli.load_env_options
     assert_equal 'test_config.yml', AIA.config.config_file
-    run_test_case(__method__)
   end
 
   def test_error_on_invalid_option_combinations_chat
