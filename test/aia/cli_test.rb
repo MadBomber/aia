@@ -13,24 +13,34 @@ class AIA::CliTest < Minitest::Test
 
   def test_initialize_with_string_args
     assert_instance_of AIA::Cli, @cli
+    refute_nil AIA.config
+    assert_equal ["arg1", "arg2"], AIA.config.arguments.first
   end
 
   def test_load_env_options
     ENV['AIA_CONFIG_FILE'] = 'test_config.yml'
+    @cli.load_env_options
     assert_equal 'test_config.yml', AIA.config.config_file
   end
 
   def test_error_on_invalid_option_combinations_chat
     AIA.config.chat = true
+    
+    # Test chat with next
     AIA.config.next = ['next_prompt']
-    assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    error = assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    assert_match /Cannot use --next with --chat/, error.message
 
+    # Test chat with out_file
     AIA.config.next.clear
     AIA.config.out_file = 'output.txt'
-    assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    error = assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    assert_match /Cannot use --out_file with --chat/, error.message
 
+    # Test chat with pipeline
     AIA.config.pipeline = ['pipeline1']
-    assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    error = assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    assert_match /Cannot use --pipeline with --chat/, error.message
   end
 
   def test_string_to_pathname
