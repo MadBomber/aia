@@ -22,7 +22,15 @@ require 'minitest/pride'
 require 'minitest/reporters'
 
 # Configure test execution order and reporters
-Minitest::Test.make_my_diffs_pretty!
+class Minitest::Test
+  # Make test output more readable
+  make_my_diffs_pretty!
+  
+  # Explicitly state that tests are order-dependent
+  i_suck_and_my_tests_are_order_dependent!
+end
+
+# Configure reporters
 Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]
 
 # Setup default test environment
