@@ -9,6 +9,7 @@ class AIA::CliTest < Minitest::Test
     puts "Running #{test_name}"
     yield if block_given?
   end
+  
   def setup
     # Initialize `@cli` before each test
     @args = "arg1 arg2"  # You can modify this based on your requirements
