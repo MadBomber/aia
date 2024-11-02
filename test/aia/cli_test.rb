@@ -2,6 +2,8 @@
 
 require_relative '../test_helper'
 
+require_relative '../test_helper'
+
 class AIA::CliTest < Minitest::Test
   def setup
     # Initialize `@cli` before each test
