@@ -1,6 +1,6 @@
 # test/aia/dynamic_content_test.rb
 
-require_relative '../test_helper'
+require 'test_helper'
 
 class DynamicContentTest < Minitest::Test
   class TestClass

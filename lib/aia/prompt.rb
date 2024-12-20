@@ -17,24 +17,14 @@ class AIA::Prompt
 
   # setting build: false supports unit testing.
   def initialize(build: true)
-    debug_me{[
-      :build
-    ]}
-
     if AIA.config.role.empty?
       @role = nil
     else
       @role = (AIA.config.roles_dir + "#{AIA.config.role}.txt").read
     end
 
-    debug_me{[
-      '@role'
-    ]}
-
     get_prompt
     
-    debug_me
-
     @prompt_text_before_role = @prompt.text.dup
 
     unless @role.nil?
@@ -53,16 +43,7 @@ class AIA::Prompt
 
   # Fetch the first argument which should be the prompt id
   def get_prompt
-    debug_me{[
-      'AIA.config.arguments',
-    ]}
-
     prompt_id = AIA.config.arguments.shift
-
-    debug_me{[
-      :prompt_id
-    ]}
-
     search_for_a_matching_prompt(prompt_id) unless existing_prompt?(prompt_id)
   end
 

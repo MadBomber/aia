@@ -2,7 +2,7 @@
 
 require 'ostruct'
 
-require_relative  '../test_helper'
+require 'test_helper'
 
 require 'aia/logging'
 

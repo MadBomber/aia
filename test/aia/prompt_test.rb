@@ -1,6 +1,6 @@
 # test/aia/prompt_test.rb
 
-require_relative  '../test_helper'
+require 'test_helper'
 
 class PromptTest < Minitest::Test
   def setup

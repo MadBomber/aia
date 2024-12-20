@@ -24,20 +24,10 @@ module AIA
     attr_reader :spinner
 
     def initialize(args = ARGV)
-      debug_me{[
-        :args
-      ]}
-
       @piped_content = read_piped_content
       @directive_output = ""
 
-      debug_me{[
-        '@piped_content'
-      ]}
-
       initialize_components(args)
-
-      debug_me
     end
 
     def call
@@ -57,21 +47,13 @@ module AIA
     end
 
     def initialize_components(args)
-      debug_me
       load_tools
-      debug_me
       initialize_cli(args)
-      debug_me
       initialize_client
-      debug_me
       setup_spinner
-      debug_me
       setup_logger
-      debug_me
       setup_directives_processor
-      debug_me
       setup_prompt
-      debug_me
     end
 
     def load_tools

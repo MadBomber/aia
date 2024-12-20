@@ -12,7 +12,11 @@ end
 
 ENV['AIA_PROMPTS_DIR'] = __dir__ + '/aia/prompts_dir'
 
-$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+# Add lib and test directories to load path
+lib_path = File.expand_path('../lib', __dir__)
+test_path = File.expand_path(__dir__)
+$LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+$LOAD_PATH.unshift(test_path) unless $LOAD_PATH.include?(test_path)
 require "aia"
 
 require "minitest/autorun"
@@ -35,7 +39,12 @@ Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]
 
 # Setup default test environment
 def setup_test_environment
-  AIA::Cli.new("test") unless defined?(AIA.config) && AIA.config&.arguments&.any?
+  begin
+    AIA::Cli.new("test") unless defined?(AIA.config) && AIA.config&.arguments&.any?
+  rescue StandardError => e
+    puts "Warning: Test environment setup failed: #{e.message}"
+    puts "Some tests may fail if they depend on configuration"
+  end
 end
 
 setup_test_environment

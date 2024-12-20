@@ -1,6 +1,6 @@
 # test/aia/cli_test.rb
 
-require_relative '../test_helper'
+require 'test_helper'
 
 class AIA::CliTest < Minitest::Test
   def setup

@@ -1,6 +1,6 @@
 # test/aia/tools/test_fzf.rb
 
-require_relative  '../../test_helper'
+require 'test_helper'
 require_relative  '../../../lib/aia/tools'
 require_relative  '../../../lib/aia/tools/fzf'
 

@@ -17,7 +17,6 @@ module AIA
     end
 
     def setup_prompt
-      debug_me
       @prompt = Prompt.new.prompt
       @prompt.text += piped_content if piped_content
     end
