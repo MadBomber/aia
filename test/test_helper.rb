@@ -34,8 +34,14 @@ class Minitest::Test
   i_suck_and_my_tests_are_order_dependent!
 end
 
-# Configure reporters
-Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]
+# Configure reporters with detailed output
+Minitest::Reporters.use! [
+  Minitest::Reporters::DefaultReporter.new(
+    color: true,
+    detailed_skip: true,
+    fast_fail: true
+  )
+]
 
 # Setup default test environment
 def setup_test_environment

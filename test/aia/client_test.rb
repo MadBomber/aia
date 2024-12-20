@@ -45,8 +45,9 @@ class ClientTest < Minitest::Test
     $stdin = input
 
     begin
-      # Initialize with a test prompt ID
+      # Initialize with a test prompt ID and setup test environment
       AIA::Cli.new(["test"])
+      AIA.config.prompts_dir = File.expand_path('../prompts_dir', __FILE__)
       main = AIA::Main.new
       assert_equal "piped content", main.instance_variable_get(:@piped_content)
     ensure
