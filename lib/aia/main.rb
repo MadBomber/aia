@@ -128,16 +128,11 @@ module AIA
     end
 
     def start_chat
-      setup_reline_history
-      start_interactive_chat
-    end
-
-    def start_interactive_chat
-      loop do
-        prompt = ask_question_with_reline("\nFollow Up: ")
-        break if prompt.empty?
-        process_chat_prompt(prompt)
-      end
+      ChatManager.new(
+        client: @client_manager.client,
+        logger: @logger,
+        directives_processor: @directives_processor
+      ).start_session
     end
 
     def log_the_follow_up(the_prompt_text, result)

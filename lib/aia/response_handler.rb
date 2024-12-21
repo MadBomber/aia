@@ -3,8 +3,9 @@
 
 
 class AIA::ResponseHandler
-  def initialize(result:)
+  def initialize(result:, prompt: nil)
     @result = result
+    @prompt = prompt
   end
 
   def process

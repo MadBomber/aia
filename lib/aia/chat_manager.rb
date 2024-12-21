@@ -2,8 +2,9 @@
 
 
 class AIA::ChatManager
-  def initialize(client:)
+  def initialize(client:, directives_processor:)
     @client = client
+    @directives_processor = directives_processor
   end
 
   def start_session

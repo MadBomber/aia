@@ -5,6 +5,7 @@ class AIA::PromptProcessor
   def initialize(directives:, prompt:)
     @directives = directives
     @prompt = prompt
+    @config = AIA.config
   end
 
   def process
