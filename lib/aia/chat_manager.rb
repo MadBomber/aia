@@ -2,9 +2,8 @@
 
 
 class AIA::ChatManager
-  def initialize(client:, config:, logger:)
+  def initialize(client:, logger:)
     @client = client
-    @config = config
     @logger = logger
   end
 
@@ -23,5 +22,4 @@ class AIA::ChatManager
     end
   end
 end
-
 

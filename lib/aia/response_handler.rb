@@ -1,15 +1,17 @@
 # lib/aia/response_handler.rb
 
+
+
 class AIA::ResponseHandler
-  def initialize(result:, config:, logger:)
+  def initialize(result:, logger:)
     @result = result
-    @config = config
     @logger = logger
   end
 
   def process
-    speak_result if @config.speak?
+    speak_result if AIA.config.speak?
     log_result
-    start_chat if @config.chat?
+    start_chat if AIA.config.chat?
   end
 end
+
