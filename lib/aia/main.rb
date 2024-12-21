@@ -10,6 +10,12 @@ require_relative 'prompt'
 require_relative 'logging'
 require_relative 'tools'
 require_relative 'user_query'
+require_relative 'client_manager'
+require_relative 'response_handler'
+require_relative 'prompt_processor'
+require_relative 'chat_manager'
+require_relative 'pipeline_processor'
+require_relative 'configuration_validator'
 
 module AIA
   class Main
@@ -31,14 +37,10 @@ module AIA
     end
 
     def call
-      validate_configuration
       process_directives
       result = process_prompt
       handle_output(result)
       continue_processing(result) if continue?
-    rescue AIAError => e
-      @logger.error(e)
-      handle_error(e)
     end
 
     private
@@ -53,7 +55,8 @@ module AIA
     def initialize_components(args)
       load_tools
       initialize_cli(args)
-      initialize_client
+      @client_manager = ClientManager.new(AIA.config)
+      @client_manager.initialize_client
       setup_spinner
       setup_logger
       setup_directives_processor
@@ -68,30 +71,21 @@ module AIA
       Cli.new(args)
     end
 
-    def initialize_client
-      AIA.client = AIA::Client.chat
-    end
-
-
-    def process_directives
-      @directive_output = @directives_processor.execute_my_directives
-    end
-
-    def build_prompt
-      prompt = @prompt.to_s
-      prompt.prepend("#{@directive_output}\n") unless @directive_output&.empty?
-      prompt.prepend("Be terse in your response. ") if AIA.config.terse?
-      prompt
-    end
-
     def process_prompt
-      get_and_display_result(build_prompt)
+      @prompt_processor = PromptProcessor.new(
+        directives: @directive_output,
+        config: AIA.config,
+        prompt: @prompt
+      )
+      @prompt_processor.process
     end
 
     def handle_output(result)
-      AIA.speak(result) if AIA.config.speak?
-      logger.prompt_result(@prompt, result)
-      start_chat if AIA.config.chat?
+      ResponseHandler.new(
+        result: result,
+        config: AIA.config,
+        logger: @logger
+      ).process
     end
 
     def continue?
@@ -228,10 +222,6 @@ module AIA
 
     def insert_terse_phrase(string)
       AIA.config.terse? ? "Be terse in your response. #{string}" : string
-    end
-
-    def validate_configuration
-      raise ConfigurationError unless valid_configuration?
     end
   end
 end
