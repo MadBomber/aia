@@ -3,6 +3,16 @@
 ## [0.6.0] WIP
 - breaking change; dependency on backend CLI tools like mods, llm, etc has been removed.
 - replaced all of the backend LLM processors with AiClient
+- added comprehensive test suite for new components including ChatService, SetupHelpers, and TTY::SpinnerLog
+- enhanced config validation and component initialization
+- refactored chat and main modules for improved maintainability
+- removed logger dependency from initializers in favor of AIA.config.logger
+- refactored config dependency from initializers to use AIA.config directly
+- added detailed class documentation for core components
+- improved test configuration and setup
+- removed debug calls and fixed require paths
+- updated gem dependencies and framework versions
+- added code model option to CLI with --cm/--code_model flags
 
 ## [0.5.17] 2024-05-17
 - removed replaced `semver` with `versionaire`
