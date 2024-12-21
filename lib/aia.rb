@@ -48,13 +48,13 @@ module AIA
 
     def run(args=ARGV)
       args = args.split(' ') if args.is_a?(String)
-
-      # TODO: Currently this is a one and done architecture.
-      #       If the args contain an "-i" or and "--interactive"
-      #       flag could this turn into some kind of
-      #       conversation REPL?
       
-      AIA::Main.new(args).call
+      main = AIA::Main.new(args)
+      if AIA::ConfigurationValidator.new(config).valid?
+        main.call
+      else
+        abort "Invalid configuration. Please check your settings."
+      end
     end
 
 

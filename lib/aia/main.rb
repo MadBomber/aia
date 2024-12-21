@@ -32,8 +32,9 @@ module AIA
     def initialize(args = ARGV)
       @piped_content = read_piped_content
       @directive_output = ""
-
-      initialize_components(args)
+      @args = args
+      
+      initialize_components
     end
 
     def call
@@ -52,11 +53,23 @@ module AIA
       content
     end
 
-    def initialize_components(args)
+    def initialize_components
       load_tools
-      initialize_cli(args)
+      initialize_cli
+      initialize_services
+      setup_components
+    end
+
+    def initialize_cli
+      Cli.new(@args)
+    end
+
+    def initialize_services
       @client_manager = ClientManager.new(AIA.config)
       @client_manager.initialize_client
+    end
+
+    def setup_components
       setup_spinner
       setup_logger
       setup_directives_processor
