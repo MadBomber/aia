@@ -1,7 +1,13 @@
 # lib/aia/chat_manager.rb
 
 
-class ChatManager
+class AIA::ChatManager
+  def initialize(client:, config:, logger:)
+    @client = client
+    @config = config
+    @logger = logger
+  end
+
   def start_session
     setup_reline_history
     handle_chat_loop
@@ -17,4 +23,5 @@ class ChatManager
     end
   end
 end
+
 

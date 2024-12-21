@@ -2,6 +2,11 @@
 
 
 class AIA::PipelineProcessor
+  def initialize(result:, config:)
+    @result = result
+    @config = config
+  end
+
   def process
     return if @config.pipeline.empty?
     
