@@ -4,7 +4,6 @@
 - breaking change; dependency on backend CLI tools like mods, llm, etc has been removed.
 - replaced all of the backend LLM processors with AiClient
 
-
 ## [0.5.17] 2024-05-17
 - removed replaced `semver` with `versionaire`
 

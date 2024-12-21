@@ -31,10 +31,14 @@ module AIA
     end
 
     def call
+      validate_configuration
       process_directives
       result = process_prompt
       handle_output(result)
       continue_processing(result) if continue?
+    rescue AIAError => e
+      @logger.error(e)
+      handle_error(e)
     end
 
     private
@@ -224,6 +228,10 @@ module AIA
 
     def insert_terse_phrase(string)
       AIA.config.terse? ? "Be terse in your response. #{string}" : string
+    end
+
+    def validate_configuration
+      raise ConfigurationError unless valid_configuration?
     end
   end
 end
