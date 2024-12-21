@@ -26,3 +26,15 @@ class AIA::PipelineProcessor
   end
 end
 
+#
+# Manages the sequential processing of multiple prompts in a pipeline
+#
+# This class handles the flow of data between multiple prompt processing steps,
+# where the output of one prompt becomes the input for the next. It manages:
+# - Temporary file handling between steps
+# - Configuration updates between pipeline stages
+# - State management across the pipeline
+#
+# The pipeline processor enables complex multi-step AI interactions where each
+# step builds on the results of previous steps.
+#

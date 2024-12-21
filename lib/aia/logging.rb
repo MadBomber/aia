@@ -60,3 +60,15 @@ end
 
 
 
+#
+# Provides structured logging capabilities for the AIA system
+#
+# This class implements a comprehensive logging system that:
+# - Supports multiple log levels (DEBUG, INFO, WARN, ERROR, FATAL)
+# - Handles log rotation (weekly)
+# - Formats log entries with timestamps
+# - Provides special handling for prompt/result logging
+#
+# The logger can write to files or STDOUT and includes safeguards
+# against common logging failures.
+#

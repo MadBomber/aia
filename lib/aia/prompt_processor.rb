@@ -23,3 +23,14 @@ class AIA::PromptProcessor
   end
 end
 
+#
+# Processes and prepares prompts before sending to AI models
+#
+# This class handles the preparation of prompts including:
+# - Incorporating system directives
+# - Applying terse mode modifications
+# - Building the final prompt structure
+#
+# It acts as an intermediary between raw prompt text and the AI client,
+# ensuring all prompts are properly formatted and enhanced before processing.
+#

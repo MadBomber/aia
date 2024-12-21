@@ -1,5 +1,18 @@
 # lib/aia/tools/fzf.rb
-# fzf is a general-purpose command-line fuzzy finder
+# Wrapper for the fzf (fuzzy finder) command-line tool
+#
+# This class provides an interface to the fzf utility for fuzzy searching through lists
+# of items. It's primarily used for interactive selection of prompts, roles, and other
+# items throughout the AIA system.
+#
+# Features:
+# - Configurable search parameters and preview window
+# - Temporary file handling for input lists
+# - Customizable prompt and header text
+# - Integration with system fzf installation
+#
+# @see https://github.com/junegunn/fzf
+#
 
 require 'shellwords'
 require 'tempfile'
