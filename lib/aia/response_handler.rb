@@ -3,15 +3,20 @@
 
 
 class AIA::ResponseHandler
-  def initialize(result:, logger:)
+  def initialize(result:)
     @result = result
-    @logger = logger
   end
 
   def process
     speak_result if AIA.config.speak?
     log_result
     start_chat if AIA.config.chat?
+  end
+
+  private
+
+  def log_result
+    AIA.config.logger.prompt_result(@prompt, @result)
   end
 end
 

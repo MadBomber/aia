@@ -2,9 +2,8 @@
 
 
 class AIA::ChatManager
-  def initialize(client:, logger:)
+  def initialize(client:)
     @client = client
-    @logger = logger
   end
 
   def start_session
@@ -20,6 +19,11 @@ class AIA::ChatManager
       break if prompt.empty?
       process_chat_interaction(prompt)
     end
+  end
+
+  def log_chat_interaction(prompt, result)
+    AIA.config.logger.info "Follow Up:\n#{prompt}"
+    AIA.config.logger.info "Response:\n#{result}"
   end
 end
 
