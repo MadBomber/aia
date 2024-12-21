@@ -82,9 +82,7 @@ module AIA
 
     def handle_output(result)
       ResponseHandler.new(
-        result: result,
-        config: AIA.config,
-        logger: @logger
+        result: result
       ).process
     end
 
@@ -97,40 +95,10 @@ module AIA
       keep_going(result) unless AIA.config.pipeline.empty?
     end
 
-    def get_and_display_result(prompt_text)
-      spinner.auto_spin if AIA.config.verbose?
-      result = AIA.client.chat(prompt_text)
-      spinner.success("Done.") if AIA.config.verbose?
-      display_result(result)
-      result
-    end
-
-    def display_result(result)
-      AIA.config.out_file.write("\nResponse:\n")
-      if STDOUT == AIA.config.out_file
-        AIA.config.render? ? render_glow(result) : write_wrapped(result)
-      else
-        write_to_file(result)
-      end
-    end
-
-    def render_glow(content)
-      Glow.new(content: content).run
-    end
-
-    def write_wrapped(content)
-      AIA.config.out_file.write(content.wrap(indent: 2))
-    end
-
-    def write_to_file(content)
-      AIA.config.out_file.write(content)
-      render_glow(AIA.config.out_file) if AIA.config.render?
-    end
 
     def start_chat
       ChatManager.new(
         client: @client_manager.client,
-        logger: @logger,
         directives_processor: @directives_processor
       ).start_session
     end
