@@ -1,0 +1,69 @@
+digraph AIA {
+  // Graph settings
+  rankdir=TB;
+  node [shape=box, style=filled, fillcolor=lightgray];
+  
+  // Main classes
+  Main [label="AIA::Main\n(Entry Point)"];
+  Cli [label="AIA::Cli\n(Command Line Interface)"];
+  Config [label="AIA::Config\n(Configuration)"];
+  
+  // Core components
+  ClientManager [label="AIA::ClientManager\n(AI Client Management)"];
+  PromptProcessor [label="AIA::PromptProcessor\n(Prompt Handling)"];
+  ResponseHandler [label="AIA::ResponseHandler\n(Response Processing)"];
+  ChatManager [label="AIA::ChatManager\n(Chat Interactions)"];
+  PipelineProcessor [label="AIA::PipelineProcessor\n(Pipeline Management)"];
+  
+  // Support classes
+  Directives [label="AIA::Directives\n(Directive Processing)"];
+  Prompt [label="AIA::Prompt\n(Prompt Management)"];
+  Logging [label="AIA::Logging\n(Logging System)"];
+  Tools [label="AIA::Tools\n(External Tools)"];
+  
+  // Tool implementations
+  Fzf [label="AIA::Fzf\n(Fuzzy Finder)"];
+  Glow [label="AIA::Glow\n(Markdown Renderer)"];
+  
+  // Modules
+  DynamicContent [label="AIA::DynamicContent\n(Dynamic Content)", shape=ellipse];
+  UserQuery [label="AIA::UserQuery\n(User Interaction)", shape=ellipse];
+  SetupHelpers [label="AIA::SetupHelpers\n(Setup Methods)", shape=ellipse];
+  
+  // Dependencies
+  Main -> Cli;
+  Main -> ClientManager;
+  Main -> PromptProcessor;
+  Main -> ResponseHandler;
+  Main -> ChatManager;
+  Main -> PipelineProcessor;
+  Main -> SetupHelpers [style=dashed];
+  Main -> DynamicContent [style=dashed];
+  Main -> UserQuery [style=dashed];
+  
+  Cli -> Config;
+  Cli -> Tools;
+  
+  Tools -> Fzf;
+  Tools -> Glow;
+  
+  PromptProcessor -> Prompt;
+  PromptProcessor -> Directives;
+  
+  Prompt -> DynamicContent [style=dashed];
+  Prompt -> UserQuery [style=dashed];
+  
+  ChatManager -> ClientManager;
+  ChatManager -> Directives;
+  
+  // Logging relationships
+  Main -> Logging;
+  ResponseHandler -> Logging;
+  ChatManager -> Logging;
+  
+  // Configuration relationships
+  Config -> ClientManager;
+  Config -> PromptProcessor;
+  Config -> PipelineProcessor;
+  Config -> ChatManager;
+}
