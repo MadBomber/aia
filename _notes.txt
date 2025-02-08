@@ -1,0 +1,8 @@
+
+--- 2025-02-01 18:01:36 -0600
+    I have no idea where I left off in this branch. The objective is to replace all the back-end processes with AiClient.
+
+    Tests are failing.
+
+    Make a few changes.  It seems to be working in its basic modes.
+    

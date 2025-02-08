@@ -80,10 +80,6 @@ module AIA
       Tools.load_tools
     end
 
-    def initialize_cli(args)
-      Cli.new(args)
-    end
-
     def process_prompt
       @prompt_processor = PromptProcessor.new(
         directives: @directive_output,
