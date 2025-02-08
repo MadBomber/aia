@@ -1,6 +1,6 @@
 ## [Unreleased]
 
-## [0.6.0] WIP
+## [0.6.?] WIP
 - breaking change; dependency on backend CLI tools like mods, llm, etc has been removed.
 - replaced all of the backend LLM processors with AiClient
 - added comprehensive test suite for new components including ChatService, SetupHelpers, and TTY::SpinnerLog
