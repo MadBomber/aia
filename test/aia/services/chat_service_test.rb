@@ -2,6 +2,7 @@ require 'test_helper'
 
 class ChatServiceTest < Minitest::Test
   def setup
+    AIA::Cli.new("test") # Initialize config
     @client = mock('client')
     @directives_processor = mock('directives_processor')
     @logger = mock('logger')
@@ -16,7 +17,7 @@ class ChatServiceTest < Minitest::Test
     prompt = "test prompt"
     result = "test result"
     
-    @client.expects(:chat).with("test prompt").returns(result)
+    @client.expects(:chat).with(prompt).returns(result)
     @logger.expects(:info).with("Follow Up:\n#{prompt}")
     @logger.expects(:info).with("Response:\n#{result}")
     
@@ -24,7 +25,7 @@ class ChatServiceTest < Minitest::Test
   end
 
   def test_process_chat_with_directives
-    prompt = "!directive test"
+    prompt = "//directive test"
     directive_output = "directive result"
     result = "processed result"
     
@@ -41,11 +42,16 @@ class ChatServiceTest < Minitest::Test
     prompt = "<%= 2 + 2 %>"
     result = "test result"
     
+    # Set up expectations in the correct order
     @client.expects(:chat).with("4").returns(result)
     @logger.expects(:info).with("Follow Up:\n4")
     @logger.expects(:info).with("Response:\n#{result}")
     
-    assert_equal result, @service.process_chat(prompt)
+    begin
+      assert_equal result, @service.process_chat(prompt)
+    ensure
+      AIA.config.erb = false
+    end
   end
 
   def test_process_chat_with_shell_enabled
@@ -53,11 +59,20 @@ class ChatServiceTest < Minitest::Test
     prompt = "$USER"
     result = "test result"
     
+    # Set the environment variable
+    original_user = ENV['USER']
     ENV['USER'] = 'testuser'
+    
+    # Set up expectations in the correct order
     @client.expects(:chat).with("testuser").returns(result)
     @logger.expects(:info).with("Follow Up:\ntestuser")
     @logger.expects(:info).with("Response:\n#{result}")
     
-    assert_equal result, @service.process_chat(prompt)
+    begin
+      assert_equal result, @service.process_chat(prompt)
+    ensure
+      ENV['USER'] = original_user
+      AIA.config.shell = false
+    end
   end
 end

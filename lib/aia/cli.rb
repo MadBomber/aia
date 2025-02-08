@@ -17,19 +17,51 @@ class AIA::Cli
   
 
   def initialize(args)
-    args = args.split(' ') if args.is_a? String
-
-    setup_options_with_defaults(args) # 1. defaults
-    load_env_options                  # 2. over-ride with envars
-    process_command_line_arguments    # 3. over-ride with command line options
-
-    # 4. over-ride everything with config file
-    load_config_file unless AIA.config.config_file.nil?
-
-    convert_to_pathname_objects
-    error_on_invalid_option_combinations
-    setup_prompt_manager
-    execute_immediate_commands
+    args = args.split(' ') if args.is_a?(String)
+    @options = {
+      arguments: args.is_a?(Array) ? args : [args],
+      directives: [[]],
+      editor:     [ENV['EDITOR'], ""],
+      model:        ["gpt-4o",  "--llm --model"],
+      code_model:   ["claude-3-5-sonnet", "--cm --code_model"],
+      speech_model: ["tts-1",   "--sm --speech_model"],
+      voice:        ["alloy",   "--voice"],
+      transcription_model:  ["whisper-1", "--tm --transcription_model"],
+      dump_file:  [nil,       "--dump"],
+      completion: [nil,       "--completion"],
+      chat?:      [false,     "--chat"],
+      debug?:     [false,     "-d --debug"],
+      erb?:       [false,     "--erb"],
+      fuzzy?:     [false,     "-f --fuzzy"],
+      help?:      [false,     "-h --help"],
+      markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
+      render?:    [false,     "--render"],
+      shell?:     [false,     "--shell"],
+      speak?:     [false,     "--speak"],
+      terse?:     [false,     "--terse"],
+      verbose?:   [false,     "-v --verbose"],
+      version?:   [false,     "--version"],
+      next:       ['',        "-n --next"],
+      pipeline:   [[],        "--pipeline"],
+      role:       ['',        "-r --role"],
+      config_file:[nil,                       "-c --config_file"],
+      prompts_dir:["~/.prompts",              "-p --prompts_dir"],
+      roles_dir:  ["~/.prompts/roles",        "--roles_dir"],
+      out_file:   [STDOUT,                    "-o --out_file --no-out_file"],
+      log_file:   ["~/.prompts/_prompts.log", "-l --log_file --no-log_file"],
+      image_model:    ['dall-e-3',  '--im --image_model'],
+      image_size:     ['',          '--is --image_size'],
+      image_quality:  ['',          '--iq --image_quality'],
+      audio_model:    ['whisper-1',   '--am --audio_model'],
+      audio_size:     ['',            '--as --audio_size'],
+      audio_quality:  ['',            '--aq --audio_quality'],
+    }
+    # Preserve full positional arguments for :arguments
+    config_options = {}
+    @options.each do |key, value|
+      config_options[key] = (key == :arguments ? value : value.first)
+    end
+    AIA.config = AIA::Config.new(config_options)
   end
 
 
@@ -47,21 +79,18 @@ class AIA::Cli
 
 
   def error_on_invalid_option_combinations
-    # --chat is intended as an interactive exchange
-    if AIA.config.chat?
-      unless AIA.config.next.empty?
+    if (AIA.config.respond_to?(:chat?) ? AIA.config.chat? : AIA.config.chat)
+      if !AIA.config.next.empty?
         abort "ERROR: Cannot use --next with --chat"
       end
-      unless STDOUT == AIA.config.out_file
+      if AIA.config.out_file != STDOUT
         abort "ERROR: Cannot use --out_file with --chat"
       end
-      unless AIA.config.pipeline.empty?
+      if !AIA.config.pipeline.empty?
         abort "ERROR: Cannot use --pipeline with --chat"
       end
     end
 
-    # --next says which prompt to process next
-    # but --pipeline gives an entire sequence of prompts for processing
     unless AIA.config.next.empty?
       unless AIA.config.pipeline.empty?
         abort "ERROR: Cannot use --pipeline with --next"

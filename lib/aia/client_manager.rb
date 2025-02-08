@@ -4,13 +4,15 @@ class AIA::ClientManager
   def initialize_client(type: :chat, model: nil)
     @client = case type
     when :code
-      CodeClient.new(model || AIA.config.code_model)
+      AIA::Client.code
     when :image
-      ImageClient.new(model || AIA.config.image_model)
+      AIA::Client.image
     when :speech
-      SpeechClient.new(model || AIA.config.speech_model)
+      AIA::Client.speech
+    when :audio
+      AIA::Client.audio
     else
-      ChatClient.new(model || AIA.config.model)
+      AIA::Client.chat
     end
   end
 end

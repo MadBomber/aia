@@ -1,45 +1,30 @@
 # lib/aia/logging.rb
 
 require 'logger'
+require 'fileutils'
 
 class AIA::Logging
   attr_accessor :logger
 
   def initialize(log_file_path)
-    @logger = if log_file_path
-                Logger.new(
-                  log_file_path,  # path/to/file
-                  'weekly',       # rotation interval
-                  'a'             # append to existing file
-                )
-              else
-                # SMELL: Looks like you get logging whether you want it or not
-                # TODO: when path is nil create a fake logger
-                #       that does nothing
-                Logger.new(STDOUT) # Fall back to standard output if path is nil or invalid
-              end
+    if log_file_path
+      # Ensure the directory for the log file exists
+      FileUtils.mkdir_p(File.dirname(log_file_path))
+      @logger = Logger.new(
+        log_file_path,  # path/to/file
+        'weekly',       # rotation interval
+        'a'             # append mode
+      )
+    else
+      @logger = Logger.new(STDOUT)
+    end
 
     configure_logger
   end
 
-  def prompt_result(prompt, result)
-    logger.info( <<~EOS
-      PROMPT ID #{prompt.id}
-      PATH:     #{prompt.path}
-      KEYWORDS: #{prompt.keywords.join(', ')}
-        
-        #{prompt.to_s}
-
-      RESULT:
-      #{result}
-
-
-    EOS
-    )
-  rescue StandardError => e
-    logger.error("Failed to log the result. Error: #{e.message}")
+  def prompt_result(result)
+    logger.info result
   end
-
 
   def debug(msg)    = logger.debug(msg)
   def info(msg)     = logger.info(msg)
@@ -50,15 +35,12 @@ class AIA::Logging
   private
 
   def configure_logger
-    @logger.formatter = proc do |severity, datetime, _progname, msg|
-      formatted_datetime = datetime.strftime("%Y-%m-%d %H:%M:%S")
-      "[#{formatted_datetime}] #{severity}: #{msg}\n"
+    @logger.formatter = proc do |severity, datetime, progname, msg|
+      date_format = datetime.strftime("%Y-%m-%d %H:%M:%S")
+      "[#{date_format}] #{severity}: #{msg}\n"
     end
-    @logger.level = Logger::DEBUG
   end
 end
-
-
 
 #
 # Provides structured logging capabilities for the AIA system

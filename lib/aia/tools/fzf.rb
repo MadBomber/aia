@@ -17,82 +17,84 @@
 require 'shellwords'
 require 'tempfile'
 
-class AIA::Fzf < AIA::Tools
+module AIA
+  class Fzf < Tools
+    # Make new public for testing
+    class << self
+      public :new
+    end
 
-  meta(
-    name:     'fzf',
-    role:     :search_tool,
-    desc:     "A command-line fuzzy finder",
-    url:      "https://github.com/junegunn/fzf",
-    install:  "brew install fzf",
-  )
-
-  DEFAULT_PARAMETERS = %w[
-    --tabstop=2
-    --header-first
-    --prompt='Search term: '
-    --delimiter :
-    --preview-window=down:50%:wrap
-  ]
-
-  attr_reader :list, :directory, :query, :subject, :prompt, :extension, :command
-
-  def initialize(
-      list:,          # Array of Strings (basenames of files w/o extension)
-      directory:,     # Parent directory of the list items
-      query:      '', # String, the thing be searched for
-      subject:    'Prompt IDs', # or 'Role Names'
-      prompt:     'Select one:',
-      extension:  '.txt'
+    meta(
+      name:     'fzf',
+      role:     :search_tool,
+      desc:     "A command-line fuzzy finder",
+      url:      "https://github.com/junegunn/fzf",
+      install:  "brew install fzf",
     )
 
-    @list       = list
-    @directory  = directory
-    @query      = query
-    @subject    = subject
-    @prompt     = prompt
-    @extension  = extension
-    
-    build_command
-  end
+    DEFAULT_PARAMETERS = %w[
+      --tabstop=2
+      --header-first
+      --prompt='Search term: '
+      --delimiter :
+      --preview-window=down:50%:wrap
+    ]
 
+    attr_reader :list, :directory, :query, :subject, :prompt, :extension, :command
 
-  def build_command
-    fzf_options = DEFAULT_PARAMETERS.dup
-    fzf_options << "--header='#{subject} which contain: #{query}\\nPress ESC to cancel.'"
-    fzf_options << "--preview='cat #{directory}/{1}#{extension}'"
-    fzf_options << "--prompt=#{Shellwords.escape(prompt)}"
-    
-    fzf_command = "#{meta.name} #{fzf_options.join(' ')}"
+    def initialize(
+        list:,          # Array of Strings (basenames of files w/o extension)
+        directory:,     # Parent directory of the list items
+        query:      '', # String, the thing be searched for
+        subject:    'Prompt IDs', # or 'Role Names'
+        prompt:     'Select one:',
+        extension:  '.txt'
+      )
 
-    @command = "cat #{tempfile_path} | #{fzf_command}"
-  end
-  
-
-  def run
-    puts "Executing: #{@command}"
-    selected = `#{@command}`
-    selected.strip.empty? ? nil : selected.strip
-  ensure
-    unlink_tempfile
-  end
-
-  ##############################################
-  private
-
-  def tempfile_path
-    @tempfile ||= Tempfile.new('fzf-input').tap do |file|
-      list.each { |item| file.puts item }
-      file.close
+      @list       = list
+      @directory  = directory
+      @query      = query
+      @subject    = subject
+      @prompt     = prompt
+      @extension  = extension
+      
+      build_command
     end
-    @tempfile.path
-  end
 
-  def unlink_tempfile
-    @tempfile&.unlink
+    def build_command
+      fzf_options = DEFAULT_PARAMETERS.dup
+      fzf_options << "--header='#{subject} which contain: #{query}\\nPress ESC to cancel.'"
+      fzf_options << "--preview='cat #{directory}/{1}#{extension}'"
+      fzf_options << "--prompt=#{Shellwords.escape(prompt)}"
+      
+      fzf_command = "#{meta.name} #{fzf_options.join(' ')}"
+
+      @command = "cat #{tempfile_path} | #{fzf_command}"
+    end
+
+    def run
+      puts "Executing: #{@command}"
+      selected = `#{@command}`
+      selected.strip.empty? ? nil : selected.strip
+    ensure
+      unlink_tempfile
+    end
+
+    private
+
+    def tempfile_path
+      @tempfile ||= Tempfile.new('fzf-input').tap do |file|
+        list.each { |item| file.puts item }
+        file.close
+      end
+      @tempfile.path
+    end
+
+    def unlink_tempfile
+      @tempfile&.unlink
+    end
   end
 end
-
 
 __END__
 

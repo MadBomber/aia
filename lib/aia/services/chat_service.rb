@@ -1,7 +1,8 @@
-
 module AIA
   module Services
     class ChatService
+      include AIA::DynamicContent
+
       def initialize(client:, directives_processor:, logger:)
         @client = client
         @directives_processor = directives_processor
@@ -11,20 +12,33 @@ module AIA
       end
 
       def process_chat(prompt)
-        prompt = preprocess_prompt(prompt)
+        processed_prompt = preprocess_prompt(prompt.dup)
         if handle_directives(prompt)
           process_directive_output
         else
-          process_regular_prompt(prompt)
+          process_regular_prompt(processed_prompt)
         end
       end
 
       private
 
       def preprocess_prompt(prompt)
-        prompt = render_erb(prompt) if AIA.config.erb?
-        prompt = render_env(prompt) if AIA.config.shell?
-        prompt
+        result = prompt.dup
+        if (AIA.config.respond_to?(:erb?) ? AIA.config.erb? : AIA.config.erb)
+          begin
+            result = ERB.new(result).result(binding)
+          rescue StandardError => e
+            @logger.error "ERB processing error: #{e.message}"
+            result
+          end
+        end
+        if (AIA.config.respond_to?(:shell?) ? AIA.config.shell? : AIA.config.shell)
+          result = result.gsub(/\$(\w+|\{\w+\})/) do |match|
+            var_name = match.tr('${}', '')
+            ENV.fetch(var_name, '')
+          end
+        end
+        result
       end
 
       def process_directive_output
@@ -32,19 +46,20 @@ module AIA
         prompt = preprocess_prompt(@directive_output)
         result = get_and_display_result(prompt)
         log_and_speak(prompt, result)
+        result
       end
 
       def process_regular_prompt(prompt)
         prompt = insert_terse_phrase(prompt)
         result = get_and_display_result(prompt)
         log_and_speak(prompt, result)
+        result
       end
 
       def get_and_display_result(prompt_text)
         @spinner.auto_spin if AIA.config.verbose?
         result = @client.chat(prompt_text)
         @spinner.success("Done.") if AIA.config.verbose?
-        display_result(result)
         result
       end
 

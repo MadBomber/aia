@@ -17,7 +17,7 @@ module TTY
     def log(message)
       synchronize do
         clear_line    # Clear the spinner
-        output.puts(message) # Log the message
+        output.print("\r#{message}\n") # Log the message
         redraw_indent # Redraw the spinner frame
       end
     end

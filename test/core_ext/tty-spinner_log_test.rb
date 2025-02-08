@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'stringio'
 
-class TTY::SpinnerLogTest < Minitest::Test
+class SpinnerLogTest < Minitest::Test
   def setup
     @output = StringIO.new
     @spinner = TTY::Spinner.new(output: @output)
@@ -13,20 +13,18 @@ class TTY::SpinnerLogTest < Minitest::Test
 
   def test_log_prints_message
     @spinner.log("test message")
-    assert_includes @output.string, "test message"
+    assert_match /test message\n/, @output.string
   end
 
   def test_log_preserves_spinner_state
-    @spinner.start
-    initial_state = @spinner.spinning?
+    @spinner.success
     @spinner.log("test message")
-    assert_equal initial_state, @spinner.spinning?
+    assert @spinner.success?
   end
 
   def test_log_clears_line_before_message
-    @spinner.start
+    @spinner.spin
     @spinner.log("test message")
-    output = @output.string
-    assert_match /\r[^\n]*\n/, output
+    assert_match /\rtest message\n/, @output.string
   end
 end

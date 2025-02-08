@@ -1,24 +1,30 @@
 module AIA
   module SetupHelpers
     SPINNER_FORMAT = :classic
+    SPINNER_MESSAGE = "composing response ... "
 
     def setup_spinner
-      @spinner = TTY::Spinner.new(":spinner :title", format: SPINNER_FORMAT)
-      spinner.update(title: "composing response ... ")
+      @spinner = TTY::Spinner.new(":spinner #{SPINNER_MESSAGE}", format: SPINNER_FORMAT)
+      @spinner.update(title: SPINNER_MESSAGE)
+      @spinner
     end
 
     def setup_logger
-      @logger = Logging.new(AIA.config.log_file)
+      @logger = AIA::Logging.new(AIA.config.log_file)
       @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
+      @logger
     end
 
     def setup_directives_processor
-      @directives_processor = Directives.new
+      @directives_processor = AIA::Directives.new
     end
 
     def setup_prompt
-      @prompt = Prompt.new.prompt
-      @prompt.text += piped_content if piped_content
+      @prompt = AIA::Prompt.new
+      if piped_content && @prompt.prompt
+        @prompt.prompt.text = @prompt.prompt.text + piped_content
+      end
+      @prompt
     end
   end
 end

@@ -6,12 +6,26 @@ class ClientTest < Minitest::Test
   def setup
     # Ensure we have a valid prompt ID for all tests
     @original_args = AIA.config&.arguments
+    @test_prompts_dir = File.expand_path('../prompts_dir', __FILE__)
+    
+    # Create test prompt file if it doesn't exist
+    @test_prompt_file = File.join(@test_prompts_dir, 'test.txt')
+    unless File.exist?(@test_prompt_file)
+      File.write(@test_prompt_file, "Test prompt content")
+    end
+    
+    # Set up environment for tests
+    ENV['AIA_PROMPTS_DIR'] = @test_prompts_dir
+    ENV['AIA_LOG_FILE'] = File.expand_path('../../tmp/test.log', __FILE__)
+    FileUtils.mkdir_p(File.dirname(ENV['AIA_LOG_FILE']))
+    
     AIA::Cli.new(["test"]) 
   end
 
   def teardown
     # Restore original arguments
     AIA.config.arguments = @original_args if @original_args
+    File.delete(ENV['AIA_LOG_FILE']) if File.exist?(ENV['AIA_LOG_FILE'])
   end
 
   def test_chat_returns_ai_client
@@ -39,26 +53,19 @@ class ClientTest < Minitest::Test
   end
 
   def test_handles_piped_input
-    # Set up test environment first
-    test_prompts_dir = File.expand_path('../prompts_dir', __FILE__)
-    ENV['AIA_PROMPTS_DIR'] = test_prompts_dir
-    
-    # Simulate piped input
     original_stdin = $stdin
     input = StringIO.new("piped content")
     $stdin = input
 
     begin
-      # Initialize with a test prompt ID
-      AIA::Cli.new(["test"])
       main = AIA::Main.new
       assert_equal "piped content", main.instance_variable_get(:@piped_content)
     ensure
       $stdin = original_stdin
-      ENV.delete('AIA_PROMPTS_DIR')
     end
   end
 end
+
 require 'test_helper'
 
 class AIA::ClientTest < Minitest::Test

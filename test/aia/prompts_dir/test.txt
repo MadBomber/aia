@@ -1,6 +1,4 @@
-# aia/test/aia/prompts_dir/test.txt
-# Desc: Just a test prompt
-
+# Test prompt content
 What does [ANIMAL] say?
 
 __END__

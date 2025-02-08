@@ -1,8 +1,8 @@
-# test/aia/tools/test_fzf.rb
+# test/aia/tools/fzf_test.rb
 
 require 'test_helper'
-require_relative  '../../../lib/aia/tools'
-require_relative  '../../../lib/aia/tools/fzf'
+require_relative '../../../lib/aia/tools'
+require_relative '../../../lib/aia/tools/fzf'
 
 class TestFZF < Minitest::Test
   def setup
@@ -25,7 +25,6 @@ class TestFZF < Minitest::Test
     )
   end
 
-
   def test_initialize
     # Check if object initializes with correct attributes
     assert_equal @list, @fzf.list
@@ -36,25 +35,16 @@ class TestFZF < Minitest::Test
     assert_equal @extension, @fzf.extension
   end
 
-
   def test_build_command
     # Ensure build_command creates the expected command string
-    expected_cmd = "fzf --tabstop=2 --header-first --prompt='Choose file:' " \
-                   "--delimiter : --preview-window=down:50%:wrap " \
-                   "--header='Test Files which contain: search_term\\nPress ESC to cancel.' " \
-                   "--preview='cat /path/to/files/{1}.rb'"
     @fzf.build_command
-
     result = @fzf.command
-
     assert result.start_with?('cat')
     assert result.include?(' | fzf ')
   end
 
-
   def test_run
     # Test to ensure `run` behaves as expected
-    # Note that we should mock system calls and file operations for a unit test
     @fzf.stub :puts, nil do
       @fzf.stub :`, "file2\n" do
         result = @fzf.run

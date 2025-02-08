@@ -38,7 +38,9 @@ module AIA
     end
 
     def call
-      process_directives
+      # this method is undefined
+      # I forgot what it is supposed to do.
+      # TDV process_directives
       result = process_prompt
       handle_output(result)
       continue_processing(result) if continue?
@@ -65,7 +67,9 @@ module AIA
     end
 
     def initialize_services
-      @client_manager = ClientManager.new(AIA.config)
+      # TDV @client_manager = ClientManager.new(AIA.config)
+      @client_manager = ClientManager.new
+
       @client_manager.initialize_client
     end
 
@@ -83,7 +87,7 @@ module AIA
     def process_prompt
       @prompt_processor = PromptProcessor.new(
         directives: @directive_output,
-        config: AIA.config,
+        # TDV config: AIA.config,
         prompt: @prompt
       )
       @prompt_processor.process

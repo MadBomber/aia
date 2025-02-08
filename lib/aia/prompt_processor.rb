@@ -10,6 +10,8 @@ class AIA::PromptProcessor
 
   def process
     prompt = build_prompt
+    # TDV:  get_and_display_result is defined in tow
+    #       places chat_services and chat_manager
     get_and_display_result(prompt)
   end
 
