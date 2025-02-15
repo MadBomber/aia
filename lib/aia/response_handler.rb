@@ -17,7 +17,7 @@ class AIA::ResponseHandler
   private
 
   def log_result
-    AIA.config.logger.prompt_result(@prompt, @result)
+    AIA::Logging.new(AIA.config.log_file).info "Prompt: #{@prompt}\nResult: #{@result}"
   end
 end
 

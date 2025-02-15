@@ -67,8 +67,9 @@ module AIA
     def initialize_services
       # TDV @client_manager = ClientManager.new(AIA.config)
       @client_manager = ClientManager.new
-
       @client_manager.initialize_client
+
+      @chat_session = ChatManager.new
     end
 
     def setup_components
@@ -105,7 +106,7 @@ module AIA
 
     def start_chat
       ChatManager.new(
-        client: @client_manager.client,
+        client: AIA::Client.chat,
         directives_processor: @directives_processor
       ).start_session
     end
@@ -133,19 +134,19 @@ module AIA
     def process_directive_output
       return if @directive_output.empty?
       prompt = preprocess_prompt(@directive_output)
-      result = get_and_display_result(prompt)
+      result = AIA::PromptProcessor.new(directives: @directive_output, prompt: @prompt).process
       log_and_speak(prompt, result)
     end
 
     def process_regular_prompt(prompt)
       prompt = insert_terse_phrase(prompt)
-      result = get_and_display_result(prompt)
+      result = @chat_session.get_and_display_result(prompt)
       log_and_speak(prompt, result)
     end
 
     def log_and_speak(prompt, result)
       log_the_follow_up(prompt, result)
-      AIA.speak(result)
+      AIA::Speech.speak(result) if AIA.config.speak?
     end
 
     def setup_reline_history

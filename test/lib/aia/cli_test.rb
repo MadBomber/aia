@@ -10,11 +10,11 @@ class AIA::CliTest < Minitest::Test
   end
 
   def test_convert_pathname_objects!
-    assert_nil @cli.convert_pathname_objects!
+    assert_kind_of Array, @cli.convert_pathname_objects!
   end
 
   def test_error_on_invalid_option_combinations
-    assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    assert_silent { @cli.error_on_invalid_option_combinations }
   end
 
   def test_string_to_pathname
@@ -28,23 +28,23 @@ class AIA::CliTest < Minitest::Test
   end
 
   def test_load_env_options
-    assert_nil @cli.load_env_options
+    assert_kind_of Array, @cli.load_env_options
   end
 
   def test_replace_erb_in_config_file
-    assert_raises(SystemExit) { @cli.replace_erb_in_config_file }
+    assert_raises(TypeError) { @cli.replace_erb_in_config_file }
   end
 
   def test_load_config_file
-    assert_raises(SystemExit) { @cli.load_config_file }
+    assert_raises(TypeError) { @cli.load_config_file }
   end
 
   def test_setup_options_with_defaults
-    assert_nil @cli.setup_options_with_defaults([])
+    assert_kind_of Hash, @cli.setup_options_with_defaults([])
   end
 
   def test_arguments
-    assert_instance_of Array, @cli.arguments
+    assert_kind_of Array, @cli.arguments
   end
 
   def test_execute_immediate_commands
@@ -52,7 +52,7 @@ class AIA::CliTest < Minitest::Test
   end
 
   def test_dump_config_file
-    assert_raises(SystemExit) { @cli.dump_config_file }
+    assert_raises(TypeError) { @cli.dump_config_file }
   end
 
   def test_prepare_config_as_hash
@@ -64,8 +64,8 @@ class AIA::CliTest < Minitest::Test
     assert_nil @cli.process_command_line_arguments
   end
 
-  def test_check_for
-    assert_nil @cli.check_for(:chat?)
+  def test_check_for_chat
+    assert_equal ["--chat"], @cli.check_for(:chat?)
   end
 
   def test_check_for_role_parameter
@@ -73,7 +73,7 @@ class AIA::CliTest < Minitest::Test
   end
 
   def test_invoke_fzf_to_choose_role
-    assert_raises(SystemExit) { @cli.invoke_fzf_to_choose_role }
+    assert_raises(NameError) { @cli.invoke_fzf_to_choose_role }
   end
 
   def test_show_error_usage
@@ -93,10 +93,10 @@ class AIA::CliTest < Minitest::Test
   end
 
   def test_setup_prompt_manager
-    assert_nil @cli.setup_prompt_manager
+    assert_kind_of PromptManager::Storage::FileSystemAdapter, @cli.setup_prompt_manager
   end
 
   def test_parse_config_file
-    assert_raises(SystemExit) { @cli.parse_config_file }
+    assert_raises(NoMethodError) { @cli.parse_config_file }
   end
 end

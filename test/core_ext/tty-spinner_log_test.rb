@@ -19,7 +19,7 @@ class SpinnerLogTest < Minitest::Test
     @spinner = TTY::Spinner.new(output: @output)
   end
 
-  def test_log_method_exists
+  def test_spinner_log_method
     assert_respond_to @spinner, :log
   end
 

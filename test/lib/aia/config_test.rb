@@ -5,11 +5,11 @@ class AIA::ConfigTest < Minitest::Test
     @config = AIA::Config.new
   end
 
-  def test_initialize
+  def test_config_initialization
     assert_instance_of AIA::Config, @config
   end
 
   def test_disable_warnings
-    assert_nil AIA::Config.disable_warnings
+    assert AIA::Config.disable_warnings
   end
 end

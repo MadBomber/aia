@@ -18,7 +18,7 @@ class AIATest < Minitest::Test
     refute_nil ::AIA::VERSION
   end
 
-  def test_it_does_something_useful
+  def test_basic_functionality
     assert true
   end
 end

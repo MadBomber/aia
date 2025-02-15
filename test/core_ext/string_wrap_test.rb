@@ -6,7 +6,7 @@ require_relative "../test_helper"
 require_relative '../../lib/core_ext/string_wrap'
 
 class StringWrapTest < Minitest::Test
-  def test_string_wrap_with_default_line_width
+  def test_wrap_with_default_width
     assert_equal <<~RESULT.chomp, "This is a single line".wrap
       This is a single line
     RESULT

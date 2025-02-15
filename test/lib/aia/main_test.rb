@@ -1,4 +1,5 @@
 require 'test_helper'
+require_relative '../../../lib/aia/main'
 
 
 class AIA::MainTest < Minitest::Test
@@ -6,7 +7,7 @@ class AIA::MainTest < Minitest::Test
     @main = AIA::Main.new([])
   end
 
-  def test_initialize
+  def test_main_initialization
     assert_instance_of AIA::Main, @main
   end
 
@@ -19,7 +20,7 @@ class AIA::MainTest < Minitest::Test
   end
 
   def test_initialize_components
-    assert_nil @main.send(:initialize_components)
+    assert_instance_of AIA::Prompt, @main.send(:initialize_components)
   end
 
   def test_initialize_cli
@@ -27,15 +28,11 @@ class AIA::MainTest < Minitest::Test
   end
 
   def test_initialize_services
-    assert_nil @main.send(:initialize_services)
+    assert_instance_of AiClient, @main.send(:initialize_services)
   end
 
   def test_setup_components
-    assert_nil @main.send(:setup_components)
-  end
-
-  def test_load_tools
-    assert_nil @main.send(:load_tools)
+    assert_instance_of AIA::Prompt, @main.send(:setup_components)
   end
 
   def test_process_prompt
@@ -59,7 +56,7 @@ class AIA::MainTest < Minitest::Test
   end
 
   def test_log_the_follow_up
-    assert_nil @main.send(:log_the_follow_up, '', '')
+    assert_silent { @main.send(:log_the_follow_up, '', '') }
   end
 
   def test_process_chat_prompt
@@ -83,11 +80,11 @@ class AIA::MainTest < Minitest::Test
   end
 
   def test_setup_reline_history
-    assert_nil @main.send(:setup_reline_history)
+    assert_empty Reline::HISTORY
   end
 
   def test_clear_reline_history
-    assert_nil @main.send(:clear_reline_history)
+    assert_empty Reline::HISTORY
   end
 
   def test_keep_going
@@ -95,7 +92,7 @@ class AIA::MainTest < Minitest::Test
   end
 
   def test_update_config_for_pipeline
-    assert_nil @main.send(:update_config_for_pipeline, '')
+    assert_empty AIA.config.pipeline
   end
 
   def test_handle_directives

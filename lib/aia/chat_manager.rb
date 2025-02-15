@@ -19,13 +19,21 @@ class AIA::ChatManager
   def handle_chat_loop
     loop do
       prompt = get_user_input
-      break if prompt.empty?
+      break if prompt&.empty?
       process_chat_interaction(prompt)
     end
   end
 
   def get_user_input
     ask_question_with_reline("\nFollow Up: ")
+  end
+
+  def ask_question_with_reline( thing = "\nYou: " )
+    # TODO: complete this method
+    #       do a gets using reline
+    #       if the value is empth then we should quit
+    #       the chat session
+    ""
   end
 
   def process_chat_interaction(prompt)
@@ -87,8 +95,8 @@ class AIA::ChatManager
   end
 
   def log_chat_interaction(prompt, result)
-    AIA.config.logger.info "Follow Up:\n#{prompt}"
-    AIA.config.logger.info "Response:\n#{result}"
+    AIA.config.logger&.info "Follow Up:\n#{prompt}"
+    AIA.config.logger&.info "Response:\n#{result}"
   end
 
   def setup_reline_history
@@ -97,7 +105,7 @@ class AIA::ChatManager
 
   def handle_directives(prompt)
     signal = AIA::Prompt::DIRECTIVE_SIGNAL
-    return false unless prompt.start_with?(signal)
+    return false unless prompt&.start_with?(signal)
 
     parts = prompt[signal.size..].split(' ')
     directive = parts.shift
