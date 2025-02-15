@@ -67,14 +67,10 @@ class AIA::ChatManager
   def display_result(result)
     AIA.config.out_file.write("\nResponse:\n")
     if STDOUT == AIA.config.out_file
-      AIA.config.render? ? render_glow(result) : write_wrapped(result)
+      write_wrapped(result)
     else
       write_to_file(result)
     end
-  end
-
-  def render_glow(content)
-    AIA::Glow.new(content: content).run
   end
 
   def write_wrapped(content)
@@ -83,7 +79,6 @@ class AIA::ChatManager
 
   def write_to_file(content)
     AIA.config.out_file.write(content)
-    render_glow(AIA.config.out_file) if AIA.config.render?
   end
 
   def log_and_speak(prompt, result)

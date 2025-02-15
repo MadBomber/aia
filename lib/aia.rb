@@ -18,7 +18,6 @@ require_relative "aia/logging"
 
 require_relative "aia/tools"
 require_relative "aia/fzf"
-require_relative "aia/glow"
 
 require_relative "aia/user_query"
 require_relative "aia/client_manager"

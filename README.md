@@ -431,7 +431,7 @@ When this prompt is processed, `aia` will ask you for a value for the keyword "R
 
 To install the external CLI programs used by aia:
   
-  brew install fzf rg glow
+  brew install fzf rg
 
 fzf
   Command-line fuzzy finder written in Go
@@ -441,10 +441,6 @@ fzf
 rg
   Search tool like grep and The Silver Searcher
   [https://github.com/BurntSushi/ripgrep](https://github.com/BurntSushi/ripgrep)
-
-glow
-  Render markdown on the CLI
-  [https://github.com/charmbracelet/glow](https://github.com/charmbracelet/glow)
 
 A text editor whose executable is setup in the
 system environment variable 'EDITOR' like this:

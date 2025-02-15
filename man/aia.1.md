@@ -49,9 +49,6 @@ The aia command-line tool is an interface for interacting with an AI model, prov
 `--model` *NAME*
 : Name of the LLM model to use - default is gpt-4-1106-preview
 
-`--render`
-: Render markdown to the terminal using the external tool "glow" - default: false
-
 `--speak`
 : Simple implementation. Uses the "say" command to speak the response.  Fun with --chat
 
@@ -203,8 +200,6 @@ Is the same thing as
 - [fzf](https://github.com/junegunn/fzf) fzf is a general-purpose command-line fuzzy finder.  It's an interactive Unix filter for command-line that can be used with any list; files, command history, processes, hostnames, bookmarks, git commits, etc.
 
 - [ripgrep](https://github.com/BurntSushi/ripgrep) Search tool like grep and The Silver Searcher. It is a line-oriented search tool that recursively searches a directory tree for a regex pattern. By default, ripgrep will respect gitignore rules and automatically skip hidden files/directories and binary files. (To disable all automatic filtering by default, use rg -uuu.) ripgrep has first class support on Windows, macOS and Linux, with binary downloads available for every release. 
-
-- [glow](https://github.com/charmbracelet/glow) Render markdown on the CLI
 
 ## Image Generation
 

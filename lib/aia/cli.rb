@@ -9,6 +9,8 @@ require 'pathname'
 require 'yaml'
 require 'toml-rb'
 
+require 'prompt_manager'
+
 
 class AIA::Cli
   CF_FORMATS    = %w[yml yaml toml]
@@ -35,7 +37,6 @@ class AIA::Cli
       fuzzy?:     [false,     "-f --fuzzy"],
       help?:      [false,     "-h --help"],
       markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
-      render?:    [false,     "--render"],
       shell?:     [false,     "--shell"],
       speak?:     [false,     "--speak"],
       terse?:     [false,     "--terse"],
@@ -199,7 +200,6 @@ class AIA::Cli
       fuzzy?:     [false,     "-f --fuzzy"],
       help?:      [false,     "-h --help"],
       markdown?:  [true,      "-m --markdown --no-markdown --md --no-md"],
-      render?:    [false,     "--render"],
       shell?:     [false,     "--shell"],
       speak?:     [false,     "--speak"],
       terse?:     [false,     "--terse"],
