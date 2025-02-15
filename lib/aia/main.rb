@@ -8,7 +8,6 @@ require_relative 'directives'
 require_relative 'dynamic_content'
 require_relative 'prompt'
 require_relative 'logging'
-require_relative 'tools'
 require_relative 'user_query'
 require_relative 'client_manager'
 require_relative 'response_handler'
@@ -26,7 +25,7 @@ module AIA
     include DynamicContent
     include UserQuery
     
-    attr_accessor :logger, :tools, :directive_output, :piped_content
+    attr_accessor :logger, :directive_output, :piped_content
     attr_reader :spinner
 
     def initialize(args = ARGV)
@@ -56,7 +55,6 @@ module AIA
     end
 
     def initialize_components
-      load_tools
       initialize_cli
       initialize_services
       setup_components
@@ -78,10 +76,6 @@ module AIA
       setup_logger
       setup_directives_processor
       setup_prompt
-    end
-
-    def load_tools
-      Tools.load_tools
     end
 
     def process_prompt

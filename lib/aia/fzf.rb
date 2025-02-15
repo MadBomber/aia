@@ -18,15 +18,7 @@ require 'shellwords'
 require 'tempfile'
 
 module AIA
-  class Fzf < Tools
-
-    meta(
-      name:     'fzf',
-      role:     :search_tool,
-      desc:     "A command-line fuzzy finder",
-      url:      "https://github.com/junegunn/fzf",
-      install:  "brew install fzf",
-    )
+  class Fzf
 
     DEFAULT_PARAMETERS = %w[
       --tabstop=2

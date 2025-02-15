@@ -16,7 +16,6 @@ require_relative "aia/dynamic_content"
 require_relative "aia/prompt"
 require_relative "aia/logging"
 
-require_relative "aia/tools"
 require_relative "aia/fzf"
 
 require_relative "aia/user_query"
