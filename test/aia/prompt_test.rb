@@ -2,6 +2,32 @@
 
 require 'test_helper'
 
+module PromptManager
+  class FileSystemAdapter
+    def initialize(dir); end
+    def find(id); end
+    def list; []; end
+  end
+
+  class Storage
+    def initialize(dir)
+      @adapter = FileSystemAdapter.new(dir)
+    end
+    def find(id); @adapter.find(id); end
+    def list; @adapter.list; end
+  end
+
+  class Prompt
+    attr_reader :id, :path, :keywords
+    def initialize(id:, path:, keywords:)
+      @id = id
+      @path = path 
+      @keywords = keywords
+    end
+    def to_s; "test prompt"; end
+  end
+end
+
 class PromptTest < Minitest::Test
   def setup
     @original_env = ENV.select { |k, _v| k.start_with?('AIA_') }

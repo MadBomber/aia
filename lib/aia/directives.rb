@@ -29,7 +29,7 @@ class AIA::Directives
       end
     end
 
-    AIA.config.directives = not_mine
+    AIA.config.directives = not_mine unless not_mine.empty?
 
     result.empty? ? nil : result
   end

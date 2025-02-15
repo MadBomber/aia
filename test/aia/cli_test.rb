@@ -33,7 +33,7 @@ class AIA::CliTest < Minitest::Test
   def test_initialize_with_string_args
     assert_instance_of AIA::Cli, @cli
     refute_nil AIA.config
-    assert_equal @args, AIA.config.arguments.first
+    assert_equal @args, AIA.config.arguments
   end
 
   def test_load_env_options
@@ -46,22 +46,26 @@ class AIA::CliTest < Minitest::Test
 
   def test_error_on_invalid_option_combinations_chat
     AIA.config.chat = true
-    AIA.config.out_file = STDOUT  # Reset to default
-    AIA.config.pipeline = []      # Reset to default
     
     # Test chat with next
     AIA.config.next = ['next_prompt']
-    assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    assert_raises(SystemExit) do
+      capture_io { @cli.error_on_invalid_option_combinations }
+    end
 
     # Test chat with out_file
-    AIA.config.next = ''  # Reset
+    AIA.config.next = nil
     AIA.config.out_file = 'output.txt'
-    assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    assert_raises(SystemExit) do
+      capture_io { @cli.error_on_invalid_option_combinations }
+    end
 
     # Test chat with pipeline
-    AIA.config.out_file = STDOUT  # Reset
+    AIA.config.out_file = nil
     AIA.config.pipeline = ['pipeline1']
-    assert_raises(SystemExit) { @cli.error_on_invalid_option_combinations }
+    assert_raises(SystemExit) do
+      capture_io { @cli.error_on_invalid_option_combinations }
+    end
   end
 
   def test_string_to_pathname

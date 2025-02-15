@@ -81,13 +81,13 @@ class AIA::Cli
   def error_on_invalid_option_combinations
     if (AIA.config.respond_to?(:chat?) ? AIA.config.chat? : AIA.config.chat)
       if !AIA.config.next.empty?
-        abort "ERROR: Cannot use --next with --chat"
+        raise SystemExit, "ERROR: Cannot use --next with --chat"
       end
       if AIA.config.out_file != STDOUT
-        abort "ERROR: Cannot use --out_file with --chat"
+        raise SystemExit, "ERROR: Cannot use --out_file with --chat"
       end
       if !AIA.config.pipeline.empty?
-        abort "ERROR: Cannot use --pipeline with --chat"
+        raise SystemExit, "ERROR: Cannot use --pipeline with --chat"
       end
     end
 

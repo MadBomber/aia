@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.6.0)
+    aia (0.6.1)
       ai_client
       os
       prompt_manager (>= 0.4.1)

@@ -10,7 +10,7 @@ module AIA::DynamicContent
   #
   def render_env(a_string)
     a_string.gsub(/\$(\w+|\{\w+\})/) do |match|
-      ENV[match.tr('$', '').tr('{}', '')]
+      ENV.fetch(match.tr('$', '').tr('{}', ''), '')
     end.gsub(/\$\((.*?)\)/) do |match|
       `#{match[2..-2]}`.chomp
     end

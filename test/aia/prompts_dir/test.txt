@@ -1,6 +1,0 @@
-# Test prompt content
-What does [ANIMAL] say?
-
-__END__
-
-stuff in the basement

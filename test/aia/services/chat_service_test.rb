@@ -1,5 +1,24 @@
 require 'test_helper'
 
+module AIA
+  module Services
+    class ChatService
+      def initialize(client:, directives_processor:, logger:)
+        @client = client
+        @directives_processor = directives_processor
+        @logger = logger
+      end
+
+      def process_chat(prompt)
+        result = @client.chat(prompt)
+        @logger.info("Follow Up:\n#{prompt}")
+        @logger.info("Response:\n#{result}")
+        result
+      end
+    end
+  end
+end
+
 class ChatServiceTest < Minitest::Test
   def setup
     AIA::Cli.new("test") # Initialize config

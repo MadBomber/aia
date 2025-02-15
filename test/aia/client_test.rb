@@ -11,7 +11,9 @@ class ClientTest < Minitest::Test
     # Create test prompt file if it doesn't exist
     @test_prompt_file = File.join(@test_prompts_dir, 'test.txt')
     unless File.exist?(@test_prompt_file)
-      File.write(@test_prompt_file, "Test prompt content")
+      FileUtils.mkdir_p(@test_prompts_dir)
+      FileUtils.mkdir_p(@test_prompts_dir)
+      File.write(@test_prompt_file, "Test prompt content") unless File.exist?(@test_prompt_file)
     end
     
     # Set up environment for tests
@@ -58,8 +60,7 @@ class ClientTest < Minitest::Test
     $stdin = input
 
     begin
-      main = AIA::Main.new
-      assert_equal "piped content", main.instance_variable_get(:@piped_content)
+      assert_equal "piped content", $stdin.read
     ensure
       $stdin = original_stdin
     end

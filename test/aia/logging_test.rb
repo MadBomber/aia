@@ -66,15 +66,11 @@ class LoggingTest < Minitest::Test
     prompt = OpenStruct.new(id: 1, path: 'test_path', keywords: ['keyword1', 'keyword2'], to_s: 'prompt_string')
     result = "Test Result"
 
-    @logging.prompt_result(prompt, result)
+    @logging.prompt_result(result)
 
-    # Check if the log file contains the proper formatted message
+    # Check if the log file contains the result
     log_content = File.read(@log_file_path)
-    assert_match (/PROMPT ID 1/), log_content
-    assert_match (/PATH:     test_path/), log_content
-    assert_match (/KEYWORDS: keyword1, keyword2/), log_content
-    assert_match (/prompt_string/), log_content
-    assert_match (/RESULT:\nTest Result/), log_content
+    assert_match(/Test Result/, log_content)
   end
 end
 

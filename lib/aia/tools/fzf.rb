@@ -73,7 +73,7 @@ module AIA
     end
 
     def run
-      puts "Executing: #{@command}"
+      puts "Executing: #{@command}" if AIA.config&.debug?
       selected = `#{@command}`
       selected.strip.empty? ? nil : selected.strip
     ensure

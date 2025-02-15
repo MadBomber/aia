@@ -3,6 +3,8 @@
 require 'reline'
 
 require_relative 'dynamic_content'
+require_relative 'prompt_manager/storage'
+require_relative 'prompt_manager/storage/file_system_adapter'
 require_relative 'user_query'
 
 module AIA
@@ -107,7 +109,7 @@ module AIA
 
     def existing_prompt?(prompt_id)
       return false unless prompt_id
-      @prompt = PromptManager::Prompt.get(id: prompt_id)
+      @prompt = PromptManager::Prompt.get(id: prompt_id) rescue Prompt::Fake.new
       true
     rescue ArgumentError
       false

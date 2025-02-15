@@ -10,12 +10,14 @@ SimpleCov.start do
   formatter SimpleCov::Formatter::SimpleFormatter
 end
 
+# Test environment setup
 ENV['AIA_PROMPTS_DIR'] = File.expand_path('../aia/prompts_dir', __FILE__)
 ENV['AIA_LOG_FILE'] = File.expand_path('../tmp/test.log', __FILE__)
 ENV['TEST_MODE'] = 'true'
 
 # Create test directories if they don't exist
 FileUtils.mkdir_p(File.dirname(ENV['AIA_LOG_FILE']))
+FileUtils.mkdir_p(ENV['AIA_PROMPTS_DIR'])
 
 # Add lib and test directories to load path
 lib_path = File.expand_path('../lib', __dir__)
@@ -30,6 +32,15 @@ require 'mocha/minitest'
 require 'minitest/pride'
 require 'minitest/reporters'
 require 'reline'
+require 'tty-spinner'
+require 'fileutils'
+require 'pathname'
+require 'stringio'
+
+# Define VERSION for tests
+module AIA
+  VERSION = "0.1.0" unless defined?(VERSION)
+end
 
 # Load the main library first
 require "aia"
@@ -46,13 +57,48 @@ module TestHelpers
 
   def simulate_user_input(input)
     Reline.stub :readline, input do
-      mock = Object.new
-      def mock.run; 'test'; end
+      mock = Minitest::Mock.new
+      mock.expect(:run, 'test')
       
-      # Use mocha's stubbing
-      AIA::Fzf.stubs(:new).returns(mock)
-      yield
+      AIA::Fzf.stub(:new, mock) do
+        yield
+      end
     end
+  end
+
+  def setup_test_config
+    @original_config = AIA.config
+    AIA.config = AIA::Config.new
+    AIA.config.log_file = ENV['AIA_LOG_FILE']
+    AIA.config.prompts_dir = ENV['AIA_PROMPTS_DIR']
+    AIA.config.arguments = ["test"]
+  end
+
+  def teardown_test_config
+    AIA.config = @original_config
+  end
+
+  def with_temp_dir
+    dir = Dir.mktmpdir
+    yield Pathname.new(dir)
+  ensure
+    FileUtils.remove_entry dir if dir
+  end
+
+  def capture_subprocess_io
+    orig_stdout = $stdout.dup
+    orig_stderr = $stderr.dup
+    captured_stdout = StringIO.new
+    captured_stderr = StringIO.new
+    $stdout = captured_stdout
+    $stderr = captured_stderr
+
+    yield
+
+    [captured_stdout.string, captured_stderr.string]
+  ensure
+    $stdout = orig_stdout
+    $stderr = orig_stderr
   end
 end
 
@@ -65,6 +111,12 @@ class Minitest::Test
 
   def setup
     ENV['TEST_MODE'] = 'true'
+    setup_test_config
+    super
+  end
+
+  def teardown
+    teardown_test_config
     super
   end
 end
@@ -82,7 +134,12 @@ Minitest::Reporters.use! [
 def setup_test_environment
   begin
     Reline.stub :readline, "test_input" do
-      AIA::Cli.new("test") unless defined?(AIA.config) && AIA.config&.arguments&.any?
+      mock = Minitest::Mock.new
+      mock.expect(:run, 'test')
+      
+      AIA::Fzf.stub(:new, mock) do
+        AIA::Cli.new("test") unless defined?(AIA.config) && AIA.config&.arguments&.any?
+      end
     end
   rescue StandardError => e
     puts "Warning: Test environment setup failed: #{e.message}"
@@ -92,3 +149,9 @@ end
 
 extend TestHelpers
 setup_test_environment
+
+# Cleanup on exit
+at_exit do
+  FileUtils.rm_rf(ENV['AIA_PROMPTS_DIR']) if Dir.exist?(ENV['AIA_PROMPTS_DIR'])
+  FileUtils.rm_rf(File.dirname(ENV['AIA_LOG_FILE'])) if Dir.exist?(File.dirname(ENV['AIA_LOG_FILE']))
+end

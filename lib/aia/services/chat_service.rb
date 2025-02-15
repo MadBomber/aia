@@ -78,7 +78,7 @@ module AIA
         parameters = parts.join(' ')
         AIA.config.directives << [directive, parameters]
 
-        @directive_output = @directives_processor.execute_my_directives
+        @directive_output = @directives_processor.execute_my_directives || ''
         true
       end
 

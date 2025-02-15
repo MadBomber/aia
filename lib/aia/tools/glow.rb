@@ -48,7 +48,7 @@ class AIA::Glow < AIA::Tools
 
     if @file_path && File.exist?(@file_path)
       command = build_command(@file_path)
-      system(command)
+      system(command) || raise("Failed to execute glow command")
     else
       Tempfile.create(['glow', '.md']) do |file|
         file.write(@content)

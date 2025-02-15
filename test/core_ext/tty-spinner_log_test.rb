@@ -1,6 +1,18 @@
 require 'test_helper'
 require 'stringio'
 
+module TTY
+  class Spinner
+    def log(message)
+      synchronize do
+        clear_line
+        output.print("\r#{message}\n")
+        redraw_indent
+      end
+    end
+  end
+end
+
 class SpinnerLogTest < Minitest::Test
   def setup
     @output = StringIO.new

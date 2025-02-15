@@ -11,7 +11,7 @@ module AIA
 
     def setup_logger
       @logger = AIA::Logging.new(AIA.config.log_file)
-      @logger.info(AIA.config) if AIA.config.debug? || AIA.config.verbose?
+      @logger.info(AIA.config.to_h) if AIA.config.debug? || AIA.config.verbose?
       @logger
     end
 

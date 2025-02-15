@@ -10,11 +10,8 @@ class AIA::Logging
     if log_file_path
       # Ensure the directory for the log file exists
       FileUtils.mkdir_p(File.dirname(log_file_path))
-      @logger = Logger.new(
-        log_file_path,  # path/to/file
-        'weekly',       # rotation interval
-        'a'             # append mode
-      )
+      @logger = Logger.new(log_file_path, 'weekly', 'a')
+      @logger.level = Logger::INFO
     else
       @logger = Logger.new(STDOUT)
     end
