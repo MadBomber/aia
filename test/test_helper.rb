@@ -37,10 +37,7 @@ require 'fileutils'
 require 'pathname'
 require 'stringio'
 
-# Define VERSION for tests
-module AIA
-  VERSION = "0.1.0" unless defined?(VERSION)
-end
+
 
 # Load the main library first
 require "aia"

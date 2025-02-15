@@ -15,8 +15,11 @@ require_relative "aia/directives"
 require_relative "aia/dynamic_content"
 require_relative "aia/prompt"
 require_relative "aia/logging"
+
 require_relative "aia/tools"
-require_relative "aia/tools/fzf"
+require_relative "aia/fzf"
+require_relative "aia/glow"
+
 require_relative "aia/user_query"
 require_relative "aia/client_manager"
 require_relative "aia/response_handler"

@@ -19,10 +19,6 @@ require 'tempfile'
 
 module AIA
   class Fzf < Tools
-    # Make new public for testing
-    class << self
-      public :new
-    end
 
     meta(
       name:     'fzf',
@@ -42,6 +38,7 @@ module AIA
 
     attr_reader :list, :directory, :query, :subject, :prompt, :extension, :command
 
+
     def initialize(
         list:,          # Array of Strings (basenames of files w/o extension)
         directory:,     # Parent directory of the list items
@@ -60,6 +57,8 @@ module AIA
       
       build_command
     end
+
+
 
     def build_command
       fzf_options = DEFAULT_PARAMETERS.dup

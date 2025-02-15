@@ -1,10 +1,10 @@
 # lib/aia/prompt.rb
 
 require 'reline'
+require 'prompt_manager/storage'
+require 'prompt_manager/storage/file_system_adapter'
 
 require_relative 'dynamic_content'
-require_relative 'prompt_manager/storage'
-require_relative 'prompt_manager/storage/file_system_adapter'
 require_relative 'user_query'
 
 module AIA
