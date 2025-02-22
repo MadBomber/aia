@@ -1,6 +1,0 @@
-backend: "mods"
-prompts_dir: "~/.prompts"
-out_file: "temp.md"
-log_file: "~/.prompts/_prompts.log"
-markdown?: true
-xyzzy: "magic"
