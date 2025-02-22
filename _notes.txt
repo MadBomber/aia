@@ -6,3 +6,9 @@
 
     Make a few changes.  It seems to be working in its basic modes.
     
+--- 2025-02-21 20:13:19 -0600
+    Implemented Stark's clean slate protocol
+
+  
+
+
