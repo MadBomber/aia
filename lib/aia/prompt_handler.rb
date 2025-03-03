@@ -8,7 +8,7 @@ module AIA
       @config = config
       @prompts_dir = config.prompts_dir
       @roles_dir = config.roles_dir || File.join(@prompts_dir, 'roles')
-      
+
       # Initialize PromptManager
       PromptManager.config do |c|
         c.prompts_dir = @prompts_dir
@@ -17,69 +17,68 @@ module AIA
 
     def get_prompt(prompt_id, role_id = nil)
       prompt = PromptManager::Prompt.get(id: prompt_id)
-      
+
       if role_id
-        role_storage = PromptManager::Storage.new(dir: @roles_dir)
-        role_prompt = PromptManager::Prompt.get(id: role_id, storage: role_storage)
+        role_prompt = PromptManager::Prompt.get(id: role_id)
         # Prepend role to prompt
         prompt.text = "#{role_prompt.text}\n#{prompt.text}"
       end
-      
+
       process_prompt(prompt)
     end
 
     def process_prompt(prompt)
       text = prompt.text.dup
-      
+
       # Process directives
       text = process_directives(text)
-      
+
       # Process shell commands if enabled
       if @config.shell
         text = text.gsub(/\$\((.*?)\)/) { `#{Regexp.last_match(1)}`.chomp }
       end
-      
+
       # Process ERB if enabled
       if @config.erb
         text = ERB.new(text).result(binding)
       end
-      
+
       # Add terse instruction if requested
       if @config.terse
         text += "\n\nPlease be terse in your response."
       end
-      
+
       text
     end
-    
+
     def process_text(text)
       # Process directives
       text = process_directives(text.dup)
-      
+
       # Process shell commands if enabled
       if @config.shell
         text = text.gsub(/\$\((.*?)\)/) { `#{Regexp.last_match(1)}`.chomp }
       end
-      
+
       # Process ERB if enabled
       if @config.erb
         text = ERB.new(text).result(binding)
       end
-      
+
       text
     end
-    
+
     def process_directives(text)
       return text unless text
 
       lines = text.split("\n")
       result_lines = []
-      
+
       lines.each do |line|
         if line.start_with?("//")
           directive, *args = line[2..-1].strip.split(/\s+/, 2)
           args = args.first || ""
-          
+
           case directive
           when "config"
             # Process config directive
@@ -114,10 +113,10 @@ module AIA
           result_lines << line
         end
       end
-      
+
       result_lines.join("\n")
     end
-    
+
     def parse_value(value)
       case value.downcase
       when 'true'
