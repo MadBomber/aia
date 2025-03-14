@@ -2,5 +2,6 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in aia.gemspec
+gem 'securerandom', '~> 0.4.0'
+gem "ai_client", "~> 0.4.4"
 gemspec

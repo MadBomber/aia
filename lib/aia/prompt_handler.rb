@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'prompt_manager'
+require 'prompt_manager/storage/file_system_adapter'
 
 module AIA
   class PromptHandler
@@ -9,10 +10,13 @@ module AIA
       @prompts_dir = config.prompts_dir
       @roles_dir = config.roles_dir || File.join(@prompts_dir, 'roles')
 
-      # Initialize PromptManager
-      PromptManager.config do |c|
-        c.prompts_dir = @prompts_dir
-      end
+      # Initialize PromptManager with the FileSystemAdapter
+      PromptManager::Prompt.storage_adapter = 
+        PromptManager::Storage::FileSystemAdapter.config do |config|
+          config.prompts_dir = @prompts_dir
+          config.prompt_extension = '.txt'  # default
+          config.params_extension = '.json' # default
+        end.new
     end
 
     def get_prompt(prompt_id, role_id = nil)

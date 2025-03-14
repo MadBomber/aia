@@ -7,30 +7,46 @@ module AIA
     def initialize(config)
       @config = config
       
-      # Parse provider/model from config.model
-      provider, model = @config.model.split('/')
+      # Get the model from config
+      # Format expected: 'provider/model' or just 'model'
+      parts = @config.model.split('/')
       
-      # Set the provider to be used with OmniAI
-      @provider = provider.downcase
+      if parts.length > 1
+        # If provider is specified, use the model part
+        @model = parts[1]
+      else
+        # If no provider specified, use the whole string as model
+        @model = parts[0]
+      end
       
-      # If no provider specified, use the whole string as model
-      @model = model || provider
+      # Initialize the AiClient instance with just the model name
+      # AiClient will automatically determine the appropriate provider
+      @client = AiClient.new(@model)
     end
 
     def chat(prompt, options = {})
-      client_options = {
-        provider: @provider,
-        model: @model,
-        prompt: prompt,
-        temperature: options[:temperature] || @config.temperature || 0.7,
-        max_tokens: options[:max_tokens] || @config.max_tokens
-      }
+      # For AiClient, we should use the simple string prompt approach
+      # or build a more complex message structure if needed
+      
+      # Set options that are supported by the client
+      client_options = {}
+      client_options[:temperature] = options[:temperature] || @config.temperature || 0.7
+      
+      # Only add max_tokens if it's set
+      if @config.max_tokens
+        client_options[:max_tokens] = options[:max_tokens] || @config.max_tokens
+      end
       
       # Add other parameters as needed
       client_options[:image_size] = @config.image_size if @config.image_size && !@config.image_size.empty?
       client_options[:image_quality] = @config.image_quality if @config.image_quality && !@config.image_quality.empty?
       
-      AiClient.chat(**client_options)
+      # Call chat with the prompt and options
+      if client_options.empty?
+        @client.chat(prompt)
+      else
+        @client.chat(prompt, **client_options)
+      end
     end
 
     def speak(text)
