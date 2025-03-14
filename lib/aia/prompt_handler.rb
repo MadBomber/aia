@@ -2,6 +2,7 @@
 
 require 'prompt_manager'
 require 'prompt_manager/storage/file_system_adapter'
+require 'erb'
 
 module AIA
   class PromptHandler
@@ -70,6 +71,13 @@ module AIA
       end
 
       text
+    end
+
+    def substitute_variables(prompt, variables)
+      # Substitute variables in the prompt using ERB
+      b = binding # Create a binding to pass variables to ERB
+      variables.each { |key, value| eval "#{key} = value", b } # Define variables in the binding
+      ERB.new(prompt).result(b)
     end
 
     def process_directives(text)

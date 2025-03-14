@@ -24,11 +24,24 @@ module AIA
       fuzzy: false,
       next: nil,
       pipeline: [],
-      image_size: '',
-      image_quality: '',
+      # AI model parameters
+      temperature: 0.7,
+      max_tokens: 2048,
+      top_p: 1.0,
+      frequency_penalty: 0.0,
+      presence_penalty: 0.0,
+      # Image generation parameters
+      image_size: '1024x1024',
+      image_quality: 'standard',
+      image_style: 'vivid',
+      # Speech parameters
       speech_model: 'tts-1',
       transcription_model: 'whisper-1',
-      voice: 'alloy'
+      voice: 'alloy',
+      # Embedding parameters
+      embedding_model: 'text-embedding-ada-002',
+      # Backend selection (for compatibility with main branch)
+      backend: 'ai_client'
     }.freeze
 
     def self.parse(args)
@@ -176,6 +189,35 @@ module AIA
         
         opts.on("--iq", "--image_quality QUALITY", "Image quality for image generation") do |quality|
           config.image_quality = quality
+        end
+        
+        opts.on("--style", "--image_style STYLE", "Style for image generation") do |style|
+          config.image_style = style
+        end
+        
+        # AI model parameters
+        opts.on("-t", "--temperature TEMP", Float, "Temperature for text generation") do |temp|
+          config.temperature = temp
+        end
+        
+        opts.on("--max_tokens TOKENS", Integer, "Maximum tokens for text generation") do |tokens|
+          config.max_tokens = tokens
+        end
+        
+        opts.on("--top_p VALUE", Float, "Top-p sampling value") do |value|
+          config.top_p = value
+        end
+        
+        opts.on("--frequency_penalty VALUE", Float, "Frequency penalty") do |value|
+          config.frequency_penalty = value
+        end
+        
+        opts.on("--presence_penalty VALUE", Float, "Presence penalty") do |value|
+          config.presence_penalty = value
+        end
+        
+        opts.on("--backend BACKEND", "Backend to use (for compatibility)") do |backend|
+          config.backend = backend
         end
         
         opts.on("--dump FILE", "Dump config to file") do |file|
