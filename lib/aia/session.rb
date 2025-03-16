@@ -28,6 +28,13 @@ module AIA
       prompt_id = @config.prompt_id
       role_id = @config.role
       
+      # Skip prompt validation if starting directly in chat mode with a role
+      if @config.chat && role_id && (!prompt_id || prompt_id.empty?)
+        # Just start chat with the role
+        start_chat_with_role(role_id)
+        return
+      end
+      
       # Create a prompt object using PromptManager
       prompt = PromptManager::Prompt.get(id: prompt_id) rescue nil
       
@@ -580,6 +587,26 @@ Available directives:
       else
         "#{history_text}User: #{current_prompt}"
       end
+    end
+    
+    # Start chat with just a role
+    def start_chat_with_role(role_id)
+      # Add 'roles/' prefix to role_id if it doesn't already have it
+      role_path = role_id.start_with?('roles/') ? role_id : "roles/#{role_id}"
+      
+      # Get the role prompt
+      role_prompt = PromptManager::Prompt.get(id: role_path) rescue nil
+      
+      if role_prompt.nil?
+        puts "Error: Could not find role with ID: #{role_id}"
+        return
+      end
+      
+      # Set the system prompt from the role
+      @config.system_prompt = role_path
+      
+      # Start the chat
+      start_chat
     end
     
     private

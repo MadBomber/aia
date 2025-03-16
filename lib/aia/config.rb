@@ -252,13 +252,18 @@ module AIA
           # Handle config dump
           dump_config(config, config.dump_file)
           exit
+        elsif config.chat && config.role
+          # For chat mode with a role, use the role as the prompt_id
+          # When the role_id is provided, format it as roles/role_id 
+          # which is the expected format for the prompt_id when referencing a role
+          config.prompt_id = "roles/#{config.role}"
         else
           puts opt_parser
           exit 1
         end
+      else
+        config.prompt_id = remaining_args.shift
       end
-
-      config.prompt_id = remaining_args.shift
 
       # Remaining args are context files
       config.context_files = remaining_args unless remaining_args.empty?
