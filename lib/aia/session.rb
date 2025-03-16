@@ -3,14 +3,20 @@
 require 'tty-spinner'
 require 'reline'
 require 'prompt_manager'
+require 'json'
+require 'fileutils'
 
 module AIA
   class Session
+    KW_HISTORY_MAX = 5 # Maximum number of history entries per keyword
+
     def initialize(config, prompt_handler, client)
       @config = config
       @prompt_handler = prompt_handler
       @client = client
       @history = []
+      @variable_history_file = File.join(ENV['HOME'], '.aia', 'variable_history.json')
+      ensure_history_file_exists
     end
 
     def start
@@ -42,12 +48,59 @@ module AIA
       # Check for variables in the prompt and prompt the user for values
       if variables && !variables.empty?
         variable_values = {}
+        # Load variable history
+        history = load_variable_history
+        prompt_history = history[prompt_id] || {}
+        
         variables.each do |variable|
-          # Make the prompt more visible and ensure it's flushed to stdout
-          puts "\nEnter value for [#{variable}]: "
+          # Get history for this variable
+          var_history = prompt_history[variable] || []
+          
+          # Setup Reline history with previous values
+          setup_variable_history(var_history)
+          
+          # Get default value (most recent entry)
+          default = var_history.last
+          
+          # Show prompt with default value if available
+          puts "\nParameter [#{variable}] ..."
           $stdout.flush
-          variable_values[variable] = Reline.readline('> ', true).strip
+          
+          prompt_text = if default.nil? || default.empty?
+                          "> "
+                        else
+                          "(#{default}) > "
+                        end
+          
+          value = Reline.readline(prompt_text, true).strip
+          
+          # Use default if user just pressed Enter
+          value = default if value.empty? && !default.nil?
+          
+          # Save value and update history
+          variable_values[variable] = value
+          
+          # Update history for this variable
+          unless value.nil? || value.empty?
+            # Remove value if it's already in history to avoid duplicates
+            var_history.delete(value)
+            
+            # Add to end of history (most recent)
+            var_history << value
+            
+            # Trim history to max size
+            var_history.shift if var_history.size > KW_HISTORY_MAX
+            
+            # Update history in memory
+            prompt_history[variable] = var_history
+            history[prompt_id] = prompt_history
+          end
         end
+        
+        # Save updated history
+        save_variable_history(history)
+        
+        # Set parameters on prompt
         prompt.parameters = variable_values
       end
       
@@ -77,6 +130,39 @@ module AIA
       
       # Enter chat mode if requested
       start_chat if @config.chat
+    end
+
+    # Setup Reline history with variable history values
+    def setup_variable_history(history_values)
+      Reline::HISTORY.clear
+      history_values.each do |value|
+        Reline::HISTORY.push(value) unless value.nil? || value.empty?
+      end
+    end
+
+    # Ensure the history file directory exists
+    def ensure_history_file_exists
+      dir = File.dirname(@variable_history_file)
+      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+      
+      # Create empty history file if it doesn't exist
+      unless File.exist?(@variable_history_file)
+        File.write(@variable_history_file, '{}')
+      end
+    end
+
+    # Load variable history from JSON file
+    def load_variable_history
+      begin
+        JSON.parse(File.read(@variable_history_file))
+      rescue JSON::ParserError
+        {} # Return empty hash if file is invalid
+      end
+    end
+
+    # Save variable history to JSON file
+    def save_variable_history(history)
+      File.write(@variable_history_file, JSON.pretty_generate(history))
     end
 
     def process_prompt(prompt, operation_type)
