@@ -4,6 +4,8 @@ A Ruby command-line interface for interacting with various AI services using the
 
 ## Installation
 
+To install the AI Assistant, run:
+
 ```bash
 $ gem install aia
 ```
@@ -14,13 +16,13 @@ The AIA project provides a flexible interface for working with AI models through
 
 ### Key Features
 
-- Proper variable substitution using `prompt_manager` gem
-- Directive handling for extended functionality
-- Support for multiple AI providers through `ai_client`
-- Conversation mode with history and context management
-- Pipeline processing for sequential AI operations
-- Shell command execution within prompts
-- Embedded Ruby support for dynamic prompt content
+- **Proper Variable Substitution:** Utilizes the `prompt_manager` gem.
+- **Directive Handling:** Extend functionality for commands via directives.
+- **Multi-Provider Support:** Facilitates interaction with various AI providers through `ai_client`.
+- **Conversation Mode:** Handles history and context management effectively.
+- **Pipeline Processing:** Processes sequential AI operations.
+- **Shell Command Execution:** Executes shell commands within prompts.
+- **Embedded Ruby Support:** Allows dynamic content within prompts.
 
 ## Usage
 
@@ -40,13 +42,13 @@ aia PROMPT_ID context_file1 context_file2
 # Enable chat mode after initial prompt
 aia --chat PROMPT_ID
 
-# Start chat mode directly with a role
+# Start chat mode directly with role
 aia -r ROLE_ID --chat
 
-# Start chat mode with no system prompt
+# Start chat mode without a system prompt
 aia --chat
 
-# Specify model to use
+# Specify the model to use
 aia --model openai/gpt-4o-mini PROMPT_ID
 
 # Process shell commands in prompt
@@ -68,7 +70,7 @@ aia -f PROMPT_ID
 ### Prompt Management
 
 ```bash
-# Specify custom prompts directory
+# Specify custom prompt directory
 aia -p /path/to/prompts PROMPT_ID
 
 # Specify custom roles directory
@@ -84,7 +86,7 @@ aia -n NEXT_PROMPT_ID PROMPT_ID
 ### AI Model Parameters
 
 ```bash
-# Set temperature (0.0-2.0)
+# Set temperature (0.0-1.0)
 aia -t 0.8 PROMPT_ID
 
 # Set maximum tokens
@@ -109,9 +111,9 @@ aia --image_size 1024x1024 --image_quality standard --image_style vivid PROMPT_I
 
 ### Chat Directives
 
-In chat mode, you can use directives to execute commands directly from the chat prompt:
+In chat mode, you can use directives directly from the chat prompt:
 
-```
+```bash
 # Shell command execution
 //shell ls -la
 #!shell: ls -la
@@ -135,21 +137,21 @@ In chat mode, you can use directives to execute commands directly from the chat 
 #!help:
 ```
 
-Outputs from `//config` and `//help` directives are not added to the chat context.
+**Note:** Outputs from `//config` and `//help` directives are not added to the chat context.
 
 ## Configuration
 
-AIA can be configured through environment variables or configuration files:
+AIA can be configured through environment variables or configuration files.
 
 ### Environment Variables
 
-All config options can be set with environment variables in the format `AIA_OPTION_NAME`:
+All configuration options can be set with environment variables in the format `AIA_OPTION_NAME`:
 
 ```bash
 # Set default model
 export AIA_MODEL=openai/gpt-4o-mini
 
-# Set prompts directory
+# Set prompt directory
 export AIA_PROMPTS_DIR=/path/to/prompts
 
 # Enable shell command processing
@@ -171,8 +173,8 @@ aia --dump config.yml
 ## Requirements
 
 - Ruby >= 3.2.0
-- Dependencies: ai_client, amazing_print, prompt_manager, os, reline, shellwords, toml-rb, tty-screen, tty-spinner, versionaire
+- Dependencies: `ai_client`, `amazing_print`, `prompt_manager`, `os`, `reline`, `shellwords`, `toml-rb`, `tty-screen`, `tty-spinner`, `versionaire`
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+The gem is available as open-source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
