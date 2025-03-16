@@ -12,7 +12,7 @@ module AIA
       @model = parts[:model]
       @client = AiClient.new(@model, provider: @provider)
     end
-`
+
     def chat(prompt)
       # Determine the type of operation based on the model
       if @model.downcase.include?('dall-e') || @model.downcase.include?('image-generation')
