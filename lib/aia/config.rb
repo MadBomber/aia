@@ -39,7 +39,9 @@ module AIA
       transcription_model: 'whisper-1',
       voice: 'alloy',
       # Embedding parameters
-      embedding_model: 'text-embedding-ada-002'
+      embedding_model: 'text-embedding-ada-002',
+      # Default speak command
+      speak_command: 'say' # 'afplay' for audio files
     }.freeze
 
     def self.parse(args)

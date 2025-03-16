@@ -9,10 +9,10 @@ module AIA
     def initialize(config)
       @config = config
       @prompts_dir = config.prompts_dir
-      @roles_dir = config.roles_dir || File.join(@prompts_dir, 'roles')
+      @roles_dir = config.roles_dir
 
       # Initialize PromptManager with the FileSystemAdapter
-      PromptManager::Prompt.storage_adapter = 
+      PromptManager::Prompt.storage_adapter =
         PromptManager::Storage::FileSystemAdapter.config do |config|
           config.prompts_dir = @prompts_dir
           config.prompt_extension = '.txt'  # default
@@ -67,7 +67,7 @@ Please be terse in your response."
       else
         # Just a plain text prompt
         text = prompt.dup
-        
+
         # Process shell commands if enabled
         if @config.shell
           text = text.gsub(/$((.*?))/) { `#{Regexp.last_match(1)}`.chomp }
@@ -87,26 +87,6 @@ Please be terse in your response."
 
         text
       end
-    end
-
-    def process_text(text)
-      # Process shell commands if enabled
-      if @config.shell
-        text = text.gsub(/$((.*?))/) { `#{Regexp.last_match(1)}`.chomp }
-      end
-
-      # Process ERB if enabled
-      if @config.erb
-        text = ERB.new(text).result(binding)
-      end
-
-      text
-    end
-
-    def substitute_variables(prompt, variables)
-      # Create a temporary prompt object
-      tmp_prompt = PromptManager::Prompt.new(text: prompt, parameters: variables)
-      tmp_prompt.to_s
     end
 
     private

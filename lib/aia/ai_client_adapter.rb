@@ -30,7 +30,7 @@ module AIA
 
     def transcribe(audio_file)
       options = {
-        model: @config.transcription_model || 'whisper-1'
+        model: @config.transcription_model
       }
 
       @client.transcribe(audio_file)
@@ -44,8 +44,8 @@ module AIA
       begin
         # Try with options
         @client.speak(text, output_file, {
-          model: @config.speech_model || 'tts-1',
-          voice: @config.voice || 'alloy'
+          model: @config.speech_model,
+          voice: @config.voice
         })
       rescue ArgumentError
         # If that fails, try without options
@@ -53,7 +53,7 @@ module AIA
       end
 
       # Play the audio file if possible
-      system("afplay #{output_file}") if File.exist?(output_file) && system("which afplay > /dev/null 2>&1")
+      system("#{@config.speak_command} #{output_file}") if File.exist?(output_file) && system("which #{@config.speak_command} > /dev/null 2>&1")
     end
 
     private
@@ -99,9 +99,9 @@ module AIA
         # Try with options first
         begin
           @client.generate_image(text_prompt, output_file, {
-            size: @config.image_size || '1024x1024',
-            quality: @config.image_quality || 'standard',
-            style: @config.image_style || 'vivid'
+            size: @config.image_size,
+            quality: @config.image_quality,
+            style: @config.image_style
           })
         rescue ArgumentError
           # If that fails, try with just the prompt
@@ -146,8 +146,8 @@ module AIA
         # Try with options
         begin
           @client.speak(text_prompt, output_file, {
-            model: @config.speech_model || 'tts-1',
-            voice: @config.voice || 'alloy'
+            model: @config.speech_model,
+            voice: @config.voice
           })
         rescue ArgumentError
           # If that fails, try without options
@@ -155,7 +155,7 @@ module AIA
         end
 
         # Play the audio if possible
-        system("afplay #{output_file}") if File.exist?(output_file) && system("which afplay > /dev/null 2>&1")
+        system("#{@config.speak_command} #{output_file}") if File.exist?(output_file) && system("which #{@config.speak_command} > /dev/null 2>&1")
 
         # Return the path to the generated audio
         "Audio generated and saved to: #{output_file}"
