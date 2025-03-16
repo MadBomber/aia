@@ -6,6 +6,7 @@ require 'reline'
 require 'prompt_manager'
 require 'json'
 require 'fileutils'
+require 'amazing_print'
 
 module AIA
   class Session
@@ -143,17 +144,6 @@ module AIA
       end
     end
 
-    # Ensure the history file directory exists
-    def ensure_history_file_exists
-      dir = File.dirname(@variable_history_file)
-      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
-      
-      # Create empty history file if it doesn't exist
-      unless File.exist?(@variable_history_file)
-        File.write(@variable_history_file, '{}')
-      end
-    end
-
     # Load variable history from JSON file
     def load_variable_history
       begin
@@ -268,7 +258,7 @@ module AIA
         end
       end
     end
-    
+
     def start_chat
       display_chat_header
       
@@ -281,6 +271,26 @@ module AIA
         
         # Exit if user types 'exit' or presses Ctrl+D
         break if prompt.nil? || prompt.strip.downcase == 'exit'
+        
+        # Check if the input is a directive
+        if is_directive?(prompt)
+          directive_output = process_chat_directive(prompt)
+          
+          # If there's no output from the directive, prompt for input again
+          if directive_output.nil? || directive_output.strip.empty?
+            next
+          else
+            # Special handling for //config directive - don't include in chat context
+            if exclude_from_chat_context?(prompt)
+              puts "\n#{directive_output}\n"
+              next
+            end
+            
+            # Add directive output to chat context and continue
+            puts "\n#{directive_output}\n"
+            prompt = "I executed this directive: #{prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
+          end
+        end
         
         # Process shell commands and ERB if enabled
         prompt = process_dynamic_content(prompt)
@@ -310,6 +320,164 @@ module AIA
       end
       
       display_chat_end
+    end
+    
+    # Check if the input is a directive
+    def is_directive?(text)
+      text.strip.match?(/^\s*\#\!\s*\w+\:/) || text.strip.match?(/^\/\/\w+/)
+    end
+    
+    # Check if the input is a config directive
+    def is_config_directive?(text)
+      text.strip.match?(/^\s*\#\!\s*config\:/) || 
+      text.strip.match?(/^\s*\#\!\s*cfg\:/) || 
+      text.strip.match?(/^\/\/config/) || 
+      text.strip.match?(/^\/\/cfg/)
+    end
+
+    # Check if the input is a help directive
+    def is_help_directive?(text)
+      text.strip.match?(/^\s*\#\!\s*help\:/) || 
+      text.strip.match?(/^\/\/help/)
+    end
+
+    # Check if directive output should be excluded from chat context
+    def exclude_from_chat_context?(text)
+      is_config_directive?(text) || is_help_directive?(text)
+    end
+
+    # Process a directive from the chat input
+    def process_chat_directive(directive_text)
+      # Extract directive type and arguments
+      if directive_text.strip =~ /^\s*\#\!\s*(\w+)\:\s*(.*)$/
+        directive_type = $1
+        directive_args = $2
+      elsif directive_text.strip =~ /^\/\/(\w+)\s+(.*)$/
+        directive_type = $1
+        directive_args = $2
+      elsif directive_text.strip =~ /^\/\/(\w+)$/
+        # Handle directives without arguments (like //help)
+        directive_type = $1
+        directive_args = ""
+      else
+        return "Invalid directive format: Use //command args or #!command: args"
+      end
+      
+      # Make sure directive_type is not nil
+      return "Invalid directive format" if directive_type.nil?
+      
+      # Process the directive
+      case directive_type.downcase
+      when "shell", "sh"
+        # Execute shell command
+        output = `#{directive_args}`.chomp
+        "Shell command output:\n#{output}"
+      when "ruby", "rb"
+        # Execute Ruby code
+        begin
+          result = eval(directive_args)
+          "Ruby code output:\n#{result.to_s}"
+        rescue => e
+          "Ruby execution error: #{e.message}"
+        end
+      when "config", "cfg"
+        # If no arguments, display current configuration
+        if directive_args.nil? || directive_args.strip.empty?
+          config_hash = {}
+          @config.instance_variables.sort.each do |var|
+            key = var.to_s.delete('@')
+            value = @config.instance_variable_get(var)
+            config_hash[key] = value
+          end
+          
+          # Use StringIO to capture the output of ap
+          require 'stringio'
+          output = StringIO.new
+          ap(config_hash, { out: output, indent: 2, index: false })
+          
+          return "Current Configuration:\n#{output.string}"
+        # If argument doesn't contain '=', display the single config value
+        elsif !directive_args.include?('=')
+          key = directive_args.strip
+          sym_key = key.to_sym
+          
+          if @config.respond_to?(sym_key) || @config.instance_variables.include?("@#{key}".to_sym)
+            value = @config.respond_to?(sym_key) ? @config.send(sym_key) : @config.instance_variable_get("@#{key}".to_sym)
+            
+            # Format the output using amazing_print
+            require 'stringio'
+            output = StringIO.new
+            output.puts "Configuration value for '#{key}':"
+            ap(value, { out: output, indent: 2 })
+            
+            return output.string
+          else
+            return "Configuration key '#{key}' not found"
+          end
+        end
+        
+        # Update configuration
+        key, value = directive_args.split(/\s*=\s*/, 2)
+        if key && value
+          old_value = @config[key.strip.to_sym]
+          @config[key.strip.to_sym] = parse_config_value(value.strip)
+          "Configuration updated: #{key} changed from '#{old_value}' to '#{@config[key.strip.to_sym]}'"
+        else
+          "Invalid config format. Use: config: key = value"
+        end
+      when "include", "inc"
+        # Include file content
+        file_path = directive_args.strip
+        if File.exist?(file_path)
+          content = File.read(file_path)
+          "File contents of #{file_path}:\n#{content}"
+        else
+          "Error: File not found: #{file_path}"
+        end
+      when "help"
+        # Show available directives
+        """
+Available directives:
+  //shell <command>  or  #!shell: <command>  - Execute a shell command
+  //ruby <code>  or  #!ruby: <code>  - Execute Ruby code
+  //config  or  #!config:  - Display current configuration
+  //config key=value  or  #!config: key=value  - Update configuration
+  //config key  or  #!config: key  - Display a single configuration key value
+  //include <file_path>  or  #!include: <file_path>  - Include file content
+  //help  or  #!help:  - Show this help message
+"""
+      else
+        "Unknown directive: #{directive_type}"
+      end
+    end
+    
+    # Parse configuration value
+    def parse_config_value(value)
+      case value.downcase
+      when 'true'
+        true
+      when 'false'
+        false
+      when /^\d+$/
+        value.to_i
+      when /^\d+\.\d+$/
+        value.to_f
+      when /^\[.*\]$/
+        value[1..-2].split(',').map(&:strip)
+      else
+        value
+      end
+    end
+    
+    # Ensure the history file directory exists
+    def ensure_history_file_exists
+      dir = File.dirname(@variable_history_file)
+      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+      
+      # Create empty history file if it doesn't exist
+      unless File.exist?(@variable_history_file)
+        File.write(@variable_history_file, '{}')
+      end
     end
     
     def display_chat_header
