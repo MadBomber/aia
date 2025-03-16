@@ -650,9 +650,12 @@ Available directives:
     # @param text [String] the text to process
     # @return [String] the processed text
     def process_dynamic_content(text)
-      # Process shell commands if enabled
+      # Process shell commands, backticks, and environment variables if enabled
       if @config.shell
         text = text.gsub(/\$\((.*?)\)/) { `#{Regexp.last_match(1)}`.chomp }
+        text = text.gsub(/`([^`]+)`/) { `#{Regexp.last_match(1)}`.chomp }
+        text = text.gsub(/`([^`]+)`/) { `#{Regexp.last_match(1)}`.chomp }
+        text = text.gsub(/\$(\w+)|\$\{(\w+)\}/) { ENV[Regexp.last_match(1) || Regexp.last_match(2)] || "" }
       end
       
       # Process ERB if enabled
