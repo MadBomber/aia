@@ -14,23 +14,45 @@ module AIA
     end
 
     def start
-      # Get initial prompt
-      prompt_text = @prompt_handler.get_prompt(@config.prompt_id, @config.role)
+      # Get prompt using the prompt_handler which uses PromptManager
+      prompt_id = @config.prompt_id
+      role_id = @config.role
+      
+      # Create a prompt object using PromptManager
+      prompt = PromptManager::Prompt.get(id: prompt_id) rescue nil
+      
+      if prompt.nil?
+        puts "Error: Could not find prompt with ID: #{prompt_id}"
+        return
+      end
+      
+      # Handle role if specified
+      if role_id
+        role_prompt = PromptManager::Prompt.get(id: role_id) rescue nil
+        if role_prompt
+          prompt.text = "#{role_prompt.text}\n#{prompt.text}"
+        else
+          puts "Warning: Could not find role with ID: #{role_id}"
+        end
+      end
       
       # Extract variables from the prompt using PromptManager
-      prompt = PromptManager::Prompt.new(id: @config.prompt_id, context: [])
       variables = prompt.keywords
-
+      
       # Check for variables in the prompt and prompt the user for values
       if variables && !variables.empty?
         variable_values = {}
         variables.each do |variable|
-          print "Enter value for [#{variable}]: "
-          variable_values[variable] = Reline.readline('', true).strip
+          # Make the prompt more visible and ensure it's flushed to stdout
+          puts "\nEnter value for [#{variable}]: "
+          $stdout.flush
+          variable_values[variable] = Reline.readline('> ', true).strip
         end
         prompt.parameters = variable_values
-        prompt_text = prompt.build
       end
+      
+      # Process the prompt using our handler (which now properly uses PromptManager directives)
+      prompt_text = @prompt_handler.process_prompt(prompt)
       
       # Add context files if any
       if @config.context_files && !@config.context_files.empty?
@@ -118,16 +140,22 @@ module AIA
     def process_next_prompts(response)
       # Process next prompt if specified
       if @config.next
-        next_prompt_handler = PromptHandler.new(@config)
-        next_prompt_text = next_prompt_handler.get_prompt(@config.next)
-        next_prompt_text = "#{next_prompt_text}\n\nContext:\n#{response}"
+        next_prompt = PromptManager::Prompt.get(id: @config.next) rescue nil
         
-        operation_type = determine_operation_type(@config.model)
-        next_response = process_prompt(next_prompt_text, operation_type)
-        output_response(next_response)
-        
-        # Update response for potential pipeline
-        response = next_response
+        if next_prompt
+          # Add the previous response as context
+          next_prompt_text = @prompt_handler.process_prompt(next_prompt)
+          next_prompt_text = "#{next_prompt_text}\n\nContext:\n#{response}"
+          
+          operation_type = determine_operation_type(@config.model)
+          next_response = process_prompt(next_prompt_text, operation_type)
+          output_response(next_response)
+          
+          # Update response for potential pipeline
+          response = next_response
+        else
+          puts "Warning: Could not find next prompt with ID: #{@config.next}"
+        end
       end
       
       # Process pipeline if specified
@@ -135,13 +163,19 @@ module AIA
         pipeline_response = response
         
         @config.pipeline.each do |prompt_id|
-          pipeline_handler = PromptHandler.new(@config)
-          pipeline_prompt_text = pipeline_handler.get_prompt(prompt_id)
-          pipeline_prompt_text = "#{pipeline_prompt_text}\n\nContext:\n#{pipeline_response}"
+          pipeline_prompt = PromptManager::Prompt.get(id: prompt_id) rescue nil
           
-          operation_type = determine_operation_type(@config.model)
-          pipeline_response = process_prompt(pipeline_prompt_text, operation_type)
-          output_response(pipeline_response)
+          if pipeline_prompt
+            # Add the previous response as context
+            pipeline_prompt_text = @prompt_handler.process_prompt(pipeline_prompt)
+            pipeline_prompt_text = "#{pipeline_prompt_text}\n\nContext:\n#{pipeline_response}"
+            
+            operation_type = determine_operation_type(@config.model)
+            pipeline_response = process_prompt(pipeline_prompt_text, operation_type)
+            output_response(pipeline_response)
+          else
+            puts "Warning: Could not find pipeline prompt with ID: #{prompt_id}"
+          end
         end
       end
     end
@@ -187,6 +221,7 @@ module AIA
     
     def ask_question(prompt)
       print prompt
+      $stdout.flush  # Ensure the prompt is displayed immediately
       begin
         input = Reline.readline('', true)
         return nil if input.nil? # Handle Ctrl+D
@@ -213,30 +248,39 @@ module AIA
     end
     
     def build_conversation_context(current_prompt)
-      # For simple prompts, just return the current prompt
-      return current_prompt if @history.empty?
-      
-      # For conversation history, format it appropriately
-      context = "Conversation history:\n"
-      
-      @history.each do |message|
-        context += "#{message[:role].capitalize}: #{message[:content]}\n"
+      # Use the system prompt if available
+      system_prompt = ""
+      if @config.system_prompt
+        system_prompt = PromptManager::Prompt.get(id: @config.system_prompt).to_s rescue ""
       end
       
-      context += "\nCurrent prompt: #{current_prompt}"
-      context
+      # Prepare the conversation history
+      history_text = ""
+      if !@history.empty?
+        @history.each do |entry|
+          history_text += "#{entry[:role].capitalize}: #{entry[:content]}\n\n"
+        end
+      end
+      
+      # Combine system prompt, history, and current prompt
+      if !system_prompt.empty?
+        "#{system_prompt}\n\n#{history_text}User: #{current_prompt}"
+      else
+        "#{history_text}User: #{current_prompt}"
+      end
     end
     
+    private
+    
     def determine_operation_type(model)
-      model = model.downcase
-      case model
-      when /vision/, /image/
-        :image_to_text
-      when /dall-e/, /image-generation/
+      model = model.to_s.downcase
+      if model.include?('dall') || model.include?('image-generation')
         :text_to_image
-      when /tts/, /speech/
+      elsif model.include?('vision') || model.include?('image')
+        :image_to_text
+      elsif model.include?('tts') || model.include?('speech')
         :text_to_audio
-      when /whisper/, /transcription/
+      elsif model.include?('whisper') || model.include?('transcription')
         :audio_to_text
       else
         :text_to_text

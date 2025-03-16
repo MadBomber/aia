@@ -21,48 +21,78 @@ module AIA
     end
 
     def get_prompt(prompt_id, role_id = nil)
+      # Get the prompt using the gem's functionality
       prompt = PromptManager::Prompt.get(id: prompt_id)
 
       if role_id
+        # Get the role prompt
         role_prompt = PromptManager::Prompt.get(id: role_id)
         # Prepend role to prompt
-        prompt.text = "#{role_prompt.text}\n#{prompt.text}"
+        prompt.text = "#{role_prompt.text}
+#{prompt.text}"
       end
 
+      # Process the prompt using the gem's functionality
       process_prompt(prompt)
     end
 
     def process_prompt(prompt)
-      text = prompt.text.dup
+      # Deep copy the prompt to avoid modifying the original
+      if prompt.is_a?(PromptManager::Prompt)
+        # Process shell commands if enabled
+        if @config.shell
+          prompt.text = prompt.text.gsub(/$((.*?))/) { `#{Regexp.last_match(1)}`.chomp }
+        end
 
-      # Process directives
-      text = process_directives(text)
+        # Process ERB if enabled
+        if @config.erb
+          prompt.text = ERB.new(prompt.text).result(binding)
+        end
 
-      # Process shell commands if enabled
-      if @config.shell
-        text = text.gsub(/\$\((.*?)\)/) { `#{Regexp.last_match(1)}`.chomp }
+        # Build the prompt with parameters
+        text = prompt.to_s
+
+        # Process directives after building the prompt
+        directives = prompt.directives
+        text = process_collected_directives(text, directives)
+
+        # Add terse instruction if requested
+        if @config.terse
+          text += "
+
+Please be terse in your response."
+        end
+
+        text
+      else
+        # Just a plain text prompt
+        text = prompt.dup
+        
+        # Process shell commands if enabled
+        if @config.shell
+          text = text.gsub(/$((.*?))/) { `#{Regexp.last_match(1)}`.chomp }
+        end
+
+        # Process ERB if enabled
+        if @config.erb
+          text = ERB.new(text).result(binding)
+        end
+
+        # Add terse instruction if requested
+        if @config.terse
+          text += "
+
+Please be terse in your response."
+        end
+
+        text
       end
-
-      # Process ERB if enabled
-      if @config.erb
-        text = ERB.new(text).result(binding)
-      end
-
-      # Add terse instruction if requested
-      if @config.terse
-        text += "\n\nPlease be terse in your response."
-      end
-
-      text
     end
 
     def process_text(text)
-      # Process directives
-      text = process_directives(text.dup)
-
       # Process shell commands if enabled
       if @config.shell
-        text = text.gsub(/\$\((.*?)\)/) { `#{Regexp.last_match(1)}`.chomp }
+        text = text.gsub(/$((.*?))/) { `#{Regexp.last_match(1)}`.chomp }
       end
 
       # Process ERB if enabled
@@ -74,59 +104,50 @@ module AIA
     end
 
     def substitute_variables(prompt, variables)
-      # Substitute variables in the prompt using ERB
-      b = binding # Create a binding to pass variables to ERB
-      variables.each { |key, value| eval "#{key} = value", b } # Define variables in the binding
-      ERB.new(prompt).result(b)
+      # Create a temporary prompt object
+      tmp_prompt = PromptManager::Prompt.new(text: prompt, parameters: variables)
+      tmp_prompt.to_s
     end
 
-    def process_directives(text)
-      return text unless text
+    private
 
-      lines = text.split("\n")
-      result_lines = []
-
-      lines.each do |line|
-        if line.start_with?("//")
-          directive, *args = line[2..-1].strip.split(/\s+/, 2)
-          args = args.first || ""
-
-          case directive
-          when "config"
-            # Process config directive
-            key, value = args.split(/\s*=\s*/, 2)
-            @config[key.strip.to_sym] = parse_value(value.strip)
-          when "include"
-            # Include another file
-            file_path = args.strip
-            if File.exist?(file_path)
-              result_lines << File.read(file_path)
-            else
-              result_lines << "# Error: File not found: #{file_path}"
-            end
-          when "shell"
-            # Execute shell command
-            result_lines << `#{args}`.chomp
-          when "ruby"
-            # Execute Ruby code
-            result = eval(args)
-            result_lines << result.to_s
-          when "next"
-            # Set next prompt
-            @config.next = args.strip
-          when "pipeline"
-            # Set pipeline
-            @config.pipeline = args.strip.split(',')
+    def process_collected_directives(text, directives)
+      directives.each do |directive, args|
+        case directive
+        when "config"
+          # Process config directive
+          key, value = args.split(/\s*=\s*/, 2)
+          @config[key.strip.to_sym] = parse_value(value.strip)
+        when "include"
+          # Include another file
+          file_path = args.strip
+          if File.exist?(file_path)
+            # Replace the directive line with file contents
+            text = text.gsub(%r{//include #{Regexp.escape(args)}}, File.read(file_path))
           else
-            # Unknown directive, keep it as is
-            result_lines << line
+            # Replace with error message
+            text = text.gsub(%r{//include #{Regexp.escape(args)}}, "# Error: File not found: #{file_path}")
           end
-        else
-          result_lines << line
+        when "shell"
+          # Execute shell command
+          cmd_output = `#{args}`.chomp
+          # Replace the directive line with command output
+          text = text.gsub(%r{//shell #{Regexp.escape(args)}}, cmd_output)
+        when "ruby"
+          # Execute Ruby code
+          result = eval(args)
+          # Replace the directive line with result
+          text = text.gsub(%r{//ruby #{Regexp.escape(args)}}, result.to_s)
+        when "next"
+          # Set next prompt
+          @config.next = args.strip
+        when "pipeline"
+          # Set pipeline
+          @config.pipeline = args.strip.split(',')
         end
       end
 
-      result_lines.join("\n")
+      text
     end
 
     def parse_value(value)
