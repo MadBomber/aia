@@ -1,3 +1,5 @@
+# lib/aia/ai_client_adapter.rb
+# lib/aia/ai_client_adapter.rb
 #
 # This file adapts the AI client for use in the AIA application.
 

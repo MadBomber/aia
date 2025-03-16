@@ -1,3 +1,4 @@
+# lib/aia/prompt_handler.rb
 #
 # This file handles prompt management for the AIA application.
 

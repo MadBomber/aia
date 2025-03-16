@@ -1,3 +1,4 @@
+# lib/aia/session.rb
 #
 # This file manages the session logic for the AIA application.
 
