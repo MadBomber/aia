@@ -51,6 +51,7 @@ Gem::Specification.new do |spec|
   spec.require_paths  = %w[ lib ]
 
   spec.add_dependency "ai_client"
+  spec.add_dependency "colorize"
   spec.add_dependency "os"
   spec.add_dependency "prompt_manager", '>= 0.4.1' # needs the directives functionality
   spec.add_dependency "reline"

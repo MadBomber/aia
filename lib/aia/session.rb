@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 require 'tty-spinner'
+require 'tty-screen'
 require 'reline'
 require 'prompt_manager'
 require 'json'
 require 'fileutils'
+require 'colorize'
 
 module AIA
   class Session
@@ -267,14 +269,18 @@ module AIA
     end
     
     def start_chat
-      puts "\nChat mode enabled. Type 'exit' or press Ctrl+D to end the chat.\n"
+      terminal_width = TTY::Screen.width
+      puts "\n#{'─' * terminal_width}".cyan
+      puts "#{'│'.cyan} #{'Chat session started'.center(terminal_width - 2)} #{'│'.cyan}"
+      puts "#{'│'.cyan} #{'Type \'exit\' or press Ctrl+D to end the chat'.center(terminal_width - 2)} #{'│'.cyan}"
+      puts "#{'─' * terminal_width}".cyan
       
       # Setup Reline history
       Reline::HISTORY.clear
       
       loop do
         # Get user input
-        prompt = ask_question("You: ")
+        prompt = ask_question("#{'You'.green.bold}: ")
         
         # Exit if user types 'exit' or presses Ctrl+D
         break if prompt.nil? || prompt.strip.downcase == 'exit'
@@ -290,19 +296,26 @@ module AIA
         
         # Get response
         operation_type = determine_operation_type(@config.model)
+        puts "\n#{'⏳'.light_yellow} #{'Processing...'.light_yellow}"
         response = process_prompt(conversation, operation_type)
         
-        # Output response
-        puts "AI: #{response}\n"
+        # Output response with formatting
+        puts "\n#{'AI'.blue.bold}: "
+        
+        # Format the response for better readability
+        format_chat_response(response)
         
         # Add to history
         @history << { role: 'assistant', content: response }
         
         # Speak response if enabled
         @client.speak(response) if @config.speak
+        
+        # Add a separator
+        puts "\n#{'─' * terminal_width}\n".cyan
       end
       
-      puts "\nChat session ended."
+      puts "\n#{'Chat session ended.'.cyan.bold}"
     end
     
     def ask_question(prompt)
@@ -314,8 +327,50 @@ module AIA
         Reline::HISTORY << input unless input.strip.empty?
         input
       rescue Interrupt
-        puts "\nChat session interrupted."
+        puts "\n#{'Chat session interrupted.'.yellow}"
         return 'exit'
+      end
+    end
+    
+    # Format the chat response with better readability
+    def format_chat_response(response)
+      terminal_width = TTY::Screen.width
+      indent = '   '
+      
+      # Handle code blocks specially
+      in_code_block = false
+      language = ''
+      code_content = ''
+      
+      response.each_line do |line|
+        line = line.chomp
+        
+        # Check for code block delimiters
+        if line.match?(/^```(\w*)$/) && !in_code_block
+          in_code_block = true
+          language = $1
+          puts "#{indent}#{'```'.yellow}#{language.yellow}" 
+        elsif line.match?(/^```$/) && in_code_block
+          in_code_block = false
+          puts "#{indent}#{'```'.yellow}"
+        elsif in_code_block
+          # Print code with special formatting
+          puts "#{indent}#{line.light_yellow}"
+        else
+          # Handle regular text
+          # Special formatting for headers
+          if line.start_with?('#')
+            puts "#{indent}#{line.light_blue.bold}"
+          # Special formatting for lists
+          elsif line.match?(/^\s*[-*+]\s/) || line.match?(/^\s*\d+\.\s/)
+            puts "#{indent}#{line.light_green}"
+          # Special formatting for quoted text
+          elsif line.start_with?('>')
+            puts "#{indent}#{line.light_magenta}"
+          else
+            puts "#{indent}#{line}"
+          end
+        end
       end
     end
     
