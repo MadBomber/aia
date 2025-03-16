@@ -1,4 +1,5 @@
-# frozen_string_literal: true
+#
+# This file manages the session logic for the AIA application.
 
 require 'tty-spinner'
 require 'tty-screen'
@@ -8,11 +9,22 @@ require 'json'
 require 'fileutils'
 require 'amazing_print'
 
+# The AIA module serves as the namespace for the AIA application, which
+# provides an interface for interacting with AI models and managing prompts.
 module AIA
+  # The Session class manages the interactive session logic for the AIA
+  # application. It handles user input, prompt processing, and interaction
+  # with the AI client.
   class Session
     KW_HISTORY_MAX = 5 # Maximum number of history entries per keyword
     USER_PROMPT = "Follow up (cntl-D or 'exit' to end) #=> "
     
+    # Initializes a new session with the given configuration, prompt handler,
+    # and AI client.
+    #
+    # @param config [OpenStruct] the configuration object
+    # @param prompt_handler [PromptHandler] the prompt handler
+    # @param client [AIClientAdapter] the AI client adapter
     def initialize(config, prompt_handler, client)
       @config = config
       @prompt_handler = prompt_handler
@@ -23,6 +35,8 @@ module AIA
       ensure_history_file_exists
     end
 
+    # Starts the session, processing the initial prompt and handling user
+    # interactions. It manages the flow of prompts, context, and responses.
     def start
       # Get prompt using the prompt_handler which uses PromptManager
       prompt_id = @config.prompt_id
@@ -151,6 +165,9 @@ module AIA
     end
 
     # Setup Reline history with variable history values
+    # Sets up the Reline history with the provided variable history values.
+    #
+    # @param history_values [Array<String>] the history values to set up
     def setup_variable_history(history_values)
       Reline::HISTORY.clear
       history_values.each do |value|
@@ -159,6 +176,9 @@ module AIA
     end
 
     # Load variable history from JSON file
+    # Loads the variable history from a JSON file.
+    #
+    # @return [Hash] the loaded variable history
     def load_variable_history
       begin
         JSON.parse(File.read(@variable_history_file))
@@ -168,10 +188,18 @@ module AIA
     end
 
     # Save variable history to JSON file
+    # Saves the variable history to a JSON file.
+    #
+    # @param history [Hash] the variable history to save
     def save_variable_history(history)
       File.write(@variable_history_file, JSON.pretty_generate(history))
     end
 
+    # Processes the given prompt based on the specified operation type.
+    #
+    # @param prompt [String] the prompt text to process
+    # @param operation_type [Symbol] the type of operation (e.g., :text_to_text)
+    # @return [String] the response from the AI client
     def process_prompt(prompt, operation_type)
       if @config.verbose
         spinner = TTY::Spinner.new("[:spinner] Processing #{operation_type}...", format: :dots)
@@ -186,6 +214,11 @@ module AIA
       end
     end
     
+    # Sends the prompt to the AI client based on the operation type.
+    #
+    # @param prompt [String] the prompt text to send
+    # @param operation_type [Symbol] the type of operation (e.g., :text_to_text)
+    # @return [String] the response from the AI client
     def send_to_client(prompt, operation_type)
       case operation_type
       when :text_to_text
@@ -208,6 +241,10 @@ module AIA
       end
     end
 
+    # Outputs the response from the AI client, handling speaking, logging,
+    # and writing to files as configured.
+    #
+    # @param response [String] the response to output
     def output_response(response)
       if @config.speak
         @client.speak(response)
@@ -230,6 +267,10 @@ module AIA
       end
     end
     
+    # Processes the next prompts or pipeline based on the current response
+    # and configuration settings.
+    #
+    # @param response [String] the current response to use as context
     def process_next_prompts(response)
       # Process next prompt if specified
       if @config.next
@@ -273,6 +314,7 @@ module AIA
       end
     end
 
+    # Starts a chat session, handling user input and AI responses in a loop.
     def start_chat
       display_chat_header
       
@@ -337,11 +379,19 @@ module AIA
     end
     
     # Check if the input is a directive
+    # Checks if the given text is a directive.
+    #
+    # @param text [String] the text to check
+    # @return [Boolean] true if the text is a directive, false otherwise
     def is_directive?(text)
       text.strip.match?(/^\s*\#\!\s*\w+\:/) || text.strip.match?(/^\/\/\w+/)
     end
     
     # Check if the input is a config directive
+    # Checks if the given text is a configuration directive.
+    #
+    # @param text [String] the text to check
+    # @return [Boolean] true if the text is a configuration directive, false otherwise
     def is_config_directive?(text)
       text.strip.match?(/^\s*\#\!\s*config\:/) || 
       text.strip.match?(/^\s*\#\!\s*cfg\:/) || 
@@ -350,17 +400,30 @@ module AIA
     end
 
     # Check if the input is a help directive
+    # Checks if the given text is a help directive.
+    #
+    # @param text [String] the text to check
+    # @return [Boolean] true if the text is a help directive, false otherwise
     def is_help_directive?(text)
       text.strip.match?(/^\s*\#\!\s*help\:/) || 
       text.strip.match?(/^\/\/help/)
     end
 
     # Check if directive output should be excluded from chat context
+    # Checks if the directive output should be excluded from the chat context.
+    #
+    # @param text [String] the directive text to check
+    # @return [Boolean] true if the directive should be excluded, false otherwise
     def exclude_from_chat_context?(text)
       is_config_directive?(text) || is_help_directive?(text)
     end
 
     # Process a directive from the chat input
+    # Processes a directive from the chat input, executing commands or
+    # updating configuration as needed.
+    #
+    # @param directive_text [String] the directive text to process
+    # @return [String] the result of processing the directive
     def process_chat_directive(directive_text)
       # Extract directive type and arguments
       if directive_text.strip =~ /^\s*\#\!\s*(\w+)\:\s*(.*)$/
@@ -466,6 +529,11 @@ Available directives:
     end
     
     # Parse configuration value
+    # Parses a configuration value from a string, converting it to the
+    # appropriate type (e.g., boolean, integer, array).
+    #
+    # @param value [String] the value to parse
+    # @return [Object] the parsed value
     def parse_config_value(value)
       case value.downcase
       when 'true'
@@ -484,6 +552,8 @@ Available directives:
     end
     
     # Ensure the history file directory exists
+    # Ensures that the history file directory exists and creates an empty
+    # history file if it does not exist.
     def ensure_history_file_exists
       dir = File.dirname(@variable_history_file)
       FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
@@ -494,27 +564,37 @@ Available directives:
       end
     end
     
+    # Displays the chat session header.
     def display_chat_header
       puts "#{'═' * @terminal_width}\n"
     end
         
+    # Displays a thinking animation while processing.
     def display_thinking_animation
       puts "\n⏳ Processing...\n"
     end
     
+    # Displays the AI response with formatting.
+    #
+    # @param response [String] the response to display
     def display_ai_response(response)
       puts "AI: "
       format_chat_response(response)
     end
     
+    # Displays a separator line in the chat session.
     def display_separator
       puts "\n#{'─' * @terminal_width}"
     end
     
+    # Displays the end of the chat session message.
     def display_chat_end
       puts "\nChat session ended."
     end
     
+    # Prompts the user for input and returns the entered text.
+    #
+    # @return [String, nil] the user input or nil if the session is interrupted
     def ask_question
       puts USER_PROMPT
       $stdout.flush  # Ensure the prompt is displayed immediately
@@ -530,6 +610,10 @@ Available directives:
     end
     
     # Format the chat response with better readability
+    # Formats the chat response for better readability, handling code blocks
+    # and regular text.
+    #
+    # @param response [String] the response to format
     def format_chat_response(response)
       indent = '   '
       
@@ -559,6 +643,11 @@ Available directives:
       end
     end
     
+    # Processes dynamic content in the text, such as shell commands and ERB,
+    # if enabled in the configuration.
+    #
+    # @param text [String] the text to process
+    # @return [String] the processed text
     def process_dynamic_content(text)
       # Process shell commands if enabled
       if @config.shell
@@ -573,6 +662,11 @@ Available directives:
       text
     end
     
+    # Builds the conversation context by combining the system prompt, chat
+    # history, and the current user prompt.
+    #
+    # @param current_prompt [String] the current user prompt
+    # @return [String] the complete conversation context
     def build_conversation_context(current_prompt)
       # Use the system prompt if available
       system_prompt = ""
@@ -597,6 +691,10 @@ Available directives:
     end
     
     # Start chat with just a role
+    # Starts a chat session with a specified role, setting the system prompt
+    # from the role and initiating the chat.
+    #
+    # @param role_id [String] the role ID to use for the chat
     def start_chat_with_role(role_id)
       # Add 'roles/' prefix to role_id if it doesn't already have it
       roles = @config.roles_dir.split('/').last
@@ -619,6 +717,10 @@ Available directives:
     
     private
     
+    # Determines the type of operation to perform based on the model name.
+    #
+    # @param model [String] the model name
+    # @return [Symbol] the operation type (e.g., :text_to_text)
     def determine_operation_type(model)
       model = model.to_s.downcase
       if model.include?('dall') || model.include?('image-generation')

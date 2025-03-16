@@ -1,11 +1,20 @@
-# frozen_string_literal: true
+#
+# This file handles prompt management for the AIA application.
 
 require 'prompt_manager'
 require 'prompt_manager/storage/file_system_adapter'
 require 'erb'
 
+# The AIA module serves as the namespace for the AIA application, which
+# provides an interface for interacting with AI models and managing prompts.
 module AIA
+  # The PromptHandler class is responsible for managing and processing
+  # prompts within the AIA application. It interacts with the PromptManager
+  # to retrieve and process prompts.
   class PromptHandler
+    # Initializes a new PromptHandler with the given configuration.
+    #
+    # @param config [OpenStruct] the configuration object
     def initialize(config)
       @config = config
       @prompts_dir = config.prompts_dir
@@ -20,6 +29,11 @@ module AIA
         end.new
     end
 
+    # Retrieves and processes a prompt by its ID, optionally prepending a role.
+    #
+    # @param prompt_id [String] the ID of the prompt to retrieve
+    # @param role_id [String, nil] the ID of the role to prepend (optional)
+    # @return [String] the processed prompt text
     def get_prompt(prompt_id, role_id = nil)
       # Get the prompt using the gem's functionality
       prompt = PromptManager::Prompt.get(id: prompt_id)
@@ -36,6 +50,10 @@ module AIA
       process_prompt(prompt)
     end
 
+    # Processes a given prompt, handling shell commands, ERB, and directives.
+    #
+    # @param prompt [PromptManager::Prompt, String] the prompt to process
+    # @return [String] the processed prompt text
     def process_prompt(prompt)
       # Deep copy the prompt to avoid modifying the original
       if prompt.is_a?(PromptManager::Prompt)
@@ -91,6 +109,12 @@ Please be terse in your response."
 
     private
 
+    # Processes collected directives within the prompt text, executing
+    # commands or including files as specified.
+    #
+    # @param text [String] the prompt text containing directives
+    # @param directives [Hash] the directives to process
+    # @return [String] the processed text with directives applied
     def process_collected_directives(text, directives)
       directives.each do |directive, args|
         case directive
@@ -130,6 +154,11 @@ Please be terse in your response."
       text
     end
 
+    # Parses a value from a string, converting it to the appropriate type
+    # (e.g., boolean, integer, array).
+    #
+    # @param value [String] the value to parse
+    # @return [Object] the parsed value
     def parse_value(value)
       case value.downcase
       when 'true'

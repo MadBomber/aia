@@ -1,4 +1,5 @@
-# frozen_string_literal: true
+#
+# This file contains the configuration settings for the AIA application.
 
 require 'ostruct'
 require 'yaml'
@@ -6,7 +7,12 @@ require 'toml-rb'
 require 'erb'
 require 'optparse'
 
+# The AIA module serves as the namespace for the AIA application, which
+# provides an interface for interacting with AI models and managing prompts.
 module AIA
+  # The Config class is responsible for managing configuration settings
+  # for the AIA application. It provides methods to parse command-line
+  # arguments, environment variables, and configuration files.
   class Config
     DEFAULT_CONFIG = {
       model: 'openai/gpt-4o-mini',
@@ -44,6 +50,11 @@ module AIA
       speak_command: 'say' # 'afplay' for audio files
     }.freeze
 
+    # Parses the configuration settings from command-line arguments,
+    # environment variables, and configuration files.
+    #
+    # @param args [Array<String>] the command-line arguments
+    # @return [OpenStruct] the configuration object
     def self.parse(args)
       config = OpenStruct.new(DEFAULT_CONFIG)
 
@@ -279,12 +290,19 @@ module AIA
       config
     end
 
+    # Generates a shell completion script for the specified shell.
+    #
+    # @param shell [String] the shell type (e.g., "bash", "zsh", "fish")
     def self.generate_completion_script(shell)
       # Implementation for shell completion script generation
       # This would output a script for bash, zsh, or fish
       puts "# Completion script for #{shell} would be generated here"
     end
 
+    # Dumps the current configuration to a file in the specified format.
+    #
+    # @param config [OpenStruct] the configuration object
+    # @param file [String] the file path to dump the configuration
     def self.dump_config(config, file)
       # Implementation for config dump
       ext = File.extname(file).downcase
