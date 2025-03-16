@@ -10,9 +10,9 @@ module AIA
       parts = extract_model_parts(@config.model)
       @provider = parts[:provider]
       @model = parts[:model]
-      @client = AiClient.new(@model)
+      @client = AiClient.new(@model, provider: @provider)
     end
-
+`
     def chat(prompt)
       # Determine the type of operation based on the model
       if @model.downcase.include?('dall-e') || @model.downcase.include?('image-generation')
@@ -38,7 +38,7 @@ module AIA
 
     def speak(text)
       output_file = "#{Time.now.to_i}.mp3"
-      
+
       # The ai_client gem's speak method might have different signatures
       # Try different approaches based on the gem version
       begin
@@ -60,23 +60,14 @@ module AIA
 
     def extract_model_parts(model_string)
       parts = model_string.split('/')
+      parts.map!(&:strip)
+
       if parts.length > 1
         { provider: parts[0], model: parts[1] }
       else
-        # Determine provider from model name if not explicitly provided
-        provider = case parts[0].downcase
-                  when /^gpt/, /^dall-e/, /^whisper/, /^tts/, /^text-embedding/
-                    'openai'
-                  when /^claude/
-                    'anthropic'
-                  when /^gemini/, /^palm/
-                    'google'
-                  when /^llama/, /^mistral/
-                    'ollama'
-                  else
-                    'openai' # Default to OpenAI if unknown
-                  end
-        { provider: provider, model: parts[0] }
+        provider = nil
+        model = parts[0]
+        { provider: provider, model: model }
       end
     end
 
@@ -95,18 +86,15 @@ module AIA
 
     def text_to_text(prompt)
       text_prompt = extract_text_prompt(prompt)
-      
-      # The ai_client gem's chat method might only accept a single argument
-      # So we'll just pass the prompt without any options
       @client.chat(text_prompt)
     end
 
     def text_to_image(prompt)
       text_prompt = extract_text_prompt(prompt)
-      
+
       # Generate a unique filename for the image
       output_file = "#{Time.now.to_i}.png"
-      
+
       begin
         # Try with options first
         begin
@@ -119,7 +107,7 @@ module AIA
           # If that fails, try with just the prompt
           @client.generate_image(text_prompt)
         end
-        
+
         # Return the path to the generated image
         "Image generated and saved to: #{output_file}"
       rescue => e
@@ -130,11 +118,11 @@ module AIA
     def image_to_text(prompt)
       # This method handles vision-based models that can analyze images
       # The prompt might contain a reference to an image file
-      
+
       # Extract image path from prompt if it exists
       image_path = extract_image_path(prompt)
       text_prompt = extract_text_prompt(prompt)
-      
+
       if image_path && File.exist?(image_path)
         begin
           # Try with the image parameter
@@ -150,10 +138,10 @@ module AIA
 
     def text_to_audio(prompt)
       text_prompt = extract_text_prompt(prompt)
-      
+
       # Generate a unique filename for the audio
       output_file = "#{Time.now.to_i}.mp3"
-      
+
       begin
         # Try with options
         begin
@@ -165,10 +153,10 @@ module AIA
           # If that fails, try without options
           @client.speak(text_prompt)
         end
-        
+
         # Play the audio if possible
         system("afplay #{output_file}") if File.exist?(output_file) && system("which afplay > /dev/null 2>&1")
-        
+
         # Return the path to the generated audio
         "Audio generated and saved to: #{output_file}"
       rescue => e
@@ -179,8 +167,8 @@ module AIA
     def audio_to_text(prompt)
       # This method handles transcription of audio files
       # The prompt might be a path to an audio file
-      
-      if prompt.is_a?(String) && File.exist?(prompt) && 
+
+      if prompt.is_a?(String) && File.exist?(prompt) &&
          prompt.downcase.end_with?('.mp3', '.wav', '.m4a', '.flac')
         begin
           @client.transcribe(prompt)
@@ -196,7 +184,7 @@ module AIA
     def extract_image_path(prompt)
       # Extract image path from prompt
       # This could be in various formats depending on how the prompt is structured
-      
+
       if prompt.is_a?(String)
         # Look for file paths in the string
         prompt.scan(/\b[\w\/\.\-]+\.(jpg|jpeg|png|gif|webp)\b/i).first&.first
