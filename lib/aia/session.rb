@@ -6,18 +6,19 @@ require 'reline'
 require 'prompt_manager'
 require 'json'
 require 'fileutils'
-require 'colorize'
 
 module AIA
   class Session
     KW_HISTORY_MAX = 5 # Maximum number of history entries per keyword
-
+    USER_PROMPT = "Follow up (cntl-D or 'exit' to end) #=> "
+    
     def initialize(config, prompt_handler, client)
       @config = config
       @prompt_handler = prompt_handler
       @client = client
       @history = []
       @variable_history_file = File.join(ENV['HOME'], '.aia', 'variable_history.json')
+      @terminal_width = TTY::Screen.width
       ensure_history_file_exists
     end
 
@@ -269,18 +270,14 @@ module AIA
     end
     
     def start_chat
-      terminal_width = TTY::Screen.width
-      puts "\n#{'─' * terminal_width}".cyan
-      puts "#{'│'.cyan} #{'Chat session started'.center(terminal_width - 2)} #{'│'.cyan}"
-      puts "#{'│'.cyan} #{'Type \'exit\' or press Ctrl+D to end the chat'.center(terminal_width - 2)} #{'│'.cyan}"
-      puts "#{'─' * terminal_width}".cyan
+      display_chat_header
       
       # Setup Reline history
       Reline::HISTORY.clear
       
       loop do
         # Get user input
-        prompt = ask_question("#{'You'.green.bold}: ")
+        prompt = ask_question
         
         # Exit if user types 'exit' or presses Ctrl+D
         break if prompt.nil? || prompt.strip.downcase == 'exit'
@@ -296,14 +293,11 @@ module AIA
         
         # Get response
         operation_type = determine_operation_type(@config.model)
-        puts "\n#{'⏳'.light_yellow} #{'Processing...'.light_yellow}"
+        display_thinking_animation
         response = process_prompt(conversation, operation_type)
         
         # Output response with formatting
-        puts "\n#{'AI'.blue.bold}: "
-        
-        # Format the response for better readability
-        format_chat_response(response)
+        display_ai_response(response)
         
         # Add to history
         @history << { role: 'assistant', content: response }
@@ -312,14 +306,35 @@ module AIA
         @client.speak(response) if @config.speak
         
         # Add a separator
-        puts "\n#{'─' * terminal_width}\n".cyan
+        display_separator
       end
       
-      puts "\n#{'Chat session ended.'.cyan.bold}"
+      display_chat_end
     end
     
-    def ask_question(prompt)
-      print prompt
+    def display_chat_header
+      puts "#{'═' * @terminal_width}\n"
+    end
+        
+    def display_thinking_animation
+      puts "\n⏳ Processing...\n"
+    end
+    
+    def display_ai_response(response)
+      puts "AI: "
+      format_chat_response(response)
+    end
+    
+    def display_separator
+      puts "\n#{'─' * @terminal_width}"
+    end
+    
+    def display_chat_end
+      puts "\nChat session ended."
+    end
+    
+    def ask_question
+      puts USER_PROMPT
       $stdout.flush  # Ensure the prompt is displayed immediately
       begin
         input = Reline.readline('', true)
@@ -327,14 +342,13 @@ module AIA
         Reline::HISTORY << input unless input.strip.empty?
         input
       rescue Interrupt
-        puts "\n#{'Chat session interrupted.'.yellow}"
+        puts "\nChat session interrupted."
         return 'exit'
       end
     end
     
     # Format the chat response with better readability
     def format_chat_response(response)
-      terminal_width = TTY::Screen.width
       indent = '   '
       
       # Handle code blocks specially
@@ -349,27 +363,16 @@ module AIA
         if line.match?(/^```(\w*)$/) && !in_code_block
           in_code_block = true
           language = $1
-          puts "#{indent}#{'```'.yellow}#{language.yellow}" 
+          puts "#{indent}```#{language}" 
         elsif line.match?(/^```$/) && in_code_block
           in_code_block = false
-          puts "#{indent}#{'```'.yellow}"
+          puts "#{indent}```"
         elsif in_code_block
           # Print code with special formatting
-          puts "#{indent}#{line.light_yellow}"
+          puts "#{indent}#{line}"
         else
           # Handle regular text
-          # Special formatting for headers
-          if line.start_with?('#')
-            puts "#{indent}#{line.light_blue.bold}"
-          # Special formatting for lists
-          elsif line.match?(/^\s*[-*+]\s/) || line.match?(/^\s*\d+\.\s/)
-            puts "#{indent}#{line.light_green}"
-          # Special formatting for quoted text
-          elsif line.start_with?('>')
-            puts "#{indent}#{line.light_magenta}"
-          else
-            puts "#{indent}#{line}"
-          end
+          puts "#{indent}#{line}"
         end
       end
     end

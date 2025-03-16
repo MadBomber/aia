@@ -3,7 +3,6 @@ PATH
   specs:
     aia (0.6.1)
       ai_client
-      colorize
       os
       prompt_manager (>= 0.4.1)
       reline
@@ -55,7 +54,6 @@ GEM
       refinements (~> 13.0)
       tone (~> 2.0)
       zeitwerk (~> 2.7)
-    colorize (1.1.0)
     concurrent-ruby (1.3.5)
     connection_pool (2.5.0)
     containable (1.1.0)
