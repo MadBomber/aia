@@ -256,7 +256,12 @@ module AIA
           # For chat mode with a role, use the role as the prompt_id
           # When the role_id is provided, format it as roles/role_id 
           # which is the expected format for the prompt_id when referencing a role
+          roles = config.roles_dir.split('/').last
           config.prompt_id = "roles/#{config.role}"
+        elsif config.chat
+          # For chat mode without a role or prompt_id, use an empty prompt_id
+          # This will start a chat with no system prompt
+          config.prompt_id = ''
         else
           puts opt_parser
           exit 1

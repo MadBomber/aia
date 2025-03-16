@@ -43,6 +43,9 @@ aia --chat PROMPT_ID
 # Start chat mode directly with a role
 aia -r ROLE_ID --chat
 
+# Start chat mode with no system prompt
+aia --chat
+
 # Specify model to use
 aia --model openai/gpt-4o-mini PROMPT_ID
 
