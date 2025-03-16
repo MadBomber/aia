@@ -40,6 +40,9 @@ aia PROMPT_ID context_file1 context_file2
 # Enable chat mode after initial prompt
 aia --chat PROMPT_ID
 
+# Start chat mode directly with a role
+aia -r ROLE_ID --chat
+
 # Specify model to use
 aia --model openai/gpt-4o-mini PROMPT_ID
 
@@ -101,6 +104,36 @@ aia --voice alloy PROMPT_ID
 aia --image_size 1024x1024 --image_quality standard --image_style vivid PROMPT_ID
 ```
 
+### Chat Directives
+
+In chat mode, you can use directives to execute commands directly from the chat prompt:
+
+```
+# Shell command execution
+//shell ls -la
+#!shell: ls -la
+
+# Ruby code execution
+//ruby puts "Hello, World!"
+#!ruby: puts "Hello, World!"
+
+# Configuration management
+//config                  # Display all configuration settings
+//config key              # Display value for a specific key
+//config key=value        # Update configuration
+#!config: key=value       # Alternative syntax
+
+# Include file content
+//include path/to/file
+#!include: path/to/file
+
+# Help
+//help                    # Show available directives
+#!help:
+```
+
+Outputs from `//config` and `//help` directives are not added to the chat context.
+
 ## Configuration
 
 AIA can be configured through environment variables or configuration files:
@@ -135,7 +168,7 @@ aia --dump config.yml
 ## Requirements
 
 - Ruby >= 3.2.0
-- Dependencies: ai_client, prompt_manager, os, reline, shellwords, toml-rb, tty-screen, tty-spinner, versionaire
+- Dependencies: ai_client, amazing_print, prompt_manager, os, reline, shellwords, toml-rb, tty-screen, tty-spinner, versionaire
 
 ## License
 
