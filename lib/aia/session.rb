@@ -261,8 +261,7 @@ module AIA
 
       puts response
       if @config.out_file
-        out_file_path = File.expand_path(@config.out_file, Dir.pwd)
-        File.open(out_file_path, 'a') do |file|
+        File.open(@config.out_file, 'a') do |file|
           file.puts response
         end
       end
@@ -339,7 +338,12 @@ module AIA
         # Exit if user types 'exit' or presses Ctrl+D
         break if prompt.nil? || prompt.strip.downcase == 'exit'
 
-        # Check if the input is a directive
+        # Append user input to out_file if specified
+        if @config.out_file
+          File.open(@config.out_file, 'a') do |file|
+            file.puts "\nYou: #{prompt}"
+          end
+        end
         if is_directive?(prompt)
           directive_output = process_chat_directive(prompt)
 
@@ -593,8 +597,7 @@ Available directives:
       format_chat_response(response)
 
       if @config.out_file
-        out_file_path = File.expand_path(@config.out_file, Dir.pwd)
-        File.open(out_file_path, 'a') do |file|
+        File.open(@config.out_file, 'a') do |file|
           file.puts "\nAI: "
           format_chat_response(response, file)
         end

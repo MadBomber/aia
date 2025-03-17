@@ -147,7 +147,7 @@ module AIA
         end
 
         opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: STDOUT)") do |file|
-          config.out_file = file
+          config.out_file = file ? File.expand_path(file, Dir.pwd) : nil
         end
 
         opts.on("-l", "--[no-]log_file [FILE]", "Log file") do |file|
