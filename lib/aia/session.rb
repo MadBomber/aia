@@ -259,10 +259,12 @@ module AIA
     def output_response(response)
       speak(response)
 
+      puts response
       if @config.out_file
-        File.write(@config.out_file, response)
-      else
-        puts response
+        out_file_path = File.expand_path(@config.out_file, Dir.pwd)
+        File.open(out_file_path, 'a') do |file|
+          file.puts response
+        end
       end
 
       # Log response if configured
@@ -587,8 +589,16 @@ Available directives:
     #
     # @param response [String] the response to display
     def display_ai_response(response)
-      puts "AI: "
+      puts "\nAI: "
       format_chat_response(response)
+
+      if @config.out_file
+        out_file_path = File.expand_path(@config.out_file, Dir.pwd)
+        File.open(out_file_path, 'a') do |file|
+          file.puts "\nAI: "
+          format_chat_response(response, file)
+        end
+      end
     end
 
     # Displays a separator line in the chat session.
@@ -623,7 +633,7 @@ Available directives:
     # and regular text.
     #
     # @param response [String] the response to format
-    def format_chat_response(response)
+    def format_chat_response(response, output = $stdout)
       indent = '   '
 
       # Handle code blocks specially
@@ -638,16 +648,16 @@ Available directives:
         if line.match?(/^```(\w*)$/) && !in_code_block
           in_code_block = true
           language = $1
-          puts "#{indent}```#{language}"
+          output.puts "#{indent}```#{language}"
         elsif line.match?(/^```$/) && in_code_block
           in_code_block = false
-          puts "#{indent}```"
+          output.puts "#{indent}```"
         elsif in_code_block
           # Print code with special formatting
-          puts "#{indent}#{line}"
+          output.puts "#{indent}#{line}"
         else
           # Handle regular text
-          puts "#{indent}#{line}"
+          output.puts "#{indent}#{line}"
         end
       end
     end

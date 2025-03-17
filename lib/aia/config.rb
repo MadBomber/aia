@@ -87,7 +87,6 @@ module AIA
 
         opts.on("--chat", "Begin a chat session after initial prompt") do
           config.chat = true
-          config.out_file = nil # Force STDOUT for chat mode
         end
 
         opts.on("--model MODEL", "Name of the LLM model to use") do |model|
