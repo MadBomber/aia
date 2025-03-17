@@ -48,7 +48,7 @@ module AIA
       # Embedding parameters
       embedding_model: 'text-embedding-ada-002',
       # Default speak command
-      speak_command: 'say' # 'afplay' for audio files
+      speak_command: 'afplay' # 'afplay' for audio files
     }.freeze
 
     # Parses the configuration settings from command-line arguments,
@@ -266,7 +266,7 @@ module AIA
           exit
         elsif config.chat && config.role
           # For chat mode with a role, use the role as the prompt_id
-          # When the role_id is provided, format it as roles/role_id 
+          # When the role_id is provided, format it as roles/role_id
           # which is the expected format for the prompt_id when referencing a role
           roles = config.roles_dir.split('/').last
           config.prompt_id = "roles/#{config.role}"
