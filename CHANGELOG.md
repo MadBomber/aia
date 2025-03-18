@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [0.7.0] WIP - 2025-03-17
+- Major code refactoring for better organization and maintainability:
+  - Extracted `DirectiveProcessor` class to handle chat-based directives
+  - Extracted `HistoryManager` class for conversation and variable history management
+  - Extracted `UIPresenter` class for UI-related functionality
+  - Extracted `ChatProcessorService` class for prompt processing and AI interactions
+  - Significantly reduced complexity of the `Session` class by applying separation of concerns
+- Enhanced the `//clear` directive to properly reset conversation context
+- Improved output handling to suppress STDOUT when chat mode is off and output file is specified
+- Updated spinner format in the process_prompt method for better user experience
+
 ## [0.6.?] WIP
 - Implemented Tony Stark's Clean Slate Protocol on the develop branch
 
