@@ -17,7 +17,7 @@ module AIA
   class Config
     DEFAULT_CONFIG = {
       model: 'openai/gpt-4o-mini',
-      out_file: nil, # STDOUT
+      out_file: 'temp.md', # Default to temp.md if not specified
       log_file: File.join(ENV['HOME'], '.prompts', 'prompts.log'),
       prompts_dir: ENV['AIA_PROMPTS_DIR'] || File.join(ENV['HOME'], '.prompts'),
       roles_dir: nil, # Will default to prompts_dir/roles
@@ -31,7 +31,7 @@ module AIA
       fuzzy: false,
       next: nil,
       pipeline: [],
-      # AI model parameters
+      append: false, # Default to not append to existing out_file
       temperature: 0.7,
       max_tokens: 2048,
       top_p: 1.0,
@@ -147,7 +147,11 @@ module AIA
         end
 
         opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: STDOUT)") do |file|
-          config.out_file = file ? File.expand_path(file, Dir.pwd) : nil
+          config.out_file = file ? File.expand_path(file, Dir.pwd) : File.expand_path('temp.md', Dir.pwd)
+        end
+
+        opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|
+          config.append = append
         end
 
         opts.on("-l", "--[no-]log_file [FILE]", "Log file") do |file|

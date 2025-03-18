@@ -33,6 +33,10 @@ module AIA
       @variable_history_file = File.join(ENV['HOME'], '.aia', 'variable_history.json')
       @terminal_width = TTY::Screen.width
       ensure_history_file_exists
+      # Overwrite the out_file if it exists and append is false
+      if @config.out_file && !@config.append && File.exist?(@config.out_file)
+        File.open(@config.out_file, 'w') {} # Truncate the file
+      end
     end
 
     def speak?
@@ -84,7 +88,6 @@ module AIA
           puts "Warning: Could not find role with ID: #{role_id}"
         end
       end
-
       # Extract variables from the prompt using PromptManager
       variables = prompt.keywords
 
@@ -147,8 +150,16 @@ module AIA
         prompt.parameters = variable_values
       end
 
+      # Ensure prompt text is processed with parameters
+      # Remove incorrect parameter substitution
+      # prompt_text = prompt.text % prompt.parameters.transform_keys { |key| "[#{key}]" }
+      
+      # The prompt_manager already handles parameter substitution in the build method,
+      # so we should just call prompt.to_s or prompt.prompt to get the text with parameters substituted
+      prompt_text = prompt.to_s
+
       # Process the prompt using our handler (which now properly uses PromptManager directives)
-      prompt_text = @prompt_handler.process_prompt(prompt)
+      prompt_text = @prompt_handler.process_prompt(prompt_text)
 
       # Add context files if any
       if @config.context_files && !@config.context_files.empty?
@@ -259,9 +270,12 @@ module AIA
     def output_response(response)
       speak(response)
 
-      puts response
+      # Only output to STDOUT if we're in chat mode or no output file is specified
+      puts response unless !@config.chat && @config.out_file
+      
       if @config.out_file
-        File.open(@config.out_file, 'a') do |file|
+        mode = @config.append ? 'a' : 'w'
+        File.open(@config.out_file, mode) do |file|
           file.puts response
         end
       end

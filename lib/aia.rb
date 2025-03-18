@@ -4,6 +4,8 @@
 
 require 'ai_client'
 require 'prompt_manager'
+require 'debug_me'
+include DebugMe
 
 require_relative 'aia/version'
 require_relative 'aia/config'
