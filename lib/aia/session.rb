@@ -9,6 +9,7 @@ require 'prompt_manager'
 require 'json'
 require 'fileutils'
 require 'amazing_print'
+require_relative 'directive_processor'
 
 module AIA
   # The Session class manages the interactive session logic for the AIA
@@ -32,6 +33,7 @@ module AIA
       @history = []
       @variable_history_file = File.join(ENV['HOME'], '.aia', 'variable_history.json')
       @terminal_width = TTY::Screen.width
+      @directive_processor = DirectiveProcessor.new(config)
       ensure_history_file_exists
       # Overwrite the out_file if it exists and append is false
       if @config.out_file && !@config.append && File.exist?(@config.out_file)
@@ -358,15 +360,19 @@ module AIA
             file.puts "\nYou: #{prompt}"
           end
         end
-        if is_directive?(prompt)
-          directive_output = process_chat_directive(prompt)
+        if @directive_processor.directive?(prompt)
+          result = @directive_processor.process(prompt, @history)
+          directive_output = result[:result]
+          
+          # Update history if it was modified (e.g., by //clear)
+          @history = result[:modified_history] if result[:modified_history]
 
           # If there's no output from the directive, prompt for input again
           if directive_output.nil? || directive_output.strip.empty?
             next
           else
-            # Special handling for //config directive - don't include in chat context
-            if exclude_from_chat_context?(prompt)
+            # Special handling for directives that should be excluded from chat context
+            if @directive_processor.exclude_from_chat_context?(prompt)
               puts "\n#{directive_output}\n"
               next
             end
@@ -385,10 +391,6 @@ module AIA
 
         # Prepare full conversation context
         conversation = build_conversation_context(prompt)
-
-        debug_me('after context added'){[
-          :conversation
-        ]}
 
         # Get response
         operation_type = determine_operation_type(@config.model)
@@ -409,202 +411,6 @@ module AIA
       end
 
       display_chat_end
-    end
-
-    # Check if the input is a directive
-    # Checks if the given text is a directive.
-    #
-    # @param text [String] the text to check
-    # @return [Boolean] true if the text is a directive, false otherwise
-    def is_directive?(text)
-      text.strip.match?(/^\s*\#\!\s*\w+\:/) || text.strip.match?(/^\/\/\w+/)
-    end
-
-    # Check if the input is a config directive
-    # Checks if the given text is a configuration directive.
-    #
-    # @param text [String] the text to check
-    # @return [Boolean] true if the text is a configuration directive, false otherwise
-    def is_config_directive?(text)
-      text.strip.match?(/^\s*\#\!\s*config\:/) ||
-      text.strip.match?(/^\s*\#\!\s*cfg\:/) ||
-      text.strip.match?(/^\/\/config/) ||
-      text.strip.match?(/^\/\/cfg/)
-    end
-
-    # Check if the input is a help directive
-    # Checks if the given text is a help directive.
-    #
-    # @param text [String] the text to check
-    # @return [Boolean] true if the text is a help directive, false otherwise
-    def is_help_directive?(text)
-      text.strip.match?(/^(\/\/|#!)help\b/i)
-    end
-
-    # Check if the input is a clear directive
-    # Checks if the given text is a clear context directive.
-    #
-    # @param text [String] the text to check
-    # @return [Boolean] true if the text is a clear context directive, false otherwise
-    def is_clear_directive?(text)
-      text.strip.match?(/^(\/\/|#!)clear\b/i)
-    end
-
-    # Check if directive output should be excluded from chat context
-    # Checks if the directive output should be excluded from the chat context.
-    #
-    # @param text [String] the directive text to check
-    # @return [Boolean] true if the directive should be excluded, false otherwise
-    def exclude_from_chat_context?(text)
-      is_config_directive?(text) || is_help_directive?(text) || is_clear_directive?(text)
-    end
-
-    # Process a directive from the chat input
-    # Processes a directive from the chat input, executing commands or
-    # updating configuration as needed.
-    #
-    # @param directive_text [String] the directive text to process
-    # @return [String] the result of processing the directive
-    def process_chat_directive(directive_text)
-      if is_help_directive?(directive_text)
-        return <<~HELP
-          Available Directives:
-          //shell <command> or //sh <command> - Execute a shell command
-          //ruby <code> or //rb <code> - Execute Ruby code
-          //config or //cfg - Show current configuration
-          //config key=value or //cfg key=value - Update configuration
-          //include <file> or //inc <file> - Include file content
-          //clear - Clear the current conversation context
-          //help - Show this help message
-        HELP
-      elsif is_clear_directive?(directive_text)
-        # Clear the conversation history
-        @history = []
-        return "Conversation context has been cleared. The AI will have no memory of our previous conversation."
-      end
-
-      # Process other directives
-      # First, extract the directive type and parameters
-      if directive_text.start_with?('//') # //directive style
-        parts = directive_text[2..-1].strip.split(' ', 2)
-        directive_type = parts[0]
-        directive_args = parts[1] || ''
-      else # #!directive: style
-        match = directive_text.match(/^\s*\#\!\s*([a-z]+)\s*\:(.*)$/i)
-        directive_type = match[1].strip if match
-        directive_args = match[2].strip if match
-      end
-
-      # Execute the directive
-      case directive_type
-      when "shell", "sh"
-        # Execute shell command
-        output = `#{directive_args}`.chomp
-        "Shell command output:\n#{output}"
-      when "ruby", "rb"
-        # Execute Ruby code
-        begin
-          result = eval(directive_args)
-          "Ruby code output:\n#{result.to_s}"
-        rescue => e
-          "Ruby execution error: #{e.message}"
-        end
-      when "config", "cfg"
-        # If no arguments, display current configuration
-        if directive_args.nil? || directive_args.strip.empty?
-          config_hash = {}
-          @config.instance_variables.sort.each do |var|
-            key = var.to_s.delete('@')
-            value = @config.instance_variable_get(var)
-            config_hash[key] = value
-          end
-
-          # Use StringIO to capture the output of ap
-          require 'stringio'
-          output = StringIO.new
-          ap(config_hash, { out: output, indent: 2, index: false })
-
-          return "Current Configuration:\n#{output.string}"
-        # If argument doesn't contain '=', display the single config value
-        elsif !directive_args.include?('=')
-          key = directive_args.strip
-          sym_key = key.to_sym
-
-          if @config.respond_to?(sym_key) || @config.instance_variables.include?("@#{key}".to_sym)
-            value = @config.respond_to?(sym_key) ? @config.send(sym_key) : @config.instance_variable_get("@#{key}".to_sym)
-
-            # Format the output using amazing_print
-            require 'stringio'
-            output = StringIO.new
-            output.puts "Configuration value for '#{key}':"
-            ap(value, { out: output, indent: 2 })
-
-            return output.string
-          else
-            return "Configuration key '#{key}' not found"
-          end
-        end
-
-        # Update configuration
-        key, value = directive_args.split(/\s*=\s*/, 2)
-        if key && value
-          old_value = @config[key.strip.to_sym]
-          @config[key.strip.to_sym] = parse_config_value(value.strip)
-          "Configuration updated: #{key} changed from '#{old_value}' to '#{@config[key.strip.to_sym]}'"
-        else
-          "Invalid config format. Use: config: key = value"
-        end
-      when "include", "inc"
-        # Include file content
-        file_path = directive_args.strip
-        if File.exist?(file_path)
-          content = File.read(file_path)
-          "File contents of #{file_path}:\n#{content}"
-        else
-          "Error: File not found: #{file_path}"
-        end
-      when "help"
-        # Show available directives
-        """
-Available Directives:
-  //shell <command> or //sh <command> - Execute a shell command
-  //ruby <code> or //rb <code> - Execute Ruby code
-  //config or //cfg - Show current configuration
-  //config key=value or //cfg key=value - Update configuration
-  //config key or //cfg key - Display a single configuration key value
-  //include <file_path> or //inc <file_path> - Include file content
-  //clear - Clear the current conversation context
-  //help - Show this help message
-"""
-      when "clear"
-        @history.clear
-        "Conversation context has been cleared."
-      else
-        "Unknown directive: #{directive_type}"
-      end
-    end
-
-    # Parse configuration value
-    # Parses a configuration value from a string, converting it to the
-    # appropriate type (e.g., boolean, integer, array).
-    #
-    # @param value [String] the value to parse
-    # @return [Object] the parsed value
-    def parse_config_value(value)
-      case value.downcase
-      when 'true'
-        true
-      when 'false'
-        false
-      when /^\d+$/
-        value.to_i
-      when /^\d+\.\d+$/
-        value.to_f
-      when /^\[.*\]$/
-        value[1..-2].split(',').map(&:strip)
-      else
-        value
-      end
     end
 
     # Ensure the history file directory exists
@@ -734,10 +540,6 @@ Available Directives:
     # @param current_prompt [String] the current user prompt
     # @return [String] the complete conversation context
     def build_conversation_context(current_prompt)
-      debug_me('before context added'){[
-        :current_prompt
-      ]}
-
       # Use the system prompt if available
       system_prompt = ""
       if @config.system_prompt
