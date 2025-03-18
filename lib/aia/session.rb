@@ -224,7 +224,7 @@ module AIA
     # @return [String] the response from the AI client
     def process_prompt(prompt, operation_type)
       if @config.verbose
-        spinner = TTY::Spinner.new("[:spinner] Processing #{operation_type}...", format: :dots)
+        spinner = TTY::Spinner.new("[:spinner] Processing #{operation_type}...", format: :bouncing_ball,)
         spinner.auto_spin
 
         response = send_to_client(prompt, operation_type)
@@ -386,6 +386,10 @@ module AIA
         # Prepare full conversation context
         conversation = build_conversation_context(prompt)
 
+        debug_me('after context added'){[
+          :conversation
+        ]}
+
         # Get response
         operation_type = determine_operation_type(@config.model)
         display_thinking_animation
@@ -434,8 +438,16 @@ module AIA
     # @param text [String] the text to check
     # @return [Boolean] true if the text is a help directive, false otherwise
     def is_help_directive?(text)
-      text.strip.match?(/^\s*\#\!\s*help\:/) ||
-      text.strip.match?(/^\/\/help/)
+      text.strip.match?(/^(\/\/|#!)help\b/i)
+    end
+
+    # Check if the input is a clear directive
+    # Checks if the given text is a clear context directive.
+    #
+    # @param text [String] the text to check
+    # @return [Boolean] true if the text is a clear context directive, false otherwise
+    def is_clear_directive?(text)
+      text.strip.match?(/^(\/\/|#!)clear\b/i)
     end
 
     # Check if directive output should be excluded from chat context
@@ -444,7 +456,7 @@ module AIA
     # @param text [String] the directive text to check
     # @return [Boolean] true if the directive should be excluded, false otherwise
     def exclude_from_chat_context?(text)
-      is_config_directive?(text) || is_help_directive?(text)
+      is_config_directive?(text) || is_help_directive?(text) || is_clear_directive?(text)
     end
 
     # Process a directive from the chat input
@@ -454,26 +466,37 @@ module AIA
     # @param directive_text [String] the directive text to process
     # @return [String] the result of processing the directive
     def process_chat_directive(directive_text)
-      # Extract directive type and arguments
-      if directive_text.strip =~ /^\s*\#\!\s*(\w+)\:\s*(.*)$/
-        directive_type = $1
-        directive_args = $2
-      elsif directive_text.strip =~ /^\/\/(\w+)\s+(.*)$/
-        directive_type = $1
-        directive_args = $2
-      elsif directive_text.strip =~ /^\/\/(\w+)$/
-        # Handle directives without arguments (like //help)
-        directive_type = $1
-        directive_args = ""
-      else
-        return "Invalid directive format: Use //command args or #!command: args"
+      if is_help_directive?(directive_text)
+        return <<~HELP
+          Available Directives:
+          //shell <command> or //sh <command> - Execute a shell command
+          //ruby <code> or //rb <code> - Execute Ruby code
+          //config or //cfg - Show current configuration
+          //config key=value or //cfg key=value - Update configuration
+          //include <file> or //inc <file> - Include file content
+          //clear - Clear the current conversation context
+          //help - Show this help message
+        HELP
+      elsif is_clear_directive?(directive_text)
+        # Clear the conversation history
+        @history = []
+        return "Conversation context has been cleared. The AI will have no memory of our previous conversation."
       end
 
-      # Make sure directive_type is not nil
-      return "Invalid directive format" if directive_type.nil?
+      # Process other directives
+      # First, extract the directive type and parameters
+      if directive_text.start_with?('//') # //directive style
+        parts = directive_text[2..-1].strip.split(' ', 2)
+        directive_type = parts[0]
+        directive_args = parts[1] || ''
+      else # #!directive: style
+        match = directive_text.match(/^\s*\#\!\s*([a-z]+)\s*\:(.*)$/i)
+        directive_type = match[1].strip if match
+        directive_args = match[2].strip if match
+      end
 
-      # Process the directive
-      case directive_type.downcase
+      # Execute the directive
+      case directive_type
       when "shell", "sh"
         # Execute shell command
         output = `#{directive_args}`.chomp
@@ -543,15 +566,19 @@ module AIA
       when "help"
         # Show available directives
         """
-Available directives:
-  //shell <command>  or  #!shell: <command>  - Execute a shell command
-  //ruby <code>  or  #!ruby: <code>  - Execute Ruby code
-  //config  or  #!config:  - Display current configuration
-  //config key=value  or  #!config: key=value  - Update configuration
-  //config key  or  #!config: key  - Display a single configuration key value
-  //include <file_path>  or  #!include: <file_path>  - Include file content
-  //help  or  #!help:  - Show this help message
+Available Directives:
+  //shell <command> or //sh <command> - Execute a shell command
+  //ruby <code> or //rb <code> - Execute Ruby code
+  //config or //cfg - Show current configuration
+  //config key=value or //cfg key=value - Update configuration
+  //config key or //cfg key - Display a single configuration key value
+  //include <file_path> or //inc <file_path> - Include file content
+  //clear - Clear the current conversation context
+  //help - Show this help message
 """
+      when "clear"
+        @history.clear
+        "Conversation context has been cleared."
       else
         "Unknown directive: #{directive_type}"
       end
@@ -707,6 +734,10 @@ Available directives:
     # @param current_prompt [String] the current user prompt
     # @return [String] the complete conversation context
     def build_conversation_context(current_prompt)
+      debug_me('before context added'){[
+        :current_prompt
+      ]}
+
       # Use the system prompt if available
       system_prompt = ""
       if @config.system_prompt
