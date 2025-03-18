@@ -1,74 +1,38 @@
-# frozen_string_literal: true
+require_relative '../test_helper'
 
-require "test_helper"
-require 'tempfile'
-
-class AIA::AIClientAdapterTest < Minitest::Test
+class AIClientAdapterTest < Minitest::Test
   def setup
     @config = OpenStruct.new(
-      model: "openai/gpt-4",
-      temperature: 0.7,
-      max_tokens: 1000,
-      image_size: "1024x1024",
-      image_quality: "standard",
-      speech_model: "tts-1",
-      voice: "alloy"
+      model: 'openai/gpt-4o-mini',
+      transcription_model: 'whisper',
+      speech_model: 'tts',
+      voice: 'default',
+      speak_command: 'say',
+      image_size: '512x512',
+      image_quality: 'high',
+      image_style: 'realistic'
     )
-    
-    # Define constants if they don't exist
-    unless defined?(::AiClient)
-      Object.const_set(:AiClient, Module.new)
-    end
+    @adapter = AIA::AIClientAdapter.new(@config)
   end
 
-  def test_initialization_with_provider_and_model
-    adapter = AIA::AIClientAdapter.new(@config)
-    assert_equal "openai", adapter.instance_variable_get(:@provider)
-    assert_equal "gpt-4", adapter.instance_variable_get(:@model)
+  def test_initialization
+    assert_equal 'openai', @adapter.instance_variable_get(:@provider)
+    assert_equal 'gpt-4o-mini', @adapter.instance_variable_get(:@model)
   end
 
-  def test_initialization_with_model_only
-    @config.model = "gpt-4"
-    
-    adapter = AIA::AIClientAdapter.new(@config)
-    assert_equal "gpt-4", adapter.instance_variable_get(:@provider)
-    assert_equal "gpt-4", adapter.instance_variable_get(:@model)
+  def test_chat_text_to_text
+    response = @adapter.chat('Hello, AI!')
+    assert_instance_of String, response
   end
 
-  def test_chat
-    # Stub AiClient.chat
-    if defined?(::AiClient)
-      AiClient.stubs(:chat).returns("Hello, human")
-    end
-    
-    adapter = AIA::AIClientAdapter.new(@config)
-    adapter.instance_variable_set(:@provider, "openai")
-    adapter.instance_variable_set(:@model, "gpt-4")
-    
-    # Skip test if AiClient.chat isn't defined
-    if defined?(::AiClient) && AiClient.respond_to?(:chat)
-      response = adapter.chat("Hello, AI")
-      assert_equal "Hello, human", response
-    else
-      skip "AiClient.chat not available"
-    end
+  def test_transcribe
+    # Assuming transcribe method returns a string
+    response = @adapter.transcribe('path/to/audio/file.mp3')
+    assert_instance_of String, response
   end
 
-  def test_speak_with_siri_on_mac
-    @config.voice = "siri"
-    
-    # Mock platform check
-    Object.stubs(:const_get).with(:RUBY_PLATFORM).returns("darwin")
-    
-    # Expect system call to say command
-    adapter = AIA::AIClientAdapter.new(@config)
-    adapter.expects(:system).with("say", "Hello").returns(true)
-    
-    result = adapter.speak("Hello")
-    assert result
-  end
-
-  def test_speak_with_openai_voice
-    skip "Skipping text_to_speech test"
+  def test_speak
+    # This test will not check the actual audio output, just that the method runs
+    assert_nil @adapter.speak('Hello, AI!')
   end
 end

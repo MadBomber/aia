@@ -278,8 +278,8 @@ module AIA
           # This will start a chat with no system prompt
           config.prompt_id = ''
         else
-          puts opt_parser
-          exit 1
+          puts "Use -h or --help for help"
+          exit
         end
       else
         config.prompt_id = remaining_args.shift

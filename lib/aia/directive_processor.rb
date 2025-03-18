@@ -10,7 +10,7 @@ module AIA
   # of various directive types like shell commands, Ruby code, configuration
   # management, file inclusion, and context control.
   class DirectiveProcessor
-    DIRECTIVE_PREFIXES = ['#!', '//']
+    DIRECTIVE_PREFIX = '//'
 
     # Initializes a new DirectiveProcessor with the given configuration.
     #
@@ -24,7 +24,7 @@ module AIA
     # @param text [String] the text to check
     # @return [Boolean] true if the text is a directive, false otherwise
     def directive?(text)
-      text.strip.match?(/^\s*\#\!\s*\w+\:/) || text.strip.match?(/^\/\/\w+/)
+      text.strip.start_with?(DIRECTIVE_PREFIX)
     end
 
     # Checks if the given text is a configuration directive.
@@ -32,10 +32,8 @@ module AIA
     # @param text [String] the text to check
     # @return [Boolean] true if the text is a configuration directive, false otherwise
     def config_directive?(text)
-      text.strip.match?(/^\s*\#\!\s*config\:/) ||
-      text.strip.match?(/^\s*\#\!\s*cfg\:/) ||
-      text.strip.match?(/^\/\/config/) ||
-      text.strip.match?(/^\/\/cfg/)
+      text.strip.start_with?(DIRECTIVE_PREFIX + 'config') ||
+      text.strip.start_with?(DIRECTIVE_PREFIX + 'cfg')
     end
 
     # Checks if the given text is a help directive.
@@ -43,7 +41,7 @@ module AIA
     # @param text [String] the text to check
     # @return [Boolean] true if the text is a help directive, false otherwise
     def help_directive?(text)
-      text.strip.match?(/^(\/\/|#!)help\b/i)
+      text.strip.start_with?(DIRECTIVE_PREFIX + 'help')
     end
 
     # Checks if the given text is a clear context directive.
@@ -51,7 +49,7 @@ module AIA
     # @param text [String] the text to check
     # @return [Boolean] true if the text is a clear context directive, false otherwise
     def clear_directive?(text)
-      text.strip.match?(/^(\/\/|#!)clear\b/i)
+      text.strip.start_with?(DIRECTIVE_PREFIX + 'clear')
     end
 
     # Checks if the directive output should be excluded from the chat context.
