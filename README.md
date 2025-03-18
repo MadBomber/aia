@@ -16,13 +16,13 @@ The AIA project provides a flexible interface for working with AI models through
 
 ### Key Features
 
-- **Proper Variable Substitution:** Utilizes the `prompt_manager` gem.
-- **Directive Handling:** Extend functionality for commands via directives.
+- **Proper Variable Substitution:** Utilizes the `prompt_manager` gem for managing prompt variables.
+- **Directive Handling:** Extend functionality for commands via directives like shell command execution, Ruby code execution, and configuration management.
 - **Multi-Provider Support:** Facilitates interaction with various AI providers through `ai_client`.
-- **Conversation Mode:** Handles history and context management effectively.
-- **Pipeline Processing:** Processes sequential AI operations.
-- **Shell Command Execution:** Executes shell commands within prompts.
-- **Embedded Ruby Support:** Allows dynamic content within prompts.
+- **Conversation Mode:** Handles conversation history and context management effectively.
+- **Pipeline Processing:** Processes sequential AI operations based on configurations.
+- **Dynamic Content Processing:** Supports shell command execution and embedded Ruby (ERB) in prompts.
+- **Persistent Configuration:** Configurable through environment variables and configuration files, ensuring flexible usage.
 
 ## Usage
 
