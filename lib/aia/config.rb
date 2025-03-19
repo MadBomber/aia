@@ -255,7 +255,13 @@ module AIA
       end
 
       # Parse the command line arguments
-      remaining_args = opt_parser.parse(args)
+      begin
+        remaining_args = opt_parser.parse(args)
+      rescue OptionParser::InvalidOption => e
+        puts e.message
+        puts opt_parser
+        exit 1
+      end
 
       # First remaining arg is the prompt ID
       if remaining_args.empty?
@@ -278,8 +284,8 @@ module AIA
           # This will start a chat with no system prompt
           config.prompt_id = ''
         else
-          puts "Use -h or --help for help"
-          exit
+          puts "Error: A prompt ID is required. Use -h or --help for help."
+          exit 1
         end
       else
         config.prompt_id = remaining_args.shift

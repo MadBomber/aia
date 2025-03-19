@@ -19,10 +19,8 @@ module AIA
     # @param config [OpenStruct] the configuration object
     def initialize(config)
       @config = config
-      parts = extract_model_parts(@config.model)
-      @provider = parts[:provider]
-      @model = parts[:model]
-      @client = AiClient.new(@model, provider: @provider)
+      @model  = @config.model
+      @client = AiClient.new(@model)
     end
 
     # Sends a prompt to the AI client for processing based on the model type.
@@ -31,6 +29,7 @@ module AIA
     # @return [String] the response from the AI client
     def chat(prompt)
       # Determine the type of operation based on the model
+      # SMELL: This should be the job of AiClient
       if @model.downcase.include?('dall-e') || @model.downcase.include?('image-generation')
         text_to_image(prompt)
       elsif @model.downcase.include?('vision') || @model.downcase.include?('image')
@@ -91,12 +90,16 @@ module AIA
       parts.map!(&:strip)
 
       if parts.length > 1
-        { provider: parts[0], model: parts[1] }
+        provider = parts[0]
+        model = parts[1]
       else
-        provider = nil
+        provider = nil # AiClient will figure it out from the model name
         model = parts[0]
-        { provider: provider, model: model }
       end
+
+
+
+      { provider: provider, model: model }
     end
 
     # Extracts the text portion of a prompt, handling different formats.
