@@ -49,6 +49,7 @@ It leverages the `prompt_manager` gem to manage prompts for the `mods` and `sgpt
   - [Shell Completion](#shell-completion)
   - [My Most Powerful Prompt](#my-most-powerful-prompt)
   - [My Configuration](#my-configuration)
+  - [Executable Prompts](#executable-prompts)
   - [Development](#development)
   - [Contributing](#contributing)
   - [License](#license)
@@ -171,7 +172,7 @@ Downstream processing directives were added to the `prompt_manager` gem used by 
 
 There is no space between the "//" and the command.
 
-### Parameter and Shell Substitution in Directives 
+### Parameter and Shell Substitution in Directives
 
 When you combine prompt directives with prompt parameters and shell envar substitutions you can get some powerful compositional prompts.
 
@@ -324,7 +325,7 @@ Consider the condition in which you have 4 prompt IDs that need to be processed 
 ### --next
 
 ```shell
-export AIA_OUT_FILE=temp.md 
+export AIA_OUT_FILE=temp.md
 aia one --next two
 aia three --next four temp.md
 ```
@@ -389,7 +390,7 @@ and
 //config model    gpt-4-turbo
 //config out_file meeting_summary.md
 
-Review the raw transcript of a technical meeting, 
+Review the raw transcript of a technical meeting,
 summarize the discussion and
 note any action items that were generated.
 
@@ -453,7 +454,7 @@ When this prompt is processed, `aia` will ask you for a value for the keyword "R
 ## External CLI Tools Used
 
 To install the external CLI programs used by aia:
-  
+
   brew install fzf mods rg glow
 
 fzf
@@ -567,6 +568,52 @@ Here is what my `chat` prompt file looks like:
 
 [WHAT]
 ```
+
+## Executable Prompts
+
+With all of the capabilities of the AI Assistant, you can create your own executable prompts. These prompts can be used to automate tasks, generate content, or perform any other action that you can think of.  All you need to get started with executable prompts is a prompt that does not do anything.  For example, consider my `run.txt` prompt.
+
+```
+# ~/.prompts/run.txt
+# Desc: Run executable prompts coming in via STDIN
+```
+
+Remember that the '#' character indicates a comment line making the `run` prompt ID basically a do nothing prompt.
+
+An executable prompt can reside anywhere either in your $PATH or not.  That is your choice.  It must however be executable.  Consider the following `top10` executable prompt:
+
+```
+#!/usr/bin/env aia run --no-out_file
+# File: top10
+# Desc: The tope 10 cities by population
+
+what are the top 10 cities by population in the USA. Summarize what people
+like about living in each city. Include an average cost of living. Include
+links to the Wikipedia pages.  Format your response as a markdown document.
+```
+
+Make sure that it is executable.
+
+```shell
+chmod +x top10
+```
+
+The magic is in the first line of the prompt.  It is a shebang line that tells the system how to execute the prompt.  In this case it is telling the system to use the `aia` command line tool to execute the `run` prompt.  The `--no-out_file` option tells the `aia` command line tool not to write the output of the prompt to a file.  Instead it will write the output to STDOUT.  The remaining content of this `top10` prompt is send via STDIN to the configured backend LLM processor.
+
+Now just execute it like any other command in your terminal.
+
+```shell
+./top10
+```
+
+Since its output is going to STDOUT you can setup a pipe chain.  Using the CLI program `glow` to render markdown in the terminal
+(brew install glow)
+
+```shell
+./top10 | glow
+```
+
+This executable prompt concept sets up the building blocks of a *nix CLI-based pipeline in the same way that the --pipeline and --next options and directives are used.
 
 ## Development
 
