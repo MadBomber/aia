@@ -19,21 +19,22 @@ module AIA
       @config = config
     end
 
-    # Checks if the given text is a directive.
+    # Checks if the given text is a specific type of directive.
     #
     # @param text [String] the text to check
-    # @return [Boolean] true if the text is a directive, false otherwise
-    def directive?(text)
-      text.strip.start_with?(DIRECTIVE_PREFIX)
+    # @param type [String] the type of directive to check for (e.g., 'config', 'help', 'clear')
+    # @return [Boolean] true if the text is the specified type of directive, false otherwise
+    def directive?(text, type = nil)
+      return text.strip.start_with?(DIRECTIVE_PREFIX) unless type
+      text.strip.start_with?(DIRECTIVE_PREFIX + type)
     end
 
-    # Checks if the given text is a configuration directive.
+    # Checks if the given text is a config directive.
     #
     # @param text [String] the text to check
-    # @return [Boolean] true if the text is a configuration directive, false otherwise
+    # @return [Boolean] true if the text is a config directive, false otherwise
     def config_directive?(text)
-      text.strip.start_with?(DIRECTIVE_PREFIX + 'config') ||
-      text.strip.start_with?(DIRECTIVE_PREFIX + 'cfg')
+      directive?(text, 'config') || directive?(text, 'cfg')
     end
 
     # Checks if the given text is a help directive.
@@ -41,15 +42,15 @@ module AIA
     # @param text [String] the text to check
     # @return [Boolean] true if the text is a help directive, false otherwise
     def help_directive?(text)
-      text.strip.start_with?(DIRECTIVE_PREFIX + 'help')
+      directive?(text, 'help')
     end
 
-    # Checks if the given text is a clear context directive.
+    # Checks if the given text is a clear directive.
     #
     # @param text [String] the text to check
-    # @return [Boolean] true if the text is a clear context directive, false otherwise
+    # @return [Boolean] true if the text is a clear directive, false otherwise
     def clear_directive?(text)
-      text.strip.start_with?(DIRECTIVE_PREFIX + 'clear')
+      directive?(text, 'clear')
     end
 
     # Checks if the directive output should be excluded from the chat context.
@@ -82,8 +83,6 @@ module AIA
 
       result
     end
-
-    private
 
     # Parses the directive text to extract the directive type and arguments.
     #
@@ -130,6 +129,8 @@ module AIA
     def execute_shell_directive(args)
       return "No command specified" if args.nil? || args.strip.empty?
       `#{args}`.chomp
+    rescue => e
+      "Error executing shell command: #{e.message}"
     end
 
     # Executes a Ruby code directive.
@@ -138,7 +139,24 @@ module AIA
     # @return [String] the result of executing the code
     def execute_ruby_directive(args)
       return "No Ruby code specified" if args.nil? || args.strip.empty?
-      eval(args).to_s
+      
+      # Create a binding for code execution
+      b = binding
+      
+      # Require specified libraries if configured
+      if @config.respond_to?(:require_libs) && @config.require_libs.is_a?(Array) && !@config.require_libs.empty?
+        @config.require_libs.each do |lib|
+          begin
+            b.eval("require '#{lib}'")
+          rescue LoadError => e
+            return "Error requiring library '#{lib}': #{e.message}"
+          end
+        end
+      end
+      
+      # Execute the code in the binding with access to the required libraries
+      result = b.eval(args).to_s
+      result
     rescue => e
       "Error executing Ruby code: #{e.message}"
     end
@@ -150,7 +168,8 @@ module AIA
     def execute_config_directive(args)
       if args.nil? || args.strip.empty?
         # Show all configuration
-        @config.to_h.to_s
+        ap @config.to_h
+        ""
       elsif args.include?('=')
         # Update configuration
         key, value = args.split('=', 2).map(&:strip)

@@ -16,7 +16,7 @@ module AIA
   # arguments, environment variables, and configuration files.
   class Config
     DEFAULT_CONFIG = {
-      model: 'openai/gpt-4o-mini',
+      model: 'gpt-4o-mini',
       out_file: 'temp.md', # Default to temp.md if not specified
       log_file: File.join(ENV['HOME'], '.prompts', 'prompts.log'),
       prompts_dir: ENV['AIA_PROMPTS_DIR'] || File.join(ENV['HOME'], '.prompts'),
@@ -37,18 +37,18 @@ module AIA
       top_p: 1.0,
       frequency_penalty: 0.0,
       presence_penalty: 0.0,
-      # Image generation parameters
       image_size: '1024x1024',
       image_quality: 'standard',
       image_style: 'vivid',
-      # Speech parameters
       speech_model: 'tts-1',
       transcription_model: 'whisper-1',
       voice: 'alloy',
       # Embedding parameters
       embedding_model: 'text-embedding-ada-002',
       # Default speak command
-      speak_command: 'afplay' # 'afplay' for audio files
+      speak_command: 'afplay', # 'afplay' for audio files
+      # Ruby libraries to require for Ruby directive
+      require_libs: []
     }.freeze
 
     # Parses the configuration settings from command-line arguments,
@@ -248,9 +248,13 @@ module AIA
           exit
         end
 
-        opts.on("-h", "--help", "Show this help") do
+        opts.on("-h", "--help", "Prints this help") do
           puts opts
           exit
+        end
+
+        opts.on("--rq LIBS", "Ruby libraries to require for Ruby directive") do |libs|
+          config.require_libs = libs.split(',')
         end
       end
 

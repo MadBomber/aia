@@ -129,8 +129,12 @@ module AIA
       # Ensure prompt text is processed with parameters
       prompt_text = prompt.to_s
 
-      # Process the prompt using our handler (which now properly uses PromptManager directives)
-      prompt_text = @prompt_handler.process_prompt(prompt_text)
+      # Process directives in the prompt
+      if @directive_processor.directive?(prompt_text)
+        directive_result = @directive_processor.process(prompt_text, @history_manager.history)
+        prompt_text = directive_result[:result]
+        @history_manager.history = directive_result[:modified_history] if directive_result[:modified_history]
+      end
 
       # Add context files if any
       if @config.context_files && !@config.context_files.empty?

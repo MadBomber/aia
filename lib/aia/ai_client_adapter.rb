@@ -1,5 +1,4 @@
 # lib/aia/ai_client_adapter.rb
-# lib/aia/ai_client_adapter.rb
 #
 # This file adapts the AI client for use in the AIA application.
 
@@ -20,7 +19,12 @@ module AIA
     def initialize(config)
       @config = config
       @model  = @config.model
-      @client = AiClient.new(@model)
+      # Initialize the AI client with the appropriate model
+      model_info = extract_model_parts(@model)
+      @client = AiClient.new(
+        model_info[:model],
+        provider: model_info[:provider]
+      )
     end
 
     # Sends a prompt to the AI client for processing based on the model type.
@@ -29,7 +33,6 @@ module AIA
     # @return [String] the response from the AI client
     def chat(prompt)
       # Determine the type of operation based on the model
-      # SMELL: This should be the job of AiClient
       if @model.downcase.include?('dall-e') || @model.downcase.include?('image-generation')
         text_to_image(prompt)
       elsif @model.downcase.include?('vision') || @model.downcase.include?('image')
@@ -48,10 +51,6 @@ module AIA
     # @param audio_file [String] the path to the audio file to transcribe
     # @return [String] the transcribed text
     def transcribe(audio_file)
-      options = {
-        model: @config.transcription_model
-      }
-
       @client.transcribe(audio_file)
     end
 

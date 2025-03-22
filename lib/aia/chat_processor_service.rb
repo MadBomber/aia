@@ -106,65 +106,47 @@ module AIA
     # @param response [String] the current response to use as context
     # @param prompt_handler [PromptHandler] the prompt handler to use
     def process_next_prompts(response, prompt_handler)
-      # Process next prompt if specified
-      if @config.next
-        next_prompt = PromptManager::Prompt.get(id: @config.next) rescue nil
-
-        if next_prompt
-          # Add the previous response as context
-          next_prompt_text = prompt_handler.process_prompt(next_prompt)
-          next_prompt_text = "#{next_prompt_text}\n\nContext:\n#{response}"
-
-          operation_type = determine_operation_type(@config.model)
-          next_response = process_prompt(next_prompt_text, operation_type)
-          output_response(next_response)
-
-          # Update response for potential pipeline
-          response = next_response
-        else
-          puts "Warning: Could not find next prompt with ID: #{@config.next}"
-        end
-      end
-
-      # Process pipeline if specified
-      if @config.pipeline && !@config.pipeline.empty?
-        pipeline_response = response
-
-        @config.pipeline.each do |prompt_id|
-          pipeline_prompt = PromptManager::Prompt.get(id: prompt_id) rescue nil
-
-          if pipeline_prompt
-            # Add the previous response as context
-            pipeline_prompt_text = prompt_handler.process_prompt(pipeline_prompt)
-            pipeline_prompt_text = "#{pipeline_prompt_text}\n\nContext:\n#{pipeline_response}"
-
-            operation_type = determine_operation_type(@config.model)
-            pipeline_response = process_prompt(pipeline_prompt_text, operation_type)
-            output_response(pipeline_response)
-          else
-            puts "Warning: Could not find pipeline prompt with ID: #{prompt_id}"
-          end
-        end
+      # Process directives in the response
+      if @directive_processor.directive?(response)
+        directive_result = @directive_processor.process(response, @history_manager.history)
+        response = directive_result[:result]
+        @history_manager.history = directive_result[:modified_history] if directive_result[:modified_history]
       end
     end
 
-    # Processes dynamic content in the text, such as shell commands and ERB,
-    # if enabled in the configuration.
+    # Processes dynamic content in text, such as shell commands and environment variables.
     #
     # @param text [String] the text to process
     # @return [String] the processed text
     def process_dynamic_content(text)
       # Process shell commands, backticks, and environment variables if enabled
       if @config.shell
-        text = text.gsub(/\$\((.*?)\)/) { `#{Regexp.last_match(1)}`.chomp }
-        text = text.gsub(/`([^`]+)`/) { `#{Regexp.last_match(1)}`.chomp }
-        text = text.gsub(/`([^`]+)`/) { `#{Regexp.last_match(1)}`.chomp }
+        text = text.gsub(/\$\((.*?)\)/) do
+          begin
+            `#{Regexp.last_match(1)}`.chomp
+          rescue => e
+            "Error executing command: #{e.message}"
+          end
+        end
+        
+        text = text.gsub(/`([^`]+)`/) do
+          begin
+            `#{Regexp.last_match(1)}`.chomp
+          rescue => e
+            "Error executing command: #{e.message}"
+          end
+        end
+        
         text = text.gsub(/\$(\w+)|\$\{(\w+)\}/) { ENV[Regexp.last_match(1) || Regexp.last_match(2)] || "" }
       end
 
       # Process ERB if enabled
       if @config.erb
-        text = ERB.new(text).result(binding)
+        begin
+          text = ERB.new(text).result(binding)
+        rescue => e
+          text = "Error processing ERB: #{e.message}"
+        end
       end
 
       text
