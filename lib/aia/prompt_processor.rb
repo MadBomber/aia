@@ -1,6 +1,8 @@
 #
 # This file contains the PromptProcessor class for processing prompts.
 
+require_relative 'shell_command_executor'
+
 module AIA
   # The PromptProcessor class is responsible for processing prompts,
   # handling shell commands, ERB, and directives.
@@ -57,7 +59,9 @@ module AIA
     end
 
     def process_shell_commands(text)
-      text.gsub(/$((.*?))/) { `#{Regexp.last_match(1)}`.chomp }
+      # There seems to be an issue with the original regex pattern
+      # Fixing it to correctly match the $(command) pattern
+      text.gsub(/\$\((.*?)\)/) { ShellCommandExecutor.execute_command(Regexp.last_match(1), @config) }
     end
 
     def process_erb(text)
@@ -78,7 +82,7 @@ module AIA
             text = text.gsub(%r{//include #{Regexp.escape(args)}}, "# Error: File not found: #{file_path}")
           end
         when "shell"
-          cmd_output = `#{args}`.chomp
+          cmd_output = ShellCommandExecutor.execute_command(args, @config)
           text = text.gsub(%r{//shell #{Regexp.escape(args)}}, cmd_output)
         when "ruby"
           result = eval(args)

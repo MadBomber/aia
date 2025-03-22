@@ -14,12 +14,15 @@ It leverages the `prompt_manager` gem to manage prompts. It utilizes "ripgrep" f
 
 ## Table of Contents
 
+- [AI Assistant (AIA)](#ai-assistant-aia)
+  - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
   - [Configuration Using Envars](#configuration-using-envars)
   - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
       - [Access to System Environment Variables](#access-to-system-environment-variables)
       - [Dynamic Shell Commands](#dynamic-shell-commands)
+      - [Shell Command Safety](#shell-command-safety)
       - [Chat Session Use](#chat-session-use)
   - [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
     - [Chat Session Behavior](#chat-session-behavior)
@@ -37,7 +40,7 @@ It leverages the `prompt_manager` gem to manage prompts. It utilizes "ripgrep" f
     - [Best Practices ??](#best-practices-)
     - [Example pipline](#example-pipline)
   - [All About ROLES](#all-about-roles)
-    - [The --roles_dir (AIA_ROLES_DIR)](#the---roles_dir-aia_roles_dir)
+    - [The --roles\_dir (AIA\_ROLES\_DIR)](#the---roles_dir-aia_roles_dir)
     - [The --role Option](#the---role-option)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
@@ -69,7 +72,9 @@ Setup a system environment variable (envar) named "AIA_PROMPTS_DIR" that points 
 
 You may also want to install the completion script for your shell.  To get a copy of the completion script do:
 
-`aia --completion bash`
+```bash
+aia --completion bash
+```
 
 `fish` and `zsh` are also available.
 
@@ -78,7 +83,7 @@ You may also want to install the completion script for your shell.  To get a cop
 
 The usage report obtained using either `-h` or `--help` is implemented as a standard `man` page.  You can use both `--help --verbose` of `-h -v` together to get not only the `aia` man page.
 
-```shell
+```bash
 $ aia --help
 ```
 
@@ -99,6 +104,8 @@ The `aia` configuration defaults can be overridden by system environment variabl
 | speech_model. | tts-1         | AIA_SPEECH_MODEL |
 | verbose       | FALSE         | AIA_VERBOSE |
 | voice         | alloy         | AIA_VOICE |
+| shell_confirm | true          | AIA_SHELL_CONFIRM |
+| strict_shell_safety | false   | AIA_STRICT_SHELL_SAFETY |
 
 
 
@@ -118,25 +125,50 @@ Dynamic content can be inserted into the prompt using the pattern $(shell comman
 
 Consider the power to tailoring a prompt to your specific operating system:
 
-```
+```plaintext
 As a system administration on a $(uname -v) platform what is the best way to [DO_SOMETHING]
 ```
 
 or insert content from a file in your home directory:
 
-```
+```plaintext
 Given the following constraints $(cat ~/3_laws_of_robotics.txt) determine the best way to instruct my roomba to clean my kids room.
+```
+
+#### Shell Command Safety
+
+To protect against potentially dangerous shell commands, AIA includes safety features that can be configured to your preference:
+
+1. **Command Confirmation** (Default: Enabled)
+   - When enabled, AIA will prompt for confirmation before executing potentially dangerous shell commands
+   - Dangerous commands include those that could delete files (`rm -f`), format drives (`mkfs`), stop services, etc.
+   - Enable/disable with `--shell-confirm` or `--no-shell-confirm` command line options
+   - Configure with `AIA_SHELL_CONFIRM=true|false` environment variable
+   - Set in a config directive with `//config shell_confirm=true|false`
+
+2. **Strict Shell Safety** (Default: Disabled)
+   - When enabled, AIA will completely block execution of potentially dangerous shell commands
+   - Enable/disable with `--strict-shell-safety` or `--no-strict-shell-safety` command line options
+   - Configure with `AIA_STRICT_SHELL_SAFETY=true|false` environment variable
+   - Set in a config directive with `//config strict_shell_safety=true|false`
+
+```bash
+⚠️  WARNING: Potentially dangerous shell command detected:
+
+    rm -rf temp_dir
+
+Do you want to execute this command? [y/N]:
 ```
 
 #### Chat Session Use
 
 When you use the `--shell` option to start a chat session, shell integration is available in your follow up prompts.  Suppose you started up a chat session using a roll of "Ruby Expert" expecting to chat about changes that could be made to a specific class BUT you forgot to include the class source file as part of the context when you got started.  You could enter this as your follow up prompt to this to keep going:
 
-```
+```plaintext
 The class I want to chat about refactoring is this one: $(cat my_class.rb)
 ```
 
-That inserts the entire class source file into your follow up prompt.  You can continue chatting with you AI Assistant avout changes to the class.
+That inserts the entire class source file into your follow up prompt.  You can continue chatting with you AI Assistant about changes to the class.
 
 ## *E*mbedded *R*u*B*y (ERB)
 
@@ -156,7 +188,7 @@ Also since follow up prompts are expected to be a single thing - sentence or par
 
 Downstream processing directives were added to the `prompt_manager` gem used by `au` at version 0.4.1.  These directives are lines in the prompt text file that begin with "//" having this pattern:
 
-```
+```bash
 //command parameters
 ```
 
@@ -168,14 +200,14 @@ When you combine prompt directives with prompt parameters and shell envar substi
 
 Here is an example of a pure generic directive.
 
-```
+```bash
 //[DIRECTIVE_NAME] [DIRECTIVE_PARAMS]
 ```
 
 When the prompt runs, you will be asked to provide a value for each of the parameters.  You could answer "shell" for the directive name and "calc 22/7" if you wanted a bad approximation of PI.
 
 Try this prompt file:
-```
+```bash
 //shell calc [FORMULA]
 
 What does that number mean to you?
@@ -195,21 +227,21 @@ The switch options are treated like booleans.  They are either `true` or `false`
 
 To set the value of a switch using ``//config` for example `--terse` or `--chat` to this:
 
-```
+```bash
 //config chat? = true
 //config terse? = true
 ```
 
 A configuration item such as `--out_file` or `--model` has an associated value on the command line.  To set that value with the `//config` directive do it like this:
 
-```
+```bash
 //config model = gpt-3.5-turbo
 //config out_file = temp.md
 ```
 
 BTW: the "=" is completely options.  Its actuall ignored as is ":=" if you were to choose that as your assignment operator.  Also the number of spaces between the item and the value is complete arbitrary.  I like to line things up so this syntax is just as valie:
 
-```
+```bash
 //config model       gpt-3.5-turbo
 //config out_file    temp.md
 //config chat?       true
@@ -222,7 +254,7 @@ NOTE: if you specify the same config item name more than once within the prompt 
 #### //include
 
 Example:
-```
+```bash
 //include path_to_file
 ```
 
@@ -230,33 +262,36 @@ The `path_to_file` can be either absolute or relative.  If it is relative, it is
 
 The file that is included will have any comments or directives excluded.  It is expected that the file will be a text file so that its content can be pre-pended to the existing prompt; however, if the file is a source code file (ex: file.rb) the source code will be included HOWEVER any comment line or line that starts with "//" will be excluded.
 
-TODO:  Consider adding a command line option `--include_dir` to specify the place from which relative files are to come.
 
 #### //ruby
-Example:
-```
-//ruby any_code_that_returns_an_instance_of_String
+
+The `//ruby` directive executes Ruby code. You can use this to perform complex operations or interact with Ruby libraries.
+
+For example:
+```ruby
+//ruby puts "Hello from Ruby"
 ```
 
-This directive is in addition to ERB.  At this point the `//ruby` directive is limited by the current binding which is within the `AIA::Directives#ruby` method.  As such it is not likely to see much use.
+You can also use the `--rq` option to specify Ruby libraries to require before executing Ruby code:
 
-However, sinces it implemented as a simple `eval(code)` then there is a potential for use like this:
-```
-//ruby load(some_ruby_file); execute_some_method
-```
+```bash
+# Command line
+aia --rq json,csv my_prompt
 
-Each execution of a `//ruby` directive will be a fresh execution of the `AIA::Directives#ruby` method so you cannot carry local variables from one invocation to another; however, you could do something with instance variables or global variables.  You might even add something to the `AIA.config` object to be pasted on to the next invocation of the directive within the context of the same prompt.
+# In chat
+//ruby JSON.parse('{"data": [1,2,3]}')["data"]
+```
 
 #### //shell
 Example:
-```
+```bash
 //shell some_shell_command
 ```
 
 It is expected that the shell command will return some text to STDOUT which will be pre-pending to the existing prompt text within the prompt file.
 
 There are no limitations on what the shell command can be.  For example if you wanted to bypass the stripping of comments and directives from a file you could do something like this:
-```
+```bash
 //shell cat path_to_file
 ```
 
@@ -266,7 +301,7 @@ Which does basically the same thing as the `//include` directive, except it uses
 
 Whe you are in a chat session, you may use a directive as a follow up prompt.  For example if you started the chat session with the option `--terse` expecting to get short answers from the LLM; but, then you decide that you want more comprehensive answers you may do this in a chat follow up:
 
-```
+```bash
 //config terse? false
 ```
 
@@ -295,14 +330,14 @@ Consider the condition in which you have 4 prompt IDs that need to be processed 
 
 ### --next
 
-```shell
+```bash
 aia one --next two --out_file temp.md
 aia three --next four temp.md -o answer.md
 ```
 
 or within each of the prompt files you use the `//next` directive:
 
-```
+```bash
 one.txt contains //next two
 two.txt contains //next three
 three.txt contains //next four
@@ -313,11 +348,15 @@ BUT if you have more than two prompts in your sequence then consider using the -
 
 ### --pipeline
 
-`aia one --pipeline two,three,four`
+```bash
+aia one --pipeline two,three,four
+```
 
 or inside of the `one.txt` prompt file use this directive:
 
-`//pipeline two,three,four`
+```bash
+//pipeline two,three,four
+```
 
 **The directive //pipeline is short for //config pipeline**
 
@@ -343,7 +382,7 @@ Suppose you have an audio file of a meeting.  You what to get a transcription of
 
 Create two prompts named transcribe.txt and tech_summary.txt
 
-```
+```bash
 # transcribe.txt
 # Desc: takes one audio file
 # note that there is no "prompt" text only the directive
@@ -354,7 +393,7 @@ Create two prompts named transcribe.txt and tech_summary.txt
 
 and
 
-```
+```bash
 # tech_summary.txt
 
 //config model    gpt-4o-mini
@@ -369,7 +408,7 @@ Format your response in markdown.
 
 Now you can do this:
 
-```
+```bash
 aia transcribe my_tech_meeting.m4a
 ```
 
@@ -378,7 +417,7 @@ You summary of the meeting is in the file `meeting_summary.md`
 
 ## All About ROLES
 
-### The --roles_dir (AIA_ROLES_DIR)
+### The --roles\_dir (AIA\_ROLES\_DIR)
 
 There are two kinds of prompts
 1. instructional - tells the LLM what to do
@@ -394,7 +433,7 @@ The `--role` option is used to identify a personification prompt within your rol
 
 For example consider:
 
-```shell
+```bash
 aia -r ruby refactor my_class.rb
 ```
 
@@ -406,7 +445,7 @@ Note that `--role` is just a way of saying add this prompt text file to the fron
 
 `aia` fully supports a directory tree within the `prompts_dir` as a way of organization or classification of your different prompt text files.
 
-```shell
+```bash
 aia -r ruby sw_eng/doc_the_methods my_class.rb
 ```
 
@@ -444,7 +483,7 @@ ripgrep
 
 You can setup a completion function in your shell that will complete on the prompt_id saved in your `prompts_dir` - functions for `bash`, `fish` and `zsh` are available.  To get a copy of these functions do this:
 
-```shell
+```bash
 aia --completion bash
 ```
 
@@ -456,17 +495,19 @@ Copy the function to a place where it can be installed in your shell's instance.
 
 This is just between you and me so don't go blabbing this around to everyone.  My most power prompt is in a file named `ad_hoc.txt`. It looks like this:
 
-```
+```text
 [WHAT_NOW_HUMAN]
 ```
 
 Yep.  Just a single parameter for which I can provide a value of anything that is on my mind at the time.  Its advantage is that I do not pollute my shell's command history with lots of text.
 
-`aia ad_hoc`
+```bash
+aia ad_hoc
+```
 
 Or consider this executable prompt file:
 
-```
+```bash
 #!/usr/bin/env aia run
 [WHAT_NOW_HUMAN]
 ```
@@ -477,7 +518,7 @@ Where the `run` prompt ID has a `run.txt` file in the prompt directory that is b
 
 I use the `bash` shell.  In my `.bashrc` file I source another file named `.bashrc__aia` which looks like this:
 
-```shell
+```bash
 # ~/.bashic_aia
 # AI Assistant
 
@@ -500,9 +541,9 @@ alias chat='aia --chat --shell --erb --terse'
 
 ## Executable Prompts
 
-With all of the capabilities of the AI Assistant, you can create your own executable prompts. These prompts can be used to automate tasks, generate content, or perform any other action that you can think of.  All you need to get started with executable prompts is a prompt that does not do anything.  For example, consider my `run.txt` prompt.
+With all of the capabilities of the AI Assistant, you can create your own executable prompts. These prompts can be used to automate tasks, generate content, or perform any other action that you can think of.  All you need to get started with executable prompts is a prompt that does not do anything.  For example consider my `run.txt` prompt.
 
-```
+```bash
 # ~/.prompts/run.txt
 # Desc: Run executable prompts coming in via STDIN
 ```
@@ -511,7 +552,7 @@ Remember that the '#' character indicates a comment line making the `run` prompt
 
 An executable prompt can reside anywhere either in your $PATH or not.  That is your choice.  It must however be executable.  Consider the following `top10` executable prompt:
 
-```
+```bash
 #!/usr/bin/env aia run --no-out_file
 # File: top10
 # Desc: The tope 10 cities by population
@@ -523,7 +564,7 @@ links to the Wikipedia pages.  Format your response as a markdown document.
 
 Make sure that it is executable.
 
-```shell
+```bash
 chmod +x top10
 ```
 
@@ -531,14 +572,14 @@ The magic is in the first line of the prompt.  It is a shebang line that tells t
 
 Now just execute it like any other command in your terminal.
 
-```shell
+```bash
 ./top10
 ```
 
 Since its output is going to STDOUT you can setup a pipe chain.  Using the CLI program `glow` to render markdown in the terminal
 (brew install glow)
 
-```shell
+```bash
 ./top10 | glow
 ```
 

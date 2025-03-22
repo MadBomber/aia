@@ -2,6 +2,8 @@
 #
 # This file contains the ChatProcessorService class for managing conversation processing logic.
 
+require_relative 'shell_command_executor'
+
 module AIA
   # The ChatProcessorService class is responsible for processing chat prompts,
   # handling AI client interactions, and managing the flow of the conversation.
@@ -122,19 +124,11 @@ module AIA
       # Process shell commands, backticks, and environment variables if enabled
       if @config.shell
         text = text.gsub(/\$\((.*?)\)/) do
-          begin
-            `#{Regexp.last_match(1)}`.chomp
-          rescue => e
-            "Error executing command: #{e.message}"
-          end
+          ShellCommandExecutor.execute_command(Regexp.last_match(1), @config)
         end
         
         text = text.gsub(/`([^`]+)`/) do
-          begin
-            `#{Regexp.last_match(1)}`.chomp
-          rescue => e
-            "Error executing command: #{e.message}"
-          end
+          ShellCommandExecutor.execute_command(Regexp.last_match(1), @config)
         end
         
         text = text.gsub(/\$(\w+)|\$\{(\w+)\}/) { ENV[Regexp.last_match(1) || Regexp.last_match(2)] || "" }

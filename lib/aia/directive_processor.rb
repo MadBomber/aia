@@ -3,6 +3,7 @@
 # This file contains the DirectiveProcessor class for handling chat-based directives.
 
 require 'shellwords'
+require_relative 'shell_command_executor'
 
 module AIA
   # The DirectiveProcessor class is responsible for processing directives
@@ -127,10 +128,7 @@ module AIA
     # @param args [String] the command to execute
     # @return [String] the output of the command
     def execute_shell_directive(args)
-      return "No command specified" if args.nil? || args.strip.empty?
-      `#{args}`.chomp
-    rescue => e
-      "Error executing shell command: #{e.message}"
+      ShellCommandExecutor.execute_command(args, @config)
     end
 
     # Executes a Ruby code directive.

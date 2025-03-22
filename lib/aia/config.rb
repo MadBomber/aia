@@ -48,7 +48,10 @@ module AIA
       # Default speak command
       speak_command: 'afplay', # 'afplay' for audio files
       # Ruby libraries to require for Ruby directive
-      require_libs: []
+      require_libs: [],
+      # Shell command safety options
+      strict_shell_safety: false, # Block dangerous shell commands
+      shell_confirm: true # Confirm before executing dangerous commands
     }.freeze
 
     # Parses the configuration settings from command-line arguments,
@@ -256,6 +259,14 @@ module AIA
         opts.on("--rq LIBS", "Ruby libraries to require for Ruby directive") do |libs|
           config.require_libs = libs.split(',')
         end
+
+        opts.on("--sss", "--[no-]strict_shell_safety", "Enable strict shell safety checks") do |sss|
+          config.strict_shell_safety = sss
+        end
+
+        opts.on("--sc", "--[no-]shell_confirm", "Require confirmation before executing shell commands") do |sc|
+          config.shell_confirm = sc
+        end
       end
 
       # Parse the command line arguments
@@ -281,7 +292,6 @@ module AIA
           # For chat mode with a role, use the role as the prompt_id
           # When the role_id is provided, format it as roles/role_id
           # which is the expected format for the prompt_id when referencing a role
-          roles = config.roles_dir.split('/').last
           config.prompt_id = "roles/#{config.role}"
         elsif config.chat
           # For chat mode without a role or prompt_id, use an empty prompt_id
