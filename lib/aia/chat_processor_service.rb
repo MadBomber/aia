@@ -13,11 +13,13 @@ module AIA
     # @param config [OpenStruct] the configuration object
     # @param client [AIClientAdapter] the AI client adapter
     # @param ui_presenter [UIPresenter] the UI presenter for displaying output
-    def initialize(config, client, ui_presenter)
+    # @param directive_processor [DirectiveProcessor] the directive processor for handling chat directives
+    def initialize(config, client, ui_presenter, directive_processor = nil)
       @config = config
       @client = client
       @ui_presenter = ui_presenter
       @speaker = speak? ? AiClient.new(config.speech_model) : nil
+      @directive_processor = directive_processor
     end
 
     # Checks if speech is enabled in the configuration.

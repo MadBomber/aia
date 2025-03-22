@@ -33,8 +33,8 @@ module AIA
       @client = client
       @history_manager = HistoryManager.new(config)
       @ui_presenter = UIPresenter.new(config)
-      @chat_processor = ChatProcessorService.new(config, client, @ui_presenter)
       @directive_processor = DirectiveProcessor.new(config)
+      @chat_processor = ChatProcessorService.new(config, client, @ui_presenter, @directive_processor)
       
       # Overwrite the out_file if it exists and append is false
       if @config.out_file && !@config.append && File.exist?(@config.out_file)

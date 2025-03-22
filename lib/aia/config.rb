@@ -234,10 +234,6 @@ module AIA
           config.presence_penalty = value
         end
 
-        opts.on("--backend BACKEND", "Backend to use (for compatibility)") do |backend|
-          config.backend = backend
-        end
-
         opts.on("--dump FILE", "Dump config to file") do |file|
           config.dump_file = file
         end
