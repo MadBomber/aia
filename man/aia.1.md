@@ -2,15 +2,15 @@
 
 ## NAME
 
-aia - command-line interface for an AI assistant  
+aia - command-line AI assistant
 
 ## SYNOPSIS
 
-aia [options]* PROMPT_ID [CONTEXT_FILE]*  
+aia [options]* PROMPT_ID [CONTEXT_FILE]*
 
 ## DESCRIPTION
 
-The aia command-line tool is an interface for interacting with an AI model, providing a simple way to send prompts and receive responses. The CLI supports various options to customize the interaction, load a configuration file, set debugging levels, and more.
+The aia command-line tool is an interface for interacting with AI models, facilitating the management of pre-compositional prompts and executing generative AI commands. It supports various options to customize interactions, load configuration files, and integrate shell and ERB for dynamic content.
 
 ## ARGUMENTS
 
@@ -18,15 +18,13 @@ The aia command-line tool is an interface for interacting with an AI model, prov
 : This is a required argument.
 
 *CONTEXT_FILES*
-: This is an optional argument.  One or more files can be added to the prompt as context for the backend gen-AI tool to process.
+: This is an optional argument.  One or more files can be added to the prompt as context for the LLM to process.
 
 ## OPTIONS
 
 `--chat`
-: begin a chat session with the backend after the initial prompt response;  will set --no-out_file so that the backend response comes to STDOUT.  After the initial prompt is processed, you will be asked to provide a follow up.  Just enter whatever is appropriate terminating your input with a RETURN.  The backend will provide a response to you follow up and ask you again if you have another follow up. This back and forth chatting will continue until you enter a RETURN without any other content - an empty follow up prompt.  You may also enter a directive to be processed after which another follow up is requested.  If you have the `--shell` and/or the `--erb` options set you may use those tools within your follow up to provide dynamic content.
+: begin a chat session with the LLM after the initial prompt response;  will set --no-out_file so that the LLM response comes to STDOUT.  After the initial prompt is processed, you will be asked to provide a follow up.  Just enter whatever is appropriate terminating your input with a RETURN.  The LLM will provide a response to your follow up and ask you again if you have another follow up. This back and forth chatting will continue until you enter `exit` or a control-D to terminate the session.  You may also enter a directive to be processed after which another follow up is requested.  If you have the `--shell` and/or the `--erb` options set you may use those tools within your follow up to provide dynamic content durning your chat session.
 
-`--cm --code_model` *MODEL_NAME*
-: Specifies which LLM model to use when processing programming-related prompts. This model should be optimized for tasks like code analysis, generation, and review. If not specified, the default general-purpose model will be used.
 
 `--completion` *SHELL_NAME*
 : Show completion script for bash|zsh|fish - default is nil
@@ -35,37 +33,37 @@ The aia command-line tool is an interface for interacting with an AI model, prov
 : Dump the current configuration to a file in the format denoted by the file's extension.  Currently only .yml, .yaml and .toml are acceptable file extensions.  *If the file exists, it will be over-written without warning.*
 
 `--shell`
-: This option tells `aia` to replace references to system environment variables in the prompt with the value of the envar.  envars are like $HOME and ${HOME} in this example their occurance will be replaced by the value of ENV['HOME'].  Also the dynamic shell command in the pattern $(shell command) will be executed and its output replaces its pattern.  It does not matter if your shell uses different patters than BASH since the replacement is being done within a Ruby context.
+: Enables `aia` to access your terminal's shell environment from inside the prompt text, allowing for dynamic content insertion using system environment variables and shell commands.
 
 `--erb`
-: If dynamic prompt content using $(...) wasn't enough here is ERB.  Embedded RUby.  <%= ruby code %> within a prompt will have its ruby code executed and the results of that execution will be inserted into the prompt.  I'm sure we will find a way to truly misuse this capability.  Remember, some say that the simple prompt is the best prompt.
+: Turns the prompt text file into a fully functioning ERB template, allowing for embedded Ruby code processing within the prompt text.
 
 `--iq`, `--image_quality` *VALUE*
-: (Used with backend 'client' only) See the OpenAI docs for valid values (depends on model) - default: ''
+: Used with an LLM that supports image generation - default: ''
 
 `--is`, `--image_size` *VALUE*
-: (Used with backend 'client' only) See the OpenAI docs for valid values (depends on model) - default: ''
+: Used with an LLM that supports image generation - default: ''
 
 `--model` *NAME*
-: Name of the LLM model to use - default is gpt-4-1106-preview
+: Name of the LLM model to use - default is gpt-4o-mini
 
 `--speak`
-: Simple implementation. Uses the "say" command to speak the response.  Fun with --chat
+: Simple implementation. Uses the speech model to convert text to audio then plays the audio.  Fun with --chat
 
 `--sm`, `--speech_model` *MODEL NAME*
-: Which OpenAI LLM to use for text-to-speech (TTS) - default: tts-1
+: The model to use for text-to-speech (TTS) - default: tts-1
 
 `--voice` *VOICE NAME*
-: Which voice to use when speaking text.  If its "siri" and the platform is a Mac, then the CLI utility "say" is used.  Any other name will be used with OpenAI - default: alloy
+: Which voice to use with the speech model.  If its "siri" and the platform is a Mac, then the CLI utility "say" is used.  Any other name will be used with speech model - default: alloy
 
 `--terse`
-: Add a clause to the prompt text that instructs the backend to be terse in its response.
+: Add a clause to the prompt text that instructs the LLM to be terse in its response.
 
 `--tm`, `--transcription_model` *MODEL NAME*
-: Which OpenAI LLM to use for audio-to-text - default: whisper-1
+: Which LLM to use for audio-to-text - default: whisper-1
 
 `--version`
-: Print Version - default is false
+: Print the aia ersion - default is false
 
 `-c`, `--config_file` *PATH_TO_CONFIG_FILE*
 : Load Config File. both YAML and TOML formats are supported.  Also ERB is supported.  For example ~/aia_config.yml.erb will be processed through ERB and then through YAML.  The result will be written out to ~/aia_config.yml so that you can manually verify that you got what you wanted from the ERB processing.
@@ -80,47 +78,41 @@ The aia command-line tool is an interface for interacting with an AI model, prov
 : Show Usage - default is false
 
 `-l`, `--[no]-log_file` *PATH_TO_LOG_FILE*
-: Log FILEPATH - default is $HOME/.prompts/prompts.log
+: Log FILEPATH - default is $AIA_PROMPTS_DIR/_prompts.log
 
 `-m`, `--[no]-markdown`
 : Format with Markdown - default is true
 
 `-n`, `--next PROMPT_ID`
-: Specifies the next prompt ID to be processed using the response for the previous prompt ID's processing as a context within which to process the next prompt - default is an empty string
+: Specifies the next prompt ID to be processed using the response from the previous prompt ID's processing as a context within which to process the next prompt - default is an empty string
 
 `-o`, `--[no]-out_file` *PATH_TO_OUTPUT_FILE*
 : Out FILENAME - default is ./temp.md
 
 `--pipeline PID1,PID2,PID3`
-: Specifies a pipeline of prompt IDs (PID) in which the respone the first prompt is fed into the second prompt as context whose response is fed into the third as context, etc.  It is a comma seperated list.  There is no artificial limit to the number of prompt IDs in the pipeline - default is an empty list
+: Specifies a pipeline of prompt IDs (PID) in which the respone from the first prompt is fed into the second prompt as context whose response is fed into the third as context, etc.  It is a comma seperated list.  There is no artificial limit to the number of prompt IDs in the pipeline - default is an empty list
 
 `-p`, `--prompts_dir` *PATH_TO_DIRECTORY*
 : Directory containing the prompt files - default is ~/.prompts
 
 `--roles_dir` *PATH_TO_DIRECTORY*
-: Directory containing the personification prompt files - default is ~/.prompts/roles
+: Directory containing the personification prompt files - default is $AIA_PROMPTS_DIR/roles
 
 `-r`, `--role` *ROLE_ID*
-: A role ID is the same as a prompt ID.  A "role" is a specialized prompt that gets pre-pended to another prompt.  It's purpose is to configure the LLM into a certain orientation within which to resolve its primary prompt.
+: A role ID is the same as a prompt ID.  A "role" is a specialized prompt that gets pre-pended to another prompt.  It's purpose is to configure the LLM into a certain orientation (personality) within which to resolve its primary prompt.
 
 `-v`, `--verbose`
 : Be Verbose - default is false
-
-`--voice`
-: The voice to use when the option `--speak` is used.  If you are on a Mac, then setting voice to "siri" will use your Mac's default siri voice and not access OpenAI - default is "alloy" from OpenAI
-
-`--sm`, `--speech_model`
-: The OpenAI speech model to use when converting text into speech - default is "tts-1"
 
 ## CONFIGURATION HIERARCHY
 
 System Environment Variables (envars) that are all uppercase and begin with "AIA_" can be used to over-ride the default configuration settings.  For example setting "export AIA_PROMPTS_DIR=~/Documents/prompts" will over-ride the default configuration; however, a config value provided by a command line options will over-ride an envar setting.
 
-Configuration values found in a config file will over-ride all other values set for a config item.
+Configuration values found in a config file will override all other values set for a config item.
 
-"//config" directives found inside a prompt file over-rides that config item regardless of where the value was set.
+"//config" directives found inside a prompt file override that config item regardless of where the value was set.
 
-For example "//config chat? = true" within a prompt will setup the chat back and forth chat session for that specific prompt regardless of the command line options or the envar AIA_CHAT settings
+For example, "//config chat? = true" within a prompt will set up the chat session for that specific prompt regardless of the command line options or the envar AIA_CHAT settings.
 
 ## OpenAI ACCOUNT IS REQUIRED
 
@@ -146,14 +138,12 @@ The `--dump path/to/file.ext` option will write the current configuration to a f
 
 Within a prompt text file any line that begins with "//" is considered a prompt directive.  There are numerious prompt directives available.  In the discussion above on the configuration you learned about the "//config" directive.
 
-Detail discussion on individual prompt directives is TBD.  Most likely it will be handled in the [github wiki](https://github.com/MadBomber/aia).
+Prompt directives are lines in the prompt text file that begin with "//" and are used to tailor the specific configuration environment for the prompt. Some directives include:
 
-Some directives are:
-
-- //config item value
-- //include path_to_file
-- //ruby ruby_code
-- //shell shell_command
+- `//config item value`: Sets configuration items for a specific prompt.
+- `//include path_to_file`: Includes the content of a specified file into the prompt.
+- `//ruby ruby_code`: Executes Ruby code and includes the result in the prompt.
+- `//shell shell_command`: Executes a shell command and includes the output in the prompt.
 
 ## Prompt Sequences
 
@@ -199,7 +189,7 @@ Is the same thing as
 
 - [fzf](https://github.com/junegunn/fzf) fzf is a general-purpose command-line fuzzy finder.  It's an interactive Unix filter for command-line that can be used with any list; files, command history, processes, hostnames, bookmarks, git commits, etc.
 
-- [ripgrep](https://github.com/BurntSushi/ripgrep) Search tool like grep and The Silver Searcher. It is a line-oriented search tool that recursively searches a directory tree for a regex pattern. By default, ripgrep will respect gitignore rules and automatically skip hidden files/directories and binary files. (To disable all automatic filtering by default, use rg -uuu.) ripgrep has first class support on Windows, macOS and Linux, with binary downloads available for every release. 
+- [ripgrep](https://github.com/BurntSushi/ripgrep) Search tool like grep and The Silver Searcher. It is a line-oriented search tool that recursively searches a directory tree for a regex pattern. By default, ripgrep will respect gitignore rules and automatically skip hidden files/directories and binary files. (To disable all automatic filtering by default, use rg -uuu.) ripgrep has first class support on Windows, macOS and Linux, with binary downloads available for every release.
 
 ## Image Generation
 
@@ -211,4 +201,4 @@ https://platform.openai.com/docs/guides/images/usage?context=node
 
 ## AUTHOR
 
-Dewayne VanHoozer <dvanhoozer@gmail.com>
+Dewayne VanHoozer <dvanhoozer@duck.com>
