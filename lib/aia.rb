@@ -21,6 +21,10 @@ require_relative 'aia/session'
 # The AIA module serves as the namespace for the AIA application, which
 # provides an interface for interacting with AI models and managing prompts.
 module AIA
+  at_exit do
+    STDERR.puts "Exiting AIA application..."
+  end
+
   # Main entry point
   # Runs the AIA application with the given command-line arguments.
   #

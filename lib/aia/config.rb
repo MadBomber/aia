@@ -294,7 +294,7 @@ module AIA
           # This will start a chat with no system prompt
           config.prompt_id = ''
         else
-          puts "Error: A prompt ID is required. Use -h or --help for help."
+          STDERR.puts "Error: A prompt ID is required. Use -h or --help for help."
           exit 1
         end
       else

@@ -1,4 +1,6 @@
 require_relative '../test_helper'
+require 'ostruct'
+require_relative '../../lib/aia'
 
 class VersionTest < Minitest::Test
   def test_version_is_defined
