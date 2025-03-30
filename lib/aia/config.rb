@@ -11,19 +11,16 @@ require 'toml-rb'
 require 'erb'
 require 'optparse'
 
-# The AIA module serves as the namespace for the AIA application, which
-# provides an interface for interacting with AI models and managing prompts.
+
 module AIA
-  # The Config class is responsible for managing configuration settings
-  # for the AIA application. It provides methods to parse command-line
-  # arguments, environment variables, and configuration files.
   class Config
     DEFAULT_CONFIG = {
-      model: 'gpt-4o-mini',
       out_file: 'temp.md', # Default to temp.md if not specified
       log_file: File.join(ENV['HOME'], '.prompts', 'prompts.log'),
       prompts_dir: ENV['AIA_PROMPTS_DIR'] || File.join(ENV['HOME'], '.prompts'),
       roles_dir: nil, # Will default to prompts_dir/roles
+
+      # Flags
       markdown: true,
       shell: false,
       erb: false,
@@ -32,9 +29,14 @@ module AIA
       verbose: false,
       debug: false,
       fuzzy: false,
+      speak: false,
+      append: false, # Default to not append to existing out_file
+
+      # workflow
       next: nil,
       pipeline: [],
-      append: false, # Default to not append to existing out_file
+
+      # LLM tuning parameters
       temperature: 0.7,
       max_tokens: 2048,
       top_p: 1.0,
@@ -43,25 +45,25 @@ module AIA
       image_size: '1024x1024',
       image_quality: 'standard',
       image_style: 'vivid',
+      model: 'gpt-4o-mini',
       speech_model: 'tts-1',
       transcription_model: 'whisper-1',
       voice: 'alloy',
+
       # Embedding parameters
       embedding_model: 'text-embedding-ada-002',
+
       # Default speak command
       speak_command: 'afplay', # 'afplay' for audio files
-      # Ruby libraries to require for Ruby directive
+
+      # Ruby libraries to require for Ruby binding
       require_libs: [],
+
       # Shell command safety options
       strict_shell_safety: false, # Block dangerous shell commands
       shell_confirm: true # Confirm before executing dangerous commands
     }.freeze
 
-    # Parses the configuration settings from command-line arguments,
-    # environment variables, and configuration files.
-    #
-    # @param args [Array<String>] the command-line arguments
-    # @return [OpenStruct] the configuration object
     def self.parse(args)
       config = OpenStruct.new(DEFAULT_CONFIG)
 
@@ -87,7 +89,6 @@ module AIA
         end
       end
 
-      # Parse command line options
       opt_parser = OptionParser.new do |opts|
         opts.banner = "Usage: aia [options] PROMPT_ID [CONTEXT_FILE]*"
 
@@ -95,7 +96,7 @@ module AIA
           config.chat = true
         end
 
-        opts.on("--model MODEL", "Name of the LLM model to use") do |model|
+        opts.on("-m MODEL", "--model MODEL", "Name of the LLM model to use") do |model|
           config.model = model
         end
 
@@ -164,7 +165,7 @@ module AIA
           config.log_file = file
         end
 
-        opts.on("-m", "--[no-]markdown", "Format with Markdown") do |md|
+        opts.on("--md", "--[no-]markdown", "Format with Markdown") do |md|
           config.markdown = md
         end
 
@@ -313,19 +314,14 @@ module AIA
       config
     end
 
-    # Generates a shell completion script for the specified shell.
-    #
-    # @param shell [String] the shell type (e.g., "bash", "zsh", "fish")
+
     def self.generate_completion_script(shell)
       # Implementation for shell completion script generation
       # This would output a script for bash, zsh, or fish
       puts "# Completion script for #{shell} would be generated here"
     end
 
-    # Dumps the current configuration to a file in the specified format.
-    #
-    # @param config [OpenStruct] the configuration object
-    # @param file [String] the file path to dump the configuration
+
     def self.dump_config(config, file)
       # Implementation for config dump
       ext = File.extname(file).downcase
@@ -345,5 +341,9 @@ module AIA
 
       File.write(file, content)
     end
+
+
+
+
   end
 end

@@ -27,15 +27,30 @@ module AIA
     STDERR.puts "Exiting AIA application..."
   end
 
-  # Main entry point
-  # Runs the AIA application with the given command-line arguments.
-  #
-  # @param args [Array<String>] the command-line arguments
+  @config = nil
+
+  def self.config
+    @config
+  end
+
+  def self.build_flags
+    @config.each_pair do |key, value|
+      if [TrueClass, FalseClass].include?(value.class)
+        define_singleton_method("#{key}?") do
+          @config[key]
+        end
+      end
+    end
+  end
+
   def self.run(args)
-    config = Config.parse(args)
-    prompt_handler = PromptHandler.new(config)
-    client = AIClientAdapter.new(config)
-    session = Session.new(config, prompt_handler, client)
+    @config = Config.parse(args)
+
+    build_flags
+
+    prompt_handler = PromptHandler.new
+    client         = AIClientAdapter.new
+    session        = Session.new(prompt_handler, client)
 
     session.start
   end

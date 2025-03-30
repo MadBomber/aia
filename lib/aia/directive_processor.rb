@@ -1,12 +1,11 @@
 # lib/aia/directive_processor.rb
-#
+
 
 module AIA
   class DirectiveProcessor
-    EXCLUDED_METHODS = %w[ run initialize ]
+    EXCLUDED_METHODS = %w[ run initialize private? ]
 
-    def initialize(config)
-      @config         = config
+    def initialize
       @prefix_size    = PromptManager::Prompt::DIRECTIVE_SIGNAL.size
       @included_files = []
     end
@@ -70,20 +69,22 @@ module AIA
     alias_method :import,       :include
 
     def config(args=[])
+      args = Array(args)
+
       if args.empty?
-        ap @config
+        ap AIA.config
         ""
       elsif args.length == 1
         config_item = args.first
         local_cfg   = Hash.new
-        local_cfg[config_item] = @config[config_item]
+        local_cfg[config_item] = AIA.config[config_item]
         ap local_cfg
         ""
       else
         config_item  = args.shift
         config_value = args.join(' ').gsub('=', '').strip
 
-        @config[config_item] = config_value
+        AIA.config[config_item] = config_value
         ""
       end
     end
@@ -115,6 +116,17 @@ module AIA
 
     def say(*args)
       `say #{args.join(' ')}`
+      ""
+    end
+
+    def help(...)
+      directives  = self.class
+                      .private_instance_methods(false)
+                      .map(&:to_s)
+                      .reject { |m| EXCLUDED_METHODS.include?(m) }
+                      .map { |m| "//#{m}" }
+                      .sort
+      puts directives.join("\n")
       ""
     end
   end
