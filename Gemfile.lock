@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.7.1)
+    aia (0.8.0)
       ai_client
       amazing_print
       os
@@ -79,7 +79,7 @@ GEM
       concurrent-ruby (~> 1.0)
       dry-core (~> 1.1)
       zeitwerk (~> 2.6)
-    dry-monads (1.8.1)
+    dry-monads (1.8.2)
       concurrent-ruby (~> 1.0)
       dry-core (~> 1.1)
       zeitwerk (~> 2.6)
@@ -152,7 +152,7 @@ GEM
     llhttp-ffi (0.5.1)
       ffi-compiler (~> 1.0)
       rake (~> 13.0)
-    logger (1.6.6)
+    logger (1.7.0)
     marameters (4.2.0)
       refinements (~> 13.0)
       zeitwerk (~> 2.7)
@@ -167,26 +167,26 @@ GEM
     multipart-post (2.4.1)
     net-http (0.6.0)
       uri
-    omniai (2.0.0)
+    omniai (2.2.0)
       event_stream_parser
       http
       logger
       zeitwerk
-    omniai-anthropic (2.0.0)
+    omniai-anthropic (2.2.0)
       event_stream_parser
-      omniai (~> 2.0)
+      omniai (~> 2.2)
       zeitwerk
-    omniai-google (2.0.0)
+    omniai-google (2.2.0)
       event_stream_parser
-      omniai (~> 2.0)
+      omniai (~> 2.2)
       zeitwerk
-    omniai-mistral (2.0.1)
+    omniai-mistral (2.2.0)
       event_stream_parser
-      omniai (~> 2.0)
+      omniai (~> 2.2)
       zeitwerk
-    omniai-openai (2.0.1)
+    omniai-openai (2.2.0)
       event_stream_parser
-      omniai (~> 2.0)
+      omniai (~> 2.2)
       zeitwerk
     open_router (0.3.3)
       activesupport (>= 6.0)
@@ -195,7 +195,7 @@ GEM
       faraday-multipart (>= 1)
     optparse (0.6.0)
     os (1.1.4)
-    prompt_manager (0.4.2)
+    prompt_manager (0.5.0)
     public_suffix (6.0.1)
     racc (1.8.1)
     rake (13.2.1)

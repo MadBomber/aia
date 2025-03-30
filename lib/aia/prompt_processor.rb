@@ -33,9 +33,6 @@ module AIA
       # Process shell commands if enabled
       text = process_shell_commands(text) if @config.shell
 
-      # Process ERB if enabled
-      text = process_erb(text) if @config.erb
-
       # Process directives
       text = process_directives(text, prompt.directives)
 
@@ -51,9 +48,6 @@ module AIA
       # Process shell commands if enabled
       text = process_shell_commands(text) if @config.shell
 
-      # Process ERB if enabled
-      text = process_erb(text) if @config.erb
-
       # Add terse instruction if requested
       text += "\n\nPlease be terse in your response." if @config.terse
 
@@ -66,9 +60,6 @@ module AIA
       text.gsub(/\$\((.*?)\)/) { ShellCommandExecutor.execute_command(Regexp.last_match(1), @config) }
     end
 
-    def process_erb(text)
-      ERB.new(text).result(binding)
-    end
 
     def process_directives(text, directives)
       directives.each do |directive, args|

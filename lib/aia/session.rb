@@ -38,7 +38,7 @@ module AIA
       @ui_presenter = UIPresenter.new(config)
       @directive_processor = DirectiveProcessor.new(config)
       @chat_processor = ChatProcessorService.new(config, client, @ui_presenter, @directive_processor)
-      
+
       # Overwrite the out_file if it exists and append is false
       if @config.out_file && !@config.append && File.exist?(@config.out_file)
         File.open(@config.out_file, 'w') {} # Truncate the file
@@ -67,7 +67,7 @@ module AIA
       end
 
       # Create a prompt object using PromptManager
-      prompt = PromptManager::Prompt.get(id: prompt_id) rescue nil
+      prompt = PromptManager::Prompt.get(id: prompt_id, shell_flag: @config.shell, erb_flag: @config.erb, directive_processor: AIA::DirectiveProcessor.new(@config), external_binding: binding) rescue nil
 
       if prompt.nil?
         puts "Error: Could not find prompt with ID: #{prompt_id}"
@@ -76,7 +76,7 @@ module AIA
 
       # Handle role if specified
       if role_id
-        role_prompt = PromptManager::Prompt.get(id: role_id) rescue nil
+        role_prompt = PromptManager::Prompt.get(id: role_id, shell_flag: @config.shell, erb_flag: @config.erb, directive_processor: AIA::DirectiveProcessor.new(@config), external_binding: binding) rescue nil
         if role_prompt
           prompt.text = "#{role_prompt.text}\n#{prompt.text}"
         else
@@ -137,11 +137,11 @@ module AIA
         prompt_text = prompt_text.gsub(/\$\((.*?)\)/) do
           ShellCommandExecutor.execute_command(Regexp.last_match(1), @config)
         end
-        
+
         prompt_text = prompt_text.gsub(/`([^`]+)`/) do
           ShellCommandExecutor.execute_command(Regexp.last_match(1), @config)
         end
-        
+
         prompt_text = prompt_text.gsub(/\$(\w+)|\$\{(\w+)\}/) { ENV[Regexp.last_match(1) || Regexp.last_match(2)] || "" }
       end
 
@@ -150,13 +150,13 @@ module AIA
       if prompt_text.include?('//') # Only process if it contains potential directive markers
         lines = prompt_text.split("\n")
         modified_lines = []
-        
+
         lines.each do |line|
           if line.strip.start_with?('//')
             # This is a directive line - process it
             directive_type, directive_args = line.strip[2..-1].split(' ', 2)
             directive_args ||= ''
-            
+
             case directive_type
             when "config", "cfg"
               if directive_args.include?('=')
@@ -191,7 +191,7 @@ module AIA
             modified_lines << line
           end
         end
-        
+
         # Replace the prompt_text with the modified version
         prompt_text = modified_lines.join("\n")
       end
@@ -253,23 +253,14 @@ module AIA
             file.puts "\nYou: #{prompt}"
           end
         end
+
         if @directive_processor.directive?(prompt)
-          result = @directive_processor.process(prompt, @history_manager.history)
-          directive_output = result[:result]
-          
-          # Update history if it was modified (e.g., by //clear)
-          @history_manager.history = result[:modified_history] if result[:modified_history]
+          directive_output = @directive_processor.process(prompt)
 
           # If there's no output from the directive, prompt for input again
           if directive_output.nil? || directive_output.strip.empty?
             next
           else
-            # Special handling for directives that should be excluded from chat context
-            if @directive_processor.exclude_from_chat_context?(prompt)
-              puts "\n#{directive_output}\n"
-              next
-            end
-
             # Add directive output to chat context and continue
             puts "\n#{directive_output}\n"
             prompt = "I executed this directive: #{prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
@@ -317,7 +308,7 @@ module AIA
       role_path = role_id.start_with?(roles+'/') ? role_id : "roles/#{role_id}"
 
       # Get the role prompt
-      role_prompt = PromptManager::Prompt.get(id: role_path) rescue nil
+      role_prompt = PromptManager::Prompt.get(id: role_path, shell_flag: @config.shell, erb_flag: @config.erb, directive_processor: AIA::DirectiveProcessor.new(@config), external_binding: binding) rescue nil
 
       if role_prompt.nil?
         puts "Error: Could not find role with ID: #{role_id}"

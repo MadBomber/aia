@@ -24,6 +24,7 @@ module AIA
       @config = config
       @prompts_dir = config.prompts_dir
       @roles_dir = config.roles_dir
+      @directive_processor = AIA::DirectiveProcessor.new(@config)
 
       # Initialize PromptManager with the FileSystemAdapter
       PromptManager::Prompt.storage_adapter =
@@ -42,11 +43,11 @@ module AIA
     # @return [String] the processed prompt text
     def get_prompt(prompt_id, role_id = nil)
       # Get the prompt using the gem's functionality
-      prompt = PromptManager::Prompt.get(id: prompt_id)
+      prompt = PromptManager::Prompt.get(id: prompt_id, shell_flag: @config.shell, erb_flag: @config.erb, directive_processor: @directive_processor, external_binding: binding)
 
       if role_id
         # Get the role prompt
-        role_prompt = PromptManager::Prompt.get(id: role_id)
+        role_prompt = PromptManager::Prompt.get(id: role_id, shell_flag: @config.shell, erb_flag: @config.erb, directive_processor: @directive_processor, external_binding: binding)
         # Prepend role to prompt
         prompt.text = "#{role_prompt.text}
 #{prompt.text}"

@@ -12,3 +12,10 @@
   
 
 
+
+--- 2025-03-29 21:39:46 -0500
+    starting the refactor to take advantage of the new capability of the PromptMananger gem.
+
+  lib/aia/chat_processor_service.rb
+
+

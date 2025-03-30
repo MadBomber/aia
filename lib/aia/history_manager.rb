@@ -63,7 +63,7 @@ module AIA
       # Use the system prompt if available
       system_prompt = ""
       if system_prompt_id
-        system_prompt = PromptManager::Prompt.get(id: system_prompt_id).to_s rescue ""
+        system_prompt = PromptManager::Prompt.get(id: system_prompt_id, external_binding: binding).to_s rescue ""
       end
 
       # Prepare the conversation history
