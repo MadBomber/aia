@@ -1,6 +1,9 @@
 # lib/aia/session.rb
 #
 # This file manages the session logic for the AIA application.
+# The Session class manages the interactive session logic for the AIA
+# application. It handles user input, prompt processing, and interaction
+# with the AI client.
 
 require 'tty-spinner'
 require 'tty-screen'
@@ -128,6 +131,75 @@ module AIA
 
       # Ensure prompt text is processed with parameters
       prompt_text = prompt.to_s
+
+      # Process shell commands, backticks, and environment variables if enabled
+      if @config.shell
+        prompt_text = prompt_text.gsub(/\$\((.*?)\)/) do
+          ShellCommandExecutor.execute_command(Regexp.last_match(1), @config)
+        end
+        
+        prompt_text = prompt_text.gsub(/`([^`]+)`/) do
+          ShellCommandExecutor.execute_command(Regexp.last_match(1), @config)
+        end
+        
+        prompt_text = prompt_text.gsub(/\$(\w+)|\$\{(\w+)\}/) { ENV[Regexp.last_match(1) || Regexp.last_match(2)] || "" }
+      end
+
+      # Process directives in the prompt - special handling for script content
+      # Split the prompt into lines and process each directive line by line
+      if prompt_text.include?('//') # Only process if it contains potential directive markers
+        lines = prompt_text.split("\n")
+        modified_lines = []
+        
+        lines.each do |line|
+          if line.strip.start_with?('//')
+            # This is a directive line - process it
+            directive_type, directive_args = line.strip[2..-1].split(' ', 2)
+            directive_args ||= ''
+            
+            case directive_type
+            when "config", "cfg"
+              if directive_args.include?('=')
+                key, value = directive_args.split('=', 2).map(&:strip)
+                # Convert value to appropriate type
+                parsed_value = case value.downcase
+                  when 'true' then true
+                  when 'false' then false
+                  when /^\d+$/ then value.to_i
+                  when /^\d+\.\d+$/ then value.to_f
+                  else value
+                end
+                @config[key.to_sym] = parsed_value
+                modified_lines << "# #{line} (processed)" # Comment it out but keep it for reference
+              else
+                modified_lines << line # Keep as is if not a valid config directive
+              end
+            when "shell", "sh"
+              # Execute the shell command and replace the line with its output
+              result = ShellCommandExecutor.execute_command(directive_args, @config)
+              modified_lines << "# #{line} (processed)" # Comment out the original directive
+              modified_lines << ""  # Empty line for readability
+              modified_lines << "# Output from: #{directive_args}" # Add comment for clarity
+              modified_lines << result # Add the actual output
+              modified_lines << ""  # Empty line for readability
+            else
+              # Unknown directive or one that should be handled differently
+              modified_lines << line
+            end
+          else
+            # Not a directive, keep as is
+            modified_lines << line
+          end
+        end
+        
+        # Replace the prompt_text with the modified version
+        prompt_text = modified_lines.join("\n")
+      end
+
+      # Process ERB if enabled
+      if @config.erb
+        prompt_text = ERB.new(prompt_text).result(binding)
+      end
 
       # Process directives in the prompt
       if @directive_processor.directive?(prompt_text)

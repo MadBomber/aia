@@ -1,5 +1,7 @@
 #
 # This file contains the PromptProcessor class for processing prompts.
+# The PromptProcessor class is responsible for processing prompts,
+# handling shell commands, ERB, and directives.
 
 require_relative 'shell_command_executor'
 

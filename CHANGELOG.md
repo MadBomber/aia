@@ -1,4 +1,19 @@
+# Changelog
 ## [Unreleased]
+
+## [0.7.1] WIP - 2025-03-22
+- Added `UIPresenter` class for handling user interface presentation.
+- Added `DirectiveProcessor` class for processing chat-based directives.
+- Added `HistoryManager` class for managing conversation and variable history.
+- Added `ShellCommandExecutor` class for executing shell commands.
+- Added `ChatProcessorService` class for managing conversation processing logic.
+- Added `PromptProcessor` class for processing prompts.
+- Enhanced `Session` class to manage interactive session logic.
+- Updated `Config` class to handle new configuration options and defaults.
+- Improved handling of chat prompts and AI interactions.
+- Added support for dynamic content processing in prompts, including shell commands and ERB.
+- Improved error handling and user feedback for directive processing.
+- Enhanced logging and output options for chat sessions.
 
 ## [0.7.0] WIP - 2025-03-17
 - Major code refactoring for better organization and maintainability:

@@ -1,6 +1,9 @@
 # lib/aia/config.rb
 #
 # This file contains the configuration settings for the AIA application.
+# The Config class is responsible for managing configuration settings
+# for the AIA application. It provides methods to parse command-line
+# arguments, environment variables, and configuration files.
 
 require 'ostruct'
 require 'yaml'

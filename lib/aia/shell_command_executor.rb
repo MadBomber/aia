@@ -1,6 +1,9 @@
 # lib/aia/shell_command_executor.rb
 #
 # This file contains the ShellCommandExecutor class for processing shell commands.
+# The ShellCommandExecutor class provides a consistent way to execute shell commands
+# across different parts of the AIA gem, ensuring uniform behavior for all shell
+# command execution methods ($(command), //shell directive, and backticks).
 
 module AIA
   # The ShellCommandExecutor class provides a consistent way to execute shell commands

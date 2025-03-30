@@ -1,6 +1,9 @@
 # lib/aia/ui_presenter.rb
 #
 # This file contains the UIPresenter class for handling user interface presentation.
+# The UIPresenter class is responsible for handling all user interface aspects
+# of the AIA application, including displaying messages, formatting responses,
+# and collecting user input.
 
 require 'tty-screen'
 require 'reline'

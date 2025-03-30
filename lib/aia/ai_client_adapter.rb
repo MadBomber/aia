@@ -1,6 +1,10 @@
 # lib/aia/ai_client_adapter.rb
 #
 # This file adapts the AI client for use in the AIA application.
+# The AIClientAdapter class adapts the AI client for use in the AIA
+# application, providing methods for interacting with AI models for
+# various operations such as text generation, image generation, and
+# speech synthesis.
 
 require 'ai_client'
 require 'tty-spinner'

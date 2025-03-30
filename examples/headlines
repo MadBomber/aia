@@ -1,0 +1,21 @@
+#!/usr/bin/env aia run --no-out_file
+# File: examples/headlines
+# Desc: retrieves the news.google.com website
+#       extracts and formats the headlines
+#       and prints them to the console
+
+//config shell = true
+# //config
+
+# Puts the webpage into index.html
+# //shell wget2 https://news.google.com
+
+$(wget2 https://news.google.com)
+
+
+# Lets hear the headlines as well as read them.
+//config speak = true
+
+Extract and summarize the headlines from the following text:
+
+$(html2text index.html)

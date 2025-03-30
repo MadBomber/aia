@@ -1,4 +1,4 @@
-# aia 1 "v0.6.0" AIA "User Manuals"
+# aia 1 "v0.7.0" AIA "User Manuals"
 
 ## NAME
 
@@ -10,7 +10,7 @@ aia [options]* PROMPT_ID [CONTEXT_FILE]*
 
 ## DESCRIPTION
 
-The aia command-line tool is an interface for interacting with AI models, facilitating the management of pre-compositional prompts and executing generative AI commands. It supports various options to customize interactions, load configuration files, and integrate shell and ERB for dynamic content.
+The aia command-line tool is an interface for interacting with AI models, facilitating the management of pre-compositional prompts and executing generative AI commands. It supports various options to customize interactions, load configuration files, and integrate shell and ERB for dynamic content. Recent updates include enhanced features such as directive processing, history management, shell command execution, and chat processing services.
 
 ## ARGUMENTS
 
@@ -23,7 +23,7 @@ The aia command-line tool is an interface for interacting with AI models, facili
 ## OPTIONS
 
 `--chat`
-: begin a chat session with the LLM after the initial prompt response;  will set --no-out_file so that the LLM response comes to STDOUT.  After the initial prompt is processed, you will be asked to provide a follow up.  Just enter whatever is appropriate terminating your input with a RETURN.  The LLM will provide a response to your follow up and ask you again if you have another follow up. This back and forth chatting will continue until you enter `exit` or a control-D to terminate the session.  You may also enter a directive to be processed after which another follow up is requested.  If you have the `--shell` and/or the `--erb` options set you may use those tools within your follow up to provide dynamic content durning your chat session.
+: Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT. After the initial prompt is processed, you will be asked to provide a follow-up. Just enter whatever is appropriate, terminating your input with a RETURN. The LLM will provide a response to your follow-up and ask you again if you have another follow-up. This back-and-forth chatting will continue until you enter `exit` or a control-D to terminate the session. You may also enter a directive to be processed, after which another follow-up is requested. If you have the `--shell` and/or the `--erb` options set, you may use those tools within your follow-up to provide dynamic content during your chat session.
 
 
 `--completion` *SHELL_NAME*
@@ -33,10 +33,10 @@ The aia command-line tool is an interface for interacting with AI models, facili
 : Dump the current configuration to a file in the format denoted by the file's extension.  Currently only .yml, .yaml and .toml are acceptable file extensions.  *If the file exists, it will be over-written without warning.*
 
 `--shell`
-: Enables `aia` to access your terminal's shell environment from inside the prompt text, allowing for dynamic content insertion using system environment variables and shell commands.
+: Enables `aia` to access your terminal's shell environment from inside the prompt text, allowing for dynamic content insertion using system environment variables and shell commands. Includes safety features to confirm or block dangerous commands.
 
 `--erb`
-: Turns the prompt text file into a fully functioning ERB template, allowing for embedded Ruby code processing within the prompt text.
+: Turns the prompt text file into a fully functioning ERB template, allowing for embedded Ruby code processing within the prompt text. This enables dynamic content generation and complex logic within prompts.
 
 `--iq`, `--image_quality` *VALUE*
 : Used with an LLM that supports image generation - default: ''
@@ -48,7 +48,7 @@ The aia command-line tool is an interface for interacting with AI models, facili
 : Name of the LLM model to use - default is gpt-4o-mini
 
 `--speak`
-: Simple implementation. Uses the speech model to convert text to audio then plays the audio.  Fun with --chat
+: Simple implementation. Uses the speech model to convert text to audio, then plays the audio. Fun with --chat. Supports configuration of speech model and voice.
 
 `--sm`, `--speech_model` *MODEL NAME*
 : The model to use for text-to-speech (TTS) - default: tts-1

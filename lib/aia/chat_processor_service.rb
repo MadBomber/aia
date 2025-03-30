@@ -1,6 +1,8 @@
 # lib/aia/chat_processor_service.rb
 #
 # This file contains the ChatProcessorService class for managing conversation processing logic.
+# The ChatProcessorService class is responsible for processing chat prompts,
+# handling AI client interactions, and managing the flow of the conversation.
 
 require_relative 'shell_command_executor'
 
@@ -34,7 +36,15 @@ module AIA
     # @param text [String] the text to speak
     def speak(text)
       if speak?
-        `#{@config.speak_command} #{@speaker.speak(text).path}`
+        # Initialize speaker on-demand if it doesn't exist but speak is enabled
+        @speaker ||= AiClient.new(@config.speech_model) if @config.speech_model
+        
+        # Only proceed if speaker is properly initialized
+        if @speaker
+          `#{@config.speak_command} #{@speaker.speak(text).path}`
+        else
+          puts "Warning: Unable to speak. Speech model not configured properly."
+        end
       end
     end
 

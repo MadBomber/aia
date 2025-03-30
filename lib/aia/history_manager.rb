@@ -1,6 +1,9 @@
 # lib/aia/history_manager.rb
 #
 # This file contains the HistoryManager class for handling conversation and variable history.
+# The HistoryManager class is responsible for managing conversation history and
+# variable history persistence. It handles loading, saving, and manipulating
+# history data throughout a session.
 
 require 'json'
 require 'fileutils'

@@ -1,12 +1,12 @@
 # AI Assistant (AIA)
 
-`aia` is a command-line utility that facilitates interaction with AI models. It automates the management of pre-compositional prompts and executes generative AI (Gen-AI) commands on those prompts taking advantage of modern LLMs increased context window size.
+`aia` is a command-line utility that facilitates interaction with AI models. It automates the management of pre-compositional prompts and executes generative AI (Gen-AI) commands on those prompts, taking advantage of modern LLMs' increased context window size. The application now includes enhanced features such as directive processing, history management, shell command execution, and chat processing services.
 
 It leverages the `prompt_manager` gem to manage prompts. It utilizes "ripgrep" for searching for prompt files and uses `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
-> Just an FYI ... I am working in the `develop` branch to **fully integrate the ai_client gem** which gives access to all models and all providers.
+> Just an FYI ... I am working in the `develop` branch to **fully integrate the ai_client gem**, which gives access to all models and all providers. Recent updates include the addition of `DirectiveProcessor`, `HistoryManager`, `ShellCommandExecutor`, and `ChatProcessorService` classes to enhance functionality and user experience.
 
 
 
@@ -14,11 +14,9 @@ It leverages the `prompt_manager` gem to manage prompts. It utilizes "ripgrep" f
 
 ## Table of Contents
 
-- [AI Assistant (AIA)](#ai-assistant-aia)
-  - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
-  - [Configuration Using Envars](#configuration-using-envars)
+  - [Configuration Using Envars and Defaults](#configuration-using-envars-and-defaults)
   - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
       - [Access to System Environment Variables](#access-to-system-environment-variables)
       - [Dynamic Shell Commands](#dynamic-shell-commands)
@@ -87,25 +85,32 @@ The usage report obtained using either `-h` or `--help` is implemented as a stan
 $ aia --help
 ```
 
-## Configuration Using Envars
+## Configuration Using Envars and Defaults
+
+The AIA application now includes a comprehensive configuration system that allows for flexible customization through environment variables, command-line options, and configuration files. The default configuration includes options for model selection, output handling, shell command safety, and more.
 
 The `aia` configuration defaults can be overridden by system environment variables *(envars)* with the prefix "AIA_" followed by the config item name also in uppercase. All configuration items can be overridden in this way by an envar.  The following table shows a few examples.
 
-| Config Item   | Default Value | envar key |
-| ------------- | ------------- | --------- |
-| config_file   | nil           | AIA_CONFIG_FILE |
-| debug         | false         | AIA_DEBUG |
-| fuzzy         | false         | AIA_FUZZY |
-| log_file      | ~/.prompts/_prompts.log | AIA_LOG_FILE |
-| markdown      | true          | AIA_MARKDOWN |
-| model         | gpt-4-1106-preview | AIA_MODEL |
-| out_file      | STDOUT        | AIA_OUT_FILE |
-| prompts_dir   | ~/.prompts    | AIA_PROMPTS_DIR |
-| speech_model. | tts-1         | AIA_SPEECH_MODEL |
-| verbose       | FALSE         | AIA_VERBOSE |
-| voice         | alloy         | AIA_VOICE |
-| shell_confirm | true          | AIA_SHELL_CONFIRM |
-| strict_shell_safety | false   | AIA_STRICT_SHELL_SAFETY |
+| Config Item          | Default Value                  | envar key                |
+| -------------------- | ------------------------------ | ------------------------ |
+| config_file          | nil                            | AIA_CONFIG_FILE          |
+| debug                | false                          | AIA_DEBUG                |
+| fuzzy                | false                          | AIA_FUZZY                |
+| log_file             | ~/.prompts/_prompts.log        | AIA_LOG_FILE             |
+| markdown             | true                           | AIA_MARKDOWN             |
+| model                | gpt-4o-mini                    | AIA_MODEL                |
+| out_file             | temp.md                        | AIA_OUT_FILE             |
+| prompts_dir          | ~/.prompts                     | AIA_PROMPTS_DIR          |
+| roles_dir            | ~/.prompts/roles               | AIA_ROLES_DIR            |
+| speech_model         | tts-1                          | AIA_SPEECH_MODEL         |
+| transcription_model  | whisper-1                      | AIA_TRANSCRIPTION_MODEL  |
+| verbose              | false                          | AIA_VERBOSE              |
+| voice                | alloy                          | AIA_VOICE                |
+| shell_confirm        | true                           | AIA_SHELL_CONFIRM        |
+| strict_shell_safety  | false                          | AIA_STRICT_SHELL_SAFETY  |
+| image_size           | 1024x1024                      | AIA_IMAGE_SIZE           |
+| image_quality        | standard                       | AIA_IMAGE_QUALITY        |
+| image_style          | vivid                          | AIA_IMAGE_STYLE          |
 
 
 

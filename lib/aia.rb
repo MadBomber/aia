@@ -1,6 +1,8 @@
 # lib/aia.rb
 #
 # This is the main entry point for the AIA application.
+# The AIA module serves as the namespace for the AIA application, which
+# provides an interface for interacting with AI models and managing prompts.
 
 require 'ai_client'
 require 'prompt_manager'

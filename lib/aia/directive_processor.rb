@@ -1,6 +1,10 @@
 # lib/aia/directive_processor.rb
 #
 # This file contains the DirectiveProcessor class for handling chat-based directives.
+# The DirectiveProcessor class is responsible for processing directives
+# entered in the chat interface. It handles parsing, validation, and execution
+# of various directive types like shell commands, Ruby code, configuration
+# management, file inclusion, and context control.
 
 require 'shellwords'
 require_relative 'shell_command_executor'
@@ -90,15 +94,11 @@ module AIA
     # @param directive_text [String] the directive text to parse
     # @return [Array<String>] an array containing the directive type and arguments
     def parse_directive(directive_text)
-      if directive_text.start_with?('//') # //directive style
-        parts = directive_text[2..-1].strip.split(' ', 2)
-        directive_type = parts[0]
-        directive_args = parts[1] || ''
-      else # #!directive: style
-        match = directive_text.match(/^\s*\#\!\s*([a-z]+)\s*\:(.*)$/i)
-        directive_type = match[1].strip if match
-        directive_args = match[2].strip if match
-      end
+      return [nil, nil] unless directive_text.start_with?('//') # //directive style
+
+      parts = directive_text[2..-1].strip.split(' ', 2)
+      directive_type = parts[0]
+      directive_args = parts[1] || ''
 
       [directive_type, directive_args]
     end

@@ -1,6 +1,9 @@
 # lib/aia/prompt_handler.rb
 #
 # This file handles prompt management for the AIA application.
+# The PromptHandler class is responsible for managing and processing
+# prompts within the AIA application. It interacts with the PromptManager
+# to retrieve and process prompts.
 
 require 'prompt_manager'
 require_relative 'prompt_processor'
