@@ -173,11 +173,9 @@ module AIA
           end
         end
 
-        prompt = @chat_processor.process_dynamic_content(prompt)
-
         @history_manager.add_to_history('user', prompt)
 
-        conversation = @history_manager.build_conversation_context(prompt, @config.system_prompt)
+        conversation = @history_manager.build_conversation_context(prompt, AIA.config.system_prompt)
 
         operation_type = @chat_processor.determine_operation_type(AIA.config.model)
         @ui_presenter.display_thinking_animation

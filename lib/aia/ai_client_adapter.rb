@@ -44,8 +44,6 @@ module AIA
     def speak(text)
       output_file = "#{Time.now.to_i}.mp3"
 
-
-
       begin
         # Try with options
         @client.speak(text, output_file, {
