@@ -49,13 +49,13 @@ module AIA
         return
       end
 
-      prompt  = PromptManager::Prompt.get(
-                  id:                  prompt_id,
-                  shell_flag:          AIA.shell?,
-                  erb_flag:            AIA.erb?,
-                  directive_processor: AIA::DirectiveProcessor.new,
-                  external_binding:    binding
-                ) rescue nil
+      prompt  = PromptManager::Prompt.new(
+                  id:                   prompt_id,
+                  envar_flag:           AIA.shell?,
+                  erb_flag:             AIA.erb?,
+                  directives_processor: AIA::DirectiveProcessor.new,
+                  external_binding:     binding
+                ) # rescue nil
 
       if prompt.nil?
         puts "Error: Could not find prompt with ID: #{prompt_id}"
@@ -78,7 +78,7 @@ module AIA
         end
       end
 
-      variables = prompt.keywords
+      variables = prompt.parameters.keys
 
       if variables && !variables.empty?
         variable_values = {}
@@ -113,11 +113,7 @@ module AIA
         prompt.parameters = variable_values
       end
 
-      prompt_text = prompt.text
-
-
-
-
+      prompt_text = prompt.to_s
 
       # Add context files if any
       if AIA.config.context_files && !AIA.config.context_files.empty?

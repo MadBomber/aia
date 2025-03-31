@@ -70,7 +70,7 @@ module AIA
           directives[key] = "Error: #{method_name} is not a valid directive: #{key}"
           next
         elsif private?(method_name)
-          directives[key] =  send(method_name, *args)
+          directives[key] =  send(method_name, args)
         else
           directives[key] = "Error: Unknown directive '#{key}'"
         end
