@@ -125,9 +125,14 @@ module AIA
         ""
       else
         config_item  = args.shift
-        config_value = args.join(' ').gsub('=', '').strip
+        boolean      = AIA.respond_to?("#{config_item}?")
+        new_value    = args.join(' ').gsub('=', '').strip
 
-        AIA.config[config_item] = config_value
+        if boolean
+          new_value = %w[true t yes y on 1 yea yeah yep yup].include?(new_value.downcase)
+        end
+
+        AIA.config[config_item] = new_value
         ""
       end
     end
@@ -150,9 +155,9 @@ module AIA
     end
     alias_method :temp, :temperature
 
-    desc "TODO: wanting to clear the chat context"
+    desc "Clears the conversation history (aka context) same as //config clear = true"
     def clear(*args)
-      "TODO: How do I clear the context?"
+      send(:config, %w[clear = true])
     end
 
     # Depends upon PromptManager::Prompt#to_s evaluating ERB
@@ -166,6 +171,11 @@ module AIA
     def say(*args)
       `say #{args.join(' ')}`
       ""
+    end
+
+    desc "Inserts an instruction to keep responses short and to the point."
+    def terse(...)
+      AIA::Session::TERSE_PROMPT
     end
 
     desc "Generates this help content"
@@ -200,8 +210,7 @@ module AIA
           #{others_line}
         TEXT
       end
-      # ap self.class.descriptions
-      # ap self.class.aliases
+
       ""
     end
   end

@@ -1,8 +1,5 @@
 # lib/aia/history_manager.rb
 
-
-
-
 require 'json'
 require 'fileutils'
 
@@ -42,6 +39,12 @@ module AIA
 
 
     def build_conversation_context(current_prompt, system_prompt_id = nil)
+      if AIA.clear?
+        clear_history
+        AIA.config.clear = false
+        return ""
+      end
+
       system_prompt = ""
       if system_prompt_id
         system_prompt = PromptManager::Prompt.get(id: system_prompt_id, external_binding: binding).to_s rescue ""

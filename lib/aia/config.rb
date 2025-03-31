@@ -25,6 +25,7 @@ module AIA
       shell: false,
       erb: false,
       chat: false,
+      clear: false,
       terse: false,
       verbose: false,
       debug: false,

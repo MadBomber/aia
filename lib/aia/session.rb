@@ -1,6 +1,5 @@
 # lib/aia/session.rb
 
-
 require 'tty-spinner'
 require 'tty-screen'
 require 'reline'
@@ -16,8 +15,7 @@ require_relative 'chat_processor_service'
 module AIA
   class Session
     KW_HISTORY_MAX = 5 # Maximum number of history entries per keyword
-
-
+    TERSE_PROMPT   = "\nKeep your response short and to the point.\n"
 
     def initialize(prompt_handler, client)
       @prompt_handler  = prompt_handler
@@ -113,6 +111,10 @@ module AIA
         prompt.parameters = variable_values
       end
 
+      if AIA.terse?
+        prompt.text << TERSE_PROMPT
+      end
+
       prompt_text = prompt.to_s
 
       # Add context files if any
@@ -150,7 +152,12 @@ module AIA
         # Get user input
         prompt = @ui_presenter.ask_question
 
-        break if prompt.nil? || prompt.strip.downcase == 'exit'
+        debug_me{[
+          :prompt,
+          "prompt.class"
+        ]}
+
+        break if prompt.nil? || prompt.strip.downcase == 'exit' || prompt.strip.empty?
 
         if AIA.config.out_file
           File.open(AIA.config.out_file, 'a') do |file|
@@ -172,6 +179,9 @@ module AIA
         @history_manager.add_to_history('user', prompt)
 
         conversation = @history_manager.build_conversation_context(prompt, AIA.config.system_prompt)
+
+        # FIXME: is conversation the same thing as the context for a chat session?
+        #        if so need to somehow delete it when the //clear directive is entered.
 
         operation_type = @chat_processor.determine_operation_type(AIA.config.model)
         @ui_presenter.display_thinking_animation
