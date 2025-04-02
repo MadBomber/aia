@@ -33,6 +33,14 @@ module AIA
     @config
   end
 
+  def self.client
+    @config.client
+  end
+
+  def self.client=(client)
+    @config.client = client
+  end
+
   def self.build_flags
     @config.each_pair do |key, value|
       if [TrueClass, FalseClass].include?(value.class)
@@ -49,8 +57,8 @@ module AIA
     build_flags
 
     prompt_handler = PromptHandler.new
-    client         = AIClientAdapter.new
-    session        = Session.new(prompt_handler, client)
+    @config.client = AIClientAdapter.new
+    session        = Session.new(prompt_handler)
 
     session.start
   end

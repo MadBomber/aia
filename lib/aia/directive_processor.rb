@@ -95,7 +95,9 @@ module AIA
     ################
 
     desc "Inserts the contents of a file  Example: //include path/to/file"
-    def include(file_path)
+    def include(args)
+      file_path = args.shift
+
       if @included_files.include?(file_path)
         ""
       else
@@ -164,8 +166,18 @@ module AIA
     # after it has evaluated directives.
     desc "Shortcut for a one line ERB statement"
     def ruby(*args)
-      "<%= #{args.join(' ')} %>"
+      erb_code = "<%= #{args.join(' ')} %>"
+      if AIA.chat?
+        begin
+          ERB.new(erb_code).result(binding)
+        rescue Exception => e
+          e.message
+        end
+      else
+        erb_code
+      end
     end
+    alias_method :rb, :ruby
 
     desc "Use the system's say command to speak text //say some text"
     def say(*args)

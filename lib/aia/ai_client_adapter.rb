@@ -57,6 +57,18 @@ module AIA
       system("#{AIA.config.speak_command} #{output_file}") if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
     end
 
+    def method_missing(method, *args, &block)
+      if @client.respond_to?(method)
+        @client.public_send(method, *args, &block)
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(method, include_private = false)
+      @client.respond_to?(method) || super
+    end
+
     private
 
 

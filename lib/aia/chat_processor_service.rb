@@ -5,8 +5,7 @@ require_relative 'shell_command_executor'
 
 module AIA
   class ChatProcessorService
-    def initialize(client, ui_presenter, directive_processor = nil)
-      @client = client
+    def initialize(ui_presenter, directive_processor = nil)
       @ui_presenter = ui_presenter
       @speaker = AIA.speak? ? AiClient.new(AIA.config.speech_model) : nil
       @directive_processor = directive_processor
@@ -39,21 +38,21 @@ module AIA
     def send_to_client(prompt, operation_type)
       case operation_type
       when :text_to_text
-        @client.chat(prompt)
+        AIA.client.chat(prompt)
       when :text_to_image
-        @client.chat(prompt)
+        AIA.client.chat(prompt)
       when :image_to_text
-        @client.chat(prompt)
+        AIA.client.chat(prompt)
       when :text_to_audio
-        @client.chat(prompt)
+        AIA.client.chat(prompt)
       when :audio_to_text
         if prompt.strip.end_with?('.mp3', '.wav', '.m4a', '.flac') && File.exist?(prompt.strip)
-          @client.transcribe(prompt.strip)
+          AIA.client.transcribe(prompt.strip)
         else
-          @client.chat(prompt) # Fall back to regular chat
+          AIA.client.chat(prompt) # Fall back to regular chat
         end
       else
-        @client.chat(prompt)
+        AIA.client.chat(prompt)
       end
     end
 

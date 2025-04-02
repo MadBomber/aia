@@ -17,13 +17,12 @@ module AIA
     KW_HISTORY_MAX = 5 # Maximum number of history entries per keyword
     TERSE_PROMPT   = "\nKeep your response short and to the point.\n"
 
-    def initialize(prompt_handler, client)
+    def initialize(prompt_handler)
       @prompt_handler  = prompt_handler
-      @client          = client
       @history_manager = HistoryManager.new
       @ui_presenter    = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
-      @chat_processor      = ChatProcessorService.new(client, @ui_presenter, @directive_processor)
+      @chat_processor      = ChatProcessorService.new(@ui_presenter, @directive_processor)
 
       if AIA.config.out_file && !AIA.append? && File.exist?(AIA.config.out_file)
         File.open(AIA.config.out_file, 'w') {} # Truncate the file
@@ -152,10 +151,6 @@ module AIA
         # Get user input
         prompt = @ui_presenter.ask_question
 
-        debug_me{[
-          :prompt,
-          "prompt.class"
-        ]}
 
         break if prompt.nil? || prompt.strip.downcase == 'exit' || prompt.strip.empty?
 
