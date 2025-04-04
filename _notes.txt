@@ -19,3 +19,213 @@
   lib/aia/chat_processor_service.rb
 
 
+
+--- 2025-04-03 22:17:11 -0500
+    i have been tring to get multi-line input to work in the chat mode but have run into all kinds of problems. I think it would be best just to invoke the users editor for that kind of operation. Alo I am not sure but I thing the same ask method is used for getting values for parameters. changes may have been committed but they should be reversed back to the original and start over.
+
+  def get_multiline_input
+	  input_lines     = []
+	  current_line    = ""
+	  last_key_time   = Time.now
+	  waiting_printed = 0 # Track number of WAITING characters printed
+	
+	  STDIN.raw! # Enable raw mode for immediate keypress detection
+	  begin
+	    loop do
+	      begin
+	        r, _, _ = IO.select([STDIN], nil, nil, 0.1)
+	        if r
+	          char = STDIN.getc
+	          last_key_time = Time.now
+	          # Clear waiting characters when user types again
+	          if waiting_printed > 0
+	            print WAITING_ERASE * waiting_printed # Erase all waiting characters
+	            $stdout.flush
+	            waiting_printed = 0
+	          end
+	        else
+	          if (Time.now - last_key_time >= KEYPRESS_TIMEUT) &&
+	              waiting_printed == 0 &&
+	              (!input_lines.empty? || !current_line.empty?)
+	            print WAITING
+	            $stdout.flush
+	            waiting_printed = 1 # Record one '?' printed
+	          end
+	          next
+	        end
+	
+	      rescue Interrupt
+	        puts "\nInput cancelled. Discarding current input; please start over."
+	        input_lines     = []
+	        current_line    = ""
+	        waiting_printed = 0
+	        last_key_time   = Time.now
+	        next
+	      end
+	
+	      break if char.nil? # Handle EOF (Ctrl+D)
+	
+	      if char == "\r" || char == "\n"
+	        if current_line.empty? && !input_lines.empty?
+	          break # Two Enters in a row submits
+	        else
+	          input_lines << current_line
+	          current_line = ""
+	          waiting_printed = 0 # Reset waiting on new line
+	          print "\n\r"
+	          $stdout.flush
+	        end
+	
+	      elsif char == "\x04" # Ctrl+D
+	        break
+	
+	      elsif char == "\x08" || char == "\x7F" # Backspace or Delete
+	        if !current_line.empty?
+	          current_line.chop!
+	          print WAITING_ERASE
+	          $stdout.flush
+	        elsif waiting_printed > 0
+	          # Clear one waiting character if current_line is empty
+	          print "\b \b"
+	          $stdout.flush
+	          waiting_printed -= 1
+	        end
+	
+	      else
+	        current_line << char
+	        print char
+	        $stdout.flush
+	      end
+	    end
+	
+	  ensure
+	    STDIN.cooked! # Restore terminal to normal mode
+	  end
+	
+	  input_lines << current_line unless current_line.empty?
+	
+	  # Handle single-line special case
+	  if input_lines.size == 1
+	    if special_first_line_processing(input_lines.first)
+	      # If special (starts with "//"), return immediately as if double return was pressed
+	      return input_lines.first
+	    else
+	      # If not special, keep as is and return the full input
+	      return input_lines.join("\n")
+	    end
+	  end
+	
+	  input_lines.join("\n").tap do |result|
+	    puts "\n" if result.empty? # Clean up display if no input
+	  end
+	
+	rescue EOFError
+	  input_lines.join("\n")
+	end
+
+
+
+--- 2025-04-03 22:18:18 -0500
+    by using subl -w for multi-line input in chat mode that gives us the ability to write ERB for chat input.
+
+  def get_multiline_input
+	  input_lines     = []
+	  current_line    = ""
+	  last_key_time   = Time.now
+	  waiting_printed = 0 # Track number of WAITING characters printed
+	
+	  STDIN.raw! # Enable raw mode for immediate keypress detection
+	  begin
+	    loop do
+	      begin
+	        r, _, _ = IO.select([STDIN], nil, nil, 0.1)
+	        if r
+	          char = STDIN.getc
+	          last_key_time = Time.now
+	          # Clear waiting characters when user types again
+	          if waiting_printed > 0
+	            print WAITING_ERASE * waiting_printed # Erase all waiting characters
+	            $stdout.flush
+	            waiting_printed = 0
+	          end
+	        else
+	          if (Time.now - last_key_time >= KEYPRESS_TIMEUT) &&
+	              waiting_printed == 0 &&
+	              (!input_lines.empty? || !current_line.empty?)
+	            print WAITING
+	            $stdout.flush
+	            waiting_printed = 1 # Record one '?' printed
+	          end
+	          next
+	        end
+	
+	      rescue Interrupt
+	        puts "\nInput cancelled. Discarding current input; please start over."
+	        input_lines     = []
+	        current_line    = ""
+	        waiting_printed = 0
+	        last_key_time   = Time.now
+	        next
+	      end
+	
+	      break if char.nil? # Handle EOF (Ctrl+D)
+	
+	      if char == "\r" || char == "\n"
+	        if current_line.empty? && !input_lines.empty?
+	          break # Two Enters in a row submits
+	        else
+	          input_lines << current_line
+	          current_line = ""
+	          waiting_printed = 0 # Reset waiting on new line
+	          print "\n\r"
+	          $stdout.flush
+	        end
+	
+	      elsif char == "\x04" # Ctrl+D
+	        break
+	
+	      elsif char == "\x08" || char == "\x7F" # Backspace or Delete
+	        if !current_line.empty?
+	          current_line.chop!
+	          print WAITING_ERASE
+	          $stdout.flush
+	        elsif waiting_printed > 0
+	          # Clear one waiting character if current_line is empty
+	          print "\b \b"
+	          $stdout.flush
+	          waiting_printed -= 1
+	        end
+	
+	      else
+	        current_line << char
+	        print char
+	        $stdout.flush
+	      end
+	    end
+	
+	  ensure
+	    STDIN.cooked! # Restore terminal to normal mode
+	  end
+	
+	  input_lines << current_line unless current_line.empty?
+	
+	  # Handle single-line special case
+	  if input_lines.size == 1
+	    if special_first_line_processing(input_lines.first)
+	      # If special (starts with "//"), return immediately as if double return was pressed
+	      return input_lines.first
+	    else
+	      # If not special, keep as is and return the full input
+	      return input_lines.join("\n")
+	    end
+	  end
+	
+	  input_lines.join("\n").tap do |result|
+	    puts "\n" if result.empty? # Clean up display if no input
+	  end
+	
+	rescue EOFError
+	  input_lines.join("\n")
+	end
+
+
