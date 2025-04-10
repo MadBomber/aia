@@ -154,8 +154,8 @@ module AIA
           config.role = role
         end
 
-        opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: STDOUT)") do |file|
-          config.out_file = file ? File.expand_path(file, Dir.pwd) : File.expand_path('temp.md', Dir.pwd)
+        opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
+          config.out_file = file ? File.expand_path(file, Dir.pwd) : 'temp.md'
         end
 
         opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|

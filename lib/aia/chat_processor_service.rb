@@ -60,10 +60,12 @@ module AIA
     def output_response(response)
       speak(response)
 
-      # Only output to STDOUT if we're in chat mode or no output file is specified
-      puts response unless !AIA.chat? && AIA.config.out_file
+      # Only output to STDOUT if we're in chat mode
+      puts response if AIA.chat?
 
-      if AIA.config.out_file
+      if 'STDOUT' == AIA.config.out_file.upcase
+        puts response
+      else
         mode = AIA.append? ? 'a' : 'w'
         File.open(AIA.config.out_file, mode) do |file|
           file.puts response
