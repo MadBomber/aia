@@ -36,6 +36,8 @@ module AIA
 
 
     def send_to_client(prompt, operation_type)
+      maybe_change_model
+
       case operation_type
       when :text_to_text
         AIA.client.chat(prompt)
@@ -53,6 +55,13 @@ module AIA
         end
       else
         AIA.client.chat(prompt)
+      end
+    end
+
+
+    def maybe_change_model
+      if AIA.client.model != AIA.config.model
+        AIA.client = AIClientAdapter.new
       end
     end
 
