@@ -6,7 +6,7 @@ aia - command-line AI assistant
 
 ## SYNOPSIS
 
-aia [options]* PROMPT_ID [CONTEXT_FILE]*
+aia [options] PROMPT_ID [CONTEXT_FILE]*
 
 ## DESCRIPTION
 
@@ -23,7 +23,7 @@ The aia command-line tool is an interface for interacting with AI models, facili
 ## OPTIONS
 
 `--chat`
-: Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT. After the initial prompt is processed, you will be asked to provide a follow-up. Just enter whatever is appropriate, terminating your input with a RETURN. The LLM will provide a response to your follow-up and ask you again if you have another follow-up. This back-and-forth chatting will continue until you enter `exit` or a control-D to terminate the session. You may also enter a directive to be processed, after which another follow-up is requested. If you have the `--shell` and/or the `--erb` options set, you may use those tools within your follow-up to provide dynamic content during your chat session.
+: Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.
 
 
 `--completion` *SHELL_NAME*

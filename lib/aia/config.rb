@@ -93,7 +93,7 @@ module AIA
       opt_parser = OptionParser.new do |opts|
         opts.banner = "Usage: aia [options] PROMPT_ID [CONTEXT_FILE]*"
 
-        opts.on("--chat", "Begin a chat session after initial prompt") do
+        opts.on("--chat", "Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.") do
           config.chat = true
         end
 
@@ -101,11 +101,11 @@ module AIA
           config.model = model
         end
 
-        opts.on("--shell", "Process shell commands in prompt") do
+        opts.on("--shell", "Enables `aia` to access your terminal's shell environment from inside the prompt text, allowing for dynamic content insertion using system environment variables and shell commands. Includes safety features to confirm or block dangerous commands.") do
           config.shell = true
         end
 
-        opts.on("--erb", "Process ERB in prompt") do
+        opts.on("--erb", "Turns the prompt text file into a fully functioning ERB template, allowing for embedded Ruby code processing within the prompt text. This enables dynamic content generation and complex logic within prompts.") do
           config.erb = true
         end
 
@@ -190,7 +190,7 @@ module AIA
           config.verbose = true
         end
 
-        opts.on("--speak", "Speak the response") do
+        opts.on("--speak", "Simple implementation. Uses the speech model to convert text to audio, then plays the audio. Fun with --chat. Supports configuration of speech model and voice.") do
           config.speak = true
         end
 
@@ -243,7 +243,7 @@ module AIA
           config.dump_file = file
         end
 
-        opts.on("--completion SHELL", "Show completion script") do |shell|
+        opts.on("--completion SHELL", "Show completion script for bash|zsh|fish - default is nil") do |shell|
           config.completion = shell
         end
 
@@ -317,22 +317,13 @@ module AIA
 
 
     def self.generate_completion_script(shell)
-      shell   = AIA.config.completion
-      script  = Pathname.new(__dir__) + "aia_completion.#{shell}"
+      script_path = File.join(File.dirname(__FILE__), "aia_completion.#{shell}")
 
-      if script.exist?
-        puts
-        puts script.read
-        puts
+      if File.exist?(script_path)
+        puts File.read(script_path)
       else
-        STDERR.puts <<~EOS
-
-          ERROR: The shell '#{shell}' is not supported.
-
-        EOS
+        STDERR.puts "ERROR: The shell '#{shell}' is not supported or the completion script is missing."
       end
-
-      exit
     end
 
 
