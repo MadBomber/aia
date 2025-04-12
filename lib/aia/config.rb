@@ -179,6 +179,10 @@ module AIA
         end
 
         opts.on("-f", "--fuzzy", "Use fuzzy matching for prompt search") do
+          unless system("which fzf > /dev/null 2>&1")
+            STDERR.puts "Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option."
+            exit 1
+          end
           config.fuzzy = true
         end
 

@@ -11,6 +11,7 @@ require_relative 'directive_processor'
 require_relative 'history_manager'
 require_relative 'ui_presenter'
 require_relative 'chat_processor_service'
+require_relative 'prompt_handler'
 
 module AIA
   class Session
@@ -46,41 +47,16 @@ module AIA
         return
       end
 
-      prompt  = PromptManager::Prompt.new(
-                  id:                   prompt_id,
-                  envar_flag:           AIA.shell?,
-                  erb_flag:             AIA.erb?,
-                  directives_processor: AIA::DirectiveProcessor.new,
-                  external_binding:     binding
-                ) # rescue nil
-
-      if prompt.nil?
-        puts "Error: Could not find prompt with ID: #{prompt_id}"
+      begin
+        prompt = @prompt_handler.get_prompt(prompt_id, role_id)
+      rescue StandardError => e
+        puts "Error: #{e.message}"
         return
       end
-
-      if role_id
-        role_prompt = PromptManager::Prompt.get(
-                        id:                  role_id,
-                        shell_flag:          AIA.shell?,
-                        erb_flag:            AIA.erb?,
-                        directive_processor: AIA::DirectiveProcessor.new,
-                        external_binding:    binding
-                      ) rescue nil
-
-        if role_prompt
-          prompt.text = "#{role_prompt.text}\n#{prompt.text}"
-        else
-          puts "Warning: Could not find role with ID: #{role_id}"
-        end
-      end
-
       variables = prompt.parameters.keys
 
       if variables && !variables.empty?
         variable_values = {}
-        history         = @history_manager.load_variable_history
-        prompt_history  = history[prompt_id] || {}
 
         variables.each do |variable|
           var_history = @history_manager.get_variable_history(prompt_id, variable)
@@ -200,20 +176,14 @@ module AIA
       roles = AIA.config.roles_dir.split('/').last
       role_path = role_id.start_with?(roles+'/') ? role_id : "roles/#{role_id}"
 
-      role_prompt = PromptManager::Prompt.get(
-                      id:                  role_path,
-                      shell_flag:          AIA.shell?,
-                      erb_flag:            AIA.erb?,
-                      directive_processor: AIA::DirectiveProcessor.new,
-                      external_binding:    binding
-                    ) rescue nil
-
-      if role_prompt.nil?
-        puts "Error: Could not find role with ID: #{role_id}"
+      begin
+        role_prompt = @prompt_handler.get_prompt('', role_path)
+      rescue StandardError => e
+        puts "Error: #{e.message}"
         return
       end
 
-      AIA.config.system_prompt = role_path
+      AIA.config.system_prompt = role_prompt.text
 
       start_chat
     end

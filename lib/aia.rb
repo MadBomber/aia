@@ -55,6 +55,11 @@ module AIA
     @config = Config.parse(args)
 
     build_flags
+    
+    # Load Fzf if fuzzy search is enabled and fzf is installed
+    if @config.fuzzy && system('which fzf >/dev/null 2>&1')
+      require_relative 'aia/fzf'
+    end
 
     prompt_handler = PromptHandler.new
     @config.client = AIClientAdapter.new
