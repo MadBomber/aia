@@ -317,9 +317,22 @@ module AIA
 
 
     def self.generate_completion_script(shell)
-      # Implementation for shell completion script generation
-      # This would output a script for bash, zsh, or fish
-      puts "# Completion script for #{shell} would be generated here"
+      shell   = AIA.config.completion
+      script  = Pathname.new(__dir__) + "aia_completion.#{shell}"
+
+      if script.exist?
+        puts
+        puts script.read
+        puts
+      else
+        STDERR.puts <<~EOS
+
+          ERROR: The shell '#{shell}' is not supported.
+
+        EOS
+      end
+
+      exit
     end
 
 
