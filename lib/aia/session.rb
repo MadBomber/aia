@@ -36,14 +36,9 @@ module AIA
       prompt_id = AIA.config.prompt_id
       role_id   = AIA.config.role
 
-      # If directly starting in chat mode with empty prompt_id and no role
-      if AIA.chat? && prompt_id.empty? && !role_id
+      # If directly starting in chat mode without any initial prompting
+      if AIA.chat? && prompt_id.empty? && role_id.empty?
         start_chat
-        return
-      end
-
-      if AIA.chat? && role_id && (!prompt_id || prompt_id.empty?)
-        start_chat_with_role(role_id)
         return
       end
 
@@ -53,6 +48,7 @@ module AIA
         puts "Error: #{e.message}"
         return
       end
+
       variables = prompt.parameters.keys
 
       if variables && !variables.empty?
@@ -168,24 +164,6 @@ module AIA
       end
 
       @ui_presenter.display_chat_end
-    end
-
-
-    def start_chat_with_role(role_id)
-      # Add 'roles/' prefix to role_id if it doesn't already have it
-      roles = AIA.config.roles_dir.split('/').last
-      role_path = role_id.start_with?(roles+'/') ? role_id : "roles/#{role_id}"
-
-      begin
-        role_prompt = @prompt_handler.get_prompt('', role_path)
-      rescue StandardError => e
-        puts "Error: #{e.message}"
-        return
-      end
-
-      AIA.config.system_prompt = role_prompt.text
-
-      start_chat
     end
   end
 end

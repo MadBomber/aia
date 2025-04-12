@@ -25,7 +25,6 @@ The aia command-line tool is an interface for interacting with AI models, facili
 `--chat`
 : Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.
 
-
 `--completion` *SHELL_NAME*
 : Show completion script for bash|zsh|fish - default is nil
 
@@ -63,7 +62,7 @@ The aia command-line tool is an interface for interacting with AI models, facili
 : Which LLM to use for audio-to-text - default: whisper-1
 
 `--version`
-: Print the aia ersion - default is false
+: Print the aia version - default is false
 
 `-c`, `--config_file` *PATH_TO_CONFIG_FILE*
 : Load Config File. both YAML and TOML formats are supported.  Also ERB is supported.  For example ~/aia_config.yml.erb will be processed through ERB and then through YAML.  The result will be written out to ~/aia_config.yml so that you can manually verify that you got what you wanted from the ERB processing.
@@ -71,7 +70,7 @@ The aia command-line tool is an interface for interacting with AI models, facili
 `-d`, `--debug`
 : Turn On Debugging - default is false
 
-`-f`, --fuzzy`
+`-f`, `--fuzzy`
 : Use Fuzzy Matching when searching for a prompt - default is false
 
 `-h`, `--help`
@@ -90,13 +89,13 @@ The aia command-line tool is an interface for interacting with AI models, facili
 : Out FILENAME - default is ./temp.md
 
 `--pipeline PID1,PID2,PID3`
-: Specifies a pipeline of prompt IDs (PID) in which the respone from the first prompt is fed into the second prompt as context whose response is fed into the third as context, etc.  It is a comma seperated list.  There is no artificial limit to the number of prompt IDs in the pipeline - default is an empty list
+: Specifies a pipeline of prompt IDs (PID) in which the response from the first prompt is fed into the second prompt as context whose response is fed into the third as context, etc.  It is a comma separated list.  There is no artificial limit to the number of prompt IDs in the pipeline - default is an empty list
 
 `-p`, `--prompts_dir` *PATH_TO_DIRECTORY*
-: Directory containing the prompt files - default is ~/.prompts
+: Directory containing prompt files (default: ~/.prompts)
 
-`--roles_dir` *PATH_TO_DIRECTORY*
-: Directory containing the personification prompt files - default is $AIA_PROMPTS_DIR/roles
+`--roles_prefix` *PREFIX*
+: Subdirectory name for role files (default: roles). Used to calculate the roles directory by joining prompts_dir and roles_prefix.
 
 `-r`, `--role` *ROLE_ID*
 : A role ID is the same as a prompt ID.  A "role" is a specialized prompt that gets pre-pended to another prompt.  It's purpose is to configure the LLM into a certain orientation (personality) within which to resolve its primary prompt.
@@ -127,16 +126,33 @@ To acquire an OpenAI access key, first create an account on the OpenAI platform,
 
 ## USAGE NOTES
 
-`aia` is designed for flexibility, allowing users to pass prompt ids and context files as arguments. Some options change the behavior of the output, such as `--out_file` for specifying a file or `--no-out_file` for disabling file output in favor of standard output (STDPIT).
+`aia` is designed for flexibility, allowing users to pass prompt ids and context files as arguments. Some options change the behavior of the output, such as `--out_file` for specifying a file or `--no-out_file` for disabling file output in favor of standard output (STDOUT).
 
 The `--completion` option displays a script that enables prompt ID auto-completion for bash, zsh, or fish shells. It's crucial to integrate the script into the shell's runtime to take effect.
 
 The `--dump path/to/file.ext` option will write the current configuration to a file in the format requested by the file's extension.  The following extensions are supported:  .yml, .yaml and .toml
 
+## EXAMPLES
+
+### Example 1
+
+```bash
+aia -r ruby refactor my_code.rb
+```
+
+### Example 2
+
+```ruby
+class MyClass
+  # code here
+end
+```
+
+See: [Prompt Libraries](https://github.com/MadBomber/aia/blob/main/how_to_build_a_prompt_library.md "Prompt Libraries")
 
 ## PROMPT DIRECTIVES
 
-Within a prompt text file any line that begins with "//" is considered a prompt directive.  There are numerious prompt directives available.  In the discussion above on the configuration you learned about the "//config" directive.
+Within a prompt text file any line that begins with "//" is considered a prompt directive.  There are numerous prompt directives available.  In the discussion above on the configuration you learned about the "//config" directive.
 
 Prompt directives are lines in the prompt text file that begin with "//" and are used to tailor the specific configuration environment for the prompt. Some directives include:
 
@@ -149,29 +165,37 @@ Prompt directives are lines in the prompt text file that begin with "//" and are
 
 The `--next` and `--pipeline` command line options allow for the sequencing of prompts such that the first prompt's response feeds into the second prompt's context and so on.  Suppose you had a complex sequence of prompts with IDs one, two, three and four.  You would use the following `aia` command to process them in sequence:
 
-`aia one --pipeline two,three,four`
+```bash
+aia one --pipeline two,three,four
+```
 
-Notice that the value for the pipelined prompt IDs has no spaces.  This is so that the command line parser does not mistake one of the promp IDs as a CLI option and issue an error.
+Notice that the value for the pipelined prompt IDs has no spaces.  This is so that the command line parser does not mistake one of the prompt IDs as a CLI option and issue an error.
 
 ### Prompt Sequences Inside of a Prompt File
 
 You can also use the `config` directive inside of a prompt file to specify a sequence.  Given the example above of 4 prompt IDs you could add this directive to the prompt file `one.txt`
 
-`//config next two`
+```bash
+//config next two
+```
 
 Then inside the prompt file `two.txt` you could use this directive:
 
-`//config pipeline three,four`
+```bash
+//config pipeline three,four
+```
 
 or just
 
-`//config next three`
+```bash
+//config next three
+```
 
 if you want to specify them one at a time.
 
 You can also use the shortcuts `//next` and `//pipeline`
 
-```
+```bash
 //next two
 //next three
 //next four
@@ -180,16 +204,16 @@ You can also use the shortcuts `//next` and `//pipeline`
 
 Is the same thing as
 
-```
+```bash
 //pipeline two,three,four
 //next five
 ```
 
 ## SEE ALSO
 
-- [fzf](https://github.com/junegunn/fzf) fzf is a general-purpose command-line fuzzy finder.  It's an interactive Unix filter for command-line that can be used with any list; files, command history, processes, hostnames, bookmarks, git commits, etc.
+- [fzf](https://github.com/junegunn/fzf "fzf") fzf is a general-purpose command-line fuzzy finder.  It's an interactive Unix filter for command-line that can be used with any list; files, command history, processes, hostnames, bookmarks, git commits, etc.
 
-- [ripgrep](https://github.com/BurntSushi/ripgrep) Search tool like grep and The Silver Searcher. It is a line-oriented search tool that recursively searches a directory tree for a regex pattern. By default, ripgrep will respect gitignore rules and automatically skip hidden files/directories and binary files. (To disable all automatic filtering by default, use rg -uuu.) ripgrep has first class support on Windows, macOS and Linux, with binary downloads available for every release.
+- [ripgrep](https://github.com/BurntSushi/ripgrep "ripgrep") Search tool like grep and The Silver Searcher. It is a line-oriented search tool that recursively searches a directory tree for a regex pattern. By default, ripgrep will respect gitignore rules and automatically skip hidden files/directories and binary files. (To disable all automatic filtering by default, use rg -uuu.) ripgrep has first class support on Windows, macOS and Linux, with binary downloads available for every release.
 
 ## Image Generation
 

@@ -18,7 +18,9 @@ module AIA
       out_file: 'temp.md', # Default to temp.md if not specified
       log_file: File.join(ENV['HOME'], '.prompts', 'prompts.log'),
       prompts_dir: ENV['AIA_PROMPTS_DIR'] || File.join(ENV['HOME'], '.prompts'),
-      roles_dir: nil, # Will default to prompts_dir/roles
+      roles_prefix: ENV['AIA_ROLES_PREFIX'] || 'roles',
+      roles_dir: nil, # Will default to prompts_dir/#{roles_prefix}
+      role: '',
 
       # Flags
       markdown: true,
@@ -146,8 +148,8 @@ module AIA
           config.prompts_dir = dir
         end
 
-        opts.on("--roles_dir DIR", "Directory containing role files") do |dir|
-          config.roles_dir = dir
+        opts.on("--roles_prefix PREFIX", "Subdirectory name for role files (default: roles)") do |prefix|
+          config.roles_prefix = prefix
         end
 
         opts.on("-r", "--role ROLE_ID", "Role ID to prepend to prompt") do |role|
@@ -283,6 +285,22 @@ module AIA
         exit 1
       end
 
+      #####################################################
+      ## Tailor the options
+
+      debug_me{[
+        'config.roles_prefix',
+        'config.role'
+      ]}
+
+      unless config.role.empty?
+        unless config.roles_prefix.empty?
+          unless config.role.start_with?(config.roles_prefix)
+            config.role.prepend "#{config.roles_prefix}/"
+          end
+        end
+      end
+
       # First remaining arg is the prompt ID
       if remaining_args.empty?
         if config.completion
@@ -294,10 +312,7 @@ module AIA
           dump_config(config, config.dump_file)
           exit
         elsif config.chat && config.role
-          # For chat mode with a role, use the role as the prompt_id
-          # When the role_id is provided, format it as roles/role_id
-          # which is the expected format for the prompt_id when referencing a role
-          config.prompt_id = "roles/#{config.role}"
+          config.prompt_id = config.role
         elsif config.chat
           # For chat mode without a role or prompt_id, use an empty prompt_id
           # This will start a chat with no system prompt
@@ -305,9 +320,10 @@ module AIA
         elsif config.fuzzy
           # When fuzzy search is enabled but no prompt ID is provided,
           # set a special value to trigger fuzzy search without an initial query
+          # SMELL: This feels like a cludge
           config.prompt_id = '__FUZZY_SEARCH__'
         else
-          STDERR.puts "Error: A prompt ID is required. Use -h or --help for help."
+          STDERR.puts "Error: A prompt ID is required. Try --fuzzy to search or use -h or --help for help."
           exit 1
         end
       else
@@ -318,7 +334,7 @@ module AIA
       config.context_files = remaining_args unless remaining_args.empty?
 
       # Set roles_dir default if not specified
-      config.roles_dir ||= File.join(config.prompts_dir, 'roles')
+      config.roles_dir ||= File.join(config.prompts_dir, config.roles_prefix)
 
       config
     end
@@ -354,9 +370,5 @@ module AIA
 
       File.write(file, content)
     end
-
-
-
-
   end
 end

@@ -38,7 +38,7 @@ It leverages the `prompt_manager` gem to manage prompts. It utilizes "ripgrep" f
     - [Best Practices ??](#best-practices-)
     - [Example pipline](#example-pipline)
   - [All About ROLES](#all-about-roles)
-    - [The --roles\_dir (AIA\_ROLES\_DIR)](#the---roles_dir-aia_roles_dir)
+    - [The --roles_prefix (AIA_ROLES_PREFIX)](#the---roles_prefix-aia_roles_prefix)
     - [The --role Option](#the---role-option)
     - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
   - [External CLI Tools Used](#external-cli-tools-used)
@@ -66,7 +66,7 @@ Install the command-line utilities by executing:
 
 You will also need to establish a directory in your file system where your prompt text files, last used parameters and usage log files are kept.
 
-Setup a system environment variable (envar) named "AIA_PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts". The envar "AIA_ROLES_DIR" points to your role directory where you have prompts that define the different roles you want the LLM to assume when it is doing its work.  The default roles directory is inside the prompts directory.  Its name is "roles".
+Setup a system environment variable (envar) named "AIA_PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts". The envar "AIA_ROLES_PREFIX" points to your role prefix where you have prompts that define the different roles you want the LLM to assume when it is doing its work.  The default roles prefix is "roles".
 
 You may also want to install the completion script for your shell.  To get a copy of the completion script do:
 
@@ -101,7 +101,7 @@ The `aia` configuration defaults can be overridden by system environment variabl
 | model                | gpt-4o-mini                    | AIA_MODEL                |
 | out_file             | temp.md                        | AIA_OUT_FILE             |
 | prompts_dir          | ~/.prompts                     | AIA_PROMPTS_DIR          |
-| roles_dir            | ~/.prompts/roles               | AIA_ROLES_DIR            |
+| roles_prefix         | roles                          | AIA_ROLES_PREFIX         |
 | speech_model         | tts-1                          | AIA_SPEECH_MODEL         |
 | transcription_model  | whisper-1                      | AIA_TRANSCRIPTION_MODEL  |
 | verbose              | false                          | AIA_VERBOSE              |
@@ -422,15 +422,11 @@ You summary of the meeting is in the file `meeting_summary.md`
 
 ## All About ROLES
 
-### The --roles\_dir (AIA\_ROLES\_DIR)
+### The --roles_prefix (AIA_ROLES_PREFIX)
 
-There are two kinds of prompts
-1. instructional - tells the LLM what to do
-2. personification - tells the LLM who it should pretend to be when it does its transformational work.
+The second kind of prompt is called a role (aka system prompt). Sometimes the role is incorporated into the instruction. For example, "As a magician make a rabbit appear out of a hat." To reuse the same role in multiple prompts, `aia` encourages you to designate a special subdirectory for prompts that are specific to personification - roles.
 
-That second kind of prompt is called a role (aka system prompt).  Sometimes the role is incorporated into the instruction.  For example "As a magician make a rabbit appear out of a hat."  To reuse the same role in multiple prompts `aia` encourages you to designate a special `roles_dir` into which you put prompts that are specific to personification - roles.
-
-The default `roles_dir` is a sub-directory of the `prompts_dir` named roles.  You can, however, put your `roles_dir` anywhere that makes sense to you.
+The default `roles_prefix` is set to 'roles'. This creates a subdirectory under the `prompts_dir` where role files are stored. Internally, `aia` calculates a `roles_dir` value by joining `prompts_dir` and `roles_prefix`. It is recommended to keep the roles organized this way for better organization and management.
 
 ### The --role Option
 
@@ -454,7 +450,7 @@ Note that `--role` is just a way of saying add this prompt text file to the fron
 aia -r ruby sw_eng/doc_the_methods my_class.rb
 ```
 
-In this example the prompt text file `$AIA_ROLES_DIR/ruby.txt` is prepended to the prompt text file `$AIA_PROMPTS_DIR/sw_eng/doc_the_methods.txt`
+In this example the prompt text file `$AIA_ROLES_PREFIX/ruby.txt` is prepended to the prompt text file `$AIA_PROMPTS_DIR/sw_eng/doc_the_methods.txt`
 
 
 ### Other Ways to Insert Roles into Prompts

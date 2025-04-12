@@ -9,7 +9,7 @@ module AIA
   class PromptHandler
     def initialize
       @prompts_dir         = AIA.config.prompts_dir
-      @roles_dir           = AIA.config.roles_dir
+      @roles_dir           = AIA.config.roles_dir # A sub-directory of @prompts_dir
       @directive_processor = AIA::DirectiveProcessor.new
 
       PromptManager::Prompt.storage_adapter =
@@ -37,7 +37,7 @@ module AIA
       if prompt_id == '__FUZZY_SEARCH__'
         return fuzzy_search_prompt('')
       end
-      
+
       # First check if the prompt file exists to avoid ArgumentError from PromptManager
       prompt_file_path = File.join(@prompts_dir, "#{prompt_id}.txt")
       if File.exist?(prompt_file_path)
@@ -89,8 +89,14 @@ module AIA
     end
 
     def fetch_role(role_id)
-      # First check if the role file exists to avoid ArgumentError from PromptManager
+      # Prepend roles_prefix if not already present
+      unless role_id.start_with?(AIA.config.roles_prefix)
+        role_id = "#{AIA.config.roles_prefix}/#{role_id}"
+      end
+
+      # NOTE: roles_prefix is a sub-directory of the prompts directory
       role_file_path = File.join(@prompts_dir, "#{role_id}.txt")
+
       if File.exist?(role_file_path)
         role_prompt = PromptManager::Prompt.new(
           id: role_id,
@@ -108,18 +114,15 @@ module AIA
     end
 
     def handle_missing_role(role_id)
-      if AIA.config.fuzzy && defined?(AIA::Fzf)
+      if AIA.config.fuzzy
         return fuzzy_search_role(role_id)
-      elsif AIA.config.fuzzy
-        puts "Warning: Fuzzy search is enabled but Fzf tool is not available."
-        raise "Error: Could not find role with ID: #{role_id}"
       else
         raise "Error: Could not find role with ID: #{role_id}"
       end
     end
 
     def fuzzy_search_role(role_id)
-      new_role_id = search_prompt_id_with_fzf(role_id)
+      new_role_id = search_role_id_with_fzf(role_id)
       if new_role_id.nil? || new_role_id.empty?
         raise "Error: Could not find role with ID: #{role_id} even with fuzzy search"
       end
@@ -153,6 +156,29 @@ module AIA
         prompt: 'Select a prompt ID:'
       )
       fzf.run || (raise "No prompt ID selected")
+    end
+
+    def search_role_id_with_fzf(initial_query)
+      role_files = Dir.glob(File.join(@roles_dir, "*.txt")).map { |file| File.basename(file, ".txt") }
+      fzf = AIA::Fzf.new(
+        list: role_files,
+        directory: @prompts_dir,
+        query: initial_query,
+        subject: 'Role IDs',
+        prompt: 'Select a role ID:'
+      )
+
+      role = fzf.run
+
+      if role.nil? || role.empty?
+        raise "No role ID selected"
+      end
+
+      unless role.start_with?(AIA.config.role_prefix)
+        role = AIA.config.role_prefix + '/' + role
+      end
+
+      role
     end
   end
 end
