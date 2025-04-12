@@ -302,6 +302,10 @@ module AIA
           # For chat mode without a role or prompt_id, use an empty prompt_id
           # This will start a chat with no system prompt
           config.prompt_id = ''
+        elsif config.fuzzy
+          # When fuzzy search is enabled but no prompt ID is provided,
+          # set a special value to trigger fuzzy search without an initial query
+          config.prompt_id = '__FUZZY_SEARCH__'
         else
           STDERR.puts "Error: A prompt ID is required. Use -h or --help for help."
           exit 1

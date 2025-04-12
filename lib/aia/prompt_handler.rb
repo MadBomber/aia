@@ -33,6 +33,11 @@ module AIA
     end
 
     def fetch_prompt(prompt_id)
+      # Special case for fuzzy search without an initial query
+      if prompt_id == '__FUZZY_SEARCH__'
+        return fuzzy_search_prompt('')
+      end
+      
       # First check if the prompt file exists to avoid ArgumentError from PromptManager
       prompt_file_path = File.join(@prompts_dir, "#{prompt_id}.txt")
       if File.exist?(prompt_file_path)
