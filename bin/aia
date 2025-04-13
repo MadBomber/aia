@@ -3,4 +3,4 @@
 
 require_relative '../lib/aia'
 
-AIA.run(ARGV)
+AIA.run

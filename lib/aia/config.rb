@@ -5,7 +5,6 @@
 # for the AIA application. It provides methods to parse command-line
 # arguments, environment variables, and configuration files.
 
-require 'ostruct'
 require 'yaml'
 require 'toml-rb'
 require 'erb'
@@ -15,43 +14,44 @@ require 'optparse'
 module AIA
   class Config
     DEFAULT_CONFIG = {
-      out_file: 'temp.md', # Default to temp.md if not specified
-      log_file: File.join(ENV['HOME'], '.prompts', 'prompts.log'),
-      prompts_dir: ENV['AIA_PROMPTS_DIR'] || File.join(ENV['HOME'], '.prompts'),
-      roles_prefix: ENV['AIA_ROLES_PREFIX'] || 'roles',
-      roles_dir: nil, # Will default to prompts_dir/#{roles_prefix}
-      role: '',
+      config_file:  File.join(ENV['HOME'], '.aia.yml'),
+      out_file:     'temp.md',
+      log_file:     File.join(ENV['HOME'], '.prompts', '_prompts.log'),
+      prompts_dir:  File.join(ENV['HOME'], '.prompts'),
+      roles_prefix: 'roles',
+      roles_dir:    File.join(ENV['HOME'], '.prompts', 'roles'),
+      role:         '',
 
       # Flags
       markdown: true,
-      shell: false,
-      erb: false,
-      chat: false,
-      clear: false,
-      terse: false,
-      verbose: false,
-      debug: false,
-      fuzzy: false,
-      speak: false,
-      append: false, # Default to not append to existing out_file
+      shell:    false,
+      erb:      false,
+      chat:     false,
+      clear:    false,
+      terse:    false,
+      verbose:  false,
+      debug:    false,
+      fuzzy:    false,
+      speak:    false,
+      append:   false, # Default to not append to existing out_file
 
       # workflow
-      next: nil,
+      next:     nil,
       pipeline: [],
 
       # LLM tuning parameters
-      temperature: 0.7,
-      max_tokens: 2048,
-      top_p: 1.0,
-      frequency_penalty: 0.0,
-      presence_penalty: 0.0,
-      image_size: '1024x1024',
-      image_quality: 'standard',
-      image_style: 'vivid',
-      model: 'gpt-4o-mini',
-      speech_model: 'tts-1',
-      transcription_model: 'whisper-1',
-      voice: 'alloy',
+      temperature:          0.7,
+      max_tokens:           2048,
+      top_p:                1.0,
+      frequency_penalty:    0.0,
+      presence_penalty:     0.0,
+      image_size:           '1024x1024',
+      image_quality:        'standard',
+      image_style:          'vivid',
+      model:                'gpt-4o-mini',
+      speech_model:         'tts-1',
+      transcription_model:  'whisper-1',
+      voice:                'alloy',
 
       # Embedding parameters
       embedding_model: 'text-embedding-ada-002',
@@ -61,36 +61,125 @@ module AIA
 
       # Ruby libraries to require for Ruby binding
       require_libs: [],
-
-      # Shell command safety options
-      strict_shell_safety: false, # Block dangerous shell commands
-      shell_confirm: true # Confirm before executing dangerous commands
     }.freeze
 
-    def self.parse(args)
-      config = OpenStruct.new(DEFAULT_CONFIG)
 
-      # Override with environment variables
-      DEFAULT_CONFIG.each_key do |key|
-        env_var = "AIA_#{key.to_s.upcase}"
-        if ENV.key?(env_var)
-          value = ENV[env_var]
-          # Convert string to appropriate type
-          value = case DEFAULT_CONFIG[key]
-                  when TrueClass, FalseClass
-                    value.downcase == 'true'
-                  when Integer
-                    value.to_i
-                  when Float
-                    value.to_f
-                  when Array
-                    value.split(',')
-                  else
-                    value
-                  end
-          config[key] = value
+    def self.setup
+      default_config  = OpenStruct.new(DEFAULT_CONFIG)
+      cli_config      = cli_options
+      envar_config    = envar_options(default_config, cli_config)
+
+      file = envar_config.config_file   unless envar_config.config_file.nil?
+      file = cli_config.config_file     unless cli_config.config_file.nil?
+
+      cf_config     = cf_options(file)
+
+      config        = OpenStruct.merge(
+                        default_config,
+                        cf_config    || {},
+                        envar_config || {},
+                        cli_config   || {}
+                      )
+
+      tailor_the_config(config)
+    end
+
+
+    def self.tailor_the_config(config)
+      unless config.role.empty?
+        unless config.roles_prefix.empty?
+          unless config.role.start_with?(config.roles_prefix)
+            config.role.prepend "#{config.roles_prefix}/"
+          end
         end
       end
+
+      config.roles_dir ||= File.join(config.prompts_dir, config.roles_prefix)
+
+      if config.prompt_id.nil? || config.prompt_id.empty?
+        if !config.role.nil? || !config.role.empty?
+          config.prompt_id = config.role
+          config.role      = ''
+        end
+      else
+        config.prompt_id = ''
+      end
+
+      if config.fuzzy && config.prompt_id.empty?
+        # When fuzzy search is enabled but no prompt ID is provided,
+        # set a special value to trigger fuzzy search without an initial query
+        # SMELL: This feels like a cludge
+        config.prompt_id = '__FUZZY_SEARCH__'
+      end
+
+      unless [TrueClass, FalseClass].include?(config.chat.class)
+        if config.chat.nil? || config.chat.empty?
+          config.chat = false
+        else
+          config.chat = true
+        end
+      end
+
+      unless [TrueClass, FalseClass].include?(config.fuzzy.class)
+        if config.fuzzy.nil? || config.fuzzy.empty?
+          config.fuzzy = false
+        else
+          config.fuzzy = true
+        end
+      end
+
+      and_exit = false
+
+      if config.completion
+        generate_completion_script(config.completion)
+        and_exit = true
+      end
+
+      if config.dump_file
+        dump_config(config, config.dump_file)
+        and_exit = true
+      end
+
+      exit if and_exit
+
+      if !config.chat && !confitg.fuzzy && config.prompt_id.empty?
+        STDERR.puts "Error: A prompt ID is required. Try --chat or --fuzzy to search or use -h or --help for help."
+        exit 1
+      end
+
+      config
+    end
+
+    # envar values are always String object so need other config
+    # layers to know the prompter type for each key's value
+    def self.envar_options(default, cli_config)
+      config = OpenStruct.merge(default, cli_config)
+      envars = ENV.keys.select { |key, _| key.start_with?('AIA_') }
+      envars.each do |envar|
+        key   = envar.sub(/^AIA_/, '').downcase.to_sym
+        value = ENV[envar]
+
+        value = case config[key]
+                when TrueClass, FalseClass
+                  value.downcase == 'true'
+                when Integer
+                  value.to_i
+                when Float
+                  value.to_f
+                when Array
+                  value.split(',').map(&:strip)
+                else
+                  value # defaults to String
+                end
+        config[key] = value
+      end
+
+      config
+    end
+
+
+    def self.cli_options
+      config = OpenStruct.new
 
       opt_parser = OptionParser.new do |opts|
         opts.banner = "Usage: aia [options] PROMPT_ID [CONTEXT_FILE]*"
@@ -266,15 +355,9 @@ module AIA
         opts.on("--rq LIBS", "Ruby libraries to require for Ruby directive") do |libs|
           config.require_libs = libs.split(',')
         end
-
-        opts.on("--sss", "--[no-]strict_shell_safety", "Enable strict shell safety checks") do |sss|
-          config.strict_shell_safety = sss
-        end
-
-        opts.on("--sc", "--[no-]shell_confirm", "Require confirmation before executing shell commands") do |sc|
-          config.shell_confirm = sc
-        end
       end
+
+      args = ARGV.dup
 
       # Parse the command line arguments
       begin
@@ -285,56 +368,54 @@ module AIA
         exit 1
       end
 
-      #####################################################
-      ## Tailor the options
-
-      debug_me{[
-        'config.roles_prefix',
-        'config.role'
-      ]}
-
-      unless config.role.empty?
-        unless config.roles_prefix.empty?
-          unless config.role.start_with?(config.roles_prefix)
-            config.role.prepend "#{config.roles_prefix}/"
-          end
-        end
-      end
-
       # First remaining arg is the prompt ID
-      if remaining_args.empty?
-        if config.completion
-          # Handle completion script generation
-          generate_completion_script(config.completion)
-          exit
-        elsif config.dump_file
-          # Handle config dump
-          dump_config(config, config.dump_file)
-          exit
-        elsif config.chat && config.role
-          config.prompt_id = config.role
-        elsif config.chat
-          # For chat mode without a role or prompt_id, use an empty prompt_id
-          # This will start a chat with no system prompt
-          config.prompt_id = ''
-        elsif config.fuzzy
-          # When fuzzy search is enabled but no prompt ID is provided,
-          # set a special value to trigger fuzzy search without an initial query
-          # SMELL: This feels like a cludge
-          config.prompt_id = '__FUZZY_SEARCH__'
-        else
-          STDERR.puts "Error: A prompt ID is required. Try --fuzzy to search or use -h or --help for help."
-          exit 1
-        end
-      else
+      unless remaining_args.empty?
         config.prompt_id = remaining_args.shift
       end
 
       # Remaining args are context files
       config.context_files = remaining_args unless remaining_args.empty?
 
-      # Set roles_dir default if not specified
-      config.roles_dir ||= File.join(config.prompts_dir, config.roles_prefix)
+
+      config
+    end
+
+
+    def self.cf_options(file)
+      config  = OpenStruct.new
+
+      if File.exist?(file)
+        ext     = File.extname(file).downcase
+        content = File.read(file)
+
+        # Process ERB if filename ends with .erb
+        if file.end_with?('.erb')
+          content = ERB.new(content).result
+          file    = file.chomp('.erb')
+          File.write(file, content)
+        end
+
+        debug_me{[
+          :content,
+          :file
+        ]}
+
+
+        file_config = case ext
+                      when '.yml', '.yaml'
+                        YAML.safe_load(content, symbolize_names: true)
+                      when '.toml'
+                        TomlRB.parse(content)
+                      else
+                        raise "Unsupported config file format: #{ext}"
+                      end
+
+        file_config.each do |key, value|
+          config[key] = value
+        end
+      else
+        STDERR.puts "WARNING:Config file not found: #{file}"
+      end
 
       config
     end

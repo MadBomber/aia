@@ -8,7 +8,9 @@ require 'ai_client'
 require 'prompt_manager'
 require 'debug_me'
 include DebugMe
+DebugMeDefaultOptions[:skip1] = true
 
+require_relative 'extensions/openstruct_merge'
 require_relative 'aia/version'
 require_relative 'aia/config'
 require_relative 'aia/shell_command_executor'
@@ -51,11 +53,11 @@ module AIA
     end
   end
 
-  def self.run(args)
-    @config = Config.parse(args)
+  def self.run
+    @config = Config.setup
 
     build_flags
-    
+
     # Load Fzf if fuzzy search is enabled and fzf is installed
     if @config.fuzzy && system('which fzf >/dev/null 2>&1')
       require_relative 'aia/fzf'
