@@ -21,6 +21,7 @@ module AIA
       roles_prefix: 'roles',
       roles_dir:    File.join(ENV['HOME'], '.prompts', 'roles'),
       role:         '',
+      system_prompt: '',
 
       # Flags
       markdown: true,
@@ -142,8 +143,9 @@ module AIA
 
       exit if and_exit
 
-      if !config.chat && !confitg.fuzzy && config.prompt_id.empty?
-        STDERR.puts "Error: A prompt ID is required. Try --chat or --fuzzy to search or use -h or --help for help."
+      # Only require a prompt_id if we're not in chat mode and not using fuzzy search
+      if !config.chat && !config.fuzzy && config.prompt_id.empty?
+        STDERR.puts "Error: A prompt ID is required unless using --chat or --fuzzy. Use -h or --help for help."
         exit 1
       end
 
@@ -186,6 +188,7 @@ module AIA
 
         opts.on("--chat", "Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.") do
           config.chat = true
+          puts "Debug: Setting chat mode to true" if config.debug
         end
 
         opts.on("-m MODEL", "--model MODEL", "Name of the LLM model to use") do |model|
@@ -218,7 +221,7 @@ module AIA
 
             file_config = case ext
                           when '.yml', '.yaml'
-                            YAML.safe_load(content, symbolize_names: true)
+                            YAML.safe_load(content, permitted_classes: [Symbol], symbolize_names: true)
                           when '.toml'
                             TomlRB.parse(content)
                           else
@@ -313,6 +316,10 @@ module AIA
           config.image_style = style
         end
 
+        opts.on("--system_prompt PROMPT_ID", "System prompt ID to use for chat sessions") do |prompt_id|
+          config.system_prompt = prompt_id
+        end
+
         # AI model parameters
         opts.on("-t", "--temperature TEMP", Float, "Temperature for text generation") do |temp|
           config.temperature = temp
@@ -395,15 +402,9 @@ module AIA
           File.write(file, content)
         end
 
-        debug_me{[
-          :content,
-          :file
-        ]}
-
-
         file_config = case ext
                       when '.yml', '.yaml'
-                        YAML.safe_load(content, symbolize_names: true)
+                        YAML.safe_load(content, permitted_classes: [Symbol], symbolize_names: true)
                       when '.toml'
                         TomlRB.parse(content)
                       else
@@ -439,6 +440,9 @@ module AIA
 
       # Remove non-serializable objects
       config_hash.delete_if { |_, v| !v.nil? && !v.is_a?(String) && !v.is_a?(Numeric) && !v.is_a?(TrueClass) && !v.is_a?(FalseClass) && !v.is_a?(Array) && !v.is_a?(Hash) }
+      
+      # Remove dump_file key to prevent automatic exit on next load
+      config_hash.delete(:dump_file)
 
       content = case ext
                 when '.yml', '.yaml'
@@ -450,6 +454,7 @@ module AIA
                 end
 
       File.write(file, content)
+      puts "Config successfully dumped to #{file}"
     end
   end
 end
