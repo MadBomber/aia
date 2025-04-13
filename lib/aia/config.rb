@@ -102,8 +102,6 @@ module AIA
           config.prompt_id = config.role
           config.role      = ''
         end
-      else
-        config.prompt_id = ''
       end
 
       if config.fuzzy && config.prompt_id.empty?
@@ -440,7 +438,7 @@ module AIA
 
       # Remove non-serializable objects
       config_hash.delete_if { |_, v| !v.nil? && !v.is_a?(String) && !v.is_a?(Numeric) && !v.is_a?(TrueClass) && !v.is_a?(FalseClass) && !v.is_a?(Array) && !v.is_a?(Hash) }
-      
+
       # Remove dump_file key to prevent automatic exit on next load
       config_hash.delete(:dump_file)
 

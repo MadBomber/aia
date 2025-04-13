@@ -43,7 +43,7 @@ Gem::Specification.new do |spec|
     `git ls-files -z`.split("\x0").reject do |f|
       (File.expand_path(f) == __FILE__) ||
         f.start_with?(*%w[bin/ test/ spec/ features/ .git Gemfile])
-    end + ['man/', '.version']
+    end + ['.version']
   end
 
   spec.bindir         = "bin"
@@ -62,7 +62,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "versionaire"
 
   spec.add_development_dependency 'debug_me'
-  spec.add_development_dependency 'kramdown-man'
   spec.add_development_dependency 'minitest'
   spec.add_development_dependency 'minitest-reporters'
   spec.add_development_dependency 'mocha'

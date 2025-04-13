@@ -21,12 +21,12 @@ module AIA
     end
 
 
-    def get_prompt(prompt_id, role_id = nil)
+    def get_prompt(prompt_id, role_id = '')
       prompt = fetch_prompt(prompt_id)
 
-      if role_id
+      unless role_id.empty?
         role_prompt = fetch_role(role_id)
-        prompt.text = combine_prompt_with_role(prompt.text, role_prompt.text)
+        prompt.text.prepend(role_prompt.text)
       end
 
       prompt
@@ -139,12 +139,6 @@ module AIA
       role_prompt
     end
 
-    def combine_prompt_with_role(prompt_text, role_text)
-      <<~TEXT
-        #{role_text}
-        #{prompt_text}
-      TEXT
-    end
 
     def search_prompt_id_with_fzf(initial_query)
       prompt_files = Dir.glob(File.join(@prompts_dir, "*.txt")).map { |file| File.basename(file, ".txt") }
