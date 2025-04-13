@@ -11,6 +11,7 @@ include DebugMe
 DebugMeDefaultOptions[:skip1] = true
 
 require_relative 'extensions/openstruct_merge'
+require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'
 require_relative 'aia/shell_command_executor'

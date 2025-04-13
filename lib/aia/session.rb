@@ -12,6 +12,7 @@ require_relative 'history_manager'
 require_relative 'ui_presenter'
 require_relative 'chat_processor_service'
 require_relative 'prompt_handler'
+require_relative 'utility'
 
 module AIA
   class Session
@@ -113,8 +114,8 @@ module AIA
       start_chat if AIA.chat?
     end
 
-
     def start_chat
+      AIA::Utility.robot
       @ui_presenter.display_chat_header
 
       Reline::HISTORY.clear

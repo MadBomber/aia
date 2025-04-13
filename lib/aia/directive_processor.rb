@@ -60,7 +60,6 @@ module AIA
 
     def run(directives)
       return {} if directives.nil? || directives.empty?
-      results = []
       directives.each do |key, _|
         sans_prefix = key[@prefix_size..]
         args        = sans_prefix.split(' ')
@@ -188,6 +187,12 @@ module AIA
     desc "Inserts an instruction to keep responses short and to the point."
     def terse(...)
       AIA::Session::TERSE_PROMPT
+    end
+
+    desc "Displays the robot ASCII art without adding to the context"
+    def robot(...)
+      AIA::Utility.robot
+      ""
     end
 
     desc "Generates this help content"
