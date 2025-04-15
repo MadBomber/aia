@@ -176,19 +176,17 @@ module AIA
       nil
     end
 
-    # Depends upon PromptManager::Prompt#to_s evaluating ERB
-    # after it has evaluated directives.
-    desc "Shortcut for a one line ERB statement"
-    def ruby(context_manager = nil, *args)
-      erb_code = "<%= #{args.join(' ')} %>"
-      if AIA.chat?
-        begin
-          ERB.new(erb_code).result(binding)
-        rescue Exception => e
-          e.message
-        end
-      else
-        erb_code
+    desc "Shortcut for a one line of ruby code; result is added to the context"
+    def ruby(*args)
+      ruby_code = args.join(' ')
+
+      begin
+        String(eval(ruby_code))
+      rescue Exception => e
+        <<~ERROR
+          This ruby code failed: #{ruby_code}
+          #{e.message}
+        ERROR
       end
     end
     alias_method :rb, :ruby
