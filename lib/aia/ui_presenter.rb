@@ -35,7 +35,6 @@ module AIA
     end
 
 
-
     def format_chat_response(response, output = $stdout)
       indent = '   '
 
@@ -74,7 +73,7 @@ module AIA
     end
 
 
-
+    # This is the follow up question in a chat session
     def ask_question
       puts USER_PROMPT
       $stdout.flush  # Ensure the prompt is displayed immediately
@@ -89,7 +88,9 @@ module AIA
       end
     end
 
-
+    def display_info(message)
+      puts "\n#{message}"
+    end
 
     def with_spinner(message = "Processing", operation_type = nil)
       if AIA.verbose?

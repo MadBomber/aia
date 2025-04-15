@@ -52,10 +52,21 @@ module AIA
     end
 
     # Used with the chat loop to allow user to enter a single directive
-    def process(a_string)
+    def process(a_string, context_manager)
       return a_string unless directive?(a_string)
+
       key = a_string.strip
-      run({ key => ""})[key]
+      sans_prefix = key[@prefix_size..]
+      args        = sans_prefix.split(' ')
+      method_name = args.shift.downcase
+
+      if EXCLUDED_METHODS.include?(method_name)
+        return "Error: #{method_name} is not a valid directive: #{key}"
+      elsif respond_to?(method_name, true)
+        return send(method_name, args, context_manager)
+      else
+        return "Error: Unknown directive '#{key}'"
+      end
     end
 
     def run(directives)
@@ -68,8 +79,8 @@ module AIA
         if EXCLUDED_METHODS.include?(method_name)
           directives[key] = "Error: #{method_name} is not a valid directive: #{key}"
           next
-        elsif private?(method_name)
-          directives[key] =  send(method_name, args)
+        elsif respond_to?(method_name, true)
+          directives[key] = send(method_name, args)
         else
           directives[key] = "Error: Unknown directive '#{key}'"
         end
@@ -94,7 +105,7 @@ module AIA
     ################
 
     desc "Inserts the contents of a file  Example: //include path/to/file"
-    def include(args)
+    def include(args, context_manager = nil)
       file_path = args.shift
 
       if @included_files.include?(file_path)
@@ -112,7 +123,7 @@ module AIA
     alias_method :import,       :include
 
     desc "Without arguments it will print a list of all config items and their values _or_ //config item (for one item's value) _or_ //config item = value (to set a value of an item)"
-    def config(args=[])
+    def config(args = [], context_manager = nil)
       args = Array(args)
 
       if args.empty?
@@ -140,31 +151,35 @@ module AIA
     alias_method :cfg, :config
 
     desc "Shortcut for //config top_p _and_ //config top_p = value"
-    def top_p(*args)
+    def top_p(context_manager = nil, *args)
       send(:config, args.prepend('top_p'))
     end
     alias_method :topp, :top_p
 
     desc "Shortcut for //config model _and_ //config model = value"
-    def model(*args)
+    def model(context_manager = nil, *args)
       send(:config, args.prepend('model'))
     end
 
     desc "Shortcut for //config temperature _and_ //config temperature = value"
-    def temperature(*args)
+    def temperature(context_manager = nil, *args)
       send(:config, args.prepend('temperature'))
     end
     alias_method :temp, :temperature
 
     desc "Clears the conversation history (aka context) same as //config clear = true"
-    def clear(*args)
-      send(:config, %w[clear = true])
+    def clear(args, context_manager)
+      if context_manager.nil?
+        return "Error: Context manager not available for //clear directive."
+      end
+      context_manager.clear_context
+      nil
     end
 
     # Depends upon PromptManager::Prompt#to_s evaluating ERB
     # after it has evaluated directives.
     desc "Shortcut for a one line ERB statement"
-    def ruby(*args)
+    def ruby(context_manager = nil, *args)
       erb_code = "<%= #{args.join(' ')} %>"
       if AIA.chat?
         begin
@@ -179,24 +194,24 @@ module AIA
     alias_method :rb, :ruby
 
     desc "Use the system's say command to speak text //say some text"
-    def say(*args)
+    def say(context_manager = nil, *args)
       `say #{args.join(' ')}`
       ""
     end
 
     desc "Inserts an instruction to keep responses short and to the point."
-    def terse(...)
+    def terse(context_manager = nil, *args)
       AIA::Session::TERSE_PROMPT
     end
 
-    desc "Displays the robot ASCII art without adding to the context"
-    def robot(...)
+    desc "Display the ASCII art AIA robot."
+    def robot(context_manager = nil, *args)
       AIA::Utility.robot
       ""
     end
 
     desc "Generates this help content"
-    def help(...)
+    def help(context_manager = nil, *args)
       puts
       puts "Available Directives"
       puts "===================="

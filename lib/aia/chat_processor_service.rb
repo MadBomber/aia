@@ -70,9 +70,9 @@ module AIA
       speak(response)
 
       # Only output to STDOUT if we're in chat mode
-      puts response if AIA.chat?
 
-      if 'STDOUT' == AIA.config.out_file.upcase
+      if AIA.chat? || 'STDOUT' == AIA.config.out_file.upcase
+        print "\nAI:\n  "
         puts response
       else
         mode = AIA.append? ? 'a' : 'w'

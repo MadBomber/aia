@@ -9,6 +9,7 @@ require 'fileutils'
 require 'amazing_print'
 require_relative 'directive_processor'
 require_relative 'history_manager'
+require_relative 'context_manager'
 require_relative 'ui_presenter'
 require_relative 'chat_processor_service'
 require_relative 'prompt_handler'
@@ -21,7 +22,16 @@ module AIA
 
     def initialize(prompt_handler)
       @prompt_handler  = prompt_handler
-      @history_manager = HistoryManager.new
+
+      if AIA.chat? && AIA.config.prompt_id.empty?
+        prompt_instance  = nil
+        @history_manager = nil
+      else
+        prompt_instance  = @prompt_handler.get_prompt(AIA.config.prompt_id)
+        @history_manager = HistoryManager.new(prompt: prompt_instance)
+      end
+
+      @context_manager = ContextManager.new(system_prompt: AIA.config.system_prompt) # Add this line
       @ui_presenter    = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
       @chat_processor      = ChatProcessorService.new(@ui_presenter, @directive_processor)
@@ -37,12 +47,17 @@ module AIA
       prompt_id = AIA.config.prompt_id
       role_id   = AIA.config.role
 
-      # If directly starting in chat mode without any initial prompting
-      if AIA.chat? && prompt_id.empty? && role_id.empty?
-        start_chat
-        return
+      # Handle chat mode *only* if NO initial prompt is given
+      if AIA.chat?
+        AIA::Utility.robot
+        if prompt_id.empty? && role_id.empty?
+          start_chat
+          return
+        end
       end
 
+
+      # --- Get and process the initial prompt ---
       begin
         prompt = @prompt_handler.get_prompt(prompt_id, role_id)
       rescue StandardError => e
@@ -50,43 +65,45 @@ module AIA
         return
       end
 
+      # Collect variable values if needed
       variables = prompt.parameters.keys
 
       if variables && !variables.empty?
         variable_values = {}
+        history_manager = AIA::HistoryManager.new prompt: prompt
 
-        variables.each do |variable|
-          var_history = @history_manager.get_variable_history(prompt_id, variable)
+        variables.each do |var_name|
+          # History is based on the prompt ID and the variable name (without brackets)
+          history = prompt.parameters[var_name]
 
-          @history_manager.setup_variable_history(var_history)
-
-          default = var_history.last
-
-          puts "\nParameter [#{variable}] ..."
-          $stdout.flush
-
-          prompt_text = if default.nil? || default.empty?
-                          "> "
-                        else
-                          "(#{default}) > "
-                        end
-
-          value = Reline.readline(prompt_text, true).strip
-
-          value = default if value.empty? && !default.nil?
-
-          variable_values[variable] = value
-
-          @history_manager.get_variable_history(prompt_id, variable, value)
+          # Ask the user for the variable
+          value = history_manager.request_variable_value(
+            variable_name:  var_name,
+            history_values: history
+          )
+          # Store the value using the original BRACKETED key from prompt.parameters
+          if history.include? value
+            history.delete(value)
+          end
+          history << value
+          if history.size > HistoryManager::MAX_VARIABLE_HISTORY
+            history.shift
+          end
+          variable_values[var_name] = history
         end
 
+        # Assign collected values back for prompt_manager substitution
         prompt.parameters = variable_values
       end
 
+      # Add terse instruction if needed
       if AIA.terse?
         prompt.text << TERSE_PROMPT
       end
 
+      prompt.save
+
+      # Substitute variables and get final prompt text
       prompt_text = prompt.to_s
 
       # Add context files if any
@@ -94,31 +111,44 @@ module AIA
         context = AIA.config.context_files.map do |file|
           File.read(file) rescue "Error reading file: #{file}"
         end.join("\n\n")
-
         prompt_text = "#{prompt_text}\n\nContext:\n#{context}"
       end
 
-      # Determine the type of operation based on the model
+      # Determine operation type
       operation_type = @chat_processor.determine_operation_type(AIA.config.model)
 
-      # Process the prompt based on the operation type
-      response = @chat_processor.process_prompt(prompt_text, operation_type)
+      # Add initial user prompt to context *before* sending to AI
+      @context_manager.add_to_context(role: 'user', content: prompt_text)
 
-      # Handle output
-      @chat_processor.output_response(response)
+      # Process the initial prompt
+      @ui_presenter.display_thinking_animation
+      # Send the current context (which includes the user prompt)
+      response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
 
-      # Process next prompt or pipeline if specified
+      # Add AI response to context
+      @context_manager.add_to_context(role: 'assistant', content: response)
+
+      # Output the response
+      @chat_processor.output_response(response) # Handles display
+
+      # Process next prompts/pipeline (if any)
       @chat_processor.process_next_prompts(response, @prompt_handler)
 
-      # Enter chat mode if requested
-      start_chat if AIA.chat?
+      # --- Enter chat mode AFTER processing initial prompt ---
+      if AIA.chat?
+        @ui_presenter.display_separator # Add separator
+        start_chat # start_chat will use the now populated context
+      end
     end
 
+    # Starts the interactive chat session.
     def start_chat
-      AIA::Utility.robot
+      # Consider if display_chat_header is needed if robot+separator already shown
+      # For now, let's keep it, maybe add an indicator message
+      puts "\nEntering interactive chat mode..."
       @ui_presenter.display_chat_header
 
-      Reline::HISTORY.clear
+      Reline::HISTORY.clear # Keep Reline history for user input editing, separate from chat context
 
       loop do
         # Get user input
@@ -134,22 +164,36 @@ module AIA
         end
 
         if @directive_processor.directive?(prompt)
-          directive_output = @directive_processor.process(prompt)
+          directive_output = @directive_processor.process(prompt, @context_manager) # Pass context_manager
 
-          if directive_output.nil? || directive_output.strip.empty?
-            next
+          # Add check for specific directives like //clear that might modify context
+          if prompt.strip.start_with?('//clear', '#!clear:')
+             # Context is likely cleared within directive_processor.process now
+             # or add @context_manager.clear_context here if not handled internally
+             @ui_presenter.display_info("Chat context cleared.")
+             next # Skip API call after clearing
+          elsif directive_output.nil? || directive_output.strip.empty?
+            next # Skip API call if directive produced no output and wasn't //clear
           else
             puts "\n#{directive_output}\n"
+            # Optionally add directive output to context or handle as needed
+            # Example: Add a summary to context
+            # @context_manager.add_to_context(role: 'assistant', content: "Directive executed. Output:\n#{directive_output}")
+            # For now, just use a placeholder prompt modification:
             prompt = "I executed this directive: #{prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
+             # Fall through to add this modified prompt to context and send to AI
           end
         end
 
-        @history_manager.add_to_history('user', prompt)
+        # Use ContextManager instead of HistoryManager
+        @context_manager.add_to_context(role: 'user', content: prompt)
 
-        conversation = @history_manager.build_conversation_context(prompt, AIA.config.system_prompt)
+        # Use ContextManager to get the conversation
+        conversation = @context_manager.get_context # System prompt handled internally
 
-        # FIXME: is conversation the same thing as the context for a chat session?
-        #        if so need to somehow delete it when the //clear directive is entered.
+        # FIXME: remove this comment once verified
+        # is conversation the same thing as the context for a chat session? YES
+        # if so need to somehow delete it when the //clear directive is entered. - Addressed above/in DirectiveProcessor
 
         operation_type = @chat_processor.determine_operation_type(AIA.config.model)
         @ui_presenter.display_thinking_animation
@@ -157,7 +201,8 @@ module AIA
 
         @ui_presenter.display_ai_response(response)
 
-        @history_manager.add_to_history('assistant', response)
+        # Use ContextManager instead of HistoryManager
+        @context_manager.add_to_context(role: 'assistant', content: response)
 
         @chat_processor.speak(response)
 

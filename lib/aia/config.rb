@@ -14,7 +14,8 @@ require 'optparse'
 module AIA
   class Config
     DEFAULT_CONFIG = {
-      config_file:  File.join(ENV['HOME'], '.aia.yml'),
+      aia_dir:      File.join(ENV['HOME'], '.aia'),
+      config_file:  File.join(ENV['HOME'], '.aia', 'config.yml'),
       out_file:     'temp.md',
       log_file:     File.join(ENV['HOME'], '.prompts', '_prompts.log'),
       prompts_dir:  File.join(ENV['HOME'], '.prompts'),
@@ -31,7 +32,7 @@ module AIA
       clear:    false,
       terse:    false,
       verbose:  false,
-      debug:    false,
+      debug:    $DEBUG_ME,
       fuzzy:    false,
       speak:    false,
       append:   false, # Default to not append to existing out_file
@@ -279,7 +280,11 @@ module AIA
         end
 
         opts.on("-d", "--debug", "Enable debug output") do
-          config.debug = true
+          config.debug = $DEBUG_ME = true
+        end
+
+        opts.on("--no-debug", "Disable debug output") do
+          config.debug = $DEBUG_ME = false
         end
 
         opts.on("-v", "--verbose", "Be verbose") do

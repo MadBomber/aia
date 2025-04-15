@@ -4,15 +4,13 @@ require 'json'
 require 'fileutils'
 
 module AIA
-
   class HistoryManager
     MAX_VARIABLE_HISTORY = 5
 
-
-    def initialize
+    # prompt is PromptManager::Prompt instance
+    def initialize(prompt:)
+      @prompt  = prompt
       @history = []
-      @variable_history_file = File.join(ENV['HOME'], '.aia', 'variable_history.json')
-      ensure_history_file_exists
     end
 
 
@@ -26,45 +24,6 @@ module AIA
     end
 
 
-
-    def add_to_history(role, content)
-      @history << { role: role, content: content }
-    end
-
-
-    def clear_history
-      @history = []
-    end
-
-
-
-    def build_conversation_context(current_prompt, system_prompt_id = nil)
-      if AIA.clear?
-        clear_history
-        AIA.config.clear = false
-        return ""
-      end
-
-      system_prompt = ""
-      if system_prompt_id
-        system_prompt = PromptManager::Prompt.get(id: system_prompt_id, external_binding: binding).to_s rescue ""
-      end
-
-      history_text = ""
-      if !@history.empty?
-        @history.each do |entry|
-          history_text += "#{entry[:role].capitalize}: #{entry[:content]}\n\n"
-        end
-      end
-
-      if !system_prompt.empty?
-        "#{system_prompt}\n\n#{history_text}User: #{current_prompt}"
-      else
-        "#{history_text}User: #{current_prompt}"
-      end
-    end
-
-
     def setup_variable_history(history_values)
       Reline::HISTORY.clear
       history_values.each do |value|
@@ -73,52 +32,53 @@ module AIA
     end
 
 
-    def load_variable_history
+    def get_variable_history(variable, value = '')
+      return if value.nil? || value.empty?
+
+      values = @prompt.parameters[variable]
+      if values.include?(value)
+        values.delete(value)
+      end
+
+      values << value
+
+      if values.size > MAX_VARIABLE_HISTORY
+        values.shift
+      end
+
+      @prompt.parameters[variable] = values
+    end
+
+
+    def request_variable_value(variable_name:, history_values: [])
+      setup_variable_history(history_values) # Setup Reline's history for completion
+
+      default_value = history_values.last || ''
+      question = "Value for #{variable_name} (#{default_value}): "
+
+      # Ensure Reline is writing to stdout explicitly for this interaction
+      Reline.output = $stdout
+
+      # Store the original prompt proc to restore later
+      original_prompt_proc = Reline.line_editor.prompt_proc
+
+      # Note: Temporarily setting prompt_proc might not be needed if passing prompt to readline works.
+      # Reline.line_editor.prompt_proc = ->(context) { [question] }
+
       begin
-        JSON.parse(File.read(@variable_history_file))
-      rescue JSON::ParserError
-        {} # Return empty hash if file is invalid
-      end
-    end
+        input = Reline.readline(question, true)
+        return default_value if input.nil? # Handle Ctrl+D -> use default
 
-
-
-    def save_variable_history(history)
-      File.write(@variable_history_file, JSON.pretty_generate(history))
-    end
-
-
-
-    def get_variable_history(prompt_id, variable, value = nil)
-      history = load_variable_history
-      prompt_history = history[prompt_id] || {}
-      var_history = prompt_history[variable] || []
-
-      if value && !value.empty?
-        var_history.delete(value)
-
-        var_history << value
-
-        var_history.shift if var_history.size > MAX_VARIABLE_HISTORY
-
-        prompt_history[variable] = var_history
-        history[prompt_id] = prompt_history
-
-        save_variable_history(history)
-      end
-
-      var_history
-    end
-
-    private
-
-
-    def ensure_history_file_exists
-      dir = File.dirname(@variable_history_file)
-      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
-
-      unless File.exist?(@variable_history_file)
-        File.write(@variable_history_file, '{}')
+        chosen_value = input.strip.empty? ? default_value : input.strip
+        # Update the persistent history for this variable
+        get_variable_history(variable_name, chosen_value)
+        return chosen_value
+      rescue Interrupt
+        puts "\nVariable input interrupted."
+        exit(1) # Exit cleanly on Ctrl+C
+      ensure
+        # Restore the original prompt proc
+        Reline.line_editor.prompt_proc = original_prompt_proc
       end
     end
   end

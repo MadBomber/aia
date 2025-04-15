@@ -8,6 +8,7 @@ require 'ai_client'
 require 'prompt_manager'
 require 'debug_me'
 include DebugMe
+$DEBUG_ME = false
 DebugMeDefaultOptions[:skip1] = true
 
 require_relative 'extensions/openstruct_merge'
