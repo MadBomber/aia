@@ -41,6 +41,7 @@ module AIA
         @context = [@context.first]
       else
         @context = []
+        AIA.config.client.clear_context
       end
     end
 
