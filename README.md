@@ -1,14 +1,32 @@
 # AI Assistant (AIA)
 
-`aia` is a command-line utility that facilitates interaction with AI models. It automates the management of pre-compositional prompts and executes generative AI (Gen-AI) commands on those prompts, taking advantage of modern LLMs' increased context window size. The application now includes enhanced features such as directive processing, history management, shell command execution, and chat processing services.
+```plain
+     ,      ,               aia is a command-line utility that facilitates
+     (\____/) AI Assistant  interaction with AI models. It automates the
+      (_oo_)   Fancy LLM    management of pre-compositional prompts and
+        (O)     is Online   executes generative AI (Gen-AI) commands on those
+      __||__    \)          prompts, taking advantage of modern LLMs'
+    [/______\]  /           increased context window size. The application
+   / \__AI__/ \/            now includes enhanced features such as directive
+  /    /__\                 processing, history management, shell command
+ (\   /____\                execution, and chat processing services.
+```
 
-It leverages the `prompt_manager` gem to manage prompts. It utilizes "ripgrep" for searching for prompt files and uses `fzf` for prompt selection based on a search term and fuzzy matching.
+aia leverages the `prompt_manager` gem to manage prompts. It utilizes `fzf` for prompt selection based on a search term and fuzzy matching.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
 > Just an FYI ... I am working in the `develop` branch to **fully integrate the ai_client gem**, which gives access to all models and all providers. Recent updates include the addition of `DirectiveProcessor`, `HistoryManager`, `ShellCommandExecutor`, and `ChatProcessorService` classes to enhance functionality and user experience.
 
-
+**Notable Recent Changes:**
+- **Directive Processing in Chat and Prompts:** You can now use directives in chat sessions and prompt files with the syntax: `//command args`. Supported directives include:
+  - `shell`/`sh`: Execute shell commands
+  - `ruby`/`rb`: Execute Ruby code
+  - `config`/`cfg`: Display or update configuration
+  - `include`/`inc`: Include file content
+  - `help`: Show available directives
+- **ShellCommandExecutor Refactor:** Now implemented as a class for better encapsulation and maintainability. Backward compatibility is preserved; class-level methods internally instantiate and delegate to the instance.
+- **Improved Variable Prompting:** When processing a prompt file without an associated `.json` history file, variables are now always parsed from the prompt text, ensuring you are prompted for values as expected.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -18,7 +36,6 @@ It leverages the `prompt_manager` gem to manage prompts. It utilizes "ripgrep" f
   - [Usage](#usage)
   - [Configuration Using Envars and Defaults](#configuration-using-envars-and-defaults)
   - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
-      - [Access to System Environment Variables](#access-to-system-environment-variables)
       - [Dynamic Shell Commands](#dynamic-shell-commands)
       - [Shell Command Safety](#shell-command-safety)
       - [Chat Session Use](#chat-session-use)
@@ -62,7 +79,7 @@ Install the gem by executing:
 
 Install the command-line utilities by executing:
 
-    brew install fzf ripgrep
+    brew install fzf
 
 You will also need to establish a directory in your file system where your prompt text files, last used parameters and usage log files are kept.
 
@@ -85,44 +102,53 @@ The usage report obtained using either `-h` or `--help` is implemented as a stan
 $ aia --help
 ```
 
-## Configuration Using Envars and Defaults
+## Configuration Options
 
-The AIA application now includes a comprehensive configuration system that allows for flexible customization through environment variables, command-line options, and configuration files. The default configuration includes options for model selection, output handling, shell command safety, and more.
+The following table provides a comprehensive list of configuration options, their default values, and the associated environment variables:
 
-The `aia` configuration defaults can be overridden by system environment variables *(envars)* with the prefix "AIA_" followed by the config item name also in uppercase. All configuration items can be overridden in this way by an envar.  The following table shows a few examples.
+| Option                  | Default Value                   | Environment Variable      |
+|-------------------------|---------------------------------|---------------------------|
+| out_file                | temp.md                         | AIA_OUT_FILE              |
+| log_file                | ~/.prompts/_prompts.log         | AIA_LOG_FILE              |
+| prompts_dir             | ~/.prompts                      | AIA_PROMPTS_DIR           |
+| roles_prefix            | roles                           | AIA_ROLES_PREFIX          |
+| model                   | gpt-4o-mini                     | AIA_MODEL                 |
+| speech_model            | tts-1                           | AIA_SPEECH_MODEL          |
+| transcription_model     | whisper-1                       | AIA_TRANSCRIPTION_MODEL   |
+| verbose                 | false                           | AIA_VERBOSE               |
+| markdown                | true                            | AIA_MARKDOWN              |
+| shell                   | false                           | AIA_SHELL                 |
+| erb                     | false                           | AIA_ERB                   |
+| chat                    | false                           | AIA_CHAT                  |
+| clear                   | false                           | AIA_CLEAR                 |
+| terse                   | false                           | AIA_TERSE                 |
+| debug                   | false                           | AIA_DEBUG                 |
+| fuzzy                   | false                           | AIA_FUZZY                 |
+| speak                   | false                           | AIA_SPEAK                 |
+| append                  | false                           | AIA_APPEND                |
+| temperature             | 0.7                             | AIA_TEMPERATURE           |
+| max_tokens              | 2048                            | AIA_MAX_TOKENS            |
+| top_p                   | 1.0                             | AIA_TOP_P                 |
+| frequency_penalty       | 0.0                             | AIA_FREQUENCY_PENALTY     |
+| presence_penalty        | 0.0                             | AIA_PRESENCE_PENALTY      |
+| image_size              | 1024x1024                       | AIA_IMAGE_SIZE            |
+| image_quality           | standard                        | AIA_IMAGE_QUALITY         |
+| image_style             | vivid                           | AIA_IMAGE_STYLE           |
+| embedding_model         | text-embedding-ada-002          | AIA_EMBEDDING_MODEL       |
+| speak_command           | afplay                          | AIA_SPEAK_COMMAND         |
+| require_libs            | []                              | AIA_REQUIRE_LIBS          |
 
-| Config Item          | Default Value                  | envar key                |
-| -------------------- | ------------------------------ | ------------------------ |
-| config_file          | nil                            | AIA_CONFIG_FILE          |
-| debug                | false                          | AIA_DEBUG                |
-| fuzzy                | false                          | AIA_FUZZY                |
-| log_file             | ~/.prompts/_prompts.log        | AIA_LOG_FILE             |
-| markdown             | true                           | AIA_MARKDOWN             |
-| model                | gpt-4o-mini                    | AIA_MODEL                |
-| out_file             | temp.md                        | AIA_OUT_FILE             |
-| prompts_dir          | ~/.prompts                     | AIA_PROMPTS_DIR          |
-| roles_prefix         | roles                          | AIA_ROLES_PREFIX         |
-| speech_model         | tts-1                          | AIA_SPEECH_MODEL         |
-| transcription_model  | whisper-1                      | AIA_TRANSCRIPTION_MODEL  |
-| verbose              | false                          | AIA_VERBOSE              |
-| voice                | alloy                          | AIA_VOICE                |
-| shell_confirm        | true                           | AIA_SHELL_CONFIRM        |
-| strict_shell_safety  | false                          | AIA_STRICT_SHELL_SAFETY  |
-| image_size           | 1024x1024                      | AIA_IMAGE_SIZE           |
-| image_quality        | standard                       | AIA_IMAGE_QUALITY        |
-| image_style          | vivid                          | AIA_IMAGE_STYLE          |
+These options can be configured via command-line arguments, environment variables, or configuration files.
 
+### Expandable Configuration
 
+The configuration options are expandable through a config file, allowing you to add custom entries. For example, you can define a custom configuration item like "xyzzy" in your config file. This value can then be accessed in your prompts using `AIA.config.xyzzy` within a `//ruby` directive or an ERB block, enabling dynamic prompt generation based on your custom configurations.
 
-See the `@options` hash in the `cli.rb` file for a complete list.  There are some config items that do not necessarily make sense for use as an envar over-ride.  For example if you set `export AIA_DUMP_FILE=config.yaml` then `aia` would dump the current configuration config.yaml and exit every time it is ran until you finally `unset AIA_DUMP_FILE`
+Some architectures put prompts inside their programs. AIA and the prompt_manager gem allow you to put programs inside your prompts.  This allows you to create dynamic prompts that can interact with your system and provide real-time information. This was an architecture built before the model context protocol (MCP) and functional tool calling was available to LLMs. Its kind of like the magician who pulls a hat out of a rabbit - messy. It does have its advantages. See the section on the executable prompt.
 
 ## Shell Integration inside of a Prompt
 
 Using the option `--shell` enables `aia` to access your terminal's shell environment from inside the prompt text.
-
-#### Access to System Environment Variables
-
-`aia` can replace any system environment variable (envar) references in the prompt text with the value of the envar.  Patterns like $USER and ${USER} in the prompt will be replaced with that envar's value - the name of the user's account.  Any envar can be used.
 
 #### Dynamic Shell Commands
 
@@ -217,6 +243,20 @@ Try this prompt file:
 
 What does that number mean to you?
 ```
+
+### Directive Syntax
+
+Directives can be entered in chat or prompt files using the following syntax:
+- `//command args`
+
+Supported directives:
+- `shell` or `sh`: Execute a shell command
+- `ruby` or `rb`: Execute Ruby code
+- `config` or `cfg`: Show or update configuration
+- `include` or `inc`: Include file content
+- `help`: Show available directives
+
+When a directive produces output, it is added to the chat context. If there is no output, you are prompted again.
 
 ### `aia` Specific Directive Commands
 
@@ -367,6 +407,7 @@ or inside of the `one.txt` prompt file use this directive:
 
 ### Best Practices ??
 
+
 Since the response of one prompt is fed into the next prompt within the sequence instead of having all prompts write their response to the same out file, use these directives inside the associated prompt files:
 
 
@@ -452,7 +493,6 @@ aia -r ruby sw_eng/doc_the_methods my_class.rb
 
 In this example the prompt text file `$AIA_ROLES_PREFIX/ruby.txt` is prepended to the prompt text file `$AIA_PROMPTS_DIR/sw_eng/doc_the_methods.txt`
 
-
 ### Other Ways to Insert Roles into Prompts
 
 Since `aia` supports parameterized prompts you could make a keyword like "[ROLE]" be part of your prompt.  For example consider this prompt:
@@ -469,15 +509,11 @@ TODO: are these cli tools still used?
 
 To install the external CLI programs used by aia:
 
-  brew install fzf ripgrep
+  brew install fzf
 
 fzf
   Command-line fuzzy finder written in Go
   [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf)
-
-ripgrep
-  Search tool like grep and The Silver Searcher
-  [https://github.com/BurntSushi/ripgrep](https://github.com/BurntSushi/ripgrep)
 
 
 ## Shell Completion
@@ -588,9 +624,11 @@ This executable prompt concept sets up the building blocks of a *nix CLI-based p
 
 ## Development
 
-This CLI tool started life as a few lines of ruby in a file in my scripts repo.  I just kep growing as I decided to add more capability.  There was no real architecture to guide the design.  What was left ws a large code mess which is slowly being refactored into something more maintainable.  That work is taking place in the `develop` branch.  I welcome you help.  Take a look at what is going on in that branch and send me a PR against it.
+**ShellCommandExecutor Refactor:**
+The `ShellCommandExecutor` is now a class (previously a module). It stores the config object as an instance variable and provides cleaner encapsulation. For backward compatibility, class-level methods are available and delegate to instance methods internally.
 
-Of course if you see something in the main branch send me a PR against that one so that we can fix the problem for all.
+**Prompt Variable Fallback:**
+When processing a prompt file without a `.json` history file, variables are always parsed from the prompt text so you are prompted for values as needed.
 
 ## Contributing
 
