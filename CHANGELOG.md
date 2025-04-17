@@ -1,8 +1,15 @@
 # Changelog
 ## [Unreleased]
 
-### [0.8.0] WIP - 2025-03-29
-- Updated PromptManager to v0.5.0 which has some of the cuntionality that was originall developed in the aia
+## Released
+
+### [0.8.0] WIP - 2025-04-15
+- Updated PromptManager to v0.5.1 which has some of the functionality that was originally developed in the AIA.
+- Enhanced README.md to include a comprehensive table of configuration options with defaults and associated environment variables.
+- Added a note in README.md about the expandability of configuration options from a config file for dynamic prompt generation.
+- Improved shell command protection by ensuring dangerous patterns are checked and confirmed before execution.
+- Ensured version consistency across `.version`, `aia.gemspec`, and `lib/aia/version.rb`.
+- Verified and updated documentation to ensure readiness for release on RubyGems.org.
 
 ### [0.7.1] WIP - 2025-03-22
 - Added `UIPresenter` class for handling user interface presentation.
@@ -31,8 +38,6 @@
 
 ### [0.6.?] WIP
 - Implemented Tony Stark's Clean Slate Protocol on the develop branch
-
-## Released
 
 ### [0.5.17] 2024-05-17
 - removed replaced `semver` with `versionaire`

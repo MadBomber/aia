@@ -63,7 +63,7 @@ module AIA
       if EXCLUDED_METHODS.include?(method_name)
         return "Error: #{method_name} is not a valid directive: #{key}"
       elsif respond_to?(method_name, true)
-        return send(method_name, args, context_manager)
+        return send(method_name, args)
       else
         return "Error: Unknown directive '#{key}'"
       end
@@ -104,8 +104,28 @@ module AIA
     ## Directives ##
     ################
 
+    desc "Specify the next prompt ID to process after this one"
+    def next(args = [])
+      if args.empty?
+        ap AIA.config.next
+      else
+        AIA.config.next = args.shift
+      end
+      ''
+    end
+
+    desc "Specify a sequence pf prompt IDs to process after this one"
+    def pipeline(args = [])
+      if args.empty?
+        ap AIA.config.pipeline
+      else
+        AIA.config.pipeline += args.map {|id| id.gsub(',', '').strip}
+      end
+      ''
+    end
+
     desc "Inserts the contents of a file  Example: //include path/to/file"
-    def include(args, context_manager = nil)
+    def include(args)
       file_path = args.shift
 
       if @included_files.include?(file_path)
@@ -123,7 +143,7 @@ module AIA
     alias_method :import,       :include
 
     desc "Without arguments it will print a list of all config items and their values _or_ //config item (for one item's value) _or_ //config item = value (to set a value of an item)"
-    def config(args = [], context_manager = nil)
+    def config(args = [])
       args = Array(args)
 
       if args.empty?
@@ -151,18 +171,18 @@ module AIA
     alias_method :cfg, :config
 
     desc "Shortcut for //config top_p _and_ //config top_p = value"
-    def top_p(context_manager = nil, *args)
+    def top_p(*args)
       send(:config, args.prepend('top_p'))
     end
     alias_method :topp, :top_p
 
     desc "Shortcut for //config model _and_ //config model = value"
-    def model(context_manager = nil, *args)
+    def model(*args)
       send(:config, args.prepend('model'))
     end
 
     desc "Shortcut for //config temperature _and_ //config temperature = value"
-    def temperature(context_manager = nil, *args)
+    def temperature(*args)
       send(:config, args.prepend('temperature'))
     end
     alias_method :temp, :temperature
@@ -192,24 +212,24 @@ module AIA
     alias_method :rb, :ruby
 
     desc "Use the system's say command to speak text //say some text"
-    def say(context_manager = nil, *args)
+    def say(*args)
       `say #{args.join(' ')}`
       ""
     end
 
     desc "Inserts an instruction to keep responses short and to the point."
-    def terse(context_manager = nil, *args)
+    def terse(*args)
       AIA::Session::TERSE_PROMPT
     end
 
     desc "Display the ASCII art AIA robot."
-    def robot(context_manager = nil, *args)
+    def robot(*args)
       AIA::Utility.robot
       ""
     end
 
     desc "Generates this help content"
-    def help(context_manager = nil, *args)
+    def help(*args)
       puts
       puts "Available Directives"
       puts "===================="
