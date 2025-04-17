@@ -3,6 +3,18 @@
 
 ## Released
 
+### [0.8.2] 2025-04-18
+- fixed problems with pre-loaded context and chat repl
+- piped content into `aia --chat` is now a part of the context/instructions
+- content via "aia --chat < some_file" is added to the context/instructions
+- `aia --chat context_file.txt context_file2.txt` now works
+- `aia --chat prompt_id context)file.txt` also works
+
+
+
+### [0.8.1] 2025-04-17
+- bumped version to 0.8.1 after correcting merge conflicts
+
 ### [0.8.0] WIP - 2025-04-15
 - Updated PromptManager to v0.5.1 which has some of the functionality that was originally developed in the AIA.
 - Enhanced README.md to include a comprehensive table of configuration options with defaults and associated environment variables.

@@ -23,7 +23,11 @@ module AIA
     def initialize(prompt_handler)
       @prompt_handler  = prompt_handler
 
-      if AIA.chat? && AIA.config.prompt_id.empty?
+      # Special handling for chat mode with context files but no prompt ID
+      if AIA.chat? && AIA.config.prompt_id.empty? && AIA.config.context_files && !AIA.config.context_files.empty?
+        prompt_instance  = nil
+        @history_manager = nil
+      elsif AIA.chat? && AIA.config.prompt_id.empty?
         prompt_instance  = nil
         @history_manager = nil
       else
@@ -47,10 +51,15 @@ module AIA
       prompt_id = AIA.config.prompt_id
       role_id   = AIA.config.role
 
-      # Handle chat mode *only* if NO initial prompt is given
+      # Handle chat mode
       if AIA.chat?
         AIA::Utility.robot
-        if prompt_id.empty? && role_id.empty?
+        # If we're in chat mode with only context files, go straight to chat
+        if prompt_id.empty? && role_id.empty? && AIA.config.context_files && !AIA.config.context_files.empty?
+          start_chat
+          return
+        elsif prompt_id.empty? && role_id.empty?
+          # Even with an empty prompt_id, we might have context files
           start_chat
           return
         end
@@ -137,22 +146,78 @@ module AIA
       # --- Enter chat mode AFTER processing initial prompt ---
       if AIA.chat?
         @ui_presenter.display_separator # Add separator
-        start_chat # start_chat will use the now populated context
+        start_chat(skip_context_files: true) # start_chat will use the now populated context
       end
     end
 
     # Starts the interactive chat session.
-    def start_chat
+    def start_chat(skip_context_files: false)
       # Consider if display_chat_header is needed if robot+separator already shown
       # For now, let's keep it, maybe add an indicator message
       puts "\nEntering interactive chat mode..."
       @ui_presenter.display_chat_header
 
       Reline::HISTORY.clear # Keep Reline history for user input editing, separate from chat context
+      
+      # Load context files if any and not skipping
+      if !skip_context_files && AIA.config.context_files && !AIA.config.context_files.empty?
+        context_content = AIA.config.context_files.map do |file|
+          File.read(file) rescue "Error reading file: #{file}"
+        end.join("\n\n")
+        
+        if !context_content.empty?
+          # Add context files content to context
+          @context_manager.add_to_context(role: 'user', content: context_content)
+          
+          # Process the context
+          operation_type = @chat_processor.determine_operation_type(AIA.config.model)
+          @ui_presenter.display_thinking_animation
+          response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+          
+          # Add AI response to context
+          @context_manager.add_to_context(role: 'assistant', content: response)
+          
+          # Output the response
+          @chat_processor.output_response(response)
+          @chat_processor.speak(response)
+          @ui_presenter.display_separator
+        end
+      end
+      
+      # Check for piped input (STDIN not a TTY and has data)
+      if !STDIN.tty?
+        # Save the original STDIN
+        orig_stdin = STDIN.dup
+        
+        # Read the piped input
+        piped_input = STDIN.read.strip
+        
+        # Reopen STDIN to the terminal
+        STDIN.reopen('/dev/tty')
+        
+        if !piped_input.empty?
+          # Add piped input to context
+          @context_manager.add_to_context(role: 'user', content: piped_input)
+          
+          # Process the piped input
+          operation_type = @chat_processor.determine_operation_type(AIA.config.model)
+          @ui_presenter.display_thinking_animation
+          response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+          
+          # Add AI response to context
+          @context_manager.add_to_context(role: 'assistant', content: response)
+          
+          # Output the response
+          @chat_processor.output_response(response)
+          @chat_processor.speak(response)
+          @ui_presenter.display_separator
+        end
+      end
 
       loop do
         # Get user input
         prompt = @ui_presenter.ask_question
+        
 
 
         break if prompt.nil? || prompt.strip.downcase == 'exit' || prompt.strip.empty?
