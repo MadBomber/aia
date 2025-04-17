@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.8.0)
+    aia (0.8.1)
       ai_client
       amazing_print
       os
