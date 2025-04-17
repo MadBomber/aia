@@ -146,10 +146,15 @@ module AIA
 
       exit if and_exit
 
-      # Only require a prompt_id if we're not in chat mode and not using fuzzy search
-      if !config.chat && !config.fuzzy && config.prompt_id.empty?
-        STDERR.puts "Error: A prompt ID is required unless using --chat or --fuzzy. Use -h or --help for help."
+      # Only require a prompt_id if we're not in chat mode, not using fuzzy search, and no context files
+      if !config.chat && !config.fuzzy && config.prompt_id.empty? && (!config.context_files || config.context_files.empty?)
+        STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
         exit 1
+      end
+      
+      # If we're in chat mode with context files but no prompt_id, that's valid
+      if config.chat && config.prompt_id.empty? && config.context_files && !config.context_files.empty?
+        # This is a valid use case - no action needed
       end
 
       # Tailor the PromptManager::Prompt
@@ -192,7 +197,9 @@ module AIA
       config = OpenStruct.new
 
       opt_parser = OptionParser.new do |opts|
-        opts.banner = "Usage: aia [options] PROMPT_ID [CONTEXT_FILE]*"
+        opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n" +
+                     "       aia --chat [PROMPT_ID] [CONTEXT_FILE]*\n" +
+                     "       aia --chat [CONTEXT_FILE]*"
 
         opts.on("--chat", "Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.") do
           config.chat = true
@@ -391,13 +398,23 @@ module AIA
         exit 1
       end
 
-      # First remaining arg is the prompt ID
+      # Handle remaining args
       unless remaining_args.empty?
-        config.prompt_id = remaining_args.shift
+        # If in chat mode and all args are existing files, treat them all as context files
+        if config.chat && remaining_args.all? { |arg| File.exist?(arg) }
+          config.context_files = remaining_args
+        # If first arg is empty string and we're in chat mode, treat all args as context files
+        elsif config.chat && remaining_args.first == ""
+          remaining_args.shift # Remove the empty string
+          config.context_files = remaining_args unless remaining_args.empty?
+        else
+          # First remaining arg is the prompt ID
+          config.prompt_id = remaining_args.shift
+          
+          # Remaining args are context files
+          config.context_files = remaining_args unless remaining_args.empty?
+        end
       end
-
-      # Remaining args are context files
-      config.context_files = remaining_args unless remaining_args.empty?
 
 
       config
