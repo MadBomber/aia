@@ -1,10 +1,13 @@
 # lib/aia/version.rb
-# frozen_string_literal: true
+#
+# This file defines the version of the AIA application.
+# The VERSION constant defines the current version of the AIA application,
+# which is read from the .version file in the project root.
 
-require 'versionaire'
-
+# The AIA module serves as the namespace for the AIA application, which
+# provides an interface for interacting with AI models and managing prompts.
 module AIA
-  VERSION_FILEPATH  = "#{__dir__}/../../.version"
-  VERSION           = Versionaire::Version File.read(VERSION_FILEPATH).strip
-  def self.version  = VERSION
+  # The VERSION constant defines the current version of the AIA application,
+  # which is read from the .version file in the project root.
+  VERSION = File.read(File.join(File.dirname(__FILE__), '..', '..', '.version')).strip
 end

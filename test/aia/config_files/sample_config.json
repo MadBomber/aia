@@ -1,7 +1,0 @@
-{
-  "backend": "sgpt",
-  "prompts_dir": "~/.prompts",
-  "log_file": "~/.prompts/_prompts.log",
-  "verbose?": true,
-  "markdown?": true
-}

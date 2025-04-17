@@ -1,78 +1,74 @@
 # lib/aia.rb
+#
+# This is the main entry point for the AIA application.
+# The AIA module serves as the namespace for the AIA application, which
+# provides an interface for interacting with AI models and managing prompts.
 
-def tramp_require(what, &block)
-  loaded, require_result = false, nil
+require 'ai_client'
+require 'prompt_manager'
+require 'debug_me'
+include DebugMe
+$DEBUG_ME = false
+DebugMeDefaultOptions[:skip1] = true
 
-  begin
-    require_result = require what
-    loaded = true
-  rescue Exception => ex
-    # Do nothing
+require_relative 'extensions/openstruct_merge'
+require_relative 'aia/utility'
+require_relative 'aia/version'
+require_relative 'aia/config'
+require_relative 'aia/shell_command_executor'
+require_relative 'aia/prompt_handler'
+require_relative 'aia/ai_client_adapter'
+require_relative 'aia/directive_processor'
+require_relative 'aia/history_manager'
+require_relative 'aia/ui_presenter'
+require_relative 'aia/chat_processor_service'
+require_relative 'aia/session'
+
+# The AIA module serves as the namespace for the AIA application, which
+# provides an interface for interacting with AI models and managing prompts.
+module AIA
+  at_exit do
+    STDERR.puts "Exiting AIA application..."
   end
 
-  yield if loaded and block_given?
+  @config = nil
 
-  require_result
-end
+  def self.config
+    @config
+  end
 
-tramp_require('debug_me') {
-  include DebugMe
-}
+  def self.client
+    @config.client
+  end
 
-require 'hashie'
-require 'openai'
-require 'os'
-require 'pathname'
-require 'reline'
-require 'shellwords'
-require 'tempfile'
+  def self.client=(client)
+    @config.client = client
+  end
 
-require 'tty-spinner'
-
-unless TTY::Spinner.new.respond_to?(:log)
-  # Allows messages to be sent to the console while
-  # the spinner is still spinning.
-  require_relative './core_ext/tty-spinner_log'
-end
-
-require 'prompt_manager'
-require 'prompt_manager/storage/file_system_adapter'
-
-require_relative "aia/version"
-require_relative "aia/clause"
-require_relative "aia/main"
-require_relative "core_ext/string_wrap"
-
-module AIA
-  class << self
-    attr_accessor :config
-    attr_accessor :client
-
-    def run(args=ARGV)
-      args = args.split(' ') if args.is_a?(String)
-
-      # TODO: Currently this is a one and done architecture.
-      #       If the args contain an "-i" or and "--interactive"
-      #       flag could this turn into some kind of
-      #       conversation REPL?
-      
-      AIA::Main.new(args).call
-    end
-
-
-    def speak(what)
-      return unless config.speak?
-
-      if OS.osx? && 'siri' == config.voice.downcase
-        system "say #{Shellwords.escape(what)}"
-      else
-        Client.speak(what)
+  def self.build_flags
+    @config.each_pair do |key, value|
+      if [TrueClass, FalseClass].include?(value.class)
+        define_singleton_method("#{key}?") do
+          @config[key]
+        end
       end
     end
+  end
 
+  def self.run
+    @config = Config.setup
 
-    def verbose?  = AIA.config.verbose?
-    def debug?    = AIA.config.debug?
+    build_flags
+
+    # Load Fzf if fuzzy search is enabled and fzf is installed
+    if @config.fuzzy && system('which fzf >/dev/null 2>&1')
+      require_relative 'aia/fzf'
+    end
+
+    prompt_handler = PromptHandler.new
+    @config.client = AIClientAdapter.new
+    session        = Session.new(prompt_handler)
+
+    session.start
   end
 end
-

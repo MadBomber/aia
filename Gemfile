@@ -2,9 +2,11 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in aia.gemspec
+gem 'securerandom', '~> 0.4.0'
+gem "ai_client", "~> 0.4.4"
+group :development do
+  gem 'debug_me'
+  gem 'simplecov_lcov_formatter'
+end
+
 gemspec
-
-gem "rake", "~> 13.0"
-
-gem "minitest", "~> 5.0"
