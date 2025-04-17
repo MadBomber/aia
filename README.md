@@ -142,13 +142,20 @@ Block comments that are not part of the context or instructions to
 the LLM.  Stuff that is just here ofr documentation.
 ```
 
-That is just about everything including the kitchen sink that a pre-compositional parameterized prompt file can have.  It can be an executable with a she-bang line and a special system prompt name `run` as shown in the example.  It has line comments that use the `#` symbol. It had end of file block comments that appear after the "__END__" line.  It has directive command that begin with the double slash `//` - an homage to IBM JCL.  It has shell variables in both forms.  It has shell commands.  It has parameters that default to a regex that uses square brackets and all uppercase characeters to define the parameter name whose value is to be given in a Q&A session before the prompt is sent to the LLM for processing.
+That is just about everything including the kitchen sink that a pre-compositional parameterized prompt file can have.  It can be an executable with a she-bang line and a special system prompt name `run` as shown in the example.  It has line comments that use the `#` symbol. It had end of file block comments that appear after the "__END__" line.  It has directive command that begin with the double slash `//` - an homage to IBM JCL.  It has shell variables in both forms.  It has shell commands. It has parameters that default to a regex that uses square brackets and all uppercase characeters to define the parameter name whose value is to be given in a Q&A session before the prompt is sent to the LLM for processing.
 
-It als has the ability to define a workflow of prompt IDs with either the //next or //pipeline directives.
+AIA has the ability to define a workflow of prompt IDs with either the //next or //pipeline directives.
 
-You could say that instead of the prompt being part of a program, a program can be part of the prompt.  The prompt is the code!
+You could say that instead of the prompt being part of a program, a program can be part of the prompt. **The prompt is the code!**
 
 By using ERB you can make parts of the context/instructions conditional. You can also use ERB to make parts of the context/instructions dynamic for example to pull information from a database or an API.
+
+## Embedded Parameters as Placeholders
+
+In the example prompt text file above I used the default regex to define parameters as all upper case characters ply space underscore and the vertical pipe enclosed within square brackets.  Since the time that I original wrote AIA I've seen more developers use double curly braces to define parameters. AIA allows you to specify your own regex as a string. If you want the curly brackets use the `--regex` option on the command line like this:
+
+`--regex '(?-mix:({{[a-zA-Z _|]+}}))'`
+
 
 ## Usage
 
@@ -193,6 +200,7 @@ The following table provides a comprehensive list of configuration options, thei
 | embedding_model         | text-embedding-ada-002          | AIA_EMBEDDING_MODEL       |
 | speak_command           | afplay                          | AIA_SPEAK_COMMAND         |
 | require_libs            | []                              | AIA_REQUIRE_LIBS          |
+| regex                   | '(?-mix:(\\[[A-Z _|]+\\]))'     | AIA_REGEX                 |
 
 These options can be configured via command-line arguments, environment variables, or configuration files.
 
@@ -216,7 +224,7 @@ For example, let's consider the `model` option. Suppose the following conditions
 
 In this scenario, the model used will be "gpt-4o-mini". However, you can override this default by setting the model at any level of the precedence order. Additionally, you can dynamically ask for user input by incorporating an embedded directive with a placeholder parameter, such as `//config model = [PROCESS_WITH_MODEL]`. When processing the prompt, AIA will prompt you to input a value for `[PROCESS_WITH_MODEL]`.
 
-> TODO: If you do not like the default regex used to identify parameters within the prompt text, don't worry there is a way to configure it.  I will tell you later if I remember.
+If you do not like the default regex used to identify parameters within the prompt text, don't worry there is a way to configure it using the `--regex` option.
 
 ### Expandable Configuration
 
@@ -589,8 +597,6 @@ When this prompt is processed, AIA will ask you for a value for the keyword "[RO
 
 ## External CLI Tools Used
 
-TODO: are these cli tools still used?
-
 To install the external CLI programs used by AIA:
 
   brew install fzf
@@ -730,7 +736,6 @@ All of that undirected experimentation without a clear picture of where this thi
 
 ## Roadmap
 
-- expose embedded parameter regex as a configuration option
 - support for using Ruby-based functional callback tools
 - support for Model Context Protocol
 

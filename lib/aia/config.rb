@@ -41,6 +41,10 @@ module AIA
       next:     nil,
       pipeline: [],
 
+      # PromptManager::Prompt Tailoring
+
+      parameter_regex: PromptManager::Prompt.parameter_regex.to_s,
+
       # LLM tuning parameters
       temperature:          0.7,
       max_tokens:           2048,
@@ -148,6 +152,11 @@ module AIA
         exit 1
       end
 
+      # Tailor the PromptManager::Prompt
+      if config.parameter_regex
+        PromptManager::Prompt.parameter_regex = Regexp.new(config.parameter_regex)
+      end
+
       config
     end
 
@@ -245,6 +254,10 @@ module AIA
 
         opts.on("-r", "--role ROLE_ID", "Role ID to prepend to prompt") do |role|
           config.role = role
+        end
+
+        opts.on('--regex pattern', 'Regex pattern to extract parameters from prompt text') do |pattern|
+          config.parameter_regex = pattern
         end
 
         opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
