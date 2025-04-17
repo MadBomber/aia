@@ -7,7 +7,7 @@
      (\____/) AI Assistant    interaction with AI models. It automates the
       (_oo_)   Fancy LLM      management of pre-compositional prompts and
         (O)     is Online     executes generative AI (Gen-AI) commands on those
-      __||__    \)            prompts. AIA includes enhanced feathres such as
+      __||__    \)            prompts. AIA includes enhanced features such as
     [/______\]  /               * embedded directives * shell integration
    / \__AI__/ \/                * embedded Ruby       * history management
   /    /__\                     * interactive chat    * prompt workflows
