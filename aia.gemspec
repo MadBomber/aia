@@ -43,31 +43,30 @@ Gem::Specification.new do |spec|
     `git ls-files -z`.split("\x0").reject do |f|
       (File.expand_path(f) == __FILE__) ||
         f.start_with?(*%w[bin/ test/ spec/ features/ .git Gemfile])
-    end + ['man/', '.version']
+    end + ['.version']
   end
 
   spec.bindir         = "bin"
   spec.executables    = %w[ aia ]
   spec.require_paths  = %w[ lib ]
 
-  spec.add_dependency "ai_client"   # TODO: replace all backend with AiClient
-  spec.add_dependency "hashie"
+  spec.add_dependency "ai_client"
+  spec.add_dependency "amazing_print"
   spec.add_dependency "os"
   spec.add_dependency "prompt_manager", '>= 0.4.1' # needs the directives functionality
   spec.add_dependency "reline"
-  spec.add_dependency "ruby-openai" # on the way out with ai_client
   spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"
   spec.add_dependency "tty-screen"
   spec.add_dependency "tty-spinner"
   spec.add_dependency "versionaire"
 
-
-
-  spec.add_development_dependency "minitest"
-  spec.add_development_dependency 'amazing_print'
   spec.add_development_dependency 'debug_me'
-  spec.add_development_dependency 'kramdown-man'
+  spec.add_development_dependency 'minitest'
+  spec.add_development_dependency 'minitest-reporters'
+  spec.add_development_dependency 'mocha'
+  spec.add_development_dependency 'rake'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'tocer'
+
 end

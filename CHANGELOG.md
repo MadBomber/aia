@@ -1,9 +1,43 @@
-## Unreleased
-
-### [0.5.18] 2024-10-26
-- updated dependencies; using prompt_manager v0.4.2
+# Changelog
+## [Unreleased]
 
 ## Released
+
+### [0.8.0] WIP - 2025-04-15
+- Updated PromptManager to v0.5.1 which has some of the functionality that was originally developed in the AIA.
+- Enhanced README.md to include a comprehensive table of configuration options with defaults and associated environment variables.
+- Added a note in README.md about the expandability of configuration options from a config file for dynamic prompt generation.
+- Improved shell command protection by ensuring dangerous patterns are checked and confirmed before execution.
+- Ensured version consistency across `.version`, `aia.gemspec`, and `lib/aia/version.rb`.
+- Verified and updated documentation to ensure readiness for release on RubyGems.org.
+
+### [0.7.1] WIP - 2025-03-22
+- Added `UIPresenter` class for handling user interface presentation.
+- Added `DirectiveProcessor` class for processing chat-based directives.
+- Added `HistoryManager` class for managing conversation and variable history.
+- Added `ShellCommandExecutor` class for executing shell commands.
+- Added `ChatProcessorService` class for managing conversation processing logic.
+- Added `PromptProcessor` class for processing prompts.
+- Enhanced `Session` class to manage interactive session logic.
+- Updated `Config` class to handle new configuration options and defaults.
+- Improved handling of chat prompts and AI interactions.
+- Added support for dynamic content processing in prompts, including shell commands and ERB.
+- Improved error handling and user feedback for directive processing.
+- Enhanced logging and output options for chat sessions.
+
+### [0.7.0] WIP - 2025-03-17
+- Major code refactoring for better organization and maintainability:
+  - Extracted `DirectiveProcessor` class to handle chat-based directives
+  - Extracted `HistoryManager` class for conversation and variable history management
+  - Extracted `UIPresenter` class for UI-related functionality
+  - Extracted `ChatProcessorService` class for prompt processing and AI interactions
+  - Significantly reduced complexity of the `Session` class by applying separation of concerns
+- Enhanced the `//clear` directive to properly reset conversation context
+- Improved output handling to suppress STDOUT when chat mode is off and output file is specified
+- Updated spinner format in the process_prompt method for better user experience
+
+### [0.6.?] WIP
+- Implemented Tony Stark's Clean Slate Protocol on the develop branch
 
 ### [0.5.17] 2024-05-17
 - removed replaced `semver` with `versionaire`
@@ -59,7 +93,7 @@
 - Adding processing for directives, shell integration and erb to the follow up prompt in a chat session
 - some code refactoring.
 
-### [0.5.3] 2024-01-14
+## [0.5.3] 2024-01-14
 - adding ability to render markdown to the terminal using the "glow" CLI utility
 
 ### [0.5.2] 2024-01-13
