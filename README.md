@@ -456,6 +456,8 @@ Whe you are in a chat session, you may use a directive as a follow up prompt.  F
 
 The directive is executed and a new follow up prompt can be entered with a more lengthy response generated from the LLM.
 
+The directive `//clear` truncates your entire session context. The LLM will not remember anything you have discussed.
+
 ## Prompt Sequences
 
 Why would you need/want to use a sequence of prompts in a batch situation. Maybe you have a complex prompt which exceeds the token limitations of your model for input so you need to break it up into multiple parts. Or suppose its a simple prompt but the number of tokens on the output is limited and you do not get exactly the kind of full response for which you were looking.
