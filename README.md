@@ -1,15 +1,17 @@
 3# AI Assistant (AIA)
 
+**The prompt is the code!**
+
 ```plain
-     ,      ,               AIA is a command-line utility that facilitates
-     (\____/) AI Assistant  interaction with AI models. It automates the
-      (_oo_)   Fancy LLM    management of pre-compositional prompts and
-        (O)     is Online   executes generative AI (Gen-AI) commands on those
-      __||__    \)          prompts, taking advantage of modern LLMs'
-    [/______\]  /           increased context window size. The application
-   / \__AI__/ \/            now includes enhanced features such as directive
-  /    /__\                 processing, history management, shell command
- (\   /____\                execution, and chat processing services.
+     ,      ,                 AIA is a command-line utility that facilitates
+     (\____/) AI Assistant    interaction with AI models. It automates the
+      (_oo_)   Fancy LLM      management of pre-compositional prompts and
+        (O)     is Online     executes generative AI (Gen-AI) commands on those
+      __||__    \)            prompts. AIA includes enhanced feathres such as
+    [/______\]  /               * embedded directives * shell integration
+   / \__AI__/ \/                * embedded Ruby       * history management
+  /    /__\                     * interactive chat    * prompt workflows
+ (\   /____\
 ```
 
 AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts. It utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection.
@@ -22,6 +24,9 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
   - `ruby`/`rb`: Execute Ruby code
   - `config`/`cfg`: Display or update configuration
   - `include`/`inc`: Include file content
+  - `next`: Specify the next prompt ID in a sequence
+  - `pipeline`: Specify a pipeline of prompt IDs to process
+  - `clear`: Clear the context (handy in a chat session)
   - `help`: Show available directives
 
 
@@ -157,7 +162,7 @@ By using ERB you can make parts of the context/instructions conditional. You can
 
 ## Embedded Parameters as Placeholders
 
-In the example prompt text file above I used the default regex to define parameters as all upper case characters ply space underscore and the vertical pipe enclosed within square brackets.  Since the time that I original wrote AIA I've seen more developers use double curly braces to define parameters. AIA allows you to specify your own regex as a string. If you want the curly brackets use the `--regex` option on the command line like this:
+In the example prompt text file above I used the default regex to define parameters as all upper case characters plus space, underscore and the vertical pipe enclosed within square brackets. Since the time that I original starting writing AIA I've seen more developers use double curly braces to define parameters. AIA allows you to specify your own regex as a string. If you want the curly brackets use the `--regex` option on the command line like this:
 
 `--regex '(?-mix:({{[a-zA-Z _|]+}}))'`
 
@@ -167,7 +172,7 @@ In the example prompt text file above I used the default regex to define paramet
 The usage report is obtained with either `-h` or `--help` options.
 
 ```bash
-$ aia --help
+aia --help
 ```
 
 ## Configuration Options
