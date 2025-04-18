@@ -63,7 +63,7 @@ module AIA
       if EXCLUDED_METHODS.include?(method_name)
         return "Error: #{method_name} is not a valid directive: #{key}"
       elsif respond_to?(method_name, true)
-        return send(method_name, args)
+        return send(method_name, args, context_manager)
       else
         return "Error: Unknown directive '#{key}'"
       end
@@ -125,7 +125,7 @@ module AIA
     end
 
     desc "Inserts the contents of a file  Example: //include path/to/file"
-    def include(args)
+    def include(args, context_manager=nil)
       # echo takes care of envars and tilde expansion
       file_path = `echo #{args.shift}`.strip
 
@@ -144,7 +144,7 @@ module AIA
     alias_method :import,       :include
 
     desc "Without arguments it will print a list of all config items and their values _or_ //config item (for one item's value) _or_ //config item = value (to set a value of an item)"
-    def config(args = [])
+    def config(args = [], context_manager=nil)
       args = Array(args)
 
       if args.empty?
@@ -172,33 +172,35 @@ module AIA
     alias_method :cfg, :config
 
     desc "Shortcut for //config top_p _and_ //config top_p = value"
-    def top_p(*args)
-      send(:config, args.prepend('top_p'))
+    def top_p(args, context_manager=nil)
+      send(:config, args.prepend('top_p'), context_manager)
     end
     alias_method :topp, :top_p
 
     desc "Shortcut for //config model _and_ //config model = value"
-    def model(*args)
-      send(:config, args.prepend('model'))
+    def model(args, context_manager=nil)
+      send(:config, args.prepend('model'), context_manager)
     end
 
     desc "Shortcut for //config temperature _and_ //config temperature = value"
-    def temperature(*args)
-      send(:config, args.prepend('temperature'))
+    def temperature(args, context_manager=nil)
+      send(:config, args.prepend('temperature'), context_manager)
     end
     alias_method :temp, :temperature
 
     desc "Clears the conversation history (aka context) same as //config clear = true"
-    def clear(args, context_manager)
+    def clear(args, context_manager=nil)
       if context_manager.nil?
         return "Error: Context manager not available for //clear directive."
       end
+
       context_manager.clear_context
-      nil
+
+      ''
     end
 
     desc "Shortcut for a one line of ruby code; result is added to the context"
-    def ruby(*args)
+    def ruby(args, context_manager=nil)
       ruby_code = args.join(' ')
 
       begin
@@ -214,34 +216,32 @@ module AIA
 
 
     desc "Executes one line of shell code; result is added to the context"
-    def shell(*args)
+    def shell(args, context_manager=nil)
       shell_code = args.join(' ')
 
       `#{shell_code}`
     end
     alias_method :sh, :shell
 
-
-
     desc "Use the system's say command to speak text //say some text"
-    def say(*args)
+    def say(args, context_manager=nil)
       `say #{args.join(' ')}`
       ""
     end
 
     desc "Inserts an instruction to keep responses short and to the point."
-    def terse(*args)
+    def terse(args, context_manager=nil)
       AIA::Session::TERSE_PROMPT
     end
 
     desc "Display the ASCII art AIA robot."
-    def robot(*args)
+    def robot(args, context_manager=nil)
       AIA::Utility.robot
       ""
     end
 
     desc "Generates this help content"
-    def help(*args)
+    def help(args=nil, context_manager=nil)
       puts
       puts "Available Directives"
       puts "===================="
