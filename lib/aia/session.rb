@@ -158,55 +158,55 @@ module AIA
       @ui_presenter.display_chat_header
 
       Reline::HISTORY.clear # Keep Reline history for user input editing, separate from chat context
-      
+
       # Load context files if any and not skipping
       if !skip_context_files && AIA.config.context_files && !AIA.config.context_files.empty?
         context_content = AIA.config.context_files.map do |file|
           File.read(file) rescue "Error reading file: #{file}"
         end.join("\n\n")
-        
+
         if !context_content.empty?
           # Add context files content to context
           @context_manager.add_to_context(role: 'user', content: context_content)
-          
+
           # Process the context
           operation_type = @chat_processor.determine_operation_type(AIA.config.model)
           @ui_presenter.display_thinking_animation
           response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
-          
+
           # Add AI response to context
           @context_manager.add_to_context(role: 'assistant', content: response)
-          
+
           # Output the response
           @chat_processor.output_response(response)
           @chat_processor.speak(response)
           @ui_presenter.display_separator
         end
       end
-      
+
       # Check for piped input (STDIN not a TTY and has data)
       if !STDIN.tty?
         # Save the original STDIN
         orig_stdin = STDIN.dup
-        
+
         # Read the piped input
         piped_input = STDIN.read.strip
-        
+
         # Reopen STDIN to the terminal
         STDIN.reopen('/dev/tty')
-        
+
         if !piped_input.empty?
           # Add piped input to context
           @context_manager.add_to_context(role: 'user', content: piped_input)
-          
+
           # Process the piped input
           operation_type = @chat_processor.determine_operation_type(AIA.config.model)
           @ui_presenter.display_thinking_animation
           response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
-          
+
           # Add AI response to context
           @context_manager.add_to_context(role: 'assistant', content: response)
-          
+
           # Output the response
           @chat_processor.output_response(response)
           @chat_processor.speak(response)
@@ -217,7 +217,7 @@ module AIA
       loop do
         # Get user input
         prompt = @ui_presenter.ask_question
-        
+
 
 
         break if prompt.nil? || prompt.strip.downcase == 'exit' || prompt.strip.empty?
@@ -232,7 +232,7 @@ module AIA
           directive_output = @directive_processor.process(prompt, @context_manager) # Pass context_manager
 
           # Add check for specific directives like //clear that might modify context
-          if prompt.strip.start_with?('//clear', '#!clear:')
+          if prompt.strip.start_with?('//clear')
              # Context is likely cleared within directive_processor.process now
              # or add @context_manager.clear_context here if not handled internally
              @ui_presenter.display_info("Chat context cleared.")
@@ -255,10 +255,6 @@ module AIA
 
         # Use ContextManager to get the conversation
         conversation = @context_manager.get_context # System prompt handled internally
-
-        # FIXME: remove this comment once verified
-        # is conversation the same thing as the context for a chat session? YES
-        # if so need to somehow delete it when the //clear directive is entered. - Addressed above/in DirectiveProcessor
 
         operation_type = @chat_processor.determine_operation_type(AIA.config.model)
         @ui_presenter.display_thinking_animation
