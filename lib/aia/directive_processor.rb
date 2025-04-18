@@ -177,6 +177,13 @@ module AIA
     end
     alias_method :topp, :top_p
 
+    desc "Review the current context"
+    def review(args, context_manager=nil)
+      ap context_manager.get_context
+      ''
+    end
+    alias_method :context, :review
+
     desc "Shortcut for //config model _and_ //config model = value"
     def model(args, context_manager=nil)
       send(:config, args.prepend('model'), context_manager)
