@@ -126,7 +126,8 @@ module AIA
 
     desc "Inserts the contents of a file  Example: //include path/to/file"
     def include(args)
-      file_path = args.shift
+      # echo takes care of envars and tilde expansion
+      file_path = `echo #{args.shift}`.strip
 
       if @included_files.include?(file_path)
         ""
@@ -210,6 +211,17 @@ module AIA
       end
     end
     alias_method :rb, :ruby
+
+
+    desc "Executes one line of shell code; result is added to the context"
+    def shell(*args)
+      shell_code = args.join(' ')
+
+      `#{shell_code}`
+    end
+    alias_method :sh, :shell
+
+
 
     desc "Use the system's say command to speak text //say some text"
     def say(*args)
