@@ -18,63 +18,57 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 
-**Notable Recent Changes:**
-- **Directive Processing in Chat and Prompts:** You can now use directives in chat sessions and prompt files with the syntax: `//command args`. Supported directives include:
-  - `shell`/`sh`: Execute shell commands
-  - `ruby`/`rb`: Execute Ruby code
-  - `config`/`cfg`: Display or update configuration
-  - `include`/`inc`: Include file content
-  - `next`: Specify the next prompt ID in a sequence
-  - `pipeline`: Specify a pipeline of prompt IDs to process
-  - `clear`: Clear the context (handy in a chat session)
-  - `help`: Show available directives
+**Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
+**Notable Recent Changes:**
+- **Directive Processing in Chat and Prompts:** You can now use directives in chat sessions and prompt files. Use the directive **//help** to get a list of available directives.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
 ## Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [Installation](#installation)
-- [What is a Prompt ID?](#what-is-a-prompt-id)
-- [Configuration Options](#configuration-options)
-  - [Configuration Flexibility](#configuration-flexibility)
-  - [Expandable Configuration](#expandable-configuration)
-- [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
-    - [Dynamic Shell Commands](#dynamic-shell-commands)
-    - [Shell Command Safety](#shell-command-safety)
-    - [Chat Session Use](#chat-session-use)
-- [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
-- [Prompt Directives](#prompt-directives)
-  - [Parameter and Shell Substitution in Directives](#parameter-and-shell-substitution-in-directives)
-  - [Directive Syntax](#directive-syntax)
-  - [AIA Specific Directive Commands](#aia-specific-directive-commands)
-    - [//config](#config)
-    - [//include](#include)
-    - [//ruby](#ruby)
-    - [//shell](#shell)
-    - [//next](#next)
-    - [//pipeline](#pipeline)
-  - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
-- [Prompt Sequences](#prompt-sequences)
-  - [--next](#--next)
-  - [--pipeline](#--pipeline)
-  - [Best Practices ??](#best-practices-)
-  - [Example pipeline](#example-pipeline)
-- [All About ROLES](#all-about-roles)
-  - [The --roles\_prefix (AIA\_ROLES\_PREFIX)](#the---roles_prefix-aia_roles_prefix)
-  - [The --role Option](#the---role-option)
-  - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
-- [External CLI Tools Used](#external-cli-tools-used)
-- [Shell Completion](#shell-completion)
-- [My Most Powerful Prompt](#my-most-powerful-prompt)
-- [My Configuration](#my-configuration)
-- [Executable Prompts](#executable-prompts)
-- [Development](#development)
-- [Contributing](#contributing)
-- [History of Development](#history-of-development)
-- [Roadmap](#roadmap)
-- [License](#license)
+  - [Installation](#installation)
+  - [What is a Prompt ID?](#what-is-a-prompt-id)
+  - [Embedded Parameters as Placeholders](#embedded-parameters-as-placeholders)
+  - [Usage](#usage)
+  - [Configuration Options](#configuration-options)
+    - [Configuration Flexibility](#configuration-flexibility)
+    - [Expandable Configuration](#expandable-configuration)
+  - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
+      - [Dynamic Shell Commands](#dynamic-shell-commands)
+      - [Shell Command Safety](#shell-command-safety)
+      - [Chat Session Use](#chat-session-use)
+  - [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
+  - [Prompt Directives](#prompt-directives)
+    - [Parameter and Shell Substitution in Directives](#parameter-and-shell-substitution-in-directives)
+    - [Directive Syntax](#directive-syntax)
+    - [AIA Specific Directive Commands](#aia-specific-directive-commands)
+      - [//config](#config)
+      - [//include](#include)
+      - [//ruby](#ruby)
+      - [//shell](#shell)
+      - [//next](#next)
+      - [//pipeline](#pipeline)
+    - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
+  - [Prompt Sequences](#prompt-sequences)
+    - [--next](#--next)
+    - [--pipeline](#--pipeline)
+    - [Best Practices ??](#best-practices-)
+    - [Example pipeline](#example-pipeline)
+  - [All About ROLES](#all-about-roles)
+    - [The --roles_prefix (AIA_ROLES_PREFIX)](#the---roles_prefix-aia_roles_prefix)
+    - [The --role Option](#the---role-option)
+    - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
+  - [External CLI Tools Used](#external-cli-tools-used)
+  - [Shell Completion](#shell-completion)
+  - [My Most Powerful Prompt](#my-most-powerful-prompt)
+  - [My Configuration](#my-configuration)
+  - [Executable Prompts](#executable-prompts)
+  - [Development](#development)
+  - [Contributing](#contributing)
+  - [History of Development](#history-of-development)
+  - [Roadmap](#roadmap)
+  - [License](#license)
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
 
@@ -89,7 +83,7 @@ Install the command-line utilities by executing:
 
     brew install fzf
 
-You will also need to establish a directory in your file system where your prompt text files, last used parameters and usage log files are kept.
+You will also need to establish a directory in your filesystem where your prompt text files, last used parameters and usage log files are kept.
 
 Setup a system environment variable (envar) named "AIA_PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts". The envar "AIA_ROLES_PREFIX" points to your role prefix where you have prompts that define the different roles you want the LLM to assume when it is doing its work.  The default roles prefix is "roles".
 
@@ -103,7 +97,7 @@ aia --completion bash
 
 ## What is a Prompt ID?
 
-A prompt ID is the basename of a text file (extension *.txt) located in a prompts directory. The prompts directory is specified by the environment variable "AIA_PROMPTS_DIR". If this variable is not set, the default is in your HOME directory named ".prompts".  It can also be set on the command line with the `--prompts-dir` option.
+A prompt ID is the basename of a text file (extension *.txt) located in a prompts directory. The prompts directory is specified by the environment variable "AIA_PROMPTS_DIR". If this variable is not set, the default is in your HOME directory named ".prompts". It can also be set on the command line with the `--prompts-dir` option.
 
 This file contains the context and instructions for the LLM to follow. The prompt ID is what you use as an option on the command line to specify which prompt text file to use. Prompt files can have comments, parameters, directives and ERB blocks along with the instruction text to feed to the LLM. It can also have shell commands and use system environment variables.  Consider the following example:
 
@@ -141,7 +135,7 @@ Tell me how to do something for a $(uname -s) platform that would rename all
 of the files in the directory $MY_DIRECTORY to have a prefix of for its filename
 that is [PREFIX] and a ${SUFFIX}
 
-<!-- 
+<!--
   directives, ERB blocks and other junk can be used
   anywhere in the file mixing dynamic context/instructions with
   the static stuff.
