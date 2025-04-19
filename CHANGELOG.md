@@ -2,6 +2,11 @@
 ## [Unreleased]
 
 ## Released
+### [0.8.5] 2025-04-49
+- documentation updates
+- integrated the https://pure.md web service for inserting web pages into the context window
+   - //include http?://example.com/stuff
+   - //webpage http?://example.com/stuff
 
 ### [0.8.2] 2025-04-18
 - fixed problems with pre-loaded context and chat repl
