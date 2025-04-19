@@ -17,6 +17,8 @@
 AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts. It utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
+- //include directive now supports web URLs
+- //webpage insert web URL content as markdown into context
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 

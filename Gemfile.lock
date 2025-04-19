@@ -1,9 +1,10 @@
 PATH
   remote: .
   specs:
-    aia (0.8.4)
+    aia (0.8.5)
       ai_client
       amazing_print
+      faraday
       os
       prompt_manager (>= 0.5.2)
       reline

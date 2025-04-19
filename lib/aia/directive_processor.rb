@@ -1,7 +1,10 @@
 # lib/aia/directive_processor.rb
 
+require 'faraday'
+
 module AIA
   class DirectiveProcessor
+    PUREMD_API_KEY   = ENV.fetch('PUREMD_API_KEY', nil)
     EXCLUDED_METHODS = %w[ run initialize private? ]
     @descriptions = {}
     @aliases      = {}
@@ -100,9 +103,31 @@ module AIA
       !respond_to?(method_name) && respond_to?(method_name, true)
     end
 
+
     ################
     ## Directives ##
     ################
+
+
+    desc "webpage inserted as markdown to context using pure.md"
+    def webpage(args, context_manager=nil)
+      if PUREMD_API_KEY.nil?
+        "ERROR: PUREMD_API_KEY is required in order to include a webpage"
+      else
+        url        = `echo #{args.shift}`.strip
+        puremd_url = "https://pure.md/#{url}"
+
+        response = Faraday.get(puremd_url) do |req|
+          req.headers['x-puremd-api-token'] = PUREMD_API_KEY
+        end
+
+        if 200 == response.status
+          response.body
+        else
+          "Error: wtatus was #{r.status}\n#{ap response}"
+        end
+      end
+    end
 
     desc "Specify the next prompt ID to process after this one"
     def next(args = [])
@@ -128,6 +153,10 @@ module AIA
     def include(args, context_manager=nil)
       # echo takes care of envars and tilde expansion
       file_path = `echo #{args.shift}`.strip
+
+      if file_path.start_with?(/http?:\/\//)
+        return webpage(args)
+      end
 
       if @included_files.include?(file_path)
         ""
