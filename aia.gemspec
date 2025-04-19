@@ -8,23 +8,15 @@ Gem::Specification.new do |spec|
   spec.authors  = ["Dewayne VanHoozer"]
   spec.email    = ["dvanhoozer@gmail.com"]
 
-  spec.summary      = "AI Assistant (aia) a command-line (CLI) utility"
-  spec.description  = <<~EOS.split("\n").map(&:strip).join(' ')
-    A command-line AI Assistante (aia) that provides pre-compositional
-    template prompt management to various backend gen-AI processes such
-    as llm, mods and sgpt support processing of prompts both via remote
-    API calls as well as keeping everything local through the use of locally
-    managed models and the LocalAI API.
-    Complete shell integration allows a prompt to access system
-    environment variables and execut shell commands as part of the
-    prompt content.  In addition full embedded Ruby support is provided
-    given even more dynamic prompt conditional content.  It is a
-    generalized power house that rivals specialized gen-AI tools.  aia
-    currently supports "mods" and "sgpt" CLI tools.  aia uses "ripgrep"
-    and "fzf" CLI utilities to search for and select prompt files to
-    send to the backend gen-AI tool along with supported context
-    files.
-  EOS
+  spec.summary      = "AI Assistant: dynamic prompts, shell & Ruby integration, and seamless chat workflows."
+  spec.description  = <<~DESC
+    Unleash the full power of AI from your terminal! AIA is a cutting-edge CLI
+    assistant for generative AI workflows, offering dynamic prompt management,
+    seamless shell and Ruby integration, interactive chat, and advanced automation.
+    Effortlessly craft, manage, and execute prompts with embedded directives,
+    history, and flexible configuration. Experience next-level productivity for
+    developers, power users, and AI enthusiasts—all from your command line.
+  DESC
 
   spec.homepage     = "https://github.com/MadBomber/aia"
   spec.license      = "MIT"
@@ -52,6 +44,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "ai_client"
   spec.add_dependency "amazing_print"
+  spec.add_dependency "faraday"
   spec.add_dependency "os"
   spec.add_dependency "prompt_manager", '>= 0.5.2' # needs the new comment removal
   spec.add_dependency "reline"
