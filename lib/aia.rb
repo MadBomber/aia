@@ -45,6 +45,16 @@ module AIA
     @config.client = client
   end
 
+  def self.good_file?(filename)
+    File.exist?(filename) &&
+    File.readable?(filename) &&
+    !File.directory?(filename)
+  end
+
+  def self.bad_file?(filename)
+    !good_file?(filename)
+  end
+
   def self.build_flags
     @config.each_pair do |key, value|
       if [TrueClass, FalseClass].include?(value.class)

@@ -1,11 +1,11 @@
 PATH
   remote: .
   specs:
-    aia (0.8.3)
+    aia (0.8.4)
       ai_client
       amazing_print
       os
-      prompt_manager (>= 0.4.1)
+      prompt_manager (>= 0.5.2)
       reline
       shellwords
       toml-rb
@@ -207,7 +207,7 @@ GEM
       faraday-multipart (>= 1)
     optparse (0.6.0)
     os (1.1.4)
-    prompt_manager (0.5.1)
+    prompt_manager (0.5.2)
     public_suffix (6.0.1)
     racc (1.8.1)
     rake (13.2.1)

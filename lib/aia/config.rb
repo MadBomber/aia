@@ -10,15 +10,17 @@ require 'toml-rb'
 require 'erb'
 require 'optparse'
 
-
 module AIA
   class Config
-    DEFAULT_CONFIG = {
+    DEFAULT_CONFIG = OpenStruct.new({
       aia_dir:      File.join(ENV['HOME'], '.aia'),
       config_file:  File.join(ENV['HOME'], '.aia', 'config.yml'),
       out_file:     'temp.md',
       log_file:     File.join(ENV['HOME'], '.prompts', '_prompts.log'),
       prompts_dir:  File.join(ENV['HOME'], '.prompts'),
+      #
+      prompt_extname: PromptManager::Storage::FileSystemAdapter::PROMPT_EXTENSION,
+      #
       roles_prefix: 'roles',
       roles_dir:    File.join(ENV['HOME'], '.prompts', 'roles'),
       role:         '',
@@ -67,11 +69,10 @@ module AIA
 
       # Ruby libraries to require for Ruby binding
       require_libs: [],
-    }.freeze
-
+    }).freeze
 
     def self.setup
-      default_config  = OpenStruct.new(DEFAULT_CONFIG)
+      default_config  = DEFAULT_CONFIG.dup
       cli_config      = cli_options
       envar_config    = envar_options(default_config, cli_config)
 
@@ -92,6 +93,35 @@ module AIA
 
 
     def self.tailor_the_config(config)
+      remaining_args = config.remaining_args.dup
+      config.remaining_args = nil
+
+      # Is first remaining argument a prompt ID?
+      unless remaining_args.empty?
+        maybe_id      = remaining_args.first
+        maybe_id_plus = File.join(config.prompts_dir, maybe_id + config.prompt_extname)
+
+        if AIA.bad_file?(maybe_id) && AIA.good_file?(maybe_id_plus)
+          config.prompt_id =remaining_args.shift
+        end
+      end
+
+      unless remaining_args.empty?
+        bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
+        if bad_files.any?
+          STDERR.puts "Error: The following files do not exist: #{bad_files.join(', ')}"
+          exit 1
+        end
+
+        config.context_files = remaining_args
+      end
+
+      if config.prompt_id.nil? && !config.chat && !config.fuzzy
+        STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
+        exit 1
+      end
+
+
       unless config.role.empty?
         unless config.roles_prefix.empty?
           unless config.role.start_with?(config.roles_prefix)
@@ -151,7 +181,7 @@ module AIA
         STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
         exit 1
       end
-      
+
       # If we're in chat mode with context files but no prompt_id, that's valid
       if config.chat && config.prompt_id.empty? && config.context_files && !config.context_files.empty?
         # This is a valid use case - no action needed
@@ -391,31 +421,12 @@ module AIA
 
       # Parse the command line arguments
       begin
-        remaining_args = opt_parser.parse(args)
+        config.remaining_args = opt_parser.parse(args)
       rescue OptionParser::InvalidOption => e
         puts e.message
         puts opt_parser
         exit 1
       end
-
-      # Handle remaining args
-      unless remaining_args.empty?
-        # If in chat mode and all args are existing files, treat them all as context files
-        if config.chat && remaining_args.all? { |arg| File.exist?(arg) }
-          config.context_files = remaining_args
-        # If first arg is empty string and we're in chat mode, treat all args as context files
-        elsif config.chat && remaining_args.first == ""
-          remaining_args.shift # Remove the empty string
-          config.context_files = remaining_args unless remaining_args.empty?
-        else
-          # First remaining arg is the prompt ID
-          config.prompt_id = remaining_args.shift
-          
-          # Remaining args are context files
-          config.context_files = remaining_args unless remaining_args.empty?
-        end
-      end
-
 
       config
     end

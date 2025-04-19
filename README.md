@@ -34,48 +34,47 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 
 ## Table of Contents
 
-  - [Installation](#installation)
-  - [What is a Prompt ID?](#what-is-a-prompt-id)
-  - [Embedded Parameters as Placeholders](#embedded-parameters-as-placeholders)
-  - [Usage](#usage)
-  - [Configuration Options](#configuration-options)
-    - [Configuration Flexibility](#configuration-flexibility)
-    - [Expandable Configuration](#expandable-configuration)
-  - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
-      - [Dynamic Shell Commands](#dynamic-shell-commands)
-      - [Shell Command Safety](#shell-command-safety)
-      - [Chat Session Use](#chat-session-use)
-  - [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
-  - [Prompt Directives](#prompt-directives)
-    - [Parameter and Shell Substitution in Directives](#parameter-and-shell-substitution-in-directives)
-    - [Directive Syntax](#directive-syntax)
-    - [AIA Specific Directive Commands](#aia-specific-directive-commands)
-      - [//config](#config)
-      - [//include](#include)
-      - [//ruby](#ruby)
-      - [//shell](#shell)
-      - [//next](#next)
-      - [//pipeline](#pipeline)
-    - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
-  - [Prompt Sequences](#prompt-sequences)
-    - [--next](#--next)
-    - [--pipeline](#--pipeline)
-    - [Best Practices ??](#best-practices-)
-    - [Example pipeline](#example-pipeline)
-  - [All About ROLES](#all-about-roles)
-    - [The --roles_prefix (AIA_ROLES_PREFIX)](#the---roles_prefix-aia_roles_prefix)
-    - [The --role Option](#the---role-option)
-    - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
-  - [External CLI Tools Used](#external-cli-tools-used)
-  - [Shell Completion](#shell-completion)
-  - [My Most Powerful Prompt](#my-most-powerful-prompt)
-  - [My Configuration](#my-configuration)
-  - [Executable Prompts](#executable-prompts)
-  - [Development](#development)
-  - [Contributing](#contributing)
-  - [History of Development](#history-of-development)
-  - [Roadmap](#roadmap)
-  - [License](#license)
+- [Table of Contents](#table-of-contents)
+- [Installation](#installation)
+- [What is a Prompt ID?](#what-is-a-prompt-id)
+- [Configuration Options](#configuration-options)
+  - [Configuration Flexibility](#configuration-flexibility)
+  - [Expandable Configuration](#expandable-configuration)
+- [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
+    - [Dynamic Shell Commands](#dynamic-shell-commands)
+    - [Shell Command Safety](#shell-command-safety)
+    - [Chat Session Use](#chat-session-use)
+- [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
+- [Prompt Directives](#prompt-directives)
+  - [Parameter and Shell Substitution in Directives](#parameter-and-shell-substitution-in-directives)
+  - [Directive Syntax](#directive-syntax)
+  - [AIA Specific Directive Commands](#aia-specific-directive-commands)
+    - [//config](#config)
+    - [//include](#include)
+    - [//ruby](#ruby)
+    - [//shell](#shell)
+    - [//next](#next)
+    - [//pipeline](#pipeline)
+  - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
+- [Prompt Sequences](#prompt-sequences)
+  - [--next](#--next)
+  - [--pipeline](#--pipeline)
+  - [Best Practices ??](#best-practices-)
+  - [Example pipeline](#example-pipeline)
+- [All About ROLES](#all-about-roles)
+  - [The --roles\_prefix (AIA\_ROLES\_PREFIX)](#the---roles_prefix-aia_roles_prefix)
+  - [The --role Option](#the---role-option)
+  - [Other Ways to Insert Roles into Prompts](#other-ways-to-insert-roles-into-prompts)
+- [External CLI Tools Used](#external-cli-tools-used)
+- [Shell Completion](#shell-completion)
+- [My Most Powerful Prompt](#my-most-powerful-prompt)
+- [My Configuration](#my-configuration)
+- [Executable Prompts](#executable-prompts)
+- [Development](#development)
+- [Contributing](#contributing)
+- [History of Development](#history-of-development)
+- [Roadmap](#roadmap)
+- [License](#license)
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
 
@@ -142,15 +141,31 @@ Tell me how to do something for a $(uname -s) platform that would rename all
 of the files in the directory $MY_DIRECTORY to have a prefix of for its filename
 that is [PREFIX] and a ${SUFFIX}
 
-# directives, ERB blocks and other junk can be used
-# anywhere in the file mixing dynamic context/instructions with
-# the static stuff.
+<!-- 
+  directives, ERB blocks and other junk can be used
+  anywhere in the file mixing dynamic context/instructions with
+  the static stuff.
+-->
+
+  ```markdown
+  # Header 1 -- not a comment
+  ## Header 2 -- not a comment
+  ### Header 3, etc -- not a comment
+
+    ```ruby
+    # this is a comment; but it stays in the prompt
+    puts "hello world" <!-- this is also a comment; but it gets removed -->
+    ```
+  Kewl!
+  ```
 
 __END__
 
-Block comments that are not part of the context or instructions to
-the LLM.  Stuff that is just here ofr documentation.
+Everything after the "__END__" line is not part of the context or instructions to
+the LLM.
 ```
+
+Comments in a prompt text file are just there to document the prompt.  They are removed before the completed prompt is processed by the LLM.  This reduces token counts; but, more importantly it helps you remember why you structured your prompt they way you did - if you remembered to document your prompt.
 
 That is just about everything including the kitchen sink that a pre-compositional parameterized prompt file can have.  It can be an executable with a she-bang line and a special system prompt name `run` as shown in the example.  It has line comments that use the `#` symbol. It had end of file block comments that appear after the "__END__" line.  It has directive command that begin with the double slash `//` - an homage to IBM JCL.  It has shell variables in both forms.  It has shell commands. It has parameters that default to a regex that uses square brackets and all uppercase characeters to define the parameter name whose value is to be given in a Q&A session before the prompt is sent to the LLM for processing.
 
