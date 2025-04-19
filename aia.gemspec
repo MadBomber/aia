@@ -53,7 +53,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "ai_client"
   spec.add_dependency "amazing_print"
   spec.add_dependency "os"
-  spec.add_dependency "prompt_manager", '>= 0.4.1' # needs the directives functionality
+  spec.add_dependency "prompt_manager", '>= 0.5.2' # needs the new comment removal
   spec.add_dependency "reline"
   spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"
