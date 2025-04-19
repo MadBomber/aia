@@ -103,10 +103,6 @@ module AIA
       !respond_to?(method_name) && respond_to?(method_name, true)
     end
 
-    def webp(url)
-      require 'open-uri'
-      open(url).read
-    end
 
     ################
     ## Directives ##
