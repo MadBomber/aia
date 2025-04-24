@@ -11,7 +11,7 @@ module AIA
        (\\____/) AI Assistant
         (_oo_)   #{AIA.config.model}
          (O)      is Online
-       __||__    \\)
+       __||__    \\) using #{AIA.config.adapter}
      [/______\\]  /
     / \\__AI__/ \\/
    /    /__\\

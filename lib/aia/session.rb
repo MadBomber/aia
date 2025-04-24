@@ -187,7 +187,7 @@ module AIA
       # Check for piped input (STDIN not a TTY and has data)
       if !STDIN.tty?
         # Save the original STDIN
-        orig_stdin = STDIN.dup
+        original_stdin = STDIN.dup
 
         # Read the piped input
         piped_input = STDIN.read.strip
@@ -209,9 +209,12 @@ module AIA
 
           # Output the response
           @chat_processor.output_response(response)
-          @chat_processor.speak(response)
+          @chat_processor.speak(response) if AIA.speak?
           @ui_presenter.display_separator
         end
+        
+        # Restore original stdin when done with piped input processing
+        STDIN.reopen(original_stdin)
       end
 
       loop do

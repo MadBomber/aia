@@ -5,6 +5,7 @@
 # provides an interface for interacting with AI models and managing prompts.
 
 require 'ai_client'
+require 'ruby_llm'
 require 'prompt_manager'
 require 'debug_me'
 include DebugMe
@@ -18,6 +19,7 @@ require_relative 'aia/config'
 require_relative 'aia/shell_command_executor'
 require_relative 'aia/prompt_handler'
 require_relative 'aia/ai_client_adapter'
+require_relative 'aia/ruby_llm_adapter'
 require_relative 'aia/directive_processor'
 require_relative 'aia/history_manager'
 require_relative 'aia/ui_presenter'
@@ -76,7 +78,14 @@ module AIA
     end
 
     prompt_handler = PromptHandler.new
-    @config.client = AIClientAdapter.new
+    
+    # Initialize the appropriate client adapter based on configuration
+    @config.client = if @config.adapter == 'ruby_llm'
+                      RubyLLMAdapter.new
+                    else
+                      AIClientAdapter.new
+                    end
+                    
     session        = Session.new(prompt_handler)
 
     session.start
