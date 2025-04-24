@@ -1,4 +1,4 @@
-3# AI Assistant (AIA)
+# AI Assistant (AIA)
 
 **The prompt is the code!**
 
@@ -17,24 +17,19 @@
 AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts. It utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
+- Added support for the `ruby_llm` gem as an alternative to `ai_client`
 - //include directive now supports web URLs
 - //webpage insert web URL content as markdown into context
-- Added support for the `ruby_llm` gem as an alternative to `ai_client`
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
 **Notable Recent Changes:**
-- **Directive Processing in Chat and Prompts:** You can now use directives in chat sessions and prompt files. Use the directive **//help** to get a list of available directives.
-- **RubyLLM Integration:** AIA now supports the RubyLLM gem as an alternative to ai_client. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
+- **RubyLLM Integration:** AIA now supports the RubyLLM gem as an alternative to ai_client. Use `--adapter ruby_llm` to switch. Why am I replacing my on gem ai_client with the ruby_llm gem?  Because its better, newer, elegant and will easily support some of the new features I have planned for AIA.  Its not fully integrated but its close ofenough to work on text-to-text generation.  Other modes will be added in the future.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
 ## Table of Contents
 
-  - [Installation](#installation)
-  - [What is a Prompt ID?](#what-is-a-prompt-id)
-  - [Embedded Parameters as Placeholders](#embedded-parameters-as-placeholders)
-  - [Usage](#usage)
   - [Configuration Options](#configuration-options)
     - [Configuration Flexibility](#configuration-flexibility)
     - [Expandable Configuration](#expandable-configuration)
@@ -68,125 +63,13 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
   - [My Most Powerful Prompt](#my-most-powerful-prompt)
   - [My Configuration](#my-configuration)
   - [Executable Prompts](#executable-prompts)
+  - [Usage](#usage)
   - [Development](#development)
   - [Contributing](#contributing)
-  - [History of Development](#history-of-development)
   - [Roadmap](#roadmap)
   - [License](#license)
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
-
-
-## Installation
-
-Install the gem by executing:
-
-    gem install aia
-
-Install the command-line utilities by executing:
-
-    brew install fzf
-
-You will also need to establish a directory in your filesystem where your prompt text files, last used parameters and usage log files are kept.
-
-Setup a system environment variable (envar) named "AIA_PROMPTS_DIR" that points to your prompts directory.  The default is in your HOME directory named ".prompts". The envar "AIA_ROLES_PREFIX" points to your role prefix where you have prompts that define the different roles you want the LLM to assume when it is doing its work.  The default roles prefix is "roles".
-
-You may also want to install the completion script for your shell.  To get a copy of the completion script do:
-
-```bash
-aia --completion bash
-```
-
-`fish` and `zsh` are also available.
-
-## What is a Prompt ID?
-
-A prompt ID is the basename of a text file (extension *.txt) located in a prompts directory. The prompts directory is specified by the environment variable "AIA_PROMPTS_DIR". If this variable is not set, the default is in your HOME directory named ".prompts". It can also be set on the command line with the `--prompts-dir` option.
-
-This file contains the context and instructions for the LLM to follow. The prompt ID is what you use as an option on the command line to specify which prompt text file to use. Prompt files can have comments, parameters, directives and ERB blocks along with the instruction text to feed to the LLM. It can also have shell commands and use system environment variables.  Consider the following example:
-
-```plaintext
-#!/usr/bin/env aia run
-# ~/.prompts/example.txt
-# Desc: Be an example prompt with all? the bells and whistles
-
-# Set the configuration for this prompt
-
-//config model = gpt-4
-//config temperature = 0.7
-//config shell = true
-//config erb = true
-//config out_file = path/to/output.md
-
-# Add some file content to the context/instructions
-
-//include path/to/file
-//shell cat path/to/file
-$(cat path/to/file)
-
-# Setup some workflows
-
-//next next_prompt_id
-//pipeline prompt_id_1, prompt_ie_2, prompt_id_3
-
-# Execute some Ruby code
-
-//ruby require 'some_library' # inserts into the context/instructions
-<% some_ruby_things # not inserted into the context %>
-<%= some_other_ruby_things # that are part of the context/instructions %>
-
-Tell me how to do something for a $(uname -s) platform that would rename all
-of the files in the directory $MY_DIRECTORY to have a prefix of for its filename
-that is [PREFIX] and a ${SUFFIX}
-
-<!--
-  directives, ERB blocks and other junk can be used
-  anywhere in the file mixing dynamic context/instructions with
-  the static stuff.
--->
-
-  ```markdown
-  # Header 1 -- not a comment
-  ## Header 2 -- not a comment
-  ### Header 3, etc -- not a comment
-
-    ```ruby
-    # this is a comment; but it stays in the prompt
-    puts "hello world" <!-- this is also a comment; but it gets removed -->
-    ```
-  Kewl!
-  ```
-
-__END__
-
-Everything after the "__END__" line is not part of the context or instructions to
-the LLM.
-```
-
-Comments in a prompt text file are just there to document the prompt.  They are removed before the completed prompt is processed by the LLM.  This reduces token counts; but, more importantly it helps you remember why you structured your prompt they way you did - if you remembered to document your prompt.
-
-That is just about everything including the kitchen sink that a pre-compositional parameterized prompt file can have.  It can be an executable with a she-bang line and a special system prompt name `run` as shown in the example.  It has line comments that use the `#` symbol. It had end of file block comments that appear after the "__END__" line.  It has directive command that begin with the double slash `//` - an homage to IBM JCL.  It has shell variables in both forms.  It has shell commands. It has parameters that default to a regex that uses square brackets and all uppercase characeters to define the parameter name whose value is to be given in a Q&A session before the prompt is sent to the LLM for processing.
-
-AIA has the ability to define a workflow of prompt IDs with either the //next or //pipeline directives.
-
-You could say that instead of the prompt being part of a program, a program can be part of the prompt. **The prompt is the code!**
-
-By using ERB you can make parts of the context/instructions conditional. You can also use ERB to make parts of the context/instructions dynamic for example to pull information from a database or an API.
-
-## Embedded Parameters as Placeholders
-
-In the example prompt text file above I used the default regex to define parameters as all upper case characters plus space, underscore and the vertical pipe enclosed within square brackets. Since the time that I original starting writing AIA I've seen more developers use double curly braces to define parameters. AIA allows you to specify your own regex as a string. If you want the curly brackets use the `--regex` option on the command line like this:
-
-`--regex '(?-mix:({{[a-zA-Z _|]+}}))'`
-
-
-## Usage
-
-The usage report is obtained with either `-h` or `--help` options.
-
-```bash
-aia --help
-```
 
 ## Configuration Options
 
@@ -194,6 +77,7 @@ The following table provides a comprehensive list of configuration options, thei
 
 | Option                  | Default Value                   | Environment Variable      |
 |-------------------------|---------------------------------|---------------------------|
+| adapter                 | ai_client                       | AIA_ADAPTER               |
 | out_file                | temp.md                         | AIA_OUT_FILE              |
 | log_file                | ~/.prompts/_prompts.log         | AIA_LOG_FILE              |
 | prompts_dir             | ~/.prompts                      | AIA_PROMPTS_DIR           |
@@ -295,7 +179,6 @@ The `--erb` option turns the prompt text file into a fully functioning ERB templ
 
 Most websites that have information about ERB will give examples of how to use ERB to generate dynamic HTML content for web-based applications. That is a common use case for ERB. AIA on the other hand uses ERB to generate dynamic prompt text for LLM processing.
 
-
 ## Prompt Directives
 
 Downstream processing directives were added to the `prompt_manager` gem used by AIA at version 0.4.1. These directives are lines in the prompt text file that begin with "//" having this pattern:
@@ -390,7 +273,6 @@ The `path_to_file` can be either absolute or relative.  If it is relative, it is
 
 The file that is included will have any comments or directives excluded.  It is expected that the file will be a text file so that its content can be pre-pended to the existing prompt; however, if the file is a source code file (ex: file.rb) the source code will be included HOWEVER any comment line or line that starts with "//" will be excluded.
 
-
 #### //ruby
 
 The `//ruby` directive executes Ruby code. You can use this to perform complex operations or interact with Ruby libraries.
@@ -424,7 +306,6 @@ There are no limitations on what the shell command can be.  For example if you w
 ```
 
 Which does basically the same thing as the `//include` directive, except it uses the entire content of the file.  For relative file paths the same thing applies.  The file's path will be relative to the PWD.
-
 
 #### //next
 Examples:
@@ -738,6 +619,24 @@ Since its output is going to STDOUT you can setup a pipe chain.  Using the CLI p
 
 This executable prompt concept sets up the building blocks of a *nix CLI-based pipeline in the same way that the --pipeline and --next options and directives are used.
 
+## Usage
+
+The usage report is obtained with either `-h` or `--help` options.
+
+```bash
+aia --help
+```
+
+Key command-line options include:
+
+- `--adapter ADAPTER`: Choose the LLM interface adapter to use. Valid options are 'ai_client' (default) or 'ruby_llm'. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
+- `--model MODEL`: Specify which LLM model to use
+- `--chat`: Start an interactive chat session
+- `--shell`: Enable shell command integration
+- `--erb`: Enable ERB processing
+- `--role ROLE`: Specify a role/system prompt
+- And many more (use --help to see all options)
+
 ## Development
 
 **ShellCommandExecutor Refactor:**
@@ -754,15 +653,11 @@ When you find problems with AIA please note them as an issue.  This thing was wr
 
 I'm not happy with the way where some command line options for external command are hard coded.  I'm specific talking about the way in which the `rg` and `fzf` tools are used.  Their options decide the basic look and feel of the search capability on the command line.  Maybe they should be part of the overall configuration so that users can tune their UI to the way they like.
 
-## History of Development
-
-I originally wrote a tiny script called `aip.rb` to experiment with parameterized prompts. That was in August of 2023. AIP meant AI Parameterized. Adding an extra P for Prompts just seemed to be a little silly. It lived in my [scripts repo](https://github.com/MadBomber/scripts) for a while. It became useful to me so of course I need to keep enhancing it. I moved it into my [experiments repo](https://github.com/MadBomber/experiments) and began adding features in a haphazard manner. No real plan or architecture. From those experiments I refactored out the [prompt_manager gem](https://github.com/MadBomber/prompt_manager) and the [ai_client gem](https://github.com/MadBomber/ai_client)(https://github.com/MadBomber/ai_client). The name was changed from AIP to AIA and it became a gem.
-
-All of that undirected experimentation without a clear picture of where this thing was going resulted in chaotic code. I would use an Italian food dish to explain the organization but I think chaotic is more descriptive.
-
 ## Roadmap
 
-- support for using Ruby-based functional callback tools
+- I'm thinking about removing the --erb and --shell options and just making those two integrations available all the time.
+- restore the prompt text file search. currently fzf only looks a prompt IDs.
+- continue integration of the ruby_llm gem
 - support for Model Context Protocol
 
 ## License
