@@ -19,11 +19,13 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
 - //include directive now supports web URLs
 - //webpage insert web URL content as markdown into context
+- Added support for the `ruby_llm` gem as an alternative to `ai_client`
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
 **Notable Recent Changes:**
 - **Directive Processing in Chat and Prompts:** You can now use directives in chat sessions and prompt files. Use the directive **//help** to get a list of available directives.
+- **RubyLLM Integration:** AIA now supports the RubyLLM gem as an alternative to ai_client. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -523,6 +525,7 @@ or inside of the `one.txt` prompt file use this directive:
 
 ### Best Practices ??
 
+
 Since the response of one prompt is fed into the next prompt within the sequence instead of having all prompts write their response to the same out file, use these directives inside the associated prompt files:
 
 
@@ -631,7 +634,7 @@ fzf
 
 ## Shell Completion
 
-You can setup a completion function in your shell that will complete on the prompt_id saved in your `prompts_dir` - functions for `bash`, `fish` and `zsh` are available.  To get a copy of these functions do this:
+You can setup a completion function in your shell that will complete on the prompt_id saved in your `prompts_dir` - functions for `bash`, `fish` and `zsh` are available.  To get a copy of these functions do:
 
 ```bash
 aia --completion bash

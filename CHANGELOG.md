@@ -1,8 +1,12 @@
 # Changelog
 ## [Unreleased]
-
 ## Released
-### [0.8.5] 2025-04-49
+
+### [0.8.6] 2025-04-23
+- Added a client adapter for the ruby_llm gem
+- Added the adapter config item and the --adapter option to select at runtime which client to use ai_client or ruby_llm
+
+### [0.8.5] 2025-04-19
 - documentation updates
 - integrated the https://pure.md web service for inserting web pages into the context window
    - //include http?://example.com/stuff

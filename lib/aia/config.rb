@@ -60,6 +60,7 @@ module AIA
       speech_model:         'tts-1',
       transcription_model:  'whisper-1',
       voice:                'alloy',
+      adapter:              'ai_client', # 'ai_client' or 'ruby_llm'
 
       # Embedding parameters
       embedding_model: 'text-embedding-ada-002',
@@ -235,6 +236,18 @@ module AIA
           config.chat = true
           puts "Debug: Setting chat mode to true" if config.debug
         end
+
+        opts.on("--adapter ADAPTER", "Interface that adapts AIA to the LLM") do |adapter|
+          adapter.downcase!
+          valid_adapters = %w[ ai_client ruby_llm]
+          if valid_adapters.include? adapter
+            config.adapter = adapter
+          else
+            STDERR.puts "ERROR: Invalid adapter #{adapter} must be one of these: #{valid_adapters.join(', ')}"
+            exit 1
+          end
+        end
+
 
         opts.on("-m MODEL", "--model MODEL", "Name of the LLM model to use") do |model|
           config.model = model
