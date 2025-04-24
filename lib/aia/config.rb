@@ -9,6 +9,7 @@ require 'yaml'
 require 'toml-rb'
 require 'erb'
 require 'optparse'
+require 'json'
 
 module AIA
   class Config
@@ -26,10 +27,13 @@ module AIA
       role:         '',
       system_prompt: '',
 
+      # MCP configuration
+      mcp_servers: [],
+
       # Flags
       markdown: true,
-      shell:    false,
-      erb:      false,
+      shell:    true,
+      erb:      true,
       chat:     false,
       clear:    false,
       terse:    false,
@@ -253,15 +257,7 @@ module AIA
           config.model = model
         end
 
-        opts.on("--shell", "Enables `aia` to access your terminal's shell environment from inside the prompt text, allowing for dynamic content insertion using system environment variables and shell commands. Includes safety features to confirm or block dangerous commands.") do
-          config.shell = true
-        end
-
-        opts.on("--erb", "Turns the prompt text file into a fully functioning ERB template, allowing for embedded Ruby code processing within the prompt text. This enables dynamic content generation and complex logic within prompts.") do
-          config.erb = true
-        end
-
-        opts.on("--terse", "Add terse instruction to prompt") do
+        opts.on("--terse", "Adds a special instruction to the prompt asking the AI to keep responses short and to the point") do
           config.terse = true
         end
 
@@ -427,6 +423,22 @@ module AIA
 
         opts.on("--rq LIBS", "Ruby libraries to require for Ruby directive") do |libs|
           config.require_libs = libs.split(',')
+        end
+
+        opts.on("--mcp FILE", "Add MCP server configuration from JSON file. Can be specified multiple times.") do |file|
+          if AIA.good_file?(file)
+            begin
+              server_config = JSON.parse(File.read(file))
+              config.mcp_servers ||= []
+              config.mcp_servers << server_config
+            rescue JSON::ParserError => e
+              STDERR.puts "Error parsing MCP server config file #{file}: #{e.message}"
+              exit 1
+            end
+          else
+            STDERR.puts "MCP server config file not found: #{file}"
+            exit 1
+          end
         end
       end
 

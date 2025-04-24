@@ -75,39 +75,49 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 
 The following table provides a comprehensive list of configuration options, their default values, and the associated environment variables:
 
-| Option                  | Default Value                   | Environment Variable      |
-|-------------------------|---------------------------------|---------------------------|
-| adapter                 | ai_client                       | AIA_ADAPTER               |
-| out_file                | temp.md                         | AIA_OUT_FILE              |
-| log_file                | ~/.prompts/_prompts.log         | AIA_LOG_FILE              |
-| prompts_dir             | ~/.prompts                      | AIA_PROMPTS_DIR           |
-| roles_prefix            | roles                           | AIA_ROLES_PREFIX          |
-| model                   | gpt-4o-mini                     | AIA_MODEL                 |
-| speech_model            | tts-1                           | AIA_SPEECH_MODEL          |
-| transcription_model     | whisper-1                       | AIA_TRANSCRIPTION_MODEL   |
-| verbose                 | false                           | AIA_VERBOSE               |
-| markdown                | true                            | AIA_MARKDOWN              |
-| shell                   | false                           | AIA_SHELL                 |
-| erb                     | false                           | AIA_ERB                   |
-| chat                    | false                           | AIA_CHAT                  |
-| clear                   | false                           | AIA_CLEAR                 |
-| terse                   | false                           | AIA_TERSE                 |
-| debug                   | false                           | AIA_DEBUG                 |
-| fuzzy                   | false                           | AIA_FUZZY                 |
-| speak                   | false                           | AIA_SPEAK                 |
-| append                  | false                           | AIA_APPEND                |
-| temperature             | 0.7                             | AIA_TEMPERATURE           |
-| max_tokens              | 2048                            | AIA_MAX_TOKENS            |
-| top_p                   | 1.0                             | AIA_TOP_P                 |
-| frequency_penalty       | 0.0                             | AIA_FREQUENCY_PENALTY     |
-| presence_penalty        | 0.0                             | AIA_PRESENCE_PENALTY      |
-| image_size              | 1024x1024                       | AIA_IMAGE_SIZE            |
-| image_quality           | standard                        | AIA_IMAGE_QUALITY         |
-| image_style             | vivid                           | AIA_IMAGE_STYLE           |
-| embedding_model         | text-embedding-ada-002          | AIA_EMBEDDING_MODEL       |
-| speak_command           | afplay                          | AIA_SPEAK_COMMAND         |
-| require_libs            | []                              | AIA_REQUIRE_LIBS          |
-| regex                   | '(?-mix:(\\[[A-Z _|]+\\]))'     | AIA_REGEX                 |
+| Config Item Name     | CLI Options | Default Value               | Environment Variable      |
+|----------------------|-------------|-----------------------------|---------------------------|
+| adapter              | --adapter   | ai_client                   | AIA_ADAPTER               |
+| aia_dir              |             | ~/.aia                      | AIA_DIR                   |
+| append               | -a, --append | false                      | AIA_APPEND                |
+| chat                 | --chat      | false                       | AIA_CHAT                  |
+| clear                | --clear     | false                       | AIA_CLEAR                 |
+| config_file          | -c, --config_file | ~/.aia/config.yml      | AIA_CONFIG_FILE           |
+| debug                | -d, --debug | false                       | AIA_DEBUG                 |
+| embedding_model      | --em, --embedding_model | text-embedding-ada-002 | AIA_EMBEDDING_MODEL       |
+| erb                  |             | true                       | AIA_ERB                   |
+| frequency_penalty    | --frequency_penalty | 0.0                  | AIA_FREQUENCY_PENALTY     |
+| fuzzy                | -f, --fuzzy | false                       | AIA_FUZZY                 |
+| image_quality        | --iq, --image_quality | standard          | AIA_IMAGE_QUALITY         |
+| image_size           | --is, --image_size | 1024x1024           | AIA_IMAGE_SIZE            |
+| image_style          | --style, --image_style | vivid            | AIA_IMAGE_STYLE           |
+| log_file             | -l, --log_file | ~/.prompts/_prompts.log  | AIA_LOG_FILE              |
+| markdown             | --md, --markdown | true                   | AIA_MARKDOWN              |
+| max_tokens           | --max_tokens | 2048                      | AIA_MAX_TOKENS            |
+| mcp_servers          | --mcp       | []                          | AIA_MCP_SERVERS           |
+| model                | -m, --model | gpt-4o-mini                 | AIA_MODEL                 |
+| next                 | -n, --next  | nil                         | AIA_NEXT                  |
+| out_file             | -o, --out_file | temp.md                  | AIA_OUT_FILE              |
+| parameter_regex      | --regex     | '(?-mix:(\[[A-Z _|]+\]))' | AIA_PARAMETER_REGEX       |
+| pipeline             | --pipeline  | []                          | AIA_PIPELINE              |
+| presence_penalty     | --presence_penalty | 0.0                   | AIA_PRESENCE_PENALTY      |
+| prompt_extname       |             | .txt                        | AIA_PROMPT_EXTNAME        |
+| prompts_dir          | -p, --prompts_dir | ~/.prompts            | AIA_PROMPTS_DIR           |
+| require_libs         | --rq        | []                          | AIA_REQUIRE_LIBS          |
+| role                 | -r, --role  |                             | AIA_ROLE                  |
+| roles_dir            |             | ~/.prompts/roles            | AIA_ROLES_DIR             |
+| roles_prefix         | --roles_prefix | roles                    | AIA_ROLES_PREFIX          |
+| shell                |             | true                        | AIA_SHELL                 |
+| speak                | --speak     | false                       | AIA_SPEAK                 |
+| speak_command        |             | afplay                      | AIA_SPEAK_COMMAND         |
+| speech_model         | --sm, --speech_model | tts-1               | AIA_SPEECH_MODEL          |
+| system_prompt        | --system_prompt |                         | AIA_SYSTEM_PROMPT         |
+| temperature          | -t, --temperature | 0.7                   | AIA_TEMPERATURE           |
+| terse                | --terse     | false                       | AIA_TERSE                 |
+| top_p                | --top_p     | 1.0                         | AIA_TOP_P                 |
+| transcription_model  | --tm, --transcription_model | whisper-1    | AIA_TRANSCRIPTION_MODEL   |
+| verbose              | -v, --verbose | false                     | AIA_VERBOSE               |
+| voice                | --voice     | alloy                       | AIA_VOICE                 |
 
 These options can be configured via command-line arguments, environment variables, or configuration files.
 
@@ -566,7 +576,7 @@ export AIA_MODEL=gpt-4o-mini
 # for feedback while waiting for the LLM to respond.
 export AIA_VERBOSE=true
 
-alias chat='aia --chat --shell --erb --terse'
+alias chat='aia --chat --terse'
 
 # rest of the file is the completion function
 ```
@@ -632,10 +642,10 @@ Key command-line options include:
 - `--adapter ADAPTER`: Choose the LLM interface adapter to use. Valid options are 'ai_client' (default) or 'ruby_llm'. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
 - `--model MODEL`: Specify which LLM model to use
 - `--chat`: Start an interactive chat session
-- `--shell`: Enable shell command integration
-- `--erb`: Enable ERB processing
 - `--role ROLE`: Specify a role/system prompt
 - And many more (use --help to see all options)
+
+**Note:** ERB and shell processing are now standard features and always enabled. This allows you to use embedded Ruby code and shell commands in your prompts without needing to specify any additional options.
 
 ## Development
 
@@ -655,7 +665,6 @@ I'm not happy with the way where some command line options for external command 
 
 ## Roadmap
 
-- I'm thinking about removing the --erb and --shell options and just making those two integrations available all the time.
 - restore the prompt text file search. currently fzf only looks a prompt IDs.
 - continue integration of the ruby_llm gem
 - support for Model Context Protocol

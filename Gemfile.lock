@@ -8,6 +8,7 @@ PATH
       os
       prompt_manager (>= 0.5.2)
       reline
+      ruby-mcp-client
       ruby_llm (>= 1.2.0)
       shellwords
       toml-rb
@@ -218,6 +219,7 @@ GEM
     refinements (13.1.0)
     reline (0.6.1)
       io-console (~> 0.5)
+    ruby-mcp-client (0.4.1)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     ruby_llm (1.2.0)
