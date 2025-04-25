@@ -49,13 +49,7 @@ module AIA
           envar_flag: AIA.config.shell
         )
         
-        # Ensure parameters are extracted even if no history file exists
-        if prompt && prompt.parameters.empty?
-          # Force re-reading of the prompt text to extract parameters
-          # This ensures parameters are found even without a .json file
-          prompt.reload
-        end
-
+        # Parameters should be extracted during initialization or to_s
         return prompt if prompt
       else
         puts "Warning: Invalid prompt ID or file not found: #{prompt_id}"
