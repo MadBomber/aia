@@ -152,6 +152,8 @@ module AIA
     end
 
     # Starts the interactive chat session.
+    # NOTE: there could have been an initial prompt sent into this session
+    #       via a prompt_id on the command line, piped in text, or context files.
     def start_chat(skip_context_files: false)
       puts "\nEntering interactive chat mode..."
       @ui_presenter.display_chat_header
@@ -162,6 +164,7 @@ module AIA
 
       # Create the temporary prompt
       begin
+        # Create the unique? prompt ID in the file storage system with its initial text
         PromptManager::Prompt.create(
           id: @chat_prompt_id,
           text: "Today's date is #{now.strftime('%Y-%m-%d')} and the current time is #{now.strftime('%H:%M:%S')}"
@@ -177,6 +180,8 @@ module AIA
           exit
         }
 
+        # Access this chat session's prompt object in order to do the dynamic things
+        # in follow up prompts that can be done in the batch mode like shell substitution. etc.
         @chat_prompt = PromptManager::Prompt.new(
           id: @chat_prompt_id,
           directives_processor: @directive_processor,
@@ -239,39 +244,32 @@ module AIA
 
         # Main chat loop
         loop do
-          prompt = @ui_presenter.ask_question
+          follow_up_prompt = @ui_presenter.ask_question
 
-          break if prompt.nil? || prompt.strip.downcase == 'exit' || prompt.strip.empty?
+          break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == 'exit' || follow_up_prompt.strip.empty?
 
           if AIA.config.out_file
             File.open(AIA.config.out_file, 'a') do |file|
-              file.puts "\nYou: #{prompt}"
+              file.puts "\nYou: #{follow_up_prompt}"
             end
           end
 
-          if @directive_processor.directive?(prompt)
-            directive_output = @directive_processor.process(prompt, @context_manager)
+          if @directive_processor.directive?(follow_up_prompt)
+            directive_output = @directive_processor.process(follow_up_prompt, @context_manager)
 
-            if prompt.strip.start_with?('//clear')
+            if follow_up_prompt.strip.start_with?('//clear')
                @ui_presenter.display_info("Chat context cleared.")
                next
             elsif directive_output.nil? || directive_output.strip.empty?
               next
             else
               puts "\n#{directive_output}\n"
-              prompt = "I executed this directive: #{prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
+              follow_up_prompt = "I executed this directive: #{follow_up_prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
             end
           end
 
-          @chat_prompt.text = prompt
+          @chat_prompt.text = follow_up_prompt
           processed_prompt = @chat_prompt.to_s
-
-          if AIA.debug?
-            puts "\n[DEBUG] Original prompt: #{prompt.inspect}"
-            puts "[DEBUG] Processed prompt: #{processed_prompt.inspect}"
-            puts "[DEBUG] Shell enabled?: #{AIA.config.shell.inspect}"
-            puts "[DEBUG] Chat prompt envar_flag: #{@chat_prompt.instance_variable_get(:@envar_flag).inspect}"
-          end
 
           @context_manager.add_to_context(role: 'user', content: processed_prompt)
           conversation = @context_manager.get_context
@@ -296,13 +294,9 @@ module AIA
 
     def cleanup_chat_prompt
       if @chat_prompt_id
-        puts "[DEBUG] Cleaning up chat prompt: #{@chat_prompt_id}"
+        puts "[DEBUG] Cleaning up chat prompt: #{@chat_prompt_id}" if AIA.debug?
         begin
-          # Get the storage adapter directly
-          adapter = PromptManager::Prompt.storage_adapter
-          puts "[DEBUG] Using adapter: #{adapter.class}"
-          # Call delete on the adapter instance directly
-          adapter.delete(id: @chat_prompt_id)
+          @chat_prompt.delete
           @chat_prompt_id = nil # Prevent repeated attempts if error occurs elsewhere
         rescue => e
           STDERR.puts "[ERROR] Failed to delete chat prompt #{@chat_prompt_id}: #{e.class} - #{e.message}"
