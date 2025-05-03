@@ -28,7 +28,8 @@ module AIA
       system_prompt: '',
 
       # MCP configuration
-      mcp_servers: [],
+      mcp_servers:   [],
+      allowed_tools: nil, # nil means all tools are allowed; otherwise an Array of Strings which are the tool names
 
       # Flags
       markdown: true,
@@ -438,6 +439,17 @@ module AIA
           else
             STDERR.puts "MCP server config file not found: #{file}"
             exit 1
+          end
+        end
+
+        opts.on("--at", "--allowed_tools TOOLS_LIST", "Allow only these tools to be used") do |tools_list|
+          config.allowed_tools ||= []
+          if tools_list.empty?
+            STDERR.puts "No list of tool names provided for --allowed_tools option"
+            exit 1
+          else
+            config.allowed_tools += tools_list.split(',').map(&:strip)
+            config.allowed_tools.uniq!
           end
         end
       end
