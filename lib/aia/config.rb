@@ -198,6 +198,18 @@ module AIA
         PromptManager::Prompt.parameter_regex = Regexp.new(config.parameter_regex)
       end
 
+      # Process MCP tools if servers are configured
+      if config.mcp_servers && !config.mcp_servers.empty?
+        begin
+          config.mcp_tools = generate_mcp_tools(config)
+        rescue LoadError => e
+          STDERR.puts "WARNING: Could not load MCP client: #{e.message}"
+          config.mcp_tools = nil
+        end
+      else
+        config.mcp_tools = nil
+      end
+
       config
     end
 
@@ -536,6 +548,32 @@ module AIA
 
       File.write(file, content)
       puts "Config successfully dumped to #{file}"
+    end
+
+    # Generate an array of MCP tools, filtered and formatted for the correct provider.
+    # @param config [OpenStruct] the config object containing mcp_servers, allowed_tools, and model
+    # @return [Array<Hash>, nil] the filtered and formatted MCP tools or nil if no tools
+    def self.generate_mcp_tools(config)
+      return nil unless config.mcp_servers && !config.mcp_servers.empty?
+
+      mcp_client = MCPClient.create_client(mcp_server_configs: config.mcp_servers)
+      all_tools  = mcp_client.list_tools(cache: false).map(&:name)
+      allowed    = config.allowed_tools
+      filtered_tools = allowed.nil? ? all_tools : all_tools & allowed
+
+      provider = nil
+      if config.model && config.model.to_s.include?('/')
+        provider = config.model.split('/').first.downcase
+      end
+
+      if provider == 'anthropic'
+        mcp_client.to_anthropic_tools(tool_names: filtered_tools)
+      else
+        mcp_client.to_openai_tools(tool_names: filtered_tools)
+      end
+    rescue => e
+      STDERR.puts "ERROR: Failed to generate MCP tools: #{e.message}"
+      nil
     end
   end
 end

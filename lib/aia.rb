@@ -7,6 +7,8 @@
 require 'ai_client'
 require 'ruby_llm'
 require 'prompt_manager'
+require 'mcp_client'
+
 require 'debug_me'
 include DebugMe
 $DEBUG_ME = false
@@ -78,14 +80,14 @@ module AIA
     end
 
     prompt_handler = PromptHandler.new
-    
+
     # Initialize the appropriate client adapter based on configuration
     @config.client = if @config.adapter == 'ruby_llm'
                       RubyLLMAdapter.new
                     else
                       AIClientAdapter.new
                     end
-                    
+
     session        = Session.new(prompt_handler)
 
     session.start
