@@ -1,11 +1,14 @@
 # lib/aia/ruby_llm_adapter.rb
-# Only RubyLLM supports MCP; AiClient never will
 
 require 'ruby_llm'
+require 'mcp_client'
 
 module AIA
   class RubyLLMAdapter
     def initialize
+
+      debug_me('=== RubyLLMAdapter ===')
+
       @model     = AIA.config.model
       model_info = extract_model_parts(@model)
 
@@ -17,18 +20,18 @@ module AIA
         config.deepseek_api_key  = ENV.fetch('DEEPSEEK_API_KEY', nil)
 
         # Bedrock configuration
-        config.bedrock_api_key    = ENV.fetch('AWS_ACCESS_KEY_ID', nil)
-        config.bedrock_secret_key = ENV.fetch('AWS_SECRET_ACCESS_KEY', nil)
-        config.bedrock_region     = ENV.fetch('AWS_REGION', nil)
+        config.bedrock_api_key       = ENV.fetch('AWS_ACCESS_KEY_ID', nil)
+        config.bedrock_secret_key    = ENV.fetch('AWS_SECRET_ACCESS_KEY', nil)
+        config.bedrock_region        = ENV.fetch('AWS_REGION', nil)
         config.bedrock_session_token = ENV.fetch('AWS_SESSION_TOKEN', nil)
       end
 
-      # Initialize chat with the specified model
-      @chat = RubyLLM.chat(model: model_info[:model])
+      @chat                = RubyLLM.chat(model: model_info[:model])
 
-      # Add tools ... RubyLLM::Tool sub-classes
-      # Only RubyLLM supports MCP
-      @chat.with_tools(AIA.config.mcp_tools) if AIA.config.mcp_tools && !AIA.config.mcp_tools.empty?
+      if @chat.model.supports_functions
+        AIA.config.mcp_tools = generate_mcp_tools(@chat.model.provider)
+        # @chat.with_mcp(AIA.config.mcp_tools) if AIA.config.mcp_tools && !AIA.config.mcp_tools.empty?
+      end
     end
 
     def chat(prompt)
@@ -78,6 +81,36 @@ module AIA
     end
 
     private
+
+    # Generate an array of MCP tools, filtered and formatted for the correct provider.
+    # @param config [OpenStruct] the config object containing mcp_servers, allowed_tools, and model
+    # @return [Array<Hash>, nil] the filtered and formatted MCP tools or nil if no tools
+    def generate_mcp_tools(provider)
+      return nil unless AIA.config.mcp_servers && !AIA.config.mcp_servers.empty?
+
+      debug_me('=== generate_mcp_tools ===')
+
+      # AIA.config.mcp_servers is now a path to the combined JSON file
+      mcp_client     = MCPClient.create_client(server_definition_file: AIA.config.mcp_servers)
+      debug_me
+      all_tools      = mcp_client.list_tools(cache: false).map(&:name)
+      debug_me
+      allowed        = AIA.config.allowed_tools
+      debug_me
+      filtered_tools = allowed.nil? ? all_tools : all_tools & allowed
+      debug_me
+
+      if :anthropic == provider.to_sym
+        debug_me
+        mcp_client.to_anthropic_tools(tool_names: filtered_tools)
+      else
+        debug_me
+        mcp_client.to_openai_tools(tool_names: filtered_tools)
+      end
+    rescue => e
+      STDERR.puts "ERROR: Failed to generate MCP tools: #{e.message}"
+      nil
+    end
 
     def extract_model_parts(model_string)
       parts = model_string.split('/')
