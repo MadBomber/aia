@@ -89,7 +89,8 @@ module RubyLLM
 
       def add_mcp_tools
         self.class.mcp_tools.each do |tool_def|
-          tool_name = tool_def[:name].to_sym
+          debug_me{[ :tool_def ]}
+          tool_name = tool_def.dig(:function, :name).to_sym
           next if @tools.key?(tool_name) # Skip if local or MCP tool exists with same name
 
           @tools[tool_name] = MCPToolWrapper.new(tool_def)

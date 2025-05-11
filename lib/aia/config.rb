@@ -202,7 +202,7 @@ module AIA
 
       debug_me{[ 'config.mcp_servers' ]}
 
-      if config.mcp_servers
+      unless config.mcp_servers.empty?
         # create a single JSON file contain all of the MCP server definitions specified my the --mcp option
         config.mcp_servers = combine_mcp_server_json_files config.mcp_servers
       end

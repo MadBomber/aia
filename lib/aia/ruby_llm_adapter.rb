@@ -26,12 +26,17 @@ module AIA
         config.bedrock_session_token = ENV.fetch('AWS_SESSION_TOKEN', nil)
       end
 
-      @chat                = RubyLLM.chat(model: model_info[:model])
+      debug_me{[ :model_info ]}
 
-      if @chat.model.supports_functions
-        AIA.config.mcp_tools = generate_mcp_tools(@chat.model.provider)
-        # @chat.with_mcp(AIA.config.mcp_tools) if AIA.config.mcp_tools && !AIA.config.mcp_tools.empty?
+      mcp_client, mcp_tools = generate_mcp_tools(model_info[:provider])
+
+      debug_me{[ :mcp_tools ]}
+
+      if mcp_tools && !mcp_tools.empty?
+        RubyLLM::Chat.with_mcp(client: mcp_client, call_tool_method: :call_tool, tools: mcp_tools)
       end
+
+      @chat = RubyLLM.chat(model: model_info[:model])
     end
 
     def chat(prompt)
@@ -69,6 +74,7 @@ module AIA
     end
 
     def method_missing(method, *args, &block)
+      debug_me(tag: '== missing ==', levels: 25){[ :method, :args ]}
       if @chat.respond_to?(method)
         @chat.public_send(method, *args, &block)
       else
@@ -86,7 +92,7 @@ module AIA
     # @param config [OpenStruct] the config object containing mcp_servers, allowed_tools, and model
     # @return [Array<Hash>, nil] the filtered and formatted MCP tools or nil if no tools
     def generate_mcp_tools(provider)
-      return nil unless AIA.config.mcp_servers && !AIA.config.mcp_servers.empty?
+      return [nil, nil] unless AIA.config.mcp_servers && !AIA.config.mcp_servers.empty?
 
       debug_me('=== generate_mcp_tools ===')
 
@@ -98,15 +104,18 @@ module AIA
       allowed        = AIA.config.allowed_tools
       debug_me
       filtered_tools = allowed.nil? ? all_tools : all_tools & allowed
-      debug_me
+      debug_me{[ :filtered_tools ]}
 
-      if :anthropic == provider.to_sym
-        debug_me
-        mcp_client.to_anthropic_tools(tool_names: filtered_tools)
-      else
-        debug_me
-        mcp_client.to_openai_tools(tool_names: filtered_tools)
-      end
+      debug_me{[ :provider ]}
+
+      mcp_tools = if :anthropic == provider.to_sym
+                    debug_me
+                    mcp_client.to_anthropic_tools(tool_names: filtered_tools)
+                  else
+                    debug_me
+                    mcp_client.to_openai_tools(tool_names: filtered_tools)
+                  end
+      [mcp_client, mcp_tools]
     rescue => e
       STDERR.puts "ERROR: Failed to generate MCP tools: #{e.message}"
       nil

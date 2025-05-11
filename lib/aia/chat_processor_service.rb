@@ -60,7 +60,20 @@ module AIA
 
 
     def maybe_change_model
-      if AIA.client.model != AIA.config.model
+      if AIA.client.model.is_a?(String)
+        client_model = AIA.client.model     # AiClient instance
+      else
+        client_model = AIA.client.model.id  # RubyLLM::Model instance
+      end
+
+      debug_me('== dynamic model change? =='){[
+        :client_model,
+        "AIA.config.model"
+      ]}
+
+      # when adapter is ruby_llm must use model.id as the name
+      unless AIA.config.model.downcase.include?(client_model.downcase)
+        # FIXME: assumes that the adapter is AiClient.  It might be RUbyLLM
         AIA.client = AIClientAdapter.new
       end
     end
