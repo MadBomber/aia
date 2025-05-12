@@ -109,21 +109,40 @@ module RubyLLM
     end
 
     def name
-      @mcp_tool[:name]
+      @mcp_tool.dig(:function, :name)
     end
 
     def description
-      @mcp_tool[:description]
+      @mcp_tool.dig(:function, :description)
     end
 
+    # Simple parameter class that implements the interface expected by RubyLLM::Providers::OpenAI::Tools#param_schema
+    class Parameter
+      attr_reader :type, :description, :required
+      
+      def initialize(type, description, required)
+        @type = type || 'string'
+        @description = description
+        @required = required
+      end
+    end
+    
     def parameters
-      @parameters ||= (@mcp_tool[:parameters] || {}).transform_values do |param|
-        Parameter.new(
-          param[:name],
-          type: param[:type] || 'string',
-          desc: param[:description],
-          required: param[:required] || false
-        )
+      @parameters ||= begin
+        props = @mcp_tool.dig(:function, :parameters, "properties") || {}
+        required_params = @mcp_tool.dig(:function, :parameters, "required") || []
+        
+        # Create Parameter objects with the expected interface
+        # The parameter name is the key in the properties hash
+        result = {}
+        props.each do |param_name, param_def|
+          result[param_name.to_sym] = Parameter.new(
+            param_def["type"],
+            param_def["description"],
+            required_params.include?(param_name)
+          )
+        end
+        result
       end
     end
 
@@ -131,20 +150,48 @@ module RubyLLM
       # Log the tool call with arguments
       RubyLLM.logger.debug "Tool #{name} called with: #{args.inspect}"
 
-      # Execute the tool via the MCP client
-      # Note: We only create MCPToolWrapper instances when we have a properly
-      # configured client, so these method calls should always work
-      result = Chat.mcp_client.send(Chat.mcp_call_tool, name, args)
+      # Verify MCP client is configured properly
+      unless Chat.mcp_client && Chat.mcp_call_tool
+        error = { error: "MCP client not properly configured" }
+        RubyLLM.logger.error error[:error]
+        return error
+      end
+
+      # Handle tool calls that require non-string parameters
+      normalized_args = {}
+      args.each do |key, value|
+        # Convert string numbers to actual numbers when needed
+        if value.is_a?(String) && value.match?(/\A-?\d+(\.\d+)?\z/)
+          param_type = @mcp_tool.dig(:function, :parameters, "properties", key.to_s, "type")
+          if param_type == "number" || param_type == "integer"
+            normalized_args[key] = value.include?('.') ? value.to_f : value.to_i
+            next
+          end
+        end
+        normalized_args[key] = value
+      end
+      
+      # Execute the tool via the MCP client with a timeout
+      timeout = 10 # seconds
+      result = nil
+      
+      begin
+        Timeout.timeout(timeout) do
+          result = Chat.mcp_client.send(Chat.mcp_call_tool, name, normalized_args)
+        end
+      rescue Timeout::Error
+        error = { error: "MCP tool execution timed out after #{timeout} seconds" }
+        RubyLLM.logger.error error[:error]
+        return error
+      rescue StandardError => e
+        error = { error: "MCP tool execution failed: #{e.message}" }
+        RubyLLM.logger.error error[:error]
+        return error
+      end
 
       # Log the result
       RubyLLM.logger.debug "Tool #{name} returned: #{result.inspect}"
-
       result
-    rescue StandardError => e
-      error = { error: "MCP tool execution failed: #{e.message}" }
-      # Log the error
-      RubyLLM.logger.debug "Tool #{name} failed: #{error.inspect}"
-      error
     end
   end
 end

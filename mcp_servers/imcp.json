@@ -1,0 +1,7 @@
+{
+  "mcpServers" : {
+    "iMCP" : {
+      "command" : "/Applications/iMCP.app/Contents/MacOS/imcp-server"
+    }
+  }
+}

@@ -38,10 +38,19 @@ module AIA
     def format_chat_response(response, output = $stdout)
       indent = '   '
 
+      # Convert RubyLLM::Message to string if necessary
+      response_text = if response.is_a?(RubyLLM::Message)
+                        response.content.to_s
+                      elsif response.respond_to?(:to_s)
+                        response.to_s
+                      else
+                        response
+                      end
+
       in_code_block = false
       language = ''
 
-      response.each_line do |line|
+      response_text.each_line do |line|
         line = line.chomp
 
         # Check for code block delimiters
