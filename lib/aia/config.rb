@@ -67,7 +67,7 @@ module AIA
       speech_model:         'tts-1',
       transcription_model:  'whisper-1',
       voice:                'alloy',
-      adapter:              'ai_client', # 'ai_client' or 'ruby_llm'
+      adapter:              'ruby_llm', # 'ruby_llm' or ???
 
       # Embedding parameters
       embedding_model: 'text-embedding-ada-002',
@@ -253,7 +253,7 @@ module AIA
 
         opts.on("--adapter ADAPTER", "Interface that adapts AIA to the LLM") do |adapter|
           adapter.downcase!
-          valid_adapters = %w[ ai_client ruby_llm]
+          valid_adapters = %w[ ruby_llm ]  # NOTE: Add additional adapters here when needed
           if valid_adapters.include? adapter
             config.adapter = adapter
           else

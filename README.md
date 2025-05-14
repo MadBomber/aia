@@ -17,14 +17,15 @@
 AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts. It utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
-- Added support for the `ruby_llm` gem as an alternative to `ai_client`
+- Replaced `ai_client` with `ruby_llm` gem
+- Added --adapter w/default ruby_llm in case there is a need to consider something else
 - //include directive now supports web URLs
 - //webpage insert web URL content as markdown into context
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
 **Notable Recent Changes:**
-- **RubyLLM Integration:** AIA now supports the RubyLLM gem as an alternative to ai_client. Use `--adapter ruby_llm` to switch. Why am I replacing my on gem ai_client with the ruby_llm gem?  Because its better, newer, elegant and will easily support some of the new features I have planned for AIA.  Its not fully integrated but its close ofenough to work on text-to-text generation.  Other modes will be added in the future.
+- **RubyLLM Integration:** AIA now uses the `ruby_llm` gem as a replacement to ai_client. The option `--adapter ruby_llm` is the default.  The `--adapter` option is there in case in the future an alternative to ruby_llm may be needed. I replacing my on gem ai_client with the ruby_llm gem? Because its better, newer, elegant and will easily support some of the new features I have planned for AIA.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -77,7 +78,7 @@ The following table provides a comprehensive list of configuration options, thei
 
 | Config Item Name     | CLI Options | Default Value               | Environment Variable      |
 |----------------------|-------------|-----------------------------|---------------------------|
-| adapter              | --adapter   | ai_client                   | AIA_ADAPTER               |
+| adapter              | --adapter   | ruby_llm                    | AIA_ADAPTER               |
 | aia_dir              |             | ~/.aia                      | AIA_DIR                   |
 | append               | -a, --append | false                      | AIA_APPEND                |
 | chat                 | --chat      | false                       | AIA_CHAT                  |
@@ -639,7 +640,7 @@ aia --help
 
 Key command-line options include:
 
-- `--adapter ADAPTER`: Choose the LLM interface adapter to use. Valid options are 'ai_client' (default) or 'ruby_llm'. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
+- `--adapter ADAPTER`: Choose the LLM interface adapter to use. Valid options are 'ruby_llm' (default) or something else in the future. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
 - `--model MODEL`: Specify which LLM model to use
 - `--chat`: Start an interactive chat session
 - `--role ROLE`: Specify a role/system prompt
