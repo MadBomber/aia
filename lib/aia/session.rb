@@ -36,8 +36,8 @@ module AIA
         @history_manager = HistoryManager.new(prompt: prompt_instance)
       end
 
-      @context_manager = ContextManager.new(system_prompt: AIA.config.system_prompt)
-      @ui_presenter    = UIPresenter.new
+      @context_manager     = ContextManager.new(system_prompt: AIA.config.system_prompt)
+      @ui_presenter        = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
       @chat_processor      = ChatProcessorService.new(@ui_presenter, @directive_processor)
 
@@ -112,7 +112,6 @@ module AIA
       end
 
       prompt.save
-
       # Substitute variables and get final prompt text
       prompt_text = prompt.to_s
 

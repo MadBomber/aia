@@ -212,7 +212,7 @@ GEM
       faraday-multipart (>= 1)
     optparse (0.6.0)
     os (1.1.4)
-    prompt_manager (0.5.2)
+    prompt_manager (0.5.3)
     public_suffix (6.0.1)
     racc (1.8.1)
     rake (13.2.1)
