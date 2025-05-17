@@ -11,20 +11,23 @@
     [/______\]  /               * embedded directives * shell integration
    / \__AI__/ \/                * embedded Ruby       * history management
   /    /__\                     * interactive chat    * prompt workflows
- (\   /____\
+ (\   /____\                    # Experimental support of MCP servers via ruby_llm extension
 ```
 
 AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts. It utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection.
 
 **Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
-- Added support for the `ruby_llm` gem as an alternative to `ai_client`
+- Replaced `ai_client` with `ruby_llm` gem
+- Added --adapter w/default ruby_llm in case there is a need to consider something else
 - //include directive now supports web URLs
 - //webpage insert web URL content as markdown into context
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
 **Notable Recent Changes:**
-- **RubyLLM Integration:** AIA now supports the RubyLLM gem as an alternative to ai_client. Use `--adapter ruby_llm` to switch. Why am I replacing my on gem ai_client with the ruby_llm gem?  Because its better, newer, elegant and will easily support some of the new features I have planned for AIA.  Its not fully integrated but its close ofenough to work on text-to-text generation.  Other modes will be added in the future.
+- **RubyLLM Integration:** AIA now uses the `ruby_llm` gem as a replacement to ai_client. The option `--adapter ruby_llm` is the default.  The `--adapter` option is there in case in the future an alternative to ruby_llm may be needed. I replacing my on gem ai_client with the ruby_llm gem? Because its better, newer, elegant and will easily support some of the new features I have planned for AIA.
+
+- **MCP Server Support:** AIA now supports Model Context Protocol (MCP) servers through an extension to the ruby_llm gem. This experimental feature allows AIA to interact with various external tools and services through MCP servers using the --mcp and --allowed_tools CLI options.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -67,6 +70,13 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
   - [Development](#development)
   - [Contributing](#contributing)
   - [Roadmap](#roadmap)
+  - [Model Context Protocol (MCP) Support](#model-context-protocol-mcp-support)
+    - [What is MCP?](#what-is-mcp)
+    - [Using MCP Servers with AIA](#using-mcp-servers-with-aia)
+    - [Focusing on Specific Tools with --allowed_tools](#focusing-on-specific-tools-with---allowed_tools)
+    - [How It Works](#how-it-works)
+    - [Current Limitations](#current-limitations)
+    - [Sounds like directives](#sounds-like-directives)
   - [License](#license)
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
@@ -75,39 +85,49 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 
 The following table provides a comprehensive list of configuration options, their default values, and the associated environment variables:
 
-| Option                  | Default Value                   | Environment Variable      |
-|-------------------------|---------------------------------|---------------------------|
-| adapter                 | ai_client                       | AIA_ADAPTER               |
-| out_file                | temp.md                         | AIA_OUT_FILE              |
-| log_file                | ~/.prompts/_prompts.log         | AIA_LOG_FILE              |
-| prompts_dir             | ~/.prompts                      | AIA_PROMPTS_DIR           |
-| roles_prefix            | roles                           | AIA_ROLES_PREFIX          |
-| model                   | gpt-4o-mini                     | AIA_MODEL                 |
-| speech_model            | tts-1                           | AIA_SPEECH_MODEL          |
-| transcription_model     | whisper-1                       | AIA_TRANSCRIPTION_MODEL   |
-| verbose                 | false                           | AIA_VERBOSE               |
-| markdown                | true                            | AIA_MARKDOWN              |
-| shell                   | false                           | AIA_SHELL                 |
-| erb                     | false                           | AIA_ERB                   |
-| chat                    | false                           | AIA_CHAT                  |
-| clear                   | false                           | AIA_CLEAR                 |
-| terse                   | false                           | AIA_TERSE                 |
-| debug                   | false                           | AIA_DEBUG                 |
-| fuzzy                   | false                           | AIA_FUZZY                 |
-| speak                   | false                           | AIA_SPEAK                 |
-| append                  | false                           | AIA_APPEND                |
-| temperature             | 0.7                             | AIA_TEMPERATURE           |
-| max_tokens              | 2048                            | AIA_MAX_TOKENS            |
-| top_p                   | 1.0                             | AIA_TOP_P                 |
-| frequency_penalty       | 0.0                             | AIA_FREQUENCY_PENALTY     |
-| presence_penalty        | 0.0                             | AIA_PRESENCE_PENALTY      |
-| image_size              | 1024x1024                       | AIA_IMAGE_SIZE            |
-| image_quality           | standard                        | AIA_IMAGE_QUALITY         |
-| image_style             | vivid                           | AIA_IMAGE_STYLE           |
-| embedding_model         | text-embedding-ada-002          | AIA_EMBEDDING_MODEL       |
-| speak_command           | afplay                          | AIA_SPEAK_COMMAND         |
-| require_libs            | []                              | AIA_REQUIRE_LIBS          |
-| regex                   | '(?-mix:(\\[[A-Z _|]+\\]))'     | AIA_REGEX                 |
+| Config Item Name     | CLI Options | Default Value               | Environment Variable      |
+|----------------------|-------------|-----------------------------|---------------------------|
+| adapter              | --adapter   | ruby_llm                    | AIA_ADAPTER               |
+| aia_dir              |             | ~/.aia                      | AIA_DIR                   |
+| append               | -a, --append | false                      | AIA_APPEND                |
+| chat                 | --chat      | false                       | AIA_CHAT                  |
+| clear                | --clear     | false                       | AIA_CLEAR                 |
+| config_file          | -c, --config_file | ~/.aia/config.yml      | AIA_CONFIG_FILE           |
+| debug                | -d, --debug | false                       | AIA_DEBUG                 |
+| embedding_model      | --em, --embedding_model | text-embedding-ada-002 | AIA_EMBEDDING_MODEL       |
+| erb                  |             | true                       | AIA_ERB                   |
+| frequency_penalty    | --frequency_penalty | 0.0                  | AIA_FREQUENCY_PENALTY     |
+| fuzzy                | -f, --fuzzy | false                       | AIA_FUZZY                 |
+| image_quality        | --iq, --image_quality | standard          | AIA_IMAGE_QUALITY         |
+| image_size           | --is, --image_size | 1024x1024           | AIA_IMAGE_SIZE            |
+| image_style          | --style, --image_style | vivid            | AIA_IMAGE_STYLE           |
+| log_file             | -l, --log_file | ~/.prompts/_prompts.log  | AIA_LOG_FILE              |
+| markdown             | --md, --markdown | true                   | AIA_MARKDOWN              |
+| max_tokens           | --max_tokens | 2048                      | AIA_MAX_TOKENS            |
+| mcp_servers          | --mcp       | []                          | AIA_MCP_SERVERS           |
+| model                | -m, --model | gpt-4o-mini                 | AIA_MODEL                 |
+| next                 | -n, --next  | nil                         | AIA_NEXT                  |
+| out_file             | -o, --out_file | temp.md                  | AIA_OUT_FILE              |
+| parameter_regex      | --regex     | '(?-mix:(\[[A-Z _|]+\]))' | AIA_PARAMETER_REGEX       |
+| pipeline             | --pipeline  | []                          | AIA_PIPELINE              |
+| presence_penalty     | --presence_penalty | 0.0                   | AIA_PRESENCE_PENALTY      |
+| prompt_extname       |             | .txt                        | AIA_PROMPT_EXTNAME        |
+| prompts_dir          | -p, --prompts_dir | ~/.prompts            | AIA_PROMPTS_DIR           |
+| require_libs         | --rq        | []                          | AIA_REQUIRE_LIBS          |
+| role                 | -r, --role  |                             | AIA_ROLE                  |
+| roles_dir            |             | ~/.prompts/roles            | AIA_ROLES_DIR             |
+| roles_prefix         | --roles_prefix | roles                    | AIA_ROLES_PREFIX          |
+| shell                |             | true                        | AIA_SHELL                 |
+| speak                | --speak     | false                       | AIA_SPEAK                 |
+| speak_command        |             | afplay                      | AIA_SPEAK_COMMAND         |
+| speech_model         | --sm, --speech_model | tts-1               | AIA_SPEECH_MODEL          |
+| system_prompt        | --system_prompt |                         | AIA_SYSTEM_PROMPT         |
+| temperature          | -t, --temperature | 0.7                   | AIA_TEMPERATURE           |
+| terse                | --terse     | false                       | AIA_TERSE                 |
+| top_p                | --top_p     | 1.0                         | AIA_TOP_P                 |
+| transcription_model  | --tm, --transcription_model | whisper-1    | AIA_TRANSCRIPTION_MODEL   |
+| verbose              | -v, --verbose | false                     | AIA_VERBOSE               |
+| voice                | --voice     | alloy                       | AIA_VOICE                 |
 
 These options can be configured via command-line arguments, environment variables, or configuration files.
 
@@ -566,7 +586,7 @@ export AIA_MODEL=gpt-4o-mini
 # for feedback while waiting for the LLM to respond.
 export AIA_VERBOSE=true
 
-alias chat='aia --chat --shell --erb --terse'
+alias chat='aia --chat --terse'
 
 # rest of the file is the completion function
 ```
@@ -629,13 +649,13 @@ aia --help
 
 Key command-line options include:
 
-- `--adapter ADAPTER`: Choose the LLM interface adapter to use. Valid options are 'ai_client' (default) or 'ruby_llm'. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
+- `--adapter ADAPTER`: Choose the LLM interface adapter to use. Valid options are 'ruby_llm' (default) or something else in the future. See [RubyLLM Integration Guide](README_RUBY_LLM.md) for details.
 - `--model MODEL`: Specify which LLM model to use
 - `--chat`: Start an interactive chat session
-- `--shell`: Enable shell command integration
-- `--erb`: Enable ERB processing
 - `--role ROLE`: Specify a role/system prompt
 - And many more (use --help to see all options)
+
+**Note:** ERB and shell processing are now standard features and always enabled. This allows you to use embedded Ruby code and shell commands in your prompts without needing to specify any additional options.
 
 ## Development
 
@@ -655,10 +675,60 @@ I'm not happy with the way where some command line options for external command 
 
 ## Roadmap
 
-- I'm thinking about removing the --erb and --shell options and just making those two integrations available all the time.
 - restore the prompt text file search. currently fzf only looks a prompt IDs.
 - continue integration of the ruby_llm gem
 - support for Model Context Protocol
+
+## Model Context Protocol (MCP) Support
+
+AIA now includes experimental support for Model Context Protocol (MCP) servers through an extension to the `ruby_llm` gem, which utilizes the `ruby-mcp-client` gem for communication with MCP servers.
+
+### What is MCP?
+
+Model Context Protocol (MCP) is a standardized way for AI models to interact with external tools and services. It allows AI assistants to perform actions beyond mere text generation, such as searching the web, accessing databases, or interacting with APIs.
+
+### Using MCP Servers with AIA
+
+To use MCP with AIA, you can specify one or more MCP servers using the `--mcp` CLI option:
+
+```bash
+aia --chat --mcp server1,server2
+```
+
+This will connect your AIA session to the specified MCP servers, allowing the AI model to access tools provided by those servers.
+
+### Focusing on Specific Tools with --allowed_tools
+
+If you want to limit which MCP tools are available to the AI model during your session, you can use the `--allowed_tools` option:
+
+```bash
+aia --chat --mcp server1 --allowed_tools tool1,tool2,tool3
+```
+
+This restricts the AI model to only use the specified tools, which can be helpful for:
+
+- Focusing the AI on a specific task
+- Preventing the use of unnecessary or potentially harmful tools
+- Reducing the cognitive load on the AI by limiting available options
+
+### How It Works
+
+Behind the scenes, AIA leverages a new `with_mcp` method in `RubyLLM::Chat` to set up the MCP tools for chat sessions. This method processes the hash-structured MCP tool definitions and makes them available for the AI to use during the conversation.
+
+When you specify `--mcp` and optionally `--allowed_tools`, AIA configures the underlying `ruby_llm` adapter to connect to the appropriate MCP servers and expose only the tools you've explicitly allowed.
+
+### Current Limitations
+
+As this is an experimental feature:
+
+- Not all AI models support MCP tools
+- The available tools may vary depending on the MCP server
+- Tool behavior may change as the MCP specification evolves
+
+### Sounds like directives
+
+Anthropic's MCP standard came months after the aia appeared with its inherent support of dynamic prompt context enhancements via directives, shell integration and ERB support.  Yes you can argue that if you have a working MCP client and access to appropriate MCP servers then the dynamic prompt context enhancements via directives, shell integration and ERB support are superfluous.  I don't agree with that argument.  I think the dynamic prompt context enhancements via directives, shell integration and ERB support are powerful tools in and of themselves.  I think they are a better way to do things.
+
 
 ## License
 

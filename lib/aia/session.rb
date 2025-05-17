@@ -22,6 +22,7 @@ module AIA
 
     def initialize(prompt_handler)
       @prompt_handler  = prompt_handler
+      @chat_prompt_id = nil  # Initialize to nil
 
       # Special handling for chat mode with context files but no prompt ID
       if AIA.chat? && AIA.config.prompt_id.empty? && AIA.config.context_files && !AIA.config.context_files.empty?
@@ -35,8 +36,8 @@ module AIA
         @history_manager = HistoryManager.new(prompt: prompt_instance)
       end
 
-      @context_manager = ContextManager.new(system_prompt: AIA.config.system_prompt) # Add this line
-      @ui_presenter    = UIPresenter.new
+      @context_manager     = ContextManager.new(system_prompt: AIA.config.system_prompt)
+      @ui_presenter        = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
       @chat_processor      = ChatProcessorService.new(@ui_presenter, @directive_processor)
 
@@ -111,7 +112,6 @@ module AIA
       end
 
       prompt.save
-
       # Substitute variables and get final prompt text
       prompt_text = prompt.to_s
 
@@ -151,129 +151,157 @@ module AIA
     end
 
     # Starts the interactive chat session.
+    # NOTE: there could have been an initial prompt sent into this session
+    #       via a prompt_id on the command line, piped in text, or context files.
     def start_chat(skip_context_files: false)
-      # Consider if display_chat_header is needed if robot+separator already shown
-      # For now, let's keep it, maybe add an indicator message
       puts "\nEntering interactive chat mode..."
       @ui_presenter.display_chat_header
 
-      Reline::HISTORY.clear # Keep Reline history for user input editing, separate from chat context
+      # Generate chat prompt ID
+      now = Time.now
+      @chat_prompt_id = "chat_#{now.strftime('%Y%m%d_%H%M%S')}"
 
-      # Load context files if any and not skipping
-      if !skip_context_files && AIA.config.context_files && !AIA.config.context_files.empty?
-        context_content = AIA.config.context_files.map do |file|
-          File.read(file) rescue "Error reading file: #{file}"
-        end.join("\n\n")
+      # Create the temporary prompt
+      begin
+        # Create the unique? prompt ID in the file storage system with its initial text
+        PromptManager::Prompt.create(
+          id: @chat_prompt_id,
+          text: "Today's date is #{now.strftime('%Y-%m-%d')} and the current time is #{now.strftime('%H:%M:%S')}"
+        )
 
-        if !context_content.empty?
-          # Add context files content to context
-          @context_manager.add_to_context(role: 'user', content: context_content)
+        # Capture self for the handlers
+        session_instance = self
 
-          # Process the context
+        # Set up cleanup handlers only after prompt is created
+        at_exit { session_instance.send(:cleanup_chat_prompt) }
+        Signal.trap('INT') {
+          session_instance.send(:cleanup_chat_prompt)
+          exit
+        }
+
+        # Access this chat session's prompt object in order to do the dynamic things
+        # in follow up prompts that can be done in the batch mode like shell substitution. etc.
+        @chat_prompt = PromptManager::Prompt.new(
+          id: @chat_prompt_id,
+          directives_processor: @directive_processor,
+          erb_flag:             AIA.config.erb,
+          envar_flag:           AIA.config.shell,
+          external_binding:     binding,
+        )
+
+        Reline::HISTORY.clear
+
+        # Load context files if any and not skipping
+        if !skip_context_files && AIA.config.context_files && !AIA.config.context_files.empty?
+          context = AIA.config.context_files.map do |file|
+            File.read(file) rescue "Error reading file: #{file}"
+          end.join("\n\n")
+
+          if !context.empty?
+            # Add context files content to context
+            @context_manager.add_to_context(role: 'user', content: context)
+
+            # Process the context
+            operation_type = @chat_processor.determine_operation_type(AIA.config.model)
+            @ui_presenter.display_thinking_animation
+            response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+
+            # Add AI response to context
+            @context_manager.add_to_context(role: 'assistant', content: response)
+
+            # Output the response
+            @chat_processor.output_response(response)
+            @chat_processor.speak(response)
+            @ui_presenter.display_separator
+          end
+        end
+
+        # Handle piped input
+        if !STDIN.tty?
+          original_stdin = STDIN.dup
+          piped_input = STDIN.read.strip
+          STDIN.reopen('/dev/tty')
+
+          if !piped_input.empty?
+            @chat_prompt.text = piped_input
+            processed_input = @chat_prompt.to_s
+
+            @context_manager.add_to_context(role: 'user', content: processed_input)
+
+            operation_type = @chat_processor.determine_operation_type(AIA.config.model)
+            @ui_presenter.display_thinking_animation
+            response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+
+            @context_manager.add_to_context(role: 'assistant', content: response)
+            @chat_processor.output_response(response)
+            @chat_processor.speak(response) if AIA.speak?
+            @ui_presenter.display_separator
+          end
+
+          STDIN.reopen(original_stdin)
+        end
+
+        # Main chat loop
+        loop do
+          follow_up_prompt = @ui_presenter.ask_question
+
+          break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == 'exit' || follow_up_prompt.strip.empty?
+
+          if AIA.config.out_file
+            File.open(AIA.config.out_file, 'a') do |file|
+              file.puts "\nYou: #{follow_up_prompt}"
+            end
+          end
+
+          if @directive_processor.directive?(follow_up_prompt)
+            directive_output = @directive_processor.process(follow_up_prompt, @context_manager)
+
+            if follow_up_prompt.strip.start_with?('//clear')
+               @ui_presenter.display_info("Chat context cleared.")
+               next
+            elsif directive_output.nil? || directive_output.strip.empty?
+              next
+            else
+              puts "\n#{directive_output}\n"
+              follow_up_prompt = "I executed this directive: #{follow_up_prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
+            end
+          end
+
+          @chat_prompt.text = follow_up_prompt
+          processed_prompt = @chat_prompt.to_s
+
+          @context_manager.add_to_context(role: 'user', content: processed_prompt)
+          conversation = @context_manager.get_context
+
           operation_type = @chat_processor.determine_operation_type(AIA.config.model)
           @ui_presenter.display_thinking_animation
-          response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+          response = @chat_processor.process_prompt(conversation, operation_type)
 
-          # Add AI response to context
+          @ui_presenter.display_ai_response(response)
           @context_manager.add_to_context(role: 'assistant', content: response)
-
-          # Output the response
-          @chat_processor.output_response(response)
           @chat_processor.speak(response)
+
           @ui_presenter.display_separator
         end
+
+      ensure
+        @ui_presenter.display_chat_end
       end
+    end
 
-      # Check for piped input (STDIN not a TTY and has data)
-      if !STDIN.tty?
-        # Save the original STDIN
-        original_stdin = STDIN.dup
+    private
 
-        # Read the piped input
-        piped_input = STDIN.read.strip
-
-        # Reopen STDIN to the terminal
-        STDIN.reopen('/dev/tty')
-
-        if !piped_input.empty?
-          # Add piped input to context
-          @context_manager.add_to_context(role: 'user', content: piped_input)
-
-          # Process the piped input
-          operation_type = @chat_processor.determine_operation_type(AIA.config.model)
-          @ui_presenter.display_thinking_animation
-          response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
-
-          # Add AI response to context
-          @context_manager.add_to_context(role: 'assistant', content: response)
-
-          # Output the response
-          @chat_processor.output_response(response)
-          @chat_processor.speak(response) if AIA.speak?
-          @ui_presenter.display_separator
+    def cleanup_chat_prompt
+      if @chat_prompt_id
+        puts "[DEBUG] Cleaning up chat prompt: #{@chat_prompt_id}" if AIA.debug?
+        begin
+          @chat_prompt.delete
+          @chat_prompt_id = nil # Prevent repeated attempts if error occurs elsewhere
+        rescue => e
+          STDERR.puts "[ERROR] Failed to delete chat prompt #{@chat_prompt_id}: #{e.class} - #{e.message}"
+          STDERR.puts e.backtrace.join("\n")
         end
-        
-        # Restore original stdin when done with piped input processing
-        STDIN.reopen(original_stdin)
       end
-
-      loop do
-        # Get user input
-        prompt = @ui_presenter.ask_question
-
-
-
-        break if prompt.nil? || prompt.strip.downcase == 'exit' || prompt.strip.empty?
-
-        if AIA.config.out_file
-          File.open(AIA.config.out_file, 'a') do |file|
-            file.puts "\nYou: #{prompt}"
-          end
-        end
-
-        if @directive_processor.directive?(prompt)
-          directive_output = @directive_processor.process(prompt, @context_manager) # Pass context_manager
-
-          # Add check for specific directives like //clear that might modify context
-          if prompt.strip.start_with?('//clear')
-             # Context is likely cleared within directive_processor.process now
-             # or add @context_manager.clear_context here if not handled internally
-             @ui_presenter.display_info("Chat context cleared.")
-             next # Skip API call after clearing
-          elsif directive_output.nil? || directive_output.strip.empty?
-            next # Skip API call if directive produced no output and wasn't //clear
-          else
-            puts "\n#{directive_output}\n"
-            # Optionally add directive output to context or handle as needed
-            # Example: Add a summary to context
-            # @context_manager.add_to_context(role: 'assistant', content: "Directive executed. Output:\n#{directive_output}")
-            # For now, just use a placeholder prompt modification:
-            prompt = "I executed this directive: #{prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
-             # Fall through to add this modified prompt to context and send to AI
-          end
-        end
-
-        # Use ContextManager instead of HistoryManager
-        @context_manager.add_to_context(role: 'user', content: prompt)
-
-        # Use ContextManager to get the conversation
-        conversation = @context_manager.get_context # System prompt handled internally
-
-        operation_type = @chat_processor.determine_operation_type(AIA.config.model)
-        @ui_presenter.display_thinking_animation
-        response = @chat_processor.process_prompt(conversation, operation_type)
-
-        @ui_presenter.display_ai_response(response)
-
-        # Use ContextManager instead of HistoryManager
-        @context_manager.add_to_context(role: 'assistant', content: response)
-
-        @chat_processor.speak(response)
-
-        @ui_presenter.display_separator
-      end
-
-      @ui_presenter.display_chat_end
     end
   end
 end

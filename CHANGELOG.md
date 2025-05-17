@@ -1,5 +1,9 @@
 # Changelog
 ## [Unreleased]
+### [0.9.0] WIP
+- Adding MCP Client suppot
+- removed the CLI options --erb and --shell but kept them in the config file with a default of true for both
+
 ## Released
 
 ### [0.8.6] 2025-04-23

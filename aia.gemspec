@@ -42,12 +42,12 @@ Gem::Specification.new do |spec|
   spec.executables    = %w[ aia ]
   spec.require_paths  = %w[ lib ]
 
-  spec.add_dependency "ai_client"
   spec.add_dependency "amazing_print"
   spec.add_dependency "faraday"
   spec.add_dependency "os"
   spec.add_dependency "prompt_manager", '>= 0.5.2' # needs the new comment removal
   spec.add_dependency "ruby_llm", '>= 1.2.0'
+  spec.add_dependency "ruby-mcp-client"
   spec.add_dependency "reline"
   spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"

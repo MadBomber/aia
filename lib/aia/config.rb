@@ -9,6 +9,9 @@ require 'yaml'
 require 'toml-rb'
 require 'erb'
 require 'optparse'
+require 'json'
+require 'tempfile'
+require 'fileutils'
 
 module AIA
   class Config
@@ -26,10 +29,14 @@ module AIA
       role:         '',
       system_prompt: '',
 
+      # MCP configuration
+      mcp_servers:   [],
+      allowed_tools: nil, # nil means all tools are allowed; otherwise an Array of Strings which are the tool names
+
       # Flags
       markdown: true,
-      shell:    false,
-      erb:      false,
+      shell:    true,
+      erb:      true,
       chat:     false,
       clear:    false,
       terse:    false,
@@ -60,7 +67,7 @@ module AIA
       speech_model:         'tts-1',
       transcription_model:  'whisper-1',
       voice:                'alloy',
-      adapter:              'ai_client', # 'ai_client' or 'ruby_llm'
+      adapter:              'ruby_llm', # 'ruby_llm' or ???
 
       # Embedding parameters
       embedding_model: 'text-embedding-ada-002',
@@ -193,6 +200,13 @@ module AIA
         PromptManager::Prompt.parameter_regex = Regexp.new(config.parameter_regex)
       end
 
+      debug_me{[ 'config.mcp_servers' ]}
+
+      unless config.mcp_servers.empty?
+        # create a single JSON file contain all of the MCP server definitions specified my the --mcp option
+        config.mcp_servers = combine_mcp_server_json_files config.mcp_servers
+      end
+
       config
     end
 
@@ -239,7 +253,7 @@ module AIA
 
         opts.on("--adapter ADAPTER", "Interface that adapts AIA to the LLM") do |adapter|
           adapter.downcase!
-          valid_adapters = %w[ ai_client ruby_llm]
+          valid_adapters = %w[ ruby_llm ]  # NOTE: Add additional adapters here when needed
           if valid_adapters.include? adapter
             config.adapter = adapter
           else
@@ -253,15 +267,7 @@ module AIA
           config.model = model
         end
 
-        opts.on("--shell", "Enables `aia` to access your terminal's shell environment from inside the prompt text, allowing for dynamic content insertion using system environment variables and shell commands. Includes safety features to confirm or block dangerous commands.") do
-          config.shell = true
-        end
-
-        opts.on("--erb", "Turns the prompt text file into a fully functioning ERB template, allowing for embedded Ruby code processing within the prompt text. This enables dynamic content generation and complex logic within prompts.") do
-          config.erb = true
-        end
-
-        opts.on("--terse", "Add terse instruction to prompt") do
+        opts.on("--terse", "Adds a special instruction to the prompt asking the AI to keep responses short and to the point") do
           config.terse = true
         end
 
@@ -428,6 +434,44 @@ module AIA
         opts.on("--rq LIBS", "Ruby libraries to require for Ruby directive") do |libs|
           config.require_libs = libs.split(',')
         end
+
+        opts.on("--mcp FILE", "Add MCP server configuration from JSON file. Can be specified multiple times.") do |file|
+          # debug_me FIXME ruby-mcp-client is looking for a single JSON file that
+          # could contain multiple server definitions that looks like this:
+          # {
+          #   "mcpServers": {
+          #     "server one": { ... },
+          #     "server two": { ... }, ....
+          #   }
+          # }
+          # FIXME: need to rurn multiple JSON files into one.
+          if AIA.good_file?(file)
+            config.mcp_servers ||= []
+            config.mcp_servers << file
+            begin
+              server_config = JSON.parse(File.read(file))
+              config.mcp_servers_config ||= []
+              config.mcp_servers_config << server_config
+            rescue JSON::ParserError => e
+              STDERR.puts "Error parsing MCP server config file #{file}: #{e.message}"
+              exit 1
+            end
+          else
+            STDERR.puts "MCP server config file not found: #{file}"
+            exit 1
+          end
+        end
+
+        opts.on("--at", "--allowed_tools TOOLS_LIST", "Allow only these tools to be used") do |tools_list|
+          config.allowed_tools ||= []
+          if tools_list.empty?
+            STDERR.puts "No list of tool names provided for --allowed_tools option"
+            exit 1
+          else
+            config.allowed_tools += tools_list.split(',').map(&:strip)
+            config.allowed_tools.uniq!
+          end
+        end
       end
 
       args = ARGV.dup
@@ -512,6 +556,96 @@ module AIA
 
       File.write(file, content)
       puts "Config successfully dumped to #{file}"
+    end
+
+
+    # Combine multiple MCP server JSON files into a single file
+    def self.combine_mcp_server_json_files(file_paths)
+      raise ArgumentError, "No JSON files provided" if file_paths.nil? || file_paths.empty?
+
+      # The output will have only one top-level key: "mcpServers"
+      mcp_servers = {} # This will store all collected server_name => server_config pairs
+
+      file_paths.each do |file_path|
+        file_content = JSON.parse(File.read(file_path))
+        # Clean basename, e.g., "filesystem.json" -> "filesystem", "foo.json.erb" -> "foo"
+        cleaned_basename = File.basename(file_path).sub(/\.json\.erb$/, '').sub(/\.json$/, '')
+
+        if file_content.is_a?(Hash)
+          if file_content.key?("mcpServers") && file_content["mcpServers"].is_a?(Hash)
+            # Case A: {"mcpServers": {"name1": {...}, "name2": {...}}}
+            file_content["mcpServers"].each do |server_name, server_data|
+              if mcp_servers.key?(server_name)
+                STDERR.puts "Warning: Duplicate MCP server name '#{server_name}' found. Overwriting with definition from #{file_path}."
+              end
+              mcp_servers[server_name] = server_data
+            end
+          # Check if the root hash itself is a single server definition
+          elsif is_single_server_definition?(file_content)
+            # Case B: {"type": "stdio", ...} or {"url": "...", ...}
+            # Use "name" property from JSON if present, otherwise use cleaned_basename
+            server_name = file_content["name"] || cleaned_basename
+            if mcp_servers.key?(server_name)
+              STDERR.puts "Warning: Duplicate MCP server name '#{server_name}' (from file #{file_path}). Overwriting."
+            end
+            mcp_servers[server_name] = file_content
+          else
+            # Case D: Fallback for {"custom_name1": {server_config1}, "custom_name2": {server_config2}}
+            # This assumes top-level keys are server names and values are server configs.
+            file_content.each do |server_name, server_data|
+              if server_data.is_a?(Hash) && is_single_server_definition?(server_data)
+                if mcp_servers.key?(server_name)
+                  STDERR.puts "Warning: Duplicate MCP server name '#{server_name}' found in #{file_path}. Overwriting."
+                end
+                mcp_servers[server_name] = server_data
+              else
+                STDERR.puts "Warning: Unrecognized structure for key '#{server_name}' in #{file_path}. Value is not a valid server definition. Skipping."
+              end
+            end
+          end
+        elsif file_content.is_a?(Array)
+          # Case C: [ {server_config1}, {server_config2_with_name} ]
+          file_content.each_with_index do |server_data, index|
+            if server_data.is_a?(Hash) && is_single_server_definition?(server_data)
+              # Use "name" property from JSON if present, otherwise generate one
+              server_name = server_data["name"] || "#{cleaned_basename}_#{index}"
+              if mcp_servers.key?(server_name)
+                STDERR.puts "Warning: Duplicate MCP server name '#{server_name}' (from array in #{file_path}). Overwriting."
+              end
+              mcp_servers[server_name] = server_data
+            else
+              STDERR.puts "Warning: Unrecognized item in array in #{file_path} at index #{index}. Skipping."
+            end
+          end
+        else
+          STDERR.puts "Warning: Unrecognized JSON structure in #{file_path}. Skipping."
+        end
+      end
+
+      # Create the final output structure
+      output    = {"mcpServers" => mcp_servers}
+      temp_file = Tempfile.new(['combined', '.json'])
+      temp_file.write(JSON.pretty_generate(output))
+      temp_file.close
+
+      temp_file.path
+    end
+
+    # Helper method to determine if a hash represents a valid MCP server definition
+    def self.is_single_server_definition?(config)
+      return false unless config.is_a?(Hash)
+      type = config['type']
+      if type
+        return true if type == 'stdio' && config.key?('command')
+        return true if type == 'sse' && config.key?('url')
+        # Potentially other explicit types if they exist in MCP
+        return false # Known type but missing required fields for it, or unknown type
+      else
+        # Infer type
+        return true if config.key?('command') || config.key?('args') || config.key?('env') # stdio
+        return true if config.key?('url') # sse
+      end
+      false
     end
   end
 end

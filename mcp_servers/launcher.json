@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "launcher": {
+      "command": "npx",
+      "args": [
+        "y",
+        "@joshuarileydev/mac-apps-launcher-mcp-server"
+      ]
+    }
+  }
+}

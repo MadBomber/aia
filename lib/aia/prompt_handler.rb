@@ -48,14 +48,8 @@ module AIA
           erb_flag: AIA.config.erb,
           envar_flag: AIA.config.shell
         )
-        
-        # Ensure parameters are extracted even if no history file exists
-        if prompt && prompt.parameters.empty?
-          # Force re-reading of the prompt text to extract parameters
-          # This ensures parameters are found even without a .json file
-          prompt.reload
-        end
 
+        # Parameters should be extracted during initialization or to_s
         return prompt if prompt
       else
         puts "Warning: Invalid prompt ID or file not found: #{prompt_id}"
@@ -147,8 +141,11 @@ module AIA
     end
 
 
+    # FIXME: original implementation used a search_proc to look into the content of the prompt
+    #        files.  The use of the select statement does not work.
     def search_prompt_id_with_fzf(initial_query)
-      prompt_files = Dir.glob(File.join(@prompts_dir, "*.txt")).map { |file| File.basename(file, ".txt") }
+      prompt_files = Dir.glob(File.join(@prompts_dir, "*.txt"))
+                       .map { |file| File.basename(file, ".txt") }
       fzf = AIA::Fzf.new(
         list: prompt_files,
         directory: @prompts_dir,
@@ -160,7 +157,8 @@ module AIA
     end
 
     def search_role_id_with_fzf(initial_query)
-      role_files = Dir.glob(File.join(@roles_dir, "*.txt")).map { |file| File.basename(file, ".txt") }
+      role_files = Dir.glob(File.join(@roles_dir, "*.txt"))
+                    .map { |file| File.basename(file, ".txt") }
       fzf = AIA::Fzf.new(
         list: role_files,
         directory: @prompts_dir,
