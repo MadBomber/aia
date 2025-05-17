@@ -51,14 +51,28 @@ module AIA
     end
 
     def directive?(a_string)
-      a_string.strip.start_with?(PromptManager::Prompt::DIRECTIVE_SIGNAL)
+      # Handle RubyLLM::Message objects by extracting their content first
+      content = if a_string.is_a?(RubyLLM::Message)
+                 a_string.content rescue a_string.to_s
+               else
+                 a_string.to_s
+               end
+      
+      content.strip.start_with?(PromptManager::Prompt::DIRECTIVE_SIGNAL)
     end
 
     # Used with the chat loop to allow user to enter a single directive
     def process(a_string, context_manager)
       return a_string unless directive?(a_string)
 
-      key = a_string.strip
+      # Handle RubyLLM::Message objects by extracting their content first
+      content = if a_string.is_a?(RubyLLM::Message)
+                 a_string.content rescue a_string.to_s
+               else
+                 a_string.to_s
+               end
+
+      key = content.strip
       sans_prefix = key[@prefix_size..]
       args        = sans_prefix.split(' ')
       method_name = args.shift.downcase

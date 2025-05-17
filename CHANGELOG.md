@@ -1,10 +1,16 @@
 # Changelog
 ## [Unreleased]
-### [0.9.0] WIP
-- Adding MCP Client suppot
-- removed the CLI options --erb and --shell but kept them in the config file with a default of true for both
 
 ## Released
+
+### [0.9.1] 2025-05-16
+- rethink MCP approach in favor of just RubyLLM::Tool
+- fixed problem with //clear
+- fixed a problem with a priming prompt in a chat loop
+
+### [0.9.0] 2025-05-13
+- Adding experimental MCP Client suppot
+- removed the CLI options --erb and --shell but kept them in the config file with a default of true for both
 
 ### [0.8.6] 2025-04-23
 - Added a client adapter for the ruby_llm gem
