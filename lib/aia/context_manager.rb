@@ -41,7 +41,23 @@ module AIA
         @context = [@context.first]
       else
         @context = []
-        AIA.config.client.clear_context
+      end
+
+      # Attempt to clear the LLM client's context as well
+      begin
+        if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
+          AIA.config.client.clear_context
+        end
+
+        if AIA.config.respond_to?(:llm) && AIA.config.llm && AIA.config.llm.respond_to?(:clear_context)
+          AIA.config.llm.clear_context
+        end
+
+        if defined?(RubyLLM) && RubyLLM.respond_to?(:chat) && RubyLLM.chat.respond_to?(:clear_history)
+          RubyLLM.chat.clear_history
+        end
+      rescue => e
+        AIA.debug_me(tag: '== context_manager clear_context error =='){[ :e, e.message, e.backtrace ]}
       end
     end
 
