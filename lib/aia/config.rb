@@ -98,6 +98,7 @@ module AIA
                       )
 
       tailor_the_config(config)
+      load_tools(config)
     end
 
 
@@ -129,7 +130,6 @@ module AIA
         STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
         exit 1
       end
-
 
       unless config.role.empty?
         unless config.roles_prefix.empty?
@@ -203,6 +203,41 @@ module AIA
 
       config
     end
+
+
+    def self.load_tools(config)
+      return if config.tool_paths.empty?
+
+      exit_on_error = false
+
+      unless config.allowed_tools.nil?
+        config.tool_paths.select! do |path|
+          config.allowed_tools.any? { |allowed| path.include?(allowed) }
+        end
+      end
+
+      unless config.rejected_tools.nil?
+        config.tool_paths.reject! do |path|
+          config.rejected_tools.any? { |rejected| path.include?(rejected) }
+        end
+      end
+
+      config.tool_paths.each do |tool_path|
+        begin
+          # expands path based on PWD
+          absolute_tool_path = File.expand_path(tool_path)
+          require(absolute_tool_path)
+        rescue => e
+          SYSERR.puts "Error loading tool '#{tool_path}' #{e.message}"
+          exit_on_error = true
+        end
+      end
+
+      exit(1) if exit_on_error
+
+      config
+    end
+
 
     # envar values are always String object so need other config
     # layers to know the prompter type for each key's value
