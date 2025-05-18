@@ -521,8 +521,6 @@ module AIA
 
       args = ARGV.dup
 
-      debug_me{[ :args ]}
-
       # Parse the command line arguments
       begin
         config.remaining_args = opt_parser.parse(args)

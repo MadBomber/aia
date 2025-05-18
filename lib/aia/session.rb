@@ -259,24 +259,23 @@ module AIA
             if follow_up_prompt.strip.start_with?('//clear')
                # The directive processor has called context_manager.clear_context
                # but we need a more aggressive approach to fully clear all context
-               
+
                # First, clear the context manager's context
                @context_manager.clear_context(keep_system_prompt: true)
-               
+
                # Second, try clearing the client's context
                if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
                  AIA.config.client.clear_context
                end
-               
+
                # Third, completely reinitialize the client to ensure fresh state
                # This is the most aggressive approach to ensure no context remains
                begin
                  AIA.config.client = AIA::RubyLLMAdapter.new
-                 AIA.debug_me("Completely reinitialized client for //clear directive")
                rescue => e
-                 AIA.debug_me("Error reinitializing client: #{e.message}")
+                 SYSERR.puts "Error reinitializing client: #{e.message}"
                end
-               
+
                @ui_presenter.display_info("Chat context cleared.")
                next
             elsif directive_output.nil? || directive_output.strip.empty?
