@@ -5,7 +5,6 @@
 # provides an interface for interacting with AI models and managing prompts.
 
 require 'ruby_llm'
-require_relative 'extensions/ruby_llm/chat'
 
 require 'prompt_manager'
 require 'mcp_client'

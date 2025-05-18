@@ -1,6 +1,10 @@
 # Changelog
 ## [Unreleased]
 
+### [0.9.2] 2025-05-WIP
+- removing the MCP experiment
+- adding support for RubyLLM::Tool usage in place of the MCP stuff
+
 ## Released
 
 ### [0.9.1] 2025-05-16
