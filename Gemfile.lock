@@ -1,13 +1,12 @@
 PATH
   remote: .
   specs:
-    aia (0.9.0)
+    aia (0.9.2)
       amazing_print
       faraday
       os
-      prompt_manager (>= 0.5.2)
+      prompt_manager (>= 0.5.4)
       reline
-      ruby-mcp-client
       ruby_llm (>= 1.2.0)
       shellwords
       toml-rb
@@ -109,15 +108,12 @@ GEM
       uri
     optparse (0.6.0)
     os (1.1.4)
-    prompt_manager (0.5.3)
+    prompt_manager (0.5.4)
     racc (1.8.1)
     rake (13.2.1)
     refinements (13.1.0)
     reline (0.6.1)
       io-console (~> 0.5)
-    ruby-mcp-client (0.5.2)
-      faraday (~> 2.0)
-      faraday-retry (~> 2.0)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     ruby_llm (1.2.0)

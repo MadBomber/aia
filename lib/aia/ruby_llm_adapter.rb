@@ -1,14 +1,12 @@
 # lib/aia/ruby_llm_adapter.rb
 
 require 'ruby_llm'
-require 'mcp_client'
 
 module AIA
   class RubyLLMAdapter
+    attr_reader :tools
+
     def initialize
-
-      debug_me('=== RubyLLMAdapter ===')
-
       @model     = AIA.config.model
       model_info = extract_model_parts(@model)
 
@@ -26,17 +24,13 @@ module AIA
         config.bedrock_session_token = ENV.fetch('AWS_SESSION_TOKEN', nil)
       end
 
-      debug_me{[ :model_info ]}
+      @chat = RubyLLM.chat(model: model_info[:model])
 
-      mcp_client, mcp_tools = generate_mcp_tools(model_info[:provider])
-
-      debug_me{[ :mcp_tools ]}
-
-      if mcp_tools && !mcp_tools.empty?
-        RubyLLM::Chat.with_mcp(client: mcp_client, call_tool_method: :call_tool, tools: mcp_tools)
+      @tools = ObjectSpace.each_object(Class).select do |klass|
+        klass < RubyLLM::Tool
       end
 
-      @chat = RubyLLM.chat(model: model_info[:model])
+      @chat.with_tools(*tools) unless tools.empty?
     end
 
     def chat(prompt)
@@ -74,7 +68,6 @@ module AIA
     end
 
     def method_missing(method, *args, &block)
-      debug_me(tag: '== missing ==', levels: 25){[ :method, :args ]}
       if @chat.respond_to?(method)
         @chat.public_send(method, *args, &block)
       else
@@ -85,62 +78,39 @@ module AIA
     # Clear the chat context/history
     # Needed for the //clear directive
     def clear_context
-      AIA.debug_me(tag: '== AGGRESSIVELY clearing LLM context ==') do
-        begin
-          # Option 1: Directly clear the messages array in the current chat object
-          if @chat.instance_variable_defined?(:@messages)
-            AIA.debug_me("Directly clearing @messages array")
-            old_messages = @chat.instance_variable_get(:@messages)
-            AIA.debug_me{[:old_messages, old_messages.length]}
-            # Force a completely empty array, not just attempting to clear it
-            @chat.instance_variable_set(:@messages, [])
-          end
-
-          # Option 2: Force RubyLLM to create a new chat instance at the global level
-          # This ensures any shared state is reset
-          AIA.debug_me("Force global RubyLLM chat reset")
-          model_info = extract_model_parts(@model)
-          RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
-          
-          # Option 3: Create a completely fresh chat instance for this adapter
-          @chat = nil  # First nil it to help garbage collection
-          @chat = RubyLLM.chat(model: model_info[:model])
-          AIA.debug_me("Created fresh RubyLLM::Chat instance")
-          
-          # Option 4: Call official clear_history method if it exists
-          if @chat.respond_to?(:clear_history)
-            AIA.debug_me("Calling clear_history method")
-            @chat.clear_history
-          end
-          
-          # Option 5: If chat has messages, force set it to empty again as a final check
-          if @chat.instance_variable_defined?(:@messages) && !@chat.instance_variable_get(:@messages).empty?
-            AIA.debug_me("FINAL CHECK: @messages still not empty, forcing empty")
-            @chat.instance_variable_set(:@messages, [])
-          end
-          
-          # Reset any MCP tools configuration
-          begin
-            mcp_client, mcp_tools = generate_mcp_tools(model_info[:provider])
-            if mcp_tools && !mcp_tools.empty?
-              AIA.debug_me("Reconfiguring MCP tools")
-              RubyLLM::Chat.with_mcp(client: mcp_client, call_tool_method: :call_tool, tools: mcp_tools)
-            end
-          rescue => mcp_error
-            AIA.debug_me{[:mcp_error, mcp_error.message]}
-          end
-          
-          # Final verification
-          new_messages = @chat.instance_variable_defined?(:@messages) ? @chat.instance_variable_get(:@messages) : []
-          AIA.debug_me{[:new_messages, new_messages.length]}
-          
-          return "Chat context successfully cleared."
-        rescue => e
-          AIA.debug_me{
-            [ :e, e.message, e.backtrace ]
-          }
-          return "Error clearing chat context: #{e.message}"
+      begin
+        # Option 1: Directly clear the messages array in the current chat object
+        if @chat.instance_variable_defined?(:@messages)
+          old_messages = @chat.instance_variable_get(:@messages)
+          # Force a completely empty array, not just attempting to clear it
+          @chat.instance_variable_set(:@messages, [])
         end
+
+        # Option 2: Force RubyLLM to create a new chat instance at the global level
+        # This ensures any shared state is reset
+        model_info = extract_model_parts(@model)
+        RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
+
+        # Option 3: Create a completely fresh chat instance for this adapter
+        @chat = nil  # First nil it to help garbage collection
+        @chat = RubyLLM.chat(model: model_info[:model])
+
+        # Option 4: Call official clear_history method if it exists
+        if @chat.respond_to?(:clear_history)
+          @chat.clear_history
+        end
+
+        # Option 5: If chat has messages, force set it to empty again as a final check
+        if @chat.instance_variable_defined?(:@messages) && !@chat.instance_variable_get(:@messages).empty?
+          @chat.instance_variable_set(:@messages, [])
+        end
+
+        # Final verification
+        new_messages = @chat.instance_variable_defined?(:@messages) ? @chat.instance_variable_get(:@messages) : []
+
+        return "Chat context successfully cleared."
+      rescue => e
+        return "Error clearing chat context: #{e.message}"
       end
     end
 
@@ -149,39 +119,6 @@ module AIA
     end
 
     private
-
-    # Generate an array of MCP tools, filtered and formatted for the correct provider.
-    # @param config [OpenStruct] the config object containing mcp_servers, allowed_tools, and model
-    # @return [Array<Hash>, nil] the filtered and formatted MCP tools or nil if no tools
-    def generate_mcp_tools(provider)
-      return [nil, nil] unless AIA.config.mcp_servers && !AIA.config.mcp_servers.empty?
-
-      debug_me('=== generate_mcp_tools ===')
-
-      # AIA.config.mcp_servers is now a path to the combined JSON file
-      mcp_client     = MCPClient.create_client(server_definition_file: AIA.config.mcp_servers)
-      debug_me
-      all_tools      = mcp_client.list_tools(cache: false).map(&:name)
-      debug_me
-      allowed        = AIA.config.allowed_tools
-      debug_me
-      filtered_tools = allowed.nil? ? all_tools : all_tools & allowed
-      debug_me{[ :filtered_tools ]}
-
-      debug_me{[ :provider ]}
-
-      mcp_tools = if :anthropic == provider.to_sym
-                    debug_me
-                    mcp_client.to_anthropic_tools(tool_names: filtered_tools)
-                  else
-                    debug_me
-                    mcp_client.to_openai_tools(tool_names: filtered_tools)
-                  end
-      [mcp_client, mcp_tools]
-    rescue => e
-      STDERR.puts "ERROR: Failed to generate MCP tools: #{e.message}"
-      nil
-    end
 
     def extract_model_parts(model_string)
       parts = model_string.split('/')

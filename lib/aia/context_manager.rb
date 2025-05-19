@@ -57,7 +57,7 @@ module AIA
           RubyLLM.chat.clear_history
         end
       rescue => e
-        AIA.debug_me(tag: '== context_manager clear_context error =='){[ :e, e.message, e.backtrace ]}
+        SYSERR.puts "ERROR: context_manager clear_context error #{e.message}"
       end
     end
 
