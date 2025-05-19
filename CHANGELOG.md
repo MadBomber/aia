@@ -1,11 +1,11 @@
 # Changelog
 ## [Unreleased]
+## Released
 
-### [0.9.2] 2025-05-WIP
+### [0.9.2] 2025-05-18
 - removing the MCP experiment
 - adding support for RubyLLM::Tool usage in place of the MCP stuff
-
-## Released
+- updated prompt_manager to v0.5.4 which fixed shell integration problem
 
 ### [0.9.1] 2025-05-16
 - rethink MCP approach in favor of just RubyLLM::Tool
