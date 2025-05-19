@@ -7,7 +7,6 @@
 require 'ruby_llm'
 
 require 'prompt_manager'
-require 'mcp_client'
 
 require 'debug_me'
 include DebugMe
