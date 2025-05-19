@@ -11,23 +11,14 @@
     [/______\]  /               * embedded directives * shell integration
    / \__AI__/ \/                * embedded Ruby       * history management
   /    /__\                     * interactive chat    * prompt workflows
- (\   /____\                    # Experimental support of MCP servers via ruby_llm extension
+ (\   /____\                    # supports RubyLLM::Tool integration
 ```
 
 AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts. It utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection.
 
-**Most Recent Change**: Refer to the [Changelog](CHANGELOG.md)
-- Replaced `ai_client` with `ruby_llm` gem
-- Added --adapter w/default ruby_llm in case there is a need to consider something else
-- //include directive now supports web URLs
-- //webpage insert web URL content as markdown into context
-
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
-**Notable Recent Changes:**
-- **RubyLLM Integration:** AIA now uses the `ruby_llm` gem as a replacement to ai_client. The option `--adapter ruby_llm` is the default.  The `--adapter` option is there in case in the future an alternative to ruby_llm may be needed. I replacing my on gem ai_client with the ruby_llm gem? Because its better, newer, elegant and will easily support some of the new features I have planned for AIA.
-
-- **MCP Server Support:** AIA now supports Model Context Protocol (MCP) servers through an extension to the ruby_llm gem. This experimental feature allows AIA to interact with various external tools and services through MCP servers using the --mcp and --allowed_tools CLI options.
+**MCRubyLLM::Tool Support:** AIA now supports the integration of Tools for those models that support function callbacks.  See the --tools, --allowed_tools and --rejected_tools options.  Yes, functional callbacks provided for dynamic prompt just like the AIA directives so why have both?  Well, AIA is older that functional callbacks.  Directives or legacy but more than that not all models support functional callbacks.  That means the old directives capability, shell and erb integration are still viable ways to provided dynamic extra content to your prompts.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -70,13 +61,15 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
   - [Development](#development)
   - [Contributing](#contributing)
   - [Roadmap](#roadmap)
-  - [Model Context Protocol (MCP) Support](#model-context-protocol-mcp-support)
-    - [What is MCP?](#what-is-mcp)
-    - [Using MCP Servers with AIA](#using-mcp-servers-with-aia)
-    - [Focusing on Specific Tools with --allowed_tools](#focusing-on-specific-tools-with---allowed_tools)
-    - [How It Works](#how-it-works)
-    - [Current Limitations](#current-limitations)
-    - [Sounds like directives](#sounds-like-directives)
+  - [RubyLLM::Tool Support](#rubyllmtool-support)
+    - [What Are RubyLLM Tools?](#what-are-rubyllm-tools)
+    - [How to Use Tools](#how-to-use-tools)
+      - [`--tools` Option](#--tools-option)
+    - [Filtering the tool paths](#filtering-the-tool-paths)
+      - [`--at`, `--allowed_tools` Option](#--at---allowed_tools-option)
+      - [`--rt`, `--rejected_tools` Option](#--rt---rejected_tools-option)
+    - [Creating Your Own Tools](#creating-your-own-tools)
+  - [MCP Supported](#mcp-supported)
   - [License](#license)
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
@@ -104,7 +97,6 @@ The following table provides a comprehensive list of configuration options, thei
 | log_file             | -l, --log_file | ~/.prompts/_prompts.log  | AIA_LOG_FILE              |
 | markdown             | --md, --markdown | true                   | AIA_MARKDOWN              |
 | max_tokens           | --max_tokens | 2048                      | AIA_MAX_TOKENS            |
-| mcp_servers          | --mcp       | []                          | AIA_MCP_SERVERS           |
 | model                | -m, --model | gpt-4o-mini                 | AIA_MODEL                 |
 | next                 | -n, --next  | nil                         | AIA_NEXT                  |
 | out_file             | -o, --out_file | temp.md                  | AIA_OUT_FILE              |
@@ -124,8 +116,11 @@ The following table provides a comprehensive list of configuration options, thei
 | system_prompt        | --system_prompt |                         | AIA_SYSTEM_PROMPT         |
 | temperature          | -t, --temperature | 0.7                   | AIA_TEMPERATURE           |
 | terse                | --terse     | false                       | AIA_TERSE                 |
+| tool_paths           | --tools     | []                          | AIA_TOOL_PATHS            |
+| allowed_tools        | --at --allowed_tools  | nil               | AIA_ALLOWED_TOOLS         |
+| rejected_tools       | --rt --rejected_tools | nil               | AIA_REJECTED_TOOLS         |
 | top_p                | --top_p     | 1.0                         | AIA_TOP_P                 |
-| transcription_model  | --tm, --transcription_model | whisper-1    | AIA_TRANSCRIPTION_MODEL   |
+| transcription_model  | --tm, --transcription_model | whisper-1   | AIA_TRANSCRIPTION_MODEL   |
 | verbose              | -v, --verbose | false                     | AIA_VERBOSE               |
 | voice                | --voice     | alloy                       | AIA_VOICE                 |
 
@@ -679,56 +674,83 @@ I'm not happy with the way where some command line options for external command 
 - continue integration of the ruby_llm gem
 - support for Model Context Protocol
 
-## Model Context Protocol (MCP) Support
+## RubyLLM::Tool Support
 
-AIA now includes experimental support for Model Context Protocol (MCP) servers through an extension to the `ruby_llm` gem, which utilizes the `ruby-mcp-client` gem for communication with MCP servers.
+AIA supports function calling capabilities through the `RubyLLM::Tool` framework, enabling LLMs to execute custom functions during a chat session.
 
-### What is MCP?
+### What Are RubyLLM Tools?
 
-Model Context Protocol (MCP) is a standardized way for AI models to interact with external tools and services. It allows AI assistants to perform actions beyond mere text generation, such as searching the web, accessing databases, or interacting with APIs.
+Tools (or functions) allow LLMs to perform actions beyond generating text, such as:
 
-### Using MCP Servers with AIA
+- Retrieving real-time information
+- Executing system commands
+- Accessing external APIs
+- Performing calculations
 
-To use MCP with AIA, you can specify one or more MCP servers using the `--mcp` CLI option:
+Check out the [examples/tools](examples/tools) directory which contains several ready-to-use tool implementations you can use as references.
+
+### How to Use Tools
+
+AIA provides three CLI options to manage function calling:
+
+#### `--tools` Option
+
+Specifies where to find tool implementations:
 
 ```bash
-aia --chat --mcp server1,server2
+# Load tools from multiple sources
+--tools /path/to/tools/directory,other/tools/dir,my_tool.rb
+
+# Or use multiple --tools flags
+--tools my_first_tool.rb --tools /tool_repo/tools
 ```
 
-This will connect your AIA session to the specified MCP servers, allowing the AI model to access tools provided by those servers.
+Each path can be:
 
-### Focusing on Specific Tools with --allowed_tools
+- A Ruby file implementing a `RubyLLM::Tool` subclass
+- A directory containing tool implementations (all Ruby files in that directory will be loaded)
 
-If you want to limit which MCP tools are available to the AI model during your session, you can use the `--allowed_tools` option:
+Supporting files for tools can be placed in the same directory or subdirectories.
+
+### Filtering the tool paths
+
+The --tools option must have exact relative or absolute paths to the tool files to be used by AIA for function callbacks.  If you are specifying directories you may find yourself needing filter the entire set of tools to either allow some or reject others based upon some indicator in their file name.  The following two options allow you to specify multiple sub-strings to match the tolls paths against.  For example you might be comparing one version of a tool against another.  Their filenames could have version prefixes like tool_v1.rb and tool_v2.rb  Using the allowed and rejected filters you can choose one of the other when using an entire directory full of tools.
+
+#### `--at`, `--allowed_tools` Option
+
+Filters which tools to make available when loading from directories:
 
 ```bash
-aia --chat --mcp server1 --allowed_tools tool1,tool2,tool3
+# Only allow tools with 'test' in their filename
+--tools my_tools_directory --allowed_tools test
 ```
 
-This restricts the AI model to only use the specified tools, which can be helpful for:
+This is useful when you have many tools but only want to use specific ones in a session.
 
-- Focusing the AI on a specific task
-- Preventing the use of unnecessary or potentially harmful tools
-- Reducing the cognitive load on the AI by limiting available options
+#### `--rt`, `--rejected_tools` Option
 
-### How It Works
+Excludes specific tools:
 
-Behind the scenes, AIA leverages a new `with_mcp` method in `RubyLLM::Chat` to set up the MCP tools for chat sessions. This method processes the hash-structured MCP tool definitions and makes them available for the AI to use during the conversation.
+```bash
+# Exclude tools with '_v1' in their filename
+--tools my_tools_directory --rejected_tools _v1
+```
 
-When you specify `--mcp` and optionally `--allowed_tools`, AIA configures the underlying `ruby_llm` adapter to connect to the appropriate MCP servers and expose only the tools you've explicitly allowed.
+Ideal for excluding older versions or temporarily disabling specific tools.
 
-### Current Limitations
+### Creating Your Own Tools
 
-As this is an experimental feature:
+To create a custom tool:
 
-- Not all AI models support MCP tools
-- The available tools may vary depending on the MCP server
-- Tool behavior may change as the MCP specification evolves
+1. Create a Ruby file that subclasses `RubyLLM::Tool`
+2. Define the tool's parameters and functionality
+3. Use the `--tools` option to load it in your AIA session
 
-### Sounds like directives
+For implementation details, refer to the [examples in the repository](examples/tools) or the RubyLLM documentation.
 
-Anthropic's MCP standard came months after the aia appeared with its inherent support of dynamic prompt context enhancements via directives, shell integration and ERB support.  Yes you can argue that if you have a working MCP client and access to appropriate MCP servers then the dynamic prompt context enhancements via directives, shell integration and ERB support are superfluous.  I don't agree with that argument.  I think the dynamic prompt context enhancements via directives, shell integration and ERB support are powerful tools in and of themselves.  I think they are a better way to do things.
+## MCP Supported
 
+Abandon all hope of seeing an MCP client added to AIA.  Maybe sometime in the future there will be a new gem "ruby_llm-mcp" that implements an MCP client as a native RubyLLM::Tool subclass.  If that every happens you would use it the same way you use any other RubyLLM::Tool subclass which AIA now supports.
 
 ## License
 
