@@ -78,40 +78,39 @@ module AIA
     # Clear the chat context/history
     # Needed for the //clear directive
     def clear_context
-        begin
-          # Option 1: Directly clear the messages array in the current chat object
-          if @chat.instance_variable_defined?(:@messages)
-            old_messages = @chat.instance_variable_get(:@messages)
-            # Force a completely empty array, not just attempting to clear it
-            @chat.instance_variable_set(:@messages, [])
-          end
-
-          # Option 2: Force RubyLLM to create a new chat instance at the global level
-          # This ensures any shared state is reset
-          model_info = extract_model_parts(@model)
-          RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
-
-          # Option 3: Create a completely fresh chat instance for this adapter
-          @chat = nil  # First nil it to help garbage collection
-          @chat = RubyLLM.chat(model: model_info[:model])
-
-          # Option 4: Call official clear_history method if it exists
-          if @chat.respond_to?(:clear_history)
-            @chat.clear_history
-          end
-
-          # Option 5: If chat has messages, force set it to empty again as a final check
-          if @chat.instance_variable_defined?(:@messages) && !@chat.instance_variable_get(:@messages).empty?
-            @chat.instance_variable_set(:@messages, [])
-          end
-
-          # Final verification
-          new_messages = @chat.instance_variable_defined?(:@messages) ? @chat.instance_variable_get(:@messages) : []
-
-          return "Chat context successfully cleared."
-        rescue => e
-          return "Error clearing chat context: #{e.message}"
+      begin
+        # Option 1: Directly clear the messages array in the current chat object
+        if @chat.instance_variable_defined?(:@messages)
+          old_messages = @chat.instance_variable_get(:@messages)
+          # Force a completely empty array, not just attempting to clear it
+          @chat.instance_variable_set(:@messages, [])
         end
+
+        # Option 2: Force RubyLLM to create a new chat instance at the global level
+        # This ensures any shared state is reset
+        model_info = extract_model_parts(@model)
+        RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
+
+        # Option 3: Create a completely fresh chat instance for this adapter
+        @chat = nil  # First nil it to help garbage collection
+        @chat = RubyLLM.chat(model: model_info[:model])
+
+        # Option 4: Call official clear_history method if it exists
+        if @chat.respond_to?(:clear_history)
+          @chat.clear_history
+        end
+
+        # Option 5: If chat has messages, force set it to empty again as a final check
+        if @chat.instance_variable_defined?(:@messages) && !@chat.instance_variable_get(:@messages).empty?
+          @chat.instance_variable_set(:@messages, [])
+        end
+
+        # Final verification
+        new_messages = @chat.instance_variable_defined?(:@messages) ? @chat.instance_variable_get(:@messages) : []
+
+        return "Chat context successfully cleared."
+      rescue => e
+        return "Error clearing chat context: #{e.message}"
       end
     end
 

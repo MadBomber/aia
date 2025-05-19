@@ -184,8 +184,8 @@ module AIA
         @chat_prompt = PromptManager::Prompt.new(
           id: @chat_prompt_id,
           directives_processor: @directive_processor,
-          erb_flag:             AIA.config.erb,
-          envar_flag:           AIA.config.shell,
+          erb_flag:             true,
+          envar_flag:           true,
           external_binding:     binding,
         )
 

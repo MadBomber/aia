@@ -99,6 +99,8 @@ module AIA
 
       tailor_the_config(config)
       load_tools(config)
+
+      config
     end
 
 
