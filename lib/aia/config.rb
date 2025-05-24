@@ -7,6 +7,7 @@
 
 require 'yaml'
 require 'toml-rb'
+require 'date'
 require 'erb'
 require 'optparse'
 require 'json'
@@ -52,7 +53,6 @@ module AIA
       pipeline: [],
 
       # PromptManager::Prompt Tailoring
-
       parameter_regex: PromptManager::Prompt.parameter_regex.to_s,
 
       # LLM tuning parameters
@@ -64,14 +64,17 @@ module AIA
       image_size:           '1024x1024',
       image_quality:        'standard',
       image_style:          'vivid',
+
       model:                'gpt-4o-mini',
       speech_model:         'tts-1',
       transcription_model:  'whisper-1',
+      embedding_model:      'text-embedding-ada-002',
+      image_model:          'dall-e-3',
+      refresh:              0, # days between refreshes of model info; 0 means every startup
+      last_refresh:         Date.today - 1,
+
       voice:                'alloy',
       adapter:              'ruby_llm', # 'ruby_llm' or ???
-
-      # Embedding parameters
-      embedding_model: 'text-embedding-ada-002',
 
       # Default speak command
       speak_command: 'afplay', # 'afplay' for audio files
@@ -98,7 +101,12 @@ module AIA
                       )
 
       tailor_the_config(config)
+      load_libraries(config)
       load_tools(config)
+
+      if config.dump_file
+        dump_config(config, config.dump_file)
+      end
 
       config
     end
@@ -180,11 +188,6 @@ module AIA
         and_exit = true
       end
 
-      if config.dump_file
-        dump_config(config, config.dump_file)
-        and_exit = true
-      end
-
       exit if and_exit
 
       # Only require a prompt_id if we're not in chat mode, not using fuzzy search, and no context files
@@ -202,6 +205,26 @@ module AIA
       if config.parameter_regex
         PromptManager::Prompt.parameter_regex = Regexp.new(config.parameter_regex)
       end
+
+      config
+    end
+
+
+    def self.load_libraries(config)
+      return if config.require_libs.empty?
+
+      exit_on_error = false
+
+      config.require_libs.each do |library|
+        begin
+          require(library)
+        rescue => e
+          STDERR.puts "Error loading library '#{library}' #{e.message}"
+          exit_on_error = true
+        end
+      end
+
+      exit(1) if exit_on_error
 
       config
     end
@@ -230,7 +253,7 @@ module AIA
           absolute_tool_path = File.expand_path(tool_path)
           require(absolute_tool_path)
         rescue => e
-          SYSERR.puts "Error loading tool '#{tool_path}' #{e.message}"
+          STDERR.puts "Error loading tool '#{tool_path}' #{e.message}"
           exit_on_error = true
         end
       end
@@ -272,253 +295,264 @@ module AIA
     def self.cli_options
       config = OpenStruct.new
 
-      opt_parser = OptionParser.new do |opts|
-        opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n" +
-                     "       aia --chat [PROMPT_ID] [CONTEXT_FILE]*\n" +
-                     "       aia --chat [CONTEXT_FILE]*"
+      begin
+        opt_parser = OptionParser.new do |opts|
+          opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n" +
+                      "       aia --chat [PROMPT_ID] [CONTEXT_FILE]*\n" +
+                      "       aia --chat [CONTEXT_FILE]*"
 
-        opts.on("--chat", "Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.") do
-          config.chat = true
-          puts "Debug: Setting chat mode to true" if config.debug
-        end
-
-        opts.on("--adapter ADAPTER", "Interface that adapts AIA to the LLM") do |adapter|
-          adapter.downcase!
-          valid_adapters = %w[ ruby_llm ]  # NOTE: Add additional adapters here when needed
-          if valid_adapters.include? adapter
-            config.adapter = adapter
-          else
-            STDERR.puts "ERROR: Invalid adapter #{adapter} must be one of these: #{valid_adapters.join(', ')}"
-            exit 1
-          end
-        end
-
-
-        opts.on("-m MODEL", "--model MODEL", "Name of the LLM model to use") do |model|
-          config.model = model
-        end
-
-        opts.on("--terse", "Adds a special instruction to the prompt asking the AI to keep responses short and to the point") do
-          config.terse = true
-        end
-
-        opts.on("-c", "--config_file FILE", "Load config file") do |file|
-          if File.exist?(file)
-            ext = File.extname(file).downcase
-            content = File.read(file)
-
-            # Process ERB if filename ends with .erb
-            if file.end_with?('.erb')
-              content = ERB.new(content).result
-              file = file.chomp('.erb')
-              File.write(file, content)
-            end
-
-            file_config = case ext
-                          when '.yml', '.yaml'
-                            YAML.safe_load(content, permitted_classes: [Symbol], symbolize_names: true)
-                          when '.toml'
-                            TomlRB.parse(content)
-                          else
-                            raise "Unsupported config file format: #{ext}"
-                          end
-
-            file_config.each do |key, value|
-              config[key.to_sym] = value
-            end
-          else
-            raise "Config file not found: #{file}"
-          end
-        end
-
-        opts.on("-p", "--prompts_dir DIR", "Directory containing prompt files") do |dir|
-          config.prompts_dir = dir
-        end
-
-        opts.on("--roles_prefix PREFIX", "Subdirectory name for role files (default: roles)") do |prefix|
-          config.roles_prefix = prefix
-        end
-
-        opts.on("-r", "--role ROLE_ID", "Role ID to prepend to prompt") do |role|
-          config.role = role
-        end
-
-        opts.on('--regex pattern', 'Regex pattern to extract parameters from prompt text') do |pattern|
-          config.parameter_regex = pattern
-        end
-
-        opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
-          config.out_file = file ? File.expand_path(file, Dir.pwd) : 'temp.md'
-        end
-
-        opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|
-          config.append = append
-        end
-
-        opts.on("-l", "--[no-]log_file [FILE]", "Log file") do |file|
-          config.log_file = file
-        end
-
-        opts.on("--md", "--[no-]markdown", "Format with Markdown") do |md|
-          config.markdown = md
-        end
-
-        opts.on("-n", "--next PROMPT_ID", "Next prompt to process") do |next_prompt|
-          config.next = next_prompt
-        end
-
-        opts.on("--pipeline PROMPTS", "Pipeline of prompts to process") do |pipeline|
-          config.pipeline = pipeline.split(',')
-        end
-
-        opts.on("-f", "--fuzzy", "Use fuzzy matching for prompt search") do
-          unless system("which fzf > /dev/null 2>&1")
-            STDERR.puts "Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option."
-            exit 1
-          end
-          config.fuzzy = true
-        end
-
-        opts.on("-d", "--debug", "Enable debug output") do
-          config.debug = $DEBUG_ME = true
-        end
-
-        opts.on("--no-debug", "Disable debug output") do
-          config.debug = $DEBUG_ME = false
-        end
-
-        opts.on("-v", "--verbose", "Be verbose") do
-          config.verbose = true
-        end
-
-        opts.on("--speak", "Simple implementation. Uses the speech model to convert text to audio, then plays the audio. Fun with --chat. Supports configuration of speech model and voice.") do
-          config.speak = true
-        end
-
-        opts.on("--voice VOICE", "Voice to use for speech") do |voice|
-          config.voice = voice
-        end
-
-        opts.on("--sm", "--speech_model MODEL", "Speech model to use") do |model|
-          config.speech_model = model
-        end
-
-        opts.on("--tm", "--transcription_model MODEL", "Transcription model to use") do |model|
-          config.transcription_model = model
-        end
-
-        opts.on("--is", "--image_size SIZE", "Image size for image generation") do |size|
-          config.image_size = size
-        end
-
-        opts.on("--iq", "--image_quality QUALITY", "Image quality for image generation") do |quality|
-          config.image_quality = quality
-        end
-
-        opts.on("--style", "--image_style STYLE", "Style for image generation") do |style|
-          config.image_style = style
-        end
-
-        opts.on("--system_prompt PROMPT_ID", "System prompt ID to use for chat sessions") do |prompt_id|
-          config.system_prompt = prompt_id
-        end
-
-        # AI model parameters
-        opts.on("-t", "--temperature TEMP", Float, "Temperature for text generation") do |temp|
-          config.temperature = temp
-        end
-
-        opts.on("--max_tokens TOKENS", Integer, "Maximum tokens for text generation") do |tokens|
-          config.max_tokens = tokens
-        end
-
-        opts.on("--top_p VALUE", Float, "Top-p sampling value") do |value|
-          config.top_p = value
-        end
-
-        opts.on("--frequency_penalty VALUE", Float, "Frequency penalty") do |value|
-          config.frequency_penalty = value
-        end
-
-        opts.on("--presence_penalty VALUE", Float, "Presence penalty") do |value|
-          config.presence_penalty = value
-        end
-
-        opts.on("--dump FILE", "Dump config to file") do |file|
-          config.dump_file = file
-        end
-
-        opts.on("--completion SHELL", "Show completion script for bash|zsh|fish - default is nil") do |shell|
-          config.completion = shell
-        end
-
-        opts.on("--version", "Show version") do
-          puts AIA::VERSION
-          exit
-        end
-
-        opts.on("-h", "--help", "Prints this help") do
-          puts opts
-          exit
-        end
-
-        opts.on("--rq LIBS", "Ruby libraries to require for Ruby directive") do |libs|
-          config.require_libs = libs.split(',')
-        end
-
-        opts.on("--tools PATH_LIST", "Add a tool(s)") do |a_path_list|
-          config.tool_paths ||= []
-
-          if a_path_list.empty?
-            STDERR.puts "No list of paths for --tools option"
-            exit 1
-          else
-            paths = a_path_list.split(',').map(&:strip).uniq
+          opts.on("--chat", "Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.") do
+            config.chat = true
+            puts "Debug: Setting chat mode to true" if config.debug
           end
 
-          paths.each do |a_path|
-            if File.exist?(a_path)
-              if File.file?(a_path)
-                if  '.rb' == File.extname(a_path)
-                  config.tool_paths << a_path
-                else
-                  STDERR.puts "file should have *.rb extension: #{a_path}"
-                  exit 1
-                end
-              elsif File.directory?(a_path)
-                rb_files = Dir.glob(File.join(a_path, '**', '*.rb'))
-                config.tool_paths += rb_files
-              end
+          opts.on("--adapter ADAPTER", "Interface that adapts AIA to the LLM") do |adapter|
+            adapter.downcase!
+            valid_adapters = %w[ ruby_llm ]  # NOTE: Add additional adapters here when needed
+            if valid_adapters.include? adapter
+              config.adapter = adapter
             else
-              STDERR.puts "file/dir path is not valid: #{a_path}"
+              STDERR.puts "ERROR: Invalid adapter #{adapter} must be one of these: #{valid_adapters.join(', ')}"
               exit 1
             end
           end
 
-          config.tool_paths.uniq!
-        end
+          opts.on("-m MODEL", "--model MODEL", "Name of the LLM model to use") do |model|
+            config.model = model
+          end
 
-        opts.on("--at", "--allowed_tools TOOLS_LIST", "Allow only these tools to be used") do |tools_list|
-          config.allowed_tools ||= []
-          if tools_list.empty?
-            STDERR.puts "No list of tool names provided for --allowed_tools option"
-            exit 1
-          else
-            config.allowed_tools += tools_list.split(',').map(&:strip)
-            config.allowed_tools.uniq!
+          opts.on("--terse", "Adds a special instruction to the prompt asking the AI to keep responses short and to the point") do
+            config.terse = true
+          end
+
+          opts.on("-c", "--config_file FILE", "Load config file") do |file|
+            if File.exist?(file)
+              ext = File.extname(file).downcase
+              content = File.read(file)
+
+              # Process ERB if filename ends with .erb
+              if file.end_with?('.erb')
+                content = ERB.new(content).result
+                file = file.chomp('.erb')
+                File.write(file, content)
+              end
+
+              file_config = case ext
+                            when '.yml', '.yaml'
+                              YAML.safe_load(content, permitted_classes: [Symbol], symbolize_names: true)
+                            when '.toml'
+                              TomlRB.parse(content)
+                            else
+                              raise "Unsupported config file format: #{ext}"
+                            end
+
+              file_config.each do |key, value|
+                config[key.to_sym] = value
+              end
+            else
+              raise "Config file not found: #{file}"
+            end
+          end
+
+          opts.on("-p", "--prompts_dir DIR", "Directory containing prompt files") do |dir|
+            config.prompts_dir = dir
+          end
+
+          opts.on("--roles_prefix PREFIX", "Subdirectory name for role files (default: roles)") do |prefix|
+            config.roles_prefix = prefix
+          end
+
+          opts.on("-r", "--role ROLE_ID", "Role ID to prepend to prompt") do |role|
+            config.role = role
+          end
+
+          opts.on("--refresh DAYS", Integer, "Refresh models database interval in days") do |days|
+            config.refresh = days || 0
+          end
+
+          opts.on('--regex pattern', 'Regex pattern to extract parameters from prompt text') do |pattern|
+            config.parameter_regex = pattern
+          end
+
+          opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
+            config.out_file = file ? File.expand_path(file, Dir.pwd) : 'temp.md'
+          end
+
+          opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|
+            config.append = append
+          end
+
+          opts.on("-l", "--[no-]log_file [FILE]", "Log file") do |file|
+            config.log_file = file
+          end
+
+          opts.on("--md", "--[no-]markdown", "Format with Markdown") do |md|
+            config.markdown = md
+          end
+
+          opts.on("-n", "--next PROMPT_ID", "Next prompt to process") do |next_prompt|
+            config.next = next_prompt
+          end
+
+          opts.on("--pipeline PROMPTS", "Pipeline of prompts to process") do |pipeline|
+            config.pipeline = pipeline.split(',')
+          end
+
+          opts.on("-f", "--fuzzy", "Use fuzzy matching for prompt search") do
+            unless system("which fzf > /dev/null 2>&1")
+              STDERR.puts "Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option."
+              exit 1
+            end
+            config.fuzzy = true
+          end
+
+          opts.on("-d", "--debug", "Enable debug output") do
+            config.debug = $DEBUG_ME = true
+          end
+
+          opts.on("--no-debug", "Disable debug output") do
+            config.debug = $DEBUG_ME = false
+          end
+
+          opts.on("-v", "--verbose", "Be verbose") do
+            config.verbose = true
+          end
+
+          opts.on("--speak", "Simple implementation. Uses the speech model to convert text to audio, then plays the audio. Fun with --chat. Supports configuration of speech model and voice.") do
+            config.speak = true
+          end
+
+          opts.on("--voice VOICE", "Voice to use for speech") do |voice|
+            config.voice = voice
+          end
+
+          opts.on("--sm", "--speech_model MODEL", "Speech model to use") do |model|
+            config.speech_model = model
+          end
+
+          opts.on("--tm", "--transcription_model MODEL", "Transcription model to use") do |model|
+            config.transcription_model = model
+          end
+
+          opts.on("--is", "--image_size SIZE", "Image size for image generation") do |size|
+            config.image_size = size
+          end
+
+          opts.on("--iq", "--image_quality QUALITY", "Image quality for image generation") do |quality|
+            config.image_quality = quality
+          end
+
+          opts.on("--style", "--image_style STYLE", "Style for image generation") do |style|
+            config.image_style = style
+          end
+
+          opts.on("--system_prompt PROMPT_ID", "System prompt ID to use for chat sessions") do |prompt_id|
+            config.system_prompt = prompt_id
+          end
+
+          # AI model parameters
+          opts.on("-t", "--temperature TEMP", Float, "Temperature for text generation") do |temp|
+            config.temperature = temp
+          end
+
+          opts.on("--max_tokens TOKENS", Integer, "Maximum tokens for text generation") do |tokens|
+            config.max_tokens = tokens
+          end
+
+          opts.on("--top_p VALUE", Float, "Top-p sampling value") do |value|
+            config.top_p = value
+          end
+
+          opts.on("--frequency_penalty VALUE", Float, "Frequency penalty") do |value|
+            config.frequency_penalty = value
+          end
+
+          opts.on("--presence_penalty VALUE", Float, "Presence penalty") do |value|
+            config.presence_penalty = value
+          end
+
+          opts.on("--dump FILE", "Dump config to file") do |file|
+            config.dump_file = file
+          end
+
+          opts.on("--completion SHELL", "Show completion script for bash|zsh|fish - default is nil") do |shell|
+            config.completion = shell
+          end
+
+          opts.on("--version", "Show version") do
+            puts AIA::VERSION
+            exit
+          end
+
+          opts.on("-h", "--help", "Prints this help") do
+            puts opts
+            exit
+          end
+
+          opts.on("--rq LIBS", "--require LIBS", "Ruby libraries to require for Ruby directive") do |libs|
+            config.require_libs ||= []
+            config.require_libs += libs.split(',')
+          end
+
+          opts.on("--tools PATH_LIST", "Add a tool(s)") do |a_path_list|
+            config.tool_paths ||= []
+
+            if a_path_list.empty?
+              STDERR.puts "No list of paths for --tools option"
+              exit 1
+            else
+              paths = a_path_list.split(',').map(&:strip).uniq
+            end
+
+            paths.each do |a_path|
+              if File.exist?(a_path)
+                if File.file?(a_path)
+                  if  '.rb' == File.extname(a_path)
+                    config.tool_paths << a_path
+                  else
+                    STDERR.puts "file should have *.rb extension: #{a_path}"
+                    exit 1
+                  end
+                elsif File.directory?(a_path)
+                  rb_files = Dir.glob(File.join(a_path, '**', '*.rb'))
+                  config.tool_paths += rb_files
+                end
+              else
+                STDERR.puts "file/dir path is not valid: #{a_path}"
+                exit 1
+              end
+            end
+
+            config.tool_paths.uniq!
+          end
+
+          opts.on("--at", "--allowed_tools TOOLS_LIST", "Allow only these tools to be used") do |tools_list|
+            config.allowed_tools ||= []
+            if tools_list.empty?
+              STDERR.puts "No list of tool names provided for --allowed_tools option"
+              exit 1
+            else
+              config.allowed_tools += tools_list.split(',').map(&:strip)
+              config.allowed_tools.uniq!
+            end
+          end
+
+          opts.on("--rt", "--rejected_tools TOOLS_LIST", "Reject these tools") do |tools_list|
+            config.rejected_tools ||= []
+            if tools_list.empty?
+              STDERR.puts "No list of tool names provided for --rejected_tools option"
+              exit 1
+            else
+              config.rejected_tools += tools_list.split(',').map(&:strip)
+              config.rejected_tools.uniq!
+            end
           end
         end
-
-        opts.on("--rt", "--rejected_tools TOOLS_LIST", "Reject these tools") do |tools_list|
-          config.rejected_tools ||= []
-          if tools_list.empty?
-            STDERR.puts "No list of tool names provided for --rejected_tools option"
-            exit 1
-          else
-            config.rejected_tools += tools_list.split(',').map(&:strip)
-            config.rejected_tools.uniq!
-          end
-        end
+        opt_parser.parse!
+      rescue => e
+        STDERR.puts "ERROR: #{e.message}"
+        STDERR.puts "       use --help for usage report"
+        exit 1
       end
 
       args = ARGV.dup
@@ -566,6 +600,12 @@ module AIA
         STDERR.puts "WARNING:Config file not found: #{file}"
       end
 
+      if config.last_refresh
+        if config.last_refresh.is_a? String
+          config.last_refresh = Date.strptime(config.last_refresh, '%Y-%m-%d')
+        end
+      end
+
       config
     end
 
@@ -584,10 +624,10 @@ module AIA
     def self.dump_config(config, file)
       # Implementation for config dump
       ext = File.extname(file).downcase
-      config_hash = config.to_h
 
-      # Remove non-serializable objects
-      config_hash.delete_if { |_, v| !v.nil? && !v.is_a?(String) && !v.is_a?(Numeric) && !v.is_a?(TrueClass) && !v.is_a?(FalseClass) && !v.is_a?(Array) && !v.is_a?(Hash) }
+      config.last_refresh = config.last_refresh.to_s if config.last_refresh.is_a? Date
+
+      config_hash = config.to_h
 
       # Remove dump_file key to prevent automatic exit on next load
       config_hash.delete(:dump_file)

@@ -2,48 +2,135 @@
 
 require 'ruby_llm'
 
+class RubyLLM::Modalities
+  def supports?(query_mode)
+    parts = query_mode
+              .to_s
+              .downcase
+              .split(/2|-to-| to |_to_/)
+              .map(&:strip)
+
+    if 2 == parts.size
+      input.include?(parts[0]) && output.include?(parts[1])
+    elsif 1 == parts.size
+      input.include?(parts[0]) || output.include?(parts[0])
+    else
+      false
+    end
+  end
+end
+
 module AIA
   class RubyLLMAdapter
     attr_reader :tools
 
     def initialize
-      @model     = AIA.config.model
-      model_info = extract_model_parts(@model)
+      @provider, @model = extract_model_parts.values
 
-      # Configure RubyLLM with available API keys
+      configure_rubyllm
+      refresh_local_model_registry
+      setup_chat_with_tools
+    end
+
+    def configure_rubyllm
+      # TODO: Add some of these configuration items to AIA.config
       RubyLLM.configure do |config|
-        config.openai_api_key    = ENV.fetch('OPENAI_API_KEY', nil)
-        config.anthropic_api_key = ENV.fetch('ANTHROPIC_API_KEY', nil)
-        config.gemini_api_key    = ENV.fetch('GEMINI_API_KEY', nil)
-        config.deepseek_api_key  = ENV.fetch('DEEPSEEK_API_KEY', nil)
+        config.openai_api_key         = ENV.fetch('OPENAI_API_KEY', nil)
+        config.openai_organization_id = ENV.fetch('OPENAI_ORGANIZATION_ID', nil)
+        config.openai_project_id      = ENV.fetch('OPENAI_PROJECT_ID', nil)
 
-        # Bedrock configuration
-        config.bedrock_api_key       = ENV.fetch('AWS_ACCESS_KEY_ID', nil)
-        config.bedrock_secret_key    = ENV.fetch('AWS_SECRET_ACCESS_KEY', nil)
-        config.bedrock_region        = ENV.fetch('AWS_REGION', nil)
-        config.bedrock_session_token = ENV.fetch('AWS_SESSION_TOKEN', nil)
+        config.anthropic_api_key  = ENV.fetch('ANTHROPIC_API_KEY', nil)
+        config.gemini_api_key     = ENV.fetch('GEMINI_API_KEY', nil)
+        config.deepseek_api_key   = ENV.fetch('DEEPSEEK_API_KEY', nil)
+        config.openrouter_api_key = ENV.fetch('OPENROUTER_API_KEY', nil)
+
+        config.bedrock_api_key       = ENV.fetch('BEDROCK_ACCESS_KEY_ID', nil)
+        config.bedrock_secret_key    = ENV.fetch('BEDROCK_SECRET_ACCESS_KEY', nil)
+        config.bedrock_region        = ENV.fetch('BEDROCK_REGION', nil)
+        config.bedrock_session_token = ENV.fetch('BEDROCK_SESSION_TOKEN', nil)
+
+        config.ollama_api_base    = ENV.fetch('OLLAMA_API_BASE', nil)
+
+        # --- Custom OpenAI Endpoint ---
+        # Use this for Azure OpenAI, proxies, or self-hosted models via OpenAI-compatible APIs.
+        config.openai_api_base  = ENV.fetch('OPENAI_API_BASE', nil) # e.g., "https://your-azure.openai.azure.com"
+
+        # --- Default Models ---
+        # Used by RubyLLM.chat, RubyLLM.embed, RubyLLM.paint if no model is specified.
+        # config.default_model            = 'gpt-4.1-nano'            # Default: 'gpt-4.1-nano'
+        # config.default_embedding_model  = 'text-embedding-3-small'  # Default: 'text-embedding-3-small'
+        # config.default_image_model      = 'dall-e-3'                # Default: 'dall-e-3'
+
+        # --- Connection Settings ---
+        # config.request_timeout            = 120 # Request timeout in seconds (default: 120)
+        # config.max_retries                = 3   # Max retries on transient network errors (default: 3)
+        # config.retry_interval             = 0.1 # Initial delay in seconds (default: 0.1)
+        # config.retry_backoff_factor       = 2   # Multiplier for subsequent retries (default: 2)
+        # config.retry_interval_randomness  = 0.5 # Jitter factor (default: 0.5)
+
+        # --- Logging Settings ---
+        # config.log_file   = '/logs/ruby_llm.log'
+        config.log_level  = :fatal # debug level can also be set to debug by setting RUBYLLM_DEBUG envar to true
+      end
+    end
+
+    def refresh_local_model_registry
+      if  AIA.config.refresh.nil?           ||
+          Integer(AIA.config.refresh).zero? ||
+          Date.today > (AIA.config.last_refresh + Integer(AIA.config.refresh))
+        RubyLLM.models.refresh!
+        AIA.config.last_refresh = Date.today
+        if AIA.config.config_file
+          AIA::Config.dump_config(AIA.config, AIA.config.config_file)
+        end
+      end
+    end
+
+    def setup_chat_with_tools
+      begin
+        @chat = RubyLLM.chat(model: @model)
+      rescue => e
+        STDERR.puts "ERROR: #{e.message}"
+        exit 1
       end
 
-      @chat = RubyLLM.chat(model: model_info[:model])
+      if !AIA.config.tool_paths.empty? && !@chat.model.supports?(:function_calling)
+        STDERR.puts "ERROR: The model #{@model} does not support tools"
+        exit 1
+      end
 
       @tools = ObjectSpace.each_object(Class).select do |klass|
         klass < RubyLLM::Tool
       end
 
-      @chat.with_tools(*tools) unless tools.empty?
+      unless tools.empty?
+        @chat.with_tools(*tools)
+        AIA.config.tools = tools.map(&:name).join(', ')
+      end
     end
 
+    # TODO: Need to rethink this dispatcher pattern w/r/t RubyLLM's capabilities
+    #       This code was originally designed for AiClient
+    #
     def chat(prompt)
-      if @model.downcase.include?('dall-e') || @model.downcase.include?('image-generation')
-        text_to_image(prompt)
-      elsif @model.downcase.include?('vision') || @model.downcase.include?('image')
-        image_to_text(prompt)
-      elsif @model.downcase.include?('tts') || @model.downcase.include?('speech')
-        text_to_audio(prompt)
-      elsif @model.downcase.include?('whisper') || @model.downcase.include?('transcription')
-        audio_to_text(prompt)
-      else
+      modes = @chat.model.modalities
+
+      # TODO: Need to consider how to handle multi-mode models
+      if modes.supports? :text_to_text
         text_to_text(prompt)
+
+      elsif modes.supports? :image_to_text
+        image_to_text(prompt)
+      elsif modes.supports? :text_to_image
+        text_to_image(prompt)
+
+      elsif modes.supports? :text_to_audio
+        text_to_audio(prompt)
+      elsif modes.supports? :audio_to_text
+        audio_to_text(prompt)
+
+      else
+        # TODO: what else can be done?
       end
     end
 
@@ -67,14 +154,6 @@ module AIA
       end
     end
 
-    def method_missing(method, *args, &block)
-      if @chat.respond_to?(method)
-        @chat.public_send(method, *args, &block)
-      else
-        super
-      end
-    end
-
     # Clear the chat context/history
     # Needed for the //clear directive
     def clear_context
@@ -88,12 +167,18 @@ module AIA
 
         # Option 2: Force RubyLLM to create a new chat instance at the global level
         # This ensures any shared state is reset
-        model_info = extract_model_parts(@model)
+        @provider, @model = extract_model_parts.values
         RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
 
         # Option 3: Create a completely fresh chat instance for this adapter
         @chat = nil  # First nil it to help garbage collection
-        @chat = RubyLLM.chat(model: model_info[:model])
+
+        begin
+          @chat = RubyLLM.chat(model: @model)
+        rescue => e
+          STDERR.puts "ERROR: #{e.message}"
+          exit 1
+        end
 
         # Option 4: Call official clear_history method if it exists
         if @chat.respond_to?(:clear_history)
@@ -114,22 +199,33 @@ module AIA
       end
     end
 
+    def method_missing(method, *args, &block)
+      if @chat.respond_to?(method)
+        @chat.public_send(method, *args, &block)
+      else
+        super
+      end
+    end
+
     def respond_to_missing?(method, include_private = false)
       @chat.respond_to?(method) || super
     end
 
     private
 
-    def extract_model_parts(model_string)
-      parts = model_string.split('/')
+    def extract_model_parts
+      parts = AIA.config.model.split('/')
       parts.map!(&:strip)
 
-      if parts.length > 1
-        provider = parts[0]
-        model = parts[1]
+      if 2 == parts.length
+        provider  = parts[0]
+        model     = parts[1]
+      elsif 1 == parts.length
+        provider  = nil # RubyLLM will figure it out from the model name
+        model     = parts[0]
       else
-        provider = nil # RubyLLM will figure it out from the model name
-        model = parts[0]
+        STDERR.puts "ERROR: malformed model name: #{AIA.config.model}"
+        exit 1
       end
 
       { provider: provider, model: model }
@@ -149,7 +245,7 @@ module AIA
 
     def text_to_text(prompt)
       text_prompt = extract_text_prompt(prompt)
-      @chat.ask(text_prompt)
+      @chat.ask(text_prompt).content
     end
 
     def text_to_image(prompt)
@@ -158,9 +254,9 @@ module AIA
 
       begin
         RubyLLM.paint(text_prompt, output_path: output_file,
-                      size: AIA.config.image_size,
-                      quality: AIA.config.image_quality,
-                      style: AIA.config.image_style)
+                      size:     AIA.config.image_size,
+                      quality:  AIA.config.image_quality,
+                      style:    AIA.config.image_style)
         "Image generated and saved to: #{output_file}"
       rescue => e
         "Error generating image: #{e.message}"
@@ -168,12 +264,12 @@ module AIA
     end
 
     def image_to_text(prompt)
-      image_path = extract_image_path(prompt)
+      image_path  = extract_image_path(prompt)
       text_prompt = extract_text_prompt(prompt)
 
       if image_path && File.exist?(image_path)
         begin
-          @chat.ask(text_prompt, with: { image: image_path })
+          @chat.ask(text_prompt, with: { image: image_path }).content
         rescue => e
           "Error analyzing image: #{e.message}"
         end
@@ -197,11 +293,16 @@ module AIA
       end
     end
 
+    # TODO: what if its a multi-mode model and a text prompt is provided with
+    #       the audio file?
     def audio_to_text(prompt)
+      text = extract_text_prompt(prompt)
+      text = 'Transcribe this audio' if text.nil? || text.empty?
+
       if prompt.is_a?(String) && File.exist?(prompt) &&
          prompt.downcase.end_with?('.mp3', '.wav', '.m4a', '.flac')
         begin
-          @chat.ask("Transcribe this audio", with: { audio: prompt })
+          @chat.ask(text, with: { audio: prompt }).content
         rescue => e
           "Error transcribing audio: #{e.message}"
         end

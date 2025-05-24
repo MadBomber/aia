@@ -18,7 +18,7 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
-**MCRubyLLM::Tool Support:** AIA now supports the integration of Tools for those models that support function callbacks.  See the --tools, --allowed_tools and --rejected_tools options.  Yes, functional callbacks provided for dynamic prompt just like the AIA directives so why have both?  Well, AIA is older that functional callbacks.  Directives or legacy but more than that not all models support functional callbacks.  That means the old directives capability, shell and erb integration are still viable ways to provided dynamic extra content to your prompts.
+**MCRubyLLM::Tool Support:** AIA now supports the integration of Tools for those models that support function callbacks.  See the --tools, --allowed_tools and --rejected_tools options.  Yes, functional callbacks provided for dynamic prompts just like the AIA directives, shell and ERB integrations so why have both?  Well, AIA is older that functional callbacks.  The AIA integrations are legacy but more than that not all models support functional callbacks.  That means the AIA integrationsß∑ are still viable ways to provided dynamic extra content to your prompts.
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
@@ -27,11 +27,13 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
   - [Configuration Options](#configuration-options)
     - [Configuration Flexibility](#configuration-flexibility)
     - [Expandable Configuration](#expandable-configuration)
+  - [The Local Model Registry Refresh](#the-local-model-registry-refresh)
+    - [Important Note](#important-note)
   - [Shell Integration inside of a Prompt](#shell-integration-inside-of-a-prompt)
       - [Dynamic Shell Commands](#dynamic-shell-commands)
       - [Shell Command Safety](#shell-command-safety)
       - [Chat Session Use](#chat-session-use)
-  - [*E*mbedded *R*u*B*y (ERB)](#embedded-ruby-erb)
+  - [Embedded Ruby (ERB)](#embedded-ruby-erb)
   - [Prompt Directives](#prompt-directives)
     - [Parameter and Shell Substitution in Directives](#parameter-and-shell-substitution-in-directives)
     - [Directive Syntax](#directive-syntax)
@@ -105,7 +107,8 @@ The following table provides a comprehensive list of configuration options, thei
 | presence_penalty     | --presence_penalty | 0.0                   | AIA_PRESENCE_PENALTY      |
 | prompt_extname       |             | .txt                        | AIA_PROMPT_EXTNAME        |
 | prompts_dir          | -p, --prompts_dir | ~/.prompts            | AIA_PROMPTS_DIR           |
-| require_libs         | --rq        | []                          | AIA_REQUIRE_LIBS          |
+| refresh              | --refresh   | 0 (days)                    | AIA_REFRESH               |
+| require_libs         | --rq --require | []                       | AIA_REQUIRE_LIBS          |
 | role                 | -r, --role  |                             | AIA_ROLE                  |
 | roles_dir            |             | ~/.prompts/roles            | AIA_ROLES_DIR             |
 | roles_prefix         | --roles_prefix | roles                    | AIA_ROLES_PREFIX          |
@@ -152,9 +155,25 @@ If you do not like the default regex used to identify parameters within the prom
 
 The configuration options are expandable through a config file, allowing you to add custom entries. For example, you can define a custom configuration item like "xyzzy" in your config file. This value can then be accessed in your prompts using `AIA.config.xyzzy` within a `//ruby` directive or an ERB block, enabling dynamic prompt generation based on your custom configurations.
 
+## The Local Model Registry Refresh
+
+The `ruby_llm` gem maintains a registry of providers and models integrated with a new website that allows users to download the latest information about each model. This capability is scheduled for release in version 1.3.0 of the gem.
+
+In anticipation of this new feature, the AIA tool has introduced the `--refresh` option, which specifies the number of days between updates to the centralized model registry. Here’s how the `--refresh` option works:
+
+- A value of `0` (zero) updates the local model registry every time AIA is executed.
+- A value of `1` (one) updates the local model registry once per day.
+- etc.
+
+The date of the last successful refresh is stored in the configuration file under the key `last_refresh`. The default configuration file is located at `~/.aia/config.yml`. When a refresh is successful, the `last_refresh` value is updated to the current date, and the updated configuration is saved in `AIA.config.config_file`.
+
+### Important Note
+
+This approach to saving the `last_refresh` date can become cumbersome, particularly if you maintain multiple configuration files for different projects. The `last_refresh` date is only updated in the currently active configuration file. If you switch to a different project with a different configuration file, you may inadvertently hit the central model registry again, even if your local registry is already up to date.
+
 ## Shell Integration inside of a Prompt
 
-Using the option `--shell` enables AIA to access your terminal's shell environment from inside the prompt text.
+AIA configures the `prompt_manager` gem to be fully integrated with your local shell by default.  This is not an option - its a feature. If your prompt inclues text patterns like $HOME, ${HOME} or $(command) those patterns will be automatically replaced in the prompt text by the shell's value for those patterns.
 
 #### Dynamic Shell Commands
 
@@ -174,25 +193,25 @@ Given the following constraints $(cat ~/3_laws_of_robotics.txt) determine the be
 
 #### Shell Command Safety
 
-The catchphrase "the prompt is the code" within AIA means that you have the power to execute any command you want, but you must be careful not to execute commands that could cause harm. AIA is not going to protect you from doing something stupid. Sure that's a copout. I just can't think (actually I can) of all the ways you can mess things up writing code. Remember what we learned from Forrest Gump "Stupid is as stupid does." So don't do anything stupid. If someone gives you a prompt as says "run this with AIA" you had better review the prompt before processing it.
+The catchphrase "the prompt is the code" within AIA means that you have the power to execute any command you want, but you must be careful not to execute commands that could cause harm. AIA is not going to protect you from doing something dumb. Sure that's a copout. I just can't think (actually I can) of all the ways you can mess things up writing code. Remember what we learned from Forrest Gump "Stupid is as stupid does." So don't break the dumb law. If someone gives you a prompt as says "run this with AIA" you had better review the prompt before processing it.
 
 #### Chat Session Use
 
-When you use the `--shell` option to start a chat session, shell integration is available in your follow up prompts. Suppose you started a chat session (--chat) using a role of "Ruby Expert" expecting to chat about changes that could be made to a specific class BUT you forgot to include the class source file as part of the context when you got started. You could enter this as your follow up prompt to keep going:
+Shell integration is available in your follow up prompts within a chat session. Suppose you started a chat session (--chat) using a role of "Ruby Expert" expecting to chat about changes that could be made to a specific class BUT you forgot to include the class source file as part of the context when you got started. You could enter this as your follow up prompt to keep going:
 
 ```plaintext
 The class I want to chat about refactoring is this one: $(cat my_class.rb)
 ```
 
-That inserts the entire class source file into your follow up prompt. You can continue chatting with you AI Assistant about changes to the class.
+That inserts the entire class source file into your follow up prompt. You can continue chatting with your AI Assistant about changes to the class.
 
-## *E*mbedded *R*u*B*y (ERB)
+## Embedded Ruby (ERB)
 
-The inclusion of dynamic content through the shell integration provided by the `--shell` option is significant. AIA also provides the full power of embedded Ruby code processing within the prompt text.
+The inclusion of dynamic content through the shell integration is significant. AIA also provides the full power of embedded Ruby code processing within the prompt text.
 
-The `--erb` option turns the prompt text file into a fully functioning ERB template. The [Embedded Ruby (ERB) template syntax (2024)](https://bophin-com.ngontinh24.com/article/language-embedded-ruby-erb-template-syntax) provides a good overview of the syntax and power of ERB.
+AIA takes advantage of the `prompt_manager` gem to enable ERB integration in prompt text as a default.  Its an always available feature of AIA prompts.  The [Embedded Ruby (ERB) template syntax (2024)](https://bophin-com.ngontinh24.com/article/language-embedded-ruby-erb-template-syntax) provides a good overview of the syntax and power of ERB.
 
-Most websites that have information about ERB will give examples of how to use ERB to generate dynamic HTML content for web-based applications. That is a common use case for ERB. AIA on the other hand uses ERB to generate dynamic prompt text for LLM processing.
+Most websites that have information about ERB will give examples of how to use ERB to generate dynamic HTML content for web-based applications. That is a common use case for ERB. AIA on the other hand uses ERB to generate dynamic or conditional prompt text for LLM processing.
 
 ## Prompt Directives
 
@@ -297,11 +316,11 @@ For example:
 //ruby puts "Hello from Ruby"
 ```
 
-You can also use the `--rq` option to specify Ruby libraries to require before executing Ruby code:
+You can also use the `--require` option to specify Ruby libraries to require before executing Ruby code:
 
 ```bash
 # Command line
-aia --rq json,csv my_prompt
+aia --rq json,csv --require os my_prompt
 
 # In chat
 //ruby JSON.parse('{"data": [1,2,3]}')["data"]
