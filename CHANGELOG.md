@@ -2,13 +2,17 @@
 ## [Unreleased]
 ### [0.9.3] WIP
 - need to pay attention to the test suite
+- also need to ensure the non text2text modes are working
+
+## Released
+### [0.9.3rc1] 2025-05-24
+- using ruby_llm v1.3.0rc1
 - added a models database refresh based on integer days interval with the --refresh option
 - config file now has a "last_refresh" String in format YYYY-MM-DD
 - enhanced the robot figure to show more config items including tools
 - fixed bug with the --require option with the specified libraries were not being loaded.
 - fixed a bug in the prompt_manager gem which is now at v0.5.5
 
-## Released
 
 ### [0.9.2] 2025-05-18
 - removing the MCP experiment
