@@ -28,9 +28,16 @@ module AIA
 
 
     def process_prompt(prompt, operation_type)
+      result = nil
       @ui_presenter.with_spinner("Processing", operation_type) do
-        send_to_client(prompt, operation_type)
+        result = send_to_client(prompt, operation_type)
       end
+
+      unless result.is_a? String
+        result = result.content
+      end
+
+      result
     end
 
 

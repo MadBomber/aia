@@ -57,7 +57,7 @@ module AIA
           RubyLLM.chat.clear_history
         end
       rescue => e
-        SYSERR.puts "ERROR: context_manager clear_context error #{e.message}"
+        STDERR.puts "ERROR: context_manager clear_context error #{e.message}"
       end
     end
 

@@ -273,7 +273,7 @@ module AIA
                begin
                  AIA.config.client = AIA::RubyLLMAdapter.new
                rescue => e
-                 SYSERR.puts "Error reinitializing client: #{e.message}"
+                 STDERR.puts "Error reinitializing client: #{e.message}"
                end
 
                @ui_presenter.display_info("Chat context cleared.")

@@ -57,7 +57,7 @@ module AIA
                else
                  a_string.to_s
                end
-      
+
       content.strip.start_with?(PromptManager::Prompt::DIRECTIVE_SIGNAL)
     end
 
@@ -162,6 +162,7 @@ module AIA
       end
       ''
     end
+    alias_method :workflow, :pipeline
 
     desc "Inserts the contents of a file  Example: //include path/to/file"
     def include(args, context_manager=nil)
@@ -240,6 +241,10 @@ module AIA
 
     desc "Clears the conversation history (aka context) same as //config clear = true"
     def clear(args, context_manager=nil)
+      # TODO: review the robot's code in the Session class for when the
+      #       //clear directive is used in a follow up prompt.  That processing
+      #       should be moved here so that it is also available in batch
+      #       sessions.
       if context_manager.nil?
         return "Error: Context manager not available for //clear directive."
       end

@@ -5,7 +5,6 @@
 # provides an interface for interacting with AI models and managing prompts.
 
 require 'ruby_llm'
-
 require 'prompt_manager'
 
 require 'debug_me'
@@ -80,11 +79,20 @@ module AIA
     prompt_handler = PromptHandler.new
 
     # Initialize the appropriate client adapter based on configuration
-    @config.client = if @config.adapter == 'ruby_llm'
+    @config.client = if 'ruby_llm' == @config.adapter
                       RubyLLMAdapter.new
                     else
-                      AIClientAdapter.new
+                      # TODO: ?? some other LLM API wrapper
+                      STDERR.puts "ERROR: There is no adapter for #{@config.adapter}"
+                      exit 1
                     end
+
+    # There are two kinds of sessions: batch and chat
+    # A chat session is started when the --chat CLI option is used
+    # BUT its also possible to start a chat session with an initial prompt AND
+    # within that initial prompt there can be a workflow (aka pipeline)
+    # defined.  If that is the case, then the chat session will not start
+    # until the initial prompt has completed its workflow.
 
     session        = Session.new(prompt_handler)
 
