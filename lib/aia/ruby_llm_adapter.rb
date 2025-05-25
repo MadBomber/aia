@@ -115,6 +115,10 @@ module AIA
     def chat(prompt)
       modes = @chat.model.modalities
 
+      debug_me{[
+        :modes
+      ]}
+
       # TODO: Need to consider how to handle multi-mode models
       if modes.supports? :text_to_text
         text_to_text(prompt)
@@ -250,14 +254,10 @@ module AIA
 
     def text_to_image(prompt)
       text_prompt = extract_text_prompt(prompt)
-      output_file = "#{Time.now.to_i}.png"
 
       begin
-        RubyLLM.paint(text_prompt, output_path: output_file,
-                      size:     AIA.config.image_size,
-                      quality:  AIA.config.image_quality,
-                      style:    AIA.config.image_style)
-        "Image generated and saved to: #{output_file}"
+        r = RubyLLM.paint(text_prompt, size: AIA.config.image_size)
+        "Image generated and saved to: #{r.url}"
       rescue => e
         "Error generating image: #{e.message}"
       end
