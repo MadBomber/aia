@@ -12,15 +12,12 @@
 /test/version_tmp/
 /tmp/
 
-
-
 # Ignore Byebug command history file.
 .byebug_history
 
 ## Documentation cache and generated files:
 /.yardoc/
 /_yardoc/
-/doc/
 /rdoc/
 
 

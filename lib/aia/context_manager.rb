@@ -27,7 +27,12 @@ module AIA
     # @return [Array<Hash>] The conversation context array.
     def get_context(system_prompt: nil)
       # Ensure system prompt is present if provided and not already the first message
-      if system_prompt && !system_prompt.strip.empty? && (@context.empty? || @context.first[:role] != 'system')
+      if  system_prompt &&
+          !system_prompt.strip.empty? &&
+          (
+            @context.empty? ||
+            @context.first[:role] != 'system'
+          )
          add_system_prompt(system_prompt)
       end
       @context

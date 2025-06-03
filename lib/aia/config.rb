@@ -17,17 +17,22 @@ require 'fileutils'
 module AIA
   class Config
     DEFAULT_CONFIG = OpenStruct.new({
+      adapter:      'ruby_llm', # 'ruby_llm' or ???
+      #
       aia_dir:      File.join(ENV['HOME'], '.aia'),
       config_file:  File.join(ENV['HOME'], '.aia', 'config.yml'),
       out_file:     'temp.md',
       log_file:     File.join(ENV['HOME'], '.prompts', '_prompts.log'),
-      prompts_dir:  File.join(ENV['HOME'], '.prompts'),
+      context_files: [],
       #
+      prompts_dir:  File.join(ENV['HOME'], '.prompts'),
       prompt_extname: PromptManager::Storage::FileSystemAdapter::PROMPT_EXTENSION,
       #
       roles_prefix: 'roles',
       roles_dir:    File.join(ENV['HOME'], '.prompts', 'roles'),
       role:         '',
+
+      #
       system_prompt: '',
 
       # Tools
@@ -61,23 +66,26 @@ module AIA
       top_p:                1.0,
       frequency_penalty:    0.0,
       presence_penalty:     0.0,
+
+      # Audio Parameters
+      voice:                'alloy',
+      speak_command:        'afplay', # 'afplay' for audio files on MacOS
+
+      # Image Parameters
       image_size:           '1024x1024',
       image_quality:        'standard',
       image_style:          'vivid',
 
+      # Models
       model:                'gpt-4o-mini',
       speech_model:         'tts-1',
       transcription_model:  'whisper-1',
       embedding_model:      'text-embedding-ada-002',
       image_model:          'dall-e-3',
-      refresh:              0, # days between refreshes of model info; 0 means every startup
+
+      # Model Regristery
+      refresh:              7, # days between refreshes of model info; 0 means every startup
       last_refresh:         Date.today - 1,
-
-      voice:                'alloy',
-      adapter:              'ruby_llm', # 'ruby_llm' or ???
-
-      # Default speak command
-      speak_command: 'afplay', # 'afplay' for audio files
 
       # Ruby libraries to require for Ruby binding
       require_libs: [],
@@ -450,6 +458,7 @@ module AIA
             config.system_prompt = prompt_id
           end
 
+          ###################################################
           # AI model parameters
           opts.on("-t", "--temperature TEMP", Float, "Temperature for text generation") do |temp|
             config.temperature = temp
@@ -628,6 +637,9 @@ module AIA
       config.last_refresh = config.last_refresh.to_s if config.last_refresh.is_a? Date
 
       config_hash = config.to_h
+
+      # Remove prompt_id to prevent automatic initial pompting in --chat mode
+      config_hash.delete(:prompt_id)
 
       # Remove dump_file key to prevent automatic exit on next load
       config_hash.delete(:dump_file)

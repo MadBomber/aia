@@ -1,10 +1,15 @@
 # Changelog
 ## [Unreleased]
-### [0.9.3] WIP
+
+## Released
+### [0.9.4] 2025-06-03
+- using RubyLLM v1.3.0
+- setting up a docs infrastructure to behave like the ruby_llm gem's guides side
+- fixed bug in the text-to-image workflow
+- discovered that ruby_llm does not have high level support for audio modes
 - need to pay attention to the test suite
 - also need to ensure the non text2text modes are working
 
-## Released
 ### [0.9.3rc1] 2025-05-24
 - using ruby_llm v1.3.0rc1
 - added a models database refresh based on integer days interval with the --refresh option

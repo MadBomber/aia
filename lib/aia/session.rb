@@ -123,16 +123,13 @@ module AIA
         prompt_text = "#{prompt_text}\n\nContext:\n#{context}"
       end
 
-      # Determine operation type
-      operation_type = @chat_processor.determine_operation_type(AIA.config.model)
-
       # Add initial user prompt to context *before* sending to AI
       @context_manager.add_to_context(role: 'user', content: prompt_text)
 
       # Process the initial prompt
       @ui_presenter.display_thinking_animation
       # Send the current context (which includes the user prompt)
-      response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+      response = @chat_processor.process_prompt(@context_manager.get_context)
 
       # Add AI response to context
       @context_manager.add_to_context(role: 'assistant', content: response)
@@ -202,9 +199,8 @@ module AIA
             @context_manager.add_to_context(role: 'user', content: context)
 
             # Process the context
-            operation_type = @chat_processor.determine_operation_type(AIA.config.model)
             @ui_presenter.display_thinking_animation
-            response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+            response = @chat_processor.process_prompt(@context_manager.get_context)
 
             # Add AI response to context
             @context_manager.add_to_context(role: 'assistant', content: response)
@@ -228,9 +224,8 @@ module AIA
 
             @context_manager.add_to_context(role: 'user', content: processed_input)
 
-            operation_type = @chat_processor.determine_operation_type(AIA.config.model)
             @ui_presenter.display_thinking_animation
-            response = @chat_processor.process_prompt(@context_manager.get_context, operation_type)
+            response = @chat_processor.process_prompt(@context_manager.get_context)
 
             @context_manager.add_to_context(role: 'assistant', content: response)
             @chat_processor.output_response(response)
@@ -292,9 +287,8 @@ module AIA
           @context_manager.add_to_context(role: 'user', content: processed_prompt)
           conversation = @context_manager.get_context
 
-          operation_type = @chat_processor.determine_operation_type(AIA.config.model)
           @ui_presenter.display_thinking_animation
-          response = @chat_processor.process_prompt(conversation, operation_type)
+          response = @chat_processor.process_prompt(conversation)
 
           @ui_presenter.display_ai_response(response)
           @context_manager.add_to_context(role: 'assistant', content: response)

@@ -12,7 +12,14 @@ include DebugMe
 $DEBUG_ME = false
 DebugMeDefaultOptions[:skip1] = true
 
-require_relative 'extensions/openstruct_merge'
+require_relative 'extensions/openstruct_merge'    # adds self.merge self.get_value
+require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.supports? :text-to-text etc.
+
+require_relative 'refinements/string.rb'        # adds #include_any? #include_all?
+
+
+
+
 require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'
