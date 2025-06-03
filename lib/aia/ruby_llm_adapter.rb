@@ -236,6 +236,8 @@ module AIA
                   end
 
       response.content
+    rescue => e
+      e.message
     end
 
 
