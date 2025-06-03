@@ -1,25 +1,5 @@
 # lib/aia/ruby_llm_adapter.rb
 
-require 'ruby_llm'
-
-class RubyLLM::Modalities
-  def supports?(query_mode)
-    parts = query_mode
-              .to_s
-              .downcase
-              .split(/2|-to-| to |_to_/)
-              .map(&:strip)
-
-    if 2 == parts.size
-      input.include?(parts[0]) && output.include?(parts[1])
-    elsif 1 == parts.size
-      input.include?(parts[0]) || output.include?(parts[0])
-    else
-      false
-    end
-  end
-end
-
 module AIA
   class RubyLLMAdapter
     attr_reader :tools
@@ -135,7 +115,7 @@ module AIA
     end
 
     def transcribe(audio_file)
-      @chat.ask("Transcribe this audio", with: { audio: audio_file })
+      @chat.ask("Transcribe this audio", with: audio_file)
     end
 
     def speak(text)
@@ -243,21 +223,48 @@ module AIA
       end
     end
 
+
+    #########################################
+    ## text
+
     def text_to_text(prompt)
       text_prompt = extract_text_prompt(prompt)
-      @chat.ask(text_prompt).content
+      response  = if AIA.config.context_files.empty?
+                    @chat.ask(text_prompt)
+                  else
+                    @chat.ask(text_prompt, with: AIA.config.context_files)
+                  end
+
+      response.content
+    end
+
+
+    #########################################
+    ## Image
+
+    def extract_image_path(prompt)
+      if prompt.is_a?(String)
+        match = prompt.match(/\b[\w\/\.\-_]+?\.(jpg|jpeg|png|gif|webp)\b/i)
+        match ? match[0] : nil
+      elsif prompt.is_a?(Hash)
+        prompt[:image] || prompt[:image_path]
+      else
+        nil
+      end
     end
 
     def text_to_image(prompt)
       text_prompt = extract_text_prompt(prompt)
-      output_file = "#{Time.now.to_i}.png"
+      image_name  = extract_image_path(text_prompt)
 
       begin
-        RubyLLM.paint(text_prompt, output_path: output_file,
-                      size:     AIA.config.image_size,
-                      quality:  AIA.config.image_quality,
-                      style:    AIA.config.image_style)
-        "Image generated and saved to: #{output_file}"
+        image = RubyLLM.paint(text_prompt, size: AIA.config.image_size)
+        if image_name
+          image_path = image.save(image_name)
+          "Image generated and saved to: #{image_path}"
+        else
+          "Image generated and available at: #{image.url}"
+        end
       rescue => e
         "Error generating image: #{e.message}"
       end
@@ -269,7 +276,7 @@ module AIA
 
       if image_path && File.exist?(image_path)
         begin
-          @chat.ask(text_prompt, with: { image: image_path }).content
+          @chat.ask(text_prompt, with: image_path).content
         rescue => e
           "Error analyzing image: #{e.message}"
         end
@@ -278,13 +285,21 @@ module AIA
       end
     end
 
+
+    #########################################
+    ## audio
+
+    def audio_file?(filepath)
+      filepath.to_s.downcase.end_with?('.mp3', '.wav', '.m4a', '.flac')
+    end
+
     def text_to_audio(prompt)
       text_prompt = extract_text_prompt(prompt)
       output_file = "#{Time.now.to_i}.mp3"
 
       begin
         # Note: RubyLLM doesn't have a direct TTS feature
-        # This is a placeholder for a custom implementation
+        # TODO: This is a placeholder for a custom implementation
         File.write(output_file, text_prompt)
         system("#{AIA.config.speak_command} #{output_file}") if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
         "Audio generated and saved to: #{output_file}"
@@ -293,16 +308,23 @@ module AIA
       end
     end
 
-    # TODO: what if its a multi-mode model and a text prompt is provided with
-    #       the audio file?
     def audio_to_text(prompt)
-      text = extract_text_prompt(prompt)
-      text = 'Transcribe this audio' if text.nil? || text.empty?
+      text_prompt = extract_text_prompt(prompt)
+      text_prompt = 'Transcribe this audio' if text_prompt.nil? || text_prompt.empty?
 
-      if prompt.is_a?(String) && File.exist?(prompt) &&
-         prompt.downcase.end_with?('.mp3', '.wav', '.m4a', '.flac')
+      # TODO: I don't think that "prompt" would ever be an audio filepath.
+      #       Check prompt to see if it is a PromptManager object that has context_files
+
+      if  prompt.is_a?(String) &&
+          File.exist?(prompt)  &&
+          audio_file?(prompt)
         begin
-          @chat.ask(text, with: { audio: prompt }).content
+          response  = if AIA.config.context_files.empty?
+                        @chat.ask(text_prompt)
+                      else
+                        @chat.ask(text_prompt, with: AIA.config.context_files)
+                      end
+          response.content
         rescue => e
           "Error transcribing audio: #{e.message}"
         end
@@ -311,15 +333,7 @@ module AIA
         text_to_text(prompt)
       end
     end
-
-    def extract_image_path(prompt)
-      if prompt.is_a?(String)
-        prompt.scan(/\b[\w\/\.\-]+\.(jpg|jpeg|png|gif|webp)\b/i).first&.first
-      elsif prompt.is_a?(Hash)
-        prompt[:image] || prompt[:image_path]
-      else
-        nil
-      end
-    end
   end
 end
+
+__END__

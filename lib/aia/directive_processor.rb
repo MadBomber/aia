@@ -4,6 +4,8 @@ require 'faraday'
 
 module AIA
   class DirectiveProcessor
+    using Refinements
+
     PUREMD_API_KEY   = ENV.fetch('PUREMD_API_KEY', nil)
     EXCLUDED_METHODS = %w[ run initialize private? ]
     @descriptions = {}
@@ -116,7 +118,6 @@ module AIA
     def private?(method_name)
       !respond_to?(method_name) && respond_to?(method_name, true)
     end
-
 
     ################
     ## Directives ##
@@ -294,6 +295,45 @@ module AIA
       AIA::Utility.robot
       ""
     end
+
+    desc "All Available models or query on [partial LLM or provider name] Examples: //llms ; //llms openai ; //llms claude"
+    def available_models( args=nil, context_manager=nil)
+      query     = args
+      header    = "Available LLMs"
+
+      if query
+        header += " for #{query.join(' and ')}"
+      end
+
+      puts header + ':'
+
+      q1 = query.select{|q| !q.start_with?(':')}
+      q2 = query.select{|q|  q.start_with?(':')}
+
+      RubyLLM.models.all.each do |llm|
+        inputs  = llm.modalities.input.join(',')
+        outputs = llm.modalities.output.join(',')
+        entry   = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
+
+        if query.nil? || query.empty?
+          puts entry
+          next
+        end
+
+        show_it = true
+        q1.each{|q| show_it &&= entry.include?(q)}
+        q2.each{|q| show_it &&= llm.modalities.supports?(q)}
+
+        puts entry if show_it
+      end
+
+      ""
+    end
+    alias_method :am,         :available_models
+    alias_method :available,  :available_models
+    alias_method :models,     :available_models
+    alias_method :all_models, :available_models
+    alias_method :llms,       :available_models
 
     desc "Generates this help content"
     def help(args=nil, context_manager=nil)

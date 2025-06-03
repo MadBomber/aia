@@ -12,7 +12,6 @@ module AIA
     end
 
 
-
     def speak(text)
       return unless AIA.speak?
 
@@ -26,11 +25,10 @@ module AIA
     end
 
 
-
-    def process_prompt(prompt, operation_type)
+    def process_prompt(prompt)
       result = nil
-      @ui_presenter.with_spinner("Processing", operation_type) do
-        result = send_to_client(prompt, operation_type)
+      @ui_presenter.with_spinner("Processing", determine_operation_type) do
+        result = send_to_client(prompt)
       end
 
       unless result.is_a? String
@@ -41,42 +39,20 @@ module AIA
     end
 
 
-
-    def send_to_client(prompt, operation_type)
+    # conversation is an Array of Hashes.  Each entry is an interchange
+    # with the LLM.
+    def send_to_client(conversation)
       maybe_change_model
 
-      case operation_type
-      when :text_to_text
-        AIA.client.chat(prompt)
-      when :text_to_image
-        AIA.client.chat(prompt)
-      when :image_to_text
-        AIA.client.chat(prompt)
-      when :text_to_audio
-        AIA.client.chat(prompt)
-      when :audio_to_text
-        if prompt.strip.end_with?('.mp3', '.wav', '.m4a', '.flac') && File.exist?(prompt.strip)
-          AIA.client.transcribe(prompt.strip)
-        else
-          AIA.client.chat(prompt) # Fall back to regular chat
-        end
-      else
-        AIA.client.chat(prompt)
-      end
+      AIA.client.chat(conversation)
     end
 
 
     def maybe_change_model
-      if AIA.client.model.is_a?(String)
-        client_model = AIA.client.model     # AiClient instance
-      else
-        client_model = AIA.client.model.id  # RubyLLM::Model instance
-      end
+      client_model = AIA.client.model.id  # RubyLLM::Model instance
 
-      # when adapter is ruby_llm must use model.id as the name
       unless AIA.config.model.downcase.include?(client_model.downcase)
-        # FIXME: assumes that the adapter is AiClient.  It might be RUbyLLM
-        AIA.client = AIClientAdapter.new
+        AIA.client = AIA.client.class.new
       end
     end
 
@@ -107,7 +83,6 @@ module AIA
     end
 
 
-
     def process_next_prompts(response, prompt_handler)
       if @directive_processor.directive?(response)
         directive_result = @directive_processor.process(response, @history_manager.history)
@@ -117,16 +92,24 @@ module AIA
     end
 
 
-    def determine_operation_type(model)
-      model = model.to_s.downcase
-      if model.include?('dall') || model.include?('image-generation')
+    def determine_operation_type
+      mode = AIA.config.client.model.modalities
+      if mode.supports?(:text_to_image)
         :text_to_image
-      elsif model.include?('vision') || model.include?('image')
+      elsif mode.supports?(:image_to_text)
         :image_to_text
-      elsif model.include?('whisper') || model.include?('audio')
+      elsif mode.supports?(:audio_to_text)
         :audio_to_text
-      elsif model.include?('speech') || model.include?('tts')
+      elsif mode.supports?(:text_to_audio)
         :text_to_audio
+      elsif mode.supports?(:audio_to_audio)
+        :audio_to_audio
+      elsif mode.supports?(:image_to_image)
+        :image_to_image
+      elsif mode.supports?(:audio_to_image)
+        :audio_to_image
+      elsif mode.supports?(:image_to_audio)
+        :image_to_audio
       else
         :text_to_text
       end
