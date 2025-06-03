@@ -107,7 +107,7 @@ The following table provides a comprehensive list of configuration options, thei
 | presence_penalty     | --presence_penalty | 0.0                   | AIA_PRESENCE_PENALTY      |
 | prompt_extname       |             | .txt                        | AIA_PROMPT_EXTNAME        |
 | prompts_dir          | -p, --prompts_dir | ~/.prompts            | AIA_PROMPTS_DIR           |
-| refresh              | --refresh   | 0 (days)                    | AIA_REFRESH               |
+| refresh              | --refresh   | 7 (days)                    | AIA_REFRESH               |
 | require_libs         | --rq --require | []                       | AIA_REQUIRE_LIBS          |
 | role                 | -r, --role  |                             | AIA_ROLE                  |
 | roles_dir            |             | ~/.prompts/roles            | AIA_ROLES_DIR             |
