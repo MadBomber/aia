@@ -108,7 +108,7 @@ GEM
     net-http (0.6.0)
       uri
     optparse (0.6.0)
-    prompt_manager (0.5.5)
+    prompt_manager (0.5.6)
     racc (1.8.1)
     rake (13.2.1)
     refinements (13.2.0)
