@@ -37,11 +37,13 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
   - [Prompt Directives](#prompt-directives)
     - [Parameter and Shell Substitution in Directives](#parameter-and-shell-substitution-in-directives)
     - [Directive Syntax](#directive-syntax)
-    - [AIA Specific Directive Commands](#aia-specific-directive-commands)
+    - [Available Directives](#available-directives)
+    - [Some Specific Directives](#some-specific-directives)
       - [//config](#config)
       - [//include](#include)
       - [//ruby](#ruby)
       - [//shell](#shell)
+      - [//available_models](#available_models)
       - [//next](#next)
       - [//pipeline](#pipeline)
     - [Using Directives in Chat Sessions](#using-directives-in-chat-sessions)
@@ -221,11 +223,13 @@ Downstream processing directives were added to the `prompt_manager` gem used by 
 //command params
 ```
 
-There is no space between the "//" and the command. Commands do not have to have params. These params are typically space delimited when more than one is required. It all depens on the command.
+There is no space between the "//" and the command. Commands do not have to have params. These params are typically space delimited when more than one is required. It all depends on the command.
+
+Some directives add their output to the context of the prompt.  Others do not.  For example the `//help` directives does not extend the context but the `//include` and `//shell` and `//ruby` will inset their output into the prompt context.
 
 ### Parameter and Shell Substitution in Directives
 
-When you combine prompt directives with prompt parameters and shell envar substitutions you can get some powerful compositional prompts.
+When you combine prompt directives with prompt parameters and shell envar substitutions you can get some powerful compositional prompts. Don't forget that ERB is also available within a prompt text file.
 
 Here is an example of a pure generic directive.
 
@@ -233,7 +237,7 @@ Here is an example of a pure generic directive.
 //[DIRECTIVE_NAME] [DIRECTIVE_PARAMS]
 ```
 
-When the prompt runs, you will be asked to provide a value for each of the parameters.  You could answer "shell" for the directive name and "calc 22/7" if you wanted a bad approximation of PI.
+When the prompt runs, you will be asked to provide a value for each of the prompt parameters. You could answer "shell" for the directive name and "calc 22/7" if you wanted a bad approximation of PI.
 
 Try this prompt file:
 ```bash
@@ -247,20 +251,58 @@ What does that number mean to you?
 Directives can be entered in chat or prompt files using the following syntax:
 - `//command args`
 
-Supported directives:
-- `help`: Show available directives
-- `shell` or `sh`: Execute a shell command
-- `ruby` or `rb`: Execute Ruby code
-- `config` or `cfg`: Show or update configuration
-- `include` or `inc`: Include file content
-- `next`: Set/Show the next prompt ID to be processed
-- `pipeline`: Set/Extend/Show the workflow of prompt IDs
+### Available Directives
 
-When a directive produces output, it is added to the chat context. If there is no output, you are prompted again.
+The following list of available directives was generated in an interactive `chat` session using the `//help` directive:
 
-### AIA Specific Directive Commands
+```plaintext
+//available_models All Available models or query on [partial LLM or provider name] Examples: //llms ; //llms openai ; //llms claude
+	Aliases://all_models  //am  //available  //llms  //models
 
-At this time AIA only has a few directives which are detailed below.
+//clear Clears the conversation history (aka context) same as //config clear = true
+
+//config Without arguments it will print a list of all config items and their values _or_ //config item (for one item's value) _or_ //config item = value (to set a value of an item)
+	Aliases://cfg
+
+//help Generates this help content
+
+//include Inserts the contents of a file  Example: //include path/to/file
+	Aliases://import  //include_file
+
+//model Shortcut for //config model _and_ //config model = value
+
+//next Specify the next prompt ID to process after this one
+
+//pipeline Specify a sequence pf prompt IDs to process after this one
+	Aliases://workflow
+
+//review Review the current context
+	Aliases://context
+
+//robot Display the ASCII art AIA robot.
+
+//ruby Shortcut for a one line of ruby code; result is added to the context
+	Aliases://rb
+
+//say Use the system's say command to speak text //say some text
+
+//shell Executes one line of shell code; result is added to the context
+	Aliases://sh
+
+//temperature Shortcut for //config temperature _and_ //config temperature = value
+	Aliases://temp
+
+//terse Inserts an instruction to keep responses short and to the point.
+
+//top_p Shortcut for //config top_p _and_ //config top_p = value
+	Aliases://topp
+
+//webpage webpage inserted as markdown to context using https://pure.md
+```
+
+### Some Specific Directives
+
+A few directives are detailed below. Others should be self explanatory.
 
 #### //config
 
@@ -284,7 +326,7 @@ A configuration item such as `--out_file` or `--model` has an associated value o
 //config out_file = temp.md
 ```
 
-BTW: the "=" is completely options.  Its actuall ignored as is ":=" if you were to choose that as your assignment operator.  Also the number of spaces between the item and the value is complete arbitrary.  I like to line things up so this syntax is just as valie:
+BTW: the "=" is completely options.  Its actually ignored as is ":=" if you were to choose that as your assignment operator.  Also the number of spaces between the item and the value is complete arbitrary.  I like to line things up so this syntax is just as valie:
 
 ```bash
 //config model       gpt-3.5-turbo
@@ -294,7 +336,7 @@ BTW: the "=" is completely options.  Its actuall ignored as is ":=" if you were 
 //config model       gpt-4
 ```
 
-NOTE: if you specify the same config item name more than once within the prompt file, its the last one which will be set when the prompt is finally process through the LLM.  For example in the example above `gpt-4` will be the model used.  Being first does not count in this case.
+NOTE: if you specify the same config item name more than once within the prompt file, it is the last one which will be set when the prompt is finally processed through the LLM.  For example in the example above `gpt-4` will be the model used.  Being first does not count in this case.
 
 #### //include
 
@@ -303,7 +345,7 @@ Example:
 //include path_to_file
 ```
 
-The `path_to_file` can be either absolute or relative.  If it is relative, it is achored at the PWD.  If the `path_to_file` includes envars, the `--shell` CLI option must be used to replace the envar in the directive with its actual value.
+The `path_to_file` can be either absolute or relative.  If it is relative, it is anchored at the PWD.  If the `path_to_file` includes envars, they will be substituted with their actual value.
 
 The file that is included will have any comments or directives excluded.  It is expected that the file will be a text file so that its content can be pre-pended to the existing prompt; however, if the file is a source code file (ex: file.rb) the source code will be included HOWEVER any comment line or line that starts with "//" will be excluded.
 
@@ -313,10 +355,15 @@ The `//ruby` directive executes Ruby code. You can use this to perform complex o
 
 For example:
 ```ruby
-//ruby puts "Hello from Ruby"
+//ruby require 'amazing_print'
+//ruby require 'json'
+//ruby a_hash = JSON.parse('{"data": [1,2,3]}')
+//ruby ap a_hash
 ```
 
-You can also use the `--require` option to specify Ruby libraries to require before executing Ruby code:
+You could have done all of that with ERB in your prompt file.
+
+You can also use the `--require` option on the command line to specify Ruby libraries to require before executing Ruby code:
 
 ```bash
 # Command line
@@ -340,6 +387,46 @@ There are no limitations on what the shell command can be.  For example if you w
 ```
 
 Which does basically the same thing as the `//include` directive, except it uses the entire content of the file.  For relative file paths the same thing applies.  The file's path will be relative to the PWD.
+
+#### //available_models
+
+That is a long name for a directive so I generally use its shortcut `//llms`  See the `//help` directives for other shortcuts.
+
+This directive is very useful in interactive chat sessions.  For example you may have started the chat session with one model but durning the conversation you want to switch to a different model but cannot remember the model ID to use.  So you type in `//llms` and get a list of 505 mode IDs, the provider and the modes.  That's too many to look through using just the mark 2 eyeball scanner. Use query parameters with the directive.
+
+```plaintext
+Follow up (cntl-D or 'exit' to end) #=>
+//llms openai text_to_image
+
+Available LLMs for openai and text_to_image:
+
+- dall-e-2 (openai) text to image,text
+- dall-e-3 (openai) text to image
+- gpt-image-1 (openai) image,text to image
+
+3 LLMs matching your query
+
+Follow up (cntl-D or 'exit' to end) #=>
+```
+
+Each parameter on this directive is considered an AND component of the query.  You asked of modes that were from OpenAI AN had a text to image mode. The number of parameters for the //llms directive is no limited.
+
+Let's say you are looking for a smallish model (7billion parameters) in the qwen family that has an image mode but you can't remember if its and input or output for the image.
+ß∑
+```plaintext
+Follow up (cntl-D or 'exit' to end) #=>
+//llms qwen 7b image
+
+Available LLMs for qwen and 7b and image:
+
+- qwen/qwen-2.5-vl-7b-instruct (openrouter) text,image to text
+- qwen/qwen-2.5-vl-7b-instruct:free (openrouter) text,image to text
+
+2 LLMs matching your query
+
+Follow up (cntl-D or 'exit' to end) #=>
+```
+
 
 #### //next
 Examples:
