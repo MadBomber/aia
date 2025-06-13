@@ -299,16 +299,16 @@ module AIA
     desc "All Available models or query on [partial LLM or provider name] Examples: //llms ; //llms openai ; //llms claude"
     def available_models( args=nil, context_manager=nil)
       query     = args
-      header    = "Available LLMs"
-
-      if query
-        header += " for #{query.join(' and ')}"
-      end
+      header    = "\nAvailable LLMs"
+      header   += " for #{query.join(' and ')}" if query
 
       puts header + ':'
+      puts
 
-      q1 = query.select{|q| !q.start_with?(':')}
-      q2 = query.select{|q|  q.start_with?(':')}
+      q1 = query.select{|q| q.include?('_to_')}.map{|q| ':'==q[0] ? q[1...] : q}
+      q2 = query.reject{|q| q.include?('_to_')}
+
+      counter = 0
 
       RubyLLM.models.all.each do |llm|
         inputs  = llm.modalities.input.join(',')
@@ -316,16 +316,24 @@ module AIA
         entry   = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
 
         if query.nil? || query.empty?
+          counter += 1
           puts entry
           next
         end
 
         show_it = true
-        q1.each{|q| show_it &&= entry.include?(q)}
-        q2.each{|q| show_it &&= llm.modalities.supports?(q)}
+        q1.each{|q| show_it &&= llm.modalities.send("#{q}?")}
+        q2.each{|q| show_it &&= entry.include?(q)}
 
-        puts entry if show_it
+        if show_it
+          counter += 1
+          puts entry
+        end
       end
+
+      puts if counter > 0
+      puts "#{counter} LLMs matching your query"
+      puts
 
       ""
     end

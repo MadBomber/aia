@@ -21,7 +21,7 @@ module AIA
          (O)       using #{AIA.config.adapter} (v#{RubyLLM::VERSION})
        __||__    \\) model db was last refreshed on
      [/______\\]  /    #{AIA.config.last_refresh}
-    / \\__AI__/ \\/      #{AIA.config.tool_paths.empty? ? 'I forgot my toolbox' : 'I brought some tools'}
+    / \\__AI__/ \\/      #{AIA.config.tool_paths.empty? ? 'You can share my tools' : 'I will also use your tools'}
    /    /__\\
   (\\   /____\\   #{AIA.config.tool_paths.empty? ? '' : 'My Toolbox contains:'}
         ROBOT

@@ -1,26 +1,34 @@
 # lib/extensions/ruby_llm/modalities.rb
-# A models "modes" are often expressed in terms like:
-#   text-to-text
-#   text_to_audio
-#   audio to image
-#   image2image
-# This new supports? method tests the models modalities against
-# these common expressions
 
 class RubyLLM::Model::Modalities
-  def supports?(query_mode)
-    parts = query_mode
-              .to_s
-              .downcase
-              .split(/2|-to-| to |_to_/)
-              .map(&:strip)
-
-    if 2 == parts.size
-      input.include?(parts[0]) && output.include?(parts[1])
-    elsif 1 == parts.size
-      input.include?(parts[0]) || output.include?(parts[0])
-    else
-      false
-    end
-  end
+  #
+  def text_to_text? = input.include?('text') && output.include?('text')
+  def text_to_embeddings? = input.include?('text') && output.include?('embeddings')
+  def text_to_audio? = input.include?('text') && output.include?('audio')
+  def text_to_image? = input.include?('text') && output.include?('image')
+  def text_to_moderation? = input.include?('text') && output.include?('moderation')
+  #
+  def image_to_text? = input.include?('image') && output.include?('text')
+  def image_to_embeddings? = input.include?('image') && output.include?('embeddings')
+  def image_to_audio? = input.include?('image') && output.include?('audio')
+  def image_to_image? = input.include?('image') && output.include?('image')
+  def image_to_moderation? = input.include?('image') && output.include?('moderation')
+  #
+  def pdf_to_text? = input.include?('pdf') && output.include?('text')
+  def pdf_to_embeddings? = input.include?('pdf') && output.include?('embeddings')
+  def pdf_to_audio? = input.include?('pdf') && output.include?('audio')
+  def pdf_to_image? = input.include?('pdf') && output.include?('image')
+  def pdf_to_moderation? = input.include?('pdf') && output.include?('moderation')
+  #
+  def audio_to_text? = input.include?('audio') && output.include?('text')
+  def audio_to_embeddings? = input.include?('audio') && output.include?('embeddings')
+  def audio_to_audio? = input.include?('audio') && output.include?('audio')
+  def audio_to_image? = input.include?('audio') && output.include?('image')
+  def audio_to_moderation? = input.include?('audio') && output.include?('moderation')
+  #
+  def file_to_text? = input.include?('file') && output.include?('text')
+  def file_to_embeddings? = input.include?('file') && output.include?('embeddings')
+  def file_to_audio? = input.include?('file') && output.include?('audio')
+  def file_to_image? = input.include?('file') && output.include?('image')
+  def file_to_moderation? = input.include?('file') && output.include?('moderation')
 end

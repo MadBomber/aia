@@ -5,7 +5,11 @@
 # provides an interface for interacting with AI models and managing prompts.
 
 require 'ruby_llm'
+require 'ruby_llm/mcp'
+require 'shared_tools'
+require 'shared_tools/ruby_llm'
 require 'prompt_manager'
+
 
 require 'debug_me'
 include DebugMe
@@ -13,7 +17,7 @@ $DEBUG_ME = false
 DebugMeDefaultOptions[:skip1] = true
 
 require_relative 'extensions/openstruct_merge'    # adds self.merge self.get_value
-require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.supports? :text-to-text etc.
+require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.text_to_text? etc.
 
 require_relative 'refinements/string.rb'        # adds #include_any? #include_all?
 

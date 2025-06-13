@@ -94,21 +94,22 @@ module AIA
 
     def determine_operation_type
       mode = AIA.config.client.model.modalities
-      if mode.supports?(:text_to_image)
+
+      if mode.text_to_image?
         :text_to_image
-      elsif mode.supports?(:image_to_text)
+      elsif mode.image_to_text?
         :image_to_text
-      elsif mode.supports?(:audio_to_text)
+      elsif mode.audio_to_text?
         :audio_to_text
-      elsif mode.supports?(:text_to_audio)
+      elsif mode.text_to_audio?
         :text_to_audio
-      elsif mode.supports?(:audio_to_audio)
+      elsif mode.audio_to_audio?
         :audio_to_audio
-      elsif mode.supports?(:image_to_image)
+      elsif mode.image_to_image?
         :image_to_image
-      elsif mode.supports?(:audio_to_image)
+      elsif mode.audio_to_image?
         :audio_to_image
-      elsif mode.supports?(:image_to_audio)
+      elsif mode.image_to_audio?
         :image_to_audio
       else
         :text_to_text
