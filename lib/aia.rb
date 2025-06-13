@@ -13,7 +13,7 @@ $DEBUG_ME = false
 DebugMeDefaultOptions[:skip1] = true
 
 require_relative 'extensions/openstruct_merge'    # adds self.merge self.get_value
-require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.supports? :text-to-text etc.
+require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.text_to_text? etc.
 
 require_relative 'refinements/string.rb'        # adds #include_any? #include_all?
 

@@ -96,17 +96,17 @@ module AIA
       modes = @chat.model.modalities
 
       # TODO: Need to consider how to handle multi-mode models
-      if modes.supports? :text_to_text
+      if modes.text_to_text?
         text_to_text(prompt)
 
-      elsif modes.supports? :image_to_text
+      elsif modes.image_to_text?
         image_to_text(prompt)
-      elsif modes.supports? :text_to_image
+      elsif modes.text_to_image?
         text_to_image(prompt)
 
-      elsif modes.supports? :text_to_audio
+      elsif modes.text_to_audio?
         text_to_audio(prompt)
-      elsif modes.supports? :audio_to_text
+      elsif modes.audio_to_text?
         audio_to_text(prompt)
 
       else

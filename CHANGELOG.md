@@ -1,9 +1,11 @@
 # Changelog
 ## [Unreleased]
+### [0.9.6] WIP
 
 ## Released
 ### [0.9.5] 2025-06-04
-- updated prompt_manager to v0.5.6 to fix issue-82 with shell integration of $(shell command)
+- changed the RubyLLM::Modalities class to use method_missing for mode query
+- hunting for why the //llms query directive is not finding image_to_image LLMs.
 
 ### [0.9.4] 2025-06-03
 - using RubyLLM v1.3.0
