@@ -5,7 +5,11 @@
 # provides an interface for interacting with AI models and managing prompts.
 
 require 'ruby_llm'
+require 'ruby_llm/mcp'
+require 'shared_tools'
+require 'shared_tools/ruby_llm'
 require 'prompt_manager'
+
 
 require 'debug_me'
 include DebugMe

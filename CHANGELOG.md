@@ -5,6 +5,10 @@
 ### [0.9.6] 2025-06-13
 - fixed issue 84 with the //llms directive
 - changed the monkey patch to the RubyLLM::Model::Modalities class at the suggestions of the RubyLLM author in prep for a PR against that gem.
+- added the shared_tools gem - need to add examples on how to use it with the --tools option
+- added the ruby_llm-mcp gem in prep for MCP support in a later version
+- added images/aia.png to README.md
+- let claude code rewrite the README.md file.  Some details were dropped but overall in reads better.  Need to add the details to a wiki or other documentation site.
 
 ### [0.9.5] 2025-06-04
 - changed the RubyLLM::Modalities class to use method_missing for mode query
