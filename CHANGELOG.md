@@ -1,8 +1,11 @@
 # Changelog
 ## [Unreleased]
-### [0.9.6] WIP
-
 ## Released
+
+### [0.9.6] 2025-06-13
+- fixed issue 84 with the //llms directive
+- changed the monkey patch to the RubyLLM::Model::Modalities class at the suggestions of the RubyLLM author in prep for a PR against that gem.
+
 ### [0.9.5] 2025-06-04
 - changed the RubyLLM::Modalities class to use method_missing for mode query
 - hunting for why the //llms query directive is not finding image_to_image LLMs.
