@@ -3,7 +3,8 @@
 
 ### [0.9.7] WIP
 
-= adding --available_models to CLI options
+- adding --available_models to CLI options
+- fixed a problem caused by SharedTools on models that do not support functions
 
 ## Released
 

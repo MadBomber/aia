@@ -74,6 +74,8 @@ module AIA
         exit 1
       end
 
+      return unless @chat.model.supports_functions?
+
       if !AIA.config.tool_paths.empty? && !@chat.model.supports?(:function_calling)
         STDERR.puts "ERROR: The model #{@model} does not support tools"
         exit 1
