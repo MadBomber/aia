@@ -299,6 +299,11 @@ module AIA
     desc "All Available models or query on [partial LLM or provider name] Examples: //llms ; //llms openai ; //llms claude"
     def available_models( args=nil, context_manager=nil)
       query     = args
+
+      if 1 == query.size
+        query = query.first.split(',')
+      end
+
       header    = "\nAvailable LLMs"
       header   += " for #{query.join(' and ')}" if query
 

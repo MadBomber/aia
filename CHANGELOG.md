@@ -1,5 +1,10 @@
 # Changelog
 ## [Unreleased]
+
+### [0.9.7] WIP
+
+= adding --available_models to CLI options
+
 ## Released
 
 ### [0.9.6] 2025-06-13

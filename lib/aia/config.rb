@@ -325,6 +325,59 @@ module AIA
             end
           end
 
+          opts.on('--available_models [QUERY]', 'List (then exit) available models that match the optional query - a comma separated list of AND components like: openai,mini') do |query|
+
+            # SMELL: mostly duplications the code in the vailable_models directive
+            #        assumes that the adapter is for the ruby_llm gem
+            #        should this be moved to the Utilities class as a common method?
+
+            if query.nil?
+              query = []
+            else
+              query = query.split(',')
+            end
+
+            header    = "\nAvailable LLMs"
+            header   += " for #{query.join(' and ')}" if query
+
+            puts header + ':'
+            puts
+
+            q1 = query.select{|q| q.include?('_to_')}.map{|q| ':'==q[0] ? q[1...] : q}
+            q2 = query.reject{|q| q.include?('_to_')}
+
+
+            # query   = nil
+            counter = 0
+
+            RubyLLM.models.all.each do |llm|
+              inputs  = llm.modalities.input.join(',')
+              outputs = llm.modalities.output.join(',')
+              entry   = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
+
+              if query.nil? || query.empty?
+                counter += 1
+                puts entry
+                next
+              end
+
+              show_it = true
+              q1.each{|q| show_it &&= llm.modalities.send("#{q}?")}
+              q2.each{|q| show_it &&= entry.include?(q)}
+
+              if show_it
+                counter += 1
+                puts entry
+              end
+            end
+
+            puts if counter > 0
+            puts "#{counter} LLMs matching your query"
+            puts
+
+            exit
+          end
+
           opts.on("-m MODEL", "--model MODEL", "Name of the LLM model to use") do |model|
             config.model = model
           end
