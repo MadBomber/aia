@@ -6,8 +6,6 @@
 
 require 'ruby_llm'
 require 'ruby_llm/mcp'
-require 'shared_tools'
-require 'shared_tools/ruby_llm'
 require 'prompt_manager'
 
 

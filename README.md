@@ -6,7 +6,7 @@
 
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
 
-AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts, utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection, and includes the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a collection of ready-to-use functions for use with LLMs that support tools.
+AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts, utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection, and can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a collection of ready-to-use functions for use with LLMs that support tools.
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
@@ -462,7 +462,7 @@ aia --tools ~/tools/ --rejected_tools deprecated
 - Data processing utilities
 
 **Shared Tools Collection:**
-AIA includes the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a curated collection of commonly-used RubyLLM::Tool implementations:
+AIA can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a curated collection of commonly-used RubyLLM::Tool implementations:
 
 ```bash
 # Access shared tools automatically (included with AIA)
