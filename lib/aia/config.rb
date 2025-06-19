@@ -124,6 +124,17 @@ module AIA
       remaining_args = config.remaining_args.dup
       config.remaining_args = nil
 
+      # Check for STDIN content (piped input)
+      stdin_content = nil
+      if !STDIN.tty? && !STDIN.closed?
+        begin
+          stdin_content = STDIN.read
+          STDIN.reopen('/dev/tty')  # Reopen STDIN for interactive use
+        rescue => e
+          # If we can't reopen, continue without error
+        end
+      end
+
       # Is first remaining argument a prompt ID?
       unless remaining_args.empty?
         maybe_id      = remaining_args.first
@@ -134,6 +145,18 @@ module AIA
         end
       end
 
+      # Handle STDIN content as context instead of treating as filenames
+      if stdin_content && !stdin_content.strip.empty?
+        # Create a temporary file for the STDIN content
+        require 'tmpdir'
+        temp_path = File.join(Dir.tmpdir, "aia_stdin_#{Process.pid}_#{Time.now.to_i}.txt")
+        File.write(temp_path, stdin_content)
+        
+        config.stdin_temp_file = temp_path
+        config.context_files ||= []
+        config.context_files << temp_path
+      end
+
       unless remaining_args.empty?
         bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
         if bad_files.any?
@@ -141,7 +164,8 @@ module AIA
           exit 1
         end
 
-        config.context_files = remaining_args
+        config.context_files ||= []
+        config.context_files += remaining_args
       end
 
       if config.prompt_id.nil? && !config.chat && !config.fuzzy
@@ -436,7 +460,13 @@ module AIA
           end
 
           opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
-            config.out_file = file ? File.expand_path(file, Dir.pwd) : 'temp.md'
+            if file == false  # --no-out_file was used
+              config.out_file = nil
+            elsif file.nil?   # No argument provided
+              config.out_file = 'temp.md'
+            else              # File name provided
+              config.out_file = File.expand_path(file, Dir.pwd)
+            end
           end
 
           opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|

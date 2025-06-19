@@ -41,7 +41,7 @@ module AIA
       @directive_processor = DirectiveProcessor.new
       @chat_processor      = ChatProcessorService.new(@ui_presenter, @directive_processor)
 
-      if AIA.config.out_file && !AIA.append? && File.exist?(AIA.config.out_file)
+      if AIA.config.out_file && !AIA.config.out_file.nil? && !AIA.append? && File.exist?(AIA.config.out_file)
         File.open(AIA.config.out_file, 'w') {} # Truncate the file
       end
     end

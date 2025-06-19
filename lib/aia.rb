@@ -39,6 +39,10 @@ require_relative 'aia/session'
 module AIA
   at_exit do
     STDERR.puts "Exiting AIA application..."
+    # Clean up temporary STDIN file if it exists
+    if @config&.stdin_temp_file && File.exist?(@config.stdin_temp_file)
+      File.unlink(@config.stdin_temp_file)
+    end
   end
 
   @config = nil

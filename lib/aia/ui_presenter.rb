@@ -26,7 +26,7 @@ module AIA
       puts "\nAI: "
       format_chat_response(response)
 
-      if AIA.config.out_file
+      if AIA.config.out_file && !AIA.config.out_file.nil?
         File.open(AIA.config.out_file, 'a') do |file|
           file.puts "\nAI: "
           format_chat_response(response, file)
