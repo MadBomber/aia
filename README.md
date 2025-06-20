@@ -25,12 +25,12 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 3. **Create your first prompt:**
    ```bash
    mkdir -p ~/.prompts
-   echo "What is [TOPIC]?" > ~/.prompts/ask.txt
+   echo "What is [TOPIC]?" > ~/.prompts/what_is.txt
    ```
 
 4. **Run your prompt:**
    ```bash
-   aia ask
+   aia what_is
    ```
    You'll be prompted to enter a value for `[TOPIC]`, then AIA will send your question to the AI model.
 
@@ -40,15 +40,17 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
    ```
 
 ```plain
-     ,      ,
-     (\____/) AI Assistant
-      (_oo_)   Fancy LLM
-        (O)     is Online
-      __||__    \)
-    [/______\]  /
-   / \__AI__/ \/
-  /    /__\
- (\   /____\
+
+       ,      ,
+       (\____/) AI Assistant (v0.9.7) is Online
+        (_oo_)   gpt-4o-mini
+         (O)       using ruby_llm (v1.3.1)
+       __||__    \) model db was last refreshed on
+     [/______\]  /    2025-06-18
+    / \__AI__/ \/      You can share my tools
+   /    /__\
+  (\   /____\
+
 ```
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
@@ -312,8 +314,10 @@ Directives are special commands in prompt files that begin with `//` and provide
 | Directive | Description | Example |
 |-----------|-------------|---------|
 | `//config` | Set configuration values | `//config model = gpt-4` |
+| `//context` | Show context for this conversation | `//context` |
 | `//include` | Insert file contents | `//include path/to/file.txt` |
 | `//shell` | Execute shell commands | `//shell ls -la` |
+| `//robot` | Show the pet robot ASCII art w/versions | `//robot` |
 | `//ruby` | Execute Ruby code | `//ruby puts "Hello World"` |
 | `//next` | Set next prompt in sequence | `//next summary` |
 | `//pipeline` | Set prompt workflow | `//pipeline analyze,summarize,report` |
@@ -321,6 +325,8 @@ Directives are special commands in prompt files that begin with `//` and provide
 | `//help` | Show available directives | `//help` |
 | `//available_models` | List available models | `//available_models` |
 | `//review` | Review current context | `//review` |
+
+Directives can also be used in the interactive chat sessions.
 
 #### Configuration Directive Examples
 
@@ -553,26 +559,26 @@ Include: API references, usage examples, and setup instructions.
 
 ### Executable Prompts
 
-Create reusable executable prompts:
+The `--exec` flag is used to create executable prompts.  If it is not present on the shebang line then the prompt file will be treated like any other context file.  That means that the file will be included as context in the prompt but no dynamic content integration or directives will be processed. All other AIA options are, well, optional.  All you need is an initial prompt ID and the --exec flag.
+
+In the example below the option `--no-out_file` is used to direct the output from the LLM processing of the prompt to STDOUT.  This way the executable prompts can be good citizens on the *nix command line receiving piped in input via STDIN and send its output to STDOUT.
+
+Create executable prompts:
 
 **weather_report** (make executable with `chmod +x`):
 ```bash
-#!/usr/bin/env aia run --no-out_file
-# Get current weather for a city
+#!/usr/bin/env aia run --no-out_file --exec
+# Get current storm activity for the east and south coast of the US
 
-//ruby require 'shared_tools/ruby_llm/current_weather'
+Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.
 
-What's the current weather in [CITY]?
-Include temperature, conditions, and 3-day forecast.
-Format as a brief, readable summary.
+//webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
 ```
 
 Usage:
 ```bash
 ./weather_report
-# Prompts for city, outputs to stdout
-
-./weather_report | glow  # Render with glow
+./weather_report | glow  # Render the markdown with glow
 ```
 
 ### Tips from the Author

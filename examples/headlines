@@ -1,21 +1,30 @@
-#!/usr/bin/env aia run --no-out_file
-# File: examples/headlines
+#!/usr/bin/env aia run --no-out_file --exec
+# NOTE: the --exec option is REQUIRED to run this executable prompt file
+#       This option signals that the contents of this file are to be appended
+#       to the contents of the given prompt ID file.  In this case it is the
+#       "run" prompt ID's text file.
+#
+#       All other AIA options are, well, optional.  The --no-out_file is
+#       used here to cause the response to this executable prompt to be
+#       sent to STDOUT like a good little *nix CLI tool.  Its not necessary.
+#       if you do not use it, the output will go to the default out_file.
+#       You could also specify a specific file to write the output to built
+#       but it is more convential to use the *nix STDOUT redirect "> output.md"
+#
 # Desc: retrieves the news.google.com website
 #       extracts and formats the headlines
-#       and prints them to the console
+#       and prints them to STDOUT
+#
+# Method:
+#   There are several ways you can accomplish this task using
+#   the shell or ERB integration.  For this example lets use
+#   a built-in directive.
 
-//config shell = true
-# //config
+Extract and summarize the headlines from the following markdown:
 
-# Puts the webpage into index.html
-# //shell wget2 https://news.google.com
+//webpage https://news.google.com
 
-$(wget2 https://news.google.com)
+__END__
 
-
-# Lets hear the headlines as well as read them.
-//config speak = true
-
-Extract and summarize the headlines from the following text:
-
-$(html2text index.html)
+The //webpage directive makes use of the website https://pure.md
+to convert any given URL to a markdown file.

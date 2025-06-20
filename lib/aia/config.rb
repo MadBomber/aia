@@ -124,13 +124,13 @@ module AIA
       remaining_args = config.remaining_args.dup
       config.remaining_args = nil
 
-      # Check for STDIN content (piped input)
+      # Check for STDIN content
       stdin_content = nil
       if !STDIN.tty? && !STDIN.closed?
         begin
           stdin_content = STDIN.read
           STDIN.reopen('/dev/tty')  # Reopen STDIN for interactive use
-        rescue => e
+        rescue => _
           # If we can't reopen, continue without error
         end
       end
@@ -145,16 +145,9 @@ module AIA
         end
       end
 
-      # Handle STDIN content as context instead of treating as filenames
+      # Store STDIN content for later processing in session.rb
       if stdin_content && !stdin_content.strip.empty?
-        # Create a temporary file for the STDIN content
-        require 'tmpdir'
-        temp_path = File.join(Dir.tmpdir, "aia_stdin_#{Process.pid}_#{Time.now.to_i}.txt")
-        File.write(temp_path, stdin_content)
-        
-        config.stdin_temp_file = temp_path
-        config.context_files ||= []
-        config.context_files << temp_path
+        config.stdin_content = stdin_content
       end
 
       unless remaining_args.empty?
@@ -167,6 +160,17 @@ module AIA
         config.context_files ||= []
         config.context_files += remaining_args
       end
+
+      # Check if the last context file is an executable prompt
+      if  config.executable_prompt     &&
+          config.context_files         &&
+          !config.context_files.empty?
+        config.executable_prompt_file = config.context_files.pop
+      end
+
+      # TODO: Consider that if there is no prompt ID but there is an executable prompt
+      #       then maybe that is all that is needed.
+
 
       if config.prompt_id.nil? && !config.chat && !config.fuzzy
         STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
@@ -406,6 +410,11 @@ module AIA
             config.model = model
           end
 
+          opts.on("-x", "--[no-]exec", "Used to designate an executable prompt file") do |value|
+            config.executable_prompt = value
+          end
+
+
           opts.on("--terse", "Adds a special instruction to the prompt asking the AI to keep responses short and to the point") do
             config.terse = true
           end
@@ -505,8 +514,8 @@ module AIA
             config.debug = $DEBUG_ME = false
           end
 
-          opts.on("-v", "--verbose", "Be verbose") do
-            config.verbose = true
+          opts.on("-v", "--[no-]verbose", "Be verbose") do |value|
+            config.verbose = value
           end
 
           opts.on("--speak", "Simple implementation. Uses the speech model to convert text to audio, then plays the audio. Fun with --chat. Supports configuration of speech model and voice.") do

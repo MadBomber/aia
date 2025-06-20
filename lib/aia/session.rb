@@ -111,8 +111,17 @@ module AIA
         prompt.text << TERSE_PROMPT
       end
 
-      prompt.save
-      # Substitute variables and get final prompt text
+      if AIA.config.stdin_content && !AIA.config.stdin_content.strip.empty?
+        prompt.text << "\n\n" << AIA.config.stdin_content
+      end
+
+      if AIA.config.executable_prompt_file
+        prompt.text << "\n\n" << File.read(AIA.config.executable_prompt_file)
+                                  .lines[1..]
+                                  .join
+      end
+
+      # Substitute variables, execute dynamic content and get final prompt text
       prompt_text = prompt.to_s
 
       # Add context files if any
