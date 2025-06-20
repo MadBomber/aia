@@ -124,6 +124,17 @@ module AIA
       remaining_args = config.remaining_args.dup
       config.remaining_args = nil
 
+      # Check for STDIN content
+      stdin_content = nil
+      if !STDIN.tty? && !STDIN.closed?
+        begin
+          stdin_content = STDIN.read
+          STDIN.reopen('/dev/tty')  # Reopen STDIN for interactive use
+        rescue => _
+          # If we can't reopen, continue without error
+        end
+      end
+
       # Is first remaining argument a prompt ID?
       unless remaining_args.empty?
         maybe_id      = remaining_args.first
@@ -134,6 +145,11 @@ module AIA
         end
       end
 
+      # Store STDIN content for later processing in session.rb
+      if stdin_content && !stdin_content.strip.empty?
+        config.stdin_content = stdin_content
+      end
+
       unless remaining_args.empty?
         bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
         if bad_files.any?
@@ -141,8 +157,20 @@ module AIA
           exit 1
         end
 
-        config.context_files = remaining_args
+        config.context_files ||= []
+        config.context_files += remaining_args
       end
+
+      # Check if the last context file is an executable prompt
+      if  config.executable_prompt     &&
+          config.context_files         &&
+          !config.context_files.empty?
+        config.executable_prompt_file = config.context_files.pop
+      end
+
+      # TODO: Consider that if there is no prompt ID but there is an executable prompt
+      #       then maybe that is all that is needed.
+
 
       if config.prompt_id.nil? && !config.chat && !config.fuzzy
         STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
@@ -325,9 +353,67 @@ module AIA
             end
           end
 
+          opts.on('--available_models [QUERY]', 'List (then exit) available models that match the optional query - a comma separated list of AND components like: openai,mini') do |query|
+
+            # SMELL: mostly duplications the code in the vailable_models directive
+            #        assumes that the adapter is for the ruby_llm gem
+            #        should this be moved to the Utilities class as a common method?
+
+            if query.nil?
+              query = []
+            else
+              query = query.split(',')
+            end
+
+            header    = "\nAvailable LLMs"
+            header   += " for #{query.join(' and ')}" if query
+
+            puts header + ':'
+            puts
+
+            q1 = query.select{|q| q.include?('_to_')}.map{|q| ':'==q[0] ? q[1...] : q}
+            q2 = query.reject{|q| q.include?('_to_')}
+
+
+            # query   = nil
+            counter = 0
+
+            RubyLLM.models.all.each do |llm|
+              inputs  = llm.modalities.input.join(',')
+              outputs = llm.modalities.output.join(',')
+              entry   = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
+
+              if query.nil? || query.empty?
+                counter += 1
+                puts entry
+                next
+              end
+
+              show_it = true
+              q1.each{|q| show_it &&= llm.modalities.send("#{q}?")}
+              q2.each{|q| show_it &&= entry.include?(q)}
+
+              if show_it
+                counter += 1
+                puts entry
+              end
+            end
+
+            puts if counter > 0
+            puts "#{counter} LLMs matching your query"
+            puts
+
+            exit
+          end
+
           opts.on("-m MODEL", "--model MODEL", "Name of the LLM model to use") do |model|
             config.model = model
           end
+
+          opts.on("-x", "--[no-]exec", "Used to designate an executable prompt file") do |value|
+            config.executable_prompt = value
+          end
+
 
           opts.on("--terse", "Adds a special instruction to the prompt asking the AI to keep responses short and to the point") do
             config.terse = true
@@ -383,7 +469,13 @@ module AIA
           end
 
           opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
-            config.out_file = file ? File.expand_path(file, Dir.pwd) : 'temp.md'
+            if file == false  # --no-out_file was used
+              config.out_file = nil
+            elsif file.nil?   # No argument provided
+              config.out_file = 'temp.md'
+            else              # File name provided
+              config.out_file = File.expand_path(file, Dir.pwd)
+            end
           end
 
           opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|
@@ -422,8 +514,8 @@ module AIA
             config.debug = $DEBUG_ME = false
           end
 
-          opts.on("-v", "--verbose", "Be verbose") do
-            config.verbose = true
+          opts.on("-v", "--[no-]verbose", "Be verbose") do |value|
+            config.verbose = value
           end
 
           opts.on("--speak", "Simple implementation. Uses the speech model to convert text to audio, then plays the audio. Fun with --chat. Supports configuration of speech model and voice.") do

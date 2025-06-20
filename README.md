@@ -6,7 +6,7 @@
 
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
 
-AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts, utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection, and includes the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a collection of ready-to-use functions for use with LLMs that support tools.
+AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts, utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection, and can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a collection of common ready-to-use functions for use with LLMs that support tools.
 
 **Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
 
@@ -25,12 +25,12 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
 3. **Create your first prompt:**
    ```bash
    mkdir -p ~/.prompts
-   echo "What is [TOPIC]?" > ~/.prompts/ask.txt
+   echo "What is [TOPIC]?" > ~/.prompts/what_is.txt
    ```
 
 4. **Run your prompt:**
    ```bash
-   aia ask
+   aia what_is
    ```
    You'll be prompted to enter a value for `[TOPIC]`, then AIA will send your question to the AI model.
 
@@ -40,43 +40,76 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
    ```
 
 ```plain
-     ,      ,
-     (\____/) AI Assistant
-      (_oo_)   Fancy LLM
-        (O)     is Online
-      __||__    \)
-    [/______\]  /
-   / \__AI__/ \/
-  /    /__\
- (\   /____\
+
+       ,      ,
+       (\____/) AI Assistant (v0.9.7) is Online
+        (_oo_)   gpt-4o-mini
+         (O)       using ruby_llm (v1.3.1)
+       __||__    \) model db was last refreshed on
+     [/______\]  /    2025-06-18
+    / \__AI__/ \/      You can share my tools
+   /    /__\
+  (\   /____\
+
 ```
 
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
 ## Table of Contents
 
-  - [Quick Start](#quick-start)
   - [Installation & Prerequisites](#installation--prerequisites)
+    - [Requirements](#requirements)
+    - [Installation](#installation)
+    - [Setup Shell Completion](#setup-shell-completion)
   - [Basic Usage](#basic-usage)
+    - [Command Line Interface](#command-line-interface)
+    - [Key Command-Line Options](#key-command-line-options)
+    - [Directory Structure](#directory-structure)
   - [Configuration](#configuration)
     - [Essential Configuration Options](#essential-configuration-options)
     - [Configuration Precedence](#configuration-precedence)
+    - [Configuration Methods](#configuration-methods)
     - [Complete Configuration Reference](#complete-configuration-reference)
   - [Advanced Features](#advanced-features)
     - [Prompt Directives](#prompt-directives)
+      - [Configuration Directive Examples](#configuration-directive-examples)
+      - [Dynamic Content Examples](#dynamic-content-examples)
     - [Shell Integration](#shell-integration)
     - [Embedded Ruby (ERB)](#embedded-ruby-erb)
     - [Prompt Sequences](#prompt-sequences)
+      - [Using --next](#using---next)
+      - [Using --pipeline](#using---pipeline)
+      - [Example Workflow](#example-workflow)
     - [Roles and System Prompts](#roles-and-system-prompts)
     - [RubyLLM::Tool Support](#rubyllmtool-support)
   - [Examples & Tips](#examples--tips)
     - [Practical Examples](#practical-examples)
+      - [Code Review Prompt](#code-review-prompt)
+      - [Meeting Notes Processor](#meeting-notes-processor)
+      - [Documentation Generator](#documentation-generator)
     - [Executable Prompts](#executable-prompts)
     - [Tips from the Author](#tips-from-the-author)
+      - [The run Prompt](#the-run-prompt)
+      - [The Ad Hoc One-shot Prompt](#the-ad-hoc-one-shot-prompt)
+      - [Recommended Shell Setup](#recommended-shell-setup)
+      - [Prompt Directory Organization](#prompt-directory-organization)
   - [Security Considerations](#security-considerations)
+    - [Shell Command Execution](#shell-command-execution)
+    - [Safe Practices](#safe-practices)
+    - [Recommended Security Setup](#recommended-security-setup)
   - [Troubleshooting](#troubleshooting)
+    - [Common Issues](#common-issues)
+    - [Error Messages](#error-messages)
+    - [Debug Mode](#debug-mode)
+    - [Performance Issues](#performance-issues)
   - [Development](#development)
+    - [Testing](#testing)
+    - [Building](#building)
+    - [Architecture Notes](#architecture-notes)
   - [Contributing](#contributing)
+    - [Reporting Issues](#reporting-issues)
+    - [Development Setup](#development-setup)
+    - [Areas for Improvement](#areas-for-improvement)
   - [Roadmap](#roadmap)
   - [License](#license)
 
@@ -281,8 +314,10 @@ Directives are special commands in prompt files that begin with `//` and provide
 | Directive | Description | Example |
 |-----------|-------------|---------|
 | `//config` | Set configuration values | `//config model = gpt-4` |
+| `//context` | Show context for this conversation | `//context` |
 | `//include` | Insert file contents | `//include path/to/file.txt` |
 | `//shell` | Execute shell commands | `//shell ls -la` |
+| `//robot` | Show the pet robot ASCII art w/versions | `//robot` |
 | `//ruby` | Execute Ruby code | `//ruby puts "Hello World"` |
 | `//next` | Set next prompt in sequence | `//next summary` |
 | `//pipeline` | Set prompt workflow | `//pipeline analyze,summarize,report` |
@@ -290,6 +325,8 @@ Directives are special commands in prompt files that begin with `//` and provide
 | `//help` | Show available directives | `//help` |
 | `//available_models` | List available models | `//available_models` |
 | `//review` | Review current context | `//review` |
+
+Directives can also be used in the interactive chat sessions.
 
 #### Configuration Directive Examples
 
@@ -462,22 +499,20 @@ aia --tools ~/tools/ --rejected_tools deprecated
 - Data processing utilities
 
 **Shared Tools Collection:**
-AIA includes the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a curated collection of commonly-used RubyLLM::Tool implementations:
+AIA can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a curated collection of commonly-used  tools (aka functions) via the --require option.
 
 ```bash
 # Access shared tools automatically (included with AIA)
-aia --tools shared --chat
+aia --require shared_tools/ruby_llm --chat
 
-# Combine with custom tools
-aia --tools shared,~/my-tools/ --chat
+# To access just one specific shared tool
+aia --require shared_tools/ruby_llm/edit_file --chat
+
+# Combine with your own local custom RubyLLM-based tools
+aia --require shared_tools/ruby_llm --tools ~/my-tools/ --chat
 ```
 
-Available shared tools include:
-- **File operations**: read, write, edit, search files
-- **Web utilities**: fetch web pages, parse HTML/JSON
-- **System tools**: execute commands, get system info
-- **Data processing**: CSV/JSON manipulation, text analysis
-- **API helpers**: HTTP requests, common API patterns
+The above examples show the shared_tools being used within an interactive chat session.  They are also available in batch prompts as well using the same --require option.  You can also use the //ruby directive to require the shared_tools as well and using a require statement within an ERB block.
 
 ## Examples & Tips
 
@@ -486,7 +521,7 @@ Available shared tools include:
 #### Code Review Prompt
 ```bash
 # ~/.prompts/code_review.txt
-//config model = gpt-4
+//config model = gpt-4o-mini
 //config temperature = 0.3
 
 Review this code for:
@@ -496,7 +531,6 @@ Review this code for:
 - Maintainability concerns
 
 Code to review:
-//include [CODE_FILE]
 ```
 
 Usage: `aia code_review mycode.rb`
@@ -516,7 +550,7 @@ Please clean up and structure these meeting notes.
 #### Documentation Generator
 ```bash
 # ~/.prompts/document.txt
-//config model = gpt-4
+//config model = gpt-4o-mini
 //shell find [PROJECT_DIR] -name "*.rb" | head -10
 
 Generate documentation for the Ruby project shown above.
@@ -525,48 +559,62 @@ Include: API references, usage examples, and setup instructions.
 
 ### Executable Prompts
 
-Create reusable executable prompts:
+The `--exec` flag is used to create executable prompts.  If it is not present on the shebang line then the prompt file will be treated like any other context file.  That means that the file will be included as context in the prompt but no dynamic content integration or directives will be processed. All other AIA options are, well, optional.  All you need is an initial prompt ID and the --exec flag.
+
+In the example below the option `--no-out_file` is used to direct the output from the LLM processing of the prompt to STDOUT.  This way the executable prompts can be good citizens on the *nix command line receiving piped in input via STDIN and send its output to STDOUT.
+
+Create executable prompts:
 
 **weather_report** (make executable with `chmod +x`):
 ```bash
-#!/usr/bin/env aia run --no-out_file
-# Get current weather for a city
+#!/usr/bin/env aia run --no-out_file --exec
+# Get current storm activity for the east and south coast of the US
 
-What's the current weather in [CITY]?
-Include temperature, conditions, and 3-day forecast.
-Format as a brief, readable summary.
+Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.
+
+//webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
 ```
 
 Usage:
 ```bash
 ./weather_report
-# Prompts for city, outputs to stdout
-
-./weather_report | glow  # Render with glow
+./weather_report | glow  # Render the markdown with glow
 ```
 
 ### Tips from the Author
 
-**Most Versatile Prompt:**
+#### The run Prompt
+```bash
+# ~/.prompts/run.txt
+# Desc: A configuration only prompt file for use with executable prompts
+#       Put whatever you want here to setup the configuration desired.
+#       You could also add a system prompt to preface your intended prompt
+```
+
+Usage: `echo "What is the meaning of life?" | aia run`
+
+#### The Ad Hoc One-shot Prompt
 ```bash
 # ~/.prompts/ad_hoc.txt
 [WHAT_NOW_HUMAN]
 ```
-Usage: `aia ad_hoc` - perfect for any quick question without cluttering shell history.
+Usage: `aia ad_hoc` - perfect for any quick one-shot question without cluttering shell history.
 
-**Recommended Shell Setup:**
+#### Recommended Shell Setup
 ```bash
 # ~/.bashrc_aia
 export AIA_PROMPTS_DIR=~/.prompts
 export AIA_OUT_FILE=./temp.md
 export AIA_MODEL=gpt-4o-mini
-export AIA_VERBOSE=true  # Shows spinner while waiting
+export AIA_VERBOSE=true  # Shows spinner while waiting for LLM response
 
 alias chat='aia --chat --terse'
-alias ask='aia ad_hoc'
+ask() { echo "$1" | aia run --no-out_file; }
 ```
 
-**Prompt Organization:**
+The `chat` alias and the `ask` function (shown above in HASH) are two powerful tools for interacting with the AI assistant. The `chat` alias allows you to engage in an interactive conversation with the AI assistant, while the `ask` function allows you to ask a question and receive a response. Later in this document the `run` prompt ID is discussed.  Besides using the run prompt ID here its also used in making executable prompt files.
+
+#### Prompt Directory Organization
 ```
 ~/.prompts/
 ├── daily/           # Daily workflow prompts
@@ -611,10 +659,6 @@ AIA executes shell commands and Ruby code embedded in prompts. This provides pow
 # Set restrictive permissions on prompts directory
 chmod 700 ~/.prompts
 chmod 600 ~/.prompts/*.txt
-
-# Use separate prompts directory for shared/untrusted prompts
-export AIA_PROMPTS_DIR_SHARED=~/shared-prompts
-chmod 755 ~/shared-prompts
 ```
 
 ## Troubleshooting

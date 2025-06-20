@@ -62,7 +62,7 @@ module AIA
 
       # Only output to STDOUT if we're in chat mode
 
-      if AIA.chat? || 'STDOUT' == AIA.config.out_file.upcase
+      if AIA.chat? || AIA.config.out_file.nil? || 'STDOUT' == AIA.config.out_file.upcase
         print "\nAI:\n  "
         puts response
       else

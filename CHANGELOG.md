@@ -1,6 +1,19 @@
 # Changelog
 ## [Unreleased]
+
+### [0.9.8] WIP
+
 ## Released
+
+### [0.9.7] 2025-06-20
+
+- **NEW FEATURE**: Added `--available_models` CLI option to list all available AI models
+- **BUG FIX**: Fixed SharedTools compatibility issue with models that don't support function calling
+- **BUG FIX**: Fixed problem with piped text through STDIN not being handled correctly.
+- **BUG FIX**: Fixed issue with output going to the default out_file evenhen --no-out_file is specified.
+- **BUG FIX**: Fixed issue with executable prompt files by adding the --exec option
+- **DOCUMENTATION**: Updated README for better clarity and structure
+- **DEPENDENCY**: Updated Gemfile.lock with latest dependency versions
 
 ### [0.9.6] 2025-06-13
 - fixed issue 84 with the //llms directive
