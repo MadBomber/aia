@@ -1,6 +1,8 @@
 # lib/aia/directive_processor.rb
 
+require 'active_support/all'
 require 'faraday'
+require 'word_wrapper'      # Pure ruby word wrapping
 
 module AIA
   class DirectiveProcessor
@@ -145,7 +147,7 @@ module AIA
     end
 
     desc "Specify the next prompt ID to process after this one"
-    def next(args = [])
+    def next(args = [], context_manager=nil)
       if args.empty?
         ap AIA.config.next
       else
@@ -154,8 +156,33 @@ module AIA
       ''
     end
 
+    desc "Show a list of tools and their description"
+    def tools(args = [], context_manager=nil)
+      indent  = 4
+      spaces  = " "*indent
+      width   = TTY::Screen.width - indent - 2
+
+      if !AIA.config.tools.empty?
+        puts
+        puts "Available Tools"
+        puts "==============="
+
+        AIA.config.tools.split(',').map(&:strip).each do |tool|
+          klass = tool.constantize
+          puts "\n#{klass.name}"
+          puts "-"*klass.name.size
+          puts WordWrapper::MinimumRaggedness.new(width, klass.description).wrap.split("\n").map{|s| spaces+s+"\n"}.join
+        end
+      else
+        puts "No tools configured"
+      end
+      puts
+
+      ''
+    end
+
     desc "Specify a sequence pf prompt IDs to process after this one"
-    def pipeline(args = [])
+    def pipeline(args = [], context_manager=nil)
       if args.empty?
         ap AIA.config.pipeline
       else

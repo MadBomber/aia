@@ -8,6 +8,7 @@
 ### [0.9.7] 2025-06-20
 
 - **NEW FEATURE**: Added `--available_models` CLI option to list all available AI models
+- **NEW FEATURE**: Added `//tools` to show a list of available tools and their description
 - **BUG FIX**: Fixed SharedTools compatibility issue with models that don't support function calling
 - **BUG FIX**: Fixed problem with piped text through STDIN not being handled correctly.
 - **BUG FIX**: Fixed issue with output going to the default out_file evenhen --no-out_file is specified.

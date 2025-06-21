@@ -324,6 +324,7 @@ Directives are special commands in prompt files that begin with `//` and provide
 | `//clear` | Clear conversation history | `//clear` |
 | `//help` | Show available directives | `//help` |
 | `//available_models` | List available models | `//available_models` |
+| `//tools` | Show a list of available tools and their description | `//tools` |
 | `//review` | Review current context | `//review` |
 
 Directives can also be used in the interactive chat sessions.
