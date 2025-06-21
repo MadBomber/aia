@@ -42,6 +42,7 @@ Gem::Specification.new do |spec|
   spec.executables    = %w[ aia ]
   spec.require_paths  = %w[ lib ]
 
+  spec.add_dependency "activesupport"
   spec.add_dependency "amazing_print"
   spec.add_dependency "faraday"
   spec.add_dependency "prompt_manager", '>= 0.5.6'
