@@ -32,10 +32,10 @@ module AIA
 
     def setup_prompt_and_history_manager
       # Special handling for chat mode with context files but no prompt ID
-      if AIA.chat? && AIA.config.prompt_id.empty? && AIA.config.context_files && !AIA.config.context_files.empty?
+      if AIA.chat? && (AIA.config.prompt_id.nil? || AIA.config.prompt_id.empty?) && AIA.config.context_files && !AIA.config.context_files.empty?
         prompt_instance = nil
         @history_manager = nil
-      elsif AIA.chat? && AIA.config.prompt_id.empty?
+      elsif AIA.chat? && (AIA.config.prompt_id.nil? || AIA.config.prompt_id.empty?)
         prompt_instance = nil
         @history_manager = nil
       else
