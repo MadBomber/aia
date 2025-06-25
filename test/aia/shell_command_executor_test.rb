@@ -1,33 +1,33 @@
 require 'minitest/autorun'
 require 'ostruct'
-require_relative '../../lib/aia/shell_command_executor'
+require_relative '../test_helper'
+require_relative '../../lib/aia'
 
 class ShellCommandExecutorTest < Minitest::Test
   def setup
-    @config = OpenStruct.new(
-      shell_confirm: true,
-      strict_shell_safety: false
-    )
-    @executor = AIA::ShellCommandExecutor.new(@config)
+    @executor = AIA::ShellCommandExecutor.new
+    
+    # Define stub methods for AIA module if they don't exist
+    unless AIA.respond_to?(:strict_shell_safety?)
+      AIA.define_singleton_method(:strict_shell_safety?) { @strict_shell_safety || false }
+    end
+    
+    unless AIA.respond_to?(:shell_confirm?)
+      AIA.define_singleton_method(:shell_confirm?) { @shell_confirm || false }
+    end
+    
+    # Set default values
+    @strict_shell_safety = false
+    @shell_confirm = false
   end
 
   def test_initialization
-    assert_equal @config, @executor.instance_variable_get(:@config)
-  end
-
-  def test_class_factory_method
-    executor = AIA::ShellCommandExecutor.with_config(@config)
-    assert_instance_of AIA::ShellCommandExecutor, executor
-    assert_equal @config, executor.instance_variable_get(:@config)
+    assert_instance_of AIA::ShellCommandExecutor, @executor
   end
 
   def test_class_method_creates_instance
-    # Mock the instance method to verify it's called
-    instance = mock
-    instance.expects(:execute_command).with('echo hello')
-
-    AIA::ShellCommandExecutor.expects(:new).with(@config).returns(instance)
-    AIA::ShellCommandExecutor.execute_command('echo hello', @config)
+    result = AIA::ShellCommandExecutor.execute_command('echo test')
+    assert_instance_of String, result
   end
 
   def test_blank_command
@@ -69,47 +69,43 @@ class ShellCommandExecutorTest < Minitest::Test
   end
 
   def test_strict_shell_safety_blocks_dangerous_commands
-    strict_config = OpenStruct.new(
-      shell_confirm: false,
-      strict_shell_safety: true
-    )
-    strict_executor = AIA::ShellCommandExecutor.new(strict_config)
-
-    result = strict_executor.execute_command('rm -f file')
+    # Temporarily override the method behavior
+    original_method = AIA.method(:strict_shell_safety?)
+    AIA.define_singleton_method(:strict_shell_safety?) { true }
+    
+    result = @executor.execute_command('rm -f file')
     assert_match(/Error: Potentially dangerous command blocked/, result)
+    
+    # Restore original method
+    AIA.define_singleton_method(:strict_shell_safety?, &original_method)
   end
 
   def test_shell_confirm_prompts_for_dangerous_commands
-    # Mock the confirmation prompt to return false (user declines)
-    @executor.expects(:prompt_confirmation).returns("Error: Command execution cancelled by user")
-
-    result = @executor.execute_command('rm -f file')
-    assert_equal "Error: Command execution cancelled by user", result
+    # Temporarily override the method behavior
+    original_confirm = AIA.method(:shell_confirm?)
+    original_strict = AIA.method(:strict_shell_safety?)
+    
+    AIA.define_singleton_method(:shell_confirm?) { true }
+    AIA.define_singleton_method(:strict_shell_safety?) { false }
+    
+    # Mock the confirmation prompt to return cancellation
+    @executor.stub(:prompt_confirmation, "Command execution canceled by user") do
+      result = @executor.execute_command('rm -f file')
+      assert_equal "Command execution canceled by user", result
+    end
+    
+    # Restore original methods
+    AIA.define_singleton_method(:shell_confirm?, &original_confirm)
+    AIA.define_singleton_method(:strict_shell_safety?, &original_strict)
   end
 
   def test_successful_command_execution
-    # Only test simple echo commands that won't modify the system
     result = @executor.execute_command('echo hello world')
     assert_equal "hello world", result
   end
 
   def test_error_handling
-    # Test with a command that should produce an error
-    result = @executor.execute_command('non_existent_command with args')
+    result = @executor.execute_command('non_existent_command_that_should_fail_12345')
     assert_match(/Error executing shell command:/, result)
-  end
-
-  def test_config_flag_handling
-    # Test with config param
-    assert @executor.send(:config_flag?, :shell_confirm)
-
-    # Test with nil config
-    nil_executor = AIA::ShellCommandExecutor.new(nil)
-    refute nil_executor.send(:config_flag?, :shell_confirm)
-
-    # Test with config that doesn't have the flag
-    empty_config = OpenStruct.new
-    empty_executor = AIA::ShellCommandExecutor.new(empty_config)
-    refute empty_executor.send(:config_flag?, :shell_confirm)
   end
 end

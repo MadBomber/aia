@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.9.8)
+    aia (0.9.9)
       activesupport
       amazing_print
       faraday
