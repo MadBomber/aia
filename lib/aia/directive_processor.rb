@@ -185,8 +185,10 @@ module AIA
     def pipeline(args = [], context_manager=nil)
       if args.empty?
         ap AIA.config.pipeline
+      elsif 1 == args.size
+        AIA.config.pipeline += args.first.split(',').map(&:strip).reject{|id| id.empty?}
       else
-        AIA.config.pipeline += args.map {|id| id.gsub(',', '').strip}
+        AIA.config.pipeline += args.map{|id| id.gsub(',', '').strip}.reject{|id| id.empty?}
       end
       ''
     end

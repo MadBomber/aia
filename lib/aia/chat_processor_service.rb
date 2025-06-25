@@ -60,9 +60,8 @@ module AIA
     def output_response(response)
       speak(response)
 
-      # Only output to STDOUT if we're in chat mode
-
-      if AIA.chat? || AIA.config.out_file.nil? || 'STDOUT' == AIA.config.out_file.upcase
+      # Output to STDOUT or file based on out_file configuration
+      if AIA.config.out_file.nil? || 'STDOUT' == AIA.config.out_file.upcase
         print "\nAI:\n  "
         puts response
       else
@@ -94,26 +93,7 @@ module AIA
 
     def determine_operation_type
       mode = AIA.config.client.model.modalities
-
-      if mode.text_to_image?
-        :text_to_image
-      elsif mode.image_to_text?
-        :image_to_text
-      elsif mode.audio_to_text?
-        :audio_to_text
-      elsif mode.text_to_audio?
-        :text_to_audio
-      elsif mode.audio_to_audio?
-        :audio_to_audio
-      elsif mode.image_to_image?
-        :image_to_image
-      elsif mode.audio_to_image?
-        :audio_to_image
-      elsif mode.image_to_audio?
-        :image_to_audio
-      else
-        :text_to_text
-      end
+      mode.input.join(',') + " TO " + mode.output.join(',')
     end
   end
 end
