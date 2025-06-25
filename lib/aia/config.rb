@@ -468,7 +468,7 @@ module AIA
             end
           end
 
-          opts.on("-p", "--prompts_dir DIR", "Directory containing prompt files") do |dir|
+          opts.on("--prompts_dir DIR", "Directory containing prompt files") do |dir|
             config.prompts_dir = dir
           end
 
@@ -515,7 +515,7 @@ module AIA
             config.pipeline << next_prompt
           end
 
-          opts.on("--pipeline PROMPTS", "Pipeline of prompts to process") do |pipeline|
+          opts.on("-p PROMPTS", "--pipeline PROMPTS", "Pipeline of comma-seperated prompt IDs to process") do |pipeline|
             config.pipeline ||= []
             config.pipeline += pipeline.split(',').map(&:strip)
           end

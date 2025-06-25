@@ -1,9 +1,12 @@
 # Changelog
 ## [Unreleased]
 
-### [0.9.8] WIP
-
 ## Released
+
+### [0.9.8] 2025-06-25
+- fixing an issue with pipelined prompts
+- now showing the complete modality of the model on the processing line.
+- changed -p option from prompts_dir to pipeline
 
 ### [0.9.7] 2025-06-20
 
