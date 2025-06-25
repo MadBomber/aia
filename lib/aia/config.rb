@@ -36,6 +36,7 @@ module AIA
       system_prompt: '',
 
       # Tools
+      tools:          '',  # Comma-separated string of loaded tool names (set by adapter)
       allowed_tools:  nil, # nil means all tools are allowed; otherwise an Array of Strings which are the tool names
       rejected_tools: nil, # nil means no tools are rejected
       tool_paths:     [],  # Strings - absolute and relative to tools
