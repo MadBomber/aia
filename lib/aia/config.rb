@@ -54,7 +54,6 @@ module AIA
       append:   false, # Default to not append to existing out_file
 
       # workflow
-      next:     nil,
       pipeline: [],
 
       # PromptManager::Prompt Tailoring
@@ -125,10 +124,11 @@ module AIA
       config.remaining_args = nil
 
       # Check for STDIN content
-      stdin_content = nil
+      stdin_content = ''
+
       if !STDIN.tty? && !STDIN.closed?
         begin
-          stdin_content = STDIN.read
+          stdin_content << "\n" + STDIN.read
           STDIN.reopen('/dev/tty')  # Reopen STDIN for interactive use
         rescue => _
           # If we can't reopen, continue without error
@@ -190,6 +190,7 @@ module AIA
       if config.prompt_id.nil? || config.prompt_id.empty?
         if !config.role.nil? || !config.role.empty?
           config.prompt_id = config.role
+          config.pipeline.prepend config.prompt_id
           config.role      = ''
         end
       end
@@ -241,6 +242,25 @@ module AIA
       if config.parameter_regex
         PromptManager::Prompt.parameter_regex = Regexp.new(config.parameter_regex)
       end
+
+      if !config.prompt_id.empty? && config.prompt_id != config.pipeline.first
+        config.pipeline.prepend config.prompt_id
+      end
+
+      unless config.pipeline.empty?
+        config.pipeline.each do |prompt_id|
+          # Skip empty prompt IDs (can happen in chat-only mode)
+          next if prompt_id.nil? || prompt_id.empty?
+
+          prompt_file_path = File.join(config.prompts_dir, "#{prompt_id}.txt")
+          unless File.exist?(prompt_file_path)
+            STDERR.puts "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
+            and_exit = true
+          end
+        end
+      end
+
+      exit(1) if and_exit
 
       config
     end
@@ -337,7 +357,7 @@ module AIA
                       "       aia --chat [PROMPT_ID] [CONTEXT_FILE]*\n" +
                       "       aia --chat [CONTEXT_FILE]*"
 
-          opts.on("--chat", "Begin a chat session with the LLM after the initial prompt response; will set --no-out_file so that the LLM response comes to STDOUT.") do
+          opts.on("--chat", "Begin a chat session with the LLM after processing all prompts in the pipeline.") do
             config.chat = true
             puts "Debug: Setting chat mode to true" if config.debug
           end
@@ -448,7 +468,7 @@ module AIA
             end
           end
 
-          opts.on("-p", "--prompts_dir DIR", "Directory containing prompt files") do |dir|
+          opts.on("--prompts_dir DIR", "Directory containing prompt files") do |dir|
             config.prompts_dir = dir
           end
 
@@ -491,11 +511,13 @@ module AIA
           end
 
           opts.on("-n", "--next PROMPT_ID", "Next prompt to process") do |next_prompt|
-            config.next = next_prompt
+            config.pipeline ||= []
+            config.pipeline << next_prompt
           end
 
-          opts.on("--pipeline PROMPTS", "Pipeline of prompts to process") do |pipeline|
-            config.pipeline = pipeline.split(',')
+          opts.on("-p PROMPTS", "--pipeline PROMPTS", "Pipeline of comma-seperated prompt IDs to process") do |pipeline|
+            config.pipeline ||= []
+            config.pipeline += pipeline.split(',').map(&:strip)
           end
 
           opts.on("-f", "--fuzzy", "Use fuzzy matching for prompt search") do

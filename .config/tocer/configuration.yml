@@ -1,5 +1,6 @@
 label: "## Table of Contents"
 patterns:
   - "README.md"
-  - doc/*.md
+  - docs/*.md
+  - docs/draft_articles/*.md
 root_dir: "."
