@@ -54,9 +54,9 @@ module AIA
         line = line.chomp
 
         # Check for code block delimiters
-        if line.match?(/^```(\w*)$/) && !in_code_block
+        if (match = line.match(/^```(\w*)$/)) && !in_code_block
           in_code_block = true
-          language = $1
+          language = match[1]
           output.puts "#{indent}```#{language}"
         elsif line.match?(/^```$/) && in_code_block
           in_code_block = false
@@ -107,9 +107,11 @@ module AIA
         spinner = TTY::Spinner.new("[:spinner] #{spinner_message}", format: :bouncing_ball)
         spinner.auto_spin
 
-        result = yield
-
-        spinner.stop
+        begin
+          result = yield
+        ensure
+          spinner.stop
+        end
         result
       else
         yield

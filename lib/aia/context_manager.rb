@@ -26,14 +26,9 @@ module AIA
     # @param system_prompt [String, nil] The system prompt to potentially prepend.
     # @return [Array<Hash>] The conversation context array.
     def get_context(system_prompt: nil)
-      # Ensure system prompt is present if provided and not already the first message
-      if  system_prompt &&
-          !system_prompt.strip.empty? &&
-          (
-            @context.empty? ||
-            @context.first[:role] != 'system'
-          )
-         add_system_prompt(system_prompt)
+      # Add or replace system prompt if provided and not empty
+      if system_prompt && !system_prompt.strip.empty?
+        add_system_prompt(system_prompt)
       end
       @context
     end

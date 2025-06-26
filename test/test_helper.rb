@@ -43,5 +43,10 @@ require 'simplecov_lcov_formatter'
 
 SimpleCov.start do
   add_filter "/test/**/*_test.rb"
-  SimpleCov.formatter = SimpleCov::Formatter::LcovFormatter
+  
+  # Configure multiple formatters: HTML (for viewing) and LCOV (for CI/tools)
+  SimpleCov.formatters = [
+    SimpleCov::Formatter::HTMLFormatter,
+    SimpleCov::Formatter::LcovFormatter
+  ]
 end

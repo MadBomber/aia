@@ -117,7 +117,7 @@ module AIA
     end
 
     def transcribe(audio_file)
-      @chat.ask("Transcribe this audio", with: audio_file)
+      @chat.ask("Transcribe this audio", with: audio_file).content
     end
 
     def speak(text)
