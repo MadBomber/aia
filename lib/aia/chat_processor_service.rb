@@ -1,8 +1,5 @@
 # lib/aia/chat_processor_service.rb
 
-
-require_relative 'shell_command_executor'
-
 module AIA
   class ChatProcessorService
     def initialize(ui_presenter, directive_processor = nil)

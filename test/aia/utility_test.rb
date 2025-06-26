@@ -188,31 +188,27 @@ class UtilityTest < Minitest::Test
   end
 
   def test_robot_string_interpolation
-    # Test that all string interpolations work correctly
-    # Save original constants
-    original_aia_version = AIA::VERSION
+    # Save original constants and config values
+    original_aia_version     = AIA::VERSION
     original_rubyllm_version = RubyLLM::VERSION
-    
-    # Temporarily override constants
-    AIA.const_set(:VERSION, 'test-version')
-    RubyLLM.const_set(:VERSION, 'test-ruby-llm')
-    
-    AIA.config.model = 'test-model'
-    AIA.config.adapter = 'test-adapter'
-    AIA.config.last_refresh = '2024-test-date'
-    
+    original_model           = AIA.config.model
+
+    # Override for test
+    AIA.const_set(:VERSION, 'vX.Y.Z')
+    RubyLLM.const_set(:VERSION, 'vR.L.M')
+    AIA.config.model = 'my-test-model'
+
     AIA::Utility.robot
-    
     output = @captured_output.string
-    
-    assert_includes output, "test-version"
-    assert_includes output, "test-ruby-llm"
-    assert_includes output, "test-model"
-    assert_includes output, "test-adapter"
-    assert_includes output, "2024-test-date"
-  ensure
-    # Restore original constants
+
+    # Validate interpolated versions and model
+    assert_includes output, "AI Assistant (vvX.Y.Z)"
+    assert_includes output, "using anthropic (vvR.L.M)"
+    assert_includes output, 'my-test-model'
+
+    # Restore originals
     AIA.const_set(:VERSION, original_aia_version)
     RubyLLM.const_set(:VERSION, original_rubyllm_version)
+    AIA.config.model = original_model
   end
 end

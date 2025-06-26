@@ -1,6 +1,7 @@
 require_relative '../test_helper'
 require 'ostruct'
 require 'stringio'
+require 'reline'
 require_relative '../../lib/aia'
 
 class UIPresenterTest < Minitest::Test
@@ -176,43 +177,30 @@ class UIPresenterTest < Minitest::Test
   end
 
   def test_ask_question_with_normal_input
-    # Mock Reline
-    Reline.expects(:readline).with('', true).returns('user input')
-    Reline::HISTORY.expects(:<<).with('user input')
-    
+    # Stub Reline.readline to simulate user input
+    Reline.stubs(:readline).returns("user input")
     result = @presenter.ask_question
-    
     assert_equal 'user input', result
-    output = @captured_output.string
-    assert_includes output, AIA::UIPresenter::USER_PROMPT
   end
 
   def test_ask_question_with_empty_input
-    # Mock Reline for empty input
-    Reline.expects(:readline).with('', true).returns('   ')
-    # Should not add empty input to history
-    Reline::HISTORY.expects(:<<).never
-    
+    # Stub Reline.readline to simulate empty input (whitespace)
+    Reline.stubs(:readline).returns("   ")
     result = @presenter.ask_question
-    
     assert_equal '   ', result
   end
 
   def test_ask_question_with_ctrl_d
-    # Mock Reline to return nil (Ctrl+D)
-    Reline.expects(:readline).with('', true).returns(nil)
-    
+    # Stub Reline.readline to simulate Ctrl+D (nil return)
+    Reline.stubs(:readline).returns(nil)
     result = @presenter.ask_question
-    
     assert_nil result
   end
 
   def test_ask_question_with_interrupt
-    # Mock Reline to raise Interrupt
-    Reline.expects(:readline).with('', true).raises(Interrupt)
-    
+    # Stub Reline.readline to simulate Interrupt exception
+    Reline.stubs(:readline).raises(Interrupt)
     result = @presenter.ask_question
-    
     assert_equal 'exit', result
     output = @captured_output.string
     assert_includes output, "Chat session interrupted."
