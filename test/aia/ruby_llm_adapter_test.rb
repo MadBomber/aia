@@ -304,4 +304,205 @@ class RubyLLMAdapterTest < Minitest::Test
     # the tools array should be empty in our test setup
     assert_respond_to @adapter, :tools
   end
+  
+  def test_extract_model_parts_edge_cases
+    # Test with provider but no model - 'openai/' splits to ['openai'] (1 part)
+    AIA.config.model = 'openai/'
+    result = @adapter.send(:extract_model_parts)
+    assert_nil result[:provider]  # 1 part means provider is nil
+    assert_equal 'openai', result[:model]  # and the part becomes the model
+  end
+  
+  def test_extract_model_parts_with_invalid_format
+    # Test with empty string - should raise error  
+    AIA.config.model = ''
+    @adapter.expects(:exit).with(1)
+    
+    # Capture any output to prevent unexpected STDERR output failures
+    capture_io do
+      @adapter.send(:extract_model_parts)
+    end
+  end
+  
+  private
+  
+  def capture_io
+    old_stdout = $stdout
+    old_stderr = $stderr
+    $stdout = StringIO.new
+    $stderr = StringIO.new
+    yield
+    [$stdout.string, $stderr.string]
+  ensure
+    $stdout = old_stdout
+    $stderr = old_stderr
+  end
+  
+  def test_extract_text_prompt_comprehensive
+    # Test with nil
+    result = @adapter.send(:extract_text_prompt, nil)
+    assert_equal '', result
+    
+    # Test with number
+    result = @adapter.send(:extract_text_prompt, 42)
+    assert_equal '42', result
+    
+    # Test with array
+    result = @adapter.send(:extract_text_prompt, ['item1', 'item2'])
+    assert_instance_of String, result
+    
+    # Test with complex hash
+    complex_hash = { text: 'text_value', content: 'content_value', other: 'other_value' }
+    result = @adapter.send(:extract_text_prompt, complex_hash)
+    assert_equal 'text_value', result  # text takes precedence
+    
+    # Test with hash without text or content
+    hash_without_text = { description: 'A description', value: 123 }
+    result = @adapter.send(:extract_text_prompt, hash_without_text)
+    assert_instance_of String, result
+  end
+  
+  def test_extract_image_path_comprehensive
+    # Test various image extensions
+    extensions = %w[jpg jpeg png gif webp JPG JPEG PNG GIF WEBP]
+    extensions.each do |ext|
+      prompt = "Generate an image called test.#{ext}"
+      result = @adapter.send(:extract_image_path, prompt)
+      assert_equal "test.#{ext}", result
+    end
+    
+    # Test with path separators - regex captures filename part
+    prompt = 'Save image to /path/to/images/test.jpg'
+    result = @adapter.send(:extract_image_path, prompt)
+    # The regex captures the filename with word boundaries, so should match
+    assert_equal 'path/to/images/test.jpg', result
+    
+    # Test with multiple images (should return first match)
+    prompt = 'Generate test1.jpg and test2.png'
+    result = @adapter.send(:extract_image_path, prompt)
+    assert_equal 'test1.jpg', result
+    
+    # Test with non-hash object
+    result = @adapter.send(:extract_image_path, OpenStruct.new(value: 'test'))
+    assert_nil result
+  end
+  
+  def test_audio_file_detection_comprehensive
+    # Test case sensitivity
+    assert @adapter.send(:audio_file?, 'FILE.MP3')
+    assert @adapter.send(:audio_file?, 'file.Mp3')
+    assert @adapter.send(:audio_file?, 'file.mP3')
+    
+    # Test with paths
+    assert @adapter.send(:audio_file?, '/path/to/audio.wav')
+    assert @adapter.send(:audio_file?, 'relative/path/audio.m4a')
+    
+    # Test with various non-audio files
+    non_audio = ['file.txt', 'file.doc', 'file.pdf', 'file.mp4', 'file.avi']
+    non_audio.each do |file|
+      refute @adapter.send(:audio_file?, file), "Should not detect #{file} as audio"
+    end
+    
+    # Test with nil and empty string
+    refute @adapter.send(:audio_file?, nil)
+    refute @adapter.send(:audio_file?, '')
+    
+    # Test with file extension only
+    refute @adapter.send(:audio_file?, '.mp3')
+    assert @adapter.send(:audio_file?, 'a.mp3')
+  end
+  
+  def test_refresh_local_model_registry_logic
+    # Test when refresh is needed (last_refresh is old)
+    AIA.config.refresh = 7
+    AIA.config.last_refresh = Date.today - 10  # 10 days ago
+    
+    mock_models = mock('models')
+    mock_models.expects(:refresh!)
+    RubyLLM.stubs(:models).returns(mock_models)
+    
+    # Expect config update
+    AIA.config.expects(:last_refresh=).with(Date.today)
+    
+    @adapter.refresh_local_model_registry
+    
+    # Test when refresh is not needed (last_refresh is recent)
+    AIA.config.refresh = 7
+    AIA.config.last_refresh = Date.today - 3  # 3 days ago
+    
+    # Should not call refresh!
+    mock_models_no_refresh = mock('models')
+    mock_models_no_refresh.expects(:refresh!).never
+    RubyLLM.stubs(:models).returns(mock_models_no_refresh)
+    
+    @adapter.refresh_local_model_registry
+  end
+  
+  def test_refresh_with_zero_interval
+    # Test when refresh is 0 (always refresh)
+    AIA.config.refresh = 0
+    AIA.config.last_refresh = Date.today  # Even today should trigger refresh
+    
+    mock_models = mock('models')
+    mock_models.expects(:refresh!)
+    RubyLLM.stubs(:models).returns(mock_models)
+    
+    AIA.config.expects(:last_refresh=).with(Date.today)
+    
+    @adapter.refresh_local_model_registry
+  end
+  
+  def test_refresh_with_nil_refresh
+    # Test when refresh is nil (should refresh)
+    AIA.config.refresh = nil
+    
+    mock_models = mock('models')
+    mock_models.expects(:refresh!)
+    RubyLLM.stubs(:models).returns(mock_models)
+    
+    AIA.config.expects(:last_refresh=).with(Date.today)
+    
+    @adapter.refresh_local_model_registry
+  end
+  
+  def test_clear_context_comprehensive_cleanup
+    # Test that all cleanup steps are attempted
+    @mock_chat.stubs(:instance_variable_defined?).with(:@messages).returns(true)
+    @mock_chat.stubs(:instance_variable_get).with(:@messages).returns(['old', 'messages'])
+    @mock_chat.expects(:instance_variable_set).with(:@messages, [])
+    
+    # Test RubyLLM global state cleanup
+    RubyLLM.stubs(:instance_variable_defined?).with(:@chat).returns(true)
+    RubyLLM.expects(:instance_variable_set).with(:@chat, nil)
+    
+    # Test chat recreation
+    RubyLLM.expects(:chat).with(model: 'gpt-4o-mini').returns(@mock_chat)
+    
+    # Test clear_history method call
+    @mock_chat.stubs(:respond_to?).with(:clear_history).returns(true)
+    @mock_chat.expects(:clear_history)
+    
+    # Test final verification
+    @mock_chat.stubs(:instance_variable_defined?).with(:@messages).returns(true)
+    @mock_chat.stubs(:instance_variable_get).with(:@messages).returns([])
+    
+    result = @adapter.clear_context
+    assert_equal 'Chat context successfully cleared.', result
+  end
+  
+  def test_clear_context_error_handling_comprehensive
+    # Test error in messages cleanup - should return error message
+    @mock_chat.stubs(:instance_variable_defined?).raises(StandardError.new('Variable error'))
+    
+    result = @adapter.clear_context
+    assert_equal 'Error clearing chat context: Variable error', result
+    
+    # Test error in chat recreation
+    @mock_chat.stubs(:instance_variable_defined?).returns(false)
+    RubyLLM.expects(:chat).with(model: 'gpt-4o-mini').raises(StandardError.new('Chat creation error'))
+    STDERR.expects(:puts).with('ERROR: Chat creation error')
+    @adapter.expects(:exit).with(1)
+    
+    @adapter.clear_context
+  end
 end
