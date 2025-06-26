@@ -1,15 +1,26 @@
 # frozen_string_literal: true
 
-begin
-  require "tocer/rake/register"
-rescue LoadError => error
-  puts error.message
-end
+ begin
+   require "tocer/rake/register"
+   begin
+     Tocer::Rake::Register.call
+   rescue => e
+     warn "Skipping Tocer::Rake::Register: #{e.message}"
+   end
+ rescue LoadError => error
+   warn error.message
+ end
 
-Tocer::Rake::Register.call
-
-require 'kramdown/man/task'
-Kramdown::Man::Task.new
+ begin
+   require 'kramdown/man/task'
+   begin
+     Kramdown::Man::Task.new
+   rescue => e
+     warn "Skipping Kramdown man task: #{e.message}"
+   end
+ rescue LoadError => error
+   warn error.message
+ end
 
 require "bundler/gem_tasks"
 require "minitest/test_task"
