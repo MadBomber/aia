@@ -359,6 +359,15 @@ class DirectiveProcessorTest < Minitest::Test
     assert_equal "test\n", result['//shell echo test']
   end
   
+  def test_run_method_with_empty_directives
+    # Test the early return for nil/empty directives (line 94)
+    result = @directive_processor.run(nil)
+    assert_equal({}, result)
+    
+    result = @directive_processor.run({})
+    assert_equal({}, result)
+  end
+  
   def test_run_method_with_invalid_directive
     directives = {
       '//unknown_command' => nil
@@ -379,22 +388,119 @@ class DirectiveProcessorTest < Minitest::Test
     assert_match /Error: run is not a valid directive/, result['//run some args']
   end
   
+  def test_webpage_directive_without_api_key
+    # Test webpage directive when PUREMD_API_KEY is not set
+    # Mock the PUREMD_API_KEY constant to be nil to trigger the error path
+    original_key = AIA::DirectiveProcessor::PUREMD_API_KEY
+    AIA::DirectiveProcessor.send(:remove_const, :PUREMD_API_KEY)
+    AIA::DirectiveProcessor.const_set(:PUREMD_API_KEY, nil)
+    
+    result = @directive_processor.process('//webpage https://example.com', @real_context_manager)
+    assert_match /ERROR: PUREMD_API_KEY is required/, result
+  ensure
+    # Restore the original constant
+    AIA::DirectiveProcessor.send(:remove_const, :PUREMD_API_KEY)
+    AIA::DirectiveProcessor.const_set(:PUREMD_API_KEY, original_key)
+  end
+  
+  def test_say_directive
+    # Test the say directive (lines 312-315)
+    # Mock the system call to avoid actual speech
+    captured_output = capture_stdout do
+      result = @directive_processor.process('//say hello world', @real_context_manager)
+      assert_equal '', result
+    end
+  end
+  
+  def test_process_excluded_methods_error
+    # Test that excluded methods return errors (lines 84-85)
+    result = @directive_processor.process('//initialize', @real_context_manager)
+    assert_match /Error: initialize is not a valid directive/, result
+    
+    result = @directive_processor.process('//run', @real_context_manager)
+    assert_match /Error: run is not a valid directive/, result
+  end
+  
+  def test_include_directive_with_http_url
+    # Test include directive with HTTP URL (lines 202-204)
+    # This should delegate to webpage method when PUREMD_API_KEY is nil
+    original_key = AIA::DirectiveProcessor::PUREMD_API_KEY
+    AIA::DirectiveProcessor.send(:remove_const, :PUREMD_API_KEY)
+    AIA::DirectiveProcessor.const_set(:PUREMD_API_KEY, nil)
+    
+    result = @directive_processor.process('//include http://example.com', @real_context_manager)
+    assert_match /ERROR: PUREMD_API_KEY is required/, result
+  ensure
+    # Restore the original constant
+    AIA::DirectiveProcessor.send(:remove_const, :PUREMD_API_KEY)
+    AIA::DirectiveProcessor.const_set(:PUREMD_API_KEY, original_key)
+  end
+  
+  def test_available_models_with_query_filtering
+    # Test available_models with query parameters (lines 332-366)
+    mock_models = mock('models')
+    mock_model = mock('model')
+    mock_modalities = mock('modalities')
+    
+    mock_model.stubs(:id).returns('gpt-4')
+    mock_model.stubs(:provider).returns('openai')
+    mock_model.stubs(:modalities).returns(mock_modalities)
+    mock_modalities.stubs(:input).returns(['text'])
+    mock_modalities.stubs(:output).returns(['text'])
+    mock_modalities.stubs(:text_to_text?).returns(true)
+    mock_models.stubs(:all).returns([mock_model])
+    
+    RubyLLM.stubs(:models).returns(mock_models)
+    
+    captured_output = capture_stdout do
+      result = @directive_processor.process('//available_models openai', @real_context_manager)
+      assert_equal '', result
+    end
+    
+    assert_match /Available LLMs for openai/, captured_output
+    assert_match /gpt-4/, captured_output
+  end
+  
   def test_directive_detection_with_ruby_llm_message
     # Create a mock object that simulates RubyLLM::Message behavior
     mock_message = mock('message')
     mock_message.stubs(:content).returns('//help')
     
     # Stub is_a? to return true for RubyLLM::Message check
-    mock_message.stubs(:is_a?).with(anything).returns(false)
+    mock_message.stubs(:is_a?).with(RubyLLM::Message).returns(true)
     
     # For this specific case where we're checking if it's a directive string
     # the content should start with directive signal to return true
-    assert @directive_processor.directive?('//help')
+    assert @directive_processor.directive?(mock_message)
     
     # If the object doesn't have directive content, it should return false
     mock_message.stubs(:content).returns('regular text')
     mock_message.stubs(:to_s).returns('regular text')
     refute @directive_processor.directive?(mock_message)
+  end
+  
+  def test_process_with_ruby_llm_message_object
+    # Test processing RubyLLM::Message objects to cover lines 73-77
+    mock_message = mock('message')
+    mock_message.stubs(:is_a?).with(RubyLLM::Message).returns(true)
+    mock_message.stubs(:content).returns('//ruby 1 + 1')
+    
+    result = @directive_processor.process(mock_message, @real_context_manager)
+    assert_equal '2', result
+  end
+  
+  def test_process_with_ruby_llm_message_fallback
+    # Test the rescue fallback path for RubyLLM::Message (line 74)
+    mock_message = mock('message')
+    mock_message.stubs(:is_a?).with(RubyLLM::Message).returns(true)
+    mock_message.stubs(:content).raises(StandardError, 'content error')
+    mock_message.stubs(:to_s).returns('//help')
+    
+    captured_output = capture_stdout do
+      result = @directive_processor.process(mock_message, @real_context_manager)
+      assert_equal '', result
+    end
+    assert_match /Available Directives/, captured_output
   end
   
   private

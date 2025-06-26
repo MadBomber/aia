@@ -1,4 +1,5 @@
 require_relative 'test_helper'
+require 'ostruct'
 
 ## Define the base module to allow the extension to load without the real gem
 module RubyLLM
@@ -11,7 +12,12 @@ class RubyLLMModalitiesTest < Minitest::Test
   OUTPUT_TYPES = %w[text embeddings audio image moderation]
 
   def setup
-    @mod = RubyLLM::Model::Modalities.new
+    # Create a mock model object to satisfy the RubyLLM::Model::Modalities constructor
+    mock_model = OpenStruct.new(input: ['text'], output: ['text'])
+    @mod = RubyLLM::Model::Modalities.new(mock_model)
+    # Define default input and output methods
+    @mod.define_singleton_method(:input) { ['text'] }
+    @mod.define_singleton_method(:output) { ['text'] }
   end
 
   def test_positive_combinations
@@ -41,5 +47,36 @@ class RubyLLMModalitiesTest < Minitest::Test
     assert @mod.text_to_text?
     @mod.define_singleton_method(:output) { ['embeddings'] }
     refute @mod.text_to_text?
+  end
+
+  def test_multiple_input_types
+    # Test that method returns true when multiple input types include the required one
+    @mod.define_singleton_method(:input) { ['image', 'text', 'audio'] }
+    @mod.define_singleton_method(:output) { ['text'] }
+    assert @mod.text_to_text?
+    assert @mod.image_to_text?
+    assert @mod.audio_to_text?
+  end
+
+  def test_multiple_output_types
+    # Test that method returns true when multiple output types include the required one
+    @mod.define_singleton_method(:input) { ['text'] }
+    @mod.define_singleton_method(:output) { ['embeddings', 'text', 'audio'] }
+    assert @mod.text_to_text?
+    assert @mod.text_to_embeddings?
+    assert @mod.text_to_audio?
+  end
+
+  def test_all_specific_method_combinations
+    # Test a few specific combinations explicitly
+    @mod.define_singleton_method(:input) { ['pdf'] }
+    @mod.define_singleton_method(:output) { ['image'] }
+    assert @mod.pdf_to_image?
+    refute @mod.pdf_to_text?
+    
+    @mod.define_singleton_method(:input) { ['audio'] }
+    @mod.define_singleton_method(:output) { ['moderation'] }
+    assert @mod.audio_to_moderation?
+    refute @mod.audio_to_embeddings?
   end
 end

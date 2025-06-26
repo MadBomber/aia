@@ -34,11 +34,16 @@ GEM
       uri (>= 0.13.1)
     amazing_print (1.8.1)
     ansi (1.5.0)
+    ast (2.4.3)
+    backports (3.25.1)
     base64 (0.3.0)
     benchmark (0.4.1)
     bigdecimal (3.2.2)
+    binding_of_caller (1.0.1)
+      debug_inspector (>= 1.2.0)
     builder (3.3.0)
     citrus (3.0.2)
+    coderay (1.1.3)
     cogger (1.2.2)
       core (~> 2.0)
       logger (~> 1.7)
@@ -50,7 +55,20 @@ GEM
     containable (1.2.0)
       concurrent-ruby (~> 1.3)
     core (2.2.0)
+    debug_inspector (1.2.0)
     debug_me (1.1.1)
+    deep-cover (1.1.0)
+      deep-cover-core (= 1.1.0)
+      highline
+      thor (>= 0.20.3)
+      with_progress
+    deep-cover-core (1.1.0)
+      backports (>= 3.11.0)
+      binding_of_caller
+      parser (>= 2.5)
+      pry
+      term-ansicolor
+      terminal-table
     docile (1.4.1)
     drb (2.2.3)
     dry-configurable (1.3.0)
@@ -105,6 +123,8 @@ GEM
       net-http (>= 0.5.0)
     faraday-retry (2.3.2)
       faraday (~> 2.0)
+    highline (3.1.2)
+      reline
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     infusible (4.3.0)
@@ -116,6 +136,7 @@ GEM
       refinements (~> 13.0)
       zeitwerk (~> 2.7)
     marcel (1.0.4)
+    method_source (1.1.0)
     minitest (5.25.5)
     minitest-reporters (1.7.1)
       ansi
@@ -128,7 +149,13 @@ GEM
     net-http (0.6.0)
       uri
     optparse (0.6.0)
+    parser (3.3.8.0)
+      ast (~> 2.4.1)
+      racc
     prompt_manager (0.5.7)
+    pry (0.15.2)
+      coderay (~> 1.1)
+      method_source (~> 1.0)
     racc (1.8.1)
     rake (13.3.0)
     refinements (13.2.0)
@@ -180,6 +207,15 @@ GEM
       refinements (~> 13.0)
       versionaire (~> 14.0)
       zeitwerk (~> 2.7)
+    sync (0.5.0)
+    term-ansicolor (1.11.2)
+      tins (~> 1.0)
+    terminal-table (4.0.0)
+      unicode-display_width (>= 1.1.1, < 4)
+    thor (1.3.2)
+    tins (1.38.0)
+      bigdecimal
+      sync
     tocer (19.2.1)
       cogger (~> 1.0)
       containable (~> 1.1)
@@ -204,9 +240,14 @@ GEM
       tty-cursor (~> 0.7)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    unicode-display_width (3.1.4)
+      unicode-emoji (~> 4.0, >= 4.0.4)
+    unicode-emoji (4.0.4)
     uri (1.0.3)
     versionaire (14.2.0)
       refinements (~> 13.0)
+    with_progress (1.0.1)
+      ruby-progressbar (~> 1.4)
     word_wrapper (0.5.0)
     xdg (9.2.0)
     zeitwerk (2.7.3)
@@ -227,6 +268,7 @@ PLATFORMS
 DEPENDENCIES
   aia!
   debug_me
+  deep-cover
   minitest
   minitest-reporters
   mocha

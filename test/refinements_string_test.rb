@@ -35,4 +35,35 @@ class RefinementsStringTest < Minitest::Test
     assert str.include_all?([])
     refute str.include_any?([])
   end
+
+  def test_empty_string_with_substrings
+    str = ''
+    refute str.include_all?('hello')
+    refute str.include_any?('hello') 
+    refute str.include_all?(['hello', 'world'])
+    refute str.include_any?(['hello', 'world'])
+  end
+
+  def test_nil_and_edge_cases
+    str = 'test string'
+    # Test with nil (should be converted to array)
+    assert str.include_all?(nil)  # Array(nil) = []
+    refute str.include_any?(nil)  # Array(nil) = []
+  end
+
+  def test_alias_methods
+    str = 'testing aliases'
+    # Ensure aliases work exactly the same as main methods
+    assert_equal str.include_all?('test'), str.all?('test')
+    assert_equal str.include_any?('test'), str.any?('test')
+    assert_equal str.include_all?(['test', 'alias']), str.all?(['test', 'alias'])
+    assert_equal str.include_any?(['test', 'missing']), str.any?(['test', 'missing'])
+  end
+
+  def test_case_sensitivity
+    str = 'Hello World'
+    assert str.include_all?('Hello')
+    refute str.include_all?('hello')  # case sensitive
+    assert str.include_any?(['hello', 'World'])  # one matches
+  end
 end
