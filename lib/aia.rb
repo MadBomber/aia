@@ -6,6 +6,11 @@
 
 require 'ruby_llm'
 require 'ruby_llm/mcp'
+
+# FIXME: Actually fix ruby_llm; this is supposed to a temporary fix for the issues
+#        discovered with shared_tools/ruby_llm/mcp/github_mcp_server
+RubyLLM::MCP.support_complex_parameters!
+
 require 'prompt_manager'
 
 

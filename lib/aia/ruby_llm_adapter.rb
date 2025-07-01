@@ -99,7 +99,7 @@ module AIA
 
       unless tools.empty?
         @chat.with_tools(*tools)
-        AIA.config.tools = tools.map(&:name).join(', ')
+        AIA.config.tools = @tools.map(&:name).join(', ')
       end
     end
 
