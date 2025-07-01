@@ -66,6 +66,9 @@ module AIA
       end
     end
 
+    # SMELL: The concept of tools and how those tools are defined to AIA
+    #        is screwed up.  We have --require and --tools cli options along with
+    #        the includes and the rejects cli options.
     def setup_chat_with_tools
       begin
         @chat = RubyLLM.chat(model: @model)
@@ -76,13 +79,22 @@ module AIA
 
       return unless @chat.model.supports_functions?
 
-      if !AIA.config.tool_paths.empty? && !@chat.model.supports?(:function_calling)
+      if  !AIA.config.tool_paths.empty? &&
+          !@chat.model.supports?(:function_calling)
         STDERR.puts "ERROR: The model #{@model} does not support tools"
         exit 1
       end
 
       @tools = ObjectSpace.each_object(Class).select do |klass|
         klass < RubyLLM::Tool
+      end
+
+      if defined? SharedTools
+        unless SharedTools.mcp_servers.empty?
+          SharedTools.mcp_servers.size.times do |server_inx |
+            @tools.concat(SharedTools.mcp_servers[server_inx].tools)
+          end
+        end
       end
 
       unless tools.empty?

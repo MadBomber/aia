@@ -6,6 +6,8 @@ require 'pdf-reader'
 
 
 class PdfPageReader < RubyLLM::Tool
+  def self.name = 'pdf_page_reader'
+
   # TODO: make the path to the pdf document a parameter
   DOC = PDF::Reader.new('docs/big-doc.pdf')
 
