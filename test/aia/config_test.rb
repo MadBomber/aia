@@ -329,26 +329,28 @@ class ConfigTest < Minitest::Test
     assert_empty config.tool_paths
   end
 
-  def test_filter_tools_by_allowed_list_filters_correctly
+  # Tool filtering tests moved to RubyLLMAdapter since filtering
+  # now happens in the adapter, not during config setup
+  def test_config_stores_allowed_tools_correctly
     config = OpenStruct.new(
       tool_paths: ['/path/to/good_tool.rb', '/path/to/bad_tool.rb'],
       allowed_tools: ['good_tool']
     )
     
-    AIA::Config.filter_tools_by_allowed_list(config)
-    
-    assert_equal ['/path/to/good_tool.rb'], config.tool_paths
+    # Config should store the allowed_tools but not filter tool_paths anymore
+    assert_equal ['good_tool'], config.allowed_tools
+    assert_equal ['/path/to/good_tool.rb', '/path/to/bad_tool.rb'], config.tool_paths
   end
 
-  def test_filter_tools_by_rejected_list_filters_correctly
+  def test_config_stores_rejected_tools_correctly
     config = OpenStruct.new(
       tool_paths: ['/path/to/good_tool.rb', '/path/to/bad_tool.rb'],
       rejected_tools: ['bad_tool']
     )
     
-    AIA::Config.filter_tools_by_rejected_list(config)
-    
-    assert_equal ['/path/to/good_tool.rb'], config.tool_paths
+    # Config should store the rejected_tools but not filter tool_paths anymore
+    assert_equal ['bad_tool'], config.rejected_tools
+    assert_equal ['/path/to/good_tool.rb', '/path/to/bad_tool.rb'], config.tool_paths
   end
 
   # Test cf_options and extracted helper methods
@@ -681,7 +683,8 @@ class ConfigTest < Minitest::Test
     FileUtils.rm_rf(tools_dir) if tools_dir
   end
   
-  def test_tool_filtering_comprehensive
+  def test_tool_configuration_stores_filter_settings
+    # Tool filtering moved to RubyLLMAdapter, but config should store the settings
     config = OpenStruct.new(
       tool_paths: [
         '/path/to/good_tool.rb',
@@ -693,28 +696,14 @@ class ConfigTest < Minitest::Test
       rejected_tools: ['rejected_tool']
     )
     
-    # Apply allowed filter first
-    AIA::Config.filter_tools_by_allowed_list(config)
-    
-    assert_equal 2, config.tool_paths.size
-    assert_includes config.tool_paths, '/path/to/good_tool.rb'
-    assert_includes config.tool_paths, '/path/to/another_good.rb'
-    
-    # Reset for rejected filter test
-    config.tool_paths = [
-      '/path/to/good_tool.rb',
-      '/path/to/bad_tool.rb',
-      '/path/to/rejected_tool.rb'
-    ]
-    config.allowed_tools = nil
-    
-    # Apply rejected filter
-    AIA::Config.filter_tools_by_rejected_list(config)
-    
-    assert_equal 2, config.tool_paths.size
+    # Config should store filter settings without modifying tool_paths
+    assert_equal ['good_tool', 'another_good'], config.allowed_tools
+    assert_equal ['rejected_tool'], config.rejected_tools
+    assert_equal 4, config.tool_paths.size
     assert_includes config.tool_paths, '/path/to/good_tool.rb'
     assert_includes config.tool_paths, '/path/to/bad_tool.rb'
-    refute_includes config.tool_paths, '/path/to/rejected_tool.rb'
+    assert_includes config.tool_paths, '/path/to/another_good.rb'
+    assert_includes config.tool_paths, '/path/to/rejected_tool.rb'
   end
   
   # Note: ERB processing test removed for simplicity - covered in integration tests

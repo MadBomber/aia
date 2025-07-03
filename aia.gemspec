@@ -46,8 +46,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "amazing_print"
   spec.add_dependency "faraday"
   spec.add_dependency "prompt_manager", '>= 0.5.7'
-  spec.add_dependency "ruby_llm", '>= 1.3.1'
-  spec.add_dependency "ruby_llm-mcp"
+  spec.add_dependency "ruby_llm",       '>= 1.3.1'
+  spec.add_dependency "ruby_llm-mcp",   '>= 0.4.1'
   spec.add_dependency "reline"
   spec.add_dependency "shellwords"
   spec.add_dependency "toml-rb"

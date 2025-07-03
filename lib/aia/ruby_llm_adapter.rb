@@ -97,6 +97,10 @@ module AIA
         end
       end
 
+      # Apply allowed/rejected tool filters to all tools regardless of source
+      filter_tools_by_allowed_list
+      filter_tools_by_rejected_list
+
       unless tools.empty?
         @chat.with_tools(*tools)
         AIA.config.tools = @tools.map(&:name).join(', ')
@@ -206,6 +210,24 @@ module AIA
     end
 
     private
+
+    def filter_tools_by_allowed_list
+      return if AIA.config.allowed_tools.nil?
+
+      @tools.select! do |tool|
+        tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
+        AIA.config.allowed_tools.any? { |allowed| tool_name.include?(allowed) }
+      end
+    end
+
+    def filter_tools_by_rejected_list
+      return if AIA.config.rejected_tools.nil?
+
+      @tools.reject! do |tool|
+        tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
+        AIA.config.rejected_tools.any? { |rejected| tool_name.include?(rejected) }
+      end
+    end
 
     def extract_model_parts
       parts = AIA.config.model.split('/')

@@ -167,28 +167,11 @@ module AIA
     def self.load_tools(config)
       return if config.tool_paths.empty?
 
-      filter_tools_by_allowed_list(config)
-      filter_tools_by_rejected_list(config)
       require_all_tools(config)
 
       config
     end
 
-    def self.filter_tools_by_allowed_list(config)
-      return if config.allowed_tools.nil?
-
-      config.tool_paths.select! do |path|
-        config.allowed_tools.any? { |allowed| path.include?(allowed) }
-      end
-    end
-
-    def self.filter_tools_by_rejected_list(config)
-      return if config.rejected_tools.nil?
-
-      config.tool_paths.reject! do |path|
-        config.rejected_tools.any? { |rejected| path.include?(rejected) }
-      end
-    end
 
     def self.require_all_tools(config)
       exit_on_error = false
@@ -238,7 +221,7 @@ module AIA
 
     def self.cli_options
       config = OpenStruct.new
-      
+
       begin
         opt_parser = create_option_parser(config)
         opt_parser.parse!

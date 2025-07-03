@@ -505,4 +505,116 @@ class RubyLLMAdapterTest < Minitest::Test
     
     @adapter.clear_context
   end
+
+  # Test tool filtering functionality
+  def test_filter_tools_by_allowed_list
+    # Create mock tool classes
+    mock_tool1 = Class.new
+    mock_tool1.stubs(:name).returns('calculator')
+    mock_tool2 = Class.new  
+    mock_tool2.stubs(:name).returns('weather')
+    mock_tool3 = Class.new
+    mock_tool3.stubs(:name).returns('file_reader')
+    
+    # Create adapter with mock config that has allowed_tools
+    config = OpenStruct.new(
+      model: 'gpt-4o-mini',
+      allowed_tools: ['calculator', 'weather'],
+      rejected_tools: nil,
+      tool_paths: [],
+      context_files: []
+    )
+    AIA.stubs(:config).returns(config)
+    
+    # Create new adapter instance with our tools
+    adapter = AIA::RubyLLMAdapter.allocate
+    adapter.instance_variable_set(:@tools, [mock_tool1, mock_tool2, mock_tool3])
+    
+    # Test the filtering method
+    adapter.send(:filter_tools_by_allowed_list)
+    
+    # Should only have calculator and weather tools
+    assert_equal 2, adapter.tools.size
+    assert_includes adapter.tools, mock_tool1  # calculator
+    assert_includes adapter.tools, mock_tool2  # weather
+    refute_includes adapter.tools, mock_tool3  # file_reader
+  end
+
+  def test_filter_tools_by_rejected_list
+    # Create mock tool classes
+    mock_tool1 = Class.new
+    mock_tool1.stubs(:name).returns('calculator')
+    mock_tool2 = Class.new
+    mock_tool2.stubs(:name).returns('dangerous_tool')
+    mock_tool3 = Class.new
+    mock_tool3.stubs(:name).returns('file_reader')
+    
+    # Create adapter with mock config that has rejected_tools
+    config = OpenStruct.new(
+      model: 'gpt-4o-mini',
+      allowed_tools: nil,
+      rejected_tools: ['dangerous'],
+      tool_paths: [],
+      context_files: []
+    )
+    AIA.stubs(:config).returns(config)
+    
+    # Create new adapter instance with our tools
+    adapter = AIA::RubyLLMAdapter.allocate
+    adapter.instance_variable_set(:@tools, [mock_tool1, mock_tool2, mock_tool3])
+    
+    # Test the filtering method
+    adapter.send(:filter_tools_by_rejected_list)
+    
+    # Should have calculator and file_reader, but not dangerous_tool
+    assert_equal 2, adapter.tools.size
+    assert_includes adapter.tools, mock_tool1  # calculator
+    refute_includes adapter.tools, mock_tool2  # dangerous_tool (rejected)
+    assert_includes adapter.tools, mock_tool3  # file_reader
+  end
+
+  def test_duplicate_tool_names_handling
+    # Create mock tool classes with same names but different implementations
+    mock_tool1 = Class.new
+    mock_tool1.stubs(:name).returns('calculator')
+    mock_tool1.stubs(:description).returns('From --tools option')
+    
+    mock_tool2 = Class.new
+    mock_tool2.stubs(:name).returns('calculator')  # Same name!
+    mock_tool2.stubs(:description).returns('From --require option')
+    
+    mock_tool3 = Class.new
+    mock_tool3.stubs(:name).returns('file_reader')
+    
+    # Create adapter with mock config
+    config = OpenStruct.new(
+      model: 'gpt-4o-mini',
+      allowed_tools: ['calculator'],
+      rejected_tools: nil,
+      tool_paths: [],
+      context_files: []
+    )
+    AIA.stubs(:config).returns(config)
+    
+    # Create new adapter instance with our tools
+    adapter = AIA::RubyLLMAdapter.allocate
+    adapter.instance_variable_set(:@tools, [mock_tool1, mock_tool2, mock_tool3])
+    
+    # Test the filtering method
+    adapter.send(:filter_tools_by_allowed_list)
+    
+    # Should have both calculator tools (duplicate names)
+    assert_equal 2, adapter.tools.size
+    assert_includes adapter.tools, mock_tool1  # calculator from --tools
+    assert_includes adapter.tools, mock_tool2  # calculator from --require (duplicate name)
+    refute_includes adapter.tools, mock_tool3  # file_reader (not in allowed list)
+    
+    # Verify duplicate names exist
+    tool_names = adapter.tools.map(&:name)
+    assert_equal ['calculator', 'calculator'], tool_names
+    assert_equal 1, tool_names.uniq.size  # Only 1 unique name
+    
+    # This demonstrates the potential issue: multiple tools with same name
+    # will be passed to chat.with_tools(*tools), which may cause conflicts
+  end
 end
