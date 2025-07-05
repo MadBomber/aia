@@ -162,19 +162,19 @@ module AIA
       spaces  = " "*indent
       width   = TTY::Screen.width - indent - 2
 
-      if !AIA.config.tools.empty?
+      if AIA.config.tools.empty?
+        puts "No tools are available"
+      else
         puts
         puts "Available Tools"
         puts "==============="
 
-        AIA.config.tools.split(',').map(&:strip).each do |tool|
-          klass = tool.constantize
-          puts "\n#{klass.name}"
-          puts "-"*klass.name.size
-          puts WordWrapper::MinimumRaggedness.new(width, klass.description).wrap.split("\n").map{|s| spaces+s+"\n"}.join
+        AIA.config.tools.each do |tool|
+          name = tool.respond_to?(:name) ? tool.name : tool.class.name
+          puts "\n#{name}"
+          puts "-"*name.size
+          puts WordWrapper::MinimumRaggedness.new(width, tool.description).wrap.split("\n").map{|s| spaces+s+"\n"}.join
         end
-      else
-        puts "No tools configured"
       end
       puts
 

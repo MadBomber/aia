@@ -71,41 +71,87 @@ module AIA
     #        the includes and the rejects cli options.
     def setup_chat_with_tools
       begin
-        @chat = RubyLLM.chat(model: @model)
+        @chat  = RubyLLM.chat(model: @model)
+        @model = @chat.model.name if @model.nil? # using default model
       rescue => e
         STDERR.puts "ERROR: #{e.message}"
         exit 1
       end
 
-      return unless @chat.model.supports_functions?
-
-      if  !AIA.config.tool_paths.empty? &&
-          !@chat.model.supports?(:function_calling)
-        STDERR.puts "ERROR: The model #{@model} does not support tools"
-        exit 1
-      end
+      @tools = []
 
       @tools = ObjectSpace.each_object(Class).select do |klass|
         klass < RubyLLM::Tool
       end
 
-      if defined? SharedTools
-        unless SharedTools.mcp_servers.empty?
-          SharedTools.mcp_servers.size.times do |server_inx |
-            @tools.concat(SharedTools.mcp_servers[server_inx].tools)
-          end
+      # Add MCP client tools from McpClient subclasses
+      # TODO: Waiting on v0.4.2 of the ruby_llm-mcp gem
+      if defined?(McpClient)
+        mcp_clients = ObjectSpace.each_object(Class).select do |klass|
+          klass < McpClient
         end
+      else
+        mcp_clients = []
+      end
+
+
+      mcp_clients.each do |mcp_client_class|
+        begin
+          mcp_client_class.connect
+          client_instance = mcp_client_class.client
+          if client_instance&.respond_to?(:tools)
+            @tools += client_instance.tools
+          end
+        rescue => e
+          STDERR.puts "Warning: Failed to connect MCP client #{mcp_client_class.name}: #{e.message}"
+        end
+      end
+
+      unless @chat.model.supports_functions?
+        STDERR.puts "ERROR: The model #{@model} does not support tools" unless @tools.empty?
+        AIA.config.tool_names = "I forgot to bring my toolbox"
+        return
       end
 
       # Apply allowed/rejected tool filters to all tools regardless of source
       filter_tools_by_allowed_list
       filter_tools_by_rejected_list
+      drop_duplicate_tools
 
-      unless tools.empty?
+      if tools.empty?
+        AIA.config.tool_names = "I through you had the toolbox"
+      else
         @chat.with_tools(*tools)
-        AIA.config.tools = @tools.map(&:name).join(', ')
+        AIA.config.tool_names = @tools.map(&:name).join(', ')
+        AIA.config.tools      = @tools
       end
     end
+
+
+    def drop_duplicate_tools
+      seen_names = Set.new
+      original_size = @tools.size
+
+      @tools.select! do |tool|
+        tool_name = tool.name
+        if seen_names.include?(tool_name)
+          STDERR.puts "WARNING: Duplicate tool name detected: '#{tool_name}'. Only the first occurrence will be used."
+          false
+        else
+          seen_names.add(tool_name)
+          true
+        end
+      end
+
+      removed_count = original_size - @tools.size
+      STDERR.puts "Removed #{removed_count} duplicate tools" if removed_count > 0
+    end
+
+
+
+
+
+
 
     # TODO: Need to rethink this dispatcher pattern w/r/t RubyLLM's capabilities
     #       This code was originally designed for AiClient
