@@ -568,7 +568,7 @@ module AIA
               exit 1
             end
           elsif File.directory?(a_path)
-            rb_files = Dir.glob(File.join(a_path, '**', '*.rb'))
+            rb_files = Dir.glob(File.join(a_path, '*.rb'))
             config.tool_paths += rb_files
           end
         else

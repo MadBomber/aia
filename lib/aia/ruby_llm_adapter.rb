@@ -80,7 +80,7 @@ module AIA
 
       unless @chat.model.supports_functions?
         AIA.config.tools      = []
-        AIA.config.tool_names = "#{@model} does not support tools"
+        AIA.config.tool_names = ""
         return
       end
 
@@ -115,13 +115,12 @@ module AIA
       drop_duplicate_tools
 
       if tools.empty?
-        AIA.config.tool_names = "I through you had the toolbox"
+        AIA.config.tool_names = ""
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
         AIA.config.tools      = @tools
       end
     end
-
 
 
     def drop_duplicate_tools
@@ -142,11 +141,6 @@ module AIA
       removed_count = original_size - @tools.size
       STDERR.puts "Removed #{removed_count} duplicate tools" if removed_count > 0
     end
-
-
-
-
-
 
 
     # TODO: Need to rethink this dispatcher pattern w/r/t RubyLLM's capabilities
