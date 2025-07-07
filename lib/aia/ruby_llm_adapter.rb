@@ -78,39 +78,35 @@ module AIA
         exit 1
       end
 
+      unless @chat.model.supports_functions?
+        AIA.config.tools      = []
+        AIA.config.tool_names = "#{@model} does not support tools"
+        return
+      end
+
+      load_tools
+
+      @chat.with_tools(*tools) unless tools.empty?
+    end
+
+
+    def load_tools
       @tools = []
 
       @tools = ObjectSpace.each_object(Class).select do |klass|
         klass < RubyLLM::Tool
       end
 
-      # Add MCP client tools from McpClient subclasses
-      # TODO: Waiting on v0.4.2 of the ruby_llm-mcp gem
-      if defined?(McpClient)
-        mcp_clients = ObjectSpace.each_object(Class).select do |klass|
-          klass < McpClient
-        end
-      else
-        mcp_clients = []
-      end
-
-
-      mcp_clients.each do |mcp_client_class|
+      if defined?(RubyLLM::MCP)
         begin
-          mcp_client_class.connect
-          client_instance = mcp_client_class.client
-          if client_instance&.respond_to?(:tools)
-            @tools += client_instance.tools
+          RubyLLM::MCP.establish_connection do |clients|
+            # FIXME: ruby_llm-mcp v0.5.0 demands a block!
           end
-        rescue => e
-          STDERR.puts "Warning: Failed to connect MCP client #{mcp_client_class.name}: #{e.message}"
-        end
-      end
 
-      unless @chat.model.supports_functions?
-        STDERR.puts "ERROR: The model #{@model} does not support tools" unless @tools.empty?
-        AIA.config.tool_names = "I forgot to bring my toolbox"
-        return
+          @tools += RubyLLM::MCP.tools # NOTE: supports blacklist and whitelist on tool_names
+        rescue => e
+          STDERR.puts "Warning: Failed to connect MCP clients: #{e.message}"
+        end
       end
 
       # Apply allowed/rejected tool filters to all tools regardless of source
@@ -121,11 +117,11 @@ module AIA
       if tools.empty?
         AIA.config.tool_names = "I through you had the toolbox"
       else
-        @chat.with_tools(*tools)
         AIA.config.tool_names = @tools.map(&:name).join(', ')
         AIA.config.tools      = @tools
       end
     end
+
 
 
     def drop_duplicate_tools
