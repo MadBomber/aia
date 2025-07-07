@@ -55,7 +55,7 @@ class UtilityTest < Minitest::Test
     
     # Check for version information
     assert_includes output, "AI Assistant (v0.9.9) is Online"
-    assert_includes output, "using anthropic (v1.3.1)"
+    assert_match /using anthropic \(v1\.3\.1(?:\s+MCP\s+v[\d.]+)?\)/, output
   end
 
   def test_robot_displays_model_information
@@ -203,7 +203,7 @@ class UtilityTest < Minitest::Test
 
     # Validate interpolated versions and model
     assert_includes output, "AI Assistant (vvX.Y.Z)"
-    assert_includes output, "using anthropic (vvR.L.M)"
+    assert_match /using anthropic \(vvR\.L\.M(?:\s+MCP\s+v[\d.]+)?\)/, output
     assert_includes output, 'my-test-model'
 
     # Restore originals

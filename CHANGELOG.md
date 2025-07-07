@@ -1,12 +1,21 @@
 # Changelog
 ## [Unreleased]
 
+### [0.9.9] WIP
+- refactored the Session and Config classes into more testable method_missing
+- updated the test suire for both the Session and Config classes
+- added support for MCP servers coming into AIA via the shared_tools gem
+- added +RubyLLM::MCP.support_complex_parameters! to patch ruby_llm gem until such time as it supports the more complex optional parameters in tool calls
+- added an examples/tools/mcp directory with 2 MCP client definitions
+- updated to ruby_llm-mcp gem version 0.5.0
+
 ## Released
 
 ### [0.9.8] 2025-06-25
 - fixing an issue with pipelined prompts
 - now showing the complete modality of the model on the processing line.
 - changed -p option from prompts_dir to pipeline
+- found problem with simple cov and deep cov w/r/t their reported test coverage; they have problems with heredoc and complex conditionals.
 
 ### [0.9.7] 2025-06-20
 

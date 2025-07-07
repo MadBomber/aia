@@ -28,13 +28,16 @@ module AIA
   (\\   /____\\   #{AIA.config.tool_paths.empty? ? '' : 'My Toolbox contains:'}
         ROBOT
         if AIA.config.tools
-          puts WordWrapper::MinimumRaggedness.new(
-              width,
-              AIA.config.tool_names # String of tool names, comma separated
-            ).wrap
-            .split("\n")
-            .map{|s| spaces+s+"\n"}
-            .join
+          tool_names = AIA.config.respond_to?(:tool_names) ? AIA.config.tool_names : AIA.config.tools
+          if tool_names && !tool_names.to_s.empty?
+            puts WordWrapper::MinimumRaggedness.new(
+                width,
+                tool_names.to_s # String of tool names, comma separated
+              ).wrap
+              .split("\n")
+              .map{|s| spaces+s+"\n"}
+              .join
+          end
         end
       end
     end

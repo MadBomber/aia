@@ -295,7 +295,7 @@ class DirectiveProcessorTest < Minitest::Test
       assert_equal '', result
     end
     
-    assert_match /No tools configured/, captured_output
+    assert_match /No tools are available/, captured_output
   end
   
   def test_tools_directive_with_no_tools
@@ -306,7 +306,7 @@ class DirectiveProcessorTest < Minitest::Test
       assert_equal '', result
     end
     
-    assert_match /No tools configured/, captured_output
+    assert_match /No tools are available/, captured_output
   end
   
   def test_available_models_directive
