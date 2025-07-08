@@ -66,9 +66,7 @@ module AIA
       end
     end
 
-    # SMELL: The concept of tools and how those tools are defined to AIA
-    #        is screwed up.  We have --require and --tools cli options along with
-    #        the includes and the rejects cli options.
+
     def setup_chat_with_tools
       begin
         @chat  = RubyLLM.chat(model: @model)
@@ -99,11 +97,8 @@ module AIA
 
       if defined?(RubyLLM::MCP)
         begin
-          RubyLLM::MCP.establish_connection do |clients|
-            # FIXME: ruby_llm-mcp v0.5.0 demands a block!
-          end
-
-          @tools += RubyLLM::MCP.tools # NOTE: supports blacklist and whitelist on tool_names
+          RubyLLM::MCP.establish_connection
+          @tools += RubyLLM::MCP.tools
         rescue => e
           STDERR.puts "Warning: Failed to connect MCP clients: #{e.message}"
         end
