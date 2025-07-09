@@ -7,7 +7,9 @@
 - added support for MCP servers coming into AIA via the shared_tools gem
 - added +RubyLLM::MCP.support_complex_parameters! to patch ruby_llm gem until such time as it supports the more complex optional parameters in tool calls
 - added an examples/tools/mcp directory with 2 MCP client definitions
-- updated to ruby_llm-mcp gem version 0.5.0
+- updated to ruby_llm-mcp gem version 0.5.1
+- //model directive now dumps full model details
+- //available_models now has context window size and capabilities for each model returned
 
 ## Released
 

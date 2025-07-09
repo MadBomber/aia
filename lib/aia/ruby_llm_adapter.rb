@@ -91,20 +91,8 @@ module AIA
     def load_tools
       @tools = []
 
-      @tools = ObjectSpace.each_object(Class).select do |klass|
-        klass < RubyLLM::Tool
-      end
-
-      if defined?(RubyLLM::MCP)
-        begin
-          RubyLLM::MCP.establish_connection
-          @tools += RubyLLM::MCP.tools
-        rescue => e
-          STDERR.puts "Warning: Failed to connect MCP clients: #{e.message}"
-        end
-      end
-
-      # Apply allowed/rejected tool filters to all tools regardless of source
+      support_local_tools
+      support_mcp
       filter_tools_by_allowed_list
       filter_tools_by_rejected_list
       drop_duplicate_tools
@@ -115,6 +103,21 @@ module AIA
         AIA.config.tool_names = @tools.map(&:name).join(', ')
         AIA.config.tools      = @tools
       end
+    end
+
+
+    def support_local_tools
+      @tools += ObjectSpace.each_object(Class).select do |klass|
+        klass < RubyLLM::Tool
+      end
+    end
+
+
+    def support_mcp
+      RubyLLM::MCP.establish_connection
+      @tools += RubyLLM::MCP.tools
+    rescue => e
+      STDERR.puts "Warning: Failed to connect MCP clients: #{e.message}"
     end
 
 
