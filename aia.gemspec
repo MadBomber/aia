@@ -10,12 +10,19 @@ Gem::Specification.new do |spec|
 
   spec.summary      = "AI Assistant: dynamic prompts, shell & Ruby integration, and seamless chat workflows."
   spec.description  = <<~DESC
-    Unleash the full power of AI from your terminal! AIA is a cutting-edge CLI
-    assistant for generative AI workflows, offering dynamic prompt management,
-    seamless shell and Ruby integration, interactive chat, and advanced automation.
-    Effortlessly craft, manage, and execute prompts with embedded directives,
-    history, and flexible configuration. Experience next-level productivity for
-    developers, power users, and AI enthusiasts—all from your command line.
+    Unlock the Power of AI Right from Your Terminal!  AIA is a
+    revolutionary CLI console application designed for generative AI
+    workflows. With AIA, you can effortlessly manage prompts,
+    integrate seamlessly with shell and embedded Ruby (ERB), and
+    engage in interactive chats, all while harnessing advanced
+    automation features.  Experience a new level of productivity with
+    dynamic prompt management, tailored directives, and comprehensive
+    history tracking. AIA supports callback functions (Tools) and
+    model context protocol (MCP) servers, making it the ultimate tool
+    for developers, power users, and AI enthusiasts alike.  Transform
+    your command line into a powerhouse of creativity and efficiency.
+    Elevate your workflow with AIA and unleash the full potential of
+    AI at your fingertips!
   DESC
 
   spec.homepage     = "https://github.com/MadBomber/aia"
