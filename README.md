@@ -358,6 +358,33 @@ Your prompt content here...
 Analyze the above information and provide insights.
 ```
 
+#### Custom Directive Examples
+
+You can extend AIA with custom directives by creating Ruby files that define new directive methods:
+
+```ruby
+# examples/directives/ask.rb
+module AIA
+  class DirectiveProcessor
+    private
+    desc "A meta-prompt to LLM making its response available as part of the primary prompt"
+    def ask(args, context_manager=nil)
+      meta_prompt = args.empty? ? "What is meta-prompting?" : args.join(' ')
+      AIA.config.client.chat(meta_prompt)
+    end
+  end
+end
+```
+
+**Usage:** Use the --tools option to specific a specific directive file or a directory full of files
+```bash
+# Load custom directive
+aia --tools examples/directives/ask.rb --chat
+
+# Use the results of the custom directive as input to a prompt
+//ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
+```
+
 ### Shell Integration
 
 AIA automatically processes shell patterns in prompts:
@@ -498,6 +525,22 @@ aia --tools ~/tools/ --rejected_tools deprecated
 - Shell command execution
 - API integrations
 - Data processing utilities
+
+**MCP Client Examples** (see `examples/tools/mcp/` directory):
+
+AIA supports Model Context Protocol (MCP) clients for extended functionality:
+
+```bash
+# GitHub MCP Server (requires: brew install github-mcp-server)
+# Set GITHUB_PERSONAL_ACCESS_TOKEN environment variable
+aia --tools examples/tools/mcp/github_mcp_server.rb --chat
+
+# iMCP for macOS (requires: brew install --cask loopwork/tap/iMCP)
+# Provides access to Notes, Calendar, Contacts, etc.
+aia --tools examples/tools/mcp/imcp.rb --chat
+```
+
+These MCP clients require the `ruby_llm-mcp` gem and provide access to external services and data sources through the Model Context Protocol.
 
 **Shared Tools Collection:**
 AIA can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a curated collection of commonly-used  tools (aka functions) via the --require option.

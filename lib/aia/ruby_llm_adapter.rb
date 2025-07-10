@@ -66,30 +66,80 @@ module AIA
       end
     end
 
+
     def setup_chat_with_tools
       begin
-        @chat = RubyLLM.chat(model: @model)
+        @chat  = RubyLLM.chat(model: @model)
+        @model = @chat.model.name if @model.nil? # using default model
       rescue => e
         STDERR.puts "ERROR: #{e.message}"
         exit 1
       end
 
-      return unless @chat.model.supports_functions?
-
-      if !AIA.config.tool_paths.empty? && !@chat.model.supports?(:function_calling)
-        STDERR.puts "ERROR: The model #{@model} does not support tools"
-        exit 1
+      unless @chat.model.supports_functions?
+        AIA.config.tools      = []
+        AIA.config.tool_names = ""
+        return
       end
 
-      @tools = ObjectSpace.each_object(Class).select do |klass|
-        klass < RubyLLM::Tool
-      end
+      load_tools
 
-      unless tools.empty?
-        @chat.with_tools(*tools)
-        AIA.config.tools = tools.map(&:name).join(', ')
+      @chat.with_tools(*tools) unless tools.empty?
+    end
+
+
+    def load_tools
+      @tools = []
+
+      support_local_tools
+      support_mcp
+      filter_tools_by_allowed_list
+      filter_tools_by_rejected_list
+      drop_duplicate_tools
+
+      if tools.empty?
+        AIA.config.tool_names = ""
+      else
+        AIA.config.tool_names = @tools.map(&:name).join(', ')
+        AIA.config.tools      = @tools
       end
     end
+
+
+    def support_local_tools
+      @tools += ObjectSpace.each_object(Class).select do |klass|
+        klass < RubyLLM::Tool
+      end
+    end
+
+
+    def support_mcp
+      RubyLLM::MCP.establish_connection
+      @tools += RubyLLM::MCP.tools
+    rescue => e
+      STDERR.puts "Warning: Failed to connect MCP clients: #{e.message}"
+    end
+
+
+    def drop_duplicate_tools
+      seen_names = Set.new
+      original_size = @tools.size
+
+      @tools.select! do |tool|
+        tool_name = tool.name
+        if seen_names.include?(tool_name)
+          STDERR.puts "WARNING: Duplicate tool name detected: '#{tool_name}'. Only the first occurrence will be used."
+          false
+        else
+          seen_names.add(tool_name)
+          true
+        end
+      end
+
+      removed_count = original_size - @tools.size
+      STDERR.puts "Removed #{removed_count} duplicate tools" if removed_count > 0
+    end
+
 
     # TODO: Need to rethink this dispatcher pattern w/r/t RubyLLM's capabilities
     #       This code was originally designed for AiClient
@@ -117,7 +167,7 @@ module AIA
     end
 
     def transcribe(audio_file)
-      @chat.ask("Transcribe this audio", with: audio_file)
+      @chat.ask("Transcribe this audio", with: audio_file).content
     end
 
     def speak(text)
@@ -194,6 +244,24 @@ module AIA
     end
 
     private
+
+    def filter_tools_by_allowed_list
+      return if AIA.config.allowed_tools.nil?
+
+      @tools.select! do |tool|
+        tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
+        AIA.config.allowed_tools.any? { |allowed| tool_name.include?(allowed) }
+      end
+    end
+
+    def filter_tools_by_rejected_list
+      return if AIA.config.rejected_tools.nil?
+
+      @tools.reject! do |tool|
+        tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
+        AIA.config.rejected_tools.any? { |rejected| tool_name.include?(rejected) }
+      end
+    end
 
     def extract_model_parts
       parts = AIA.config.model.split('/')

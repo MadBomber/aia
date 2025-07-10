@@ -6,6 +6,11 @@
 
 require 'ruby_llm'
 require 'ruby_llm/mcp'
+
+# FIXME: Actually fix ruby_llm; this is supposed to a temporary fix for the issues
+#        discovered with shared_tools/ruby_llm/mcp/github_mcp_server
+RubyLLM::MCP.support_complex_parameters!
+
 require 'prompt_manager'
 
 
@@ -25,7 +30,6 @@ require_relative 'refinements/string.rb'        # adds #include_any? #include_al
 require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'
-require_relative 'aia/shell_command_executor'
 require_relative 'aia/prompt_handler'
 require_relative 'aia/ruby_llm_adapter'
 require_relative 'aia/directive_processor'

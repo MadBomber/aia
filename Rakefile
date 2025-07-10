@@ -2,23 +2,31 @@
 
 begin
   require "tocer/rake/register"
-rescue LoadError => error
-  puts error.message
+  Tocer::Rake::Register.call
+rescue LoadError, StandardError => e
+  warn "Skipping tocer tasks: #{e.message}"
 end
 
-Tocer::Rake::Register.call
+begin
+  require 'kramdown/man/task'
+  Kramdown::Man::Task.new
+rescue LoadError, StandardError => e
+  warn "Skipping kramdown man task: #{e.message}"
+end
 
-require 'kramdown/man/task'
-Kramdown::Man::Task.new
-
-require "bundler/gem_tasks"
+begin
+  require "bundler/gem_tasks"
+rescue LoadError, StandardError => e
+  warn "Skipping bundler/gem_tasks: #{e.message}"
+end
 require "minitest/test_task"
 
 Minitest::TestTask.create(:test) do |t|
   t.libs        << "test"
   t.libs        << "lib"
   t.warning     = false
-  t.test_globs  = ["test/aia/*_test.rb", "test/aia_test.rb", "!test/integration/**/*_test.rb"]
+  # Include all unit tests under test/, excluding integration tests
+  t.test_globs  = ["test/**/*_test.rb", "!test/integration/**/*_test.rb"]
 end
 
 Minitest::TestTask.create(:integration) do |t|

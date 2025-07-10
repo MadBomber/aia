@@ -5,6 +5,8 @@ require "ruby_llm/tool"
 
 module Tools
   class RunShellCommand < RubyLLM::Tool
+    def self.name = 'run_shell_command'
+
     description "Execute a linux shell command"
     param :command, desc: "The command to execute"
 

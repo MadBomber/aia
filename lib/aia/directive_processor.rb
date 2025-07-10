@@ -162,19 +162,19 @@ module AIA
       spaces  = " "*indent
       width   = TTY::Screen.width - indent - 2
 
-      if !AIA.config.tools.empty?
+      if AIA.config.tools.empty?
+        puts "No tools are available"
+      else
         puts
         puts "Available Tools"
         puts "==============="
 
-        AIA.config.tools.split(',').map(&:strip).each do |tool|
-          klass = tool.constantize
-          puts "\n#{klass.name}"
-          puts "-"*klass.name.size
-          puts WordWrapper::MinimumRaggedness.new(width, klass.description).wrap.split("\n").map{|s| spaces+s+"\n"}.join
+        AIA.config.tools.each do |tool|
+          name = tool.respond_to?(:name) ? tool.name : tool.class.name
+          puts "\n#{name}"
+          puts "-"*name.size
+          puts WordWrapper::MinimumRaggedness.new(width, tool.description).wrap.split("\n").map{|s| spaces+s+"\n"}.join
         end
-      else
-        puts "No tools configured"
       end
       puts
 
@@ -260,7 +260,15 @@ module AIA
 
     desc "Shortcut for //config model _and_ //config model = value"
     def model(args, context_manager=nil)
-      send(:config, args.prepend('model'), context_manager)
+      if args.empty?
+        puts
+        puts AIA.config.client.model.to_h.pretty_inspect
+        puts
+      else
+        send(:config, args.prepend('model'), context_manager)
+      end
+
+      return ''
     end
 
     desc "Shortcut for //config temperature _and_ //config temperature = value"
@@ -345,9 +353,12 @@ module AIA
       counter = 0
 
       RubyLLM.models.all.each do |llm|
+        cw      = llm.context_window
+        caps    = llm.capabilities.join(',')
         inputs  = llm.modalities.input.join(',')
         outputs = llm.modalities.output.join(',')
-        entry   = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
+        mode    = "#{inputs} to #{outputs}"
+        entry   = "- #{llm.id} (#{llm.provider}) cw: #{cw} mode: #{mode} caps: #{caps}"
 
         if query.nil? || query.empty?
           counter += 1

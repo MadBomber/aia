@@ -4,6 +4,8 @@ require "ruby_llm/tool"
 
 module Tools
   class EditFile < RubyLLM::Tool
+    def self.name = "edit_file"
+
     description <<~DESCRIPTION
       Make edits to a text file.
 
