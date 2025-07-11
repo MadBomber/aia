@@ -464,7 +464,33 @@ module AIA
       end
 
       opts.on("-h", "--help", "Prints this help") do
+        puts <<~HELP
+
+          AIA your AI Assistant
+            - designed for generative AI workflows,
+            - effortlessly manage AI prompts,
+            - integrate seamlessly with shell and embedded Ruby (ERB),
+            - run batch processes,
+            - engage in interactive chats,
+            - with user defined directives, tools and MCP clients.
+
+        HELP
+
         puts opts
+
+        puts <<~EXTRA
+
+          Explore Further:
+          - AIA Report an Issue:   https://github.com/MadBomber/aia/issues
+          - AIA Documentation:     https://github.com/madbomber/aia/blob/main/README.md
+          - AIA GitHub Repository: https://github.com/MadBomber/aia
+          - PromptManager Docs:    https://github.com/MadBomber/prompt_manager/blob/main/README.md
+          - ERB Documentation:     https://rubyapi.org/o/erb
+          - RubyLLM Tool Docs:     https://rubyllm.com/guides/tools
+          - MCP Client Docs:       https://github.com/patvice/ruby_llm-mcp/blob/main/README.md
+
+        EXTRA
+
         exit
       end
     end

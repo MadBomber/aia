@@ -849,11 +849,17 @@ rake test
 ## Roadmap
 
 - **Enhanced Search**: Restore full-text search within prompt files
-- **Model Context Protocol**: Continue integration with ruby_llm gem
 - **UI Improvements**: Better configuration management for fzf and rg tools
-- **Performance**: Optimize prompt loading and processing
-- **Security**: Enhanced sandboxing for shell command execution
+- **Logging**: Enhanced logging using Ruby Logger class; integration with RubyLLM and RubyLLM::MCP logging
 
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+
+## Articles on AIA
+
+1. [The Philosophy of Prompt-Driven Development with AIA](https://madbomber.github.io/blog/engineering/AIA-Philosophy/)
+2. [Mastering AIA's Batch Mode: From Simple Questions to Complex Workflows](https://madbomber.github.io/blog/engineering/AIA-Batch-Mode/)
+3. [Building AI Workflows: AIA's Prompt Sequencing and Pipelines](https://madbomber.github.io/blog/engineering/AIA-Workflows/)
+4. [Interactive AI Sessions: Mastering AIA's Chat Mode](https://madbomber.github.io/blog/engineering/AIA-Chat-Mode/)
+5. [From Dynamic Prompts to Advanced Tool Integration](https://madbomber.github.io/blog/engineering/AIA-Advanced-Tool-Integration/)

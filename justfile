@@ -1,12 +1,8 @@
 # aia/main.just
 #
-# Support man pages with ...
-# gem install kramdown-man versionaire
-#
 
 RR                := env_var('RR')
 version_filepath  := env_var('RR') + "/.version"
-man_filepath      := env_var('RR') + "/man/aia.1.md"
 
 # with ~/.justfile
 
@@ -135,7 +131,7 @@ module_git := "/Users/dewayne/just_modules/git.just"
 
 
 # Install Locally
-install: update_toc_in_readmen create_man_page flay
+install: update_toc_in_readmen flay
   rake install
 
 
@@ -143,10 +139,6 @@ install: update_toc_in_readmen create_man_page flay
 update_toc_in_readmen:
   rake toc
 
-
-# Preview man page
-preview_man_page:
-  kramdown-man {{RR}}/man/aia.1.md
 
 # Static Code Check
 flay: coverage
@@ -161,20 +153,10 @@ coverage: test
 # Run Unit Tests
 test:
   rake test
-  
-
-# View man page
-view_man_page: create_man_page
-  man {{RR}}/man/aia.1
-
-
-# Create man page
-create_man_page:
-  rake man
 
 
 # Generate the Documentation
-gen_doc: create_man_page update_toc_in_readmen
+gen_doc: update_toc_in_readmen
 
 
 ##########################################
@@ -206,11 +188,7 @@ alias inc := bump
   File.open("{{version_filepath}}", 'w')
   .write(new_version.to_s + "\n")
   #
-  content = File.read({{man_filepath}}).sub(old_version, new_version)
-  #
-  File.write({{man_filepath}}, content)
-  #
-  `git add {{version_filepath}} {{man_filepath}}`
+  `git add {{version_filepath}}`
 
 
 # Module repo
