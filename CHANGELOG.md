@@ -1,7 +1,12 @@
 # Changelog
 ## [Unreleased]
 
-### [0.9.9] WIP
+## Released
+
+### [0.9.10] 2025-07-18
+- updated ruby_llm-mcp to version 0.6.1 which solves problems with MCP tools not being installed
+
+### [0.9.9] 2025-07-10
 - refactored the Session and Config classes into more testable method_missing
 - updated the test suire for both the Session and Config classes
 - added support for MCP servers coming into AIA via the shared_tools gem
@@ -11,7 +16,6 @@
 - //model directive now dumps full model details
 - //available_models now has context window size and capabilities for each model returned
 
-## Released
 
 ### [0.9.8] 2025-06-25
 - fixing an issue with pipelined prompts
