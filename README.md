@@ -6,9 +6,15 @@
 
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
 
-AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manager) to manage prompts, utilizes the [CLI tool fzf](https://github.com/junegunn/fzf) for prompt selection, and can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a collection of common ready-to-use functions for use with LLMs that support tools.
+AIA leverages the following Ruby gems:
 
-**Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)
+- **[prompt_manager](https://github.com/madbomber/prompt_manager)** to manage prompts,
+- **[ruby_llm](https://rubyllm.com)** to access LLM providers,
+- **[ruby_llm-mcp](https://www.rubyllm-mcp.com)** for Model Context Protocol (MCP) support,
+- and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use MCP clients and functions for use with LLMs that support tools.
+
+**Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)<br />
+**BLOG**: [Series on AIA](https://madbomber.github.io/blog/engineering/AIA-Philosophy/)
 
 ## Quick Start
 
@@ -74,6 +80,7 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
     - [Prompt Directives](#prompt-directives)
       - [Configuration Directive Examples](#configuration-directive-examples)
       - [Dynamic Content Examples](#dynamic-content-examples)
+      - [Custom Directive Examples](#custom-directive-examples)
     - [Shell Integration](#shell-integration)
     - [Embedded Ruby (ERB)](#embedded-ruby-erb)
     - [Prompt Sequences](#prompt-sequences)
@@ -112,6 +119,7 @@ AIA leverages the [prompt_manager gem](https://github.com/madbomber/prompt_manag
     - [Areas for Improvement](#areas-for-improvement)
   - [Roadmap](#roadmap)
   - [License](#license)
+  - [Articles on AIA](#articles-on-aia)
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
 
