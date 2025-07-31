@@ -347,7 +347,7 @@ module AIA
       puts header + ':'
       puts
 
-      q1 = query.select{|q| q.include?('_to_')}.map{|q| ':'==q[0] ? q[1...] : q}
+      q1 = query.select{|q| q.include?('_to_')} # SMELL: ?? .map{|q| ':'==q[0] ? q[1...] : q}
       q2 = query.reject{|q| q.include?('_to_')}
 
       counter = 0
@@ -358,7 +358,8 @@ module AIA
         inputs  = llm.modalities.input.join(',')
         outputs = llm.modalities.output.join(',')
         mode    = "#{inputs} to #{outputs}"
-        entry   = "- #{llm.id} (#{llm.provider}) cw: #{cw} mode: #{mode} caps: #{caps}"
+        in_1m   = llm.pricing.text_tokens.standard.to_h[:input_per_million]
+        entry   = "- #{llm.id} (#{llm.provider}) in: $#{in_1m} cw: #{cw} mode: #{mode} caps: #{caps}"
 
         if query.nil? || query.empty?
           counter += 1
