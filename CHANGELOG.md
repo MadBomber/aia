@@ -1,7 +1,15 @@
 # Changelog
 ## [Unreleased]
 
+### [0.9.12] WIP
+- TODO: focus on log file consistency using Logger
+
 ## Released
+
+### [0.9.11] 2025-07-31
+- added a cost per 1 million input tokens to available_models query output
+- updated ruby_llm to version 1.4.0
+- updated all other gem dependencies to their latest versions
 
 ### [0.9.10] 2025-07-18
 - updated ruby_llm-mcp to version 0.6.1 which solves problems with MCP tools not being installed
