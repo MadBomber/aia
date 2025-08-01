@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### [0.9.12] WIP
+- Fixed ruby_llm version to 1.5.1
 - TODO: focus on log file consistency using Logger
 
 ## Released
