@@ -13,8 +13,10 @@ AIA leverages the following Ruby gems:
 - **[ruby_llm-mcp](https://www.rubyllm-mcp.com)** for Model Context Protocol (MCP) support,
 - and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use MCP clients and functions for use with LLMs that support tools.
 
-**Wiki**: [Checkout the AIA Wiki](https://github.com/MadBomber/aia/wiki)<br />
-**BLOG**: [Series on AIA](https://madbomber.github.io/blog/engineering/AIA-Philosophy/)
+For more information on AIA visit these locations:
+
+- **[The AIA Docs Website](https://madbomber.github.io/aia)**<br />
+- **[Blog Series on AIA](https://madbomber.github.io/blog/engineering/AIA-Philosophy/)**
 
 ## Quick Start
 
@@ -43,7 +45,7 @@ AIA leverages the following Ruby gems:
 5. **Start an interactive chat:**
    ```bash
    aia --chat
-   
+
    # Or use multiple models for comparison
    aia --chat -m gpt-4o-mini,gpt-3.5-turbo
    ```
@@ -442,7 +444,7 @@ Based on the insights from multiple AI models, here is a comprehensive answer th
 incorporates the best perspectives and resolves any contradictions...
 ```
 
-#### Individual Responses Mode  
+#### Individual Responses Mode
 
 By default (or with `--no-consensus`), each model provides its own response:
 
@@ -459,7 +461,7 @@ aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo --no-consensus
 from: gpt-4o-mini
 Response from the first model...
 
-from: gpt-3.5-turbo  
+from: gpt-3.5-turbo
 Response from the second model...
 
 from: gpt-5-mini
@@ -729,7 +731,7 @@ Usage examples:
 # Get individual perspectives from each model
 aia decision_maker -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini --no-consensus
 
-# Get a synthesized consensus recommendation  
+# Get a synthesized consensus recommendation
 aia decision_maker -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini --consensus
 
 # Use with chat mode for follow-up questions
