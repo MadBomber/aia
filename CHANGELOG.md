@@ -1,17 +1,20 @@
 # Changelog
 ## [Unreleased]
 
-### [0.9.12] WIP
+## Released
+
+### [0.9.12] 2025-08-28
 
 #### New Features
 - **MAJOR NEW FEATURE**: Multi-model support - specify multiple AI models simultaneously with comma-separated syntax
 - **NEW FEATURE**: `--consensus` flag to enable primary model consensus mode for synthesized responses from multiple models
-- **NEW FEATURE**: `--no-consensus` flag to explicitly force individual responses from all models  
+- **NEW FEATURE**: `--no-consensus` flag to explicitly force individual responses from all models
 - **NEW FEATURE**: Enhanced `//model` directive now shows comprehensive multi-model configuration details
 - **NEW FEATURE**: Concurrent processing of multiple models for improved performance
 - **NEW FEATURE**: Primary model concept - first model in list serves as consensus orchestrator
 - **NEW FEATURE**: Multi-model error handling - invalid models reported but don't prevent valid models from working
 - **NEW FEATURE**: Multi-model support in both batch and interactive chat modes
+- **NEW FEATURE**: Comprehensive documentation website https://madbomber.github.io/aia/
 
 #### Improvements
 - **ENHANCEMENT**: Enhanced `//model` directive output with detailed multi-model configuration display
@@ -66,7 +69,6 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 #### TODO
 - TODO: focus on log file consistency using Logger
 
-## Released
 
 ### [0.9.11] 2025-07-31
 - added a cost per 1 million input tokens to available_models query output
