@@ -1,0 +1,11 @@
+{
+  "mcpservers": {
+    "github": {
+      "command": "/opt/homebrew/bin/github-mcp-server",
+      "args": ["stdio"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT_HERE"
+      }
+    }
+  }
+}

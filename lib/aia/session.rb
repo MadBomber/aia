@@ -313,26 +313,39 @@ module AIA
     def handle_piped_input
       return if STDIN.tty?
 
-      original_stdin = STDIN.dup
-      piped_input = STDIN.read.strip
-      STDIN.reopen("/dev/tty")
+      # Additional check: see if /dev/tty is available before attempting to use it
+      return unless File.exist?("/dev/tty") && File.readable?("/dev/tty") && File.writable?("/dev/tty")
 
-      return if piped_input.empty?
+      begin
+        original_stdin = STDIN.dup
+        piped_input = STDIN.read.strip
+        STDIN.reopen("/dev/tty")
 
-      @chat_prompt.text = piped_input
-      processed_input = @chat_prompt.to_s
+        return if piped_input.empty?
 
-      @context_manager.add_to_context(role: "user", content: processed_input)
+        @chat_prompt.text = piped_input
+        processed_input = @chat_prompt.to_s
 
-      @ui_presenter.display_thinking_animation
-      response = @chat_processor.process_prompt(@context_manager.get_context)
+        @context_manager.add_to_context(role: "user", content: processed_input)
 
-      @context_manager.add_to_context(role: "assistant", content: response)
-      @chat_processor.output_response(response)
-      @chat_processor.speak(response) if AIA.speak?
-      @ui_presenter.display_separator
+        @ui_presenter.display_thinking_animation
+        response = @chat_processor.process_prompt(@context_manager.get_context)
 
-      STDIN.reopen(original_stdin)
+        @context_manager.add_to_context(role: "assistant", content: response)
+        @chat_processor.output_response(response)
+        @chat_processor.speak(response) if AIA.speak?
+        @ui_presenter.display_separator
+
+        STDIN.reopen(original_stdin)
+      rescue Errno::ENXIO => e
+        # Handle case where /dev/tty is not available (e.g., in some containerized environments)
+        warn "Warning: Unable to handle piped input due to TTY unavailability: #{e.message}"
+        return
+      rescue StandardError => e
+        # Handle any other errors gracefully
+        warn "Warning: Error handling piped input: #{e.message}"
+        return
+      end
     end
 
     def run_chat_loop

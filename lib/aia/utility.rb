@@ -6,11 +6,15 @@ module AIA
   class Utility
     class << self
       def tools?
-        !AIA.config.tool_names.empty?
+        AIA.config&.tool_names && !AIA.config.tool_names.empty?
+      end
+
+      def user_tools?
+        AIA.config&.tool_paths && !AIA.config.tool_paths.empty?
       end
 
       def supports_tools?
-        AIA.config.client.model.supports_functions?
+        AIA.config&.client&.model&.supports_functions? || false
       end
 
 
@@ -28,15 +32,15 @@ module AIA
 
        ,      ,
        (\\____/) AI Assistant (v#{AIA::VERSION}) is Online
-        (_oo_)   #{AIA.config.model}#{supports_tools? ? ' (supports tools)' : ''}
-         (O)       using #{AIA.config.adapter} (v#{RubyLLM::VERSION}#{mcp_version})
+        (_oo_)   #{AIA.config&.model || 'unknown-model'}#{supports_tools? ? ' (supports tools)' : ''}
+         (O)       using #{AIA.config&.adapter || 'unknown-adapter'} (v#{RubyLLM::VERSION}#{mcp_version})
        __||__    \\) model db was last refreshed on
-     [/______\\]  /    #{AIA.config.last_refresh}
-    / \\__AI__/ \\/      #{tools? ? 'You can share my tools' : 'I did not bring any tools'}
+     [/______\\]  /    #{AIA.config&.last_refresh || 'unknown'}
+    / \\__AI__/ \\/      #{user_tools? ? 'I will also use your tools' : (tools? ? 'You can share my tools' : 'I did not bring any tools')}
    /    /__\\
-  (\\   /____\\   #{tools? ? 'My Toolbox contains:' : ''}
+  (\\   /____\\   #{user_tools? && tools? ? 'My Toolbox contains:' : ''}
         ROBOT
-        if tools?
+        if user_tools? && tools?
           tool_names = AIA.config.respond_to?(:tool_names) ? AIA.config.tool_names : AIA.config.tools
           if tool_names && !tool_names.to_s.empty?
             puts WordWrapper::MinimumRaggedness.new(

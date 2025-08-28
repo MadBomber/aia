@@ -1,39 +1,48 @@
 # lib/aia/ruby_llm_adapter.rb
 
+require 'async'
+
 module AIA
   class RubyLLMAdapter
     attr_reader :tools
 
     def initialize
-      @provider, @model = extract_model_parts.values
+      @models = extract_models_config
+      @chats = {}
 
       configure_rubyllm
       refresh_local_model_registry
-      setup_chat_with_tools
+      setup_chats_with_tools
     end
+
 
     def configure_rubyllm
       # TODO: Add some of these configuration items to AIA.config
       RubyLLM.configure do |config|
+        config.anthropic_api_key  = ENV.fetch('ANTHROPIC_API_KEY', nil)
+        config.deepseek_api_key   = ENV.fetch('DEEPSEEK_API_KEY', nil)
+        config.gemini_api_key     = ENV.fetch('GEMINI_API_KEY', nil)
+        config.gpustack_api_key   = ENV.fetch('GPUSTACK_API_KEY', nil)
+        config.mistral_api_key    = ENV.fetch('MISTRAL_API_KEY', nil)
+        config.openrouter_api_key = ENV.fetch('OPENROUTER_API_KEY', nil)
+        config.perplexity_api_key = ENV.fetch('PERPLEXITY_API_KEY', nil)
+
+        # These providers require a little something extra
         config.openai_api_key         = ENV.fetch('OPENAI_API_KEY', nil)
         config.openai_organization_id = ENV.fetch('OPENAI_ORGANIZATION_ID', nil)
         config.openai_project_id      = ENV.fetch('OPENAI_PROJECT_ID', nil)
-
-        config.anthropic_api_key  = ENV.fetch('ANTHROPIC_API_KEY', nil)
-        config.gemini_api_key     = ENV.fetch('GEMINI_API_KEY', nil)
-        config.deepseek_api_key   = ENV.fetch('DEEPSEEK_API_KEY', nil)
-        config.openrouter_api_key = ENV.fetch('OPENROUTER_API_KEY', nil)
 
         config.bedrock_api_key       = ENV.fetch('BEDROCK_ACCESS_KEY_ID', nil)
         config.bedrock_secret_key    = ENV.fetch('BEDROCK_SECRET_ACCESS_KEY', nil)
         config.bedrock_region        = ENV.fetch('BEDROCK_REGION', nil)
         config.bedrock_session_token = ENV.fetch('BEDROCK_SESSION_TOKEN', nil)
 
-        config.ollama_api_base    = ENV.fetch('OLLAMA_API_BASE', nil)
+        # Ollama is based upon the OpenAI API so it needs to over-ride a few things
+        config.ollama_api_base = ENV.fetch('OLLAMA_API_BASE', nil)
 
         # --- Custom OpenAI Endpoint ---
         # Use this for Azure OpenAI, proxies, or self-hosted models via OpenAI-compatible APIs.
-        config.openai_api_base  = ENV.fetch('OPENAI_API_BASE', nil) # e.g., "https://your-azure.openai.azure.com"
+        config.openai_api_base = ENV.fetch('OPENAI_API_BASE', nil) # e.g., "https://your-azure.openai.azure.com"
 
         # --- Default Models ---
         # Used by RubyLLM.chat, RubyLLM.embed, RubyLLM.paint if no model is specified.
@@ -42,17 +51,20 @@ module AIA
         # config.default_image_model      = 'dall-e-3'                # Default: 'dall-e-3'
 
         # --- Connection Settings ---
-        # config.request_timeout            = 120 # Request timeout in seconds (default: 120)
-        # config.max_retries                = 3   # Max retries on transient network errors (default: 3)
-        # config.retry_interval             = 0.1 # Initial delay in seconds (default: 0.1)
-        # config.retry_backoff_factor       = 2   # Multiplier for subsequent retries (default: 2)
-        # config.retry_interval_randomness  = 0.5 # Jitter factor (default: 0.5)
+        config.request_timeout            = 120 # Request timeout in seconds (default: 120)
+                config.max_retries                = 3   # Max retries on transient network errors (default: 3)
+                config.retry_interval             = 0.1 # Initial delay in seconds (default: 0.1)
+                config.retry_backoff_factor       = 2   # Multiplier for subsequent retries (default: 2)
+                config.retry_interval_randomness  = 0.5 # Jitter factor (default: 0.5)
 
-        # --- Logging Settings ---
+        # Connection pooling settings removed - not supported in current RubyLLM version
+        # config.connection_pool_size       = 10  # Number of connections to maintain in pool
+        # config.connection_pool_timeout    = 60  # Connection pool timeout in seconds
         # config.log_file   = '/logs/ruby_llm.log'
-        config.log_level  = :fatal # debug level can also be set to debug by setting RUBYLLM_DEBUG envar to true
+        config.log_level = :fatal # debug level can also be set to debug by setting RUBYLLM_DEBUG envar to true
       end
     end
+
 
     def refresh_local_model_registry
       if  AIA.config.refresh.nil?           ||
@@ -60,31 +72,76 @@ module AIA
           Date.today > (AIA.config.last_refresh + Integer(AIA.config.refresh))
         RubyLLM.models.refresh!
         AIA.config.last_refresh = Date.today
-        if AIA.config.config_file
-          AIA::Config.dump_config(AIA.config, AIA.config.config_file)
-        end
+        AIA::Config.dump_config(AIA.config, AIA.config.config_file) if AIA.config.config_file
       end
     end
 
 
-    def setup_chat_with_tools
-      begin
-        @chat  = RubyLLM.chat(model: @model)
-        @model = @chat.model.name if @model.nil? # using default model
-      rescue => e
-        STDERR.puts "ERROR: #{e.message}"
+    def setup_chats_with_tools
+      valid_chats = {}
+      failed_models = []
+
+      @models.each do |model_name|
+        begin
+          chat = RubyLLM.chat(model: model_name)
+          valid_chats[model_name] = chat
+        rescue StandardError => e
+          failed_models << "#{model_name}: #{e.message}"
+        end
+      end
+
+      # Report failed models but continue with valid ones
+      unless failed_models.empty?
+        puts "\n❌ Failed to initialize the following models:"
+        failed_models.each { |failure| puts "   - #{failure}" }
+      end
+
+      # If no models initialized successfully, exit
+      if valid_chats.empty?
+        puts "\n❌ No valid models could be initialized. Exiting."
+        puts "\n💡 Available models can be listed with: bin/aia --help models"
         exit 1
       end
 
-      unless @chat.model.supports_functions?
-        AIA.config.tools      = []
-        AIA.config.tool_names = ""
-        return
+      @chats = valid_chats
+      @models = valid_chats.keys
+
+      # Update the config to reflect only the valid models
+      AIA.config.model = @models
+
+      # Report successful models
+      if failed_models.any?
+        puts "\n✅ Successfully initialized: #{@models.join(', ')}"
+        puts
       end
 
-      load_tools
+      # Use the first chat to determine tool support (assuming all models have similar tool support)
+      first_chat = @chats.values.first
+      return unless first_chat&.model&.supports_functions?
 
-      @chat.with_tools(*tools) unless tools.empty?
+      load_tools_lazy_mcp_support_only_when_needed
+
+      @chats.each_value do |chat|
+        chat.with_tools(*tools) unless tools.empty?
+      end
+    end
+
+
+    def load_tools_lazy_mcp_support_only_when_needed
+      @tools = []
+
+      support_local_tools
+      support_mcp_lazy
+      filter_tools_by_allowed_list
+      filter_tools_by_rejected_list
+      drop_duplicate_tools
+
+      if tools.empty?
+        AIA.config.tool_names = ''
+      else
+        AIA.config.tool_names = @tools.map(&:name).join(', ')
+        AIA.config.tools      = @tools
+      end
     end
 
 
@@ -98,7 +155,7 @@ module AIA
       drop_duplicate_tools
 
       if tools.empty?
-        AIA.config.tool_names = ""
+        AIA.config.tool_names = ''
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
         AIA.config.tools      = @tools
@@ -113,11 +170,24 @@ module AIA
     end
 
 
+    def support_mcp_lazy
+      # Only load MCP tools if MCP servers are actually configured
+      return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
+
+      begin
+        RubyLLM::MCP.establish_connection
+        @tools += RubyLLM::MCP.tools
+      rescue StandardError => e
+        warn "Warning: Failed to connect MCP clients: #{e.message}"
+      end
+    end
+
+
     def support_mcp
       RubyLLM::MCP.establish_connection
       @tools += RubyLLM::MCP.tools
-    rescue => e
-      STDERR.puts "Warning: Failed to connect MCP clients: #{e.message}"
+    rescue StandardError => e
+      warn "Warning: Failed to connect MCP clients: #{e.message}"
     end
 
 
@@ -128,7 +198,7 @@ module AIA
       @tools.select! do |tool|
         tool_name = tool.name
         if seen_names.include?(tool_name)
-          STDERR.puts "WARNING: Duplicate tool name detected: '#{tool_name}'. Only the first occurrence will be used."
+          warn "WARNING: Duplicate tool name detected: '#{tool_name}'. Only the first occurrence will be used."
           false
         else
           seen_names.add(tool_name)
@@ -137,110 +207,216 @@ module AIA
       end
 
       removed_count = original_size - @tools.size
-      STDERR.puts "Removed #{removed_count} duplicate tools" if removed_count > 0
+      warn "Removed #{removed_count} duplicate tools" if removed_count > 0
     end
 
 
-    # TODO: Need to rethink this dispatcher pattern w/r/t RubyLLM's capabilities
-    #       This code was originally designed for AiClient
-    #
     def chat(prompt)
-      modes = @chat.model.modalities
+      if @models.size == 1
+        # Single model - use the original behavior
+        single_model_chat(prompt, @models.first)
+      else
+        # Multiple models - use concurrent processing
+        multi_model_chat(prompt)
+      end
+    end
+
+    def single_model_chat(prompt, model_name)
+      chat_instance = @chats[model_name]
+      modes = chat_instance.model.modalities
 
       # TODO: Need to consider how to handle multi-mode models
       if modes.text_to_text?
-        text_to_text(prompt)
-
+        text_to_text_single(prompt, model_name)
       elsif modes.image_to_text?
-        image_to_text(prompt)
+        image_to_text_single(prompt, model_name)
       elsif modes.text_to_image?
-        text_to_image(prompt)
-
+        text_to_image_single(prompt, model_name)
       elsif modes.text_to_audio?
-        text_to_audio(prompt)
+        text_to_audio_single(prompt, model_name)
       elsif modes.audio_to_text?
-        audio_to_text(prompt)
-
+        audio_to_text_single(prompt, model_name)
       else
         # TODO: what else can be done?
       end
     end
 
-    def transcribe(audio_file)
-      @chat.ask("Transcribe this audio", with: audio_file).content
+    def multi_model_chat(prompt)
+      results = {}
+
+      Async do |task|
+        @models.each do |model_name|
+          task.async do
+            begin
+              result = single_model_chat(prompt, model_name)
+              results[model_name] = result
+            rescue StandardError => e
+              results[model_name] = "Error with #{model_name}: #{e.message}"
+            end
+          end
+        end
+      end
+
+      # Format and return results from all models
+      format_multi_model_results(results)
     end
 
-    def speak(text)
+    def format_multi_model_results(results)
+      use_consensus = should_use_consensus_mode?
+      
+      if use_consensus
+        # Generate consensus response using primary model
+        generate_consensus_response(results)
+      else
+        # Show individual responses from all models
+        format_individual_responses(results)
+      end
+    end
+
+    def should_use_consensus_mode?
+      # Only use consensus when explicitly enabled with --consensus flag
+      AIA.config.consensus == true
+    end
+
+    def generate_consensus_response(results)
+      primary_model = @models.first
+      primary_chat = @chats[primary_model]
+
+      # Build the consensus prompt with all model responses
+      consensus_prompt = build_consensus_prompt(results)
+
+      begin
+        # Have the primary model generate the consensus
+        consensus_result = primary_chat.ask(consensus_prompt).content
+        
+        # Format the consensus response
+        "from: #{primary_model} (consensus)\n#{consensus_result}"
+      rescue StandardError => e
+        # If consensus fails, fall back to individual responses
+        "Error generating consensus: #{e.message}\n\n" + format_individual_responses(results)
+      end
+    end
+
+    def build_consensus_prompt(results)
+      prompt_parts = []
+      prompt_parts << "You are tasked with creating a consensus response based on multiple AI model responses to the same query."
+      prompt_parts << "Please analyze the following responses and provide a unified, comprehensive answer that:"
+      prompt_parts << "- Incorporates the best insights from all models"
+      prompt_parts << "- Resolves any contradictions with clear reasoning"
+      prompt_parts << "- Provides additional context or clarification when helpful"
+      prompt_parts << "- Maintains accuracy and avoids speculation"
+      prompt_parts << ""
+      prompt_parts << "Model responses:"
+      prompt_parts << ""
+
+      results.each do |model_name, result|
+        next if result.to_s.start_with?("Error with")
+        prompt_parts << "#{model_name}:"
+        prompt_parts << result.to_s
+        prompt_parts << ""
+      end
+
+      prompt_parts << "Please provide your consensus response:"
+      prompt_parts.join("\n")
+    end
+
+    def format_individual_responses(results)
+      output = []
+      results.each do |model_name, result|
+        output << "from: #{model_name}"
+        output << result
+        output << "" # Add blank line between results
+      end
+      output.join("\n")
+    end
+
+
+    def transcribe(audio_file)
+      # Use the first model for transcription
+      first_model = @models.first
+      @chats[first_model].ask('Transcribe this audio', with: audio_file).content
+    end
+
+
+    def speak(_text)
       output_file = "#{Time.now.to_i}.mp3"
 
-      # Note: RubyLLM doesn't have a direct text-to-speech feature
+      # NOTE: RubyLLM doesn't have a direct text-to-speech feature
       # This is a placeholder for a custom implementation or external service
       begin
         # Try using a TTS API if available
         # For now, we'll use a mock implementation
-        File.write(output_file, "Mock TTS audio content")
-        system("#{AIA.config.speak_command} #{output_file}") if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
+        File.write(output_file, 'Mock TTS audio content')
+        if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
+          system("#{AIA.config.speak_command} #{output_file}")
+        end
         "Audio generated and saved to: #{output_file}"
-      rescue => e
+      rescue StandardError => e
         "Error generating audio: #{e.message}"
       end
     end
 
+
     # Clear the chat context/history
     # Needed for the //clear directive
     def clear_context
-      begin
+      @chats.each do |model_name, chat|
         # Option 1: Directly clear the messages array in the current chat object
-        if @chat.instance_variable_defined?(:@messages)
-          old_messages = @chat.instance_variable_get(:@messages)
+        if chat.instance_variable_defined?(:@messages)
+          chat.instance_variable_get(:@messages)
           # Force a completely empty array, not just attempting to clear it
-          @chat.instance_variable_set(:@messages, [])
+          chat.instance_variable_set(:@messages, [])
         end
-
-        # Option 2: Force RubyLLM to create a new chat instance at the global level
-        # This ensures any shared state is reset
-        @provider, @model = extract_model_parts.values
-        RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
-
-        # Option 3: Create a completely fresh chat instance for this adapter
-        @chat = nil  # First nil it to help garbage collection
-
-        begin
-          @chat = RubyLLM.chat(model: @model)
-        rescue => e
-          STDERR.puts "ERROR: #{e.message}"
-          exit 1
-        end
-
-        # Option 4: Call official clear_history method if it exists
-        if @chat.respond_to?(:clear_history)
-          @chat.clear_history
-        end
-
-        # Option 5: If chat has messages, force set it to empty again as a final check
-        if @chat.instance_variable_defined?(:@messages) && !@chat.instance_variable_get(:@messages).empty?
-          @chat.instance_variable_set(:@messages, [])
-        end
-
-        # Final verification
-        new_messages = @chat.instance_variable_defined?(:@messages) ? @chat.instance_variable_get(:@messages) : []
-
-        return "Chat context successfully cleared."
-      rescue => e
-        return "Error clearing chat context: #{e.message}"
       end
+
+      # Option 2: Force RubyLLM to create a new chat instance at the global level
+      # This ensures any shared state is reset
+      RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
+
+      # Option 3: Create completely fresh chat instances for this adapter
+      @chats = {} # First nil the chats hash
+
+      begin
+        @models.each do |model_name|
+          @chats[model_name] = RubyLLM.chat(model: model_name)
+        end
+      rescue StandardError => e
+        warn "ERROR: #{e.message}"
+        exit 1
+      end
+
+      # Option 4: Call official clear_history method if it exists
+      @chats.each_value do |chat|
+        chat.clear_history if chat.respond_to?(:clear_history)
+      end
+
+      # Final verification
+      @chats.each_value do |chat|
+        if chat.instance_variable_defined?(:@messages) && !chat.instance_variable_get(:@messages).empty?
+          chat.instance_variable_set(:@messages, [])
+        end
+      end
+
+      return 'Chat context successfully cleared.'
+    rescue StandardError => e
+      return "Error clearing chat context: #{e.message}"
     end
 
+
     def method_missing(method, *args, &block)
-      if @chat.respond_to?(method)
-        @chat.public_send(method, *args, &block)
+      # Use the first chat instance for backward compatibility with method_missing
+      first_chat = @chats.values.first
+      if first_chat&.respond_to?(method)
+        first_chat.public_send(method, *args, &block)
       else
         super
       end
     end
 
+
     def respond_to_missing?(method, include_private = false)
-      @chat.respond_to?(method) || super
+      # Check if any of our chat instances respond to the method
+      @chats.values.any? { |chat| chat.respond_to?(method) } || super
     end
 
     private
@@ -254,6 +430,7 @@ module AIA
       end
     end
 
+
     def filter_tools_by_rejected_list
       return if AIA.config.rejected_tools.nil?
 
@@ -263,23 +440,20 @@ module AIA
       end
     end
 
-    def extract_model_parts
-      parts = AIA.config.model.split('/')
-      parts.map!(&:strip)
 
-      if 2 == parts.length
-        provider  = parts[0]
-        model     = parts[1]
-      elsif 1 == parts.length
-        provider  = nil # RubyLLM will figure it out from the model name
-        model     = parts[0]
+    def extract_models_config
+      models_config = AIA.config.model
+
+      # Handle backward compatibility - if it's a string, convert to array
+      if models_config.is_a?(String)
+        [models_config]
+      elsif models_config.is_a?(Array)
+        models_config
       else
-        STDERR.puts "ERROR: malformed model name: #{AIA.config.model}"
-        exit 1
+        ['gpt-4o-mini'] # fallback to default
       end
-
-      { provider: provider, model: model }
     end
+
 
     def extract_text_prompt(prompt)
       if prompt.is_a?(String)
@@ -297,16 +471,17 @@ module AIA
     #########################################
     ## text
 
-    def text_to_text(prompt)
+    def text_to_text_single(prompt, model_name)
+      chat_instance = @chats[model_name]
       text_prompt = extract_text_prompt(prompt)
-      response  = if AIA.config.context_files.empty?
-                    @chat.ask(text_prompt)
-                  else
-                    @chat.ask(text_prompt, with: AIA.config.context_files)
-                  end
+      response = if AIA.config.context_files.empty?
+                   chat_instance.ask(text_prompt)
+                 else
+                   chat_instance.ask(text_prompt, with: AIA.config.context_files)
+                 end
 
       response.content
-    rescue => e
+    rescue StandardError => e
       e.message
     end
 
@@ -316,16 +491,15 @@ module AIA
 
     def extract_image_path(prompt)
       if prompt.is_a?(String)
-        match = prompt.match(/\b[\w\/\.\-_]+?\.(jpg|jpeg|png|gif|webp)\b/i)
+        match = prompt.match(%r{\b[\w/.\-_]+?\.(jpg|jpeg|png|gif|webp)\b}i)
         match ? match[0] : nil
       elsif prompt.is_a?(Hash)
         prompt[:image] || prompt[:image_path]
-      else
-        nil
       end
     end
 
-    def text_to_image(prompt)
+
+    def text_to_image_single(prompt, model_name)
       text_prompt = extract_text_prompt(prompt)
       image_name  = extract_image_path(text_prompt)
 
@@ -337,23 +511,24 @@ module AIA
         else
           "Image generated and available at: #{image.url}"
         end
-      rescue => e
+      rescue StandardError => e
         "Error generating image: #{e.message}"
       end
     end
 
-    def image_to_text(prompt)
+
+    def image_to_text_single(prompt, model_name)
       image_path  = extract_image_path(prompt)
       text_prompt = extract_text_prompt(prompt)
 
       if image_path && File.exist?(image_path)
         begin
-          @chat.ask(text_prompt, with: image_path).content
-        rescue => e
+          @chats[model_name].ask(text_prompt, with: image_path).content
+        rescue StandardError => e
           "Error analyzing image: #{e.message}"
         end
       else
-        text_to_text(prompt)
+        text_to_text_single(prompt, model_name)
       end
     end
 
@@ -365,22 +540,26 @@ module AIA
       filepath.to_s.downcase.end_with?('.mp3', '.wav', '.m4a', '.flac')
     end
 
-    def text_to_audio(prompt)
+
+    def text_to_audio_single(prompt, model_name)
       text_prompt = extract_text_prompt(prompt)
       output_file = "#{Time.now.to_i}.mp3"
 
       begin
-        # Note: RubyLLM doesn't have a direct TTS feature
+        # NOTE: RubyLLM doesn't have a direct TTS feature
         # TODO: This is a placeholder for a custom implementation
         File.write(output_file, text_prompt)
-        system("#{AIA.config.speak_command} #{output_file}") if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
+        if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
+          system("#{AIA.config.speak_command} #{output_file}")
+        end
         "Audio generated and saved to: #{output_file}"
-      rescue => e
+      rescue StandardError => e
         "Error generating audio: #{e.message}"
       end
     end
 
-    def audio_to_text(prompt)
+
+    def audio_to_text_single(prompt, model_name)
       text_prompt = extract_text_prompt(prompt)
       text_prompt = 'Transcribe this audio' if text_prompt.nil? || text_prompt.empty?
 
@@ -391,18 +570,18 @@ module AIA
           File.exist?(prompt)  &&
           audio_file?(prompt)
         begin
-          response  = if AIA.config.context_files.empty?
-                        @chat.ask(text_prompt)
-                      else
-                        @chat.ask(text_prompt, with: AIA.config.context_files)
-                      end
+          response = if AIA.config.context_files.empty?
+                       @chats[model_name].ask(text_prompt)
+                     else
+                       @chats[model_name].ask(text_prompt, with: AIA.config.context_files)
+                     end
           response.content
-        rescue => e
+        rescue StandardError => e
           "Error transcribing audio: #{e.message}"
         end
       else
         # Fall back to regular chat if no valid audio file is found
-        text_to_text(prompt)
+        text_to_text_single(prompt, model_name)
       end
     end
   end

@@ -156,8 +156,7 @@ class ContextManagerTest < Minitest::Test
   end
 
   def test_clear_context_calls_ruby_llm_clear_history
-    # Skip this test if RubyLLM is not available or if we can't mock it properly
-    skip "RubyLLM mocking not supported in this environment" unless defined?(RubyLLM)
+    # RubyLLM is available, proceed with test
     
     mock_chat = mock('chat')
     mock_chat.expects(:clear_history)

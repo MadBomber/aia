@@ -59,13 +59,22 @@ module AIA
     end
 
     def handle_missing_prompt(prompt_id)
+      # Handle empty/nil prompt_id
+      prompt_id = prompt_id.to_s.strip
+      if prompt_id.empty?
+        STDERR.puts "Error: Prompt ID cannot be empty"
+        exit 1
+      end
+      
       if AIA.config.fuzzy
         return fuzzy_search_prompt(prompt_id)
       elsif AIA.config.fuzzy
         puts "Warning: Fuzzy search is enabled but Fzf tool is not available."
-        raise "Error: Could not find prompt with ID: #{prompt_id}"
+        STDERR.puts "Error: Could not find prompt with ID: #{prompt_id}"
+        exit 1
       else
-        raise "Error: Could not find prompt with ID: #{prompt_id}"
+        STDERR.puts "Error: Could not find prompt with ID: #{prompt_id}"
+        exit 1
       end
     end
 
@@ -90,6 +99,9 @@ module AIA
     end
 
     def fetch_role(role_id)
+      # Handle nil role_id
+      return handle_missing_role("roles/") if role_id.nil?
+      
       # Prepend roles_prefix if not already present
       unless role_id.start_with?(AIA.config.roles_prefix)
         role_id = "#{AIA.config.roles_prefix}/#{role_id}"
@@ -115,10 +127,18 @@ module AIA
     end
 
     def handle_missing_role(role_id)
+      # Handle empty/nil role_id
+      role_id = role_id.to_s.strip
+      if role_id.empty? || role_id == "roles/"
+        STDERR.puts "Error: Role ID cannot be empty"
+        exit 1
+      end
+      
       if AIA.config.fuzzy
         return fuzzy_search_role(role_id)
       else
-        raise "Error: Could not find role with ID: #{role_id}"
+        STDERR.puts "Error: Could not find role with ID: #{role_id}"
+        exit 1
       end
     end
 

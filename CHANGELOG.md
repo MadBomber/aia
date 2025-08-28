@@ -2,6 +2,68 @@
 ## [Unreleased]
 
 ### [0.9.12] WIP
+
+#### New Features
+- **MAJOR NEW FEATURE**: Multi-model support - specify multiple AI models simultaneously with comma-separated syntax
+- **NEW FEATURE**: `--consensus` flag to enable primary model consensus mode for synthesized responses from multiple models
+- **NEW FEATURE**: `--no-consensus` flag to explicitly force individual responses from all models  
+- **NEW FEATURE**: Enhanced `//model` directive now shows comprehensive multi-model configuration details
+- **NEW FEATURE**: Concurrent processing of multiple models for improved performance
+- **NEW FEATURE**: Primary model concept - first model in list serves as consensus orchestrator
+- **NEW FEATURE**: Multi-model error handling - invalid models reported but don't prevent valid models from working
+- **NEW FEATURE**: Multi-model support in both batch and interactive chat modes
+
+#### Improvements
+- **ENHANCEMENT**: Enhanced `//model` directive output with detailed multi-model configuration display
+- **ENHANCEMENT**: Improved error handling with graceful fallback when model initialization fails
+- **ENHANCEMENT**: Better TTY handling in chat mode to prevent `Errno::ENXIO` errors in containerized environments
+- **ENHANCEMENT**: Updated directive processor to use new module-based architecture for better maintainability
+- **ENHANCEMENT**: Improved batch mode output file formatting consistency between STDOUT and file output
+
+#### Bug Fixes
+- **BUG FIX**: Fixed DirectiveProcessor TypeError that prevented application startup with invalid directive calls
+- **BUG FIX**: Fixed missing primary model output in batch mode output files
+- **BUG FIX**: Fixed inconsistent formatting between STDOUT and file output in batch mode
+- **BUG FIX**: Fixed TTY availability issues in chat mode for containerized environments
+- **BUG FIX**: Fixed directive processing to use updated module-based registry system
+
+#### Technical Changes
+- Fixed ruby_llm version to 1.5.1
+- Added extra API_KEY configuration for new LLM providers
+- Updated RubyLLMAdapter to support multiple model initialization and management
+- Enhanced ChatProcessorService output handling for multi-model responses
+- Improved Session class TTY error handling with proper exception catching
+- Updated CLI parser to support multi-model flags and options
+- Enhanced configuration system to support consensus mode settings
+
+#### Documentation
+- **DOCUMENTATION**: Comprehensive README.md updates with multi-model usage examples and best practices
+- **DOCUMENTATION**: Added multi-model section to README with detailed usage instructions
+- **DOCUMENTATION**: Updated command-line options table with new multi-model flags
+- **DOCUMENTATION**: Added practical multi-model examples for decision-making scenarios
+
+#### Usage Examples
+```bash
+# Basic multi-model usage
+aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo
+
+# Enable consensus mode for synthesized response
+aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini --consensus
+
+# Multi-model chat mode
+aia --chat -m gpt-4o-mini,gpt-3.5-turbo
+
+# View current multi-model configuration
+//model  # Use in any prompt or chat session
+```
+
+#### Migration Notes
+- Existing single-model usage remains unchanged and fully compatible
+- Multi-model is opt-in via comma-separated model names
+- Default behavior without `--consensus` flag shows individual responses from all models
+- Invalid model names are reported but don't prevent valid models from working
+
+#### TODO
 - TODO: focus on log file consistency using Logger
 
 ## Released
