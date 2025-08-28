@@ -313,4 +313,102 @@ class SessionTest < Minitest::Test
     $stdout = old_stdout
     $stderr = old_stderr
   end
+
+  def test_collect_variable_values_with_history_file
+    # Create a temporary prompt file with variables
+    temp_prompt_file = Tempfile.new(['test_prompt', '.txt'])
+    temp_prompt_file.write('Hello {{name}}, your age is {{age}}.')
+    temp_prompt_file.close
+    
+    # Create a corresponding history file
+    history_file = temp_prompt_file.path.sub('.txt', '.json')
+    history_data = {
+      'name' => ['John', 'Jane'],
+      'age' => ['25', '30']
+    }
+    File.write(history_file, JSON.dump(history_data))
+    
+    # Mock the prompt handler to return our test prompt
+    mock_prompt = mock('prompt')
+    mock_prompt.stubs(:parameters).returns({
+      'name' => ['John', 'Jane'],
+      'age' => ['25', '30']
+    })
+    mock_prompt.stubs(:text).returns('Hello {{name}}, your age is {{age}}.')
+    mock_prompt.stubs(:text=)
+    
+    @prompt_handler.expects(:get_prompt).returns(mock_prompt)
+    
+    # Mock HistoryManager to simulate user input
+    mock_history_manager = mock('history_manager')
+    mock_history_manager.expects(:request_variable_value).with(
+      variable_name: 'name',
+      history_values: ['John', 'Jane']
+    ).returns('Alice')
+    mock_history_manager.expects(:request_variable_value).with(
+      variable_name: 'age',
+      history_values: ['25', '30']
+    ).returns('28')
+    
+    AIA::HistoryManager.expects(:new).with(prompt: mock_prompt).returns(mock_history_manager)
+    
+    @session.send(:collect_variable_values, mock_prompt)
+    
+    expected_parameters = {
+      'name' => ['John', 'Jane', 'Alice'],
+      'age' => ['25', '30', '28']
+    }
+    assert_equal expected_parameters, mock_prompt.parameters
+    
+    temp_prompt_file.unlink
+    File.unlink(history_file) if File.exist?(history_file)
+  end
+  
+  def test_collect_variable_values_without_history_file
+    # This test addresses the issue mentioned in memories where
+    # variables are not prompted when no history file exists
+    
+    # Create a temporary prompt file with variables but no history file
+    temp_prompt_file = Tempfile.new(['test_prompt_no_history', '.txt'])
+    temp_prompt_file.write('Hello {{name}}, welcome!')
+    temp_prompt_file.close
+    
+    # Mock the prompt handler to return our test prompt
+    mock_prompt = mock('prompt')
+    mock_prompt.stubs(:parameters).returns({
+      'name' => []  # Empty history
+    })
+    mock_prompt.stubs(:text).returns('Hello {{name}}, welcome!')
+    mock_prompt.stubs(:text=)
+    
+    @prompt_handler.expects(:get_prompt).returns(mock_prompt)
+    
+    # Mock HistoryManager to simulate user input
+    mock_history_manager = mock('history_manager')
+    mock_history_manager.expects(:request_variable_value).with(
+      variable_name: 'name',
+      history_values: []
+    ).returns('Bob')
+    
+    AIA::HistoryManager.expects(:new).with(prompt: mock_prompt).returns(mock_history_manager)
+    
+    @session.send(:collect_variable_values, mock_prompt)
+    
+    expected_parameters = {
+      'name' => ['Bob']
+    }
+    assert_equal expected_parameters, mock_prompt.parameters
+    
+    temp_prompt_file.unlink
+  end
+  
+  def test_collect_variable_values_no_variables
+    mock_prompt = mock('prompt')
+    mock_prompt.stubs(:parameters).returns({})
+    
+    # Should not create HistoryManager or request any values
+    AIA::HistoryManager.expects(:new).never
+    
+    @session.send(:collect_variable_values, mock_prompt)
+  end
 end

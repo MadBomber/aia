@@ -43,6 +43,9 @@ AIA leverages the following Ruby gems:
 5. **Start an interactive chat:**
    ```bash
    aia --chat
+   
+   # Or use multiple models for comparison
+   aia --chat -m gpt-4o-mini,gpt-3.5-turbo
    ```
 
 ```plain
@@ -81,6 +84,11 @@ AIA leverages the following Ruby gems:
       - [Configuration Directive Examples](#configuration-directive-examples)
       - [Dynamic Content Examples](#dynamic-content-examples)
       - [Custom Directive Examples](#custom-directive-examples)
+    - [Multi-Model Support](#multi-model-support)
+      - [Basic Multi-Model Usage](#basic-multi-model-usage)
+      - [Consensus Mode](#consensus-mode)
+      - [Individual Responses Mode](#individual-responses-mode)
+      - [Model Information](#model-information)
     - [Shell Integration](#shell-integration)
     - [Embedded Ruby (ERB)](#embedded-ruby-erb)
     - [Prompt Sequences](#prompt-sequences)
@@ -192,7 +200,9 @@ aia --fuzzy
 | Option | Description | Example |
 |--------|-------------|---------|
 | `--chat` | Start interactive chat session | `aia --chat` |
-| `--model MODEL` | Specify AI model to use | `aia --model gpt-4` |
+| `--model MODEL` | Specify AI model(s) to use | `aia --model gpt-4o-mini,gpt-3.5-turbo` |
+| `--consensus` | Enable consensus mode for multi-model | `aia --consensus` |
+| `--no-consensus` | Force individual responses | `aia --no-consensus` |
 | `--role ROLE` | Use a role/system prompt | `aia --role expert` |
 | `--out_file FILE` | Specify output file | `aia --out_file results.md` |
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
@@ -331,6 +341,7 @@ Directives are special commands in prompt files that begin with `//` and provide
 | `//pipeline` | Set prompt workflow | `//pipeline analyze,summarize,report` |
 | `//clear` | Clear conversation history | `//clear` |
 | `//help` | Show available directives | `//help` |
+| `//model` | Show current model configuration | `//model` |
 | `//available_models` | List available models | `//available_models` |
 | `//tools` | Show a list of available tools and their description | `//tools` |
 | `//review` | Review current context | `//review` |
@@ -392,6 +403,99 @@ aia --tools examples/directives/ask.rb --chat
 # Use the results of the custom directive as input to a prompt
 //ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
 ```
+
+### Multi-Model Support
+
+AIA supports running multiple AI models simultaneously, allowing you to:
+- Compare responses from different models
+- Get consensus answers from multiple AI perspectives
+- Leverage the strengths of different models for various tasks
+
+#### Basic Multi-Model Usage
+
+Specify multiple models using comma-separated values with the `-m` flag:
+
+```bash
+# Use two models
+aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo
+
+# Use three models
+aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini
+
+# Works in chat mode too
+aia --chat -m gpt-4o-mini,gpt-3.5-turbo
+```
+
+#### Consensus Mode
+
+Use the `--consensus` flag to have the primary model (first in the list) synthesize responses from all models into a unified answer:
+
+```bash
+# Enable consensus mode
+aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini --consensus
+```
+
+**Consensus Output Format:**
+```
+from: gpt-4o-mini (consensus)
+Based on the insights from multiple AI models, here is a comprehensive answer that
+incorporates the best perspectives and resolves any contradictions...
+```
+
+#### Individual Responses Mode  
+
+By default (or with `--no-consensus`), each model provides its own response:
+
+```bash
+# Default behavior - show individual responses
+aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini
+
+# Explicitly disable consensus
+aia my_prompt -m gpt-4o-mini,gpt-3.5-turbo --no-consensus
+```
+
+**Individual Responses Output Format:**
+```
+from: gpt-4o-mini
+Response from the first model...
+
+from: gpt-3.5-turbo  
+Response from the second model...
+
+from: gpt-5-mini
+Response from the third model...
+```
+
+#### Model Information
+
+View your current multi-model configuration using the `//model` directive:
+
+```bash
+# In any prompt file or chat session
+//model
+```
+
+**Example Output:**
+```
+Multi-Model Configuration:
+==========================
+Model count: 3
+Primary model: gpt-4o-mini (used for consensus when --consensus flag is enabled)
+Consensus mode: false
+
+Model Details:
+--------------------------------------------------
+1. gpt-4o-mini (primary)
+2. gpt-3.5-turbo
+3. gpt-5-mini
+```
+
+**Key Features:**
+- **Primary Model**: The first model in the list serves as the consensus orchestrator
+- **Concurrent Processing**: All models run simultaneously for better performance
+- **Flexible Output**: Choose between individual responses or synthesized consensus
+- **Error Handling**: Invalid models are reported but don't prevent valid models from working
+- **Batch Mode Support**: Multi-model responses are properly formatted in output files
 
 ### Shell Integration
 
@@ -607,6 +711,29 @@ Please clean up and structure these meeting notes.
 
 Generate documentation for the Ruby project shown above.
 Include: API references, usage examples, and setup instructions.
+```
+
+#### Multi-Model Decision Making
+```bash
+# ~/.prompts/decision_maker.txt
+# Compare different AI perspectives on complex decisions
+
+What are the pros and cons of [DECISION_TOPIC]?
+Consider: technical feasibility, business impact, risks, and alternatives.
+
+Analyze this thoroughly and provide actionable recommendations.
+```
+
+Usage examples:
+```bash
+# Get individual perspectives from each model
+aia decision_maker -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini --no-consensus
+
+# Get a synthesized consensus recommendation  
+aia decision_maker -m gpt-4o-mini,gpt-3.5-turbo,gpt-5-mini --consensus
+
+# Use with chat mode for follow-up questions
+aia --chat -m gpt-4o-mini,gpt-3.5-turbo --consensus
 ```
 
 ### Executable Prompts

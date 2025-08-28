@@ -46,6 +46,11 @@ module AIA
 
 
     def maybe_change_model
+      # With multiple models, we don't need to change the model in the same way
+      # The RubyLLMAdapter now handles multiple models internally
+      # This method is kept for backward compatibility but may not be needed
+      return if AIA.config.model.is_a?(Array)
+
       client_model = AIA.client.model.id  # RubyLLM::Model instance
 
       unless AIA.config.model.downcase.include?(client_model.downcase)
@@ -64,7 +69,12 @@ module AIA
       else
         mode = AIA.append? ? 'a' : 'w'
         File.open(AIA.config.out_file, mode) do |file|
-          file.puts response
+          file.puts "\nAI: "
+          # Handle multi-line responses by adding proper indentation
+          response_lines = response.to_s.split("\n")
+          response_lines.each do |line|
+            file.puts "  #{line}"
+          end
         end
       end
 
@@ -89,8 +99,14 @@ module AIA
 
 
     def determine_operation_type
-      mode = AIA.config.client.model.modalities
-      mode.input.join(',') + " TO " + mode.output.join(',')
+      # With multiple models, determine operation type from the first model
+      # or provide a generic description
+      if AIA.config.model.is_a?(Array) && AIA.config.model.size > 1
+        "MULTI-MODEL PROCESSING"
+      else
+        mode = AIA.config.client.model.modalities
+        mode.input.join(',') + " TO " + mode.output.join(',')
+      end
     end
   end
 end

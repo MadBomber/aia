@@ -89,8 +89,17 @@ module AIA
     build_flags
 
     # Load Fzf if fuzzy search is enabled and fzf is installed
-    if @config.fuzzy && system('which fzf >/dev/null 2>&1')
-      require_relative 'aia/fzf'
+    if @config.fuzzy
+      begin
+        # Cache fzf availability check for better performance
+        if system('which fzf >/dev/null 2>&1')
+          require_relative 'aia/fzf'
+        else
+          warn "Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities."
+        end
+      rescue StandardError => e
+        warn "Warning: Failed to load fzf: #{e.message}"
+      end
     end
 
     prompt_handler = PromptHandler.new

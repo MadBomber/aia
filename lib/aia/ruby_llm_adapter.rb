@@ -1,15 +1,18 @@
 # lib/aia/ruby_llm_adapter.rb
 
+require 'async'
+
 module AIA
   class RubyLLMAdapter
     attr_reader :tools
 
     def initialize
-      @provider, @model = extract_model_parts.values
+      @models = extract_models_config
+      @chats = {}
 
       configure_rubyllm
       refresh_local_model_registry
-      setup_chat_with_tools
+      setup_chats_with_tools
     end
 
 
@@ -48,13 +51,15 @@ module AIA
         # config.default_image_model      = 'dall-e-3'                # Default: 'dall-e-3'
 
         # --- Connection Settings ---
-        # config.request_timeout            = 120 # Request timeout in seconds (default: 120)
-        # config.max_retries                = 3   # Max retries on transient network errors (default: 3)
-        # config.retry_interval             = 0.1 # Initial delay in seconds (default: 0.1)
-        # config.retry_backoff_factor       = 2   # Multiplier for subsequent retries (default: 2)
-        # config.retry_interval_randomness  = 0.5 # Jitter factor (default: 0.5)
+        config.request_timeout            = 120 # Request timeout in seconds (default: 120)
+                config.max_retries                = 3   # Max retries on transient network errors (default: 3)
+                config.retry_interval             = 0.1 # Initial delay in seconds (default: 0.1)
+                config.retry_backoff_factor       = 2   # Multiplier for subsequent retries (default: 2)
+                config.retry_interval_randomness  = 0.5 # Jitter factor (default: 0.5)
 
-        # --- Logging Settings ---
+        # Connection pooling settings removed - not supported in current RubyLLM version
+        # config.connection_pool_size       = 10  # Number of connections to maintain in pool
+        # config.connection_pool_timeout    = 60  # Connection pool timeout in seconds
         # config.log_file   = '/logs/ruby_llm.log'
         config.log_level = :fatal # debug level can also be set to debug by setting RUBYLLM_DEBUG envar to true
       end
@@ -72,24 +77,71 @@ module AIA
     end
 
 
-    def setup_chat_with_tools
-      begin
-        @chat  = RubyLLM.chat(model: @model)
-        @model = @chat.model.name if @model.nil? # using default model
-      rescue StandardError => e
-        warn "ERROR: #{e.message}"
+    def setup_chats_with_tools
+      valid_chats = {}
+      failed_models = []
+
+      @models.each do |model_name|
+        begin
+          chat = RubyLLM.chat(model: model_name)
+          valid_chats[model_name] = chat
+        rescue StandardError => e
+          failed_models << "#{model_name}: #{e.message}"
+        end
+      end
+
+      # Report failed models but continue with valid ones
+      unless failed_models.empty?
+        puts "\n❌ Failed to initialize the following models:"
+        failed_models.each { |failure| puts "   - #{failure}" }
+      end
+
+      # If no models initialized successfully, exit
+      if valid_chats.empty?
+        puts "\n❌ No valid models could be initialized. Exiting."
+        puts "\n💡 Available models can be listed with: bin/aia --help models"
         exit 1
       end
 
-      unless @chat.model.supports_functions?
-        AIA.config.tools      = []
-        AIA.config.tool_names = ''
-        return
+      @chats = valid_chats
+      @models = valid_chats.keys
+
+      # Update the config to reflect only the valid models
+      AIA.config.model = @models
+
+      # Report successful models
+      if failed_models.any?
+        puts "\n✅ Successfully initialized: #{@models.join(', ')}"
+        puts
       end
 
-      load_tools
+      # Use the first chat to determine tool support (assuming all models have similar tool support)
+      first_chat = @chats.values.first
+      return unless first_chat&.model&.supports_functions?
 
-      @chat.with_tools(*tools) unless tools.empty?
+      load_tools_lazy_mcp_support_only_when_needed
+
+      @chats.each_value do |chat|
+        chat.with_tools(*tools) unless tools.empty?
+      end
+    end
+
+
+    def load_tools_lazy_mcp_support_only_when_needed
+      @tools = []
+
+      support_local_tools
+      support_mcp_lazy
+      filter_tools_by_allowed_list
+      filter_tools_by_rejected_list
+      drop_duplicate_tools
+
+      if tools.empty?
+        AIA.config.tool_names = ''
+      else
+        AIA.config.tool_names = @tools.map(&:name).join(', ')
+        AIA.config.tools      = @tools
+      end
     end
 
 
@@ -114,6 +166,19 @@ module AIA
     def support_local_tools
       @tools += ObjectSpace.each_object(Class).select do |klass|
         klass < RubyLLM::Tool
+      end
+    end
+
+
+    def support_mcp_lazy
+      # Only load MCP tools if MCP servers are actually configured
+      return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
+
+      begin
+        RubyLLM::MCP.establish_connection
+        @tools += RubyLLM::MCP.tools
+      rescue StandardError => e
+        warn "Warning: Failed to connect MCP clients: #{e.message}"
       end
     end
 
@@ -146,34 +211,130 @@ module AIA
     end
 
 
-    # TODO: Need to rethink this dispatcher pattern w/r/t RubyLLM's capabilities
-    #       This code was originally designed for AiClient
-    #
     def chat(prompt)
-      modes = @chat.model.modalities
+      if @models.size == 1
+        # Single model - use the original behavior
+        single_model_chat(prompt, @models.first)
+      else
+        # Multiple models - use concurrent processing
+        multi_model_chat(prompt)
+      end
+    end
+
+    def single_model_chat(prompt, model_name)
+      chat_instance = @chats[model_name]
+      modes = chat_instance.model.modalities
 
       # TODO: Need to consider how to handle multi-mode models
       if modes.text_to_text?
-        text_to_text(prompt)
-
+        text_to_text_single(prompt, model_name)
       elsif modes.image_to_text?
-        image_to_text(prompt)
+        image_to_text_single(prompt, model_name)
       elsif modes.text_to_image?
-        text_to_image(prompt)
-
+        text_to_image_single(prompt, model_name)
       elsif modes.text_to_audio?
-        text_to_audio(prompt)
+        text_to_audio_single(prompt, model_name)
       elsif modes.audio_to_text?
-        audio_to_text(prompt)
-
+        audio_to_text_single(prompt, model_name)
       else
         # TODO: what else can be done?
       end
     end
 
+    def multi_model_chat(prompt)
+      results = {}
+
+      Async do |task|
+        @models.each do |model_name|
+          task.async do
+            begin
+              result = single_model_chat(prompt, model_name)
+              results[model_name] = result
+            rescue StandardError => e
+              results[model_name] = "Error with #{model_name}: #{e.message}"
+            end
+          end
+        end
+      end
+
+      # Format and return results from all models
+      format_multi_model_results(results)
+    end
+
+    def format_multi_model_results(results)
+      use_consensus = should_use_consensus_mode?
+      
+      if use_consensus
+        # Generate consensus response using primary model
+        generate_consensus_response(results)
+      else
+        # Show individual responses from all models
+        format_individual_responses(results)
+      end
+    end
+
+    def should_use_consensus_mode?
+      # Only use consensus when explicitly enabled with --consensus flag
+      AIA.config.consensus == true
+    end
+
+    def generate_consensus_response(results)
+      primary_model = @models.first
+      primary_chat = @chats[primary_model]
+
+      # Build the consensus prompt with all model responses
+      consensus_prompt = build_consensus_prompt(results)
+
+      begin
+        # Have the primary model generate the consensus
+        consensus_result = primary_chat.ask(consensus_prompt).content
+        
+        # Format the consensus response
+        "from: #{primary_model} (consensus)\n#{consensus_result}"
+      rescue StandardError => e
+        # If consensus fails, fall back to individual responses
+        "Error generating consensus: #{e.message}\n\n" + format_individual_responses(results)
+      end
+    end
+
+    def build_consensus_prompt(results)
+      prompt_parts = []
+      prompt_parts << "You are tasked with creating a consensus response based on multiple AI model responses to the same query."
+      prompt_parts << "Please analyze the following responses and provide a unified, comprehensive answer that:"
+      prompt_parts << "- Incorporates the best insights from all models"
+      prompt_parts << "- Resolves any contradictions with clear reasoning"
+      prompt_parts << "- Provides additional context or clarification when helpful"
+      prompt_parts << "- Maintains accuracy and avoids speculation"
+      prompt_parts << ""
+      prompt_parts << "Model responses:"
+      prompt_parts << ""
+
+      results.each do |model_name, result|
+        next if result.to_s.start_with?("Error with")
+        prompt_parts << "#{model_name}:"
+        prompt_parts << result.to_s
+        prompt_parts << ""
+      end
+
+      prompt_parts << "Please provide your consensus response:"
+      prompt_parts.join("\n")
+    end
+
+    def format_individual_responses(results)
+      output = []
+      results.each do |model_name, result|
+        output << "from: #{model_name}"
+        output << result
+        output << "" # Add blank line between results
+      end
+      output.join("\n")
+    end
+
 
     def transcribe(audio_file)
-      @chat.ask('Transcribe this audio', with: audio_file).content
+      # Use the first model for transcription
+      first_model = @models.first
+      @chats[first_model].ask('Transcribe this audio', with: audio_file).content
     end
 
 
@@ -199,50 +360,54 @@ module AIA
     # Clear the chat context/history
     # Needed for the //clear directive
     def clear_context
-
-      # Option 1: Directly clear the messages array in the current chat object
-      if @chat.instance_variable_defined?(:@messages)
-        @chat.instance_variable_get(:@messages)
-        # Force a completely empty array, not just attempting to clear it
-        @chat.instance_variable_set(:@messages, [])
+      @chats.each do |model_name, chat|
+        # Option 1: Directly clear the messages array in the current chat object
+        if chat.instance_variable_defined?(:@messages)
+          chat.instance_variable_get(:@messages)
+          # Force a completely empty array, not just attempting to clear it
+          chat.instance_variable_set(:@messages, [])
+        end
       end
 
       # Option 2: Force RubyLLM to create a new chat instance at the global level
       # This ensures any shared state is reset
-      @provider, @model = extract_model_parts.values
       RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
 
-      # Option 3: Create a completely fresh chat instance for this adapter
-      @chat = nil # First nil it to help garbage collection
+      # Option 3: Create completely fresh chat instances for this adapter
+      @chats = {} # First nil the chats hash
 
       begin
-        @chat = RubyLLM.chat(model: @model)
+        @models.each do |model_name|
+          @chats[model_name] = RubyLLM.chat(model: model_name)
+        end
       rescue StandardError => e
         warn "ERROR: #{e.message}"
         exit 1
       end
 
       # Option 4: Call official clear_history method if it exists
-      @chat.clear_history if @chat.respond_to?(:clear_history)
-
-      # Option 5: If chat has messages, force set it to empty again as a final check
-      if @chat.instance_variable_defined?(:@messages) && !@chat.instance_variable_get(:@messages).empty?
-        @chat.instance_variable_set(:@messages, [])
+      @chats.each_value do |chat|
+        chat.clear_history if chat.respond_to?(:clear_history)
       end
 
       # Final verification
-      @chat.instance_variable_defined?(:@messages) ? @chat.instance_variable_get(:@messages) : []
+      @chats.each_value do |chat|
+        if chat.instance_variable_defined?(:@messages) && !chat.instance_variable_get(:@messages).empty?
+          chat.instance_variable_set(:@messages, [])
+        end
+      end
 
       return 'Chat context successfully cleared.'
     rescue StandardError => e
       return "Error clearing chat context: #{e.message}"
-
     end
 
 
     def method_missing(method, *args, &block)
-      if @chat.respond_to?(method)
-        @chat.public_send(method, *args, &block)
+      # Use the first chat instance for backward compatibility with method_missing
+      first_chat = @chats.values.first
+      if first_chat&.respond_to?(method)
+        first_chat.public_send(method, *args, &block)
       else
         super
       end
@@ -250,7 +415,8 @@ module AIA
 
 
     def respond_to_missing?(method, include_private = false)
-      @chat.respond_to?(method) || super
+      # Check if any of our chat instances respond to the method
+      @chats.values.any? { |chat| chat.respond_to?(method) } || super
     end
 
     private
@@ -275,22 +441,17 @@ module AIA
     end
 
 
-    def extract_model_parts
-      parts = AIA.config.model.split('/')
-      parts.map!(&:strip)
+    def extract_models_config
+      models_config = AIA.config.model
 
-      if 2 == parts.length
-        provider  = parts[0]
-        model     = parts[1]
-      elsif 1 == parts.length
-        provider  = nil # RubyLLM will figure it out from the model name
-        model     = parts[0]
+      # Handle backward compatibility - if it's a string, convert to array
+      if models_config.is_a?(String)
+        [models_config]
+      elsif models_config.is_a?(Array)
+        models_config
       else
-        warn "ERROR: malformed model name: #{AIA.config.model}"
-        exit 1
+        ['gpt-4o-mini'] # fallback to default
       end
-
-      { provider: provider, model: model }
     end
 
 
@@ -310,12 +471,13 @@ module AIA
     #########################################
     ## text
 
-    def text_to_text(prompt)
+    def text_to_text_single(prompt, model_name)
+      chat_instance = @chats[model_name]
       text_prompt = extract_text_prompt(prompt)
       response = if AIA.config.context_files.empty?
-                   @chat.ask(text_prompt)
+                   chat_instance.ask(text_prompt)
                  else
-                   @chat.ask(text_prompt, with: AIA.config.context_files)
+                   chat_instance.ask(text_prompt, with: AIA.config.context_files)
                  end
 
       response.content
@@ -337,7 +499,7 @@ module AIA
     end
 
 
-    def text_to_image(prompt)
+    def text_to_image_single(prompt, model_name)
       text_prompt = extract_text_prompt(prompt)
       image_name  = extract_image_path(text_prompt)
 
@@ -355,18 +517,18 @@ module AIA
     end
 
 
-    def image_to_text(prompt)
+    def image_to_text_single(prompt, model_name)
       image_path  = extract_image_path(prompt)
       text_prompt = extract_text_prompt(prompt)
 
       if image_path && File.exist?(image_path)
         begin
-          @chat.ask(text_prompt, with: image_path).content
+          @chats[model_name].ask(text_prompt, with: image_path).content
         rescue StandardError => e
           "Error analyzing image: #{e.message}"
         end
       else
-        text_to_text(prompt)
+        text_to_text_single(prompt, model_name)
       end
     end
 
@@ -379,7 +541,7 @@ module AIA
     end
 
 
-    def text_to_audio(prompt)
+    def text_to_audio_single(prompt, model_name)
       text_prompt = extract_text_prompt(prompt)
       output_file = "#{Time.now.to_i}.mp3"
 
@@ -397,7 +559,7 @@ module AIA
     end
 
 
-    def audio_to_text(prompt)
+    def audio_to_text_single(prompt, model_name)
       text_prompt = extract_text_prompt(prompt)
       text_prompt = 'Transcribe this audio' if text_prompt.nil? || text_prompt.empty?
 
@@ -409,9 +571,9 @@ module AIA
           audio_file?(prompt)
         begin
           response = if AIA.config.context_files.empty?
-                       @chat.ask(text_prompt)
+                       @chats[model_name].ask(text_prompt)
                      else
-                       @chat.ask(text_prompt, with: AIA.config.context_files)
+                       @chats[model_name].ask(text_prompt, with: AIA.config.context_files)
                      end
           response.content
         rescue StandardError => e
@@ -419,7 +581,7 @@ module AIA
         end
       else
         # Fall back to regular chat if no valid audio file is found
-        text_to_text(prompt)
+        text_to_text_single(prompt, model_name)
       end
     end
   end

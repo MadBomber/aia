@@ -1,14 +1,12 @@
 require_relative '../test_helper'
 require 'tempfile'
 require_relative '../../lib/aia'
+require_relative '../../lib/aia/fzf'
 
 class FzfTest < Minitest::Test
   def setup
-    # Skip all tests if fzf is not available
-    skip "fzf not available" unless system('which fzf >/dev/null 2>&1')
-    
-    # Load Fzf class conditionally
-    require_relative '../../lib/aia/fzf'
+    # Only skip if fzf is truly not available (check with full path)
+    skip "fzf not available" unless system('which fzf >/dev/null 2>&1') || File.exist?('/opt/homebrew/bin/fzf')
     
     @list = ['item1', 'item2', 'item3']
     @directory = '/test/dir'
