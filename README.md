@@ -1,6 +1,6 @@
 <div align="center">
   <h1>AI Assistant (AIA)</h1>
-  <img src="images/aia.png" alt="Robots waiter ready to take your order."><br />
+  <img src="docs/assets/images/aia.png" alt="Robots waiter ready to take your order."><br />
   **The Prompt is the Code**
 </div>
 
