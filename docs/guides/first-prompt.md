@@ -73,7 +73,7 @@ Provide a detailed technical analysis of this code:
 
 Focus on:
 - Architecture and design patterns
-- Performance considerations  
+- Performance considerations
 - Security implications
 - Best practices compliance
 EOF
@@ -202,7 +202,7 @@ Extract and list all requirements from this project:
 
 Provide a structured list of:
 - Functional requirements
-- Non-functional requirements  
+- Non-functional requirements
 - Dependencies
 - Constraints
 EOF

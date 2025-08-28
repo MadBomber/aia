@@ -113,14 +113,19 @@ module AIA
         def normalize_boolean_flags(config)
           normalize_boolean_flag(config, :chat)
           normalize_boolean_flag(config, :fuzzy)
+          normalize_boolean_flag(config, :consensus)
         end
 
         def normalize_boolean_flag(config, flag)
           return if [TrueClass, FalseClass].include?(config[flag].class)
 
-          config[flag] = if config[flag].nil? || config[flag].empty?
+          config[flag] = case config[flag]
+                         when nil, '', 'false', false
                            false
+                         when 'true', true
+                           true
                          else
+                           # For any other non-empty string value, treat as true
                            true
                          end
         end

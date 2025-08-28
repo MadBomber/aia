@@ -47,8 +47,8 @@ aia generate_docs --format markdown src/
 ### Code Review Prompt
 ```bash
 # ~/.prompts/code_review.txt
-//config model = gpt-4o-mini
-//config temperature = 0.3
+//config model gpt-4o-mini
+//config temperature 0.3
 
 Review this code for:
 - Best practices adherence
@@ -64,7 +64,7 @@ Code to review:
 ### Meeting Notes Processor
 ```bash
 # ~/.prompts/meeting_notes.txt
-//config model = gpt-4o-mini
+//config model gpt-4o-mini
 //pipeline format,action_items
 
 Raw meeting notes:
@@ -78,7 +78,7 @@ Please clean up and structure these meeting notes.
 ### Documentation Generator  
 ```bash
 # ~/.prompts/document.txt
-//config model = gpt-4o-mini
+//config model gpt-4o-mini
 //shell find [PROJECT_DIR] -name "*.rb" | head -10
 
 Generate documentation for the Ruby project shown above.

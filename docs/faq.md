@@ -35,7 +35,7 @@ aia explain_code my_script.py
 ```
 
 ### Q: What's the difference between batch mode and chat mode?
-**A:** 
+**A:**
 - **Batch mode** (default): Processes prompts once and exits
 - **Chat mode** (`--chat`): Interactive conversation that maintains context
 
@@ -94,10 +94,16 @@ See the [Directives Reference](directives-reference.md) for all available direct
 ```
 
 ### Q: Can I use Ruby code in prompts?
-**A:** Yes, use the `//ruby` directive:
+**A:** Yes, use the `//ruby` directive for one-liners:
 ```markdown
-//ruby puts "Hello, #{ENV['USER']}!"
-//ruby Time.now.strftime("%Y-%m-%d")
+//ruby puts "Hello, my name is#{ENV['USER']}"
+
+# Or for multi-line or conditional code use ERB
+
+<%=
+  puts "Hello, my name is #{ENV['USER']}"
+  puts "Today is #{Time.now.strftime('%Y-%m-%d')}"
+%>
 ```
 
 ### Q: How do I create prompt workflows?
@@ -157,7 +163,7 @@ aia --tools ./tools/ my_prompt
 ```ruby
 class MyTool < RubyLLM::Tool
   description "What this tool does"
-  
+
   def my_method(param)
     # Implementation
     "Result"
@@ -195,7 +201,7 @@ You: /clear
 ## Troubleshooting
 
 ### Q: "Command not found: aia"
-**A:** 
+**A:**
 1. Make sure Ruby's bin directory is in your PATH
 2. Try reinstalling: `gem uninstall aia && gem install aia`
 3. Check if using `--user-install`: `gem install aia --user-install`
@@ -245,7 +251,7 @@ aia --tools data_analyzer.rb analyze_data dataset.csv
 ```
 
 ### Q: How do I integrate AIA into my development workflow?
-**A:** 
+**A:**
 1. Create project-specific prompts
 2. Use tools for code analysis
 3. Set up workflows with pipelines

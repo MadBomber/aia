@@ -63,11 +63,13 @@ What patterns do you see?
 
 #### Code Execution
 ```
-You: What's the current date and time?
+The current date and time is:
 //ruby Time.now
 
-And what files are in the current directory?
+Files in the current directory are:
 //shell ls -la
+
+which files are over 1 week old?
 ```
 
 ## Advanced Chat Features
@@ -202,7 +204,7 @@ You: Make it more engaging for developers
 AI: Here's how we can make it more engaging...
 ```
 
-### Learning Session  
+### Learning Session
 ```bash
 # Start educational chat
 aia --chat --role teacher --system_prompt patient_explainer
@@ -337,12 +339,12 @@ chat:
   auto_save_interval: 300  # seconds
   max_context_length: 16000
   show_token_count: true
-  
+
 speech:
   enabled: false
   voice: alloy
   auto_play: true
-  
+
 tools:
   auto_discover: true
   default_paths: [~/.aia/tools, ./tools]
@@ -357,12 +359,12 @@ You can define custom chat commands by creating tool functions:
 class ChatCommands < RubyLLM::Tool
   def summarize_conversation
     # Custom command to summarize the current conversation
-    "//ruby AIA.chat.context.summarize"
+    "<%= AIA.chat.context.summarize %>"
   end
-  
+
   def export_code_snippets
     # Extract and export all code snippets from conversation
-    "//ruby AIA.chat.extract_code_blocks"
+    "<%= AIA.chat.extract_code_blocks %>"
   end
 end
 ```

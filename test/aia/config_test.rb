@@ -50,6 +50,31 @@ class ConfigTest < Minitest::Test
     ENV.delete('AIA_MODEL')
   end
 
+  def test_consensus_environment_variable_parsing
+    # Test AIA_CONSENSUS environment variable processing
+    ENV['AIA_CONSENSUS'] = 'true'
+    
+    default_config = OpenStruct.new(consensus: nil)
+    cli_config = OpenStruct.new
+    
+    result = AIA::Config.envar_options(default_config, cli_config)
+    # After boolean normalization, this should be true (Boolean), not "true" (String)
+    AIA::Config.normalize_boolean_flag(result, :consensus)
+    
+    assert_equal true, result.consensus
+    assert_equal TrueClass, result.consensus.class
+    
+    # Test false case
+    ENV['AIA_CONSENSUS'] = 'false'
+    result = AIA::Config.envar_options(default_config, cli_config)
+    AIA::Config.normalize_boolean_flag(result, :consensus)
+    
+    assert_equal false, result.consensus
+    assert_equal FalseClass, result.consensus.class
+    
+    ENV.delete('AIA_CONSENSUS')
+  end
+
   def test_config_validation
     # Test basic config validation
     config = OpenStruct.new(model: 'valid-model')

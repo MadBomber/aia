@@ -52,7 +52,7 @@ Educational and knowledge acquisition prompts:
 - Clear, straightforward outputs
 - Great for learning AIA basics
 
-### Intermediate  
+### Intermediate
 - Multi-step workflows
 - Dynamic configuration
 - Context-aware processing
@@ -109,7 +109,7 @@ aia --pipeline "code_review,optimize,test" my_project/
 
 Review the following code for:
 - **Bugs**: Logic errors, edge cases, potential crashes
-- **Security**: Vulnerabilities, input validation, data exposure  
+- **Security**: Vulnerabilities, input validation, data exposure
 - **Performance**: Efficiency, scalability, resource usage
 - **Style**: Conventions, readability, maintainability
 - **Best Practices**: Design patterns, industry standards
@@ -154,7 +154,9 @@ Create an engaging, well-structured blog post about: **<%= topic %>**
 - **Include Code Examples**: <%= code_examples || "Yes" %>
 
 ## Context:
-//include <%= context_file if context_file %>
+<% if context_file %>
+//include <%= context_file %>
+<% end %>
 
 ## Structure:
 1. **Hook**: Engaging opening that grabs attention
@@ -238,9 +240,17 @@ Output Format: <%= format || "Markdown" %>
 ### Conditional Inclusion Pattern
 Include different content based on conditions:
 ```markdown
-//ruby puts File.exist?('production.yml') ? '//include production.yml' : '//include development.yml'
+<% if File.exist?('production.yml') %>
+//include production.yml
+<% else %>
+//include development.yml
+<% end %>
 
-//ruby puts ENV['DETAILED_ANALYSIS'] == 'true' ? 'Provide detailed technical analysis.' : 'Provide summary analysis.'
+<% if ENV['DETAILED_ANALYSIS'] == 'true' %>
+Provide detailed technical analysis.
+<% else %>
+Provide summary analysis.
+<% end %>
 ```
 
 ### Multi-Stage Pipeline Pattern
@@ -256,10 +266,13 @@ Ready for next stage: <%= next_stage %>
 ### Tool Integration Pattern
 Incorporate external tools:
 ```markdown
-//tools ./analysis_tools.rb
+# Get a list of tools that are available
+//tools
 
 Using advanced analysis tools:
-//ruby AnalysisTools.examine_data('<%= data_file %>')
+
+# Tell the LLM which tool to use and its arguments
+use the examine_data tool to review this file '<%= data_file %>')
 ```
 
 ## Validation and Testing

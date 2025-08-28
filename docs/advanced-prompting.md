@@ -7,34 +7,38 @@ Master sophisticated prompting strategies to get the most out of AIA's capabilit
 ### Conditional Execution
 Execute directives based on runtime conditions:
 
-```ruby
-# Conditional file inclusion
-//ruby
+```markdown
+<%
 environment = ENV['RAILS_ENV'] || 'development'
 config_file = "config/#{environment}.yml"
-puts File.exist?(config_file) ? "//include #{config_file}" : "//include config/default.yml"
+if File.exist?(config_file)
+%>
+//include <%= config_file %><%
+<% else %>
+//include config/default.yml
+<% end %>
 ```
 
-```ruby
-# Model-specific instructions
-//ruby
+```markdown
+<%
 model = AIA.config.model
 case model
 when /gpt-4/
-  puts "Provide detailed, step-by-step analysis with code examples."
-when /gpt-3.5/
-  puts "Provide concise, practical guidance with brief examples."
-when /claude/
-  puts "Provide thorough analysis with emphasis on reasoning process."
-end
+%>
+Provide detailed, step-by-step analysis with code examples.
+<% when /gpt-3.5/ %>
+Provide concise, practical guidance with brief examples.
+<% when /claude/ %>
+Provide thorough analysis with emphasis on reasoning process.
+<% end %>
 ```
 
 ### Dynamic Configuration
 Adjust settings based on content or context:
 
-```ruby
-# Adjust temperature based on task type
+```markdown
 //ruby
+<%
 task_type = '<%= task_type %>'
 temperature = case task_type
              when 'creative' then 1.2
@@ -42,17 +46,18 @@ temperature = case task_type
              when 'balanced' then 0.7
              else 0.7
              end
-puts "//config temperature #{temperature}"
+%>
+//config temperature <%= temperature %>
 ```
 
-```ruby
-# Adjust model based on content size
-//ruby
+```markdown
+<%
 content_size = File.read('<%= input_file %>').length
 model = content_size > 50000 ? 'claude-3-sonnet' : 'gpt-4'
 max_tokens = content_size > 50000 ? 8000 : 4000
-puts "//config model #{model}"
-puts "//config max_tokens #{max_tokens}"
+%>
+//config model <%= model %>
+//config max_tokens <%= max_tokens %>
 ```
 
 ## Complex Workflow Patterns
@@ -70,7 +75,7 @@ Create sophisticated analysis workflows with intermediate processing:
 ## Input Data Overview
 //shell file <%= input_file %>
 //shell wc -l <%= input_file %>
-//ruby puts "File size: #{File.size('<%= input_file %>')} bytes"
+<%= "File size: #{File.size('<%= input_file %>')} bytes" %>
 
 ## Data Quality Assessment
 //include <%= input_file %>
@@ -90,27 +95,32 @@ Save findings to: preprocessing_notes.md
 ### Adaptive Decision Trees
 Create prompts that adapt their approach based on intermediate results:
 
-```ruby
-# Decision tree for code analysis
-//ruby
+```markdown
+<%
 file_ext = File.extname('<%= code_file %>')
 file_size = File.size('<%= code_file %>')
 
 # Determine analysis approach
 if file_size > 10000
   analysis_type = 'comprehensive'
-  puts "//config model gpt-4"
-  puts "//config max_tokens 6000"
+%>
+//config model gpt-4
+//config max_tokens 6000
+<%
 elsif file_ext == '.py'
   analysis_type = 'python_specific'
-  puts "//config model gpt-4"
-  puts "Including Python-specific analysis patterns"
+%>
+//config model gpt-4
+Including Python-specific analysis patterns
+<%
 else
   analysis_type = 'standard'
-  puts "//config model gpt-3.5-turbo"
+%>
+//config model gpt-3.5-turbo
+<%
 end
-
-puts "Selected #{analysis_type} analysis for #{file_ext} file (#{file_size} bytes)"
+%>
+Selected <%= analysis_type %> analysis for <%= file_ext %> file (<%= file_size %> bytes)
 ```
 
 ## Advanced Context Management
@@ -124,19 +134,27 @@ Build context progressively through multiple layers:
 //include ARCHITECTURE.md
 
 # Layer 2: Domain Context
-//ruby
+<%
 domain = '<%= domain || "general" %>'
 domain_file = "docs/#{domain}_context.md"
-puts File.exist?(domain_file) ? "//include #{domain_file}" : ""
+if File.exist?(domain_file)
+%>
+//include <%= domain_file %>
+<% end %>
 ```
 
 # Layer 3: Task-Specific Context
-//include <%= task_context_file if task_context_file %>
+<% if task_context_file %>
+//include <%= task_context_file %>
+<% end %>
 
 # Layer 4: Historical Context
-//ruby
+<%
 history_file = ".aia/history/#{Date.today.strftime('%Y%m')}_context.md"
-puts File.exist?(history_file) ? "//include #{history_file}" : ""
+if File.exist?(history_file)
+%>
+//include <%= history_file %>
+<% end %>
 ```
 
 Now analyze <%= task %> using all available context layers.
@@ -145,9 +163,8 @@ Now analyze <%= task %> using all available context layers.
 ### Context Filtering and Summarization
 Manage large contexts intelligently:
 
-```ruby
-# Smart context inclusion
-//ruby
+```markdown
+<%
 max_context_size = 20000  # characters
 context_files = ['docs/spec.md', 'docs/api.md', 'docs/examples.md']
 total_size = 0
@@ -156,15 +173,20 @@ context_files.each do |file|
   if File.exist?(file)
     file_size = File.read(file).length
     if total_size + file_size <= max_context_size
-      puts "//include #{file}"
+%>
+//include <%= file %>
+<%
       total_size += file_size
     else
-      puts "Summarizing #{file} (too large for full inclusion):"
-      # Could trigger a summarization prompt here
-      puts "//ruby AIA.summarize_file('#{file}', max_length: 500)"
+%>
+Summarizing <%= file %> (too large for full inclusion):
+
+<%= AIA.summarize_file(file, max_length: 500) %>
+<%
     end
   end
 end
+%>
 ```
 
 ## Dynamic Content Generation
@@ -183,7 +205,7 @@ Create flexible templates that adapt to different scenarios:
 <% when 'technical' %>
 Generate a technical document with:
 - Executive summary
-- Detailed technical specifications  
+- Detailed technical specifications
 - Implementation guidelines
 - Code examples and APIs
 - Testing and validation procedures
@@ -222,31 +244,31 @@ Document length: <%= length || "2000-3000 words" %>
 ### Recursive Prompt Generation
 Generate prompts that create other prompts:
 
-```ruby
-# Prompt generator for specific domains
-//ruby
+```markdown
+<%
 domain = '<%= domain %>'
 tasks = ['analyze', 'design', 'implement', 'test', 'document']
 
 tasks.each do |task|
   prompt_content = <<~PROMPT
     # #{domain.capitalize} #{task.capitalize} Prompt
-    
+
     //config model gpt-4
     //config temperature 0.5
-    
+
     You are a #{domain} expert performing #{task} tasks.
-    
+
     Task: <%= specific_task %>
     Context: //include <%= context_file %>
-    
+
     Provide expert-level guidance specific to #{domain} #{task}.
   PROMPT
-  
+
   filename = "generated_#{domain}_#{task}.txt"
   File.write(filename, prompt_content)
-  puts "Generated: #{filename}"
-end
+%>
+Generated: <%= filename %>
+<% end %>
 ```
 
 ## Expert-Level Model Interaction
@@ -259,35 +281,39 @@ Coordinate multiple models for complex tasks:
 //config consensus false
 
 ## Phase 1: Creative Ideation (High Temperature)
-//ruby
-puts "Using GPT-4 for creative brainstorming..."
+<%= "Using GPT-4 for creative brainstorming..." %>
+<%
 gpt4_creative = RubyLLM.chat(model: 'gpt-4', temperature: 1.3)
 ideas = gpt4_creative.ask("Generate 10 innovative approaches to: <%= problem %>")
-puts ideas.content
+%>
+<%= ideas.content %>
 ```
 
-## Phase 2: Technical Analysis (Low Temperature)  
-//ruby
-puts "Using Claude for technical analysis..."
-claude_technical = RubyLLM.chat(model: 'claude-3-sonnet', temperature: 0.2)  
+## Phase 2: Technical Analysis (Low Temperature)
+
+<%= "Using Claude for technical analysis..." %>
+<%
+claude_technical = RubyLLM.chat(model: 'claude-3-sonnet', temperature: 0.2)
 analysis = claude_technical.ask("Analyze technical feasibility of these approaches: #{ideas.content}")
-puts analysis.content
+%>
+<%= analysis.content %>
 ```
 
 ## Phase 3: Synthesis and Recommendation
-//ruby
-puts "Using GPT-4 for final synthesis..."
+
+<%= "Using GPT-4 for final synthesis..." %>
+<%
 gpt4_synthesis = RubyLLM.chat(model: 'gpt-4', temperature: 0.7)
 final_rec = gpt4_synthesis.ask("Synthesize and recommend best approach: Ideas: #{ideas.content} Analysis: #{analysis.content}")
-puts final_rec.content
+%>
+<%= final_rec.content %>
 ```
 
 ### Model-Specific Optimization
 Tailor prompts for specific model strengths:
 
-```ruby
-# Model-optimized prompt selection
-//ruby
+```markdown
+<%
 model = AIA.config.model
 case model
 when /gpt-4/
@@ -303,8 +329,8 @@ when /gemini/
   instruction_style = "structured analysis with quantitative metrics"
   context_depth = "organized data with clear relationships"
 end
-
-puts "Optimizing for #{model}: #{instruction_style}"
+%>
+Optimizing for <%= model %>: <%= instruction_style %>
 ```
 
 Apply <%= instruction_style %> to analyze <%= task %>.
@@ -317,21 +343,21 @@ Include <%= context_depth %> for comprehensive understanding.
 ### Custom Tool Workflows
 Create sophisticated tool integration patterns:
 
-```ruby
-# Multi-tool analysis workflow
+```markdown
 //tools advanced_analysis_tools.rb
 
-//ruby
+<%
 # Initialize analysis workflow
 workflow = AnalysisWorkflow.new
 workflow.add_tool('data_preprocessor', weight: 0.3)
-workflow.add_tool('statistical_analyzer', weight: 0.4)  
+workflow.add_tool('statistical_analyzer', weight: 0.4)
 workflow.add_tool('pattern_detector', weight: 0.2)
 workflow.add_tool('insight_generator', weight: 0.1)
 
 results = workflow.execute('<%= input_data %>')
-puts "Analysis complete. Confidence: #{results[:confidence]}"
-puts results[:summary]
+%>
+Analysis complete. Confidence: <%= results[:confidence] %>
+<%= results[:summary] %>
 ```
 
 Based on multi-tool analysis, provide expert interpretation of:
@@ -341,9 +367,8 @@ Based on multi-tool analysis, provide expert interpretation of:
 ### Dynamic Tool Selection
 Select tools based on content analysis:
 
-```ruby
-# Intelligent tool selection
-//ruby
+```markdown
+<%
 content = File.read('<%= input_file %>')
 
 # Analyze content to determine best tools
@@ -352,9 +377,11 @@ tools << 'text_analyzer' if content.match?(/[a-zA-Z]{100,}/)
 tools << 'code_analyzer' if content.match?(/def\s+\w+|function\s+\w+|class\s+\w+/)
 tools << 'data_analyzer' if content.match?(/\d+[,.]?\d*\s*[%$]?/)
 tools << 'web_scraper' if content.match?(/https?:\/\//)
-
-puts "Selected tools: #{tools.join(', ')}"
-tools.each { |tool| puts "//tools #{tool}.rb" }
+%>
+Selected tools: <%= tools.join(', ') %>
+<% tools.each do |tool| %>
+//tools <%= tool %>.rb
+<% end %>
 ```
 
 ## Sophisticated Output Formatting
@@ -372,7 +399,7 @@ Generate analysis in multiple formats:
 ## 1. Executive Summary (Business Format)
 Provide a 200-word executive summary suitable for C-level presentation.
 
-## 2. Technical Detail (Developer Format)  
+## 2. Technical Detail (Developer Format)
 Provide detailed technical analysis with:
 - Architecture diagrams (textual description)
 - Code examples
@@ -420,13 +447,12 @@ Content:
 
 Output valid JSON only, no explanatory text.
 
-//ruby
 # Post-process extracted JSON
 json_output = response.content
 begin
   data = JSON.parse(json_output)
   puts "Successfully extracted #{data.keys.length} data categories"
-  
+
   # Save to structured file
   File.write('extracted_data.json', JSON.pretty_generate(data))
   puts "Data saved to extracted_data.json"
@@ -442,17 +468,17 @@ Handle errors and provide fallback options:
 
 ```ruby
 # Robust prompt with fallbacks
-//ruby
+<%=
 begin
   primary_content = File.read('<%= primary_source %>')
   puts "//include <%= primary_source %>"
 rescue => e
   puts "Primary source unavailable (#{e.message})"
-  
+
   # Try fallback sources
   fallback_sources = ['backup.txt', 'default_context.md', 'minimal_info.txt']
   fallback_found = false
-  
+
   fallback_sources.each do |source|
     if File.exist?(source)
       puts "Using fallback source: #{source}"
@@ -461,12 +487,13 @@ rescue => e
       break
     end
   end
-  
+
   unless fallback_found
     puts "No sources available. Proceeding with minimal context."
     puts "Please provide basic information about: <%= topic %>"
   end
 end
+%>
 ```
 
 ### Validation and Quality Assurance
@@ -474,26 +501,27 @@ Implement quality checks for AI outputs:
 
 ```ruby
 # Output validation system
-//ruby
+<%=
 class OutputValidator
   def self.validate_code_review(output)
     required_sections = ['Summary', 'Issues Found', 'Recommendations']
     severity_levels = ['Critical', 'Major', 'Minor']
-    
+
     issues = []
     required_sections.each do |section|
       issues << "Missing section: #{section}" unless output.include?(section)
     end
-    
+
     has_severity = severity_levels.any? { |level| output.include?(level) }
     issues << "No severity levels found" unless has_severity
-    
+
     issues.empty? ? "✓ Validation passed" : "⚠ Issues: #{issues.join(', ')}"
   end
 end
 
 # This will be used to validate the AI response
 puts "Response will be validated for: <%= validation_criteria %>"
+%>
 ```
 
 ## Performance Optimization Techniques
@@ -503,7 +531,7 @@ Implement smart caching for expensive operations:
 
 ```ruby
 # Smart caching system
-//ruby
+<%=
 require 'digest'
 
 cache_key = Digest::MD5.hexdigest('<%= input_data %>' + AIA.config.model)
@@ -520,6 +548,7 @@ else
   # Continue with normal processing
   # Result will be cached by post-processing script
 end
+%>
 ```
 
 ### Batch Processing Strategies
@@ -527,7 +556,7 @@ Optimize for processing multiple items:
 
 ```ruby
 # Intelligent batch processing
-//ruby
+<%=
 files = Dir.glob('<%= pattern %>')
 batch_size = 5
 model_switching_threshold = 10
@@ -546,6 +575,7 @@ files.each_slice(batch_size).with_index do |batch, index|
   batch.each { |file| puts "//include #{file}" }
   puts "\nAnalyze this batch focusing on common patterns and unique aspects."
 end
+%>
 ```
 
 ## Best Practices for Advanced Prompting
@@ -558,7 +588,7 @@ end
 
 ### Performance Considerations
 1. **Model Selection**: Choose appropriate models for task complexity
-2. **Context Management**: Balance completeness with efficiency  
+2. **Context Management**: Balance completeness with efficiency
 3. **Caching Strategies**: Cache expensive computations and API calls
 4. **Batch Processing**: Optimize for multiple similar tasks
 
@@ -586,7 +616,7 @@ A comprehensive code review system using multiple models and tools:
 
 # Enterprise Code Review System
 
-//ruby
+<%=
 # Multi-phase review process
 phases = {
   security: { model: 'gpt-4', temperature: 0.1, tools: ['security_scanner'] },
@@ -603,6 +633,7 @@ puts "//config temperature #{config[:temperature]}"
 config[:tools].each { |tool| puts "//tools #{tool}.rb" }
 
 puts "\n## Phase: #{current_phase.capitalize} Review"
+%>
 ```
 
 ### Code to Analyze:
@@ -610,20 +641,21 @@ puts "\n## Phase: #{current_phase.capitalize} Review"
 
 Perform comprehensive <%= current_phase %> analysis following enterprise standards.
 
-//ruby
+<%=
 next_phase = phases.keys[phases.keys.index(current_phase.to_sym) + 1]
 puts next_phase ? "//next enterprise_code_review --phase #{next_phase}" : "# Review complete"
+%>
 ```
 
 ### Intelligent Research Assistant
 A research system that adapts its approach based on query complexity:
 
 ```markdown
+<%=
 # adaptive_research_assistant.txt
-//ruby
-query = '<%= research_query %>'
+query = research_query
 complexity = query.split.length > 10 ? 'complex' : 'simple'
-domain = '<%= domain || "general" %>'
+domain = domain || "general"
 
 if complexity == 'complex'
   puts "//config model claude-3-sonnet"
@@ -631,19 +663,20 @@ if complexity == 'complex'
   research_depth = 'comprehensive'
 else
   puts "//config model gpt-4"
-  puts "//config max_tokens 3000" 
+  puts "//config max_tokens 3000"
   research_depth = 'focused'
 end
 
 puts "Research mode: #{research_depth} analysis for #{domain} domain"
+%>
 ```
 
 # Adaptive Research Analysis
 
 ## Query: <%= research_query %>
 
-//ruby
 # Dynamic source inclusion based on domain
+<%=
 source_map = {
   'technology' => ['tech_sources.md', 'industry_reports/', 'patent_db.txt'],
   'business' => ['market_data.csv', 'financial_reports/', 'competitor_analysis.md'],
@@ -657,20 +690,22 @@ sources.each do |source|
     puts "//include #{source}"
   end
 end
+%>
 ```
 
 Provide <%= research_depth %> research analysis addressing:
 1. Current state of knowledge
-2. Key findings and insights  
+2. Key findings and insights
 3. Research gaps and limitations
 4. Future research directions
 5. Practical implications
 
-//ruby
+<%=
 if research_depth == 'comprehensive'
   puts "//next citation_generator"
   puts "//pipeline fact_checker,source_validator,bibliography_creator"
 end
+%>
 ```
 
 ## Related Documentation

@@ -13,7 +13,8 @@ Examples:
 //config model gpt-4
 //include my_file.txt
 //shell ls -la
-//ruby puts "Hello World"
+
+<%= "Hello World" %>
 ```
 
 ## Configuration Directives
@@ -150,17 +151,22 @@ Execute shell commands and include their output.
 **Aliases**: `//sh`
 
 ### `//ruby`
-Execute Ruby code and include the result.
+Execute one line of Ruby code and include the result.
 
-**Syntax**: `//ruby ruby_code`
+**Syntax**: `//ruby` (followed by Ruby code)
 
 **Examples**:
 ```markdown
 //ruby Time.now
+
 //ruby Dir.pwd
+
 //ruby File.read('config.yml')
+
 //ruby [1,2,3,4,5].sum
+
 //ruby "Hello, #{ENV['USER']}!"
+
 //ruby require 'json'; JSON.pretty_generate({hello: 'world'})
 ```
 
@@ -364,7 +370,7 @@ Analyze these recent commits and suggest improvements.
 ### Dynamic Configuration
 
 ```markdown
-//ruby model_name = ENV['PREFERRED_MODEL'] || 'gpt-3.5-turbo'
+<% model_name = ENV['PREFERRED_MODEL'] || 'gpt-3.5-turbo' %>
 //config model <%= model_name %>
 //config temperature <%= ENV['AI_TEMPERATURE'] || '0.7' %>
 
@@ -374,7 +380,11 @@ Process this data with optimized settings.
 ### Conditional Execution
 
 ```markdown
-//ruby puts File.exist?('production.yml') ? '//include production.yml' : '//include development.yml'
+<% if File.exist?('production.yml') %>
+//include production.yml
+<% else %>
+//include development.yml
+<% end %>
 
 Configure the system based on environment.
 ```
