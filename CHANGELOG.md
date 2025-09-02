@@ -3,6 +3,24 @@
 
 ## Released
 
+### [0.9.13] 2025-09-02
+#### New Features
+- **NEW FEATURE**: Added `--metrics` flag to show token counts for each model
+- **NEW FEATURE**: Added `--cost` flag to enable cost estimation for each model
+
+#### Improvements
+- **DEPENDENCY**: Removed versionaire dependency, simplifying version management
+- **ENHANCEMENT**: Improved test suite reliability and coverage
+- **ENHANCEMENT**: Updated Gemfile.lock with latest dependency versions
+
+#### Bug Fixes
+- **BUG FIX**: Fixed version handling issues by removing external versioning dependency
+
+#### Technical Changes
+- Simplified version management by removing versionaire gem
+- Enhanced test suite with improved assertions and coverage
+- Updated various gem dependencies to latest stable versions
+
 ### [0.9.12] 2025-08-28
 
 #### New Features
