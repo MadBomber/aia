@@ -14,7 +14,6 @@ PATH
       toml-rb
       tty-screen
       tty-spinner
-      versionaire
       word_wrapper
 
 GEM

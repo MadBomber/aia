@@ -49,7 +49,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "toml-rb"
   spec.add_dependency "tty-screen"
   spec.add_dependency "tty-spinner"
-  spec.add_dependency "versionaire"
   spec.add_dependency "word_wrapper"
 
   spec.add_development_dependency 'debug_me'
