@@ -372,11 +372,34 @@ module AIA
         conversation = @context_manager.get_context
 
         @ui_presenter.display_thinking_animation
-        response = @chat_processor.process_prompt(conversation)
+        response_data = @chat_processor.process_prompt(conversation)
 
-        @ui_presenter.display_ai_response(response)
-        @context_manager.add_to_context(role: "assistant", content: response)
-        @chat_processor.speak(response)
+        # Handle new response format with metrics
+        if response_data.is_a?(Hash)
+          content = response_data[:content]
+          metrics = response_data[:metrics]
+          multi_metrics = response_data[:multi_metrics]
+        else
+          content = response_data
+          metrics = nil
+          multi_metrics = nil
+        end
+
+        @ui_presenter.display_ai_response(content)
+        
+        # Display metrics if enabled and available (chat mode only)
+        if AIA.config.show_metrics
+          if multi_metrics
+            # Display metrics for each model in multi-model mode
+            @ui_presenter.display_multi_model_metrics(multi_metrics)
+          elsif metrics
+            # Display metrics for single model
+            @ui_presenter.display_token_metrics(metrics)
+          end
+        end
+        
+        @context_manager.add_to_context(role: "assistant", content: content)
+        @chat_processor.speak(content)
 
         @ui_presenter.display_separator
       end
