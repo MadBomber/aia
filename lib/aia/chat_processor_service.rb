@@ -28,11 +28,26 @@ module AIA
         result = send_to_client(prompt)
       end
 
-      unless result.is_a? String
-        result = result.content
+      # Preserve token information if available for metrics
+      if result.is_a?(String)
+        { content: result, metrics: nil }
+      elsif result.respond_to?(:multi_model?) && result.multi_model?
+        # Handle multi-model response with metrics
+        {
+          content: result.content,
+          metrics: nil,  # Individual model metrics handled separately
+          multi_metrics: result.metrics_list
+        }
+      else
+        {
+          content: result.content,
+          metrics: {
+            input_tokens: result.input_tokens,
+            output_tokens: result.output_tokens,
+            model_id: result.model_id
+          }
+        }
       end
-
-      result
     end
 
 

@@ -41,7 +41,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "amazing_print"
   spec.add_dependency "async"
   spec.add_dependency "faraday"
-  spec.add_dependency "prompt_manager", '>= 0.5.7'
+  spec.add_dependency "prompt_manager", '>= 0.5.8'
   spec.add_dependency "ruby_llm",       '>= 1.5.1'
   spec.add_dependency "ruby_llm-mcp",   '>= 0.6.1'
   spec.add_dependency "reline"
@@ -49,7 +49,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "toml-rb"
   spec.add_dependency "tty-screen"
   spec.add_dependency "tty-spinner"
-  spec.add_dependency "versionaire"
   spec.add_dependency "word_wrapper"
 
   spec.add_development_dependency 'debug_me'

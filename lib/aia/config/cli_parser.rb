@@ -250,6 +250,15 @@ module AIA
             config.completion = shell
           end
 
+          opts.on("--metrics", "Display token usage in chat mode") do
+            config.show_metrics = true
+          end
+
+          opts.on("--cost", "Include cost calculations with metrics (requires --metrics)") do
+            config.show_cost = true
+            config.show_metrics = true  # Automatically enable metrics when cost is requested
+          end
+
           opts.on("--version", "Show version") do
             puts AIA::VERSION
             exit

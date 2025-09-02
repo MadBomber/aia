@@ -62,8 +62,8 @@ class UtilityTest < Minitest::Test
     
     output = @captured_output.string
     
-    # Check for version information  
-    assert_includes output, "AI Assistant (v0.9.11) is Online"
+    # Check for version information - flexible pattern matching
+    assert_match /AI Assistant \(v[\d.]+\) is Online/, output
     assert_match /using anthropic \(v[\d.]+(?:\s+MCP\s+v[\d.]+)?\)/, output
   end
 
@@ -364,7 +364,8 @@ class UtilityTest < Minitest::Test
     AIA::Utility.robot
     
     output = @captured_output.string
-    assert_includes output, "AI Assistant (v0.9.11) is Online"
+    # Check for key components without exact version
+    assert_match /AI Assistant \(v[\d.]+\) is Online/, output
     
   ensure
     # Restore originals

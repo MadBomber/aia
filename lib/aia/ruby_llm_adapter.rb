@@ -310,9 +310,15 @@ module AIA
       prompt_parts << ""
 
       results.each do |model_name, result|
-        next if result.to_s.start_with?("Error with")
+        # Extract content from RubyLLM::Message if needed
+        content = if result.respond_to?(:content)
+                    result.content
+                  else
+                    result.to_s
+                  end
+        next if content.start_with?("Error with")
         prompt_parts << "#{model_name}:"
-        prompt_parts << result.to_s
+        prompt_parts << content
         prompt_parts << ""
       end
 
@@ -321,13 +327,64 @@ module AIA
     end
 
     def format_individual_responses(results)
-      output = []
-      results.each do |model_name, result|
-        output << "from: #{model_name}"
-        output << result
-        output << "" # Add blank line between results
+      # For metrics support, return a special structure if all results have token info
+      has_metrics = results.values.all? { |r| r.respond_to?(:input_tokens) && r.respond_to?(:output_tokens) }
+      
+      if has_metrics && AIA.config.show_metrics
+        # Return structured data that preserves metrics for multi-model
+        format_multi_model_with_metrics(results)
+      else
+        # Original string formatting for non-metrics mode
+        output = []
+        results.each do |model_name, result|
+          output << "from: #{model_name}"
+          # Extract content from RubyLLM::Message if needed
+          content = if result.respond_to?(:content)
+                      result.content
+                    else
+                      result.to_s
+                    end
+          output << content
+          output << "" # Add blank line between results
+        end
+        output.join("\n")
       end
-      output.join("\n")
+    end
+    
+    def format_multi_model_with_metrics(results)
+      # Create a composite response that includes all model responses and metrics
+      formatted_content = []
+      metrics_data = []
+      
+      results.each do |model_name, result|
+        formatted_content << "from: #{model_name}"
+        formatted_content << result.content
+        formatted_content << ""
+        
+        # Collect metrics for each model
+        metrics_data << {
+          model_id: model_name,
+          input_tokens: result.input_tokens,
+          output_tokens: result.output_tokens
+        }
+      end
+      
+      # Return a special MultiModelResponse that ChatProcessorService can handle
+      MultiModelResponse.new(formatted_content.join("\n"), metrics_data)
+    end
+    
+    # Helper class to carry multi-model response with metrics
+    class MultiModelResponse
+      attr_reader :content, :metrics_list
+      
+      def initialize(content, metrics_list)
+        @content = content
+        @metrics_list = metrics_list
+      end
+      
+      def multi_model?
+        true
+      end
     end
 
 
@@ -480,7 +537,8 @@ module AIA
                    chat_instance.ask(text_prompt, with: AIA.config.context_files)
                  end
 
-      response.content
+      # Return the full response object to preserve token information
+      response
     rescue StandardError => e
       e.message
     end

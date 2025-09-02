@@ -70,19 +70,31 @@ class ChatProcessorServiceTest < Minitest::Test
     @mock_client.expects(:chat).with(conversation).returns('AI response')
     
     result = @service.process_prompt(conversation)
-    assert_equal 'AI response', result
+    expected = { content: 'AI response', metrics: nil }
+    assert_equal expected, result
   end
 
   def test_process_prompt_with_object_response
     conversation = [{ role: 'user', content: 'Hello' }]
     mock_response = mock('response')
     mock_response.stubs(:content).returns('AI response content')
+    mock_response.stubs(:input_tokens).returns(100)
+    mock_response.stubs(:output_tokens).returns(50)
+    mock_response.stubs(:model_id).returns('gpt-4o-mini')
     
     @mock_ui_presenter.expects(:with_spinner).with('Processing', 'text TO text').yields
     @mock_client.expects(:chat).with(conversation).returns(mock_response)
     
     result = @service.process_prompt(conversation)
-    assert_equal 'AI response content', result
+    expected = { 
+      content: 'AI response content',
+      metrics: {
+        input_tokens: 100,
+        output_tokens: 50,
+        model_id: 'gpt-4o-mini'
+      }
+    }
+    assert_equal expected, result
   end
 
   def test_send_to_client_calls_maybe_change_model_then_chat
@@ -143,7 +155,8 @@ class ChatProcessorServiceTest < Minitest::Test
     AIA.stubs(:append?).returns(false)
     
     mock_file = mock('file')
-    mock_file.expects(:puts).with('Test response')
+    mock_file.expects(:puts).with("\nAI: ")
+    mock_file.expects(:puts).with("  Test response")
     File.expects(:open).with('output.txt', 'w').yields(mock_file)
     
     @service.expects(:speak).with('Test response')
@@ -156,7 +169,8 @@ class ChatProcessorServiceTest < Minitest::Test
     AIA.stubs(:append?).returns(true)
     
     mock_file = mock('file')
-    mock_file.expects(:puts).with('Test response')
+    mock_file.expects(:puts).with("\nAI: ")
+    mock_file.expects(:puts).with("  Test response")
     File.expects(:open).with('output.txt', 'a').yields(mock_file)
     
     @service.expects(:speak).with('Test response')
