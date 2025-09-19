@@ -334,7 +334,9 @@ Directives are special commands in prompt files that begin with `//` and provide
 | Directive | Description | Example |
 |-----------|-------------|---------|
 | `//config` | Set configuration values | `//config model = gpt-4` |
-| `//context` | Show context for this conversation | `//context` |
+| `//context` | Show context for this conversation with checkpoint markers | `//context` |
+| `//checkpoint` | Create a named checkpoint of current context | `//checkpoint save_point` |
+| `//restore` | Restore context to a previous checkpoint | `//restore save_point` |
 | `//include` | Insert file contents | `//include path/to/file.txt` |
 | `//shell` | Execute shell commands | `//shell ls -la` |
 | `//robot` | Show the pet robot ASCII art w/versions | `//robot` |
@@ -346,7 +348,7 @@ Directives are special commands in prompt files that begin with `//` and provide
 | `//model` | Show current model configuration | `//model` |
 | `//available_models` | List available models | `//available_models` |
 | `//tools` | Show a list of available tools and their description | `//tools` |
-| `//review` | Review current context | `//review` |
+| `//review` | Review current context with checkpoint markers | `//review` |
 
 Directives can also be used in the interactive chat sessions.
 
@@ -378,6 +380,64 @@ Your prompt content here...
 
 Analyze the above information and provide insights.
 ```
+
+#### Context Management with Checkpoints
+
+AIA provides powerful context management capabilities in chat mode through checkpoint and restore directives:
+
+```bash
+# Create a checkpoint with automatic naming (1, 2, 3...)
+//checkpoint
+
+# Create a named checkpoint
+//checkpoint important_decision
+
+# Restore to the last checkpoint
+//restore
+
+# Restore to a specific checkpoint
+//restore important_decision
+
+# View context with checkpoint markers
+//context
+```
+
+**Example Chat Session:**
+```
+You: Tell me about Ruby programming
+AI: Ruby is a dynamic programming language...
+
+You: //checkpoint ruby_basics
+
+You: Now explain object-oriented programming
+AI: Object-oriented programming (OOP) is...
+
+You: //checkpoint oop_concepts
+
+You: Actually, let's go back to Ruby basics
+You: //restore ruby_basics
+
+You: //context
+=== Chat Context ===
+Total messages: 4
+Checkpoints: ruby_basics, oop_concepts
+
+1. [System]: You are a helpful assistant
+2. [User]: Tell me about Ruby programming
+3. [Assistant]: Ruby is a dynamic programming language...
+
+📍 [Checkpoint: ruby_basics]
+----------------------------------------
+4. [User]: Now explain object-oriented programming
+=== End of Context ===
+```
+
+**Key Features:**
+- **Auto-naming**: Checkpoints without names use incrementing integers (1, 2, 3...)
+- **Named checkpoints**: Use meaningful names like `//checkpoint before_refactor`
+- **Default restore**: `//restore` without a name restores to the last checkpoint
+- **Context visualization**: `//context` shows checkpoint markers in conversation history
+- **Clean slate**: `//clear` removes all context and checkpoints
 
 #### Custom Directive Examples
 
