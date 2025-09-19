@@ -345,23 +345,238 @@ class ContextManagerTest < Minitest::Test
   
   def test_context_manager_thread_safety_simulation
     manager = AIA::ContextManager.new
-    
+
     # Simulate concurrent additions (not truly threaded, but tests data integrity)
     messages = []
     10.times do |i|
       messages << { role: 'user', content: "Message #{i}" }
     end
-    
+
     messages.each do |msg|
       manager.add_to_context(**msg)
     end
-    
+
     context = manager.get_context
     assert_equal 10, context.size
-    
+
     # Verify all messages are present and in order
     10.times do |i|
       assert_equal "Message #{i}", context[i][:content]
     end
+  end
+
+  # Tests for checkpoint and restore functionality
+
+  def test_create_checkpoint_with_default_name
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'First message')
+
+    checkpoint_name = manager.create_checkpoint
+
+    assert_equal '1', checkpoint_name
+    assert_includes manager.checkpoint_names, '1'
+  end
+
+  def test_create_checkpoint_with_custom_name
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'First message')
+
+    checkpoint_name = manager.create_checkpoint(name: 'before_changes')
+
+    assert_equal 'before_changes', checkpoint_name
+    assert_includes manager.checkpoint_names, 'before_changes'
+  end
+
+  def test_create_multiple_checkpoints_with_default_names
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'Message 1')
+
+    checkpoint1 = manager.create_checkpoint
+    manager.add_to_context(role: 'assistant', content: 'Response 1')
+
+    checkpoint2 = manager.create_checkpoint
+    manager.add_to_context(role: 'user', content: 'Message 2')
+
+    checkpoint3 = manager.create_checkpoint
+
+    assert_equal '1', checkpoint1
+    assert_equal '2', checkpoint2
+    assert_equal '3', checkpoint3
+    assert_equal ['1', '2', '3'], manager.checkpoint_names
+  end
+
+  def test_restore_checkpoint_with_custom_name
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'Original message')
+
+    # Create checkpoint
+    manager.create_checkpoint(name: 'save_point')
+
+    # Add more messages
+    manager.add_to_context(role: 'assistant', content: 'Response')
+    manager.add_to_context(role: 'user', content: 'Another message')
+
+    assert_equal 3, manager.context.size
+
+    # Restore to checkpoint
+    result = manager.restore_checkpoint(name: 'save_point')
+
+    assert result
+    assert_equal 1, manager.context.size
+    assert_equal 'Original message', manager.context[0][:content]
+  end
+
+  def test_restore_checkpoint_without_name_uses_last
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'Message 1')
+
+    manager.create_checkpoint(name: 'first')
+    manager.add_to_context(role: 'assistant', content: 'Response 1')
+
+    manager.create_checkpoint(name: 'second')
+    manager.add_to_context(role: 'user', content: 'Message 2')
+
+    # Restore without specifying name (should use 'second')
+    result = manager.restore_checkpoint
+
+    assert result
+    assert_equal 2, manager.context.size
+    assert_equal 'Message 1', manager.context[0][:content]
+    assert_equal 'Response 1', manager.context[1][:content]
+  end
+
+  def test_restore_checkpoint_with_nonexistent_name
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'Message')
+    manager.create_checkpoint(name: 'exists')
+
+    result = manager.restore_checkpoint(name: 'does_not_exist')
+
+    refute result
+    # Context should remain unchanged
+    assert_equal 1, manager.context.size
+  end
+
+  def test_restore_checkpoint_when_no_checkpoints_exist
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'Message')
+
+    result = manager.restore_checkpoint
+
+    refute result
+    # Context should remain unchanged
+    assert_equal 1, manager.context.size
+  end
+
+  def test_checkpoint_with_system_prompt
+    manager = AIA::ContextManager.new(system_prompt: 'You are helpful')
+    manager.add_to_context(role: 'user', content: 'Hello')
+
+    manager.create_checkpoint(name: 'with_system')
+    manager.add_to_context(role: 'assistant', content: 'Hi there')
+
+    result = manager.restore_checkpoint(name: 'with_system')
+
+    assert result
+    assert_equal 2, manager.context.size
+    assert_equal 'system', manager.context[0][:role]
+    assert_equal 'You are helpful', manager.context[0][:content]
+    assert_equal 'user', manager.context[1][:role]
+    assert_equal 'Hello', manager.context[1][:content]
+  end
+
+  def test_checkpoint_deep_copies_context
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'Original')
+
+    manager.create_checkpoint(name: 'test')
+
+    # Modify the current context
+    manager.context[0][:content] = 'Modified'
+
+    # Restore checkpoint
+    manager.restore_checkpoint(name: 'test')
+
+    # Should have the original content, not modified
+    assert_equal 'Original', manager.context[0][:content]
+  end
+
+  def test_checkpoint_positions
+    manager = AIA::ContextManager.new
+
+    manager.add_to_context(role: 'user', content: 'Message 1')
+    manager.create_checkpoint(name: 'after_msg1')
+
+    manager.add_to_context(role: 'assistant', content: 'Response 1')
+    manager.create_checkpoint(name: 'after_response1')
+
+    manager.add_to_context(role: 'user', content: 'Message 2')
+
+    positions = manager.checkpoint_positions
+
+    assert_equal ['after_msg1'], positions[1]
+    assert_equal ['after_response1'], positions[2]
+    assert_nil positions[3]
+  end
+
+  def test_clear_context_clears_checkpoints
+    manager = AIA::ContextManager.new
+    manager.add_to_context(role: 'user', content: 'Message')
+
+    manager.create_checkpoint(name: 'checkpoint1')
+    manager.create_checkpoint(name: 'checkpoint2')
+
+    assert_equal 2, manager.checkpoint_names.size
+
+    manager.clear_context
+
+    assert_empty manager.checkpoint_names
+  end
+
+  def test_checkpoint_names_returns_all_checkpoint_names
+    manager = AIA::ContextManager.new
+
+    manager.create_checkpoint(name: 'alpha')
+    manager.create_checkpoint(name: 'beta')
+    manager.create_checkpoint # default name '1'
+    manager.create_checkpoint(name: 'gamma')
+
+    names = manager.checkpoint_names
+
+    assert_equal 4, names.size
+    assert_includes names, 'alpha'
+    assert_includes names, 'beta'
+    assert_includes names, '1'
+    assert_includes names, 'gamma'
+  end
+
+  def test_multiple_checkpoint_restore_workflow
+    manager = AIA::ContextManager.new(system_prompt: 'System')
+
+    # Build up context with checkpoints
+    manager.add_to_context(role: 'user', content: 'Question 1')
+    manager.create_checkpoint(name: 'after_q1')
+
+    manager.add_to_context(role: 'assistant', content: 'Answer 1')
+    manager.create_checkpoint(name: 'after_a1')
+
+    manager.add_to_context(role: 'user', content: 'Question 2')
+    manager.create_checkpoint(name: 'after_q2')
+
+    manager.add_to_context(role: 'assistant', content: 'Answer 2')
+
+    assert_equal 5, manager.context.size # system + 4 messages
+
+    # Restore to middle checkpoint
+    manager.restore_checkpoint(name: 'after_a1')
+    assert_equal 3, manager.context.size # system + q1 + a1
+
+    # Restore to earlier checkpoint
+    manager.restore_checkpoint(name: 'after_q1')
+    assert_equal 2, manager.context.size # system + q1
+
+    # Restore to later checkpoint
+    manager.restore_checkpoint(name: 'after_q2')
+    assert_equal 4, manager.context.size # system + q1 + a1 + q2
   end
 end

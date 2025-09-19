@@ -34,7 +34,7 @@ module AIA
             # Display details for all configured models
             puts
             models = Array(AIA.config.model)
-            
+
             if models.size == 1
               puts "Current Model:"
               puts "=============="
@@ -48,10 +48,10 @@ module AIA
               puts
               puts "Model Details:"
               puts "-" * 50
-              
+
               models.each_with_index do |model_name, index|
                 puts "#{index + 1}. #{model_name}#{index == 0 ? ' (primary)' : ''}"
-                
+
                 # Try to get model details if available
                 begin
                   # Access the model details from RubyLLM's model registry
@@ -98,8 +98,80 @@ module AIA
         end
 
       def self.review(args, context_manager = nil)
-          ap context_manager.get_context
+          return "Error: Context manager not available for //review directive." if context_manager.nil?
+
+          context = context_manager.get_context
+          checkpoint_positions = context_manager.checkpoint_positions
+
+          # Display context with checkpoint markers
+          puts "\n=== Chat Context ==="
+          puts "Total messages: #{context.size}"
+
+          if checkpoint_positions.any?
+            puts "Checkpoints: #{context_manager.checkpoint_names.join(', ')}"
+          end
+
+          puts "\n"
+
+          context.each_with_index do |message, index|
+            # Check if there's a checkpoint at this position
+            if checkpoint_positions[index]
+              checkpoint_names = checkpoint_positions[index].join(', ')
+              puts "📍 [Checkpoint: #{checkpoint_names}]"
+              puts "-" * 40
+            end
+
+            # Display the message
+            role_display = message[:role].capitalize
+            content_preview = message[:content].to_s
+
+            # Truncate long content for display
+            if content_preview.length > 200
+              content_preview = content_preview[0..197] + "..."
+            end
+
+            puts "#{index + 1}. [#{role_display}]: #{content_preview}"
+            puts ""
+          end
+
+          # Check if there's a checkpoint at the end (after all messages)
+          if checkpoint_positions[context.size]
+            checkpoint_names = checkpoint_positions[context.size].join(', ')
+            puts "📍 [Checkpoint: #{checkpoint_names}]"
+            puts "-" * 40
+          end
+
+          puts "=== End of Context ==="
           ''
+        end
+
+      def self.checkpoint(args, context_manager = nil)
+          if context_manager.nil?
+            return "Error: Context manager not available for //checkpoint directive."
+          end
+
+          name = args.empty? ? nil : args.join(' ').strip
+          checkpoint_name = context_manager.create_checkpoint(name: name)
+          "Checkpoint '#{checkpoint_name}' created."
+        end
+
+      def self.restore(args, context_manager = nil)
+          if context_manager.nil?
+            return "Error: Context manager not available for //restore directive."
+          end
+
+          name = args.empty? ? nil : args.join(' ').strip
+
+          if context_manager.restore_checkpoint(name: name)
+            restored_name = name || context_manager.checkpoint_names.last
+            "Context restored to checkpoint '#{restored_name}'."
+          else
+            if name
+              "Error: Checkpoint '#{name}' not found. Available checkpoints: #{context_manager.checkpoint_names.join(', ')}"
+            else
+              "Error: No checkpoints available to restore."
+            end
+          end
         end
 
       # Set up aliases - these work on the module's singleton class
@@ -108,6 +180,7 @@ module AIA
         alias_method :temp, :temperature
         alias_method :topp, :top_p
         alias_method :context, :review
+        alias_method :ckp, :checkpoint
       end
     end
   end
