@@ -34,7 +34,7 @@ module AIA
             # Display details for all configured models
             puts
             models = Array(AIA.config.model)
-            
+
             if models.size == 1
               puts "Current Model:"
               puts "=============="
@@ -48,10 +48,10 @@ module AIA
               puts
               puts "Model Details:"
               puts "-" * 50
-              
+
               models.each_with_index do |model_name, index|
                 puts "#{index + 1}. #{model_name}#{index == 0 ? ' (primary)' : ''}"
-                
+
                 # Try to get model details if available
                 begin
                   # Access the model details from RubyLLM's model registry
@@ -180,7 +180,7 @@ module AIA
         alias_method :temp, :temperature
         alias_method :topp, :top_p
         alias_method :context, :review
-        alias_method :cp, :checkpoint
+        alias_method :ckp, :checkpoint
       end
     end
   end
