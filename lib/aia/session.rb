@@ -407,10 +407,12 @@ module AIA
 
     def process_chat_directive(follow_up_prompt)
       directive_output = @directive_processor.process(follow_up_prompt, @context_manager)
-      
+
       return handle_clear_directive if follow_up_prompt.strip.start_with?("//clear")
+      return handle_checkpoint_directive(directive_output) if follow_up_prompt.strip.start_with?("//checkpoint")
+      return handle_restore_directive(directive_output) if follow_up_prompt.strip.start_with?("//restore")
       return handle_empty_directive_output if directive_output.nil? || directive_output.strip.empty?
-      
+
       handle_successful_directive(follow_up_prompt, directive_output)
     end
 
@@ -435,6 +437,31 @@ module AIA
       end
 
       @ui_presenter.display_info("Chat context cleared.")
+      nil
+    end
+
+    def handle_checkpoint_directive(directive_output)
+      @ui_presenter.display_info(directive_output)
+      nil
+    end
+
+    def handle_restore_directive(directive_output)
+      # If the restore was successful, we also need to refresh the client's context
+      if directive_output.start_with?("Context restored")
+        # Try to clear and rebuild the client's context
+        if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
+          AIA.config.client.clear_context
+        end
+
+        # Optionally reinitialize the client for a clean state
+        begin
+          AIA.config.client = AIA::RubyLLMAdapter.new
+        rescue => e
+          STDERR.puts "Error reinitializing client after restore: #{e.message}"
+        end
+      end
+
+      @ui_presenter.display_info(directive_output)
       nil
     end
 

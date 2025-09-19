@@ -85,30 +85,163 @@ module AIA
           puts "===================="
           puts
 
-          directives = self.methods(false).map(&:to_s).reject do |m|
-            ['run', 'initialize', 'private?', 'descriptions', 'aliases', 'build_aliases'].include?(m)
-          end.sort
+          # Manual descriptions for all directives
+          directive_descriptions = {
+            # Configuration directives
+            'config' => 'View or set configuration values',
+            'model' => 'View or change the AI model',
+            'temperature' => 'Set the temperature parameter for AI responses',
+            'top_p' => 'Set the top_p parameter for AI responses',
+            'clear' => 'Clear the conversation context',
+            'review' => 'Display the current conversation context with checkpoint markers',
+            'checkpoint' => 'Create a named checkpoint of the current context',
+            'restore' => 'Restore context to a previous checkpoint',
 
-          build_aliases(directives)
+            # Utility directives
+            'tools' => 'List available tools',
+            'next' => 'Set the next prompt in the sequence',
+            'pipeline' => 'Set or view the prompt workflow sequence',
+            'terse' => 'Add instruction for concise responses',
+            'robot' => 'Display ASCII robot art',
 
-          directives.each do |directive|
-            next unless descriptions[directive]
+            # Execution directives
+            'ruby' => 'Execute Ruby code',
+            'shell' => 'Execute shell commands',
+            'say' => 'Use text-to-speech to speak the text',
 
-            others = aliases[directive]
+            # Web and File directives
+            'webpage' => 'Fetch and include content from a webpage',
+            'include' => 'Include content from a file',
+            'include_file' => 'Include file content (internal use)',
+            'included_files' => 'List files that have been included',
+            'included_files=' => 'Set the list of included files',
 
-            if others.empty?
-              others_line = ""
-            else
-              with_prefix = others.map { |m| PromptManager::Prompt::DIRECTIVE_SIGNAL + m }
-              others_line = "\tAliases:#{with_prefix.join('  ')}\n"
+            # Model directives
+            'available_models' => 'List all available AI models',
+            'compare' => 'Compare responses from multiple models',
+            'help' => 'Show this help message',
+
+            # Aliases (these get their descriptions from main directive)
+            'cfg' => nil,  # alias for config
+            'temp' => nil, # alias for temperature
+            'topp' => nil, # alias for top_p
+            'context' => nil, # alias for review
+            'cp' => nil, # alias for checkpoint
+            'workflow' => nil, # alias for pipeline
+            'rb' => nil, # alias for ruby
+            'sh' => nil, # alias for shell
+            'web' => nil, # alias for webpage
+            'website' => nil, # alias for webpage
+            'import' => nil, # alias for include
+            'models' => nil, # alias for available_models
+            'all_models' => nil, # alias for available_models
+            'am' => nil, # alias for available_models
+            'llms' => nil, # alias for available_models
+            'available' => nil, # alias for available_models
+            'cmp' => nil, # alias for compare
+          }
+
+          # Get all registered directive modules from the Registry
+          all_modules = [
+            AIA::Directives::WebAndFile,
+            AIA::Directives::Utility,
+            AIA::Directives::Configuration,
+            AIA::Directives::Execution,
+            AIA::Directives::Models
+          ]
+
+          all_directives = {}
+          excluded_methods = ['run', 'initialize', 'private?', 'descriptions', 'aliases', 'build_aliases',
+                             'desc', 'method_added', 'register_directive_module', 'process',
+                             'directive?', 'prefix_size']
+
+          # Collect directives from all modules
+          all_modules.each do |mod|
+            methods = mod.methods(false).map(&:to_s).reject { |m| excluded_methods.include?(m) }
+
+            methods.each do |method|
+              # Skip if this is an alias (has nil description)
+              next if directive_descriptions.key?(method) && directive_descriptions[method].nil?
+
+              description = directive_descriptions[method] || method.gsub('_', ' ').capitalize
+
+              all_directives[method] = {
+                module: mod.name.split('::').last,
+                description: description,
+                aliases: []
+              }
             end
-
-            puts <<~TEXT
-              //#{directive} #{descriptions[directive]}
-              #{others_line}
-            TEXT
           end
 
+          # Manually map known aliases
+          alias_mappings = {
+            'config' => ['cfg'],
+            'temperature' => ['temp'],
+            'top_p' => ['topp'],
+            'review' => ['context'],
+            'checkpoint' => ['cp'],
+            'pipeline' => ['workflow'],
+            'ruby' => ['rb'],
+            'shell' => ['sh'],
+            'webpage' => ['web', 'website'],
+            'include' => ['import'],
+            'available_models' => ['models', 'all_models', 'am', 'llms', 'available'],
+            'compare' => ['cmp']
+          }
+
+          # Apply alias mappings
+          alias_mappings.each do |directive, aliases|
+            if all_directives[directive]
+              all_directives[directive][:aliases] = aliases
+            end
+          end
+
+          # Sort and display directives by category
+          categories = {
+            'Configuration' => ['config', 'model', 'temperature', 'top_p', 'clear', 'review', 'checkpoint', 'restore'],
+            'Utility' => ['tools', 'next', 'pipeline', 'terse', 'robot', 'help'],
+            'Execution' => ['ruby', 'shell', 'say'],
+            'Web & Files' => ['webpage', 'include'],
+            'Models' => ['available_models', 'compare']
+          }
+
+          categories.each do |category, directives|
+            puts "#{category}:"
+            puts "-" * category.length
+
+            directives.each do |directive|
+              info = all_directives[directive]
+              next unless info
+
+              if info[:aliases] && !info[:aliases].empty?
+                with_prefix = info[:aliases].map { |m| PromptManager::Prompt::DIRECTIVE_SIGNAL + m }
+                alias_text = " (aliases: #{with_prefix.join(', ')})"
+              else
+                alias_text = ""
+              end
+
+              puts "  //#{directive}#{alias_text}"
+              puts "      #{info[:description]}"
+              puts
+            end
+          end
+
+          # Show any uncategorized directives
+          categorized = categories.values.flatten
+          uncategorized = all_directives.keys - categorized - ['include_file', 'included_files', 'included_files=']
+
+          if uncategorized.any?
+            puts "Other:"
+            puts "------"
+            uncategorized.sort.each do |directive|
+              info = all_directives[directive]
+              puts "  //#{directive}"
+              puts "      #{info[:description]}"
+              puts
+            end
+          end
+
+          puts "\nTotal: #{all_directives.size} directives available"
           ""
         end
 
