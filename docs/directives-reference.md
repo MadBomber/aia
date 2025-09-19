@@ -271,21 +271,93 @@ Inserts a fun ASCII robot character for visual breaks in prompts.
 
 ## Context Management Directives
 
+### `//checkpoint`
+Create a named checkpoint of the current conversation context.
+
+**Syntax**: `//checkpoint [name]`
+
+**Examples**:
+```markdown
+//checkpoint                    # Auto-named checkpoint (1, 2, 3...)
+//checkpoint important_decision # Named checkpoint
+//checkpoint before_refactor    # Descriptive name
+```
+
+**Features**:
+- **Auto-naming**: If no name provided, uses incrementing integers (1, 2, 3...)
+- **Named checkpoints**: Use meaningful names for easy identification
+- **Deep copying**: Safely stores complete conversation state
+- **Chat mode only**: Only available during interactive chat sessions
+
+**Usage**:
+- `//checkpoint` - Create an auto-named checkpoint
+- `//checkpoint name` - Create a checkpoint with specific name
+
+**Aliases**: `//cp`
+
+### `//restore`
+Restore conversation context to a previously saved checkpoint.
+
+**Syntax**: `//restore [name]`
+
+**Examples**:
+```markdown
+//restore                      # Restore to last checkpoint
+//restore important_decision    # Restore to named checkpoint
+//restore 1                    # Restore to auto-named checkpoint
+```
+
+**Features**:
+- **Default behavior**: Without a name, restores to the most recent checkpoint
+- **Named restoration**: Restore to any previously saved checkpoint
+- **Context truncation**: Removes all messages added after the checkpoint
+- **Client refresh**: Automatically refreshes AI client context
+
+**Usage**:
+- `//restore` - Restore to the last checkpoint created
+- `//restore name` - Restore to a specific named checkpoint
+- Returns error message if checkpoint doesn't exist
+
 ### `//clear`
 Clear conversation context in chat mode.
 
 **Syntax**: `//clear`
 
-**Usage**: Only available during chat sessions. Clears the conversation history while keeping the session active.
+**Usage**: Only available during chat sessions. Clears the conversation history and all checkpoints while keeping the session active.
 
 ### `//review`
-Display current conversation context.
+Display current conversation context with checkpoint markers.
 
 **Syntax**: `//review`
 
 **Aliases**: `//context`
 
-Shows the current context manager state, including conversation history and metadata.
+**Example Output**:
+```
+=== Chat Context ===
+Total messages: 5
+Checkpoints: ruby_basics, oop_concepts
+
+1. [System]: You are a helpful assistant
+2. [User]: Tell me about Ruby programming
+3. [Assistant]: Ruby is a dynamic programming language...
+
+📍 [Checkpoint: ruby_basics]
+----------------------------------------
+4. [User]: Now explain object-oriented programming
+5. [Assistant]: Object-oriented programming (OOP) is...
+
+📍 [Checkpoint: oop_concepts]
+----------------------------------------
+=== End of Context ===
+```
+
+**Features**:
+- Shows complete conversation history with message numbers
+- Displays checkpoint markers (📍) at their exact positions
+- Lists all available checkpoints
+- Truncates long messages for readability (200 characters)
+- Shows total message count and checkpoint summary
 
 ## Model and Information Directives
 

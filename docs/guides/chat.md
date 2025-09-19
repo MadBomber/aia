@@ -112,19 +112,71 @@ You: How do I handle user authentication?
 AI: For your Flask application, here are several authentication options...
 ```
 
+#### Context Checkpoints
+Create savepoints in your conversation to easily return to specific moments:
+
+```
+You: Let's explore different authentication approaches for Flask.
+AI: I can help you explore various authentication methods...
+
+You: //checkpoint auth_start
+
+You: Tell me about JWT authentication.
+AI: JWT (JSON Web Tokens) authentication is a stateless approach...
+
+You: //checkpoint jwt_discussion
+
+You: What about OAuth integration?
+AI: OAuth provides a robust framework for authentication...
+
+You: Actually, let's go back to the JWT discussion
+You: //restore jwt_discussion
+
+You: //context
+=== Chat Context ===
+Total messages: 6
+Checkpoints: auth_start, jwt_discussion
+
+1. [System]: You are a helpful assistant
+2. [User]: Let's explore different authentication approaches for Flask.
+3. [Assistant]: I can help you explore various authentication methods...
+
+📍 [Checkpoint: auth_start]
+----------------------------------------
+4. [User]: Tell me about JWT authentication.
+5. [Assistant]: JWT (JSON Web Tokens) authentication is a stateless approach...
+
+📍 [Checkpoint: jwt_discussion]
+----------------------------------------
+=== End of Context ===
+```
+
+**Checkpoint Commands**:
+- `//checkpoint` - Create auto-numbered checkpoint (1, 2, 3...)
+- `//checkpoint name` - Create named checkpoint
+- `//restore` - Restore to last checkpoint
+- `//restore name` - Restore to specific checkpoint
+- `//cp name` - Short alias for checkpoint
+
+**Use Cases for Checkpoints**:
+- **Exploring alternatives**: Save before trying different approaches
+- **Debugging conversations**: Return to working state after errors
+- **Session branching**: Explore multiple conversation paths
+- **Learning sessions**: Bookmark important explanations
+
 #### Context Inspection
 ```
-You: /context
-# Shows current conversation history and metadata
+You: //context
+# Shows current conversation history with checkpoint markers
+
+You: //review
+# Alternative command for context inspection
 ```
 
 #### Context Clearing
 ```
-You: /clear
-# Clears conversation history while keeping session active
-
-You: /new
-# Starts a completely fresh session
+You: //clear
+# Clears conversation history and all checkpoints while keeping session active
 ```
 
 ### Tool Integration in Chat
