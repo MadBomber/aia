@@ -3,6 +3,32 @@
 
 ## Released
 
+### [0.9.14] 2025-09-19
+
+#### New Features
+- **NEW FEATURE**: Added `//checkpoint` directive to create named snapshots of conversation context
+- **NEW FEATURE**: Added `//restore` directive to restore context to a previous checkpoint
+- **NEW FEATURE**: Enhanced `//context` (and `//review`) directive to display checkpoint markers in conversation history
+- **NEW FEATURE**: Added `//cp` alias for checkpoint directive
+
+#### Improvements
+- **ENHANCEMENT**: Context manager now tracks checkpoint positions for better context visualization
+- **ENHANCEMENT**: Checkpoint system uses auto-incrementing integer names when no name is provided
+- **ENHANCEMENT**: Restore directive defaults to last checkpoint when no name specified
+- **ENHANCEMENT**: Clear context now also clears all checkpoints
+
+#### Bug Fixes
+- **BUG FIX**: Fixed `//help` directive that was showing empty list of directives
+- **BUG FIX**: Help directive now displays all directives from all registered modules
+- **BUG FIX**: Help directive now shows proper descriptions and aliases for all directives
+- **BUG FIX**: Help directive organizes directives by category for better readability
+
+#### Technical Changes
+- Enhanced ContextManager with checkpoint storage and restoration capabilities
+- Added checkpoint_positions method to track checkpoint locations in context
+- Refactored help directive to collect directives from all registered modules
+- Added comprehensive test coverage for checkpoint and restore functionality
+
 ### [0.9.13] 2025-09-02
 #### New Features
 - **NEW FEATURE**: Added `--metrics` flag to show token counts for each model
