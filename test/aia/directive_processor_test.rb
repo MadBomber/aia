@@ -43,4 +43,46 @@ class DirectiveProcessorTest < Minitest::Test
     # Test basic functionality without complex API calls
     assert processor.respond_to?(:directive?)
   end
+
+  def test_paste_directive
+    # Test the paste directive functionality
+    processor = AIA::DirectiveProcessor.new
+
+    # Mock the Clipboard.paste method to return a predictable value
+    require 'clipboard'
+    Clipboard.stubs(:paste).returns("Test clipboard content")
+
+    # Test processing the paste directive
+    result = processor.process("//paste", nil)
+    assert_equal "Test clipboard content", result
+
+    # Test with alias
+    result = processor.process("//clipboard", nil)
+    assert_equal "Test clipboard content", result
+  end
+
+  def test_paste_directive_with_error
+    # Test paste directive error handling
+    processor = AIA::DirectiveProcessor.new
+
+    # Mock the Clipboard.paste method to raise an error
+    require 'clipboard'
+    Clipboard.stubs(:paste).raises(StandardError.new("Clipboard access failed"))
+
+    # Test that error is handled gracefully
+    result = processor.process("//paste", nil)
+    assert_match(/Error: Unable to paste from clipboard/, result)
+  end
+
+  def test_directive_detection
+    processor = AIA::DirectiveProcessor.new
+
+    # Test that paste directive is recognized
+    assert processor.directive?("//paste")
+    assert processor.directive?("//clipboard")
+
+    # Test that non-directives are not recognized
+    refute processor.directive?("paste")
+    refute processor.directive?("not a directive")
+  end
 end

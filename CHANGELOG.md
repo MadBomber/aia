@@ -1,7 +1,15 @@
 # Changelog
 ## [Unreleased]
-
 ## Released
+### [0.9.15] 2025-09-21
+
+#### New Features
+- **NEW FEATURE**: Added `//paste` directive to insert clipboard contents into prompts
+- **NEW FEATURE**: Added `//clipboard` alias for the paste directive
+
+#### Technical Changes
+- Enhanced DirectiveProcessor with clipboard integration using the clipboard gem
+- Added comprehensive test coverage for paste directive functionality
 
 ### [0.9.14] 2025-09-19
 

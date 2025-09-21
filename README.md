@@ -338,6 +338,7 @@ Directives are special commands in prompt files that begin with `//` and provide
 | `//checkpoint` | Create a named checkpoint of current context | `//checkpoint save_point` |
 | `//restore` | Restore context to a previous checkpoint | `//restore save_point` |
 | `//include` | Insert file contents | `//include path/to/file.txt` |
+| `//paste` | Insert clipboard contents | `//paste` |
 | `//shell` | Execute shell commands | `//shell ls -la` |
 | `//robot` | Show the pet robot ASCII art w/versions | `//robot` |
 | `//ruby` | Execute Ruby code | `//ruby puts "Hello World"` |
@@ -371,6 +372,9 @@ Your prompt content here...
 ```bash
 # Include file contents
 //include ~/project/README.md
+
+# Paste clipboard contents
+//paste
 
 # Execute shell commands
 //shell git log --oneline -10

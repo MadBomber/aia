@@ -111,6 +111,24 @@ Include content from files or websites.
 
 **Aliases**: `//import`
 
+### `//paste`
+Insert content from the system clipboard.
+
+**Syntax**: `//paste`
+
+**Examples**:
+```markdown
+//paste
+```
+
+**Features**:
+- Inserts the current clipboard contents directly into the prompt
+- Useful for quickly including copied text, code, or data
+- Works across different platforms (macOS, Linux, Windows)
+- Handles multi-line clipboard content
+
+**Aliases**: `//clipboard`
+
 ### `//webpage`
 Include content from web pages (requires PUREMD_API_KEY).
 

@@ -160,6 +160,30 @@ if File.exist?(history_file)
 Now analyze <%= task %> using all available context layers.
 ```
 
+### Clipboard Integration
+Quick data insertion from clipboard:
+
+```markdown
+# Code Review with Clipboard Content
+
+## Code to Review
+//paste
+
+## Review Guidelines
+- Check for best practices
+- Identify security vulnerabilities
+- Suggest performance improvements
+- Validate error handling
+
+Please provide detailed feedback on the code above.
+```
+
+This is particularly useful for:
+- Quick code reviews when you've copied code from an IDE
+- Analyzing error messages or logs copied from terminals
+- Including data from spreadsheets or other applications
+- Rapid prototyping with copied examples
+
 ### Context Filtering and Summarization
 Manage large contexts intelligently:
 
@@ -235,6 +259,11 @@ Generate an academic document with:
 <% context_files.each do |file| %>
 //include <%= file %>
 <% end %>
+<% end %>
+
+## Clipboard Content (if applicable)
+<% if include_clipboard %>
+//paste
 <% end %>
 
 Target audience: <%= audience || "general professional" %>

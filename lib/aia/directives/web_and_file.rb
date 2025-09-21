@@ -2,6 +2,7 @@
 
 require 'faraday'
 require 'active_support/all'
+require 'clipboard'
 
 module AIA
   module Directives
@@ -60,11 +61,21 @@ module AIA
         @included_files = files
       end
 
+      def self.paste(args = [], context_manager = nil)
+        begin
+          content = Clipboard.paste
+          content.to_s
+        rescue => e
+          "Error: Unable to paste from clipboard - #{e.message}"
+        end
+      end
+
       # Set up aliases - these work on the module's singleton class
       class << self
         alias_method :website, :webpage
-        alias_method :web, :webpage  
+        alias_method :web, :webpage
         alias_method :import, :include
+        alias_method :clipboard, :paste
       end
     end
   end
