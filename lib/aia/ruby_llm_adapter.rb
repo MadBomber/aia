@@ -42,6 +42,8 @@ module AIA
 
         # --- Custom OpenAI Endpoint ---
         # Use this for Azure OpenAI, proxies, or self-hosted models via OpenAI-compatible APIs.
+        # For osaurus: Use model name prefix "osaurus/" and set OSAURUS_API_BASE env var
+        # For LM Studio: Use model name prefix "lms/" and set LMS_API_BASE env var
         config.openai_api_base = ENV.fetch('OPENAI_API_BASE', nil) # e.g., "https://your-azure.openai.azure.com"
 
         # --- Default Models ---
@@ -83,7 +85,30 @@ module AIA
 
       @models.each do |model_name|
         begin
-          chat = RubyLLM.chat(model: model_name)
+          # Check if this is a local provider model and handle it specially
+          if model_name.start_with?('ollama/')
+            # For Ollama models, extract the actual model name and use assume_model_exists
+            actual_model = model_name.sub('ollama/', '')
+            chat = RubyLLM.chat(model: actual_model, provider: 'ollama', assume_model_exists: true)
+          elsif model_name.start_with?('osaurus/')
+            # For Osaurus models (OpenAI-compatible), create a custom context with the right API base
+            actual_model = model_name.sub('osaurus/', '')
+            custom_config = RubyLLM.config.dup
+            custom_config.openai_api_base = ENV.fetch('OSAURUS_API_BASE', 'http://localhost:11434/v1')
+            custom_config.openai_api_key = 'dummy' # Local servers don't need a real API key
+            context = RubyLLM::Context.new(custom_config)
+            chat = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
+          elsif model_name.start_with?('lms/')
+            # For LM Studio models (OpenAI-compatible), create a custom context with the right API base
+            actual_model = model_name.sub('lms/', '')
+            custom_config = RubyLLM.config.dup
+            custom_config.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
+            custom_config.openai_api_key = 'dummy' # Local servers don't need a real API key
+            context = RubyLLM::Context.new(custom_config)
+            chat = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
+          else
+            chat = RubyLLM.chat(model: model_name)
+          end
           valid_chats[model_name] = chat
         rescue StandardError => e
           failed_models << "#{model_name}: #{e.message}"
@@ -263,7 +288,7 @@ module AIA
 
     def format_multi_model_results(results)
       use_consensus = should_use_consensus_mode?
-      
+
       if use_consensus
         # Generate consensus response using primary model
         generate_consensus_response(results)
@@ -288,7 +313,7 @@ module AIA
       begin
         # Have the primary model generate the consensus
         consensus_result = primary_chat.ask(consensus_prompt).content
-        
+
         # Format the consensus response
         "from: #{primary_model} (consensus)\n#{consensus_result}"
       rescue StandardError => e
@@ -329,7 +354,7 @@ module AIA
     def format_individual_responses(results)
       # For metrics support, return a special structure if all results have token info
       has_metrics = results.values.all? { |r| r.respond_to?(:input_tokens) && r.respond_to?(:output_tokens) }
-      
+
       if has_metrics && AIA.config.show_metrics
         # Return structured data that preserves metrics for multi-model
         format_multi_model_with_metrics(results)
@@ -350,17 +375,17 @@ module AIA
         output.join("\n")
       end
     end
-    
+
     def format_multi_model_with_metrics(results)
       # Create a composite response that includes all model responses and metrics
       formatted_content = []
       metrics_data = []
-      
+
       results.each do |model_name, result|
         formatted_content << "from: #{model_name}"
         formatted_content << result.content
         formatted_content << ""
-        
+
         # Collect metrics for each model
         metrics_data << {
           model_id: model_name,
@@ -368,20 +393,20 @@ module AIA
           output_tokens: result.output_tokens
         }
       end
-      
+
       # Return a special MultiModelResponse that ChatProcessorService can handle
       MultiModelResponse.new(formatted_content.join("\n"), metrics_data)
     end
-    
+
     # Helper class to carry multi-model response with metrics
     class MultiModelResponse
       attr_reader :content, :metrics_list
-      
+
       def initialize(content, metrics_list)
         @content = content
         @metrics_list = metrics_list
       end
-      
+
       def multi_model?
         true
       end
