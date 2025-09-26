@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.9.15)
+    aia (0.9.16)
       activesupport
       amazing_print
       async
