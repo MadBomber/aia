@@ -1,5 +1,17 @@
 # Changelog
 ## [Unreleased]
+
+### [0.9.16] 2025-09-26
+
+#### New Features
+- **NEW FEATURE**: Added support for Ollama AI provider
+- **NEW FEATURE**: Added support for Osaurus AI provider
+- **NEW FEATURE**: Added support for LM Studio AI provider
+
+#### Improvements
+- **ENHANCEMENT**: Expanded AI provider ecosystem with three new local/self-hosted model options
+- **ENHANCEMENT**: Improved flexibility for users preferring local LLM deployments
+
 ## Released
 ### [0.9.15] 2025-09-21
 
