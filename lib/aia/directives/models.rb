@@ -30,9 +30,141 @@ module AIA
       end
 
       def self.available_models(args = nil, context_manager = nil)
+          # Check if we're using a local provider
+          current_models = AIA.config.model
+          current_models = [current_models] if current_models.is_a?(String)
+
+          using_local_provider = current_models.any? { |m| m.start_with?('ollama/', 'lms/') }
+
+          if using_local_provider
+            show_local_models(current_models, args)
+          else
+            show_rubyllm_models(args)
+          end
+
+          ""
+        end
+
+      def self.show_local_models(current_models, args)
+          require 'net/http'
+          require 'json'
+
+          puts "\nLocal LLM Models:"
+          puts
+
+          current_models.each do |model_spec|
+            if model_spec.start_with?('ollama/')
+              # Ollama uses its native API, not /v1
+              api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
+              # Remove /v1 suffix if present
+              api_base = api_base.gsub(%r{/v1/?$}, '')
+              show_ollama_models(api_base, args)
+            elsif model_spec.start_with?('lms/')
+              api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
+              show_lms_models(api_base, args)
+            end
+          end
+        end
+
+      def self.show_ollama_models(api_base, args)
+          begin
+            uri = URI("#{api_base}/api/tags")
+            response = Net::HTTP.get_response(uri)
+
+            unless response.is_a?(Net::HTTPSuccess)
+              puts "❌ Cannot connect to Ollama at #{api_base}"
+              return
+            end
+
+            data = JSON.parse(response.body)
+            models = data['models'] || []
+
+            if models.empty?
+              puts "No Ollama models found"
+              return
+            end
+
+            puts "Ollama Models (#{api_base}):"
+            puts "-" * 60
+
+            counter = 0
+            models.each do |model|
+              name = model['name']
+              size = model['size'] ? format_bytes(model['size']) : 'unknown'
+              modified = model['modified_at'] ? Time.parse(model['modified_at']).strftime('%Y-%m-%d') : 'unknown'
+
+              entry = "- ollama/#{name} (size: #{size}, modified: #{modified})"
+
+              # Apply query filter if provided
+              if args.nil? || args.empty? || args.any? { |q| entry.downcase.include?(q.downcase) }
+                puts entry
+                counter += 1
+              end
+            end
+
+            puts
+            puts "#{counter} Ollama model(s) available"
+            puts
+          rescue StandardError => e
+            puts "❌ Error fetching Ollama models: #{e.message}"
+          end
+        end
+
+      def self.show_lms_models(api_base, args)
+          begin
+            uri = URI("#{api_base.gsub(%r{/v1/?$}, '')}/v1/models")
+            response = Net::HTTP.get_response(uri)
+
+            unless response.is_a?(Net::HTTPSuccess)
+              puts "❌ Cannot connect to LM Studio at #{api_base}"
+              return
+            end
+
+            data = JSON.parse(response.body)
+            models = data['data'] || []
+
+            if models.empty?
+              puts "No LM Studio models found"
+              return
+            end
+
+            puts "LM Studio Models (#{api_base}):"
+            puts "-" * 60
+
+            counter = 0
+            models.each do |model|
+              name = model['id']
+              entry = "- lms/#{name}"
+
+              # Apply query filter if provided
+              if args.nil? || args.empty? || args.any? { |q| entry.downcase.include?(q.downcase) }
+                puts entry
+                counter += 1
+              end
+            end
+
+            puts
+            puts "#{counter} LM Studio model(s) available"
+            puts
+          rescue StandardError => e
+            puts "❌ Error fetching LM Studio models: #{e.message}"
+          end
+        end
+
+      def self.format_bytes(bytes)
+          units = ['B', 'KB', 'MB', 'GB', 'TB']
+          return "0 B" if bytes.zero?
+
+          exp = (Math.log(bytes) / Math.log(1024)).to_i
+          exp = [exp, units.length - 1].min
+
+          "%.1f %s" % [bytes.to_f / (1024 ** exp), units[exp]]
+        end
+
+      def self.show_rubyllm_models(args)
           query = args
 
-          if 1 == query.size
+          if query && 1 == query.size
             query = query.first.split(',')
           end
 
@@ -42,8 +174,8 @@ module AIA
           puts header + ':'
           puts
 
-          q1 = query.select { |q| q.include?('_to_') } # SMELL: ??
-          q2 = query.reject { |q| q.include?('_to_') }
+          q1 = query ? query.select { |q| q.include?('_to_') } : []
+          q2 = query ? query.reject { |q| q.include?('_to_') } : []
 
           counter = 0
 
@@ -75,8 +207,6 @@ module AIA
           puts if counter > 0
           puts "#{counter} LLMs matching your query"
           puts
-
-          ""
         end
 
       def self.help(args = nil, context_manager = nil)

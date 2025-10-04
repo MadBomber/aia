@@ -58,6 +58,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'simplecov_lcov_formatter'
   spec.add_development_dependency 'tocer'
+  spec.add_development_dependency 'webmock'
 
 end

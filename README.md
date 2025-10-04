@@ -563,6 +563,83 @@ Model Details:
 - **Error Handling**: Invalid models are reported but don't prevent valid models from working
 - **Batch Mode Support**: Multi-model responses are properly formatted in output files
 
+### Local Model Support
+
+AIA supports running local AI models through Ollama and LM Studio, providing privacy, offline capability, and cost savings.
+
+#### Ollama Integration
+
+[Ollama](https://ollama.ai) runs AI models locally on your machine.
+
+```bash
+# Install Ollama (macOS)
+brew install ollama
+
+# Pull a model
+ollama pull llama3.2
+
+# Use with AIA - prefix model name with 'ollama/'
+aia --model ollama/llama3.2 my_prompt
+
+# In chat mode
+aia --chat --model ollama/llama3.2
+
+# Combine with cloud models
+aia --model ollama/llama3.2,gpt-4o-mini --consensus my_prompt
+```
+
+**Environment Variables:**
+```bash
+# Optional: Set custom Ollama API endpoint
+export OLLAMA_API_BASE=http://localhost:11434
+```
+
+#### LM Studio Integration
+
+[LM Studio](https://lmstudio.ai) provides a desktop application for running local models with an OpenAI-compatible API.
+
+```bash
+# 1. Install LM Studio from lmstudio.ai
+# 2. Download and load a model in LM Studio
+# 3. Start the local server in LM Studio
+
+# Use with AIA - prefix model name with 'lms/'
+aia --model lms/qwen/qwen3-coder-30b my_prompt
+
+# In chat mode
+aia --chat --model lms/your-model-name
+
+# Mix local and cloud models
+aia --model lms/local-model,gpt-4o-mini my_prompt
+```
+
+**Environment Variables:**
+```bash
+# Optional: Set custom LM Studio API endpoint (default: http://localhost:1234/v1)
+export LMS_API_BASE=http://localhost:1234/v1
+```
+
+#### Listing Local Models
+
+The `//models` directive automatically detects local providers and queries their endpoints:
+
+```bash
+# In a prompt file or chat session
+//models
+
+# Output will show:
+# - Ollama models from http://localhost:11434/api/tags
+# - LM Studio models from http://localhost:1234/v1/models
+# - Cloud models from RubyLLM database
+```
+
+**Benefits of Local Models:**
+- 🔒 **Privacy**: No data sent to external servers
+- 💰 **Cost**: Zero API costs after initial setup
+- 🚀 **Speed**: No network latency
+- 📡 **Offline**: Works without internet connection
+- 🔧 **Control**: Full control over model and parameters
+
 ### Shell Integration
 
 AIA automatically processes shell patterns in prompts:

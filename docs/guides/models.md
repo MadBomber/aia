@@ -373,6 +373,163 @@ premium_models:
 - **Llama 2**: Open-source general purpose
 - **Mixtral**: High-performance open model
 
+## Local Model Providers
+
+### Ollama
+
+[Ollama](https://ollama.ai) enables running open-source AI models locally.
+
+#### Setup
+
+```bash
+# Install Ollama
+brew install ollama  # macOS
+# or download from https://ollama.ai
+
+# Pull models
+ollama pull llama3.2
+ollama pull mistral
+ollama pull qwen2.5-coder
+
+# List available models
+ollama list
+```
+
+#### Usage with AIA
+
+```bash
+# Use Ollama model (prefix with 'ollama/')
+aia --model ollama/llama3.2 my_prompt
+
+# Chat mode
+aia --chat --model ollama/mistral
+
+# List Ollama models from AIA
+aia --model ollama/llama3.2 --chat
+> //models
+
+# Combine with cloud models for comparison
+aia --model ollama/llama3.2,gpt-4o-mini,claude-3-sonnet my_prompt
+```
+
+#### Configuration
+
+```yaml
+# ~/.aia/config.yml
+model: ollama/llama3.2
+
+# Optional: Custom Ollama endpoint
+# Set via environment variable
+export OLLAMA_API_BASE=http://custom-host:11434
+```
+
+#### Popular Ollama Models
+
+- **llama3.2**: Latest Llama model, good general purpose
+- **llama3.2:70b**: Larger version, better quality
+- **mistral**: Fast and efficient
+- **mixtral**: High-performance mixture of experts
+- **qwen2.5-coder**: Specialized for code
+- **codellama**: Code-focused model
+
+### LM Studio
+
+[LM Studio](https://lmstudio.ai) provides a GUI for running local models with OpenAI-compatible API.
+
+#### Setup
+
+1. Download LM Studio from https://lmstudio.ai
+2. Install and launch the application
+3. Browse and download models within LM Studio
+4. Start the local server:
+   - Click "Local Server" tab
+   - Click "Start Server"
+   - Default endpoint: http://localhost:1234/v1
+
+#### Usage with AIA
+
+```bash
+# Use LM Studio model (prefix with 'lms/')
+aia --model lms/qwen/qwen3-coder-30b my_prompt
+
+# Chat mode
+aia --chat --model lms/llama-3.2-3b-instruct
+
+# List LM Studio models from AIA
+aia --model lms/any-loaded-model --chat
+> //models
+
+# Model validation
+# AIA validates model names against LM Studio's loaded models
+# If you specify an invalid model, you'll see:
+#   ❌ 'model-name' is not a valid LM Studio model.
+#
+#   Available LM Studio models:
+#     - lms/qwen/qwen3-coder-30b
+#     - lms/llama-3.2-3b-instruct
+```
+
+#### Configuration
+
+```yaml
+# ~/.aia/config.yml
+model: lms/qwen/qwen3-coder-30b
+
+# Optional: Custom LM Studio endpoint
+# Set via environment variable
+export LMS_API_BASE=http://localhost:1234/v1
+```
+
+#### Tips for LM Studio
+
+- Use the model name exactly as shown in LM Studio
+- Prefix all model names with `lms/`
+- Ensure the local server is running before use
+- LM Studio supports one model at a time (unlike Ollama)
+
+### Comparison: Ollama vs LM Studio
+
+| Feature | Ollama | LM Studio |
+|---------|--------|-----------|
+| **Interface** | Command-line | GUI + CLI |
+| **Model Management** | Via CLI (`ollama pull`) | GUI download |
+| **API Compatibility** | Custom + OpenAI-like | OpenAI-compatible |
+| **Multiple Models** | Yes (switch quickly) | One at a time |
+| **Platform** | macOS, Linux, Windows | macOS, Windows |
+| **Model Format** | GGUF, custom | GGUF |
+| **Best For** | CLI users, automation | GUI users, experimentation |
+
+### Local + Cloud Model Workflows
+
+#### Privacy-First Workflow
+```bash
+# Use local model for sensitive data
+aia --model ollama/llama3.2 --out_file draft.md process_private_data.txt
+
+# Use cloud model for final polish (on sanitized data)
+aia --model gpt-4 --include draft.md refine_output
+```
+
+#### Cost-Optimization Workflow
+```bash
+# Bulk processing with local model (free)
+for file in *.txt; do
+  aia --model ollama/mistral --out_file "${file%.txt}_summary.md" summarize "$file"
+done
+
+# Final review with premium cloud model
+aia --model gpt-4 --include *_summary.md final_report
+```
+
+#### Consensus with Mixed Models
+```bash
+# Get consensus from local and cloud models
+aia --model ollama/llama3.2,ollama/mistral,gpt-4o-mini --consensus decision_prompt
+
+# Or individual responses to compare
+aia --model ollama/llama3.2,lms/qwen-coder,claude-3-sonnet --no-consensus code_review.py
+```
+
 ## Troubleshooting Models
 
 ### Common Issues
