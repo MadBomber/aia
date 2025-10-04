@@ -151,6 +151,7 @@ nav:
     - Getting Started: guides/getting-started.md
     - Chat Mode: guides/chat.md
     - Working with Models: guides/models.md
+    - Local Models: guides/local-models.md
     - Available Models: guides/available-models.md
     - Image Generation: guides/image-generation.md
     - Tools Integration: guides/tools.md
