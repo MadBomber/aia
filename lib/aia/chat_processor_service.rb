@@ -28,25 +28,37 @@ module AIA
         result = send_to_client(prompt)
       end
 
+      # Debug output to understand what we're receiving
+      puts "[DEBUG ChatProcessor] Result class: #{result.class}" if AIA.config.debug
+      puts "[DEBUG ChatProcessor] Result inspect: #{result.inspect[0..500]}..." if AIA.config.debug
+
       # Preserve token information if available for metrics
       if result.is_a?(String)
+        puts "[DEBUG ChatProcessor] Processing as String" if AIA.config.debug
         { content: result, metrics: nil }
       elsif result.respond_to?(:multi_model?) && result.multi_model?
+        puts "[DEBUG ChatProcessor] Processing as multi-model response" if AIA.config.debug
         # Handle multi-model response with metrics
         {
           content: result.content,
           metrics: nil,  # Individual model metrics handled separately
           multi_metrics: result.metrics_list
         }
-      else
+      elsif result.respond_to?(:content)
+        puts "[DEBUG ChatProcessor] Processing as standard response with content method" if AIA.config.debug
+        # Standard response object with content method
         {
           content: result.content,
           metrics: {
-            input_tokens: result.input_tokens,
-            output_tokens: result.output_tokens,
-            model_id: result.model_id
+            input_tokens: result.respond_to?(:input_tokens) ? result.input_tokens : nil,
+            output_tokens: result.respond_to?(:output_tokens) ? result.output_tokens : nil,
+            model_id: result.respond_to?(:model_id) ? result.model_id : nil
           }
         }
+      else
+        puts "[DEBUG ChatProcessor] Processing as fallback (unexpected type)" if AIA.config.debug
+        # Fallback for unexpected response types
+        { content: result.to_s, metrics: nil }
       end
     end
 
@@ -56,7 +68,10 @@ module AIA
     def send_to_client(conversation)
       maybe_change_model
 
-      AIA.client.chat(conversation)
+      puts "[DEBUG ChatProcessor] Sending conversation to client: #{conversation.inspect[0..500]}..." if AIA.config.debug
+      result = AIA.client.chat(conversation)
+      puts "[DEBUG ChatProcessor] Client returned: #{result.class} - #{result.inspect[0..500]}..." if AIA.config.debug
+      result
     end
 
 

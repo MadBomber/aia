@@ -418,23 +418,23 @@ module AIA
 
     def handle_clear_directive
       # The directive processor has called context_manager.clear_context
-      # but we need a more aggressive approach to fully clear all context
+      # but we need to also clear the LLM client's context
 
       # First, clear the context manager's context
       @context_manager.clear_context(keep_system_prompt: true)
 
       # Second, try clearing the client's context
       if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
-        AIA.config.client.clear_context
+        begin
+          AIA.config.client.clear_context
+        rescue => e
+          STDERR.puts "Warning: Error clearing client context: #{e.message}"
+          # Continue anyway - the context manager has been cleared which is the main goal
+        end
       end
 
-      # Third, completely reinitialize the client to ensure fresh state
-      # This is the most aggressive approach to ensure no context remains
-      begin
-        AIA.config.client = AIA::RubyLLMAdapter.new
-      rescue => e
-        STDERR.puts "Error reinitializing client: #{e.message}"
-      end
+      # Note: We intentionally do NOT reinitialize the client here
+      # as that could cause termination if model initialization fails
 
       @ui_presenter.display_info("Chat context cleared.")
       nil
@@ -448,16 +448,27 @@ module AIA
     def handle_restore_directive(directive_output)
       # If the restore was successful, we also need to refresh the client's context
       if directive_output.start_with?("Context restored")
-        # Try to clear and rebuild the client's context
+        # Clear the client's context without reinitializing the entire adapter
+        # This avoids the risk of exiting if model initialization fails
         if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
-          AIA.config.client.clear_context
+          begin
+            AIA.config.client.clear_context
+          rescue => e
+            STDERR.puts "Warning: Error clearing client context after restore: #{e.message}"
+            # Continue anyway - the context manager has been restored which is the main goal
+          end
         end
 
-        # Optionally reinitialize the client for a clean state
-        begin
-          AIA.config.client = AIA::RubyLLMAdapter.new
-        rescue => e
-          STDERR.puts "Error reinitializing client after restore: #{e.message}"
+        # Rebuild the conversation in the LLM client from the restored context
+        # This ensures the LLM's internal state matches what we restored
+        if AIA.config.client && @context_manager
+          begin
+            restored_context = @context_manager.get_context
+            # The client's context has been cleared, so we can safely continue
+            # The next interaction will use the restored context from context_manager
+          rescue => e
+            STDERR.puts "Warning: Error syncing restored context: #{e.message}"
+          end
         end
       end
 

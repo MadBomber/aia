@@ -23,7 +23,89 @@ export ANTHROPIC_API_KEY="your_key_here"
 ```
 
 ### Q: Can I use AIA without internet access?
-**A:** Yes, if you use local models through Ollama. Most AI models require internet access, but you can run models locally for offline use.
+**A:** Yes! AIA supports two local model providers for complete offline operation:
+
+1. **Ollama**: Run open-source models locally
+   ```bash
+   # Install and use Ollama
+   brew install ollama
+   ollama pull llama3.2
+   aia --model ollama/llama3.2 --chat
+   ```
+
+2. **LM Studio**: GUI-based local model runner
+   ```bash
+   # Download from https://lmstudio.ai
+   # Load a model and start local server
+   aia --model lms/your-model-name --chat
+   ```
+
+Both options provide full AI functionality without internet connection, perfect for:
+- 🔒 Private/sensitive data processing
+- ✈️ Offline/travel use
+- 💰 Zero API costs
+- 🏠 Air-gapped environments
+
+### Q: How do I list available local models?
+**A:** Use the `//models` directive in a chat session or prompt:
+
+```bash
+# Start chat with any local model
+aia --model ollama/llama3.2 --chat
+
+# In the chat session
+> //models
+
+# Output shows:
+# - Ollama models from local installation
+# - LM Studio models currently loaded
+# - Cloud models from RubyLLM database
+```
+
+For Ollama specifically: `ollama list`
+For LM Studio: Check the Models tab in the LM Studio GUI
+
+### Q: What's the difference between Ollama and LM Studio?
+**A:**
+- **Ollama**: Command-line focused, quick model switching, multiple models available
+- **LM Studio**: GUI application, visual model management, one model at a time
+
+Choose **Ollama** if you prefer CLI tools and automation.
+Choose **LM Studio** if you want a visual interface and easier model discovery.
+
+Both work great with AIA!
+
+### Q: Can I mix local and cloud models?
+**A:** Absolutely! This is a powerful feature:
+
+```bash
+# Compare local vs cloud responses
+aia --model ollama/llama3.2,gpt-4o-mini my_prompt
+
+# Get consensus across local and cloud models
+aia --model ollama/mistral,lms/qwen-coder,claude-3-sonnet --consensus decision
+
+# Use local for drafts, cloud for refinement
+aia --model ollama/llama3.2 --out_file draft.md initial_analysis
+aia --model gpt-4 --include draft.md final_report
+```
+
+### Q: Why does my lms/ model show an error?
+**A:** Common causes:
+
+1. **Model not loaded in LM Studio**: Load a model first
+2. **Wrong model name**: AIA validates against available models and shows the exact names to use
+3. **Server not running**: Start the local server in LM Studio
+4. **Wrong prefix**: Always use `lms/` prefix with full model name
+
+If you get an error, AIA will show you the exact model names to use:
+```
+❌ 'wrong-name' is not a valid LM Studio model.
+
+Available LM Studio models:
+  - lms/qwen/qwen3-coder-30b
+  - lms/llama-3.2-3b-instruct
+```
 
 ## Basic Usage
 

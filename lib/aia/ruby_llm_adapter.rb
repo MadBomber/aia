@@ -1,6 +1,7 @@
 # lib/aia/ruby_llm_adapter.rb
 
 require 'async'
+require_relative '../extensions/ruby_llm/provider_fix'
 
 module AIA
   class RubyLLMAdapter
@@ -101,8 +102,13 @@ module AIA
           elsif model_name.start_with?('lms/')
             # For LM Studio models (OpenAI-compatible), create a custom context with the right API base
             actual_model = model_name.sub('lms/', '')
+            lms_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
+
+            # Validate model exists in LM Studio
+            validate_lms_model!(actual_model, lms_api_base)
+
             custom_config = RubyLLM.config.dup
-            custom_config.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
+            custom_config.openai_api_base = lms_api_base
             custom_config.openai_api_key = 'dummy' # Local servers don't need a real API key
             context = RubyLLM::Context.new(custom_config)
             chat = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
@@ -237,33 +243,55 @@ module AIA
 
 
     def chat(prompt)
-      if @models.size == 1
+      puts "[DEBUG RubyLLMAdapter.chat] Received prompt class: #{prompt.class}" if AIA.config.debug
+      puts "[DEBUG RubyLLMAdapter.chat] Prompt inspect: #{prompt.inspect[0..500]}..." if AIA.config.debug
+      puts "[DEBUG RubyLLMAdapter.chat] Models: #{@models.inspect}" if AIA.config.debug
+
+      result = if @models.size == 1
         # Single model - use the original behavior
         single_model_chat(prompt, @models.first)
       else
         # Multiple models - use concurrent processing
         multi_model_chat(prompt)
       end
+
+      puts "[DEBUG RubyLLMAdapter.chat] Returning result class: #{result.class}" if AIA.config.debug
+      puts "[DEBUG RubyLLMAdapter.chat] Result inspect: #{result.inspect[0..500]}..." if AIA.config.debug
+      result
     end
 
     def single_model_chat(prompt, model_name)
+      puts "[DEBUG single_model_chat] Model name: #{model_name}" if AIA.config.debug
       chat_instance = @chats[model_name]
+      puts "[DEBUG single_model_chat] Chat instance: #{chat_instance.class}" if AIA.config.debug
+
       modes = chat_instance.model.modalities
+      puts "[DEBUG single_model_chat] Modalities: #{modes.inspect}" if AIA.config.debug
 
       # TODO: Need to consider how to handle multi-mode models
-      if modes.text_to_text?
+      result = if modes.text_to_text?
+        puts "[DEBUG single_model_chat] Using text_to_text_single" if AIA.config.debug
         text_to_text_single(prompt, model_name)
       elsif modes.image_to_text?
+        puts "[DEBUG single_model_chat] Using image_to_text_single" if AIA.config.debug
         image_to_text_single(prompt, model_name)
       elsif modes.text_to_image?
+        puts "[DEBUG single_model_chat] Using text_to_image_single" if AIA.config.debug
         text_to_image_single(prompt, model_name)
       elsif modes.text_to_audio?
+        puts "[DEBUG single_model_chat] Using text_to_audio_single" if AIA.config.debug
         text_to_audio_single(prompt, model_name)
       elsif modes.audio_to_text?
+        puts "[DEBUG single_model_chat] Using audio_to_text_single" if AIA.config.debug
         audio_to_text_single(prompt, model_name)
       else
+        puts "[DEBUG single_model_chat] No matching modality!" if AIA.config.debug
         # TODO: what else can be done?
+        "Error: No matching modality for model #{model_name}"
       end
+
+      puts "[DEBUG single_model_chat] Result class: #{result.class}" if AIA.config.debug
+      result
     end
 
     def multi_model_chat(prompt)
@@ -440,7 +468,7 @@ module AIA
 
 
     # Clear the chat context/history
-    # Needed for the //clear directive
+    # Needed for the //clear and //restore directives
     def clear_context
       @chats.each do |model_name, chat|
         # Option 1: Directly clear the messages array in the current chat object
@@ -455,16 +483,65 @@ module AIA
       # This ensures any shared state is reset
       RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
 
-      # Option 3: Create completely fresh chat instances for this adapter
-      @chats = {} # First nil the chats hash
+      # Option 3: Try to create fresh chat instances, but don't exit on failure
+      # This is safer for use in directives like //restore
+      old_chats = @chats
+      @chats = {} # First clear the chats hash
 
       begin
         @models.each do |model_name|
-          @chats[model_name] = RubyLLM.chat(model: model_name)
+          # Try to recreate each chat, but if it fails, keep the old one
+          begin
+            # Check if this is a local provider model and handle it specially
+            if model_name.start_with?('ollama/')
+              actual_model = model_name.sub('ollama/', '')
+              @chats[model_name] = RubyLLM.chat(model: actual_model, provider: 'ollama', assume_model_exists: true)
+            elsif model_name.start_with?('osaurus/')
+              actual_model = model_name.sub('osaurus/', '')
+              custom_config = RubyLLM.config.dup
+              custom_config.openai_api_base = ENV.fetch('OSAURUS_API_BASE', 'http://localhost:11434/v1')
+              custom_config.openai_api_key = 'dummy'
+              context = RubyLLM::Context.new(custom_config)
+              @chats[model_name] = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
+            elsif model_name.start_with?('lms/')
+              actual_model = model_name.sub('lms/', '')
+              lms_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
+
+              # Validate model exists in LM Studio
+              validate_lms_model!(actual_model, lms_api_base)
+
+              custom_config = RubyLLM.config.dup
+              custom_config.openai_api_base = lms_api_base
+              custom_config.openai_api_key = 'dummy'
+              context = RubyLLM::Context.new(custom_config)
+              @chats[model_name] = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
+            else
+              @chats[model_name] = RubyLLM.chat(model: model_name)
+            end
+
+            # Re-add tools if they were previously loaded
+            if @tools && !@tools.empty? && @chats[model_name].model&.supports_functions?
+              @chats[model_name].with_tools(*@tools)
+            end
+          rescue StandardError => e
+            # If we can't create a new chat, keep the old one but clear its context
+            warn "Warning: Could not recreate chat for #{model_name}: #{e.message}. Keeping existing instance."
+            @chats[model_name] = old_chats[model_name]
+            # Clear the old chat's messages if possible
+            if @chats[model_name] && @chats[model_name].instance_variable_defined?(:@messages)
+              @chats[model_name].instance_variable_set(:@messages, [])
+            end
+          end
         end
       rescue StandardError => e
-        warn "ERROR: #{e.message}"
-        exit 1
+        # If something went terribly wrong, restore the old chats but clear their contexts
+        warn "Warning: Error during context clearing: #{e.message}. Attempting to recover."
+        @chats = old_chats
+        @chats.each_value do |chat|
+          if chat.instance_variable_defined?(:@messages)
+            chat.instance_variable_set(:@messages, [])
+          end
+        end
       end
 
       # Option 4: Call official clear_history method if it exists
@@ -523,6 +600,44 @@ module AIA
     end
 
 
+    def validate_lms_model!(model_name, api_base)
+      require 'net/http'
+      require 'json'
+
+      # Build the /v1/models endpoint URL
+      uri = URI("#{api_base.gsub(%r{/v1/?$}, '')}/v1/models")
+
+      begin
+        response = Net::HTTP.get_response(uri)
+
+        unless response.is_a?(Net::HTTPSuccess)
+          raise "Cannot connect to LM Studio at #{api_base}. Is LM Studio running?"
+        end
+
+        data = JSON.parse(response.body)
+        available_models = data['data']&.map { |m| m['id'] } || []
+
+        unless available_models.include?(model_name)
+          error_msg = "❌ '#{model_name}' is not a valid LM Studio model.\n\n"
+          if available_models.empty?
+            error_msg += "No models are currently loaded in LM Studio.\n"
+            error_msg += "Please load a model in LM Studio first."
+          else
+            error_msg += "Available LM Studio models:\n"
+            available_models.each { |m| error_msg += "  - lms/#{m}\n" }
+          end
+          raise error_msg
+        end
+      rescue JSON::ParserError => e
+        raise "Invalid response from LM Studio at #{api_base}: #{e.message}"
+      rescue StandardError => e
+        # Re-raise our custom error messages, wrap others
+        raise if e.message.start_with?('❌')
+        raise "Error connecting to LM Studio: #{e.message}"
+      end
+    end
+
+
     def extract_models_config
       models_config = AIA.config.model
 
@@ -556,15 +671,30 @@ module AIA
     def text_to_text_single(prompt, model_name)
       chat_instance = @chats[model_name]
       text_prompt = extract_text_prompt(prompt)
+
+      puts "[DEBUG RubyLLMAdapter] Sending to model #{model_name}: #{text_prompt[0..100]}..." if AIA.config.debug
+
       response = if AIA.config.context_files.empty?
                    chat_instance.ask(text_prompt)
                  else
                    chat_instance.ask(text_prompt, with: AIA.config.context_files)
                  end
 
+      # Debug output to understand the response structure
+      puts "[DEBUG RubyLLMAdapter] Response class: #{response.class}" if AIA.config.debug
+      puts "[DEBUG RubyLLMAdapter] Response inspect: #{response.inspect[0..500]}..." if AIA.config.debug
+
+      if response.respond_to?(:content)
+        puts "[DEBUG RubyLLMAdapter] Response content: #{response.content[0..200]}..." if AIA.config.debug
+      else
+        puts "[DEBUG RubyLLMAdapter] Response (no content method): #{response.to_s[0..200]}..." if AIA.config.debug
+      end
+
       # Return the full response object to preserve token information
       response
     rescue StandardError => e
+      puts "[DEBUG RubyLLMAdapter] Error in text_to_text_single: #{e.class} - #{e.message}" if AIA.config.debug
+      puts "[DEBUG RubyLLMAdapter] Backtrace: #{e.backtrace[0..5].join("\n")}" if AIA.config.debug
       e.message
     end
 
