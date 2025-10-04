@@ -1,6 +1,56 @@
 # Changelog
 ## [Unreleased]
 
+### [0.9.17] 2025-10-04
+
+#### New Features
+- **NEW FEATURE**: Enhanced local model support with comprehensive validation and error handling
+- **NEW FEATURE**: Added `lms/` prefix support for LM Studio models with automatic validation against loaded models
+- **NEW FEATURE**: Enhanced `//models` directive to auto-detect and display local providers (Ollama and LM Studio)
+- **NEW FEATURE**: Added model name prefix display in error messages for LM Studio (`lms/` prefix)
+
+#### Improvements
+- **ENHANCEMENT**: Improved LM Studio integration with model validation against `/v1/models` endpoint
+- **ENHANCEMENT**: Enhanced error messages showing exact model names with correct prefixes when validation fails
+- **ENHANCEMENT**: Added environment variable support for custom LM Studio API base (`LMS_API_BASE`)
+- **ENHANCEMENT**: Improved `//models` directive output formatting for local models with size and modified date for Ollama
+- **ENHANCEMENT**: Enhanced multi-model support to seamlessly mix local and cloud models
+
+#### Documentation
+- **DOCUMENTATION**: Added comprehensive local model documentation to README.md
+- **DOCUMENTATION**: Created new docs/guides/local-models.md guide covering Ollama and LM Studio setup, usage, and troubleshooting
+- **DOCUMENTATION**: Updated docs/guides/models.md with local provider sections including comparison table and workflow examples
+- **DOCUMENTATION**: Enhanced docs/faq.md with 5 new FAQ entries covering local model usage, differences, and error handling
+
+#### Technical Changes
+- Enhanced RubyLLMAdapter with LM Studio model validation (lib/aia/ruby_llm_adapter.rb)
+- Updated models directive to query local provider endpoints (lib/aia/directives/models.rb)
+- Added provider_fix extension for RubyLLM compatibility (lib/extensions/ruby_llm/provider_fix.rb)
+- Added comprehensive test coverage with 22 new tests for local providers
+- Updated dependencies: ruby_llm, webmock, crack, rexml
+- Bumped Ruby bundler version to 2.7.2
+
+#### Bug Fixes
+- **BUG FIX**: Fixed missing `lms/` prefix in LM Studio model listings
+- **BUG FIX**: Fixed model validation error messages to show usable model names with correct prefixes
+- **BUG FIX**: Fixed Ollama endpoint to use native API (removed incorrect `/v1` suffix)
+
+#### Usage Examples
+```bash
+# Use LM Studio with validation
+aia --model lms/qwen/qwen3-coder-30b my_prompt
+
+# Use Ollama
+aia --model ollama/llama3.2 --chat
+
+# Mix local and cloud models
+aia --model ollama/llama3.2,gpt-4o-mini,claude-3-sonnet my_prompt
+
+# List available local models
+aia --model ollama/llama3.2 --chat
+> //models
+```
+
 ### [0.9.16] 2025-09-26
 
 #### New Features
