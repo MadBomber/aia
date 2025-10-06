@@ -45,7 +45,21 @@ module AIA
     end
 
     def initialize_components
-      @context_manager = ContextManager.new(system_prompt: AIA.config.system_prompt)
+      # For multi-model: create separate context manager per model (ADR-002 revised)
+      # For single-model: maintain backward compatibility with single context manager
+      if AIA.config.model.is_a?(Array) && AIA.config.model.size > 1
+        @context_managers = {}
+        AIA.config.model.each do |model_name|
+          @context_managers[model_name] = ContextManager.new(
+            system_prompt: AIA.config.system_prompt
+          )
+        end
+        @context_manager = nil # Signal we're using per-model managers
+      else
+        @context_manager = ContextManager.new(system_prompt: AIA.config.system_prompt)
+        @context_managers = nil
+      end
+
       @ui_presenter = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
       @chat_processor = ChatProcessorService.new(@ui_presenter, @directive_processor)
@@ -368,11 +382,29 @@ module AIA
         @chat_prompt.text = follow_up_prompt
         processed_prompt = @chat_prompt.to_s
 
-        @context_manager.add_to_context(role: "user", content: processed_prompt)
-        conversation = @context_manager.get_context
+        # Handle per-model contexts (ADR-002 revised)
+        if @context_managers
+          # Multi-model: add user prompt to each model's context
+          @context_managers.each_value do |ctx_mgr|
+            ctx_mgr.add_to_context(role: "user", content: processed_prompt)
+          end
 
-        @ui_presenter.display_thinking_animation
-        response_data = @chat_processor.process_prompt(conversation)
+          # Get per-model conversations
+          conversations = {}
+          @context_managers.each do |model_name, ctx_mgr|
+            conversations[model_name] = ctx_mgr.get_context
+          end
+
+          @ui_presenter.display_thinking_animation
+          response_data = @chat_processor.process_prompt(conversations)
+        else
+          # Single-model: use original logic
+          @context_manager.add_to_context(role: "user", content: processed_prompt)
+          conversation = @context_manager.get_context
+
+          @ui_presenter.display_thinking_animation
+          response_data = @chat_processor.process_prompt(conversation)
+        end
 
         # Handle new response format with metrics
         if response_data.is_a?(Hash)
@@ -386,7 +418,7 @@ module AIA
         end
 
         @ui_presenter.display_ai_response(content)
-        
+
         # Display metrics if enabled and available (chat mode only)
         if AIA.config.show_metrics
           if multi_metrics
@@ -397,8 +429,22 @@ module AIA
             @ui_presenter.display_token_metrics(metrics)
           end
         end
-        
-        @context_manager.add_to_context(role: "assistant", content: content)
+
+        # Add responses to context (ADR-002 revised)
+        if @context_managers
+          # Multi-model: parse combined response and add each model's response to its own context
+          parsed_responses = parse_multi_model_response(content)
+          parsed_responses.each do |model_name, model_response|
+            @context_managers[model_name]&.add_to_context(
+              role: "assistant",
+              content: model_response
+            )
+          end
+        else
+          # Single-model: add response to single context
+          @context_manager.add_to_context(role: "assistant", content: content)
+        end
+
         @chat_processor.speak(content)
 
         @ui_presenter.display_separator
@@ -406,7 +452,10 @@ module AIA
     end
 
     def process_chat_directive(follow_up_prompt)
-      directive_output = @directive_processor.process(follow_up_prompt, @context_manager)
+      # For multi-model, use first context manager for directives (ADR-002 revised)
+      # TODO: Consider if directives should affect all contexts or just one
+      context_for_directive = @context_managers ? @context_managers.values.first : @context_manager
+      directive_output = @directive_processor.process(follow_up_prompt, context_for_directive)
 
       return handle_clear_directive if follow_up_prompt.strip.start_with?("//clear")
       return handle_checkpoint_directive(directive_output) if follow_up_prompt.strip.start_with?("//checkpoint")
@@ -417,13 +466,16 @@ module AIA
     end
 
     def handle_clear_directive
-      # The directive processor has called context_manager.clear_context
-      # but we need to also clear the LLM client's context
+      # Clear context manager(s) - ADR-002 revised
+      if @context_managers
+        # Multi-model: clear all context managers
+        @context_managers.each_value { |ctx_mgr| ctx_mgr.clear_context(keep_system_prompt: true) }
+      else
+        # Single-model: clear single context manager
+        @context_manager.clear_context(keep_system_prompt: true)
+      end
 
-      # First, clear the context manager's context
-      @context_manager.clear_context(keep_system_prompt: true)
-
-      # Second, try clearing the client's context
+      # Try clearing the client's context
       if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
         begin
           AIA.config.client.clear_context
@@ -446,10 +498,9 @@ module AIA
     end
 
     def handle_restore_directive(directive_output)
-      # If the restore was successful, we also need to refresh the client's context
+      # If the restore was successful, we also need to refresh the client's context - ADR-002 revised
       if directive_output.start_with?("Context restored")
         # Clear the client's context without reinitializing the entire adapter
-        # This avoids the risk of exiting if model initialization fails
         if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
           begin
             AIA.config.client.clear_context
@@ -459,17 +510,9 @@ module AIA
           end
         end
 
-        # Rebuild the conversation in the LLM client from the restored context
-        # This ensures the LLM's internal state matches what we restored
-        if AIA.config.client && @context_manager
-          begin
-            restored_context = @context_manager.get_context
-            # The client's context has been cleared, so we can safely continue
-            # The next interaction will use the restored context from context_manager
-          rescue => e
-            STDERR.puts "Warning: Error syncing restored context: #{e.message}"
-          end
-        end
+        # Note: For multi-model, only the first context manager was used for restore
+        # This is a limitation of the current directive system
+        # TODO: Consider supporting restore for all context managers
       end
 
       @ui_presenter.display_info(directive_output)
@@ -483,6 +526,39 @@ module AIA
     def handle_successful_directive(follow_up_prompt, directive_output)
       puts "\n#{directive_output}\n"
       "I executed this directive: #{follow_up_prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
+    end
+
+    # Parse multi-model response into per-model responses (ADR-002 revised)
+    # Input:  "from: lms/model\nHabari!\n\nfrom: ollama/model\nKaixo!"
+    # Output: {"lms/model" => "Habari!", "ollama/model" => "Kaixo!"}
+    def parse_multi_model_response(combined_response)
+      return {} if combined_response.nil? || combined_response.empty?
+
+      responses = {}
+      current_model = nil
+      current_content = []
+
+      combined_response.each_line do |line|
+        if line =~ /^from:\s+(.+)$/
+          # Save previous model's response
+          if current_model
+            responses[current_model] = current_content.join.strip
+          end
+
+          # Start new model
+          current_model = $1.strip
+          current_content = []
+        elsif current_model
+          current_content << line
+        end
+      end
+
+      # Save last model's response
+      if current_model
+        responses[current_model] = current_content.join.strip
+      end
+
+      responses
     end
 
     def cleanup_chat_prompt

@@ -167,15 +167,18 @@ class LocalProvidersTest < Minitest::Test
   def test_ollama_model_initialization
     @mock_config.model = ['ollama/llama2']
 
-    # Mock successful Ollama chat creation
+    # Mock successful Ollama chat creation via Context (ADR-002)
     mock_chat = mock('chat')
     mock_model = mock('model')
     mock_model.stubs(:supports_functions?).returns(false)
     mock_chat.stubs(:model).returns(mock_model)
 
-    RubyLLM.expects(:chat)
+    mock_context = mock('context')
+    mock_context.expects(:chat)
       .with(model: 'llama2', provider: 'ollama', assume_model_exists: true)
       .returns(mock_chat)
+
+    RubyLLM::Context.expects(:new).returns(mock_context)
 
     adapter = AIA::RubyLLMAdapter.new
     assert_instance_of AIA::RubyLLMAdapter, adapter
@@ -190,9 +193,12 @@ class LocalProvidersTest < Minitest::Test
     mock_model.stubs(:supports_functions?).returns(false)
     mock_chat.stubs(:model).returns(mock_model)
 
-    RubyLLM.expects(:chat)
+    mock_context = mock('context')
+    mock_context.expects(:chat)
       .with(model: 'llama2', provider: 'ollama', assume_model_exists: true)
       .returns(mock_chat)
+
+    RubyLLM::Context.expects(:new).returns(mock_context)
 
     # The custom API base is set during configure_rubyllm, not during model setup
     # Just verify it was set in the environment
@@ -234,22 +240,30 @@ class LocalProvidersTest < Minitest::Test
   def test_multiple_providers_initialization
     @mock_config.model = ['gpt-4o-mini', 'ollama/llama2']
 
-    # Mock OpenAI model
+    # Mock OpenAI model - uses context.chat() (ADR-002)
     mock_chat_openai = mock('chat_openai')
     mock_model_openai = mock('model_openai')
     mock_model_openai.stubs(:supports_functions?).returns(false)
     mock_chat_openai.stubs(:model).returns(mock_model_openai)
 
-    # Mock Ollama model
+    mock_context_openai = mock('context_openai')
+    mock_context_openai.expects(:chat)
+      .with(model: 'gpt-4o-mini')
+      .returns(mock_chat_openai)
+
+    # Mock Ollama model - uses context.chat() (ADR-002)
     mock_chat_ollama = mock('chat_ollama')
     mock_model_ollama = mock('model_ollama')
     mock_model_ollama.stubs(:supports_functions?).returns(false)
     mock_chat_ollama.stubs(:model).returns(mock_model_ollama)
 
-    RubyLLM.expects(:chat).with(model: 'gpt-4o-mini').returns(mock_chat_openai)
-    RubyLLM.expects(:chat)
+    mock_context_ollama = mock('context_ollama')
+    mock_context_ollama.expects(:chat)
       .with(model: 'llama2', provider: 'ollama', assume_model_exists: true)
       .returns(mock_chat_ollama)
+
+    # Both models get their own Context instance
+    RubyLLM::Context.expects(:new).twice.returns(mock_context_openai, mock_context_ollama)
 
     adapter = AIA::RubyLLMAdapter.new
     assert_instance_of AIA::RubyLLMAdapter, adapter
@@ -294,10 +308,13 @@ class LocalProvidersTest < Minitest::Test
     mock_model.stubs(:supports_functions?).returns(false)
     mock_chat.stubs(:model).returns(mock_model)
 
-    # Verify that 'mistral:7b' (without prefix) is passed to the chat
-    RubyLLM.expects(:chat)
+    mock_context = mock('context')
+    # Verify that 'mistral:7b' (without prefix) is passed to the chat (ADR-002)
+    mock_context.expects(:chat)
       .with(model: 'mistral:7b', provider: 'ollama', assume_model_exists: true)
       .returns(mock_chat)
+
+    RubyLLM::Context.expects(:new).returns(mock_context)
 
     adapter = AIA::RubyLLMAdapter.new
     assert_instance_of AIA::RubyLLMAdapter, adapter

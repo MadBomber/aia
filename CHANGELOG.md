@@ -1,6 +1,88 @@
 # Changelog
 ## [Unreleased]
 
+### [0.9.19] 2025-10-06
+
+#### Bug Fixes
+- **CRITICAL BUG FIX**: Fixed multi-model cross-talk issue (#118) where models could see each other's conversation history
+- **BUG FIX**: Implemented complete two-level context isolation to prevent models from contaminating each other's responses
+- **BUG FIX**: Fixed token count inflation caused by models processing combined conversation histories
+
+#### Technical Changes
+- **Level 1 (Library)**: Implemented per-model RubyLLM::Context isolation - each model now has its own Context instance (lib/aia/ruby_llm_adapter.rb)
+- **Level 2 (Application)**: Implemented per-model ContextManager isolation - each model maintains its own conversation history (lib/aia/session.rb)
+- Added `parse_multi_model_response` method to extract individual model responses from combined output (lib/aia/session.rb:502-533)
+- Enhanced `multi_model_chat` to accept Hash of per-model conversations (lib/aia/ruby_llm_adapter.rb:305-334)
+- Updated ChatProcessorService to handle both Array (single model) and Hash (multi-model with per-model contexts) inputs (lib/aia/chat_processor_service.rb:68-83)
+- Refactored RubyLLMAdapter:
+  - Added `@contexts` hash to store per-model Context instances
+  - Added `create_isolated_context_for_model` helper method (lines 84-99)
+  - Added `extract_model_and_provider` helper method (lines 102-112)
+  - Simplified `clear_context` from 92 lines to 40 lines (56% reduction)
+- Updated directive handlers to work with per-model context managers
+- Added comprehensive test coverage with 6 new tests for multi-model isolation
+- Updated LocalProvidersTest to reflect Context-based architecture
+
+#### Architecture
+- **ADR-002-revised**: Complete Multi-Model Isolation (see `.architecture/decisions/adrs/ADR-002-revised-multi-model-isolation.md`)
+- Eliminated global state dependencies in multi-model chat sessions
+- Maintained backward compatibility with single-model mode (verified with tests)
+
+#### Test Coverage
+- Added `test/aia/multi_model_isolation_test.rb` with comprehensive isolation tests
+- Tests cover: response parsing, per-model context managers, single-model compatibility, RubyLLM::Context isolation
+- Full test suite: 282 runs, 837 assertions, 0 failures, 0 errors, 13 skips ✅
+
+#### Expected Behavior After Fix
+Previously, when running multi-model chat with repeated prompts:
+- ❌ Models would see BOTH their own AND other models' responses
+- ❌ Models would report inflated counts (e.g., "5 times", "6 times" instead of "3 times")
+- ❌ Token counts would be inflated due to contaminated context
+
+Now with the fix:
+- ✅ Each model sees ONLY its own conversation history
+- ✅ Each model correctly reports its own interaction count
+- ✅ Token counts accurately reflect per-model conversation size
+
+#### Usage Examples
+```bash
+# Multi-model chat now properly isolates each model's context
+bin/aia --chat --model lms/openai/gpt-oss-20b,ollama/gpt-oss:20b --metrics
+
+> pick a random language and say hello
+# LMS: "Habari!" (Swahili)
+# Ollama: "Kaixo!" (Basque)
+
+> do it again
+# LMS: "Habari!" (only sees its own previous response)
+# Ollama: "Kaixo!" (only sees its own previous response)
+
+> do it again
+> how many times did you say hello to me?
+
+# Both models correctly respond: "3 times"
+# (Previously: LMS would say "5 times", Ollama "6 times" due to cross-talk)
+```
+
+### [0.9.18] 2025-10-05
+
+#### Bug Fixes
+- **BUG FIX**: Fixed RubyLLM provider error parsing to handle both OpenAI and LM Studio error formats
+- **BUG FIX**: Fixed "String does not have #dig method" errors when parsing error responses from local providers
+- **BUG FIX**: Enhanced error parsing to gracefully handle malformed JSON responses
+
+#### Improvements
+- **ENHANCEMENT**: Removed debug output statements from RubyLLMAdapter for cleaner production logs
+- **ENHANCEMENT**: Improved error handling with debug logging for JSON parsing failures
+
+#### Documentation
+- **DOCUMENTATION**: Added Local Models entry to MkDocs navigation for better documentation accessibility
+
+#### Technical Changes
+- Enhanced provider_fix extension to support multiple error response formats (lib/extensions/ruby_llm/provider_fix.rb)
+- Cleaned up debug puts statements from RubyLLMAdapter and provider_fix
+- Added robust JSON parsing with fallback error handling
+
 ### [0.9.17] 2025-10-04
 
 #### New Features

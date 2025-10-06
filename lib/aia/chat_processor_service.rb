@@ -63,13 +63,22 @@ module AIA
     end
 
 
-    # conversation is an Array of Hashes.  Each entry is an interchange
-    # with the LLM.
-    def send_to_client(conversation)
+    # conversation is an Array of Hashes (single model) or Hash of Arrays (multi-model per-model contexts)
+    # Each entry is an interchange with the LLM.
+    def send_to_client(conversation_or_conversations)
       maybe_change_model
 
-      puts "[DEBUG ChatProcessor] Sending conversation to client: #{conversation.inspect[0..500]}..." if AIA.config.debug
-      result = AIA.client.chat(conversation)
+      # Handle per-model conversations (Hash) or single conversation (Array) - ADR-002 revised
+      if conversation_or_conversations.is_a?(Hash)
+        # Multi-model with per-model contexts: pass Hash directly to adapter
+        puts "[DEBUG ChatProcessor] Sending per-model conversations to client" if AIA.config.debug
+        result = AIA.client.chat(conversation_or_conversations)
+      else
+        # Single conversation for single model
+        puts "[DEBUG ChatProcessor] Sending conversation to client: #{conversation_or_conversations.inspect[0..500]}..." if AIA.config.debug
+        result = AIA.client.chat(conversation_or_conversations)
+      end
+
       puts "[DEBUG ChatProcessor] Client returned: #{result.class} - #{result.inspect[0..500]}..." if AIA.config.debug
       result
     end
