@@ -243,10 +243,6 @@ module AIA
 
 
     def chat(prompt)
-      puts "[DEBUG RubyLLMAdapter.chat] Received prompt class: #{prompt.class}" if AIA.config.debug
-      puts "[DEBUG RubyLLMAdapter.chat] Prompt inspect: #{prompt.inspect[0..500]}..." if AIA.config.debug
-      puts "[DEBUG RubyLLMAdapter.chat] Models: #{@models.inspect}" if AIA.config.debug
-
       result = if @models.size == 1
         # Single model - use the original behavior
         single_model_chat(prompt, @models.first)
@@ -255,42 +251,29 @@ module AIA
         multi_model_chat(prompt)
       end
 
-      puts "[DEBUG RubyLLMAdapter.chat] Returning result class: #{result.class}" if AIA.config.debug
-      puts "[DEBUG RubyLLMAdapter.chat] Result inspect: #{result.inspect[0..500]}..." if AIA.config.debug
       result
     end
 
     def single_model_chat(prompt, model_name)
-      puts "[DEBUG single_model_chat] Model name: #{model_name}" if AIA.config.debug
       chat_instance = @chats[model_name]
-      puts "[DEBUG single_model_chat] Chat instance: #{chat_instance.class}" if AIA.config.debug
-
       modes = chat_instance.model.modalities
-      puts "[DEBUG single_model_chat] Modalities: #{modes.inspect}" if AIA.config.debug
 
       # TODO: Need to consider how to handle multi-mode models
       result = if modes.text_to_text?
-        puts "[DEBUG single_model_chat] Using text_to_text_single" if AIA.config.debug
         text_to_text_single(prompt, model_name)
       elsif modes.image_to_text?
-        puts "[DEBUG single_model_chat] Using image_to_text_single" if AIA.config.debug
         image_to_text_single(prompt, model_name)
       elsif modes.text_to_image?
-        puts "[DEBUG single_model_chat] Using text_to_image_single" if AIA.config.debug
         text_to_image_single(prompt, model_name)
       elsif modes.text_to_audio?
-        puts "[DEBUG single_model_chat] Using text_to_audio_single" if AIA.config.debug
         text_to_audio_single(prompt, model_name)
       elsif modes.audio_to_text?
-        puts "[DEBUG single_model_chat] Using audio_to_text_single" if AIA.config.debug
         audio_to_text_single(prompt, model_name)
       else
-        puts "[DEBUG single_model_chat] No matching modality!" if AIA.config.debug
         # TODO: what else can be done?
         "Error: No matching modality for model #{model_name}"
       end
 
-      puts "[DEBUG single_model_chat] Result class: #{result.class}" if AIA.config.debug
       result
     end
 
@@ -672,29 +655,15 @@ module AIA
       chat_instance = @chats[model_name]
       text_prompt = extract_text_prompt(prompt)
 
-      puts "[DEBUG RubyLLMAdapter] Sending to model #{model_name}: #{text_prompt[0..100]}..." if AIA.config.debug
-
       response = if AIA.config.context_files.empty?
                    chat_instance.ask(text_prompt)
                  else
                    chat_instance.ask(text_prompt, with: AIA.config.context_files)
                  end
 
-      # Debug output to understand the response structure
-      puts "[DEBUG RubyLLMAdapter] Response class: #{response.class}" if AIA.config.debug
-      puts "[DEBUG RubyLLMAdapter] Response inspect: #{response.inspect[0..500]}..." if AIA.config.debug
-
-      if response.respond_to?(:content)
-        puts "[DEBUG RubyLLMAdapter] Response content: #{response.content[0..200]}..." if AIA.config.debug
-      else
-        puts "[DEBUG RubyLLMAdapter] Response (no content method): #{response.to_s[0..200]}..." if AIA.config.debug
-      end
-
       # Return the full response object to preserve token information
       response
     rescue StandardError => e
-      puts "[DEBUG RubyLLMAdapter] Error in text_to_text_single: #{e.class} - #{e.message}" if AIA.config.debug
-      puts "[DEBUG RubyLLMAdapter] Backtrace: #{e.backtrace[0..5].join("\n")}" if AIA.config.debug
       e.message
     end
 
