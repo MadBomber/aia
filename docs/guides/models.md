@@ -162,10 +162,205 @@ Model Details:
 
 **Multi-Model Features:**
 - **Primary Model**: The first model in the list serves as the consensus orchestrator
-- **Concurrent Processing**: All models run simultaneously for better performance  
+- **Concurrent Processing**: All models run simultaneously for better performance
 - **Flexible Output**: Choose between individual responses or synthesized consensus
 - **Error Handling**: Invalid models are reported but don't prevent valid models from working
 - **Batch Mode Support**: Multi-model responses are properly formatted in output files
+
+### Per-Model Roles
+
+Assign specific roles to each model in multi-model mode to get diverse perspectives on your prompts. Each model receives a prepended role prompt that shapes its perspective.
+
+#### Inline Role Syntax
+
+Use the `MODEL=ROLE` syntax to assign roles directly on the command line:
+
+```bash
+# Single model with role
+aia --model gpt-4o=architect design_review.md
+
+# Multiple models with different roles
+aia --model gpt-4o=architect,claude=security,gemini=performance design_review.md
+
+# Mixed: some models with roles, some without
+aia --model gpt-4o=expert,claude analyze.md
+```
+
+#### Multiple Perspectives
+
+Use the same model multiple times with different roles for diverse viewpoints:
+
+```bash
+# Three instances of same model with different roles
+aia --model gpt-4o=optimist,gpt-4o=pessimist,gpt-4o=realist project_plan.md
+
+# AI provides three distinct perspectives on the same input
+```
+
+**Output Format with Roles:**
+```
+from: gpt-4o (optimist)
+I see great potential in this approach! The architecture is solid...
+
+from: gpt-4o #2 (pessimist)
+We need to consider several risks here. The design has some concerning...
+
+from: gpt-4o #3 (realist)
+Let's look at this pragmatically. The proposal has both strengths and...
+```
+
+**Note**: When using duplicate models, AIA automatically numbers them (e.g., `gpt-4o`, `gpt-4o #2`, `gpt-4o #3`) and maintains separate conversation contexts for each instance.
+
+#### Role Discovery
+
+List all available roles in your prompts directory:
+
+```bash
+# List all roles
+aia --list-roles
+
+# Output shows role IDs and descriptions
+Available roles in /Users/you/.prompts/roles:
+  architect    - Software architecture expert
+  security     - Security analysis specialist
+  performance  - Performance optimization expert
+  optimist     - Positive perspective analyzer
+  pessimist    - Critical risk analyzer
+  realist      - Balanced pragmatic analyzer
+```
+
+#### Role Files
+
+Roles are stored as text files in your prompts directory:
+
+```bash
+# Default location: ~/.prompts/roles/
+~/.prompts/
+  roles/
+    architect.txt
+    security.txt
+    performance.txt
+    optimist.txt
+    pessimist.txt
+    realist.txt
+
+# Nested role organization
+~/.prompts/
+  roles/
+    software/
+      architect.txt
+      developer.txt
+    analysis/
+      optimist.txt
+      pessimist.txt
+      realist.txt
+```
+
+**Using Nested Roles:**
+```bash
+# Specify full path from roles directory
+aia --model gpt-4o=software/architect,claude=analysis/pessimist design.md
+```
+
+#### Configuration File Format
+
+Define model roles in your configuration file using array format:
+
+```yaml
+# ~/.aia/config.yml
+model:
+  - model: gpt-4o
+    role: architect
+  - model: claude-3-sonnet
+    role: security
+  - model: gemini-pro
+    role: performance
+
+# Duplicate models with different roles
+model:
+  - model: gpt-4o
+    role: optimist
+  - model: gpt-4o
+    role: pessimist
+  - model: gpt-4o
+    role: realist
+```
+
+**Note**: Models without roles work normally - simply omit the `role` key.
+
+#### Environment Variable Usage
+
+Set model roles via environment variables using the same inline syntax:
+
+```bash
+# Single model with role
+export AIA_MODEL="gpt-4o=architect"
+
+# Multiple models with roles
+export AIA_MODEL="gpt-4o=architect,claude=security,gemini=performance"
+
+# Duplicate models
+export AIA_MODEL="gpt-4o=optimist,gpt-4o=pessimist,gpt-4o=realist"
+
+# Then run AIA normally
+aia design_review.md
+```
+
+#### Role Configuration Precedence
+
+When roles are specified in multiple places, the precedence order is:
+
+1. **CLI inline syntax**: `--model gpt-4o=architect` (highest priority)
+2. **CLI role flag**: `--role architect` (applies to all models)
+3. **Environment variable**: `AIA_MODEL="gpt-4o=architect"`
+4. **Configuration file**: `model: [{model: gpt-4o, role: architect}]`
+
+**Example of precedence:**
+```bash
+# Config file specifies: model: [{model: gpt-4o, role: architect}]
+# Environment has: AIA_MODEL="claude=security"
+# Command line uses:
+aia --model gemini=performance my_prompt
+
+# Result: Uses gemini with performance role (CLI wins)
+```
+
+#### Role Validation
+
+AIA validates role files exist at parse time and provides helpful error messages:
+
+```bash
+# If role file doesn't exist
+$ aia --model gpt-4o=nonexistent my_prompt
+
+ERROR: Role file not found: ~/.prompts/roles/nonexistent.txt
+
+Available roles:
+  - architect
+  - security
+  - performance
+  - optimist
+  - pessimist
+  - realist
+```
+
+#### Creating Custom Roles
+
+Create new role files in your roles directory:
+
+```bash
+# Create a new role
+cat > ~/.prompts/roles/debugger.txt << 'EOF'
+You are an expert debugging assistant. When analyzing code:
+- Focus on identifying potential bugs and edge cases
+- Suggest specific debugging strategies
+- Explain the root cause of issues clearly
+- Provide actionable fix recommendations
+EOF
+
+# Use the new role
+aia --model gpt-4o=debugger analyze_bug.py
+```
 
 ### Model Comparison in Prompts
 ```markdown

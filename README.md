@@ -1,7 +1,8 @@
 <div align="center">
   <h1>AI Assistant (AIA)</h1>
   <img src="docs/assets/images/aia.png" alt="Robots waiter ready to take your order."><br />
-  **The Prompt is the Code**
+  **The Prompt is the Code**<br />
+  <p>Check out the new <a href="http://madbomber.github.io/aia/guides/models/?h=inline+role+syntax#inline-role-syntax">Inline Role Syntax</a> when working with multiple concurrent models.</p>
 </div>
 
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
@@ -202,10 +203,11 @@ aia --fuzzy
 | Option | Description | Example |
 |--------|-------------|---------|
 | `--chat` | Start interactive chat session | `aia --chat` |
-| `--model MODEL` | Specify AI model(s) to use | `aia --model gpt-4o-mini,gpt-3.5-turbo` |
+| `--model MODEL` | Specify AI model(s) to use. Supports `MODEL[=ROLE]` syntax | `aia --model gpt-4o-mini,gpt-3.5-turbo` or `aia --model gpt-4o=architect,claude=security` |
 | `--consensus` | Enable consensus mode for multi-model | `aia --consensus` |
 | `--no-consensus` | Force individual responses | `aia --no-consensus` |
-| `--role ROLE` | Use a role/system prompt | `aia --role expert` |
+| `--role ROLE` | Use a role/system prompt (default for all models) | `aia --role expert` |
+| `--list-roles` | List available role files | `aia --list-roles` |
 | `--out_file FILE` | Specify output file | `aia --out_file results.md` |
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
 | `--help` | Show complete help | `aia --help` |
@@ -757,6 +759,129 @@ You are an experienced code reviewer. Focus on:
 
 Provide specific, actionable feedback.
 EOF
+```
+
+**Per-Model Roles** (Multi-Model Role Assignment):
+
+Assign different roles to different models using inline `model=role` syntax:
+
+```bash
+# Different perspectives on the same design
+aia --model gpt-4o=architect,claude=security,gemini=performance design_doc.md
+
+# Output shows each model with its role:
+# from: gpt-4o (architect)
+# The proposed microservices architecture provides good separation...
+#
+# from: claude (security)
+# I'm concerned about the authentication flow between services...
+#
+# from: gemini (performance)
+# The database access pattern could become a bottleneck...
+```
+
+**Multiple Perspectives** (Same Model, Different Roles):
+
+```bash
+# Get optimistic, pessimistic, and realistic views
+aia --model gpt-4o=optimist,gpt-4o=pessimist,gpt-4o=realist business_plan.md
+
+# Output shows instance numbers:
+# from: gpt-4o #1 (optimist)
+# This market opportunity is massive...
+#
+# from: gpt-4o #2 (pessimist)
+# The competition is fierce and our runway is limited...
+#
+# from: gpt-4o #3 (realist)
+# Given our current team size, we should focus on MVP first...
+```
+
+**Mixed Role Assignment:**
+
+```bash
+# Some models with roles, some with default
+aia --model gpt-4o=architect,claude,gemini=performance --role security design.md
+# gpt-4o gets architect (inline)
+# claude gets security (default from --role)
+# gemini gets performance (inline)
+```
+
+**Discovering Available Roles:**
+
+```bash
+# List all available role files
+aia --list-roles
+
+# Output:
+# Available roles in ~/.prompts/roles:
+#   - architect
+#   - performance
+#   - security
+#   - code_reviewer
+#   - specialized/senior_architect  # nested paths supported
+```
+
+**Role Organization:**
+
+Roles can be organized in subdirectories:
+
+```bash
+# Create nested role structure
+mkdir -p ~/.prompts/roles/specialized
+echo "You are a senior software architect..." > ~/.prompts/roles/specialized/senior_architect.txt
+
+# Use nested roles
+aia --model gpt-4o=specialized/senior_architect design.md
+```
+
+**Using Config Files for Model Roles** (v2):
+
+Define model-role assignments in your config file (`~/.aia/config.yml`) for reusable setups:
+
+```yaml
+# Array of hashes format (mirrors internal structure)
+model:
+  - model: gpt-4o
+    role: architect
+  - model: claude
+    role: security
+  - model: gemini
+    role: performance
+
+# Also supports models without roles
+model:
+  - model: gpt-4o
+    role: architect
+  - model: claude      # No role assigned
+```
+
+Then simply run:
+
+```bash
+aia design_doc.md  # Uses model configuration from config file
+```
+
+**Using Environment Variables** (v2):
+
+Set default model-role assignments via environment variable:
+
+```bash
+# Set in your shell profile (.bashrc, .zshrc, etc.)
+export AIA_MODEL="gpt-4o=architect,claude=security,gemini=performance"
+
+# Or for a single command
+AIA_MODEL="gpt-4o=architect,claude=security" aia design.md
+```
+
+**Configuration Precedence:**
+
+When model roles are specified in multiple places, the precedence is:
+
+1. **Command-line inline** (highest): `--model gpt-4o=architect`
+2. **Command-line flag**: `--model gpt-4o --role architect`
+3. **Environment variable**: `AIA_MODEL="gpt-4o=architect"`
+4. **Config file** (lowest): `model` array in `~/.aia/config.yml`
 ```
 
 ### RubyLLM::Tool Support

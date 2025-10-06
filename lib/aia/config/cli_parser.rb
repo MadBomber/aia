@@ -81,12 +81,17 @@ module AIA
         end
 
         def setup_model_options(opts, config)
-          opts.on("-m MODEL", "--model MODEL", "Name of the LLM model(s) to use (comma-separated for multiple models)") do |model|
-            config.model = model.split(',').map(&:strip)
+          opts.on("-m MODEL", "--model MODEL", "Name of the LLM model(s) to use. Format: MODEL[=ROLE][,MODEL[=ROLE]]...") do |model|
+            config.model = parse_models_with_roles(model)
           end
 
           opts.on("--[no-]consensus", "Enable/disable consensus mode for multi-model responses (default: show individual responses)") do |consensus|
             config.consensus = consensus
+          end
+
+          opts.on("--list-roles", "List available role files and exit") do
+            list_available_roles
+            exit 0
           end
 
           opts.on("--sm", "--speech_model MODEL", "Speech model to use") do |model|
@@ -294,6 +299,115 @@ module AIA
 
             exit
           end
+        end
+
+        def parse_models_with_roles(model_string)
+          models = []
+          model_counts = Hash.new(0)
+
+          model_string.split(',').each do |spec|
+            spec.strip!
+
+            # Validate syntax
+            if spec =~ /^=|=$/
+              raise ArgumentError, "Invalid model syntax: '#{spec}'. Expected format: MODEL[=ROLE]"
+            end
+
+            if spec.include?('=')
+              # Explicit role: "model=role" or "provider/model=role"
+              model_name, role_name = spec.split('=', 2)
+              model_name.strip!
+              role_name.strip!
+
+              # Validate role file exists (fail fast)
+              validate_role_exists(role_name)
+
+              # Track instance count for duplicates
+              model_counts[model_name] += 1
+              instance = model_counts[model_name]
+
+              models << {
+                model: model_name,
+                role: role_name,
+                instance: instance,
+                internal_id: instance > 1 ? "#{model_name}##{instance}" : model_name
+              }
+            else
+              # No explicit role, will use default from -r/--role
+              model_counts[spec] += 1
+              instance = model_counts[spec]
+
+              models << {
+                model: spec,
+                role: nil,
+                instance: instance,
+                internal_id: instance > 1 ? "#{spec}##{instance}" : spec
+              }
+            end
+          end
+
+          models
+        end
+
+        def validate_role_exists(role_id)
+          # Get prompts_dir from defaults or environment
+          prompts_dir = ENV.fetch('AIA_PROMPTS_DIR', File.join(ENV['HOME'], '.prompts'))
+          roles_prefix = ENV.fetch('AIA_ROLES_PREFIX', 'roles')
+
+          # Build role file path
+          unless role_id.start_with?(roles_prefix)
+            role_id = "#{roles_prefix}/#{role_id}"
+          end
+
+          role_file_path = File.join(prompts_dir, "#{role_id}.txt")
+
+          unless File.exist?(role_file_path)
+            available_roles = list_available_role_names(prompts_dir, roles_prefix)
+
+            error_msg = "Role file not found: #{role_file_path}\n\n"
+
+            if available_roles.empty?
+              error_msg += "No roles directory found at #{File.join(prompts_dir, roles_prefix)}\n"
+              error_msg += "Create the directory and add role files to use this feature."
+            else
+              error_msg += "Available roles:\n"
+              error_msg += available_roles.map { |r| "  - #{r}" }.join("\n")
+              error_msg += "\n\nCreate the role file or use an existing role."
+            end
+
+            raise ArgumentError, error_msg
+          end
+        end
+
+        def list_available_roles
+          prompts_dir = ENV.fetch('AIA_PROMPTS_DIR', File.join(ENV['HOME'], '.prompts'))
+          roles_prefix = ENV.fetch('AIA_ROLES_PREFIX', 'roles')
+          roles_dir = File.join(prompts_dir, roles_prefix)
+
+          if Dir.exist?(roles_dir)
+            roles = list_available_role_names(prompts_dir, roles_prefix)
+
+            if roles.empty?
+              puts "No role files found in #{roles_dir}"
+              puts "Create .txt files in this directory to define roles."
+            else
+              puts "Available roles in #{roles_dir}:"
+              roles.each { |role| puts "  - #{role}" }
+            end
+          else
+            puts "No roles directory found at #{roles_dir}"
+            puts "Create this directory and add role files to use roles."
+          end
+        end
+
+        def list_available_role_names(prompts_dir, roles_prefix)
+          roles_dir = File.join(prompts_dir, roles_prefix)
+          return [] unless Dir.exist?(roles_dir)
+
+          # Find all .txt files recursively, preserving paths
+          Dir.glob("**/*.txt", base: roles_dir)
+            .map { |f| f.chomp('.txt') }
+            .sort
         end
 
         def list_available_models(query)

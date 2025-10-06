@@ -5,6 +5,7 @@
 # - Per-model ContextManager isolation (application level)
 
 require_relative '../test_helper'
+require_relative '../../lib/aia'
 
 class MultiModelIsolationTest < Minitest::Test
   def setup

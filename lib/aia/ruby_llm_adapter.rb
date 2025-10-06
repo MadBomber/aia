@@ -5,10 +5,11 @@ require_relative '../extensions/ruby_llm/provider_fix'
 
 module AIA
   class RubyLLMAdapter
-    attr_reader :tools
+    attr_reader :tools, :model_specs
 
     def initialize
-      @models = extract_models_config
+      @model_specs = extract_models_config  # Full specs with role info
+      @models = extract_model_names(@model_specs)  # Just model names for backward compat
       @chats = {}
       @contexts = {} # Store isolated contexts for each model
 
@@ -115,9 +116,13 @@ module AIA
     def setup_chats_with_tools
       valid_chats = {}
       valid_contexts = {}
+      valid_specs = []
       failed_models = []
 
-      @models.each do |model_name|
+      @model_specs.each do |spec|
+        model_name = spec[:model]          # Actual model name (e.g., "gpt-4o")
+        internal_id = spec[:internal_id]   # Key for storage (e.g., "gpt-4o#1", "gpt-4o#2")
+
         begin
           # Create isolated context for this model to prevent cross-talk (ADR-002)
           context = create_isolated_context_for_model(model_name)
@@ -138,10 +143,11 @@ module AIA
                    context.chat(model: actual_model)
                  end
 
-          valid_chats[model_name] = chat
-          valid_contexts[model_name] = context
+          valid_chats[internal_id] = chat
+          valid_contexts[internal_id] = context
+          valid_specs << spec
         rescue StandardError => e
-          failed_models << "#{model_name}: #{e.message}"
+          failed_models << "#{internal_id}: #{e.message}"
         end
       end
 
@@ -160,10 +166,11 @@ module AIA
 
       @chats = valid_chats
       @contexts = valid_contexts
+      @model_specs = valid_specs
       @models = valid_chats.keys
 
-      # Update the config to reflect only the valid models
-      AIA.config.model = @models
+      # Update the config to reflect only the valid models (keep as specs)
+      AIA.config.model = @model_specs
 
       # Report successful models
       if failed_models.any?
@@ -279,27 +286,69 @@ module AIA
       result
     end
 
-    def single_model_chat(prompt, model_name)
-      chat_instance = @chats[model_name]
+    def single_model_chat(prompt, internal_id)
+      chat_instance = @chats[internal_id]
       modes = chat_instance.model.modalities
 
       # TODO: Need to consider how to handle multi-mode models
       result = if modes.text_to_text?
-        text_to_text_single(prompt, model_name)
+        text_to_text_single(prompt, internal_id)
       elsif modes.image_to_text?
-        image_to_text_single(prompt, model_name)
+        image_to_text_single(prompt, internal_id)
       elsif modes.text_to_image?
-        text_to_image_single(prompt, model_name)
+        text_to_image_single(prompt, internal_id)
       elsif modes.text_to_audio?
-        text_to_audio_single(prompt, model_name)
+        text_to_audio_single(prompt, internal_id)
       elsif modes.audio_to_text?
-        audio_to_text_single(prompt, model_name)
+        audio_to_text_single(prompt, internal_id)
       else
         # TODO: what else can be done?
-        "Error: No matching modality for model #{model_name}"
+        "Error: No matching modality for model #{internal_id}"
       end
 
       result
+    end
+
+    # Prepend role content to prompt for a specific model (ADR-005)
+    def prepend_model_role(prompt, internal_id)
+      # Get model spec to find role
+      spec = get_model_spec(internal_id)
+      return prompt unless spec && spec[:role]
+
+      # Get role content using PromptHandler
+      # Need to create PromptHandler instance if not already available
+      prompt_handler = AIA::PromptHandler.new
+      role_content = prompt_handler.load_role_for_model(spec, AIA.config.role)
+
+      return prompt unless role_content
+
+      # Prepend role to prompt based on prompt type
+      if prompt.is_a?(String)
+        # Simple string prompt
+        "#{role_content}\n\n#{prompt}"
+      elsif prompt.is_a?(Array)
+        # Conversation array - prepend to first user message
+        prepend_role_to_conversation(prompt, role_content)
+      else
+        prompt
+      end
+    end
+
+    def prepend_role_to_conversation(conversation, role_content)
+      # Find the first user message and prepend role
+      modified = conversation.dup
+      first_user_index = modified.find_index { |msg| msg[:role] == "user" || msg["role"] == "user" }
+
+      if first_user_index
+        msg = modified[first_user_index].dup
+        role_key = msg.key?(:role) ? :role : "role"
+        content_key = msg.key?(:content) ? :content : "content"
+
+        msg[content_key] = "#{role_content}\n\n#{msg[content_key]}"
+        modified[first_user_index] = msg
+      end
+
+      modified
     end
 
     def multi_model_chat(prompt_or_contexts)
@@ -310,20 +359,23 @@ module AIA
                            prompt_or_contexts.keys.all? { |k| @models.include?(k) }
 
       Async do |task|
-        @models.each do |model_name|
+        @models.each do |internal_id|
           task.async do
             begin
               # Use model-specific context if available, otherwise shared prompt
               prompt = if per_model_contexts
-                         prompt_or_contexts[model_name]
+                         prompt_or_contexts[internal_id]
                        else
                          prompt_or_contexts
                        end
 
-              result = single_model_chat(prompt, model_name)
-              results[model_name] = result
+              # Add per-model role if specified (ADR-005)
+              prompt = prepend_model_role(prompt, internal_id)
+
+              result = single_model_chat(prompt, internal_id)
+              results[internal_id] = result
             rescue StandardError => e
-              results[model_name] = "Error with #{model_name}: #{e.message}"
+              results[internal_id] = "Error with #{internal_id}: #{e.message}"
             end
           end
         end
@@ -355,14 +407,17 @@ module AIA
       primary_chat = @chats[primary_model]
 
       # Build the consensus prompt with all model responses
+      # Note: This prompt does NOT include the model's role (ADR-005)
+      # The primary model synthesizes neutrally without role bias
       consensus_prompt = build_consensus_prompt(results)
 
       begin
         # Have the primary model generate the consensus
+        # The consensus prompt is already role-neutral
         consensus_result = primary_chat.ask(consensus_prompt).content
 
-        # Format the consensus response
-        "from: #{primary_model} (consensus)\n#{consensus_result}"
+        # Format the consensus response - no role label for consensus
+        "from: #{primary_model}\n#{consensus_result}"
       rescue StandardError => e
         # If consensus fails, fall back to individual responses
         "Error generating consensus: #{e.message}\n\n" + format_individual_responses(results)
@@ -406,10 +461,14 @@ module AIA
         # Return structured data that preserves metrics for multi-model
         format_multi_model_with_metrics(results)
       else
-        # Original string formatting for non-metrics mode
+        # Original string formatting for non-metrics mode with role labels (ADR-005)
         output = []
-        results.each do |model_name, result|
-          output << "from: #{model_name}"
+        results.each do |internal_id, result|
+          # Get model spec to include role in output
+          spec = get_model_spec(internal_id)
+          display_name = format_model_display_name(spec)
+
+          output << "from: #{display_name}"
           # Extract content from RubyLLM::Message if needed
           content = if result.respond_to?(:content)
                       result.content
@@ -421,6 +480,27 @@ module AIA
         end
         output.join("\n")
       end
+    end
+
+    # Format display name with instance number and role (ADR-005)
+    def format_model_display_name(spec)
+      return spec unless spec.is_a?(Hash)
+
+      model_name = spec[:model]
+      instance = spec[:instance]
+      role = spec[:role]
+
+      # Add instance number if > 1
+      display = if instance > 1
+                  "#{model_name} ##{instance}"
+                else
+                  model_name
+                end
+
+      # Add role label if present
+      display += " (#{role})" if role
+
+      display
     end
 
     def format_multi_model_with_metrics(results)
@@ -610,14 +690,38 @@ module AIA
     def extract_models_config
       models_config = AIA.config.model
 
-      # Handle backward compatibility - if it's a string, convert to array
+      # Handle backward compatibility
       if models_config.is_a?(String)
-        [models_config]
+        # Old format: single string
+        [{model: models_config, role: nil, instance: 1, internal_id: models_config}]
       elsif models_config.is_a?(Array)
-        models_config
+        if models_config.empty?
+          # Empty array - use default
+          [{model: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini'}]
+        elsif models_config.first.is_a?(Hash)
+          # New format: array of hashes with model specs
+          models_config
+        else
+          # Old format: array of strings
+          models_config.map { |m| {model: m, role: nil, instance: 1, internal_id: m} }
+        end
       else
-        ['gpt-4o-mini'] # fallback to default
+        # Fallback to default
+        [{model: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini'}]
       end
+    end
+
+    def extract_model_names(model_specs)
+      # Extract just the model names from the specs
+      # For models with instance > 1, use internal_id (e.g., "gpt-4o#2")
+      model_specs.map do |spec|
+        spec[:internal_id]
+      end
+    end
+
+    def get_model_spec(internal_id)
+      # Find the spec for a given internal_id
+      @model_specs.find { |spec| spec[:internal_id] == internal_id }
     end
 
 
