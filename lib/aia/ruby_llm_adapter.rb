@@ -10,6 +10,7 @@ module AIA
     def initialize
       @models = extract_models_config
       @chats = {}
+      @contexts = {} # Store isolated contexts for each model
 
       configure_rubyllm
       refresh_local_model_registry
@@ -80,42 +81,65 @@ module AIA
     end
 
 
+    # Create an isolated RubyLLM::Context for a model to prevent cross-talk (ADR-002)
+    # Each model gets its own context with provider-specific configuration
+    def create_isolated_context_for_model(model_name)
+      config = RubyLLM.config.dup
+
+      # Apply provider-specific configuration
+      if model_name.start_with?('lms/')
+        config.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
+        config.openai_api_key = 'dummy' # Local servers don't need a real API key
+      elsif model_name.start_with?('osaurus/')
+        config.openai_api_base = ENV.fetch('OSAURUS_API_BASE', 'http://localhost:11434/v1')
+        config.openai_api_key = 'dummy' # Local servers don't need a real API key
+      end
+
+      RubyLLM::Context.new(config)
+    end
+
+
+    # Extract the actual model name and provider from the prefixed model_name
+    # Returns: [actual_model, provider] where provider may be nil for auto-detection
+    def extract_model_and_provider(model_name)
+      if model_name.start_with?('ollama/')
+        [model_name.sub('ollama/', ''), 'ollama']
+      elsif model_name.start_with?('lms/') || model_name.start_with?('osaurus/')
+        [model_name.sub(%r{^(lms|osaurus)/}, ''), 'openai']
+      else
+        [model_name, nil] # Let RubyLLM auto-detect provider
+      end
+    end
+
+
     def setup_chats_with_tools
       valid_chats = {}
+      valid_contexts = {}
       failed_models = []
 
       @models.each do |model_name|
         begin
-          # Check if this is a local provider model and handle it specially
-          if model_name.start_with?('ollama/')
-            # For Ollama models, extract the actual model name and use assume_model_exists
-            actual_model = model_name.sub('ollama/', '')
-            chat = RubyLLM.chat(model: actual_model, provider: 'ollama', assume_model_exists: true)
-          elsif model_name.start_with?('osaurus/')
-            # For Osaurus models (OpenAI-compatible), create a custom context with the right API base
-            actual_model = model_name.sub('osaurus/', '')
-            custom_config = RubyLLM.config.dup
-            custom_config.openai_api_base = ENV.fetch('OSAURUS_API_BASE', 'http://localhost:11434/v1')
-            custom_config.openai_api_key = 'dummy' # Local servers don't need a real API key
-            context = RubyLLM::Context.new(custom_config)
-            chat = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
-          elsif model_name.start_with?('lms/')
-            # For LM Studio models (OpenAI-compatible), create a custom context with the right API base
-            actual_model = model_name.sub('lms/', '')
+          # Create isolated context for this model to prevent cross-talk (ADR-002)
+          context = create_isolated_context_for_model(model_name)
+
+          # Determine provider and actual model name
+          actual_model, provider = extract_model_and_provider(model_name)
+
+          # Validate LM Studio models
+          if model_name.start_with?('lms/')
             lms_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
-
-            # Validate model exists in LM Studio
             validate_lms_model!(actual_model, lms_api_base)
-
-            custom_config = RubyLLM.config.dup
-            custom_config.openai_api_base = lms_api_base
-            custom_config.openai_api_key = 'dummy' # Local servers don't need a real API key
-            context = RubyLLM::Context.new(custom_config)
-            chat = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
-          else
-            chat = RubyLLM.chat(model: model_name)
           end
+
+          # Create chat using isolated context
+          chat = if provider
+                   context.chat(model: actual_model, provider: provider, assume_model_exists: true)
+                 else
+                   context.chat(model: actual_model)
+                 end
+
           valid_chats[model_name] = chat
+          valid_contexts[model_name] = context
         rescue StandardError => e
           failed_models << "#{model_name}: #{e.message}"
         end
@@ -135,6 +159,7 @@ module AIA
       end
 
       @chats = valid_chats
+      @contexts = valid_contexts
       @models = valid_chats.keys
 
       # Update the config to reflect only the valid models
@@ -277,13 +302,24 @@ module AIA
       result
     end
 
-    def multi_model_chat(prompt)
+    def multi_model_chat(prompt_or_contexts)
       results = {}
+
+      # Check if we're receiving per-model contexts (Hash) or shared prompt (String/Array) - ADR-002 revised
+      per_model_contexts = prompt_or_contexts.is_a?(Hash) &&
+                           prompt_or_contexts.keys.all? { |k| @models.include?(k) }
 
       Async do |task|
         @models.each do |model_name|
           task.async do
             begin
+              # Use model-specific context if available, otherwise shared prompt
+              prompt = if per_model_contexts
+                         prompt_or_contexts[model_name]
+                       else
+                         prompt_or_contexts
+                       end
+
               result = single_model_chat(prompt, model_name)
               results[model_name] = result
             rescue StandardError => e
@@ -452,96 +488,46 @@ module AIA
 
     # Clear the chat context/history
     # Needed for the //clear and //restore directives
+    # Simplified with ADR-002: Each model has isolated context, no global state to manage
     def clear_context
-      @chats.each do |model_name, chat|
-        # Option 1: Directly clear the messages array in the current chat object
-        if chat.instance_variable_defined?(:@messages)
-          chat.instance_variable_get(:@messages)
-          # Force a completely empty array, not just attempting to clear it
-          chat.instance_variable_set(:@messages, [])
-        end
-      end
+      old_chats = @chats.dup
+      new_chats = {}
 
-      # Option 2: Force RubyLLM to create a new chat instance at the global level
-      # This ensures any shared state is reset
-      RubyLLM.instance_variable_set(:@chat, nil) if RubyLLM.instance_variable_defined?(:@chat)
+      @models.each do |model_name|
+        begin
+          # Get the isolated context for this model
+          context = @contexts[model_name]
+          actual_model, provider = extract_model_and_provider(model_name)
 
-      # Option 3: Try to create fresh chat instances, but don't exit on failure
-      # This is safer for use in directives like //restore
-      old_chats = @chats
-      @chats = {} # First clear the chats hash
+          # Create a fresh chat instance from the same isolated context
+          chat = if provider
+                   context.chat(model: actual_model, provider: provider, assume_model_exists: true)
+                 else
+                   context.chat(model: actual_model)
+                 end
 
-      begin
-        @models.each do |model_name|
-          # Try to recreate each chat, but if it fails, keep the old one
-          begin
-            # Check if this is a local provider model and handle it specially
-            if model_name.start_with?('ollama/')
-              actual_model = model_name.sub('ollama/', '')
-              @chats[model_name] = RubyLLM.chat(model: actual_model, provider: 'ollama', assume_model_exists: true)
-            elsif model_name.start_with?('osaurus/')
-              actual_model = model_name.sub('osaurus/', '')
-              custom_config = RubyLLM.config.dup
-              custom_config.openai_api_base = ENV.fetch('OSAURUS_API_BASE', 'http://localhost:11434/v1')
-              custom_config.openai_api_key = 'dummy'
-              context = RubyLLM::Context.new(custom_config)
-              @chats[model_name] = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
-            elsif model_name.start_with?('lms/')
-              actual_model = model_name.sub('lms/', '')
-              lms_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
-
-              # Validate model exists in LM Studio
-              validate_lms_model!(actual_model, lms_api_base)
-
-              custom_config = RubyLLM.config.dup
-              custom_config.openai_api_base = lms_api_base
-              custom_config.openai_api_key = 'dummy'
-              context = RubyLLM::Context.new(custom_config)
-              @chats[model_name] = context.chat(model: actual_model, provider: 'openai', assume_model_exists: true)
-            else
-              @chats[model_name] = RubyLLM.chat(model: model_name)
-            end
-
-            # Re-add tools if they were previously loaded
-            if @tools && !@tools.empty? && @chats[model_name].model&.supports_functions?
-              @chats[model_name].with_tools(*@tools)
-            end
-          rescue StandardError => e
-            # If we can't create a new chat, keep the old one but clear its context
-            warn "Warning: Could not recreate chat for #{model_name}: #{e.message}. Keeping existing instance."
-            @chats[model_name] = old_chats[model_name]
-            # Clear the old chat's messages if possible
-            if @chats[model_name] && @chats[model_name].instance_variable_defined?(:@messages)
-              @chats[model_name].instance_variable_set(:@messages, [])
-            end
+          # Re-add tools if they were previously loaded
+          if @tools && !@tools.empty? && chat.model&.supports_functions?
+            chat.with_tools(*@tools)
           end
-        end
-      rescue StandardError => e
-        # If something went terribly wrong, restore the old chats but clear their contexts
-        warn "Warning: Error during context clearing: #{e.message}. Attempting to recover."
-        @chats = old_chats
-        @chats.each_value do |chat|
-          if chat.instance_variable_defined?(:@messages)
+
+          new_chats[model_name] = chat
+        rescue StandardError => e
+          # If recreation fails, keep the old chat but clear its messages
+          warn "Warning: Could not recreate chat for #{model_name}: #{e.message}. Clearing existing chat."
+          chat = old_chats[model_name]
+          if chat&.instance_variable_defined?(:@messages)
             chat.instance_variable_set(:@messages, [])
           end
+          chat.clear_history if chat&.respond_to?(:clear_history)
+          new_chats[model_name] = chat
         end
       end
 
-      # Option 4: Call official clear_history method if it exists
-      @chats.each_value do |chat|
-        chat.clear_history if chat.respond_to?(:clear_history)
-      end
-
-      # Final verification
-      @chats.each_value do |chat|
-        if chat.instance_variable_defined?(:@messages) && !chat.instance_variable_get(:@messages).empty?
-          chat.instance_variable_set(:@messages, [])
-        end
-      end
-
-      return 'Chat context successfully cleared.'
+      @chats = new_chats
+      'Chat context successfully cleared.'
     rescue StandardError => e
-      return "Error clearing chat context: #{e.message}"
+      "Error clearing chat context: #{e.message}"
     end
 
 
