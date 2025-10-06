@@ -84,6 +84,8 @@ aia --available_models openai,gpt,text_to_image
 ### `-m MODEL, --model MODEL`
 Name of the LLM model(s) to use. For multiple models, use comma-separated values.
 
+Supports inline role assignment using `MODEL=ROLE` syntax to assign specific roles to individual models.
+
 ```bash
 # Single model
 aia --model gpt-4 my_prompt
@@ -93,7 +95,21 @@ aia --model "gpt-4,claude-3-sonnet,gemini-pro" my_prompt
 
 # Short form
 aia -m gpt-3.5-turbo my_prompt
+
+# Single model with role (inline syntax)
+aia --model gpt-4o=architect design_review.md
+
+# Multiple models with different roles
+aia --model "gpt-4o=architect,claude=security,gemini=performance" my_prompt
+
+# Same model with multiple roles for diverse perspectives
+aia --model "gpt-4o=optimist,gpt-4o=pessimist,gpt-4o=realist" project_plan.md
+
+# Mixed: some models with roles, some without
+aia --model "gpt-4o=expert,claude,gemini" my_prompt
 ```
+
+**See also**: `--role` for applying a role to all models, `--list-roles` for discovering available roles.
 
 ### `--[no-]consensus`
 Enable/disable consensus mode for multi-model responses. When enabled, AIA attempts to create a consensus response from multiple models.
@@ -206,12 +222,50 @@ aia --roles_prefix personas --role expert
 ```
 
 ### `-r, --role ROLE_ID`
-Role ID to prepend to the prompt.
+Role ID to prepend to the prompt. This applies the same role to all models.
+
+For per-model role assignment, use the inline `MODEL=ROLE` syntax with `--model` instead.
 
 ```bash
+# Apply role to all models
 aia --role expert my_prompt
 aia -r teacher explain_concept
+
+# With multiple models (same role for all)
+aia --model "gpt-4,claude" --role architect design.md
+
+# Per-model roles (inline syntax - see --model)
+aia --model "gpt-4=architect,claude=security" design.md
 ```
+
+**See also**: `--model` for inline role syntax, `--list-roles` for discovering available roles.
+
+### `--list-roles`
+List all available roles and exit. Shows role IDs and their descriptions from the roles directory.
+
+```bash
+# List all available roles
+aia --list-roles
+
+# Example output:
+# Available roles in /Users/you/.prompts/roles:
+#   architect    - Software architecture expert
+#   security     - Security analysis specialist
+#   performance  - Performance optimization expert
+#   debugger     - Expert debugging assistant
+#   optimist     - Positive perspective analyzer
+#   pessimist    - Critical risk analyzer
+#   realist      - Balanced pragmatic analyzer
+```
+
+Roles are discovered from:
+- **Default location**: `~/.prompts/roles/`
+- **Custom location**: Set via `--prompts_dir` and `--roles_prefix`
+- **Nested directories**: Supports subdirectories like `roles/software/architect.txt`
+
+**Use case**: Discover available roles before using them with `--role` or inline `MODEL=ROLE` syntax.
+
+**See also**: `--role`, `--model`, `--prompts_dir`, `--roles_prefix`
 
 ### `-n, --next PROMPT_ID`
 Next prompt to process (can be used multiple times to build a pipeline).
@@ -556,12 +610,23 @@ aia --transcription_model whisper-1 --speech_model tts-1-hd --voice echo audio_p
 Many CLI options have corresponding environment variables with the `AIA_` prefix:
 
 ```bash
+# Basic model configuration
 export AIA_MODEL="gpt-4"
+
+# Model with inline role syntax
+export AIA_MODEL="gpt-4o=architect"
+
+# Multiple models with roles
+export AIA_MODEL="gpt-4o=architect,claude=security,gemini=performance"
+
+# Other configuration
 export AIA_TEMPERATURE="0.8"
 export AIA_PROMPTS_DIR="/custom/prompts"
 export AIA_VERBOSE="true"
 export AIA_DEBUG="false"
 ```
+
+**Note**: The `AIA_MODEL` environment variable supports the same inline `MODEL=ROLE` syntax as the `--model` CLI option.
 
 See [Configuration](configuration.md#environment-variables) for a complete list.
 
@@ -569,10 +634,12 @@ See [Configuration](configuration.md#environment-variables) for a complete list.
 
 Options are resolved in this order (highest to lowest precedence):
 
-1. Command line arguments
-2. Environment variables
-3. Configuration files  
+1. Command line arguments (including inline `MODEL=ROLE` syntax)
+2. Environment variables (including inline syntax in `AIA_MODEL`)
+3. Configuration files (including array format with roles)
 4. Built-in defaults
+
+**Role-specific precedence**: When using the role feature, inline `MODEL=ROLE` syntax takes precedence over the `--role` flag, which takes precedence over roles in config files.
 
 ## Related Documentation
 

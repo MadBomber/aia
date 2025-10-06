@@ -1,7 +1,8 @@
 <div align="center">
   <h1>AI Assistant (AIA)</h1>
   <img src="docs/assets/images/aia.png" alt="Robots waiter ready to take your order."><br />
-  **The Prompt is the Code**
+  **The Prompt is the Code**<br />
+  <p>Check out the new <a href="http://madbomber.github.io/aia/guides/models/?h=inline+role+syntax#inline-role-syntax">Inline Role Syntax</a> when working with multiple concurrent models.</p>
 </div>
 
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
