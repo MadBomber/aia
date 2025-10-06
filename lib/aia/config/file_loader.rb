@@ -79,8 +79,40 @@ module AIA
 
         def apply_file_config_to_struct(config, file_config)
           file_config.each do |key, value|
-            config[key] = value
+            # Special handling for model array with roles (ADR-005 v2)
+            if (key == :model || key == 'model') && value.is_a?(Array) && value.first.is_a?(Hash)
+              config[:model] = process_model_array_with_roles(value)
+            else
+              config[key] = value
+            end
           end
+        end
+
+        # Process model array with roles from config file (ADR-005 v2)
+        # Format: [{model: "gpt-4o", role: "architect"}, ...]
+        # Also supports models without roles: [{model: "gpt-4o"}, ...]
+        def process_model_array_with_roles(models_array)
+          return [] if models_array.nil? || models_array.empty?
+
+          model_specs = []
+          model_counts = Hash.new(0)
+
+          models_array.each do |spec|
+            model_name = spec[:model] || spec['model']
+            role_name = spec[:role] || spec['role']
+
+            model_counts[model_name] += 1
+            instance = model_counts[model_name]
+
+            model_specs << {
+              model: model_name,
+              role: role_name,
+              instance: instance,
+              internal_id: instance > 1 ? "#{model_name}##{instance}" : model_name
+            }
+          end
+
+          model_specs
         end
 
         def normalize_last_refresh_date(config)

@@ -101,7 +101,7 @@ module AIA
     def fetch_role(role_id)
       # Handle nil role_id
       return handle_missing_role("roles/") if role_id.nil?
-      
+
       # Prepend roles_prefix if not already present
       unless role_id.start_with?(AIA.config.roles_prefix)
         role_id = "#{AIA.config.roles_prefix}/#{role_id}"
@@ -124,6 +124,27 @@ module AIA
       end
 
       handle_missing_role(role_id)
+    end
+
+    # Load role for a specific model (ADR-005)
+    # Takes a model spec hash and default role, returns role text
+    def load_role_for_model(model_spec, default_role = nil)
+      # Determine which role to use
+      role_id = if model_spec.is_a?(Hash)
+                  model_spec[:role] || default_role
+                else
+                  # Backward compatibility: if model_spec is a string, use default role
+                  default_role
+                end
+
+      return nil if role_id.nil? || role_id.empty?
+
+      # Load the role using existing fetch_role method
+      role_prompt = fetch_role(role_id)
+      role_prompt.text
+    rescue => e
+      puts "Warning: Could not load role '#{role_id}' for model: #{e.message}"
+      nil
     end
 
     def handle_missing_role(role_id)

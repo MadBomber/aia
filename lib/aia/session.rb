@@ -45,12 +45,19 @@ module AIA
     end
 
     def initialize_components
-      # For multi-model: create separate context manager per model (ADR-002 revised)
+      # For multi-model: create separate context manager per model (ADR-002 revised + ADR-005)
       # For single-model: maintain backward compatibility with single context manager
       if AIA.config.model.is_a?(Array) && AIA.config.model.size > 1
         @context_managers = {}
-        AIA.config.model.each do |model_name|
-          @context_managers[model_name] = ContextManager.new(
+        AIA.config.model.each do |model_spec|
+          # Handle both old string format and new hash format (ADR-005)
+          internal_id = if model_spec.is_a?(Hash)
+                          model_spec[:internal_id]
+                        else
+                          model_spec
+                        end
+
+          @context_managers[internal_id] = ContextManager.new(
             system_prompt: AIA.config.system_prompt
           )
         end
@@ -528,9 +535,9 @@ module AIA
       "I executed this directive: #{follow_up_prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
     end
 
-    # Parse multi-model response into per-model responses (ADR-002 revised)
-    # Input:  "from: lms/model\nHabari!\n\nfrom: ollama/model\nKaixo!"
-    # Output: {"lms/model" => "Habari!", "ollama/model" => "Kaixo!"}
+    # Parse multi-model response into per-model responses (ADR-002 revised + ADR-005)
+    # Input:  "from: lms/model #2 (role)\nHabari!\n\nfrom: ollama/model\nKaixo!"
+    # Output: {"lms/model#2" => "Habari!", "ollama/model" => "Kaixo!"}
     def parse_multi_model_response(combined_response)
       return {} if combined_response.nil? || combined_response.empty?
 
@@ -545,8 +552,17 @@ module AIA
             responses[current_model] = current_content.join.strip
           end
 
-          # Start new model
-          current_model = $1.strip
+          # Extract internal_id from display name (ADR-005)
+          # Display format: "model_name #N (role)" or "model_name (role)" or "model_name #N" or "model_name"
+          display_name = $1.strip
+
+          # Remove role part: " (role_name)"
+          internal_id = display_name.sub(/\s+\([^)]+\)\s*$/, '')
+
+          # Remove space before instance number: "model #2" -> "model#2"
+          internal_id = internal_id.sub(/\s+#/, '#')
+
+          current_model = internal_id
           current_content = []
         elsif current_model
           current_content << line

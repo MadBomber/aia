@@ -28,11 +28,29 @@ module AIA
 
         mcp_version = defined?(RubyLLM::MCP::VERSION) ? " MCP v" + RubyLLM::MCP::VERSION : ''
 
+        # Extract model names from config (handles hash format from ADR-005)
+        model_display = if AIA.config&.model
+          models = AIA.config.model
+          if models.is_a?(String)
+            models
+          elsif models.is_a?(Array)
+            if models.first.is_a?(Hash)
+              models.map { |spec| spec[:model] }.join(', ')
+            else
+              models.join(', ')
+            end
+          else
+            models.to_s
+          end
+        else
+          'unknown-model'
+        end
+
         puts <<-ROBOT
 
        ,      ,
        (\\____/) AI Assistant (v#{AIA::VERSION}) is Online
-        (_oo_)   #{AIA.config&.model || 'unknown-model'}#{supports_tools? ? ' (supports tools)' : ''}
+        (_oo_)   #{model_display}#{supports_tools? ? ' (supports tools)' : ''}
          (O)       using #{AIA.config&.adapter || 'unknown-adapter'} (v#{RubyLLM::VERSION}#{mcp_version})
        __||__    \\) model db was last refreshed on
      [/______\\]  /    #{AIA.config&.last_refresh || 'unknown'}

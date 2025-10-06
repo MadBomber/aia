@@ -209,7 +209,12 @@ module AIA
                     when Float
                       value.to_f
                     when Array
-                      value.split(',').map(&:strip)
+                      # Special handling for :model to support inline role syntax (ADR-005 v2)
+                      if key == :model && value.include?('=')
+                        CLIParser.parse_models_with_roles(value)
+                      else
+                        value.split(',').map(&:strip)
+                      end
                     else
                       value # defaults to String
                     end
