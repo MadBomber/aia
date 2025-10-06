@@ -71,13 +71,9 @@ end
 
 # Apply the prepend to all Provider subclasses
 # LM Studio uses the OpenAI provider, so we need to prepend to all provider classes
-puts "[PROVIDER_FIX] Applying prepend to RubyLLM::Provider and all subclasses"
 RubyLLM::Provider.prepend(RubyLLM::ProviderErrorFix)
 
 # Also prepend to all registered provider classes
 RubyLLM::Provider.providers.each do |slug, provider_class|
   provider_class.prepend(RubyLLM::ProviderErrorFix)
-  puts "[PROVIDER_FIX] Prepended to #{provider_class}"
 end
-
-puts "[PROVIDER_FIX] Prepend complete. RubyLLM::Provider ancestors: #{RubyLLM::Provider.ancestors.first(3).join(', ')}"
