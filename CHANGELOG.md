@@ -1,6 +1,25 @@
 # Changelog
 ## [Unreleased]
 
+### [0.9.18] 2025-10-05
+
+#### Bug Fixes
+- **BUG FIX**: Fixed RubyLLM provider error parsing to handle both OpenAI and LM Studio error formats
+- **BUG FIX**: Fixed "String does not have #dig method" errors when parsing error responses from local providers
+- **BUG FIX**: Enhanced error parsing to gracefully handle malformed JSON responses
+
+#### Improvements
+- **ENHANCEMENT**: Removed debug output statements from RubyLLMAdapter for cleaner production logs
+- **ENHANCEMENT**: Improved error handling with debug logging for JSON parsing failures
+
+#### Documentation
+- **DOCUMENTATION**: Added Local Models entry to MkDocs navigation for better documentation accessibility
+
+#### Technical Changes
+- Enhanced provider_fix extension to support multiple error response formats (lib/extensions/ruby_llm/provider_fix.rb)
+- Cleaned up debug puts statements from RubyLLMAdapter and provider_fix
+- Added robust JSON parsing with fallback error handling
+
 ### [0.9.17] 2025-10-04
 
 #### New Features
