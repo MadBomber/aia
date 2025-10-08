@@ -1,6 +1,13 @@
 # Changelog
 ## [Unreleased]
 
+## [0.9.21] 2025-10-08
+### Bug Fixes
+- **Checkpoint Directive Output**: Fixed `//checkpoint` directive to return empty string instead of status message (lib/aia/directives/configuration.rb:155)
+  - Prevents checkpoint creation messages from entering AI context
+  - Outputs confirmation to STDOUT instead for user feedback
+  - Prevents potential AI manipulation of checkpoint system
+
 ## [0.9.20] 2025-10-06
 ### Added
 - **Enhanced Multi-Model Role System (ADR-005)**: Implemented per-model role assignment with inline syntax
