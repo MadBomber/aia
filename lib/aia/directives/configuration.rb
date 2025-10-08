@@ -152,8 +152,9 @@ module AIA
 
           name = args.empty? ? nil : args.join(' ').strip
           checkpoint_name = context_manager.create_checkpoint(name: name)
-          "Checkpoint '#{checkpoint_name}' created."
-        end
+          puts "Checkpoint '#{checkpoint_name}' created."
+          ""
+      end
 
       def self.restore(args, context_manager = nil)
           if context_manager.nil?
