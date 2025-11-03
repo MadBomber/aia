@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.9.21)
+    aia (0.9.22)
       activesupport
       amazing_print
       async
@@ -9,8 +9,8 @@ PATH
       faraday
       prompt_manager (>= 0.5.8)
       reline
-      ruby_llm (>= 1.5.1)
-      ruby_llm-mcp (>= 0.6.1)
+      ruby_llm (= 1.8.2)
+      ruby_llm-mcp (>= 0.6.4)
       shellwords
       toml-rb
       tty-screen
@@ -20,14 +20,14 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (8.0.3)
+    activesupport (8.1.1)
       base64
-      benchmark (>= 0.3)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.3.1)
       connection_pool (>= 2.2.5)
       drb
       i18n (>= 1.6, < 2)
+      json
       logger (>= 1.4.2)
       minitest (>= 5.1)
       securerandom (>= 0.3)
@@ -46,8 +46,7 @@ GEM
       traces (~> 0.18)
     backports (3.25.2)
     base64 (0.3.0)
-    benchmark (0.4.1)
-    bigdecimal (3.3.0)
+    bigdecimal (3.3.1)
     binding_of_caller (1.0.1)
       debug_inspector (>= 1.2.0)
     builder (3.3.0)
@@ -62,14 +61,14 @@ GEM
       zeitwerk (~> 2.7)
     concurrent-ruby (1.3.5)
     connection_pool (2.5.4)
-    console (1.34.0)
+    console (1.34.2)
       fiber-annotation
       fiber-local (~> 1.1)
       json
     containable (1.4.0)
       concurrent-ruby (~> 1.3)
     core (2.4.0)
-    crack (1.0.0)
+    crack (1.0.1)
       bigdecimal
       rexml
     debug_inspector (1.2.0)
@@ -156,7 +155,7 @@ GEM
       marameters (~> 4.1)
     io-console (0.8.1)
     io-event (1.14.0)
-    json (2.15.1)
+    json (2.15.2)
     json-schema (5.2.2)
       addressable (~> 2.8)
       bigdecimal (~> 3.1)
@@ -177,10 +176,10 @@ GEM
     mocha (2.7.1)
       ruby2_keywords (>= 0.0.5)
     multipart-post (2.4.1)
-    net-http (0.6.0)
+    net-http (0.7.0)
       uri
-    optparse (0.6.0)
-    parser (3.3.9.0)
+    optparse (0.8.0)
+    parser (3.3.10.0)
       ast (~> 2.4.1)
       racc
     prompt_manager (0.5.8)
@@ -189,7 +188,7 @@ GEM
       method_source (~> 1.0)
     public_suffix (6.0.2)
     racc (1.8.1)
-    rake (13.3.0)
+    rake (13.3.1)
     refinements (13.5.0)
     reline (0.6.2)
       io-console (~> 0.5)
@@ -205,11 +204,10 @@ GEM
       faraday-retry (>= 1)
       marcel (~> 1.0)
       zeitwerk (~> 2)
-    ruby_llm-mcp (0.6.1)
+    ruby_llm-mcp (0.6.4)
       httpx (~> 1.4)
       json-schema (~> 5.0)
       ruby_llm (~> 1.3)
-      thor (~> 1.3)
       zeitwerk (~> 2)
     runcom (12.4.0)
       refinements (~> 13.5)
@@ -245,7 +243,7 @@ GEM
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
     thor (1.4.0)
-    tins (1.44.1)
+    tins (1.45.0)
       bigdecimal
       mize (~> 0.6)
       sync
@@ -261,7 +259,7 @@ GEM
       sod (~> 1.0)
       spek (~> 4.0)
       zeitwerk (~> 2.7)
-    toml-rb (4.0.0)
+    toml-rb (4.1.0)
       citrus (~> 3.0, > 3.0)
       racc (~> 1.7)
     tone (2.5.0)
@@ -277,10 +275,10 @@ GEM
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.1.0)
-    uri (1.0.4)
+    uri (1.1.0)
     versionaire (14.4.0)
       refinements (~> 13.5)
-    webmock (3.25.1)
+    webmock (3.26.1)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
