@@ -7,9 +7,8 @@
 require 'ruby_llm'
 require 'ruby_llm/mcp'
 
-# FIXME: Actually fix ruby_llm; this is supposed to a temporary fix for the issues
-#        discovered with shared_tools/ruby_llm/mcp/github_mcp_server
-RubyLLM::MCP.support_complex_parameters!
+# NOTE: Complex parameters are now supported natively in ruby_llm-mcp >= 0.8.0
+#       The support_complex_parameters! method has been removed.
 
 require 'prompt_manager'
 
