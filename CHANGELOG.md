@@ -1,6 +1,22 @@
 # Changelog
 ## [Unreleased]
 
+## [0.9.22] 2025-11-12
+
+### Bug Fixes
+- **TEST SUITE**: Fixed all Mocha test isolation issues causing stub contamination between tests
+  - Added proper teardown methods with `super` calls to 13 test files to ensure Mocha cleanup
+  - Fixed PromptHandlerTest missing teardown and config fields (erb, shell, roles_dir)
+  - Fixed ModelsDirectiveTest to use consistent stubbing approach instead of mixing real and stubbed config
+  - Fixed MultiModelIsolationTest to use stubs instead of direct instance variable manipulation
+  - Fixed AIAIntegrationTest, ChatProcessorServiceTest, ContextManagerTest, DirectiveProcessorTest, RubyLLMAdapterTest, SessionTest, LocalProvidersTest, UtilityTest, AIAMockingTest, and AIAPropertyBasedTest to include proper Mocha cleanup
+  - Test results improved from 2 failures, 2 errors to 0 failures, 0 errors (325 runs, 1018 assertions)
+
+### Technical Changes
+- Enhanced test isolation by ensuring all tests using Mocha stubs properly clean up via `super` in teardown
+- Standardized stub usage pattern across test suite for consistency
+- Eliminated stub leakage that caused "unexpected invocation" and "AIA was instantiated in one test but receiving invocations in another" errors
+
 ## [0.9.21] 2025-10-08
 ### Bug Fixes
 - **Checkpoint Directive Output**: Fixed `//checkpoint` directive to return empty string instead of status message (lib/aia/directives/configuration.rb:155)
