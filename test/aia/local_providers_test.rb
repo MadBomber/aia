@@ -33,6 +33,8 @@ class LocalProvidersTest < Minitest::Test
   def teardown
     WebMock.reset!
     WebMock.allow_net_connect!
+    # Call super to ensure Mocha cleanup runs properly
+    super
   end
 
   # ===========================

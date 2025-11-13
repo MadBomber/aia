@@ -11,6 +11,11 @@ class ContextManagerTest < Minitest::Test
     ))
   end
 
+  def teardown
+    # Call super to ensure Mocha cleanup runs properly
+    super
+  end
+
   def test_initialization_without_system_prompt
     manager = AIA::ContextManager.new
     

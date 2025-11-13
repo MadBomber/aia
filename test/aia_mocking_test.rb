@@ -11,6 +11,11 @@ class AIAMockingTest < Minitest::Test
     ))
   end
 
+  def teardown
+    # Call super to ensure Mocha cleanup runs properly
+    super
+  end
+
   def test_basic_mocking_functionality
     # Simple test that mocking works
     assert_equal 'test-model', AIA.config.model

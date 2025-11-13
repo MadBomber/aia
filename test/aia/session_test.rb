@@ -35,6 +35,11 @@ class SessionTest < Minitest::Test
     @session = AIA::Session.new(@prompt_handler)
   end
 
+  def teardown
+    # Call super to ensure Mocha cleanup runs properly
+    super
+  end
+
   def test_initialization
     refute_nil @session
     assert_instance_of AIA::Session, @session

@@ -13,8 +13,13 @@ class DirectiveProcessorTest < Minitest::Test
       tools: [],
       context_files: []
     ))
-    
+
     @processor = AIA::DirectiveProcessor.new
+  end
+
+  def teardown
+    # Call super to ensure Mocha cleanup runs properly
+    super
   end
 
   def test_initialization

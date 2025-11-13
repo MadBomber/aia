@@ -11,14 +11,6 @@ class ModelsDirectiveTest < Minitest::Test
   def setup
     puts "\n→ Running: #{self.name}"
 
-    # Reset ALL Mocha state to avoid pollution from other test files
-    begin
-      Mocha::Mockery.instance.teardown if defined?(Mocha::Mockery)
-      Mocha::Mockery.instance.stubba.unstub_all if defined?(Mocha::Mockery)
-    rescue => e
-      # Ignore errors during Mocha cleanup
-    end
-
     # Allow real HTTP connections for this test (no mocks!)
     if defined?(WebMock)
       @webmock_was_disabled = WebMock.net_connect_allowed?
@@ -29,33 +21,14 @@ class ModelsDirectiveTest < Minitest::Test
     @captured_output = StringIO.new
     $stdout = @captured_output
 
-    # Save original config model for cleanup
-    begin
-      @original_config_model = AIA.config.model
-    rescue => e
-      # If we can't access config, just skip saving
-      @original_config_model = nil
-    end
+    # Stub AIA.config with a realistic default to avoid stub contamination issues
+    # This test modifies the model in some tests, so we track changes
+    @test_config = OpenStruct.new(model: 'gpt-4')
+    @original_config_model = @test_config.model
+    AIA.stubs(:config).returns(@test_config)
   end
 
   def teardown
-    # Manually do Mocha cleanup FIRST, before anything else
-    begin
-      Mocha::Mockery.instance.teardown
-      Mocha::Mockery.instance.stubba.unstub_all
-    rescue => e
-      # Ignore cleanup errors
-    end
-
-    # Restore original config if we saved it
-    if @original_config_model
-      begin
-        AIA.config.model = @original_config_model
-      rescue => e
-        # Ignore errors during cleanup
-      end
-    end
-
     # Restore WebMock state if it was modified
     if defined?(WebMock) && !@webmock_was_disabled
       WebMock.disable_net_connect!
@@ -63,6 +36,9 @@ class ModelsDirectiveTest < Minitest::Test
 
     $stdout = @original_stdout
     puts "✓ Completed: #{self.name}"
+
+    # Call super to ensure Mocha cleanup runs properly
+    super
   end
 
   # ============================================================================

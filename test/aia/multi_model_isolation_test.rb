@@ -11,39 +11,20 @@ require 'fileutils'
 
 class MultiModelIsolationTest < Minitest::Test
   def setup
-    # Clean up any Mocha stubs from previous tests FIRST
-    begin
-      Mocha::Mockery.instance.teardown
-      Mocha::Mockery.instance.stubba.unstub_all
-    rescue => e
-      # Ignore cleanup errors
-    end
-
-    # Save original config if it exists
-    @original_config = AIA.instance_variable_get(:@config)
-
     # Create temp directory for prompts
     @temp_prompts_dir = Dir.mktmpdir('aia_test_prompts')
 
-    # Setup minimal real AIA config with all required fields
+    # Setup minimal real AIA config with all required fields using stubs
     config = create_test_config
-    AIA.instance_variable_set(:@config, config)
+    AIA.stubs(:config).returns(config)
   end
 
   def teardown
-    # Manually do Mocha cleanup FIRST, before anything else
-    begin
-      Mocha::Mockery.instance.teardown
-      Mocha::Mockery.instance.stubba.unstub_all
-    rescue => e
-      # Ignore cleanup errors
-    end
-
-    # Restore original config
-    AIA.instance_variable_set(:@config, @original_config)
-
     # Clean up temp directory
     FileUtils.rm_rf(@temp_prompts_dir) if @temp_prompts_dir && Dir.exist?(@temp_prompts_dir)
+
+    # Call super to ensure Mocha cleanup runs properly
+    super
   end
 
   private

@@ -30,6 +30,11 @@ class RubyLLMAdapterTest < Minitest::Test
     @adapter = AIA::RubyLLMAdapter.new
   end
 
+  def teardown
+    # Call super to ensure Mocha cleanup runs properly
+    super
+  end
+
   def test_initialization
     # Simple test that adapter can be initialized
     assert_instance_of AIA::RubyLLMAdapter, @adapter

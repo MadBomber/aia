@@ -39,6 +39,8 @@ class UtilityTest < Minitest::Test
 
   def teardown
     $stdout = @original_stdout
+    # Call super to ensure Mocha cleanup runs properly
+    super
   end
 
   def test_robot_displays_ascii_art

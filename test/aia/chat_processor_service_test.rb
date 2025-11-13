@@ -40,6 +40,11 @@ class ChatProcessorServiceTest < Minitest::Test
     @service = AIA::ChatProcessorService.new(@mock_ui_presenter, @mock_directive_processor)
   end
 
+  def teardown
+    # Call super to ensure Mocha cleanup runs properly
+    super
+  end
+
   def test_initialization
     assert_instance_of AIA::ChatProcessorService, @service
   end

@@ -13,12 +13,20 @@ class PromptHandlerTest < Minitest::Test
       tools: [],
       context_files: [],
       prompts_dir: '/tmp/test_prompts',
+      roles_dir: '/tmp/test_prompts/roles',
       role: nil,
       prompt_id: 'test_prompt',
-      fuzzy: false
+      fuzzy: false,
+      erb: false,
+      shell: false
     ))
-    
+
     @handler = AIA::PromptHandler.new
+  end
+
+  def teardown
+    # Call super to ensure Mocha cleanup runs
+    super
   end
 
   def test_initialization

@@ -83,6 +83,8 @@ class AIAIntegrationTest < Minitest::Test
 
   def teardown
     FileUtils.rm_rf(@temp_prompts_dir) if @temp_prompts_dir && Dir.exist?(@temp_prompts_dir)
+    # Call super to ensure Mocha cleanup runs properly
+    super
   end
 
   def test_batch_mode_single_prompt_workflow
