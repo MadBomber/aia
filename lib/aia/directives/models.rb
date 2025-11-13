@@ -34,10 +34,15 @@ module AIA
           current_models = AIA.config.model
           current_models = [current_models] if current_models.is_a?(String)
 
-          using_local_provider = current_models.any? { |m| m.start_with?('ollama/', 'lms/') }
+          # Extract model names (handles both String and Hash formats)
+          model_names = current_models.map do |m|
+            m.is_a?(Hash) ? m[:model] : m
+          end
+
+          using_local_provider = model_names.any? { |m| m.start_with?('ollama/', 'lms/') }
 
           if using_local_provider
-            show_local_models(current_models, args)
+            show_local_models(model_names, args)
           else
             show_rubyllm_models(args)
           end

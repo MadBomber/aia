@@ -12,6 +12,10 @@ require "minitest/reporters"
 require "mocha/minitest"
 require "simplecov"
 
+# Note: Mocha cleanup is handled explicitly in individual test files
+# where needed (multi_model_isolation_test.rb, models_directive_test.rb)
+# to prevent stub pollution between tests
+
 # Override Kernel#exit to prevent tests from terminating prematurely
 module Kernel
   alias_method :original_exit, :exit

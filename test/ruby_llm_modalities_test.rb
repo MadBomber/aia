@@ -12,7 +12,7 @@ class RubyLLMModalitiesTest < Minitest::Test
   OUTPUT_TYPES = %w[text embeddings audio image moderation]
 
   def setup
-    # Create a mock model object to satisfy the RubyLLM::Model::Modalities constructor
+    # Create a mock model object for the Modalities constructor
     mock_model = OpenStruct.new(input: ['text'], output: ['text'])
     @mod = RubyLLM::Model::Modalities.new(mock_model)
     # Define default input and output methods
