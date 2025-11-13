@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.9.21)
+    aia (0.9.22)
       activesupport
       amazing_print
       async
@@ -9,7 +9,7 @@ PATH
       faraday
       prompt_manager (>= 0.5.8)
       reline
-      ruby_llm (>= 1.5.1)
+      ruby_llm (>= 1.9.1)
       ruby_llm-mcp (~> 0.8.0)
       shellwords
       toml-rb
@@ -20,14 +20,14 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (8.0.3)
+    activesupport (8.1.1)
       base64
-      benchmark (>= 0.3)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.3.1)
       connection_pool (>= 2.2.5)
       drb
       i18n (>= 1.6, < 2)
+      json
       logger (>= 1.4.2)
       minitest (>= 5.1)
       securerandom (>= 0.3)
@@ -56,11 +56,14 @@ GEM
     coderay (1.1.3)
     concurrent-ruby (1.3.5)
     connection_pool (2.5.4)
-    console (1.34.0)
+    console (1.34.2)
       fiber-annotation
       fiber-local (~> 1.1)
       json
-    crack (1.0.0)
+    containable (1.4.0)
+      concurrent-ruby (~> 1.3)
+    core (2.4.0)
+    crack (1.0.1)
       bigdecimal
       rexml
     debug_inspector (1.2.0)
@@ -106,7 +109,7 @@ GEM
       concurrent-ruby (~> 1.0)
     io-console (0.8.1)
     io-event (1.14.0)
-    json (2.16.0)
+    json (2.15.2)
     json-schema (5.2.2)
       addressable (~> 2.8)
       bigdecimal (~> 3.1)
@@ -126,7 +129,8 @@ GEM
     multipart-post (2.4.1)
     net-http (0.7.0)
       uri
-    parser (3.3.9.0)
+    optparse (0.8.0)
+    parser (3.3.10.0)
       ast (~> 2.4.1)
       racc
     pastel (0.8.0)
@@ -137,8 +141,8 @@ GEM
       method_source (~> 1.0)
     public_suffix (6.0.2)
     racc (1.8.1)
-    rake (13.3.0)
-    refinements (9.8.0)
+    rake (13.3.1)
+    refinements (13.5.0)
     reline (0.6.2)
       io-console (~> 0.5)
     rexml (3.4.4)
@@ -179,17 +183,23 @@ GEM
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
     thor (1.4.0)
-    tins (1.44.1)
+    tins (1.45.0)
       bigdecimal
       mize (~> 0.6)
       sync
-    tocer (13.1.0)
-      dry-container (~> 0.9)
-      pastel (~> 0.8)
-      refinements (~> 9.1)
-      runcom (~> 8.0)
-      zeitwerk (~> 2.5)
-    toml-rb (4.0.0)
+    tocer (19.4.0)
+      cogger (~> 1.0)
+      containable (~> 1.1)
+      core (~> 2.0)
+      dry-schema (~> 1.13)
+      etcher (~> 3.0)
+      infusible (~> 4.0)
+      refinements (~> 13.5)
+      runcom (~> 12.0)
+      sod (~> 1.0)
+      spek (~> 4.0)
+      zeitwerk (~> 2.7)
+    toml-rb (4.1.0)
       citrus (~> 3.0, > 3.0)
       racc (~> 1.7)
     traces (0.18.2)

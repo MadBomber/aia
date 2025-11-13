@@ -26,6 +26,8 @@ class UIPresenterTest < Minitest::Test
 
   def teardown
     $stdout = @original_stdout
+    # Call super to ensure global Mocha cleanup runs
+    super
   end
 
   def test_initialization
