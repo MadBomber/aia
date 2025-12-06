@@ -140,6 +140,7 @@ module AIA
           config = tailor_the_config(config)
           load_libraries(config)
           load_tools(config)
+          load_mcp_servers(config)
 
           if config.dump_file
             dump_config(config, config.dump_file)
@@ -190,6 +191,64 @@ module AIA
           end
 
           exit(1) if exit_on_error
+        end
+
+        def load_mcp_servers(config)
+          servers = config.mcp_servers
+
+          return config if servers.nil? || (servers.respond_to?(:empty?) && servers.empty?)
+
+          servers.each do |server|
+            name    = server[:name]    || server["name"]
+            command = server[:command] || server["command"]
+            args    = server[:args]    || server["args"] || []
+            env     = server[:env]     || server["env"]  || {}
+            timeout = server[:timeout] || server["timeout"] || 8000  # default 8 seconds in ms
+
+            unless name && command
+              STDERR.puts "WARNING: MCP server entry missing name or command: #{server.inspect}"
+              next
+            end
+
+            # Resolve command path if not absolute
+            resolved_command = resolve_command_path(command)
+            unless resolved_command
+              STDERR.puts "WARNING: MCP server '#{name}' command not found: #{command}"
+              next
+            end
+
+            begin
+              RubyLLM::MCP.add_client(
+                name:            name,
+                transport_type:  :stdio,
+                request_timeout: timeout,
+                config: {
+                  command:  resolved_command,
+                  args:     args,
+                  env:      env
+                }
+              )
+            rescue => e
+              STDERR.puts "ERROR: Failed to load MCP server '#{name}': #{e.message}"
+            end
+          end
+
+          config
+        end
+
+        def resolve_command_path(command)
+          # If already absolute path, verify it exists
+          if command.start_with?('/')
+            return File.executable?(command) ? command : nil
+          end
+
+          # Search in PATH
+          ENV['PATH'].split(File::PATH_SEPARATOR).each do |dir|
+            full_path = File.join(dir, command)
+            return full_path if File.executable?(full_path)
+          end
+
+          nil
         end
 
         # envar values are always String object so need other config

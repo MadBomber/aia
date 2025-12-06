@@ -13,6 +13,15 @@ module AIA
         AIA.config&.tool_paths && !AIA.config.tool_paths.empty?
       end
 
+      def mcp_servers?
+        AIA.config&.mcp_servers && !AIA.config.mcp_servers.empty?
+      end
+
+      def mcp_server_names
+        return [] unless mcp_servers?
+        AIA.config.mcp_servers.map { |s| s[:name] || s["name"] }.compact
+      end
+
       def supports_tools?
         AIA.config&.client&.model&.supports_functions? || false
       end
@@ -46,6 +55,8 @@ module AIA
           'unknown-model'
         end
 
+        mcp_line = mcp_servers? ? "MCP: #{mcp_server_names.join(', ')}" : ''
+
         puts <<-ROBOT
 
        ,      ,
@@ -55,7 +66,7 @@ module AIA
        __||__    \\) model db was last refreshed on
      [/______\\]  /    #{AIA.config&.last_refresh || 'unknown'}
     / \\__AI__/ \\/      #{user_tools? ? 'I will also use your tools' : (tools? ? 'You can share my tools' : 'I did not bring any tools')}
-   /    /__\\
+   /    /__\\              #{mcp_line}
   (\\   /____\\   #{user_tools? && tools? ? 'My Toolbox contains:' : ''}
         ROBOT
         if user_tools? && tools?

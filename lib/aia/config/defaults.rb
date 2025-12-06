@@ -82,6 +82,9 @@ module AIA
 
         # Ruby libraries to require for Ruby binding
         require_libs: [],
+
+        # MCP Servers (nil means not configured, set in config file)
+        mcp_servers: nil,
       }).freeze
     end
   end
