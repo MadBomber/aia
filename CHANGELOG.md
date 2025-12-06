@@ -1,6 +1,39 @@
 # Changelog
 ## [Unreleased]
 
+## [0.9.23] 2025-12-06
+
+### New Features
+- **MCP Server Configuration**: Added native support for defining MCP (Model Context Protocol) servers in the config file
+  - Configure MCP servers in `~/.aia/config.yml` under the `mcp_servers` key
+  - Supports `name`, `command`, `args`, `env`, and `timeout` options per server
+  - Automatic PATH resolution for commands (no absolute paths required)
+  - Configurable timeouts for slow-starting servers (default: 8000ms)
+  - Environment variable support for MCP server processes
+
+### Improvements
+- **Robot Display**: Added MCP server names to the robot ASCII art display
+  - Shows "MCP: server1, server2, ..." when MCP servers are configured
+
+### Technical Changes
+- Added `load_mcp_servers` method to `lib/aia/config/base.rb` for automatic MCP client registration
+- Added `resolve_command_path` method for PATH-based command resolution
+- Added `mcp_servers?` and `mcp_server_names` helper methods to `lib/aia/utility.rb`
+- Fixed `OpenStruct.merge` to skip nil values, preventing config file values from being overwritten
+- Added `mcp_servers: nil` default to prevent merge issues with empty arrays
+
+### Configuration Example
+```yaml
+# ~/.aia/config.yml
+:mcp_servers:
+  - name: "my-server"
+    command: "my_mcp_server.rb"
+    args: ["stdio"]
+    timeout: 30000
+    env:
+      MY_VAR: "value"
+```
+
 ## [0.9.22] 2025-11-12
 
 ### Bug Fixes

@@ -21,7 +21,11 @@ class OpenStruct
   end
 
   # Sets value in result OpenStruct, handling nested OpenStruct and Hash objects
+  # Skip nil values to avoid overwriting existing values with nil
   def self.set_value(result, key, value)
+    # Skip nil values - don't overwrite existing values with nil
+    return if value.nil?
+
     if value.is_a?(OpenStruct) || value.is_a?(Hash)
       current_value = result[key]
       current_value = {} if current_value.nil?
