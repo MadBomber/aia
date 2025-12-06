@@ -100,6 +100,7 @@ For more information on AIA visit these locations:
       - [Example Workflow](#example-workflow)
     - [Roles and System Prompts](#roles-and-system-prompts)
     - [RubyLLM::Tool Support](#rubyllmtool-support)
+    - [MCP Server Configuration](#mcp-server-configuration)
   - [Examples & Tips](#examples--tips)
     - [Practical Examples](#practical-examples)
       - [Code Review Prompt](#code-review-prompt)
@@ -921,6 +922,170 @@ aia --tools examples/tools/mcp/imcp.rb --chat
 ```
 
 These MCP clients require the `ruby_llm-mcp` gem and provide access to external services and data sources through the Model Context Protocol.
+
+### MCP Server Configuration
+
+AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time.
+
+#### Configuration Format
+
+Add MCP servers to your `~/.aia/config.yml` file:
+
+```yaml
+:mcp_servers:
+  - name: "server-name"
+    command: "server_command"
+    args: ["arg1", "arg2"]
+    timeout: 30000  # milliseconds (default: 8000)
+    env:
+      ENV_VAR: "value"
+```
+
+#### Configuration Options
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `name` | Yes | - | Unique identifier for the MCP server |
+| `command` | Yes | - | Executable command (absolute path or found in PATH) |
+| `args` | No | `[]` | Array of command-line arguments |
+| `timeout` | No | `8000` | Connection timeout in milliseconds |
+| `env` | No | `{}` | Environment variables for the server process |
+
+#### Example: GitHub MCP Server
+
+The GitHub MCP server provides access to GitHub repositories, issues, pull requests, and more:
+
+```yaml
+# ~/.aia/config.yml
+:mcp_servers:
+  - name: "github"
+    command: "github-mcp-server"
+    args: ["stdio"]
+    timeout: 15000
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_your_token_here"
+```
+
+**Setup:**
+```bash
+# Install GitHub MCP server (macOS)
+brew install github-mcp-server
+
+# Or via npm
+npm install -g @anthropic/github-mcp-server
+
+# Set your GitHub token (recommended: use environment variable instead of config)
+export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_your_token_here"
+```
+
+#### Example: Hierarchical Temporal Memory (HTM)
+
+```shell
+gem install htm
+```
+
+See the [full HTM documentation](https://madbomber.github.io/htm) for database configuration and system environment variable usage.
+
+A custom Ruby-based MCP server for accessing database-backed long term memory:
+
+```yaml
+# ~/.aia/config.yml
+:mcp_servers:
+  - name: "htm"
+    command: "htm_mcp.rb"
+    args: ["stdio"]
+    timeout: 30000
+    env:
+      HTM_DBURL: "postgres://localhost:5432/htm_development"
+      ...
+```
+
+**Notes:**
+- The `command` can be just the executable name if it's in your PATH
+- AIA automatically resolves command paths, so you don't need absolute paths
+- Environment variables in the `env` section are passed only to that MCP server process
+
+#### Example: Multiple MCP Servers
+
+You can configure multiple MCP servers to provide different capabilities:
+
+```yaml
+# ~/.aia/config.yml
+:mcp_servers:
+  - name: "github"
+    command: "github-mcp-server"
+    args: ["stdio"]
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_your_token_here"
+
+  - name: "htm"
+    command: "htm_mcp.rb"
+    args: ["stdio"]
+    timeout: 30000
+    env:
+      HTM_DBURL: "postgres://localhost:5432/htm_development"
+
+  - name: "filesystem"
+    command: "filesystem-mcp-server"
+    args: ["stdio", "--root", "/Users/me/projects"]
+```
+
+#### Verifying MCP Server Configuration
+
+When MCP servers are configured, AIA displays them in the startup robot:
+
+```
+       ,      ,
+       (\____/) AI Assistant (v0.9.23) is Online
+        (_oo_)   gpt-4o-mini (supports tools)
+         (O)       using ruby_llm (v1.9.0 MCP v0.6.1)
+       __||__    \) model db was last refreshed on
+     [/______\]  /    2025-06-03
+    / \__AI__/ \/      You can share my tools
+   /    /__\              MCP: github, htm
+  (\   /____\
+```
+
+Use the `//tools` directive in chat mode to see all available tools including those from MCP servers:
+
+```bash
+aia --chat
+> //tools
+
+Available Tools:
+- github_create_issue: Create a new GitHub issue
+- github_list_repos: List repositories for the authenticated user
+- htm_query: Execute a query against the HTM database
+- htm_insert: Insert a record into HTM
+...
+```
+
+#### Troubleshooting MCP Servers
+
+If an MCP server fails to load, AIA will display a warning:
+
+```
+WARNING: MCP server 'github' command not found: github-mcp-server
+WARNING: MCP server entry missing name or command: {...}
+ERROR: Failed to load MCP server 'htm': Connection timeout
+```
+
+**Common Issues:**
+
+| Problem | Solution |
+|---------|----------|
+| Command not found | Ensure the command is in your PATH or use absolute path |
+| Connection timeout | Increase the `timeout` value |
+| Missing environment variables | Add required env vars to the `env` section |
+| Server hangs on startup | Check that all required environment variables are set |
+
+**Debug Mode:**
+
+Enable debug mode to see detailed MCP server loading information:
+
+```bash
+aia --debug --chat
+```
 
 **Shared Tools Collection:**
 AIA can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a curated collection of commonly-used  tools (aka functions) via the --require option.
