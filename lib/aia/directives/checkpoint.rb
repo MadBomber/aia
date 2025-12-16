@@ -8,16 +8,17 @@ module AIA
   module Directives
     module Checkpoint
       # Module-level state for checkpoints
-      @checkpoints = {}
+      # Note: Using @checkpoint_store to avoid naming conflict with //checkpoints directive
+      @checkpoint_store = {}
       @checkpoint_counter = 0
       @last_checkpoint_name = nil
 
       class << self
-        attr_accessor :checkpoints, :checkpoint_counter, :last_checkpoint_name
+        attr_accessor :checkpoint_store, :checkpoint_counter, :last_checkpoint_name
 
         # Reset all checkpoint state (useful for testing)
         def reset!
-          @checkpoints = {}
+          @checkpoint_store = {}
           @checkpoint_counter = 0
           @last_checkpoint_name = nil
         end
@@ -38,36 +39,41 @@ module AIA
         return "Error: No active chat sessions found." if chats.nil? || chats.empty?
 
         # Deep copy messages from all chats
-        checkpoints[name] = {
+        first_chat_messages = chats.values.first&.messages || []
+        checkpoint_store[name] = {
           messages: chats.transform_values { |chat|
             chat.messages.map { |msg| deep_copy_message(msg) }
           },
-          position: chats.values.first&.messages&.size || 0,
-          created_at: Time.now
+          position: first_chat_messages.size,
+          created_at: Time.now,
+          topic_preview: extract_last_user_message(first_chat_messages)
         }
         self.last_checkpoint_name = name
 
-        puts "Checkpoint '#{name}' created at position #{checkpoints[name][:position]}."
+        puts "Checkpoint '#{name}' created at position #{checkpoint_store[name][:position]}."
         ""
       end
 
       # //restore [name]
       # Restores the conversation state to a previously saved checkpoint.
-      # If no name is provided, restores to the last checkpoint.
+      # If no name is provided, restores to the previous checkpoint (one step back).
       def self.restore(args, _unused = nil)
         name = args.empty? ? nil : args.join(' ').strip
-        name = last_checkpoint_name if name.nil? || name.empty?
 
-        if name.nil?
-          return "Error: No checkpoint name provided and no previous checkpoint exists."
+        if name.nil? || name.empty?
+          # Find the previous checkpoint (second-to-last by position)
+          name = find_previous_checkpoint
+          if name.nil?
+            return "Error: No previous checkpoint to restore to."
+          end
         end
 
-        unless checkpoints.key?(name)
+        unless checkpoint_store.key?(name)
           available = checkpoint_names.empty? ? "none" : checkpoint_names.join(', ')
           return "Error: Checkpoint '#{name}' not found. Available: #{available}"
         end
 
-        checkpoint_data = checkpoints[name]
+        checkpoint_data = checkpoint_store[name]
         chats = get_chats
 
         return "Error: No active chat sessions found." if chats.nil? || chats.empty?
@@ -82,7 +88,17 @@ module AIA
           chat.instance_variable_set(:@messages, restored_messages)
         end
 
-        "Context restored to checkpoint '#{name}' (position #{checkpoint_data[:position]})."
+        # Remove checkpoints that are now invalid (position > restored position)
+        # because they reference conversation states that no longer exist
+        restored_position = checkpoint_data[:position]
+        removed_count = remove_invalid_checkpoints(restored_position)
+
+        # Update last_checkpoint_name to this checkpoint
+        self.last_checkpoint_name = name
+
+        msg = "Context restored to checkpoint '#{name}' (position #{restored_position})."
+        msg += " Removed #{removed_count} checkpoint(s) that were beyond this position." if removed_count > 0
+        msg
       end
 
       # //clear
@@ -104,7 +120,7 @@ module AIA
         end
 
         # Clear all checkpoints
-        checkpoints.clear
+        checkpoint_store.clear
         self.checkpoint_counter = 0
         self.last_checkpoint_name = nil
 
@@ -156,15 +172,18 @@ module AIA
       # //checkpoints
       # Lists all available checkpoints with their details.
       def self.checkpoints_list(args, _unused = nil)
-        if checkpoints.empty?
+        if checkpoint_store.empty?
           puts "No checkpoints available."
           return ""
         end
 
         puts "\n=== Available Checkpoints ==="
-        checkpoints.each do |name, data|
+        checkpoint_store.each do |name, data|
           created = data[:created_at]&.strftime('%H:%M:%S') || 'unknown'
           puts "  #{name}: position #{data[:position]}, created #{created}"
+          if data[:topic_preview] && !data[:topic_preview].empty?
+            puts "    → \"#{data[:topic_preview]}\""
+          end
         end
         puts "=== End of Checkpoints ==="
         ""
@@ -172,17 +191,35 @@ module AIA
 
       # Helper methods
       def self.checkpoint_names
-        checkpoints.keys
+        checkpoint_store.keys
       end
 
       def self.checkpoint_positions
         positions = {}
-        checkpoints.each do |name, data|
+        checkpoint_store.each do |name, data|
           pos = data[:position]
           positions[pos] ||= []
           positions[pos] << name
         end
         positions
+      end
+
+      # Remove checkpoints with position > the given position
+      # Returns the count of removed checkpoints
+      def self.remove_invalid_checkpoints(max_position)
+        invalid_names = checkpoint_store.select { |_name, data| data[:position] > max_position }.keys
+        invalid_names.each { |name| checkpoint_store.delete(name) }
+        invalid_names.size
+      end
+
+      # Find the previous checkpoint (second-to-last by position)
+      # This is used when //restore is called without a name
+      def self.find_previous_checkpoint
+        return nil if checkpoint_store.size < 2
+
+        # Sort checkpoints by position descending, return the second one
+        sorted = checkpoint_store.sort_by { |_name, data| -data[:position] }
+        sorted[1]&.first  # Return the name of the second-to-last checkpoint
       end
 
       private
@@ -218,11 +255,27 @@ module AIA
         end
       end
 
+      # Extract a preview of the last user message for checkpoint context
+      def self.extract_last_user_message(messages, max_length: 70)
+        return "" if messages.nil? || messages.empty?
+
+        # Find the last user message (not system, not assistant, not tool)
+        last_user_msg = messages.reverse.find { |msg| msg.role == :user }
+        return "" unless last_user_msg
+
+        content = last_user_msg.content.to_s.strip
+        # Collapse whitespace and truncate
+        content = content.gsub(/\s+/, ' ')
+        content.length > max_length ? "#{content[0..max_length - 4]}..." : content
+      end
+
       # Aliases
       class << self
         alias_method :ckp, :checkpoint
         alias_method :cp, :checkpoint
         alias_method :context, :review
+        # Route //checkpoints directive to checkpoints_list
+        # (safe now that we renamed attr_accessor to checkpoint_store)
         alias_method :checkpoints, :checkpoints_list
       end
     end
