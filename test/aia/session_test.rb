@@ -237,8 +237,8 @@ class SessionTest < Minitest::Test
 
   def test_initialize_components_creates_all_components
     @session.send(:initialize_components)
-    
-    refute_nil @session.instance_variable_get(:@context_manager)
+
+    # Note: ContextManager was removed - RubyLLM's Chat maintains conversation history internally
     refute_nil @session.instance_variable_get(:@ui_presenter)
     refute_nil @session.instance_variable_get(:@directive_processor)
     refute_nil @session.instance_variable_get(:@chat_processor)
@@ -272,20 +272,9 @@ class SessionTest < Minitest::Test
     assert_match /^chat_\d{8}_\d{6}$/, chat_id
   end
 
-  def test_handle_clear_directive_returns_nil
-    mock_context_manager = mock('context_manager')
-    mock_context_manager.expects(:clear_context).with(keep_system_prompt: true)
-    mock_ui_presenter = mock('ui_presenter') 
-    mock_ui_presenter.expects(:display_info).with('Chat context cleared.')
-    
-    @session.instance_variable_set(:@context_manager, mock_context_manager)
-    @session.instance_variable_set(:@ui_presenter, mock_ui_presenter)
-    
-    AIA.config.client = nil
-    
-    result = @session.send(:handle_clear_directive)
-    assert_nil result
-  end
+  # NOTE: test_handle_clear_directive_returns_nil removed - the //clear directive
+  # is now handled by AIA::Directives::Checkpoint module which operates directly
+  # on RubyLLM's Chat.@messages
 
   def test_handle_empty_directive_output_returns_nil
     result = @session.send(:handle_empty_directive_output)

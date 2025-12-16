@@ -126,13 +126,13 @@ graph TD
 - **AIA::PromptHandler** - Main prompt processing orchestrator
 - **AIA::ChatProcessorService** - Interactive chat session management
 - **AIA::DirectiveProcessor** - Processes embedded directives (`//command params`)
-- **AIA::ContextManager** - Manages conversation context and history
-- **AIA::RubyLLMAdapter** - Interfaces with the ruby_llm gem for AI model communication
+- **AIA::RubyLLMAdapter** - Interfaces with the ruby_llm gem for AI model communication (manages conversation history via RubyLLM's Chat.@messages)
 - **AIA::ShellCommandExecutor** - Executes shell commands safely within prompts
 - **AIA::HistoryManager** - Manages prompt parameter history and user input
 - **AIA::UIPresenter** - Terminal output formatting and presentation
 - **AIA::Session** - Manages chat sessions and state
 - **AIA::Fzf** - Fuzzy finder integration for prompt selection
+- **AIA::Directives::Checkpoint** - Manages conversation checkpoints, restore, clear, and review operations
 
 ### External Dependencies
 

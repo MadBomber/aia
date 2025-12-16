@@ -509,11 +509,6 @@ SyntaxError: unexpected token
 ERROR: PUREMD_API_KEY is required in order to include a webpage
 ```
 
-**Missing Context Manager**:
-```
-Error: Context manager not available for //clear directive.
-```
-
 ### Custom Directives
 
 You can extend AIA with custom directives by creating Ruby files that define new directive methods:

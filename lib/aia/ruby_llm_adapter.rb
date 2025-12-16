@@ -5,7 +5,7 @@ require_relative '../extensions/ruby_llm/provider_fix'
 
 module AIA
   class RubyLLMAdapter
-    attr_reader :tools, :model_specs
+    attr_reader :tools, :model_specs, :chats
 
     def initialize
       @model_specs = extract_models_config  # Full specs with role info
