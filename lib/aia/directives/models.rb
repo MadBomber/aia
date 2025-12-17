@@ -234,7 +234,7 @@ module AIA
             'checkpoints_list' => 'List all available checkpoints',
 
             # Utility directives
-            'tools' => 'List available tools',
+            'tools' => 'List available tools (optional filter by name substring)',
             'next' => 'Set the next prompt in the sequence',
             'pipeline' => 'Set or view the prompt workflow sequence',
             'terse' => 'Add instruction for concise responses',
