@@ -12,19 +12,34 @@ module AIA
           indent = 4
           spaces = " " * indent
           width = TTY::Screen.width - indent - 2
+          filter = args.first&.downcase
 
           if AIA.config.tools.empty?
             puts "No tools are available"
           else
-            puts
-            puts "Available Tools"
-            puts "==============="
+            tools_to_display = AIA.config.tools
 
-            AIA.config.tools.each do |tool|
-              name = tool.respond_to?(:name) ? tool.name : tool.class.name
-              puts "\n#{name}"
-              puts "-" * name.size
-              puts WordWrapper::MinimumRaggedness.new(width, tool.description).wrap.split("\n").map { |s| spaces + s + "\n" }.join
+            if filter
+              tools_to_display = tools_to_display.select do |tool|
+                name = tool.respond_to?(:name) ? tool.name : tool.class.name
+                name.downcase.include?(filter)
+              end
+            end
+
+            if tools_to_display.empty?
+              puts "No tools match the filter: #{args.first}"
+            else
+              puts
+              header = filter ? "Available Tools (filtered by '#{args.first}')" : "Available Tools"
+              puts header
+              puts "=" * header.length
+
+              tools_to_display.each do |tool|
+                name = tool.respond_to?(:name) ? tool.name : tool.class.name
+                puts "\n#{name}"
+                puts "-" * name.size
+                puts WordWrapper::MinimumRaggedness.new(width, tool.description).wrap.split("\n").map { |s| spaces + s + "\n" }.join
+              end
             end
           end
           puts

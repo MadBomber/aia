@@ -9,7 +9,6 @@ require "fileutils"
 require "amazing_print"
 require_relative "directive_processor"
 require_relative "history_manager"
-require_relative "context_manager"
 require_relative "ui_presenter"
 require_relative "chat_processor_service"
 require_relative "prompt_handler"
@@ -45,28 +44,9 @@ module AIA
     end
 
     def initialize_components
-      # For multi-model: create separate context manager per model (ADR-002 revised + ADR-005)
-      # For single-model: maintain backward compatibility with single context manager
-      if AIA.config.model.is_a?(Array) && AIA.config.model.size > 1
-        @context_managers = {}
-        AIA.config.model.each do |model_spec|
-          # Handle both old string format and new hash format (ADR-005)
-          internal_id = if model_spec.is_a?(Hash)
-                          model_spec[:internal_id]
-                        else
-                          model_spec
-                        end
-
-          @context_managers[internal_id] = ContextManager.new(
-            system_prompt: AIA.config.system_prompt
-          )
-        end
-        @context_manager = nil # Signal we're using per-model managers
-      else
-        @context_manager = ContextManager.new(system_prompt: AIA.config.system_prompt)
-        @context_managers = nil
-      end
-
+      # RubyLLM's Chat instances maintain conversation history internally
+      # via @messages array. No separate context manager needed.
+      # Checkpoint/restore directives access Chat.@messages directly via AIA.client.chats
       @ui_presenter = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
       @chat_processor = ChatProcessorService.new(@ui_presenter, @directive_processor)
@@ -225,23 +205,21 @@ module AIA
     end
 
     # Send prompt to AI and handle the response
+    # RubyLLM's Chat automatically adds user messages and responses to its internal @messages
     def send_prompt_and_get_response(prompt_text)
-      # Add prompt to conversation context
-      @context_manager.add_to_context(role: "user", content: prompt_text)
-
-      # Process the prompt
+      # Process the prompt - RubyLLM Chat maintains conversation history internally
       @ui_presenter.display_thinking_animation
-      response = @chat_processor.process_prompt(@context_manager.get_context)
+      response_data = @chat_processor.process_prompt(prompt_text)
 
-      # Add AI response to context
-      @context_manager.add_to_context(role: "assistant", content: response)
+      # Handle response format (may include metrics)
+      content = response_data.is_a?(Hash) ? response_data[:content] : response_data
 
       # Output the response
-      @chat_processor.output_response(response)
+      @chat_processor.output_response(content)
 
       # Process any directives in the response
-      if @directive_processor.directive?(response)
-        directive_result = @directive_processor.process(response, @context_manager)
+      if @directive_processor.directive?(content)
+        directive_result = @directive_processor.process(content, nil)
         puts "\nDirective output: #{directive_result}" if directive_result && !directive_result.strip.empty?
       end
     end
@@ -315,19 +293,16 @@ module AIA
 
       return if context.empty?
 
-      # Add context files content to context
-      @context_manager.add_to_context(role: "user", content: context)
-
-      # Process the context
+      # Process the context - RubyLLM Chat maintains conversation history internally
       @ui_presenter.display_thinking_animation
-      response = @chat_processor.process_prompt(@context_manager.get_context)
+      response_data = @chat_processor.process_prompt(context)
 
-      # Add AI response to context
-      @context_manager.add_to_context(role: "assistant", content: response)
+      # Handle response format (may include metrics)
+      content = response_data.is_a?(Hash) ? response_data[:content] : response_data
 
       # Output the response
-      @chat_processor.output_response(response)
-      @chat_processor.speak(response)
+      @chat_processor.output_response(content)
+      @chat_processor.speak(content)
       @ui_presenter.display_separator
     end
 
@@ -347,14 +322,15 @@ module AIA
         @chat_prompt.text = piped_input
         processed_input = @chat_prompt.to_s
 
-        @context_manager.add_to_context(role: "user", content: processed_input)
-
+        # Process the piped input - RubyLLM Chat maintains conversation history internally
         @ui_presenter.display_thinking_animation
-        response = @chat_processor.process_prompt(@context_manager.get_context)
+        response_data = @chat_processor.process_prompt(processed_input)
 
-        @context_manager.add_to_context(role: "assistant", content: response)
-        @chat_processor.output_response(response)
-        @chat_processor.speak(response) if AIA.speak?
+        # Handle response format (may include metrics)
+        content = response_data.is_a?(Hash) ? response_data[:content] : response_data
+
+        @chat_processor.output_response(content)
+        @chat_processor.speak(content) if AIA.speak?
         @ui_presenter.display_separator
 
         STDIN.reopen(original_stdin)
@@ -389,29 +365,10 @@ module AIA
         @chat_prompt.text = follow_up_prompt
         processed_prompt = @chat_prompt.to_s
 
-        # Handle per-model contexts (ADR-002 revised)
-        if @context_managers
-          # Multi-model: add user prompt to each model's context
-          @context_managers.each_value do |ctx_mgr|
-            ctx_mgr.add_to_context(role: "user", content: processed_prompt)
-          end
-
-          # Get per-model conversations
-          conversations = {}
-          @context_managers.each do |model_name, ctx_mgr|
-            conversations[model_name] = ctx_mgr.get_context
-          end
-
-          @ui_presenter.display_thinking_animation
-          response_data = @chat_processor.process_prompt(conversations)
-        else
-          # Single-model: use original logic
-          @context_manager.add_to_context(role: "user", content: processed_prompt)
-          conversation = @context_manager.get_context
-
-          @ui_presenter.display_thinking_animation
-          response_data = @chat_processor.process_prompt(conversation)
-        end
+        # Process the prompt - RubyLLM Chat maintains conversation history internally
+        # via @messages array. Each model's Chat instance tracks its own conversation.
+        @ui_presenter.display_thinking_animation
+        response_data = @chat_processor.process_prompt(processed_prompt)
 
         # Handle new response format with metrics
         if response_data.is_a?(Hash)
@@ -437,21 +394,6 @@ module AIA
           end
         end
 
-        # Add responses to context (ADR-002 revised)
-        if @context_managers
-          # Multi-model: parse combined response and add each model's response to its own context
-          parsed_responses = parse_multi_model_response(content)
-          parsed_responses.each do |model_name, model_response|
-            @context_managers[model_name]&.add_to_context(
-              role: "assistant",
-              content: model_response
-            )
-          end
-        else
-          # Single-model: add response to single context
-          @context_manager.add_to_context(role: "assistant", content: content)
-        end
-
         @chat_processor.speak(content)
 
         @ui_presenter.display_separator
@@ -459,71 +401,21 @@ module AIA
     end
 
     def process_chat_directive(follow_up_prompt)
-      # For multi-model, use first context manager for directives (ADR-002 revised)
-      # TODO: Consider if directives should affect all contexts or just one
-      context_for_directive = @context_managers ? @context_managers.values.first : @context_manager
-      directive_output = @directive_processor.process(follow_up_prompt, context_for_directive)
+      # Directives now access RubyLLM's Chat.@messages directly via AIA.client
+      # The second parameter is no longer used by checkpoint/restore/clear/review
+      directive_output = @directive_processor.process(follow_up_prompt, nil)
 
-      return handle_clear_directive if follow_up_prompt.strip.start_with?("//clear")
-      return handle_checkpoint_directive(directive_output) if follow_up_prompt.strip.start_with?("//checkpoint")
-      return handle_restore_directive(directive_output) if follow_up_prompt.strip.start_with?("//restore")
+      # Checkpoint-related directives (clear, checkpoint, restore, review) handle
+      # everything internally via the Checkpoint module, which operates directly
+      # on RubyLLM's Chat.@messages - no additional handling needed here.
+      if follow_up_prompt.strip.start_with?("//clear", "//checkpoint", "//restore", "//review", "//context")
+        @ui_presenter.display_info(directive_output) unless directive_output.nil? || directive_output.strip.empty?
+        return nil
+      end
+
       return handle_empty_directive_output if directive_output.nil? || directive_output.strip.empty?
 
       handle_successful_directive(follow_up_prompt, directive_output)
-    end
-
-    def handle_clear_directive
-      # Clear context manager(s) - ADR-002 revised
-      if @context_managers
-        # Multi-model: clear all context managers
-        @context_managers.each_value { |ctx_mgr| ctx_mgr.clear_context(keep_system_prompt: true) }
-      else
-        # Single-model: clear single context manager
-        @context_manager.clear_context(keep_system_prompt: true)
-      end
-
-      # Try clearing the client's context
-      if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
-        begin
-          AIA.config.client.clear_context
-        rescue => e
-          STDERR.puts "Warning: Error clearing client context: #{e.message}"
-          # Continue anyway - the context manager has been cleared which is the main goal
-        end
-      end
-
-      # Note: We intentionally do NOT reinitialize the client here
-      # as that could cause termination if model initialization fails
-
-      @ui_presenter.display_info("Chat context cleared.")
-      nil
-    end
-
-    def handle_checkpoint_directive(directive_output)
-      @ui_presenter.display_info(directive_output)
-      nil
-    end
-
-    def handle_restore_directive(directive_output)
-      # If the restore was successful, we also need to refresh the client's context - ADR-002 revised
-      if directive_output.start_with?("Context restored")
-        # Clear the client's context without reinitializing the entire adapter
-        if AIA.config.client && AIA.config.client.respond_to?(:clear_context)
-          begin
-            AIA.config.client.clear_context
-          rescue => e
-            STDERR.puts "Warning: Error clearing client context after restore: #{e.message}"
-            # Continue anyway - the context manager has been restored which is the main goal
-          end
-        end
-
-        # Note: For multi-model, only the first context manager was used for restore
-        # This is a limitation of the current directive system
-        # TODO: Consider supporting restore for all context managers
-      end
-
-      @ui_presenter.display_info(directive_output)
-      nil
     end
 
     def handle_empty_directive_output

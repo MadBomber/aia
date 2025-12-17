@@ -351,7 +351,7 @@ Directives are special commands in prompt files that begin with `//` and provide
 | `//help` | Show available directives | `//help` |
 | `//model` | Show current model configuration | `//model` |
 | `//available_models` | List available models | `//available_models` |
-| `//tools` | Show a list of available tools and their description | `//tools` |
+| `//tools` | Show available tools (optional filter by name) | `//tools` or `//tools file` |
 | `//review` | Review current context with checkpoint markers | `//review` |
 
 Directives can also be used in the interactive chat sessions.
@@ -1058,6 +1058,13 @@ Available Tools:
 - htm_query: Execute a query against the HTM database
 - htm_insert: Insert a record into HTM
 ...
+
+# Filter tools by name (case-insensitive)
+> //tools github
+
+Available Tools (filtered by 'github')
+- github_create_issue: Create a new GitHub issue
+- github_list_repos: List repositories for the authenticated user
 ```
 
 #### Troubleshooting MCP Servers

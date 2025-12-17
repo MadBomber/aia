@@ -5,6 +5,7 @@ require_relative 'utility'
 require_relative 'configuration'
 require_relative 'execution'
 require_relative 'models'
+require_relative 'checkpoint'
 
 module AIA
   module Directives
@@ -115,6 +116,7 @@ module AIA
       register_directive_module(Configuration)
       register_directive_module(Execution)
       register_directive_module(Models)
+      register_directive_module(Checkpoint)
     end
   end
 end

@@ -231,9 +231,10 @@ module AIA
             'review' => 'Display the current conversation context with checkpoint markers',
             'checkpoint' => 'Create a named checkpoint of the current context',
             'restore' => 'Restore context to a previous checkpoint',
+            'checkpoints_list' => 'List all available checkpoints',
 
             # Utility directives
-            'tools' => 'List available tools',
+            'tools' => 'List available tools (optional filter by name substring)',
             'next' => 'Set the next prompt in the sequence',
             'pipeline' => 'Set or view the prompt workflow sequence',
             'terse' => 'Add instruction for concise responses',
@@ -261,6 +262,7 @@ module AIA
             'temp' => nil, # alias for temperature
             'topp' => nil, # alias for top_p
             'context' => nil, # alias for review
+            'ckp' => nil, # alias for checkpoint
             'cp' => nil, # alias for checkpoint
             'workflow' => nil, # alias for pipeline
             'rb' => nil, # alias for ruby
@@ -282,13 +284,18 @@ module AIA
             AIA::Directives::Utility,
             AIA::Directives::Configuration,
             AIA::Directives::Execution,
-            AIA::Directives::Models
+            AIA::Directives::Models,
+            AIA::Directives::Checkpoint
           ]
 
           all_directives = {}
           excluded_methods = ['run', 'initialize', 'private?', 'descriptions', 'aliases', 'build_aliases',
                              'desc', 'method_added', 'register_directive_module', 'process',
-                             'directive?', 'prefix_size']
+                             'directive?', 'prefix_size', 'reset!', 'checkpoint_names',
+                             'checkpoint_positions', 'get_chats', 'deep_copy_message',
+                             'format_message_content', 'checkpoints', 'checkpoint_counter',
+                             'last_checkpoint_name', 'checkpoints=', 'checkpoint_counter=',
+                             'last_checkpoint_name=']
 
           # Collect directives from all modules
           all_modules.each do |mod|
@@ -314,7 +321,7 @@ module AIA
             'temperature' => ['temp'],
             'top_p' => ['topp'],
             'review' => ['context'],
-            'checkpoint' => ['cp'],
+            'checkpoint' => ['ckp', 'cp'],
             'pipeline' => ['workflow'],
             'ruby' => ['rb'],
             'shell' => ['sh'],
@@ -333,7 +340,7 @@ module AIA
 
           # Sort and display directives by category
           categories = {
-            'Configuration' => ['config', 'model', 'temperature', 'top_p', 'clear', 'review', 'checkpoint', 'restore'],
+            'Configuration' => ['config', 'model', 'temperature', 'top_p', 'clear', 'review', 'checkpoint', 'restore', 'checkpoints_list'],
             'Utility' => ['tools', 'next', 'pipeline', 'terse', 'robot', 'help'],
             'Execution' => ['ruby', 'shell', 'say'],
             'Web & Files' => ['webpage', 'include'],

@@ -1,6 +1,13 @@
 # Changelog
 ## [Unreleased]
 
+### Improvements
+- **`//tools` Directive Filter**: Added optional filter parameter to the `//tools` directive
+  - Filter tools by name substring (case-insensitive)
+  - Example: `//tools error` lists only tools with "error" in the name
+  - Shows "No tools match the filter: [filter]" when no matches found
+  - Header indicates when filtering is active: "Available Tools (filtered by 'filter')"
+
 ## [0.9.23] 2025-12-06
 
 ### New Features
