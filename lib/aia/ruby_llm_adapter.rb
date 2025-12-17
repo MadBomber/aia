@@ -644,7 +644,10 @@ module AIA
 
       @tools.select! do |tool|
         tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        AIA.config.allowed_tools.any? { |allowed| tool_name.include?(allowed) }
+        AIA.config.allowed_tools
+          .split(',')
+          .map(&:strip)
+          .any? { |allowed| tool_name.include?(allowed) }
       end
     end
 
@@ -654,7 +657,10 @@ module AIA
 
       @tools.reject! do |tool|
         tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        AIA.config.rejected_tools.any? { |rejected| tool_name.include?(rejected) }
+        AIA.config.rejected_tools
+          .split(',')
+          .map(&:strip)
+          .any? { |rejected| tool_name.include?(rejected) }
       end
     end
 
