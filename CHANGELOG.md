@@ -1,6 +1,10 @@
 # Changelog
 ## [Unreleased]
 
+## [0.9.24] 2025-12-17
+### Fixes
+- Ran into a problem with the `shared_tools` gem and the --require parameter of AIA which required changes to both gems.
+
 ### Improvements
 - **`//tools` Directive Filter**: Added optional filter parameter to the `//tools` directive
   - Filter tools by name substring (case-insensitive)
