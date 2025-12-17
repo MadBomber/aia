@@ -214,11 +214,21 @@ Speak text using system text-to-speech (macOS/Linux).
 ## Utility Directives
 
 ### `//tools`
-Display available RubyLLM tools.
+Display available RubyLLM tools with optional filtering.
 
-**Syntax**: `//tools`
+**Syntax**: `//tools [filter]`
 
-**Example Output**:
+**Parameters**:
+- `filter` (optional) - Case-insensitive substring to filter tool names
+
+**Examples**:
+```markdown
+//tools           # List all available tools
+//tools file      # List tools with "file" in the name
+//tools analyzer  # List tools with "analyzer" in the name
+```
+
+**Example Output** (unfiltered):
 ```
 Available Tools
 ===============
@@ -233,6 +243,21 @@ WebScraper
     Extract and parse content from web pages with customizable
     selectors and filters.
 ```
+
+**Example Output** (filtered with `//tools file`):
+```
+Available Tools (filtered by 'file')
+====================================
+
+FileReader
+----------
+    Read and analyze file contents with support for multiple formats
+    including text, JSON, YAML, and CSV files.
+```
+
+**Notes**:
+- When no tools match the filter, displays "No tools match the filter: [filter]"
+- Filtering is case-insensitive (e.g., "File", "FILE", and "file" all match)
 
 ### `//next`
 Set the next prompt to execute in a workflow.
