@@ -173,10 +173,10 @@ GEM
       minitest (>= 5.0)
       ruby-progressbar
     mize (0.6.1)
-    mocha (3.0.0)
+    mocha (3.0.1)
       ruby2_keywords (>= 0.0.5)
     multipart-post (2.4.1)
-    net-http (0.8.0)
+    net-http (0.9.1)
       uri (>= 0.11.1)
     optparse (0.8.1)
     ostruct (0.6.3)

@@ -157,6 +157,9 @@ module AIA
           config.require_libs.each do |library|
             begin
               require(library)
+              # Check if the library provides tools that need eager loading
+              # Convert library name to module constant (e.g., 'shared_tools' -> 'SharedTools')
+              eager_load_tools_from_library(library)
             rescue => e
               STDERR.puts "Error loading library '#{library}' #{e.message}"
             exit_on_error = true
@@ -166,6 +169,23 @@ module AIA
           exit(1) if exit_on_error
 
           config
+        end
+
+        # Attempt to eager load tools from a required library
+        # Libraries that use Zeitwerk need their tools eager loaded so they
+        # appear in ObjectSpace for AIA's tool discovery
+        def eager_load_tools_from_library(library)
+          # Convert library name to module constant (e.g., 'shared_tools' -> 'SharedTools')
+          module_name = library.split('/').first.split('_').map(&:capitalize).join
+
+          begin
+            mod = Object.const_get(module_name)
+            if mod.respond_to?(:load_all_tools)
+              mod.load_all_tools
+            end
+          rescue NameError
+            # Module doesn't exist with expected name, skip
+          end
         end
 
         def load_tools(config)

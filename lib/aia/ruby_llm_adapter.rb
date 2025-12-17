@@ -228,7 +228,17 @@ module AIA
 
     def support_local_tools
       @tools += ObjectSpace.each_object(Class).select do |klass|
-        klass < RubyLLM::Tool
+        next false unless klass < RubyLLM::Tool
+
+        # Filter out tools that can't be instantiated without arguments
+        # RubyLLM calls tool.new without args, so we must verify each tool works
+        begin
+          klass.new
+          true
+        rescue ArgumentError, LoadError, StandardError
+          # Skip tools that require arguments or have missing dependencies
+          false
+        end
       end
     end
 
