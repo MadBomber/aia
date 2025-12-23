@@ -95,27 +95,46 @@ max_tokens: 8000
 
 ## Environment Variables
 
-All configuration options can be set via environment variables with the `AIA_` prefix:
+All configuration options can be set via environment variables with the `AIA_` prefix.
+Use double underscore (`__`) for nested configuration sections:
 
 ```bash
-# Core settings
+# LLM settings (nested under llm:)
+export AIA_LLM__TEMPERATURE="0.8"
+export AIA_LLM__ADAPTER="ruby_llm"
+
+# Models (top-level array, supports MODEL=ROLE syntax)
 export AIA_MODEL="gpt-4"
-export AIA_TEMPERATURE="0.8"
-export AIA_PROMPTS_DIR="/path/to/my/prompts"
+export AIA_MODEL="gpt-4o=architect,claude=reviewer"
+
+# Prompts settings (nested under prompts:)
+export AIA_PROMPTS__DIR="/path/to/my/prompts"
+export AIA_PROMPTS__ROLES_PREFIX="roles"
 
 # API Keys (handled by RubyLLM)
 export OPENAI_API_KEY="your_key_here"
-export ANTHROPIC_API_KEY="your_key_here" 
+export ANTHROPIC_API_KEY="your_key_here"
 export GOOGLE_API_KEY="your_key_here"
 
-# Chat settings
-export AIA_CHAT="true"
-export AIA_VERBOSE="true"
-export AIA_DEBUG="false"
+# Flags (nested under flags:)
+export AIA_FLAGS__CHAT="true"
+export AIA_FLAGS__VERBOSE="true"
+export AIA_FLAGS__DEBUG="false"
 
-# Output settings
-export AIA_OUT_FILE="/tmp/aia_output.md"
-export AIA_MARKDOWN="true"
+# Output settings (nested under output:)
+export AIA_OUTPUT__FILE="/tmp/aia_output.md"
+export AIA_OUTPUT__MARKDOWN="true"
+export AIA_OUTPUT__LOG_FILE="~/.prompts/_prompts.log"
+
+# Tools settings (nested under tools:)
+export AIA_TOOLS__PATHS="/path/to/tools"
+export AIA_TOOLS__REJECTED="dangerous_tool"
+
+# Registry settings (nested under registry:)
+export AIA_REGISTRY__REFRESH="7"
+
+# Paths settings (nested under paths:)
+export AIA_PATHS__AIA_DIR="~/.aia"
 ```
 
 ## Command Line Arguments

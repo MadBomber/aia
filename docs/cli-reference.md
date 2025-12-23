@@ -607,10 +607,11 @@ aia --transcription_model whisper-1 --speech_model tts-1-hd --voice echo audio_p
 
 ## Environment Variables
 
-Many CLI options have corresponding environment variables with the `AIA_` prefix:
+Many CLI options have corresponding environment variables with the `AIA_` prefix.
+Use double underscore (`__`) for nested configuration sections:
 
 ```bash
-# Basic model configuration
+# Model configuration (top-level)
 export AIA_MODEL="gpt-4"
 
 # Model with inline role syntax
@@ -619,11 +620,19 @@ export AIA_MODEL="gpt-4o=architect"
 # Multiple models with roles
 export AIA_MODEL="gpt-4o=architect,claude=security,gemini=performance"
 
-# Other configuration
-export AIA_TEMPERATURE="0.8"
-export AIA_PROMPTS_DIR="/custom/prompts"
-export AIA_VERBOSE="true"
-export AIA_DEBUG="false"
+# LLM settings (nested under llm:)
+export AIA_LLM__TEMPERATURE="0.8"
+
+# Prompts settings (nested under prompts:)
+export AIA_PROMPTS__DIR="/custom/prompts"
+
+# Flags (nested under flags:)
+export AIA_FLAGS__VERBOSE="true"
+export AIA_FLAGS__DEBUG="false"
+export AIA_FLAGS__CHAT="true"
+
+# Output settings (nested under output:)
+export AIA_OUTPUT__FILE="./output.md"
 ```
 
 **Note**: The `AIA_MODEL` environment variable supports the same inline `MODEL=ROLE` syntax as the `--model` CLI option.
