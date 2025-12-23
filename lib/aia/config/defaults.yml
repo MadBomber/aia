@@ -17,6 +17,9 @@
 #   AIA_PROMPTS__DIR=~/my-prompts
 #   AIA_FLAGS__DEBUG=true
 
+service:
+  name: aia
+
 # -----------------------------------------------------------------------------
 # LLM Configuration
 # Access: AIA.config.llm.adapter, AIA.config.llm.temperature, etc.
@@ -138,12 +141,12 @@ pipeline: []
 
 # -----------------------------------------------------------------------------
 # Model Registry Configuration
-# Access: AIA.config.registry.refresh, AIA.config.registry.last_refresh
-# Env: AIA_REGISTRY__REFRESH, etc.
+# Access: AIA.config.registry.refresh
+# Env: AIA_REGISTRY__REFRESH
+# Note: last_refresh is derived from models.json file modification time
 # -----------------------------------------------------------------------------
 registry:
-  refresh: 7
-  last_refresh: ~
+  refresh: 7 # days between refreshes (0 = disable periodic refresh)
 
 # -----------------------------------------------------------------------------
 # Required Ruby Libraries
@@ -169,10 +172,13 @@ mcp_servers: []
 # Paths Configuration
 # Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
 # Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
+#
+# Note: anyway_config uses XDG Base Directory Specification by default.
+# User config is loaded from ~/.config/aia/aia.yml
 # -----------------------------------------------------------------------------
 paths:
-  aia_dir: ~/.aia
-  config_file: ~/.aia/config.yml
+  aia_dir: ~/.config/aia
+  config_file: ~/.config/aia/aia.yml
 
 # -----------------------------------------------------------------------------
 # Context Files (set at runtime)

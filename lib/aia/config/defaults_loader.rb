@@ -2,14 +2,15 @@
 
 # lib/aia/config/defaults_loader.rb
 #
-# Bundled Defaults Loader for Anyway Config
+# Configuration Loaders for Anyway Config
 #
-# Loads default configuration values from defaults.yml bundled with the gem.
-# This ensures defaults are always available regardless of where AIA is installed.
+# Provides two custom loaders:
+# 1. DefaultsLoader - Loads bundled defaults from defaults.yml
+# 2. UserConfigLoader - Loads user config from ~/.config/aia/aia.yml
 #
-# This loader runs at LOWEST priority, so all other sources can override:
-# 1. Bundled defaults (this loader)
-# 2. User config (~/.aia/config.yml)
+# Loading priority (lowest to highest):
+# 1. Bundled defaults (DefaultsLoader)
+# 2. User config (UserConfigLoader)
 # 3. Environment variables (AIA_*)
 # 4. CLI arguments (applied separately)
 
@@ -18,6 +19,7 @@ require 'yaml'
 
 module AIA
   module Loaders
+    # Loads bundled default configuration values from defaults.yml
     class DefaultsLoader < Anyway::Loaders::Base
       DEFAULTS_PATH = File.expand_path('../defaults.yml', __FILE__).freeze
 
@@ -81,9 +83,65 @@ module AIA
         end
       end
     end
+
+    # Loads user configuration from XDG config directory
+    # Follows XDG Base Directory Specification: ~/.config/aia/aia.yml
+    class UserConfigLoader < Anyway::Loaders::Base
+      class << self
+        # Returns the path to the user config file
+        # Uses XDG_CONFIG_HOME if set, otherwise defaults to ~/.config
+        #
+        # @return [String] path to user config file
+        def user_config_path
+          xdg_config_home = ENV.fetch('XDG_CONFIG_HOME', File.expand_path('~/.config'))
+          File.join(xdg_config_home, 'aia', 'aia.yml')
+        end
+
+        # Check if user config file exists
+        #
+        # @return [Boolean]
+        def user_config_exist?
+          File.exist?(user_config_path)
+        end
+
+        # Load and parse the user YAML content
+        #
+        # @return [Hash] parsed YAML with symbolized keys
+        def load_user_yaml
+          return {} unless user_config_exist?
+
+          content = File.read(user_config_path)
+          YAML.safe_load(
+            content,
+            permitted_classes: [Symbol, Date],
+            symbolize_names: true,
+            aliases: true
+          ) || {}
+        rescue Psych::SyntaxError => e
+          warn "AIA: Failed to parse user config #{user_config_path}: #{e.message}"
+          {}
+        end
+      end
+
+      # Called by Anyway Config to load configuration
+      #
+      # @param name [Symbol] the config name (unused, always :aia)
+      # @return [Hash] configuration hash
+      def call(name:, **_options)
+        return {} unless self.class.user_config_exist?
+
+        trace!(:user_config, path: self.class.user_config_path) do
+          self.class.load_user_yaml
+        end
+      end
+    end
   end
 end
 
-# Register the defaults loader at LOWEST priority (before :yml loader)
-# This ensures bundled defaults are overridden by all other sources
+# Register loaders in priority order (lowest to highest)
+# 1. bundled_defaults - gem's default values
+# 2. user_config - user's ~/.config/aia/aia.yml
+# 3. yml - standard anyway_config yml loader (for config/aia.yml in app directory)
+# 4. env - environment variables
 Anyway.loaders.insert_before :yml, :bundled_defaults, AIA::Loaders::DefaultsLoader
+Anyway.loaders.insert_after :bundled_defaults, :user_config, AIA::Loaders::UserConfigLoader

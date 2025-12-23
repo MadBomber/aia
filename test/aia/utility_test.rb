@@ -20,12 +20,16 @@ class UtilityTest < Minitest::Test
       llm: OpenStruct.new(adapter: 'anthropic'),
       models: [OpenStruct.new(name: 'claude-3-sonnet')],
       tools: OpenStruct.new(paths: []),
-      registry: OpenStruct.new(last_refresh: '2024-01-15'),
+      registry: OpenStruct.new(refresh: 7),
+      paths: OpenStruct.new(aia_dir: '/tmp/aia_test'),
       tool_names: 'calculator, weather_api, file_reader',
       mcp_servers: [],
       client: mock_client
     )
     AIA.stubs(:config).returns(config)
+
+    # Mock models_last_refresh to return a known date
+    AIA::Utility.stubs(:models_last_refresh).returns('2024-01-15 10:30')
 
     # Mock TTY::Screen.width
     TTY::Screen.stubs(:width).returns(100)
@@ -241,7 +245,8 @@ class UtilityTest < Minitest::Test
     real_config = OpenStruct.new(
       llm: OpenStruct.new(adapter: 'openai'),
       models: [OpenStruct.new(name: 'gpt-4-turbo')],
-      registry: OpenStruct.new(last_refresh: '2024-12-26'),
+      registry: OpenStruct.new(refresh: 7),
+      paths: OpenStruct.new(aia_dir: '/tmp/aia_test'),
       tools: OpenStruct.new(paths: ['/usr/local/tools', '/home/tools']),  # Non-empty to trigger lines 24, 26
       tool_names: 'calculator, weather_api, file_reader',  # Non-nil to trigger lines 28, 29
       mcp_servers: []
@@ -250,6 +255,9 @@ class UtilityTest < Minitest::Test
     # Temporarily replace the config
     original_config_method = AIA.method(:config) rescue nil
     AIA.define_singleton_method(:config) { real_config }
+
+    # Mock models_last_refresh to return a known date
+    AIA::Utility.stubs(:models_last_refresh).returns('2024-12-26 14:30')
 
     # Mock only what's absolutely necessary to avoid external dependencies
     TTY::Screen.expects(:width).returns(100).at_least_once  # This will trigger width calculation on line 14

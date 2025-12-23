@@ -26,6 +26,16 @@ module AIA
         AIA.client&.model&.supports_functions? || false
       end
 
+      # Returns the last refresh date from models.json modification time
+      def models_last_refresh
+        aia_dir = AIA.config&.paths&.aia_dir
+        return nil if aia_dir.nil?
+
+        models_file = File.join(File.expand_path(aia_dir), 'models.json')
+        return nil unless File.exist?(models_file)
+
+        File.mtime(models_file).strftime('%Y-%m-%d %H:%M')
+      end
 
       # Displays the AIA robot ASCII art
       # Yes, its slightly frivolous but it does contain some
@@ -54,7 +64,7 @@ module AIA
         (_oo_)   #{model_display}#{supports_tools? ? ' (supports tools)' : ''}
          (O)       using #{AIA.config&.llm&.adapter || 'unknown-adapter'} (v#{RubyLLM::VERSION}#{mcp_version})
        __||__    \\) model db was last refreshed on
-     [/______\\]  /    #{AIA.config&.registry&.last_refresh || 'unknown'}
+     [/______\\]  /    #{models_last_refresh || 'unknown'}
     / \\__AI__/ \\/      #{user_tools? ? 'I will also use your tools' : (tools? ? 'You can share my tools' : 'I did not bring any tools')}
    /    /__\\              #{mcp_line}
   (\\   /____\\   #{user_tools? && tools? ? 'My Toolbox contains:' : ''}

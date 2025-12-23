@@ -38,7 +38,7 @@ module AIA
     SCHEMA = Loaders::DefaultsLoader.schema
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
-    attr_config :llm, :prompts, :output, :audio, :image, :embedding,
+    attr_config :service, :llm, :prompts, :output, :audio, :image, :embedding,
                 :tools, :flags, :registry, :paths
 
     # Array/collection attributes
@@ -121,6 +121,7 @@ module AIA
 
     coerce_types(
       # Nested sections -> ConfigSection objects (with SCHEMA defaults merged)
+      service: config_section_with_defaults(:service),
       llm: config_section_with_defaults(:llm),
       prompts: config_section_with_defaults(:prompts),
       output: config_section_with_defaults(:output),
@@ -163,6 +164,52 @@ module AIA
     # Instance Methods
     # ==========================================================================
 
+    # Mapping of flat CLI keys to their nested config locations
+    CLI_TO_NESTED_MAP = {
+      # flags section
+      chat: [:flags, :chat],
+      fuzzy: [:flags, :fuzzy],
+      terse: [:flags, :terse],
+      debug: [:flags, :debug],
+      verbose: [:flags, :verbose],
+      consensus: [:flags, :consensus],
+      # llm section
+      adapter: [:llm, :adapter],
+      temperature: [:llm, :temperature],
+      max_tokens: [:llm, :max_tokens],
+      top_p: [:llm, :top_p],
+      frequency_penalty: [:llm, :frequency_penalty],
+      presence_penalty: [:llm, :presence_penalty],
+      # prompts section
+      prompts_dir: [:prompts, :dir],
+      roles_prefix: [:prompts, :roles_prefix],
+      role: [:prompts, :role],
+      parameter_regex: [:prompts, :parameter_regex],
+      system_prompt: [:prompts, :system_prompt],
+      # output section
+      out_file: [:output, :file],
+      log_file: [:output, :log_file],
+      append: [:output, :append],
+      markdown: [:output, :markdown],
+      # audio section
+      speak: [:audio, :speak],
+      voice: [:audio, :voice],
+      speech_model: [:audio, :speech_model],
+      transcription_model: [:audio, :transcription_model],
+      # image section
+      image_size: [:image, :size],
+      image_quality: [:image, :quality],
+      image_style: [:image, :style],
+      # tools section
+      tool_paths: [:tools, :paths],
+      allowed_tools: [:tools, :allowed],
+      rejected_tools: [:tools, :rejected],
+      # registry section
+      refresh: [:registry, :refresh],
+      # paths section
+      extra_config_file: [:paths, :extra_config_file]
+    }.freeze
+
     def initialize(overrides: {})
       super()
       apply_overrides(overrides) if overrides && !overrides.empty?
@@ -175,7 +222,14 @@ module AIA
       overrides.each do |key, value|
         next if value.nil?
 
-        if respond_to?("#{key}=")
+        key_sym = key.to_sym
+
+        # Check if this is a flat CLI key that maps to a nested location
+        if CLI_TO_NESTED_MAP.key?(key_sym)
+          section, nested_key = CLI_TO_NESTED_MAP[key_sym]
+          section_obj = send(section)
+          section_obj.send("#{nested_key}=", value) if section_obj.respond_to?("#{nested_key}=")
+        elsif respond_to?("#{key}=")
           send("#{key}=", value)
         elsif key.to_s.include?('__')
           # Handle nested keys like 'llm__temperature'
@@ -188,6 +242,7 @@ module AIA
     # Convert config to hash (for dump, etc.)
     def to_h
       {
+        service: service.to_h,
         llm: llm.to_h,
         models: models.map(&:to_h),
         prompts: prompts.to_h,

@@ -1,6 +1,8 @@
 # lib/aia/ruby_llm_adapter.rb
 
 require 'async'
+require 'fileutils'
+require 'json'
 require_relative '../extensions/ruby_llm/provider_fix'
 
 module AIA
@@ -21,13 +23,15 @@ module AIA
 
     def configure_rubyllm
       # TODO: Add some of these configuration items to AIA.config
+      # Note: RubyLLM supports specific providers. Use provider prefix (e.g., "xai/grok-beta")
+      # for providers not directly configured here.
       RubyLLM.configure do |config|
         config.anthropic_api_key  = ENV.fetch('ANTHROPIC_API_KEY', nil)
         config.deepseek_api_key   = ENV.fetch('DEEPSEEK_API_KEY', nil)
         config.gemini_api_key     = ENV.fetch('GEMINI_API_KEY', nil)
         config.gpustack_api_key   = ENV.fetch('GPUSTACK_API_KEY', nil)
         config.mistral_api_key    = ENV.fetch('MISTRAL_API_KEY', nil)
-        config.openrouter_api_key = ENV.fetch('OPENROUTER_API_KEY', nil)
+        config.openrouter_api_key = ENV.fetch('OPEN_ROUTER_API_KEY', nil)
         config.perplexity_api_key = ENV.fetch('PERPLEXITY_API_KEY', nil)
 
         # These providers require a little something extra
@@ -72,19 +76,64 @@ module AIA
 
 
     def refresh_local_model_registry
+      return if models_json_path.nil? # Skip if no aia_dir configured
+
+      # Coerce refresh_days to integer (env vars come as strings)
       refresh_days = AIA.config.registry.refresh
-      last_refresh = AIA.config.registry.last_refresh
+      refresh_days = refresh_days.to_i if refresh_days.respond_to?(:to_i)
+      refresh_days ||= 7 # Default to 7 days if nil
 
-      # Parse last_refresh if it's a string
-      last_refresh = Date.parse(last_refresh) if last_refresh.is_a?(String)
-      last_refresh ||= Date.today - 999 # Force refresh if never done
+      last_refresh = models_last_refresh
+      models_exist = !last_refresh.nil?
 
-      if refresh_days.nil? || refresh_days.zero? || Date.today > (last_refresh + refresh_days)
-        RubyLLM.models.refresh!
-        AIA.config.registry.last_refresh = Date.today
-        config_file = AIA.config.paths.config_file
-        AIA::ConfigValidator.dump_config(AIA.config, config_file) if config_file
+      # If refresh is disabled (0), just save current models if file doesn't exist
+      if refresh_days.zero?
+        save_models_to_json unless models_exist
+        return
       end
+
+      # Determine if refresh is needed:
+      # 1. Always refresh if models.json doesn't exist (initial setup)
+      # 2. Otherwise, refresh if enough time has passed
+      needs_refresh = if !models_exist
+                        true # Initial refresh needed (no models.json)
+                      else
+                        Date.today > (last_refresh + refresh_days)
+                      end
+
+      return unless needs_refresh
+
+      # Refresh models from RubyLLM (fetches latest model info)
+      RubyLLM.models.refresh!
+
+      # Save models to JSON file in aia_dir
+      save_models_to_json
+    end
+
+    def models_json_path
+      aia_dir = AIA.config.paths&.aia_dir
+      return nil if aia_dir.nil?
+
+      File.join(File.expand_path(aia_dir), 'models.json')
+    end
+
+    # Returns the last refresh date based on models.json modification time
+    def models_last_refresh
+      path = models_json_path
+      return nil if path.nil? || !File.exist?(path)
+
+      File.mtime(path).to_date
+    end
+
+    def save_models_to_json
+      return if models_json_path.nil?
+
+      aia_dir = File.expand_path(AIA.config.paths.aia_dir)
+      FileUtils.mkdir_p(aia_dir)
+
+      models_data = RubyLLM.models.all.map(&:to_h)
+
+      File.write(models_json_path, JSON.pretty_generate(models_data))
     end
 
 
@@ -205,11 +254,21 @@ module AIA
       filter_tools_by_rejected_list
       drop_duplicate_tools
 
+      if AIA.debug?
+        final_tool_count = @tools.size
+        debug_me { :final_tool_count }
+      end
+
       if tools.empty?
         AIA.config.tool_names = ''
+        AIA.config.loaded_tools = []
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
         AIA.config.loaded_tools = @tools
+        if AIA.debug?
+          loaded_tool_names = AIA.config.tool_names
+          debug_me { :loaded_tool_names }
+        end
       end
     end
 
@@ -233,7 +292,14 @@ module AIA
 
 
     def support_local_tools
-      @tools += ObjectSpace.each_object(Class).select do |klass|
+      # First, load any required libraries specified in config
+      load_require_libs
+
+      # Then, load tool files from tools.paths
+      load_tool_files
+
+      # Now scan ObjectSpace for RubyLLM::Tool subclasses
+      tool_classes = ObjectSpace.each_object(Class).select do |klass|
         next false unless klass < RubyLLM::Tool
 
         # Filter out tools that can't be instantiated without arguments
@@ -246,6 +312,122 @@ module AIA
           false
         end
       end
+
+      if AIA.debug?
+        tool_count = tool_classes.size
+        tool_names = tool_classes.map(&:name).join(', ')
+        debug_me { [:tool_count, :tool_names] }
+      end
+
+      @tools += tool_classes
+    end
+
+    def load_require_libs
+      require_libs = AIA.config.require_libs
+      debug_me { :require_libs } if AIA.debug?
+
+      return if require_libs.nil? || require_libs.empty?
+
+      require_libs.each do |lib|
+        begin
+          debug_me { :lib } if AIA.debug?
+
+          # Activate gem and add to load path (bypasses Bundler's restrictions)
+          activate_gem_for_require(lib)
+
+          require lib
+
+          # After requiring, trigger tool loading if the library supports it
+          # This handles gems like shared_tools that use Zeitwerk lazy loading
+          debug_me "About to call trigger_tool_loading(#{lib})" if AIA.debug?
+          trigger_tool_loading(lib)
+          debug_me "Finished trigger_tool_loading(#{lib})" if AIA.debug?
+        rescue LoadError => e
+          warn "Warning: Failed to require library '#{lib}': #{e.message}"
+          warn "Hint: Make sure the gem is installed: gem install #{lib}"
+        rescue StandardError => e
+          warn "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
+        end
+      end
+    end
+
+    # Activate a gem and add its lib path to $LOAD_PATH
+    # This bypasses Bundler's restrictions on loading non-bundled gems
+    def activate_gem_for_require(lib)
+      # First try normal activation
+      return if Gem.try_activate(lib)
+
+      # Bundler intercepts Gem::Specification methods, so search gem dirs directly
+      gem_path = find_gem_path(lib)
+      if gem_path
+        lib_path = File.join(gem_path, 'lib')
+        $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+        debug_me "Added #{lib} from #{lib_path}" if AIA.debug?
+      else
+        debug_me "Gem #{lib} not found in gem paths" if AIA.debug?
+      end
+    end
+
+    # Find gem path by searching gem directories directly
+    # This bypasses Bundler's restrictions
+    def find_gem_path(gem_name)
+      gem_dirs = Gem.path.flat_map do |base|
+        gems_dir = File.join(base, 'gems')
+        next [] unless File.directory?(gems_dir)
+
+        Dir.glob(File.join(gems_dir, "#{gem_name}-*")).select do |path|
+          File.directory?(path) && File.basename(path).match?(/^#{Regexp.escape(gem_name)}-[\d.]+/)
+        end
+      end
+
+      # Return the most recent version
+      gem_dirs.sort.last
+    end
+
+    # Some tool libraries use lazy loading (e.g., Zeitwerk) and need explicit
+    # triggering to load tool classes into ObjectSpace
+    def trigger_tool_loading(lib)
+      # Convert lib name to constant (e.g., 'shared_tools' -> SharedTools)
+      const_name = lib.split(/[_-]/).map(&:capitalize).join
+      debug_me { :const_name } if AIA.debug?
+
+      begin
+        mod = Object.const_get(const_name)
+        debug_me { :mod } if AIA.debug?
+
+        # Try common methods that libraries use to load tools
+        if mod.respond_to?(:load_all_tools)
+          debug_me "Calling #{const_name}.load_all_tools" if AIA.debug?
+          mod.load_all_tools
+        elsif mod.respond_to?(:tools)
+          # Calling .tools often triggers lazy loading
+          debug_me "Calling #{const_name}.tools to trigger loading" if AIA.debug?
+          mod.tools
+        else
+          debug_me "#{const_name} does not respond to load_all_tools or tools" if AIA.debug?
+        end
+      rescue NameError => e
+        # Constant doesn't exist, library might use different naming
+        debug_me "Could not find constant #{const_name} for #{lib}: #{e.message}" if AIA.debug?
+      end
+    end
+
+    def load_tool_files
+      paths = AIA.config.tools&.paths
+      return if paths.nil? || paths.empty?
+
+      paths.each do |path|
+        expanded_path = File.expand_path(path)
+        if File.exist?(expanded_path)
+          begin
+            require expanded_path
+          rescue LoadError, StandardError => e
+            warn "Warning: Failed to load tool file '#{path}': #{e.message}"
+          end
+        else
+          warn "Warning: Tool file not found: #{path}"
+        end
+      end
     end
 
 
@@ -253,11 +435,78 @@ module AIA
       # Only load MCP tools if MCP servers are actually configured
       return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
 
+      if AIA.debug?
+        mcp_server_names = AIA.config.mcp_servers.map { |s| s[:name] || s['name'] }.join(', ')
+        debug_me { :mcp_server_names }
+      end
+
       begin
+        # Register each MCP server with RubyLLM::MCP
+        register_mcp_clients
+
         RubyLLM::MCP.establish_connection
-        @tools += RubyLLM::MCP.tools
+        mcp_tools = RubyLLM::MCP.tools
+        if AIA.debug?
+          mcp_tool_count = mcp_tools.size
+          mcp_tool_names = mcp_tools.map(&:name).join(', ')
+          debug_me { [:mcp_tool_count, :mcp_tool_names] }
+        end
+        @tools += mcp_tools
       rescue StandardError => e
         warn "Warning: Failed to connect MCP clients: #{e.message}"
+        if AIA.debug?
+          error_class = e.class
+          error_backtrace = e.backtrace.first(5).join("\n")
+          debug_me { [:error_class, :error_backtrace] }
+        end
+      end
+    end
+
+    def register_mcp_clients
+      AIA.config.mcp_servers.each do |server|
+        # Support both symbol and string keys
+        name    = server[:name]    || server['name']
+        command = server[:command] || server['command']
+        args    = server[:args]    || server['args'] || []
+        env     = server[:env]     || server['env'] || {}
+        timeout = server[:timeout] || server['timeout']
+
+        # Build config - always include args (even if empty) as RubyLLM::MCP requires it
+        config = {
+          command: command,
+          args: Array(args)
+        }
+        config[:env] = env unless env.empty?
+
+        debug_me { [:name, :config] } if AIA.debug?
+
+        begin
+          # Build add_client options - timeout is a top-level option, not in config
+          client_options = {
+            name: name,
+            transport_type: :stdio,
+            config: config
+          }
+          # Some versions of RubyLLM::MCP support timeout as a top-level option
+          client_options[:timeout] = timeout if timeout
+
+          RubyLLM::MCP.add_client(**client_options)
+        rescue ArgumentError => e
+          # If timeout isn't supported, try without it
+          if e.message.include?('timeout')
+            debug_me "Retrying without timeout option" if AIA.debug?
+            RubyLLM::MCP.add_client(
+              name: name,
+              transport_type: :stdio,
+              config: config
+            )
+          else
+            raise
+          end
+        rescue StandardError => e
+          warn "Warning: Failed to register MCP client '#{name}': #{e.message}"
+          debug_me { [:mcp_client_error, e.class, e.message] } if AIA.debug?
+        end
       end
     end
 
