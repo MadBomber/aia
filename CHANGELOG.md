@@ -1,5 +1,27 @@
 # Changelog
-## [Unreleased]
+## [0.10.0] - 2025-12-23
+
+### Breaking Changes
+- **Environment Variable Naming Convention**: Updated to use nested naming with double underscore (`__`)
+  - `AIA_PROMPTS_DIR` → `AIA_PROMPTS__DIR`
+  - `AIA_OUT_FILE` → `AIA_OUTPUT__FILE`
+  - `AIA_VERBOSE` → `AIA_FLAGS__VERBOSE`
+  - `AIA_DEBUG` → `AIA_FLAGS__DEBUG`
+  - `AIA_CHAT` → `AIA_FLAGS__CHAT`
+  - `AIA_TEMPERATURE` → `AIA_LLM__TEMPERATURE`
+  - `AIA_MARKDOWN` → `AIA_OUTPUT__MARKDOWN`
+  - Note: `AIA_MODEL` remains unchanged (top-level, not nested)
+
+### Bug Fixes
+- **MCP Tool Timeout Handling**: Fixed issue where MCP tool timeouts corrupted conversation history
+  - Added `repair_incomplete_tool_calls` method to add synthetic tool results when timeouts occur
+  - Prevents "assistant message with 'tool_calls' must be followed by tool messages" API errors
+  - Conversation can now continue gracefully after tool timeouts
+
+- **Tool Crash Handling**: Fixed crash when tools throw non-StandardError exceptions (e.g., LoadError)
+  - Changed `rescue StandardError` to `rescue Exception` to catch all error types
+  - Added `handle_tool_crash` method that logs errors with 5-line traceback
+  - Tool crashes no longer crash AIA - conversation continues gracefully
 
 ### Improvements
 - **`//tools` Directive Filter**: Added optional filter parameter to the `//tools` directive
@@ -7,6 +29,20 @@
   - Example: `//tools error` lists only tools with "error" in the name
   - Shows "No tools match the filter: [filter]" when no matches found
   - Header indicates when filtering is active: "Available Tools (filtered by 'filter')"
+
+### Documentation
+- Updated all shell completion scripts (`aia_completion.bash`, `aia_completion.zsh`, `aia_completion.fish`) to use new nested naming convention
+- Updated `docs/configuration.md` with comprehensive environment variable documentation
+- Updated `docs/cli-reference.md` environment variables section
+- Updated `docs/prompt_management.md` with correct envar names
+- Updated `docs/faq.md` with correct envar names
+- Updated `docs/guides/basic-usage.md` shell setup examples
+
+### Technical Changes
+- Enhanced `lib/aia/ruby_llm_adapter.rb`:
+  - Added `repair_incomplete_tool_calls` method for conversation integrity
+  - Added `handle_tool_crash` method for graceful error handling
+  - Removed debug statements
 
 ## [0.9.23] 2025-12-06
 
