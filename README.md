@@ -5,6 +5,20 @@
   <p>Check out the new <a href="http://madbomber.github.io/aia/guides/models/?h=inline+role+syntax#inline-role-syntax">Inline Role Syntax</a> when working with multiple concurrent models.</p>
 </div>
 
+---
+
+> ## ⚠️ BREAKING CHANGES ARE COMMING IN v0.10.0 ⚠️
+>
+> **Version 0.10.0 will introduce breaking changes affecting:**
+>
+> - **Environment Variables** — Naming conventions for system environment variables will change
+> - **Configuration Files** — Both the content format and structure of configuration files will be updated
+> - **File Locations** — Expected locations for configuration files will change
+>
+> **Please review the migration guide (coming soon) before upgrading to v0.10.0.**
+
+---
+
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
 
 AIA leverages the following Ruby gems:
