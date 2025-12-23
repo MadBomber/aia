@@ -1,9 +1,10 @@
 PATH
   remote: .
   specs:
-    aia (0.9.24)
+    aia (0.10.0)
       activesupport
       amazing_print
+      anyway_config (~> 2.6)
       async
       clipboard
       faraday
@@ -12,7 +13,6 @@ PATH
       ruby_llm (>= 1.9.1)
       ruby_llm-mcp (>= 0.8.0)
       shellwords
-      toml-rb
       tty-screen
       tty-spinner
       word_wrapper
@@ -37,6 +37,8 @@ GEM
       public_suffix (>= 2.0.2, < 8.0)
     amazing_print (2.0.0)
     ansi (1.5.0)
+    anyway_config (2.7.2)
+      ruby-next-core (~> 1.0)
     ast (2.4.3)
     async (2.35.0)
       console (~> 1.29)
@@ -50,7 +52,6 @@ GEM
     binding_of_caller (1.0.1)
       debug_inspector (>= 1.2.0)
     builder (3.3.0)
-    citrus (3.0.2)
     clipboard (2.0.0)
     coderay (1.1.3)
     cogger (1.7.0)
@@ -149,7 +150,7 @@ GEM
     http-2 (1.1.1)
     httpx (1.6.3)
       http-2 (>= 1.0.0)
-    i18n (1.14.7)
+    i18n (1.14.8)
       concurrent-ruby (~> 1.0)
     infusible (4.6.0)
       marameters (~> 4.1)
@@ -166,7 +167,8 @@ GEM
     marcel (1.1.0)
     method_source (1.1.0)
     metrics (0.15.0)
-    minitest (5.27.0)
+    minitest (6.0.0)
+      prism (~> 1.5)
     minitest-reporters (1.7.1)
       ansi
       builder
@@ -183,6 +185,7 @@ GEM
     parser (3.3.10.0)
       ast (~> 2.4.1)
       racc
+    prism (1.7.0)
     prompt_manager (0.5.8)
     pry (0.15.2)
       coderay (~> 1.1)
@@ -190,10 +193,13 @@ GEM
     public_suffix (7.0.0)
     racc (1.8.1)
     rake (13.3.1)
+    readline (0.0.4)
+      reline
     refinements (13.6.0)
     reline (0.6.3)
       io-console (~> 0.5)
     rexml (3.4.4)
+    ruby-next-core (1.1.2)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     ruby_llm (1.9.1)
@@ -246,9 +252,10 @@ GEM
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
     thor (1.4.0)
-    tins (1.48.0)
+    tins (1.51.0)
       bigdecimal
       mize (~> 0.6)
+      readline
       sync
     tocer (19.5.0)
       cogger (~> 1.0)
@@ -262,9 +269,6 @@ GEM
       sod (~> 1.5)
       spek (~> 4.0)
       zeitwerk (~> 2.7)
-    toml-rb (4.1.0)
-      citrus (~> 3.0, > 3.0)
-      racc (~> 1.7)
     tone (2.6.0)
       refinements (~> 13.6)
       zeitwerk (~> 2.7)
@@ -277,7 +281,7 @@ GEM
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
-    unicode-emoji (4.1.0)
+    unicode-emoji (4.2.0)
     uri (1.1.1)
     versionaire (14.5.0)
       refinements (~> 13.6)

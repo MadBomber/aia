@@ -72,12 +72,18 @@ module AIA
 
 
     def refresh_local_model_registry
-      if  AIA.config.refresh.nil?           ||
-          Integer(AIA.config.refresh).zero? ||
-          Date.today > (AIA.config.last_refresh + Integer(AIA.config.refresh))
+      refresh_days = AIA.config.registry.refresh
+      last_refresh = AIA.config.registry.last_refresh
+
+      # Parse last_refresh if it's a string
+      last_refresh = Date.parse(last_refresh) if last_refresh.is_a?(String)
+      last_refresh ||= Date.today - 999 # Force refresh if never done
+
+      if refresh_days.nil? || refresh_days.zero? || Date.today > (last_refresh + refresh_days)
         RubyLLM.models.refresh!
-        AIA.config.last_refresh = Date.today
-        AIA::Config.dump_config(AIA.config, AIA.config.config_file) if AIA.config.config_file
+        AIA.config.registry.last_refresh = Date.today
+        config_file = AIA.config.paths.config_file
+        AIA::ConfigValidator.dump_config(AIA.config, config_file) if config_file
       end
     end
 
@@ -170,7 +176,7 @@ module AIA
       @models = valid_chats.keys
 
       # Update the config to reflect only the valid models (keep as specs)
-      AIA.config.model = @model_specs
+      # Note: models is an array, not directly settable - skip this update
 
       # Report successful models
       if failed_models.any?
@@ -203,7 +209,7 @@ module AIA
         AIA.config.tool_names = ''
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
-        AIA.config.tools      = @tools
+        AIA.config.loaded_tools = @tools
       end
     end
 
@@ -221,7 +227,7 @@ module AIA
         AIA.config.tool_names = ''
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
-        AIA.config.tools      = @tools
+        AIA.config.loaded_tools = @tools
       end
     end
 
@@ -328,7 +334,7 @@ module AIA
       # Get role content using PromptHandler
       # Need to create PromptHandler instance if not already available
       prompt_handler = AIA::PromptHandler.new
-      role_content = prompt_handler.load_role_for_model(spec, AIA.config.role)
+      role_content = prompt_handler.load_role_for_model(spec, AIA.config.prompts.role)
 
       return prompt unless role_content
 
@@ -409,7 +415,7 @@ module AIA
 
     def should_use_consensus_mode?
       # Only use consensus when explicitly enabled with --consensus flag
-      AIA.config.consensus == true
+      AIA.config.flags.consensus == true
     end
 
     def generate_consensus_response(results)
@@ -566,8 +572,8 @@ module AIA
         # Try using a TTS API if available
         # For now, we'll use a mock implementation
         File.write(output_file, 'Mock TTS audio content')
-        if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
-          system("#{AIA.config.speak_command} #{output_file}")
+        if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
+          system("#{AIA.config.audio.speak_command} #{output_file}")
         end
         "Audio generated and saved to: #{output_file}"
       rescue StandardError => e
@@ -640,27 +646,29 @@ module AIA
     private
 
     def filter_tools_by_allowed_list
-      return if AIA.config.allowed_tools.nil?
+      allowed = AIA.config.tools.allowed
+      return if allowed.nil? || allowed.empty?
+
+      # allowed_tools is now an array
+      allowed_list = Array(allowed).map(&:strip)
 
       @tools.select! do |tool|
         tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        AIA.config.allowed_tools
-          .split(',')
-          .map(&:strip)
-          .any? { |allowed| tool_name.include?(allowed) }
+        allowed_list.any? { |allowed_pattern| tool_name.include?(allowed_pattern) }
       end
     end
 
 
     def filter_tools_by_rejected_list
-      return if AIA.config.rejected_tools.nil?
+      rejected = AIA.config.tools.rejected
+      return if rejected.nil? || rejected.empty?
+
+      # rejected_tools is now an array
+      rejected_list = Array(rejected).map(&:strip)
 
       @tools.reject! do |tool|
         tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        AIA.config.rejected_tools
-          .split(',')
-          .map(&:strip)
-          .any? { |rejected| tool_name.include?(rejected) }
+        rejected_list.any? { |rejected_pattern| tool_name.include?(rejected_pattern) }
       end
     end
 
@@ -704,26 +712,30 @@ module AIA
 
 
     def extract_models_config
-      models_config = AIA.config.model
+      # Use config.models which returns array of ModelSpec objects
+      models_config = AIA.config.models
 
-      # Handle backward compatibility
-      if models_config.is_a?(String)
-        # Old format: single string
-        [{model: models_config, role: nil, instance: 1, internal_id: models_config}]
-      elsif models_config.is_a?(Array)
-        if models_config.empty?
-          # Empty array - use default
-          [{model: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini'}]
-        elsif models_config.first.is_a?(Hash)
-          # New format: array of hashes with model specs
-          models_config
-        else
-          # Old format: array of strings
-          models_config.map { |m| {model: m, role: nil, instance: 1, internal_id: m} }
-        end
-      else
+      if models_config.nil? || models_config.empty?
         # Fallback to default
         [{model: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini'}]
+      else
+        # Convert ModelSpec objects to hash format expected by adapter
+        models_config.map do |spec|
+          if spec.respond_to?(:name)
+            # ModelSpec object
+            {model: spec.name, role: spec.role, instance: spec.instance, internal_id: spec.internal_id}
+          elsif spec.is_a?(Hash)
+            # Hash format (legacy or from config.model accessor)
+            model_name = spec[:model] || spec[:name]
+            {model: model_name, role: spec[:role], instance: spec[:instance] || 1, internal_id: spec[:internal_id] || model_name}
+          elsif spec.is_a?(String)
+            # String format (legacy)
+            {model: spec, role: nil, instance: 1, internal_id: spec}
+          else
+            # Unknown format, skip
+            nil
+          end
+        end.compact
       end
     end
 
@@ -792,7 +804,7 @@ module AIA
       image_name  = extract_image_path(text_prompt)
 
       begin
-        image = RubyLLM.paint(text_prompt, size: AIA.config.image_size)
+        image = RubyLLM.paint(text_prompt, size: AIA.config.image.size)
         if image_name
           image_path = image.save(image_name)
           "Image generated and saved to: #{image_path}"
@@ -837,8 +849,8 @@ module AIA
         # NOTE: RubyLLM doesn't have a direct TTS feature
         # TODO: This is a placeholder for a custom implementation
         File.write(output_file, text_prompt)
-        if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
-          system("#{AIA.config.speak_command} #{output_file}")
+        if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
+          system("#{AIA.config.audio.speak_command} #{output_file}")
         end
         "Audio generated and saved to: #{output_file}"
       rescue StandardError => e

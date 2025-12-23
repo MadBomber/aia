@@ -13,16 +13,57 @@ class SessionTest < Minitest::Test
     AIA.stubs(:speak?).returns(false)
     AIA.stubs(:debug?).returns(false)
     
-    # Mock AIA.config to return safe defaults
+    # Mock AIA.config with nested structure (matching new config layout)
     AIA.stubs(:config).returns(OpenStruct.new(
       prompt_id: 'test_prompt',
       context_files: [],
       stdin_content: nil,
       executable_prompt_file: nil,
-      system_prompt: 'You are a helpful assistant',
       pipeline: ['test_prompt'],
-      role: nil,
-      out_file: nil
+      mcp_servers: [],
+      tool_names: '',
+      prompts: OpenStruct.new(
+        dir: '/tmp/test_prompts',
+        extname: '.txt',
+        roles_prefix: 'roles',
+        roles_dir: '/tmp/test_prompts/roles',
+        role: nil,
+        system_prompt: 'You are a helpful assistant'
+      ),
+      output: OpenStruct.new(
+        file: nil,
+        append: false,
+        markdown: true,
+        log_file: nil
+      ),
+      flags: OpenStruct.new(
+        chat: false,
+        fuzzy: false,
+        debug: false,
+        verbose: false,
+        terse: false,
+        speak: false
+      ),
+      llm: OpenStruct.new(
+        adapter: 'ruby_llm',
+        temperature: 0.7,
+        max_tokens: 2048
+      ),
+      models: [OpenStruct.new(name: 'gpt-4o-mini')],
+      tools: OpenStruct.new(
+        paths: [],
+        allowed: nil,
+        rejected: nil
+      ),
+      audio: OpenStruct.new(
+        voice: 'alloy',
+        speak_command: 'afplay',
+        speech_model: 'tts-1'
+      ),
+      registry: OpenStruct.new(
+        refresh: 7,
+        last_refresh: nil
+      )
     ))
     
     @prompt_handler = mock('prompt_handler')
@@ -248,20 +289,20 @@ class SessionTest < Minitest::Test
     temp_file = Tempfile.new('test_output')
     temp_file.write('existing content')
     temp_file.close
-    
-    AIA.config.out_file = temp_file.path
+
+    AIA.config.output.file = temp_file.path
     AIA.stubs(:append?).returns(false)
-    
+
     @session.send(:setup_output_file)
-    
+
     assert_equal '', File.read(temp_file.path)
     temp_file.unlink
   end
 
   def test_setup_output_file_does_nothing_when_append_mode
-    AIA.config.out_file = 'some_file.txt'
+    AIA.config.output.file = 'some_file.txt'
     AIA.stubs(:append?).returns(true)
-    
+
     # Should not try to truncate file
     @session.send(:setup_output_file)
   end

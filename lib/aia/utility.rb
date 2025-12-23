@@ -10,7 +10,7 @@ module AIA
       end
 
       def user_tools?
-        AIA.config&.tool_paths && !AIA.config.tool_paths.empty?
+        AIA.config&.tools&.paths && !AIA.config.tools.paths.empty?
       end
 
       def mcp_servers?
@@ -23,7 +23,7 @@ module AIA
       end
 
       def supports_tools?
-        AIA.config&.client&.model&.supports_functions? || false
+        AIA.client&.model&.supports_functions? || false
       end
 
 
@@ -37,20 +37,10 @@ module AIA
 
         mcp_version = defined?(RubyLLM::MCP::VERSION) ? " MCP v" + RubyLLM::MCP::VERSION : ''
 
-        # Extract model names from config (handles hash format from ADR-005)
-        model_display = if AIA.config&.model
-          models = AIA.config.model
-          if models.is_a?(String)
-            models
-          elsif models.is_a?(Array)
-            if models.first.is_a?(Hash)
-              models.map { |spec| spec[:model] }.join(', ')
-            else
-              models.join(', ')
-            end
-          else
-            models.to_s
-          end
+        # Extract model names from config (handles ModelSpec objects from ADR-005)
+        model_display = if AIA.config&.models && !AIA.config.models.empty?
+          models = AIA.config.models
+          models.map { |spec| spec.respond_to?(:name) ? spec.name : spec.to_s }.join(', ')
         else
           'unknown-model'
         end
@@ -62,15 +52,15 @@ module AIA
        ,      ,
        (\\____/) AI Assistant (v#{AIA::VERSION}) is Online
         (_oo_)   #{model_display}#{supports_tools? ? ' (supports tools)' : ''}
-         (O)       using #{AIA.config&.adapter || 'unknown-adapter'} (v#{RubyLLM::VERSION}#{mcp_version})
+         (O)       using #{AIA.config&.llm&.adapter || 'unknown-adapter'} (v#{RubyLLM::VERSION}#{mcp_version})
        __||__    \\) model db was last refreshed on
-     [/______\\]  /    #{AIA.config&.last_refresh || 'unknown'}
+     [/______\\]  /    #{AIA.config&.registry&.last_refresh || 'unknown'}
     / \\__AI__/ \\/      #{user_tools? ? 'I will also use your tools' : (tools? ? 'You can share my tools' : 'I did not bring any tools')}
    /    /__\\              #{mcp_line}
   (\\   /____\\   #{user_tools? && tools? ? 'My Toolbox contains:' : ''}
         ROBOT
         if user_tools? && tools?
-          tool_names = AIA.config.respond_to?(:tool_names) ? AIA.config.tool_names : AIA.config.tools
+          tool_names = AIA.config.tool_names
           if tool_names && !tool_names.to_s.empty?
             puts WordWrapper::MinimumRaggedness.new(
                 width,

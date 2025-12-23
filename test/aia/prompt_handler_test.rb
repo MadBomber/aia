@@ -6,19 +6,20 @@ class PromptHandlerTest < Minitest::Test
   def setup
     # Mock AIA module methods to prevent actual operations
     AIA.stubs(:config).returns(OpenStruct.new(
-      model: 'test-model',
-      temperature: 0.7,
-      max_tokens: 2048,
-      chat: false,
-      tools: [],
+      models: [OpenStruct.new(name: 'test-model')],
+      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+      tools: OpenStruct.new(paths: []),
       context_files: [],
-      prompts_dir: '/tmp/test_prompts',
-      roles_dir: '/tmp/test_prompts/roles',
-      role: nil,
-      prompt_id: 'test_prompt',
-      fuzzy: false,
-      erb: false,
-      shell: false
+      prompts: OpenStruct.new(
+        dir: '/tmp/test_prompts',
+        extname: '.txt',
+        roles_dir: '/tmp/test_prompts/roles',
+        roles_prefix: 'roles',
+        role: nil,
+        parameter_regex: '\\{\\{\\w+\\}\\}'
+      ),
+      prompt_id: 'test_prompt'
     ))
 
     @handler = AIA::PromptHandler.new

@@ -1,0 +1,181 @@
+# AIA Configuration Schema and Defaults
+#
+# This file is the SINGLE SOURCE OF TRUTH for AIA configuration.
+# All attributes must be declared here to be recognized.
+# It is bundled with the gem and loaded automatically at lowest priority.
+#
+# Loading priority (lowest to highest):
+# 1. This file (bundled defaults)
+# 2. User config (~/.aia/config.yml)
+# 3. Environment variables (AIA_*)
+# 4. CLI arguments
+# 5. Embedded directives (//config)
+#
+# Environment Variable Naming:
+# Use double underscore for nested keys:
+#   AIA_LLM__TEMPERATURE=0.5
+#   AIA_PROMPTS__DIR=~/my-prompts
+#   AIA_FLAGS__DEBUG=true
+
+# -----------------------------------------------------------------------------
+# LLM Configuration
+# Access: AIA.config.llm.adapter, AIA.config.llm.temperature, etc.
+# Env: AIA_LLM__ADAPTER, AIA_LLM__TEMPERATURE, etc.
+# -----------------------------------------------------------------------------
+llm:
+  adapter: ruby_llm
+  temperature: 0.7
+  max_tokens: 2048
+  top_p: 1.0
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+
+# -----------------------------------------------------------------------------
+# Models Configuration
+# Access: AIA.config.models (array of ModelSpec objects)
+# Each model has: name, role, instance, internal_id
+#
+# Example YAML:
+#   models:
+#     - name: gpt-4o
+#       role: architect
+#     - name: claude-3-opus
+#       role: reviewer
+#
+# Example CLI: --model "gpt-4o=architect,claude-3-opus=reviewer"
+# -----------------------------------------------------------------------------
+models:
+  - name: gpt-4o-mini
+    role: ~
+
+# -----------------------------------------------------------------------------
+# Prompts Configuration
+# Access: AIA.config.prompts.dir, AIA.config.prompts.roles_prefix, etc.
+# Env: AIA_PROMPTS__DIR, AIA_PROMPTS__ROLES_PREFIX, etc.
+# -----------------------------------------------------------------------------
+prompts:
+  dir: ~/.prompts
+  extname: .txt
+  roles_prefix: roles
+  roles_dir: ~/.prompts/roles
+  role: ~
+  system_prompt: ~
+  parameter_regex: ~
+
+# -----------------------------------------------------------------------------
+# Output Configuration
+# Access: AIA.config.output.file, AIA.config.output.append, etc.
+# Env: AIA_OUTPUT__FILE, AIA_OUTPUT__APPEND, etc.
+# -----------------------------------------------------------------------------
+output:
+  file: temp.md
+  append: false
+  markdown: true
+  log_file: ~/.prompts/_prompts.log
+
+# -----------------------------------------------------------------------------
+# Audio Configuration
+# Access: AIA.config.audio.voice, AIA.config.audio.speak_command, etc.
+# Env: AIA_AUDIO__VOICE, AIA_AUDIO__SPEAK_COMMAND, etc.
+# -----------------------------------------------------------------------------
+audio:
+  voice: alloy
+  speak_command: afplay
+  speech_model: tts-1
+  transcription_model: whisper-1
+
+# -----------------------------------------------------------------------------
+# Image Configuration
+# Access: AIA.config.image.model, AIA.config.image.size, etc.
+# Env: AIA_IMAGE__MODEL, AIA_IMAGE__SIZE, etc.
+# -----------------------------------------------------------------------------
+image:
+  model: dall-e-3
+  size: 1024x1024
+  quality: standard
+  style: vivid
+
+# -----------------------------------------------------------------------------
+# Embedding Configuration
+# Access: AIA.config.embedding.model
+# Env: AIA_EMBEDDING__MODEL
+# -----------------------------------------------------------------------------
+embedding:
+  model: text-embedding-ada-002
+
+# -----------------------------------------------------------------------------
+# Tools Configuration
+# Access: AIA.config.tools.paths, AIA.config.tools.allowed, etc.
+# Env: AIA_TOOLS__PATHS, AIA_TOOLS__ALLOWED, etc.
+# -----------------------------------------------------------------------------
+tools:
+  paths: []
+  allowed: ~
+  rejected: ~
+
+# -----------------------------------------------------------------------------
+# Flags (Boolean Options)
+# Access: AIA.config.flags.chat, AIA.config.flags.debug, etc.
+# Env: AIA_FLAGS__CHAT=true, AIA_FLAGS__DEBUG=true, etc.
+# -----------------------------------------------------------------------------
+flags:
+  chat: false
+  debug: false
+  verbose: false
+  fuzzy: false
+  speak: false
+  terse: false
+  shell: true
+  erb: true
+  clear: false
+  consensus: false
+
+# -----------------------------------------------------------------------------
+# Pipeline/Workflow Configuration
+# Access: AIA.config.pipeline (array of prompt IDs)
+# -----------------------------------------------------------------------------
+pipeline: []
+
+# -----------------------------------------------------------------------------
+# Model Registry Configuration
+# Access: AIA.config.registry.refresh, AIA.config.registry.last_refresh
+# Env: AIA_REGISTRY__REFRESH, etc.
+# -----------------------------------------------------------------------------
+registry:
+  refresh: 7
+  last_refresh: ~
+
+# -----------------------------------------------------------------------------
+# Required Ruby Libraries
+# Access: AIA.config.require_libs (array)
+# -----------------------------------------------------------------------------
+require_libs: []
+
+# -----------------------------------------------------------------------------
+# MCP Servers Configuration
+# Access: AIA.config.mcp_servers (array of server configs)
+#
+# Example:
+#   mcp_servers:
+#     - name: my-server
+#       command: /path/to/server
+#       args: []
+#       env: {}
+#       timeout: 8000
+# -----------------------------------------------------------------------------
+mcp_servers: []
+
+# -----------------------------------------------------------------------------
+# Paths Configuration
+# Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
+# Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
+# -----------------------------------------------------------------------------
+paths:
+  aia_dir: ~/.aia
+  config_file: ~/.aia/config.yml
+
+# -----------------------------------------------------------------------------
+# Context Files (set at runtime)
+# Access: AIA.config.context_files (array of file paths)
+# -----------------------------------------------------------------------------
+context_files: []

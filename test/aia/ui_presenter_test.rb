@@ -11,10 +11,10 @@ class UIPresenterTest < Minitest::Test
     @captured_output = StringIO.new
     $stdout = @captured_output
     
-    # Mock AIA.config
+    # Mock AIA.config with nested structure
     AIA.stubs(:config).returns(OpenStruct.new(
-      out_file: nil,
-      verbose: false
+      output: OpenStruct.new(file: nil),
+      flags: OpenStruct.new(verbose: false)
     ))
     
     # Mock AIA.verbose? method
@@ -97,7 +97,7 @@ class UIPresenterTest < Minitest::Test
 
   def test_display_ai_response_with_out_file
     temp_file = Tempfile.new('test_output')
-    AIA.config.out_file = temp_file.path
+    AIA.config.output.file = temp_file.path
     
     @presenter.display_ai_response("Test output")
     

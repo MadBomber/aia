@@ -25,15 +25,26 @@ class ChatProcessorServiceTest < Minitest::Test
     
     AIA.stubs(:client).returns(@mock_client)
     
-    # Create config with client reference
+    # Create config with nested structure (matching new config layout)
     @config = OpenStruct.new(
-      speech_model: 'tts-1',
-      speak_command: 'say',
-      out_file: nil,
-      log_file: nil,
       prompt_id: 'test_prompt',
-      model: 'gpt-4o-mini',
-      client: @mock_client
+      client: @mock_client,
+      models: [OpenStruct.new(name: 'gpt-4o-mini')],
+      audio: OpenStruct.new(
+        speech_model: 'tts-1',
+        speak_command: 'say'
+      ),
+      output: OpenStruct.new(
+        file: nil,
+        log_file: nil
+      ),
+      flags: OpenStruct.new(
+        debug: false,
+        verbose: false
+      ),
+      llm: OpenStruct.new(
+        adapter: 'ruby_llm'
+      )
     )
     AIA.stubs(:config).returns(@config)
     
@@ -136,7 +147,7 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_output_response_to_stdout_when_out_file_nil
-    @config.out_file = nil
+    @config.output.file = nil
     
     @service.expects(:speak).with('Test response')
     @service.expects(:print).with("\nAI:\n  ")
@@ -146,7 +157,7 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_output_response_to_stdout_when_out_file_is_stdout
-    @config.out_file = 'STDOUT'
+    @config.output.file = 'STDOUT'
     
     @service.expects(:speak).with('Test response')
     @service.expects(:print).with("\nAI:\n  ")
@@ -156,7 +167,7 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_output_response_to_file_in_write_mode
-    @config.out_file = 'output.txt'
+    @config.output.file = 'output.txt'
     AIA.stubs(:append?).returns(false)
     
     mock_file = mock('file')
@@ -170,7 +181,7 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_output_response_to_file_in_append_mode
-    @config.out_file = 'output.txt'
+    @config.output.file = 'output.txt'
     AIA.stubs(:append?).returns(true)
     
     mock_file = mock('file')
@@ -184,8 +195,8 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_output_response_logs_to_log_file
-    @config.log_file = 'test.log'
-    @config.out_file = nil
+    @config.output.log_file = 'test.log'
+    @config.output.file = nil
     
     # Mock Time.now to return a predictable time
     fixed_time = Time.parse('2025-06-25 17:48:32 -0500')
@@ -212,22 +223,22 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_determine_operation_type_with_array_model
-    @config.model = ['gpt-4o-mini', 'claude-3']
-    
+    @config.models = [OpenStruct.new(name: 'gpt-4o-mini'), OpenStruct.new(name: 'claude-3')]
+
     operation_type = @service.send(:determine_operation_type)
     assert_equal 'MULTI-MODEL PROCESSING', operation_type
   end
 
   def test_determine_operation_type_with_single_model_array
-    @config.model = ['gpt-4o-mini']
-    
+    @config.models = [OpenStruct.new(name: 'gpt-4o-mini')]
+
     operation_type = @service.send(:determine_operation_type)
     assert_equal 'text TO text', operation_type
   end
 
   def test_maybe_change_model_with_array_model
-    @config.model = ['gpt-4o-mini', 'claude-3']
-    
+    @config.models = [OpenStruct.new(name: 'gpt-4o-mini'), OpenStruct.new(name: 'claude-3')]
+
     # Should return early when model is an array
     AIA.expects(:client=).never
     @service.send(:maybe_change_model)
@@ -235,7 +246,7 @@ class ChatProcessorServiceTest < Minitest::Test
 
   def test_speak_when_enabled_without_speech_model
     AIA.stubs(:speak?).returns(true)
-    @config.speech_model = nil
+    @config.audio.speech_model = nil
     
     captured_output = StringIO.new
     original_stdout = $stdout

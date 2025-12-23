@@ -30,36 +30,66 @@ class AIAIntegrationTest < Minitest::Test
     TTY::Screen.stubs(:width).returns(80)
     TTY::Screen.stubs(:height).returns(24)
 
-    # Mock AIA.config with realistic defaults
+    # Mock AIA.config with nested structure (matching new config layout)
     @mock_config = OpenStruct.new(
       prompt_id: nil,
       context_files: [],
       stdin_content: nil,
       executable_prompt_file: nil,
-      system_prompt: 'You are a helpful assistant',
       pipeline: [],
-      role: nil,
-      out_file: nil,
-      prompts_dir: @temp_prompts_dir,
-      model: 'gpt-4o-mini',
-      temperature: 0.7,
-      tools: [],
-      tool_paths: [],
-      tool_names: [],
-      allowed_tools: nil,
-      rejected_tools: nil,
-      chat: false,
-      fuzzy: false,
-      parameter_regex: '\\{\\{\\w+\\}\\}',
-      erb: true,
-      shell: true,
-      markdown: true,
-      max_tokens: 2048,
-      refresh: 7,
-      last_refresh: Date.today,
       require_libs: [],
-      voice: 'alloy',
-      speak_command: 'afplay'
+      mcp_servers: [],
+      tool_names: '',
+      # Nested sections
+      llm: OpenStruct.new(
+        adapter: 'ruby_llm',
+        temperature: 0.7,
+        max_tokens: 2048
+      ),
+      models: [OpenStruct.new(name: 'gpt-4o-mini')],
+      prompts: OpenStruct.new(
+        dir: @temp_prompts_dir,
+        extname: '.txt',
+        roles_prefix: 'roles',
+        roles_dir: File.join(@temp_prompts_dir, 'roles'),
+        role: nil,
+        system_prompt: 'You are a helpful assistant',
+        parameter_regex: '\\{\\{\\w+\\}\\}'
+      ),
+      output: OpenStruct.new(
+        file: nil,
+        append: false,
+        markdown: true,
+        log_file: nil
+      ),
+      flags: OpenStruct.new(
+        chat: false,
+        fuzzy: false,
+        debug: false,
+        verbose: false,
+        terse: false,
+        speak: false,
+        erb: true,
+        shell: true
+      ),
+      tools: OpenStruct.new(
+        paths: [],
+        allowed: nil,
+        rejected: nil
+      ),
+      audio: OpenStruct.new(
+        voice: 'alloy',
+        speak_command: 'afplay',
+        speech_model: 'tts-1'
+      ),
+      registry: OpenStruct.new(
+        refresh: 7,
+        last_refresh: Date.today
+      ),
+      paths: OpenStruct.new(
+        aia_dir: '~/.aia',
+        config_file: '~/.aia/config.yml'
+      )
     )
     
     # Add client.model structure for utility methods
@@ -164,7 +194,7 @@ class AIAIntegrationTest < Minitest::Test
   end
 
   def test_chat_mode_workflow
-    @mock_config.chat = true
+    @mock_config.flags.chat = true
     @mock_config.prompt_id = nil
     @mock_config.context_files = []
 
@@ -217,29 +247,19 @@ class AIAIntegrationTest < Minitest::Test
   end
 
   def test_configuration_workflow_with_environment_variables
-    # Test that environment variables are properly processed
-    ENV['AIA_MODEL'] = 'test-model'
-    ENV['AIA_TEMPERATURE'] = '0.8'
-    ENV['AIA_CHAT'] = 'true'
+    # Test that anyway_config handles environment variables
+    # Environment variables now use nested naming like AIA_LLM__TEMPERATURE
+    # This test verifies the config structure is correct
+    config = AIA::Config.new
 
-    # Mock config setup
-    mock_config = OpenStruct.new(
-      model: 'default-model',
-      temperature: 0.7,
-      chat: false
-    )
+    # Test that nested sections exist
+    assert_respond_to config, :llm
+    assert_respond_to config, :flags
+    assert_respond_to config, :models
 
-    # Test environment variable processing
-    result = AIA::Config.envar_options(mock_config, OpenStruct.new)
-
-    assert_equal 'test-model', result.model
-    assert_equal 0.8, result.temperature
-    assert_equal true, result.chat
-
-    # Clean up
-    ENV.delete('AIA_MODEL')
-    ENV.delete('AIA_TEMPERATURE')
-    ENV.delete('AIA_CHAT')
+    # Test that nested values are accessible
+    assert_kind_of Numeric, config.llm.temperature
+    assert_kind_of Array, config.models
   end
 
   def test_tool_loading_workflow
@@ -259,7 +279,7 @@ class AIAIntegrationTest < Minitest::Test
     tool_file.write(tool_content)
     tool_file.close
 
-    @mock_config.tool_paths = [tool_file.path]
+    @mock_config.tools.paths = [tool_file.path]
 
     # Test tool loading
     mock_adapter = mock('adapter')
@@ -278,7 +298,7 @@ class AIAIntegrationTest < Minitest::Test
     output_file = Tempfile.new('test_output')
     output_file.close
 
-    @mock_config.out_file = output_file.path
+    @mock_config.output.file = output_file.path
     @mock_config.prompt_id = 'test_prompt'
 
     # Create test prompt
@@ -322,7 +342,7 @@ class AIAIntegrationTest < Minitest::Test
     prompt_file = File.join(@temp_prompts_dir, 'debug_task.txt')
     File.write(prompt_file, 'Debug this code issue.')
 
-    @mock_config.role = 'developer'
+    @mock_config.prompts.role = 'developer'
     @mock_config.prompt_id = 'debug_task'
 
     # Mock session

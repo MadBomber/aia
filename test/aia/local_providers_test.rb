@@ -10,14 +10,15 @@ class LocalProvidersTest < Minitest::Test
     # Enable WebMock
     WebMock.disable_net_connect!(allow_localhost: false)
 
-    # Mock AIA.config
+    # Mock AIA.config with nested structure
     @mock_config = OpenStruct.new(
-      model: ['lms/test-model'],
-      tools: [],
+      models: [OpenStruct.new(name: 'lms/test-model')],
+      tools: OpenStruct.new(paths: []),
       context_files: [],
-      debug: false,
-      refresh: nil,
-      last_refresh: Date.today
+      flags: OpenStruct.new(debug: false),
+      registry: OpenStruct.new(refresh: nil, last_refresh: Date.today),
+      paths: OpenStruct.new(config_file: '/tmp/test_config.yml'),
+      mcp_servers: []
     )
     AIA.stubs(:config).returns(@mock_config)
 
@@ -167,7 +168,7 @@ class LocalProvidersTest < Minitest::Test
   # ===========================
 
   def test_ollama_model_initialization
-    @mock_config.model = ['ollama/llama2']
+    @mock_config.models = [OpenStruct.new(name: 'ollama/llama2')]
 
     # Mock successful Ollama chat creation via Context (ADR-002)
     mock_chat = mock('chat')
@@ -187,7 +188,7 @@ class LocalProvidersTest < Minitest::Test
   end
 
   def test_ollama_custom_api_base
-    @mock_config.model = ['ollama/llama2']
+    @mock_config.models = [OpenStruct.new(name: 'ollama/llama2')]
     ENV['OLLAMA_API_BASE'] = 'http://custom-ollama:11434'
 
     mock_chat = mock('chat')
@@ -216,7 +217,7 @@ class LocalProvidersTest < Minitest::Test
   # ===========================
 
   def test_osaurus_model_initialization
-    @mock_config.model = ['osaurus/test-model']
+    @mock_config.models = [OpenStruct.new(name: 'osaurus/test-model')]
 
     # Mock successful Osaurus initialization
     mock_context = mock('context')
@@ -240,7 +241,7 @@ class LocalProvidersTest < Minitest::Test
   # ===========================
 
   def test_multiple_providers_initialization
-    @mock_config.model = ['gpt-4o-mini', 'ollama/llama2']
+    @mock_config.models = [OpenStruct.new(name: 'gpt-4o-mini'), OpenStruct.new(name: 'ollama/llama2')]
 
     # Mock OpenAI model - uses context.chat() (ADR-002)
     mock_chat_openai = mock('chat_openai')
@@ -276,7 +277,7 @@ class LocalProvidersTest < Minitest::Test
   # ===========================
 
   def test_lms_prefix_extraction
-    @mock_config.model = ['lms/qwen3-coder']
+    @mock_config.models = [OpenStruct.new(name: 'lms/qwen3-coder')]
 
     stub_request(:get, "http://localhost:1234/v1/models")
       .to_return(
@@ -303,7 +304,7 @@ class LocalProvidersTest < Minitest::Test
   end
 
   def test_ollama_prefix_extraction
-    @mock_config.model = ['ollama/mistral:7b']
+    @mock_config.models = [OpenStruct.new(name: 'ollama/mistral:7b')]
 
     mock_chat = mock('chat')
     mock_model = mock('model')
