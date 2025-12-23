@@ -254,21 +254,12 @@ module AIA
       filter_tools_by_rejected_list
       drop_duplicate_tools
 
-      if AIA.debug?
-        final_tool_count = @tools.size
-        debug_me { :final_tool_count }
-      end
-
       if tools.empty?
         AIA.config.tool_names = ''
         AIA.config.loaded_tools = []
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
         AIA.config.loaded_tools = @tools
-        if AIA.debug?
-          loaded_tool_names = AIA.config.tool_names
-          debug_me { :loaded_tool_names }
-        end
       end
     end
 
@@ -313,25 +304,15 @@ module AIA
         end
       end
 
-      if AIA.debug?
-        tool_count = tool_classes.size
-        tool_names = tool_classes.map(&:name).join(', ')
-        debug_me { [:tool_count, :tool_names] }
-      end
-
       @tools += tool_classes
     end
 
     def load_require_libs
       require_libs = AIA.config.require_libs
-      debug_me { :require_libs } if AIA.debug?
-
       return if require_libs.nil? || require_libs.empty?
 
       require_libs.each do |lib|
         begin
-          debug_me { :lib } if AIA.debug?
-
           # Activate gem and add to load path (bypasses Bundler's restrictions)
           activate_gem_for_require(lib)
 
@@ -339,9 +320,7 @@ module AIA
 
           # After requiring, trigger tool loading if the library supports it
           # This handles gems like shared_tools that use Zeitwerk lazy loading
-          debug_me "About to call trigger_tool_loading(#{lib})" if AIA.debug?
           trigger_tool_loading(lib)
-          debug_me "Finished trigger_tool_loading(#{lib})" if AIA.debug?
         rescue LoadError => e
           warn "Warning: Failed to require library '#{lib}': #{e.message}"
           warn "Hint: Make sure the gem is installed: gem install #{lib}"
@@ -362,9 +341,6 @@ module AIA
       if gem_path
         lib_path = File.join(gem_path, 'lib')
         $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-        debug_me "Added #{lib} from #{lib_path}" if AIA.debug?
-      else
-        debug_me "Gem #{lib} not found in gem paths" if AIA.debug?
       end
     end
 
@@ -389,26 +365,19 @@ module AIA
     def trigger_tool_loading(lib)
       # Convert lib name to constant (e.g., 'shared_tools' -> SharedTools)
       const_name = lib.split(/[_-]/).map(&:capitalize).join
-      debug_me { :const_name } if AIA.debug?
 
       begin
         mod = Object.const_get(const_name)
-        debug_me { :mod } if AIA.debug?
 
         # Try common methods that libraries use to load tools
         if mod.respond_to?(:load_all_tools)
-          debug_me "Calling #{const_name}.load_all_tools" if AIA.debug?
           mod.load_all_tools
         elsif mod.respond_to?(:tools)
           # Calling .tools often triggers lazy loading
-          debug_me "Calling #{const_name}.tools to trigger loading" if AIA.debug?
           mod.tools
-        else
-          debug_me "#{const_name} does not respond to load_all_tools or tools" if AIA.debug?
         end
-      rescue NameError => e
+      rescue NameError
         # Constant doesn't exist, library might use different naming
-        debug_me "Could not find constant #{const_name} for #{lib}: #{e.message}" if AIA.debug?
       end
     end
 
@@ -435,30 +404,14 @@ module AIA
       # Only load MCP tools if MCP servers are actually configured
       return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
 
-      if AIA.debug?
-        mcp_server_names = AIA.config.mcp_servers.map { |s| s[:name] || s['name'] }.join(', ')
-        debug_me { :mcp_server_names }
-      end
-
       begin
         # Register each MCP server with RubyLLM::MCP
         register_mcp_clients
 
         RubyLLM::MCP.establish_connection
-        mcp_tools = RubyLLM::MCP.tools
-        if AIA.debug?
-          mcp_tool_count = mcp_tools.size
-          mcp_tool_names = mcp_tools.map(&:name).join(', ')
-          debug_me { [:mcp_tool_count, :mcp_tool_names] }
-        end
-        @tools += mcp_tools
+        @tools += RubyLLM::MCP.tools
       rescue StandardError => e
         warn "Warning: Failed to connect MCP clients: #{e.message}"
-        if AIA.debug?
-          error_class = e.class
-          error_backtrace = e.backtrace.first(5).join("\n")
-          debug_me { [:error_class, :error_backtrace] }
-        end
       end
     end
 
@@ -478,8 +431,6 @@ module AIA
         }
         config[:env] = env unless env.empty?
 
-        debug_me { [:name, :config] } if AIA.debug?
-
         begin
           # Build add_client options - timeout is a top-level option, not in config
           client_options = {
@@ -494,7 +445,6 @@ module AIA
         rescue ArgumentError => e
           # If timeout isn't supported, try without it
           if e.message.include?('timeout')
-            debug_me "Retrying without timeout option" if AIA.debug?
             RubyLLM::MCP.add_client(
               name: name,
               transport_type: :stdio,
@@ -505,7 +455,6 @@ module AIA
           end
         rescue StandardError => e
           warn "Warning: Failed to register MCP client '#{name}': #{e.message}"
-          debug_me { [:mcp_client_error, e.class, e.message] } if AIA.debug?
         end
       end
     end
@@ -922,6 +871,68 @@ module AIA
     end
 
 
+    # Handles tool execution crashes gracefully
+    # Logs error with short traceback, repairs conversation, and returns error message
+    def handle_tool_crash(chat_instance, exception)
+      error_msg = "Tool error: #{exception.class} - #{exception.message}"
+
+      # Log error with short traceback (first 5 lines)
+      warn "\n⚠️  #{error_msg}"
+      if exception.backtrace
+        short_trace = exception.backtrace.first(5).map { |line| "   #{line}" }.join("\n")
+        warn short_trace
+      end
+      warn "" # blank line for readability
+
+      # Repair incomplete tool calls to maintain conversation integrity
+      repair_incomplete_tool_calls(chat_instance, error_msg)
+
+      # Return error message so conversation can continue
+      error_msg
+    end
+
+
+    # Repairs conversation history when a tool call fails (timeout, error, etc.)
+    # When an MCP tool times out, the conversation gets into an invalid state:
+    # - Assistant message with tool_calls was added to history
+    # - But no tool result message was added (because the tool failed)
+    # - The API requires tool results for each tool_call_id
+    # This method adds synthetic error tool results to fix the conversation.
+    def repair_incomplete_tool_calls(chat_instance, error_message)
+      return unless chat_instance.respond_to?(:messages)
+
+      messages = chat_instance.messages
+      return if messages.empty?
+
+      # Find the last assistant message that has tool_calls
+      last_assistant_with_tools = messages.reverse.find do |msg|
+        msg.role == :assistant && msg.respond_to?(:tool_calls) && msg.tool_calls&.any?
+      end
+
+      return unless last_assistant_with_tools
+
+      # Get the tool_call_ids that need results
+      tool_call_ids = last_assistant_with_tools.tool_calls.keys
+
+      # Check which tool_call_ids already have results
+      existing_tool_results = messages.select { |m| m.role == :tool }.map(&:tool_call_id).compact
+
+      # Add synthetic error results for any missing tool_call_ids
+      tool_call_ids.each do |tool_call_id|
+        next if existing_tool_results.include?(tool_call_id.to_s) || existing_tool_results.include?(tool_call_id)
+
+        # Add a synthetic tool result with the error message
+        chat_instance.add_message(
+          role: :tool,
+          content: "Error: #{error_message}",
+          tool_call_id: tool_call_id
+        )
+      end
+    rescue StandardError
+      # Don't let repair failures cascade
+    end
+
+
     def validate_lms_model!(model_name, api_base)
       require 'net/http'
       require 'json'
@@ -1030,8 +1041,10 @@ module AIA
 
       # Return the full response object to preserve token information
       response
-    rescue StandardError => e
-      e.message
+    rescue Exception => e # rubocop:disable Lint/RescueException
+      # Catch ALL exceptions including LoadError, ScriptError, etc.
+      # Tool crashes should not crash AIA - log and continue gracefully
+      handle_tool_crash(chat_instance, e)
     end
 
 
