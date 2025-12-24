@@ -35,7 +35,7 @@ class MultiModelIsolationTest < Minitest::Test
       aia_dir: File.join(ENV['HOME'], '.aia'),
       config_file: File.join(ENV['HOME'], '.aia', 'config.yml'),
       out_file: nil,
-      log_file: File.join(@temp_prompts_dir, '_prompts.log'),
+      history_file: File.join(@temp_prompts_dir, '_prompts.log'),
       context_files: [],
       prompts_dir: @temp_prompts_dir,
       roles_prefix: 'roles',

@@ -36,7 +36,7 @@ class ChatProcessorServiceTest < Minitest::Test
       ),
       output: OpenStruct.new(
         file: nil,
-        log_file: nil
+        history_file: nil
       ),
       flags: OpenStruct.new(
         debug: false,
@@ -194,21 +194,21 @@ class ChatProcessorServiceTest < Minitest::Test
     @service.output_response('Test response')
   end
 
-  def test_output_response_logs_to_log_file
-    @config.output.log_file = 'test.log'
+  def test_output_response_logs_to_history_file
+    @config.output.history_file = 'test.log'
     @config.output.file = nil
-    
+
     # Mock Time.now to return a predictable time
     fixed_time = Time.parse('2025-06-25 17:48:32 -0500')
     Time.stubs(:now).returns(fixed_time)
-    
-    mock_log_file = mock('log_file')
-    mock_log_file.expects(:puts).with("=== #{fixed_time} ===")
-    mock_log_file.expects(:puts).with('Prompt: test_prompt')
-    mock_log_file.expects(:puts).with('Response: Test response')
-    mock_log_file.expects(:puts).with('===')
-    
-    File.expects(:open).with('test.log', 'a').yields(mock_log_file)
+
+    mock_history_file = mock('history_file')
+    mock_history_file.expects(:puts).with("=== #{fixed_time} ===")
+    mock_history_file.expects(:puts).with('Prompt: test_prompt')
+    mock_history_file.expects(:puts).with('Response: Test response')
+    mock_history_file.expects(:puts).with('===')
+
+    File.expects(:open).with('test.log', 'a').yields(mock_history_file)
     
     @service.expects(:speak).with('Test response')
     @service.expects(:print).with("\nAI:\n  ")

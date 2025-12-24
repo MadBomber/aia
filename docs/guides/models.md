@@ -431,7 +431,7 @@ aia --model claude-3-haiku code_completion
 
 # Bulk processing
 for file in *.txt; do
-  aia --model gpt-3.5-turbo --out_file "${file%.txt}_processed.md" process_file "$file"
+  aia --model gpt-3.5-turbo --output "${file%.txt}_processed.md" process_file "$file"
 done
 ```
 
@@ -699,7 +699,7 @@ export LMS_API_BASE=http://localhost:1234/v1
 #### Privacy-First Workflow
 ```bash
 # Use local model for sensitive data
-aia --model ollama/llama3.2 --out_file draft.md process_private_data.txt
+aia --model ollama/llama3.2 --output draft.md process_private_data.txt
 
 # Use cloud model for final polish (on sanitized data)
 aia --model gpt-4 --include draft.md refine_output
@@ -709,7 +709,7 @@ aia --model gpt-4 --include draft.md refine_output
 ```bash
 # Bulk processing with local model (free)
 for file in *.txt; do
-  aia --model ollama/mistral --out_file "${file%.txt}_summary.md" summarize "$file"
+  aia --model ollama/mistral --output "${file%.txt}_summary.md" summarize "$file"
 done
 
 # Final review with premium cloud model
@@ -775,10 +775,10 @@ aia --model claude-3-sonnet alternative_processing
 ### Model Switching Workflows
 ```bash
 # Start with fast model for initial processing
-aia --model gpt-3.5-turbo --out_file draft.md initial_analysis data.csv
+aia --model gpt-3.5-turbo --output draft.md initial_analysis data.csv
 
 # Switch to quality model for refinement
-aia --model gpt-4 --include draft.md --out_file final.md refine_analysis
+aia --model gpt-4 --include draft.md --output final.md refine_analysis
 
 # Use specialized model for specific tasks
 aia --model gpt-4-vision --include final.md image_analysis charts/
@@ -803,8 +803,8 @@ puts "Selected #{model} for #{complexity} complexity task"
 ### Model Ensemble Techniques
 ```bash
 # Use different models for different aspects
-aia --model gpt-4 --out_file technical_analysis.md technical_review code.py
-aia --model claude-3-sonnet --out_file style_analysis.md style_review code.py
+aia --model gpt-4 --output technical_analysis.md technical_review code.py
+aia --model claude-3-sonnet --output style_analysis.md style_review code.py
 aia --model gpt-3.5-turbo --include technical_analysis.md --include style_analysis.md synthesize_reviews
 ```
 

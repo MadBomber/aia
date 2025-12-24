@@ -60,7 +60,7 @@ class AIAIntegrationTest < Minitest::Test
         file: nil,
         append: false,
         markdown: true,
-        log_file: nil
+        history_file: nil
       ),
       flags: OpenStruct.new(
         chat: false,

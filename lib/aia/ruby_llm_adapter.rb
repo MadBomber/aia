@@ -411,10 +411,20 @@ module AIA
     MCP_DEFAULT_TIMEOUT = 8_000  # 8 seconds (same as RubyLLM::MCP default)
 
     def support_mcp
+      mcp_log.debug("Starting MCP connection via RubyLLM::MCP.establish_connection")
       LoggerManager.configure_mcp_logger
+
+      start_time = Time.now
       RubyLLM::MCP.establish_connection
+      elapsed = Time.now - start_time
+
+      tool_count = RubyLLM::MCP.tools.size
       @tools += RubyLLM::MCP.tools
+
+      mcp_log.info("MCP connection established in #{elapsed.round(2)}s, loaded #{tool_count} tools")
     rescue StandardError => e
+      mcp_log.error("Failed to connect MCP clients: #{e.class} - #{e.message}")
+      mcp_log.debug("MCP connection error backtrace: #{e.backtrace&.first(5)&.join("\n")}")
       warn "Warning: Failed to connect MCP clients: #{e.message}"
     end
 
@@ -425,7 +435,10 @@ module AIA
     # This reduces total connection time from sum(timeouts) to max(timeouts).
 
     def support_mcp_with_simple_flow
-      return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
+      if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
+        mcp_log.debug("No MCP servers configured, skipping MCP setup")
+        return
+      end
 
       # Initialize tracking (kept for compatibility with Utility.robot)
       AIA.config.connected_mcp_servers = []
@@ -434,6 +447,7 @@ module AIA
       servers = AIA.config.mcp_servers
       server_names = servers.map { |s| s[:name] || s['name'] }.compact
 
+      mcp_log.info("Starting parallel MCP connection to #{servers.size} servers: #{server_names.join(', ')}")
       $stderr.puts "MCP: Connecting to #{server_names.join(', ')}..."
       $stderr.flush
 
@@ -444,11 +458,13 @@ module AIA
       adapter = self
       steps = servers.map do |server|
         name = (server[:name] || server['name']).to_sym
+        mcp_log.debug("Building connection step for server '#{name}'")
         [name, adapter.send(:build_mcp_connection_step, server)]
       end
 
       # Build parallel pipeline - each server is independent (depends_on: :none)
       # All servers will connect concurrently using fiber-based async
+      mcp_log.debug("Creating SimpleFlow pipeline with #{steps.size} parallel steps")
       pipeline = SimpleFlow::Pipeline.new(concurrency: :async) do
         steps.each do |name, callable|
           step name, callable, depends_on: :none
@@ -456,47 +472,74 @@ module AIA
       end
 
       # Execute all connections in parallel
+      start_time = Time.now
       initial_result = SimpleFlow::Result.new({ tools: [] })
       final_result = pipeline.call_parallel(initial_result)
+      elapsed = Time.now - start_time
+
+      mcp_log.info("Parallel MCP connection completed in #{elapsed.round(2)}s")
 
       # Extract results and populate config arrays for compatibility
       extract_mcp_results(final_result)
     end
 
     def build_mcp_connection_step(server)
+      # Capture logger in closure for use within the lambda
+      logger = mcp_log
+
       ->(result) {
         name = server[:name] || server['name']
+        start_time = Time.now
 
         begin
+          logger.debug("[#{name}] Registering MCP client")
+
           # Register client with RubyLLM::MCP
           client = register_single_mcp_client(server)
+
+          logger.debug("[#{name}] Starting client connection")
 
           # Start and verify connection
           client.start
           caps = client.capabilities
           has_capabilities = caps && (caps.is_a?(Hash) ? !caps.empty? : caps)
 
+          elapsed = Time.now - start_time
+
           if client.alive? && has_capabilities
             # Success - get tools and record in context
             tools = begin
               client.tools
-            rescue StandardError
+            rescue StandardError => tool_err
+              logger.warn("[#{name}] Failed to retrieve tools: #{tool_err.message}")
               []
             end
+
+            logger.info("[#{name}] Connected successfully in #{elapsed.round(2)}s, #{tools.size} tools available")
+            logger.debug("[#{name}] Tools: #{tools.map { |t| t.respond_to?(:name) ? t.name : t.to_s }.join(', ')}")
+
             result
               .with_context(name.to_sym, { status: :connected, tools: tools })
               .continue(result.value)
           else
             # Connection issue - determine specific error
             error = determine_mcp_connection_error(client, caps)
+            logger.warn("[#{name}] Connection failed after #{elapsed.round(2)}s: #{error}")
+            logger.debug("[#{name}] Client alive: #{client.alive?}, capabilities: #{caps.inspect}")
+
             result
               .with_error(name.to_sym, error)
               .with_context(name.to_sym, { status: :failed })
               .continue(result.value) # Continue to allow other servers
           end
         rescue StandardError => e
+          elapsed = Time.now - start_time
           error_msg = e.message.downcase.include?('timeout') ?
             "Connection timed out" : e.message
+
+          logger.error("[#{name}] Connection exception after #{elapsed.round(2)}s: #{e.class} - #{error_msg}")
+          logger.debug("[#{name}] Exception backtrace: #{e.backtrace&.first(3)&.join("\n")}")
+
           result
             .with_error(name.to_sym, error_msg)
             .with_context(name.to_sym, { status: :failed })
@@ -517,10 +560,14 @@ module AIA
       request_timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
       request_timeout = [request_timeout, 30_000].min
 
+      mcp_log.debug("[#{name}] Configuring client: command='#{command}', args=#{args.inspect}, timeout=#{request_timeout}ms")
+      mcp_log.debug("[#{name}] Environment variables: #{env.keys.join(', ')}") unless env.empty?
+
       mcp_config = { command: command, args: Array(args) }
       mcp_config[:env] = env unless env.empty?
 
       begin
+        mcp_log.debug("[#{name}] Adding client to RubyLLM::MCP with request_timeout")
         RubyLLM::MCP.add_client(
           name: name,
           transport_type: :stdio,
@@ -531,6 +578,7 @@ module AIA
       rescue ArgumentError => e
         # If request_timeout isn't supported in this version, try without it
         if e.message.include?('timeout')
+          mcp_log.debug("[#{name}] Retrying without request_timeout (unsupported in this RubyLLM::MCP version)")
           RubyLLM::MCP.add_client(
             name: name,
             transport_type: :stdio,
@@ -538,10 +586,12 @@ module AIA
             start: false
           )
         else
+          mcp_log.error("[#{name}] Failed to add client: #{e.message}")
           raise
         end
       end
 
+      mcp_log.debug("[#{name}] Client registered successfully")
       RubyLLM::MCP.clients[name]
     end
 
@@ -558,17 +608,21 @@ module AIA
     end
 
     def extract_mcp_results(result)
+      mcp_log.debug("Extracting MCP connection results from SimpleFlow pipeline")
       all_tools = []
 
       result.context.each do |server_name, info|
         name = server_name.to_s
         if info[:status] == :connected
+          tool_count = (info[:tools] || []).size
+          mcp_log.debug("[#{name}] Extracting #{tool_count} tools from connected server")
           AIA.config.connected_mcp_servers << name
           all_tools.concat(info[:tools] || [])
         end
       end
 
       result.errors.each do |server_name, messages|
+        mcp_log.debug("[#{server_name}] Recording failure: #{messages.first}")
         AIA.config.failed_mcp_servers << {
           name: server_name.to_s,
           error: messages.first
@@ -577,20 +631,25 @@ module AIA
 
       @tools += all_tools
 
+      mcp_log.info("MCP results: #{AIA.config.connected_mcp_servers.size} connected, #{AIA.config.failed_mcp_servers.size} failed, #{all_tools.size} total tools")
+
       # Report results
       report_mcp_connection_results(all_tools.size)
     end
 
     def report_mcp_connection_results(tool_count)
       if AIA.config.connected_mcp_servers.any?
+        mcp_log.info("Successfully connected to: #{AIA.config.connected_mcp_servers.join(', ')}")
         $stderr.puts "MCP: Connected to #{AIA.config.connected_mcp_servers.join(', ')} (#{tool_count} tools)"
       end
 
       AIA.config.failed_mcp_servers.each do |failure|
+        mcp_log.warn("Server '#{failure[:name]}' failed: #{failure[:error]}")
         $stderr.puts "⚠️  MCP: '#{failure[:name]}' failed - #{failure[:error]}"
       end
 
       if AIA.config.connected_mcp_servers.empty? && AIA.config.failed_mcp_servers.any?
+        mcp_log.error("No MCP servers connected successfully")
         $stderr.puts "MCP: No servers connected successfully"
       end
 
@@ -601,9 +660,12 @@ module AIA
       seen_names = Set.new
       original_size = @tools.size
 
+      mcp_log.debug("Checking #{original_size} tools for duplicates")
+
       @tools.select! do |tool|
         tool_name = tool.name
         if seen_names.include?(tool_name)
+          mcp_log.warn("Duplicate tool detected: '#{tool_name}' - keeping first occurrence only")
           warn "WARNING: Duplicate tool name detected: '#{tool_name}'. Only the first occurrence will be used."
           false
         else
@@ -613,7 +675,12 @@ module AIA
       end
 
       removed_count = original_size - @tools.size
-      warn "Removed #{removed_count} duplicate tools" if removed_count > 0
+      if removed_count > 0
+        mcp_log.info("Removed #{removed_count} duplicate tools, #{@tools.size} unique tools remaining")
+        warn "Removed #{removed_count} duplicate tools"
+      else
+        mcp_log.debug("No duplicate tools found")
+      end
     end
 
 
@@ -971,6 +1038,11 @@ module AIA
     end
 
     private
+
+    # Helper to access the MCP logger for connection-related logging
+    def mcp_log
+      @mcp_log ||= LoggerManager.mcp_logger
+    end
 
     def filter_tools_by_allowed_list
       allowed = AIA.config.tools.allowed

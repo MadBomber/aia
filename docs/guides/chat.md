@@ -507,10 +507,10 @@ aia --chat --temperature 0.9 --max_tokens 3000
 ### Output Integration
 ```bash
 # Save chat output to file
-aia --chat --out_file discussion.md --markdown
+aia --chat --output discussion.md --markdown
 
 # Append to existing files
-aia --chat --out_file project_log.md --append
+aia --chat --output project_log.md --append
 ```
 
 ## Related Documentation

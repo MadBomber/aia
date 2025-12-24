@@ -148,21 +148,21 @@ aia --config_file /path/to/config.yml my_prompt
 aia -c ~/.aia/custom_config.yml my_prompt
 ```
 
-### `-o, --[no-]out_file [FILE]`
+### `-o, --[no-]output [FILE]`
 Output file for saving AI responses.
 
 ```bash
 # Save to default file (temp.md)
-aia --out_file my_prompt
+aia --output my_prompt
 
 # Save to specific file
-aia --out_file output.txt my_prompt
+aia --output output.txt my_prompt
 
 # Use absolute path
-aia --out_file /tmp/ai_response.md my_prompt
+aia --output /tmp/ai_response.md my_prompt
 
 # Disable file output
-aia --no-out_file my_prompt
+aia --no-output my_prompt
 ```
 
 ### `-a, --[no-]append`
@@ -170,24 +170,24 @@ Append to output file instead of overwriting.
 
 ```bash
 # Append mode
-aia --out_file log.md --append my_prompt
+aia --output log.md --append my_prompt
 
 # Overwrite mode (default)
-aia --out_file log.md --no-append my_prompt
+aia --output log.md --no-append my_prompt
 ```
 
-### `-l, --[no-]log_file [FILE]`
-Log file for AIA operations.
+### `--[no-]history-file [FILE]`
+Conversation history file for logging prompts and responses.
 
 ```bash
-# Enable logging to default location
-aia --log_file my_prompt
+# Enable history logging to default location
+aia --history-file my_prompt
 
 # Log to specific file
-aia --log_file /var/log/aia.log my_prompt
+aia --history-file /var/log/aia_history.log my_prompt
 
-# Disable logging
-aia --no-log_file my_prompt
+# Disable history logging
+aia --no-history-file my_prompt
 ```
 
 ### `--md, --[no-]markdown`
@@ -619,7 +619,7 @@ aia --model gpt-4 --temperature 1.2 --speak --voice nova story_prompt
 aia --tools ./safe_tools/ --allowed_tools "calculator,file_reader" --rejected_tools "system_command" analysis_prompt
 
 # Pipeline with custom configuration
-aia --pipeline "extract,analyze,summarize" --temperature 0.3 --max_tokens 2000 --out_file report.md data_source.txt
+aia --pipeline "extract,analyze,summarize" --temperature 0.3 --max_tokens 2000 --output report.md data_source.txt
 
 # Debug mode with verbose output
 aia --debug --verbose --model claude-3-sonnet problematic_prompt
@@ -632,7 +632,7 @@ aia --debug --verbose --model claude-3-sonnet problematic_prompt
 aia --config_file ./project_config.yml --prompts_dir ./project_prompts/ my_prompt
 
 # Save output with markdown formatting
-aia --out_file analysis.md --markdown --append data_analysis dataset.csv
+aia --output analysis.md --markdown --append data_analysis dataset.csv
 
 # Audio processing
 aia --transcription_model whisper-1 --speech_model tts-1-hd --voice echo audio_prompt audio_file.wav

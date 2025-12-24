@@ -86,7 +86,7 @@ aia --model ollama/llama3.2,gpt-4o-mini my_prompt
 aia --model ollama/mistral,lms/qwen-coder,claude-3-sonnet --consensus decision
 
 # Use local for drafts, cloud for refinement
-aia --model ollama/llama3.2 --out_file draft.md initial_analysis
+aia --model ollama/llama3.2 --output draft.md initial_analysis
 aia --model gpt-4 --include draft.md final_report
 ```
 

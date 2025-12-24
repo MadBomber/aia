@@ -450,11 +450,11 @@ end
 ```bash
 # Batch process multiple files
 for file in data/*.csv; do
-  aia batch_analysis_prompt "$file" --out_file "results/$(basename $file .csv)_analysis.md"
+  aia batch_analysis_prompt "$file" --output "results/$(basename $file .csv)_analysis.md"
 done
 
 # Parallel processing
-parallel -j4 aia analysis_prompt {} --out_file {.}_result.md ::: data/*.txt
+parallel -j4 aia analysis_prompt {} --output {.}_result.md ::: data/*.txt
 ```
 
 ## Troubleshooting Prompts

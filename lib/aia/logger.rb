@@ -104,7 +104,7 @@ module AIA
       def create_logger(system)
         config = logger_config_for(system)
 
-        file  = config&.file || 'STDOUT'
+        file  = effective_log_file(config)
         level = effective_log_level(config, system)
         flush = config&.flush != false  # default to true
 
@@ -114,6 +114,18 @@ module AIA
           level:    LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN),
           progname: system.to_s.upcase
         )
+      end
+
+      # Get the effective log file, considering any override
+      #
+      # @param config [ConfigSection, nil] The logger config for a specific system
+      # @return [String] The log file path or STDOUT/STDERR
+      def effective_log_file(config)
+        # CLI override (--log-to) takes precedence over per-system config
+        override = AIA.config&.log_file_override
+        return override if override && !override.to_s.empty?
+
+        config&.file || 'STDOUT'
       end
 
       # Get the effective log level, considering any override

@@ -118,13 +118,13 @@ module AIA
           options[:extra_config_file] = file
         end
 
-        opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
+        opts.on("-o", "--[no-]output [FILE]", "Output file (default: temp.md)") do |file|
           if file == false
-            options[:out_file] = nil
+            options[:output] = nil
           elsif file.nil?
-            options[:out_file] = 'temp.md'
+            options[:output] = 'temp.md'
           else
-            options[:out_file] = File.expand_path(file, Dir.pwd)
+            options[:output] = File.expand_path(file, Dir.pwd)
           end
         end
 
@@ -132,8 +132,8 @@ module AIA
           options[:append] = append
         end
 
-        opts.on("-l", "--[no-]log_file [FILE]", "Log file") do |file|
-          options[:log_file] = file
+        opts.on("--[no-]history-file [FILE]", "Conversation history file") do |file|
+          options[:history_file] = file
         end
 
         opts.on("--md", "--[no-]markdown", "Format with Markdown") do |md|
@@ -268,6 +268,10 @@ module AIA
 
         opts.on("--fatal", "Set all loggers to FATAL level") do
           options[:log_level_override] = 'fatal'
+        end
+
+        opts.on("--log-to FILE", "Direct all loggers to FILE") do |file|
+          options[:log_file_override] = file
         end
 
         opts.on("-v", "--[no-]verbose", "Be verbose") do |value|

@@ -239,13 +239,13 @@ Save AI responses to files:
 
 ```bash
 # Save to a file
-aia --out_file response.md my_prompt
+aia --output response.md my_prompt
 
 # Append to an existing file
-aia --out_file response.md --append my_prompt
+aia --output response.md --append my_prompt
 
 # Format with Markdown
-aia --out_file response.md --markdown my_prompt
+aia --output response.md --markdown my_prompt
 ```
 
 ## Chat Mode Features

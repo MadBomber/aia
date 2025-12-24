@@ -359,13 +359,13 @@ aia --image_quality hd "Final marketing image"
 ### Iterative Refinement
 ```bash
 # Generate initial concept
-aia --model dall-e-3 --out_file concept_v1.png "Modern kitchen design"
+aia --model dall-e-3 --output concept_v1.png "Modern kitchen design"
 
 # Refine based on results
-aia --model dall-e-3 --out_file concept_v2.png "Modern kitchen with marble countertops, pendant lighting, minimalist cabinets"
+aia --model dall-e-3 --output concept_v2.png "Modern kitchen with marble countertops, pendant lighting, minimalist cabinets"
 
 # Final version with specific details
-aia --model dall-e-3 --image_quality hd --out_file final_kitchen.png "Ultra-modern kitchen with white marble waterfall countertops, brass pendant lights, handleless cabinets, large island, professional photography"
+aia --model dall-e-3 --image_quality hd --output final_kitchen.png "Ultra-modern kitchen with white marble waterfall countertops, brass pendant lights, handleless cabinets, large island, professional photography"
 ```
 
 ## Troubleshooting Image Generation

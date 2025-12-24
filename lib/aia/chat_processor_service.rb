@@ -125,9 +125,9 @@ module AIA
         end
       end
 
-      log_file = AIA.config.output.log_file
-      if log_file
-        File.open(log_file, 'a') do |f|
+      history_file = AIA.config.output.history_file
+      if history_file
+        File.open(history_file, 'a') do |f|
           f.puts "=== #{Time.now} ==="
           f.puts "Prompt: #{AIA.config.prompt_id}"
           f.puts "Response: #{response}"

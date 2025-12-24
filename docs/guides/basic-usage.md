@@ -34,13 +34,13 @@ Control where and how AIA saves results:
 
 ```bash
 # Save to file
-aia --out_file result.md analysis_prompt data.csv
+aia --output result.md analysis_prompt data.csv
 
 # Append to existing file
-aia --out_file log.md --append status_check
+aia --output log.md --append status_check
 
 # Format with markdown
-aia --out_file report.md --markdown comprehensive_analysis
+aia --output report.md --markdown comprehensive_analysis
 ```
 
 ## Common Workflow Patterns
@@ -237,11 +237,11 @@ Handle multiple similar tasks efficiently:
 ```bash
 # Process multiple files
 for file in *.py; do
-  aia code_review "$file" --out_file "reviews/${file%.py}_review.md"
+  aia code_review "$file" --output "reviews/${file%.py}_review.md"
 done
 
 # Parallel processing
-parallel -j4 aia analysis_task {} --out_file {.}_analysis.md ::: *.csv
+parallel -j4 aia analysis_task {} --output {.}_analysis.md ::: *.csv
 ```
 
 ### Caching and Reuse
@@ -250,7 +250,7 @@ Avoid redundant processing:
 ```bash
 # Check if output exists before processing
 output_file="analysis_$(date +%Y%m%d).md"
-test -f "$output_file" || aia daily_analysis --out_file "$output_file"
+test -f "$output_file" || aia daily_analysis --output "$output_file"
 
 # Reuse previous analysis
 aia followup_analysis --previous_analysis yesterday_analysis.md
@@ -266,11 +266,11 @@ Integrate AIA into shell workflows:
 # Automated analysis script
 
 echo "Starting analysis..."
-aia system_health_check --out_file health_$(date +%Y%m%d_%H%M).md
+aia system_health_check --output health_$(date +%Y%m%d_%H%M).md
 
 if [ $? -eq 0 ]; then
     echo "Health check complete"
-    aia generate_report --source health_*.md --out_file daily_report.md
+    aia generate_report --source health_*.md --output daily_report.md
 else
     echo "Health check failed, investigating..."
     aia troubleshoot_system --debug --verbose
@@ -316,7 +316,7 @@ jobs:
         run: gem install aia
       - name: Run Analysis
         run: |
-          aia pr_analysis --diff_only --out_file analysis.md
+          aia pr_analysis --diff_only --output analysis.md
           cat analysis.md >> $GITHUB_STEP_SUMMARY
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -425,7 +425,7 @@ export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 alias chat='aia --chat --terse'
 
 # Quick question function
-ask() { echo "$1" | aia run --no-out_file; }
+ask() { echo "$1" | aia run --no-output; }
 ```
 
 **Usage Examples:**

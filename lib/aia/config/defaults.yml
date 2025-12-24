@@ -74,7 +74,7 @@ output:
   file: temp.md
   append: false
   markdown: true
-  log_file: ~/.prompts/_prompts.log
+  history_file: ~/.prompts/_prompts.log
 
 # -----------------------------------------------------------------------------
 # Audio Configuration

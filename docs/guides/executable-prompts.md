@@ -11,7 +11,7 @@ Executable prompts are prompt files with a special shebang line that makes them 
 ### Basic Structure
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Your prompt description and comments
 
 Your prompt content here...
@@ -20,7 +20,7 @@ Your prompt content here...
 ### Key Components
 
 1. **Shebang Line**: Must include `--exec` flag to enable prompt processing
-2. **Output Configuration**: Use `--no-out_file` to send output to STDOUT
+2. **Output Configuration**: Use `--no-output` to send output to STDOUT
 3. **Executable Permissions**: Make file executable with `chmod +x`
 
 ## The `run` Prompt Pattern
@@ -56,7 +56,7 @@ This pattern allows for quick one-shot questions without creating specific promp
 Create a weather monitoring executable:
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Get current storm activity for the east and south coast of the US
 
 Summarize the tropical storm outlook for the Atlantic, Caribbean Sea and Gulf of America.
@@ -79,7 +79,7 @@ chmod +x weather_report
 ### System Status Monitor
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # System health check and analysis
 
 Analyze the current system status and provide recommendations:
@@ -102,7 +102,7 @@ Provide analysis and recommendations for system optimization.
 ### Code Quality Checker
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Analyze code quality for the current directory
 
 //config model = gpt-4
@@ -125,7 +125,7 @@ Provide code quality assessment and improvement recommendations.
 ### Daily Standup Generator
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Generate daily standup report from git activity
 
 //config model = gpt-4o-mini
@@ -151,7 +151,7 @@ Provide a structured standup report.
 Create executable prompts that accept command-line parameters:
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Code review for specific file
 # Usage: ./code_review <filename>
 
@@ -172,7 +172,7 @@ Provide specific, actionable feedback for improvements.
 Chain multiple prompts in an executable workflow:
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Complete project analysis pipeline
 
 //pipeline project_scan,security_check,recommendations
@@ -183,7 +183,7 @@ Starting comprehensive project analysis...
 ### Conditional Logic Executables
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Environment-aware deployment checker
 
 //ruby
@@ -216,7 +216,7 @@ Analyze the deployment configuration and provide environment-specific recommenda
 ### As Git Hooks
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # .git/hooks/pre-commit
 # Automated commit message analysis
 
@@ -285,7 +285,7 @@ chmod 700 sensitive_prompt     # Owner only
 ### Error Handling
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Robust executable with error handling
 
 //ruby
@@ -327,7 +327,7 @@ Analyze the file structure, quality, and provide recommendations.
 ### Enable Debug Mode
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec --debug --verbose
+#!/usr/bin/env aia run --no-output --exec --debug --verbose
 # Debug version of your executable prompt
 ```
 
@@ -352,14 +352,14 @@ git status
 | "Permission denied" | File not executable | `chmod +x filename` |
 | "Command not found" | Missing shebang or wrong path | Check shebang line |
 | "Prompt not found" | Missing run prompt | Create ~/.prompts/run.txt |
-| "Output not appearing" | Missing --no-out_file | Add flag to shebang |
+| "Output not appearing" | Missing --no-output | Add flag to shebang |
 
 ## Advanced Executable Patterns
 
 ### Self-Documenting Executables
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Self-documenting code analyzer
 # Usage: ./code_analyzer [--help] <directory>
 
@@ -384,7 +384,7 @@ end
 ### Multi-Stage Executables
 
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Multi-stage project analysis
 
 //ruby
