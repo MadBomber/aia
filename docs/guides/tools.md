@@ -47,13 +47,13 @@ aia --tools "./tools/,./custom_tools.rb,/shared/tools/" my_prompt
 ### Tool Security
 ```bash
 # Restrict to specific tools
-aia --tools ./tools/ --allowed_tools "file_reader,calculator" my_prompt
+aia --tools ./tools/ --allowed-tools "file_reader,calculator" my_prompt
 
 # Block dangerous tools
-aia --tools ./tools/ --rejected_tools "file_writer,system_admin" my_prompt
+aia --tools ./tools/ --rejected-tools "file_writer,system_admin" my_prompt
 
 # Combine restrictions
-aia --tools ./tools/ --allowed_tools "safe_tools" --rejected_tools "dangerous_tools" my_prompt
+aia --tools ./tools/ --allowed-tools "safe_tools" --rejected-tools "dangerous_tools" my_prompt
 ```
 
 ### Discovering Available Tools

@@ -72,10 +72,10 @@ aia --tools ./tools/ comprehensive_analysis
 ### Tool Security
 ```bash
 # Restrict to specific tools
-aia --tools ./tools/ --allowed_tools "file_analyzer,data_analyzer" safe_analysis
+aia --tools ./tools/ --allowed-tools "file_analyzer,data_analyzer" safe_analysis
 
 # Block potentially dangerous tools
-aia --tools ./tools/ --rejected_tools "system_monitor,process_manager" user_analysis
+aia --tools ./tools/ --rejected-tools "system_monitor,process_manager" user_analysis
 ```
 
 ### Tool Integration in Prompts

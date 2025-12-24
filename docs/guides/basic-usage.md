@@ -108,8 +108,8 @@ debug: false
 
 ```bash
 # Use environment-specific configs
-aia --config_file ~/.aia/dev_config.yml development_task
-aia --config_file ~/.aia/prod_config.yml production_analysis
+aia --config-file ~/.aia/dev_config.yml development_task
+aia --config-file ~/.aia/prod_config.yml production_analysis
 ```
 
 ### Task-Specific Model Selection
@@ -216,7 +216,7 @@ Validate inputs before processing:
 test -f input.csv && aia data_analysis input.csv || echo "Input file not found"
 
 # Verify model availability
-aia --available_models | grep -q "gpt-4" && aia --model gpt-4 task || aia task
+aia --available-models | grep -q "gpt-4" && aia --model gpt-4 task || aia task
 ```
 
 ## Performance Optimization
@@ -327,7 +327,7 @@ jobs:
 ### Model and API Issues
 ```bash
 # Test model availability
-aia --available_models | grep "gpt-4" || echo "GPT-4 not available"
+aia --available-models | grep "gpt-4" || echo "GPT-4 not available"
 
 # Test API connection
 aia --model gpt-3.5-turbo --debug simple_test_prompt

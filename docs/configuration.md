@@ -411,7 +411,7 @@ aia --dump config.yaml
 
 ```bash
 # Test model access
-aia --available_models
+aia --available-models
 
 # Test configuration
 aia --debug --verbose hello_world
@@ -424,7 +424,7 @@ aia --tools ./my_tools --debug test_prompt
 
 #### Model Not Found
 - Check your API keys are set
-- Verify the model name: `aia --available_models`
+- Verify the model name: `aia --available-models`
 - Check network connectivity
 
 #### Permission Errors  

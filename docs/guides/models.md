@@ -7,20 +7,20 @@ AIA supports multiple AI models through the RubyLLM gem, allowing you to choose 
 ### List All Models
 ```bash
 # Show all available models
-aia --available_models
+aia --available-models
 
 # Filter by provider
-aia --available_models openai
-aia --available_models anthropic
-aia --available_models google
+aia --available-models openai
+aia --available-models anthropic
+aia --available-models google
 
 # Filter by capability
-aia --available_models vision
-aia --available_models function_calling
-aia --available_models text_to_image
+aia --available-models vision
+aia --available-models function_calling
+aia --available-models text_to_image
 
 # Complex filtering
-aia --available_models openai,gpt,4
+aia --available-models openai,gpt,4
 ```
 
 ### Model Information
@@ -732,10 +732,10 @@ aia --model ollama/llama3.2,lms/qwen-coder,claude-3-sonnet --no-consensus code_r
 #### Model Not Available
 ```bash
 # Check if model exists
-aia --available_models | grep model_name
+aia --available-models | grep model_name
 
 # Try alternative model names
-aia --available_models anthropic
+aia --available-models anthropic
 ```
 
 #### Authentication Errors
@@ -826,7 +826,7 @@ You: //compare "Explain this concept" --models gpt-4,claude-3-sonnet
 ### Pipeline Model Configuration
 ```bash
 # Different models for different pipeline stages
-aia --config_file pipeline_config.yml --pipeline "extract,analyze,report"
+aia --config-file pipeline_config.yml --pipeline "extract,analyze,report"
 
 # pipeline_config.yml
 extract:

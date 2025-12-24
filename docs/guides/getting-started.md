@@ -53,7 +53,7 @@ aia --model gpt-4 --chat
 aia --model claude-3-sonnet --chat
 
 # See all available models
-aia --available_models
+aia --available-models
 ```
 
 ### 3. Adjusting AI Behavior
@@ -71,7 +71,7 @@ aia --temperature 0.3 --chat
 aia --terse --chat
 
 # Limit response length
-aia --max_tokens 100 --chat
+aia --max-tokens 100 --chat
 ```
 
 ## Creating Your First Prompt
@@ -426,7 +426,7 @@ Now that you understand the basics:
 
 #### "Model not available"
 - Check your API keys: `echo $OPENAI_API_KEY`
-- List available models: `aia --available_models`
+- List available models: `aia --available-models`
 - Check your internet connection
 
 #### "Permission denied"

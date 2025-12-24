@@ -385,7 +385,7 @@ git commit -m "My first AIA prompts"
 aia --help
 
 # Model information
-aia --available_models
+aia --available-models
 
 # Debug information
 aia --debug my_prompt
@@ -417,7 +417,7 @@ ls ~/.prompts/your_prompt.txt
 chmod 644 ~/.prompts/your_prompt.txt
 
 # Use full path if needed
-aia --prompts_dir ~/.prompts your_prompt
+aia --prompts-dir ~/.prompts your_prompt
 ```
 
 ### API Errors

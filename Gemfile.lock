@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.10.1)
+    aia (0.10.2)
       amazing_print
       anyway_config (~> 2.6)
       async
@@ -134,7 +134,7 @@ GEM
     highline (3.1.2)
       reline
     http-2 (1.1.1)
-    httpx (1.6.3)
+    httpx (1.7.0)
       http-2 (>= 1.0.0)
     infusible (4.6.0)
       marameters (~> 4.1)

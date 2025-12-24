@@ -204,7 +204,7 @@ aia --chat [--role ROLE] [--model MODEL]
 aia --model gpt-4 my_prompt
 
 # Specify output file
-aia --out_file result.md my_prompt
+aia --output result.md my_prompt
 
 # Use a role/system prompt
 aia --role expert my_prompt
@@ -223,7 +223,7 @@ aia --fuzzy
 | `--no-consensus` | Force individual responses | `aia --no-consensus` |
 | `--role ROLE` | Use a role/system prompt (default for all models) | `aia --role expert` |
 | `--list-roles` | List available role files | `aia --list-roles` |
-| `--out_file FILE` | Specify output file | `aia --out_file results.md` |
+| `--output FILE` | Specify output file | `aia --output results.md` |
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
 | `--help` | Show complete help | `aia --help` |
 
@@ -249,7 +249,7 @@ The most commonly used configuration options:
 |--------|---------|-------------|
 | `model` | `gpt-4o-mini` | AI model to use |
 | `prompts_dir` | `~/.prompts` | Directory containing prompts |
-| `out_file` | `temp.md` | Default output file |
+| `output` | `temp.md` | Default output file |
 | `temperature` | `0.7` | Model creativity (0.0-1.0) |
 | `chat` | `false` | Start in chat mode |
 
@@ -300,43 +300,43 @@ Your prompt content here...
 | append | -a, --append | false | AIA_FLAGS__APPEND |
 | chat | --chat | false | AIA_FLAGS__CHAT |
 | clear | --clear | false | AIA_FLAGS__CLEAR |
-| config_file | -c, --config_file | ~/.aia/config.yml | AIA_CONFIG_FILE |
+| config_file | -c, --config-file | ~/.aia/config.yml | AIA_CONFIG_FILE |
 | debug | -d, --debug | false | AIA_FLAGS__DEBUG |
 | embedding_model | --em, --embedding_model | text-embedding-ada-002 | AIA_LLM__EMBEDDING_MODEL |
 | erb | | true | AIA_FLAGS__ERB |
-| frequency_penalty | --frequency_penalty | 0.0 | AIA_LLM__FREQUENCY_PENALTY |
+| frequency_penalty | --frequency-penalty | 0.0 | AIA_LLM__FREQUENCY_PENALTY |
 | fuzzy | -f, --fuzzy | false | AIA_FLAGS__FUZZY |
-| image_quality | --iq, --image_quality | standard | AIA_IMAGE__QUALITY |
-| image_size | --is, --image_size | 1024x1024 | AIA_IMAGE__SIZE |
-| image_style | --style, --image_style | vivid | AIA_IMAGE__STYLE |
-| log_file | -l, --log_file | ~/.prompts/_prompts.log | AIA_LOG__FILE |
+| image_quality | --iq, --image-quality | standard | AIA_IMAGE__QUALITY |
+| image_size | --is, --image-size | 1024x1024 | AIA_IMAGE__SIZE |
+| image_style | --style, --image-style | vivid | AIA_IMAGE__STYLE |
+| history_file | --history-file | ~/.prompts/_prompts.log | AIA_OUTPUT__HISTORY_FILE |
 | markdown | --md, --markdown | true | AIA_OUTPUT__MARKDOWN |
-| max_tokens | --max_tokens | 2048 | AIA_LLM__MAX_TOKENS |
+| max_tokens | --max-tokens | 2048 | AIA_LLM__MAX_TOKENS |
 | model | -m, --model | gpt-4o-mini | AIA_MODEL |
 | next | -n, --next | nil | AIA_NEXT |
-| out_file | -o, --out_file | temp.md | AIA_OUTPUT__FILE |
+| output | -o, --output | temp.md | AIA_OUTPUT__FILE |
 | parameter_regex | --regex | '(?-mix:(\[[A-Z _\|]+\]))' | AIA_PROMPTS__PARAMETER_REGEX |
 | pipeline | --pipeline | [] | AIA_PIPELINE |
-| presence_penalty | --presence_penalty | 0.0 | AIA_LLM__PRESENCE_PENALTY |
+| presence_penalty | --presence-penalty | 0.0 | AIA_LLM__PRESENCE_PENALTY |
 | prompt_extname | | .txt | AIA_PROMPTS__EXTNAME |
-| prompts_dir | -p, --prompts_dir | ~/.prompts | AIA_PROMPTS__DIR |
+| prompts_dir | --prompts-dir | ~/.prompts | AIA_PROMPTS__DIR |
 | refresh | --refresh | 7 (days) | AIA_REGISTRY__REFRESH |
 | require_libs | --rq --require | [] | AIA_REQUIRE_LIBS |
 | role | -r, --role | | AIA_ROLE |
 | roles_dir | | ~/.prompts/roles | AIA_ROLES__DIR |
-| roles_prefix | --roles_prefix | roles | AIA_ROLES__PREFIX |
+| roles_prefix | --roles-prefix | roles | AIA_ROLES__PREFIX |
 | shell | | true | AIA_FLAGS__SHELL |
 | speak | --speak | false | AIA_FLAGS__SPEAK |
 | speak_command | | afplay | AIA_SPEECH__COMMAND |
-| speech_model | --sm, --speech_model | tts-1 | AIA_SPEECH__MODEL |
-| system_prompt | --system_prompt | | AIA_SYSTEM_PROMPT |
+| speech_model | --sm, --speech-model | tts-1 | AIA_SPEECH__MODEL |
+| system_prompt | --system-prompt | | AIA_SYSTEM_PROMPT |
 | temperature | -t, --temperature | 0.7 | AIA_LLM__TEMPERATURE |
 | terse | --terse | false | AIA_FLAGS__TERSE |
 | tool_paths | --tools | [] | AIA_TOOLS__PATHS |
-| allowed_tools | --at --allowed_tools | nil | AIA_TOOLS__ALLOWED |
-| rejected_tools | --rt --rejected_tools | nil | AIA_TOOLS__REJECTED |
-| top_p | --top_p | 1.0 | AIA_LLM__TOP_P |
-| transcription_model | --tm, --transcription_model | whisper-1 | AIA_TRANSCRIPTION__MODEL |
+| allowed_tools | --at, --allowed-tools | nil | AIA_TOOLS__ALLOWED |
+| rejected_tools | --rt, --rejected-tools | nil | AIA_TOOLS__REJECTED |
+| top_p | --top-p | 1.0 | AIA_LLM__TOP_P |
+| transcription_model | --tm, --transcription-model | whisper-1 | AIA_TRANSCRIPTION__MODEL |
 | verbose | -v, --verbose | false | AIA_FLAGS__VERBOSE |
 | voice | --voice | alloy | AIA_SPEECH__VOICE |
 
@@ -735,7 +735,7 @@ Provide comprehensive background information.
 
 **analyze.txt:**
 ```
-//config out_file = analysis.md
+//config output = analysis.md
 //next summarize
 
 Analyze the research data and identify key insights.
@@ -743,7 +743,7 @@ Analyze the research data and identify key insights.
 
 **summarize.txt:**
 ```
-//config out_file = summary.md
+//config output = summary.md
 
 Create a concise summary of the analysis with actionable recommendations.
 ```
@@ -911,8 +911,8 @@ aia --tools ~/my-tools/ --chat
 aia --tools weather.rb,calculator.rb --chat
 
 # Filter tools
-aia --tools ~/tools/ --allowed_tools weather,calc
-aia --tools ~/tools/ --rejected_tools deprecated
+aia --tools ~/tools/ --allowed-tools weather,calc
+aia --tools ~/tools/ --rejected-tools deprecated
 ```
 
 **Tool Examples** (see `examples/tools/` directory):
@@ -1194,13 +1194,13 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo --consensus
 
 The `--exec` flag is used to create executable prompts.  If it is not present on the shebang line then the prompt file will be treated like any other context file.  That means that the file will be included as context in the prompt but no dynamic content integration or directives will be processed. All other AIA options are, well, optional.  All you need is an initial prompt ID and the --exec flag.
 
-In the example below the option `--no-out_file` is used to direct the output from the LLM processing of the prompt to STDOUT.  This way the executable prompts can be good citizens on the *nix command line receiving piped in input via STDIN and send its output to STDOUT.
+In the example below the option `--no-output` is used to direct the output from the LLM processing of the prompt to STDOUT.  This way the executable prompts can be good citizens on the *nix command line receiving piped in input via STDIN and send its output to STDOUT.
 
 Create executable prompts:
 
 **weather_report** (make executable with `chmod +x`):
 ```bash
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # Get current storm activity for the east and south coast of the US
 
 Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.
@@ -1242,7 +1242,7 @@ export AIA_MODEL=gpt-4o-mini
 export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 
 alias chat='aia --chat --terse'
-ask() { echo "$1" | aia run --no-out_file; }
+ask() { echo "$1" | aia run --no-output; }
 ```
 
 The `chat` alias and the `ask` function (shown above in HASH) are two powerful tools for interacting with the AI assistant. The `chat` alias allows you to engage in an interactive conversation with the AI assistant, while the `ask` function allows you to ask a question and receive a response. Later in this document the `run` prompt ID is discussed.  Besides using the run prompt ID here its also used in making executable prompt files.
@@ -1313,7 +1313,7 @@ aia --fuzzy
 **Model errors:**
 ```bash
 # List available models
-aia --available_models
+aia --available-models
 
 # Check model name spelling
 aia --model gpt-4o  # Correct
@@ -1341,7 +1341,7 @@ aia --debug --config
 | Error | Cause | Solution |
 |-------|-------|----------|
 | "Prompt not found" | Missing prompt file | Check file exists and spelling |
-| "Model not available" | Invalid model name | Use `--available_models` to list valid models |
+| "Model not available" | Invalid model name | Use `--available-models` to list valid models |
 | "Shell command failed" | Invalid shell syntax | Test shell commands separately first |
 | "Configuration error" | Invalid config syntax | Check config file YAML syntax |
 
@@ -1386,7 +1386,7 @@ aia --fatal --chat
 
 **Slow model responses:**
 - Try smaller/faster models: `--model gpt-4o-mini`
-- Reduce max_tokens: `--max_tokens 1000`
+- Reduce max_tokens: `--max-tokens 1000`
 - Use lower temperature for faster responses: `--temperature 0.1`
 
 **Large prompt processing:**

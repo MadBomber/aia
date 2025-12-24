@@ -59,24 +59,24 @@ aia --adapter ruby_llm
 
 **Valid adapters**: `ruby_llm`
 
-### `--available_models [QUERY]`
+### `--available-models [QUERY]`
 List (then exit) available models that match the optional query. Query is a comma-separated list of AND components.
 
 ```bash
 # List all models
-aia --available_models
+aia --available-models
 
 # Filter by provider
-aia --available_models openai
+aia --available-models openai
 
 # Filter by capability and provider
-aia --available_models openai,mini
+aia --available-models openai,mini
 
 # Filter by modality
-aia --available_models text_to_text
+aia --available-models text_to_text
 
 # Complex filter
-aia --available_models openai,gpt,text_to_image
+aia --available-models openai,gpt,text_to_image
 ```
 
 ## Model Options
@@ -122,29 +122,29 @@ aia --model "gpt-4,claude-3-sonnet" --consensus my_prompt
 aia --model "gpt-4,claude-3-sonnet" --no-consensus my_prompt
 ```
 
-### `--sm, --speech_model MODEL`
+### `--sm, --speech-model MODEL`
 Speech model to use for text-to-speech functionality.
 
 ```bash
-aia --speech_model tts-1 --speak my_prompt
+aia --speech-model tts-1 --speak my_prompt
 aia --sm tts-1-hd --speak my_prompt
 ```
 
-### `--tm, --transcription_model MODEL`
+### `--tm, --transcription-model MODEL`
 Transcription model to use for speech-to-text functionality.
 
 ```bash
-aia --transcription_model whisper-1 audio_file.wav
+aia --transcription-model whisper-1 audio_file.wav
 aia --tm whisper-1 my_audio.mp3
 ```
 
 ## File Options
 
-### `-c, --config_file FILE`
+### `-c, --config-file FILE`
 Load configuration from a specific file.
 
 ```bash
-aia --config_file /path/to/config.yml my_prompt
+aia --config-file /path/to/config.yml my_prompt
 aia -c ~/.aia/custom_config.yml my_prompt
 ```
 
@@ -203,20 +203,20 @@ aia --no-markdown my_prompt
 
 ## Prompt Options
 
-### `--prompts_dir DIR`
+### `--prompts-dir DIR`
 Directory containing prompt files.
 
 ```bash
-aia --prompts_dir /custom/prompts my_prompt
-aia --prompts_dir ~/work/prompts my_prompt
+aia --prompts-dir /custom/prompts my_prompt
+aia --prompts-dir ~/work/prompts my_prompt
 ```
 
-### `--roles_prefix PREFIX`
+### `--roles-prefix PREFIX`
 Subdirectory name for role files (default: `roles`).
 
 ```bash
 # Use custom roles directory
-aia --roles_prefix personas --role expert
+aia --roles-prefix personas --role expert
 
 # Results in looking for roles in ~/.prompts/personas/expert.txt
 ```
@@ -260,12 +260,12 @@ aia --list-roles
 
 Roles are discovered from:
 - **Default location**: `~/.prompts/roles/`
-- **Custom location**: Set via `--prompts_dir` and `--roles_prefix`
+- **Custom location**: Set via `--prompts-dir` and `--roles-prefix`
 - **Nested directories**: Supports subdirectories like `roles/software/architect.txt`
 
 **Use case**: Discover available roles before using them with `--role` or inline `MODEL=ROLE` syntax.
 
-**See also**: `--role`, `--model`, `--prompts_dir`, `--roles_prefix`
+**See also**: `--role`, `--model`, `--prompts-dir`, `--roles-prefix`
 
 ### `-n, --next PROMPT_ID`
 Next prompt to process (can be used multiple times to build a pipeline).
@@ -294,12 +294,12 @@ aia --exec my_script_prompt
 aia --no-exec my_script_prompt
 ```
 
-### `--system_prompt PROMPT_ID`
+### `--system-prompt PROMPT_ID`
 System prompt ID to use for chat sessions.
 
 ```bash
-aia --system_prompt helpful_assistant --chat
-aia --system_prompt code_expert --chat my_code.py
+aia --system-prompt helpful_assistant --chat
+aia --system-prompt code_expert --chat my_code.py
 ```
 
 ### `--regex PATTERN`
@@ -329,42 +329,42 @@ aia --temperature 1.5 creative_writing
 aia -t 2.0 brainstorm_ideas
 ```
 
-### `--max_tokens TOKENS`
+### `--max-tokens TOKENS`
 Maximum tokens for text generation.
 
 ```bash
-aia --max_tokens 100 short_summary
-aia --max_tokens 4000 detailed_analysis
+aia --max-tokens 100 short_summary
+aia --max-tokens 4000 detailed_analysis
 ```
 
-### `--top_p VALUE`
+### `--top-p VALUE`
 Top-p sampling value (0.0 to 1.0). Alternative to temperature for controlling randomness.
 
 ```bash
-aia --top_p 0.1 precise_answer
-aia --top_p 0.9 creative_response
+aia --top-p 0.1 precise_answer
+aia --top-p 0.9 creative_response
 ```
 
-### `--frequency_penalty VALUE`
+### `--frequency-penalty VALUE`
 Frequency penalty (-2.0 to 2.0). Positive values discourage repetition.
 
 ```bash
 # Discourage repetition
-aia --frequency_penalty 0.5 my_prompt
+aia --frequency-penalty 0.5 my_prompt
 
 # Encourage repetition
-aia --frequency_penalty -0.5 my_prompt
+aia --frequency-penalty -0.5 my_prompt
 ```
 
-### `--presence_penalty VALUE`
+### `--presence-penalty VALUE`
 Presence penalty (-2.0 to 2.0). Positive values encourage discussing new topics.
 
 ```bash
 # Encourage new topics
-aia --presence_penalty 0.5 broad_discussion
+aia --presence-penalty 0.5 broad_discussion
 
 # Focus on current topics
-aia --presence_penalty -0.5 deep_dive
+aia --presence-penalty -0.5 deep_dive
 ```
 
 ## Audio/Image Options
@@ -389,32 +389,32 @@ aia --voice onyx --speak my_prompt
 aia --voice shimmer --speak my_prompt
 ```
 
-### `--is, --image_size SIZE`
+### `--is, --image-size SIZE`
 Image size for image generation.
 
 ```bash
-aia --image_size 1024x1024 image_prompt
+aia --image-size 1024x1024 image_prompt
 aia --is 1792x1024 wide_image
 aia --is 1024x1792 tall_image
 ```
 
 **Common sizes**: `256x256`, `512x512`, `1024x1024`, `1792x1024`, `1024x1792`
 
-### `--iq, --image_quality QUALITY`
+### `--iq, --image-quality QUALITY`
 Image quality for image generation.
 
 ```bash
-aia --image_quality standard image_prompt
+aia --image-quality standard image_prompt
 aia --iq hd high_quality_image
 ```
 
 **Values**: `standard`, `hd`
 
-### `--style, --image_style STYLE`
+### `--style, --image-style STYLE`
 Style for image generation.
 
 ```bash
-aia --image_style vivid colorful_image
+aia --image-style vivid colorful_image
 aia --style natural realistic_image
 ```
 
@@ -447,21 +447,21 @@ aia --tools ./tools/ my_prompt
 aia --tools "./tools/,./special_tool.rb" my_prompt
 ```
 
-### `--at, --allowed_tools TOOLS_LIST`
+### `--at, --allowed-tools TOOLS_LIST`
 Allow only these tools to be used. Security feature to restrict tool access.
 
 ```bash
 # Allow specific tools
-aia --allowed_tools "calculator,file_reader" my_prompt
+aia --allowed-tools "calculator,file_reader" my_prompt
 aia --at "web_scraper,data_analyzer" analysis_prompt
 ```
 
-### `--rt, --rejected_tools TOOLS_LIST`
+### `--rt, --rejected-tools TOOLS_LIST`
 Reject/block these tools from being used.
 
 ```bash
 # Block dangerous tools
-aia --rejected_tools "file_writer,system_command" my_prompt
+aia --rejected-tools "file_writer,system_command" my_prompt
 aia --rt "network_access" secure_prompt
 ```
 
@@ -616,10 +616,10 @@ aia --model "gpt-4,claude-3-sonnet" --consensus analysis_prompt data.csv
 aia --model gpt-4 --temperature 1.2 --speak --voice nova story_prompt
 
 # Secure tool usage
-aia --tools ./safe_tools/ --allowed_tools "calculator,file_reader" --rejected_tools "system_command" analysis_prompt
+aia --tools ./safe_tools/ --allowed-tools "calculator,file_reader" --rejected-tools "system_command" analysis_prompt
 
 # Pipeline with custom configuration
-aia --pipeline "extract,analyze,summarize" --temperature 0.3 --max_tokens 2000 --output report.md data_source.txt
+aia --pipeline "extract,analyze,summarize" --temperature 0.3 --max-tokens 2000 --output report.md data_source.txt
 
 # Debug mode with verbose output
 aia --debug --verbose --model claude-3-sonnet problematic_prompt
@@ -629,13 +629,13 @@ aia --debug --verbose --model claude-3-sonnet problematic_prompt
 
 ```bash
 # Use custom configuration
-aia --config_file ./project_config.yml --prompts_dir ./project_prompts/ my_prompt
+aia --config-file ./project_config.yml --prompts-dir ./project_prompts/ my_prompt
 
 # Save output with markdown formatting
 aia --output analysis.md --markdown --append data_analysis dataset.csv
 
 # Audio processing
-aia --transcription_model whisper-1 --speech_model tts-1-hd --voice echo audio_prompt audio_file.wav
+aia --transcription-model whisper-1 --speech-model tts-1-hd --voice echo audio_prompt audio_file.wav
 ```
 
 ## Exit Codes
