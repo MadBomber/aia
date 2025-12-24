@@ -4,9 +4,9 @@
 #
 # Centralized logger management for AIA using Lumberjack.
 # Provides loggers for three systems:
-#   - aia: AIA application logging
-#   - llm: RubyLLM gem logging
-#   - mcp: RubyLLM::MCP gem logging
+#   - aia: Used within the AIA codebase for application-level logging
+#   - llm: Passed to RubyLLM gem's configuration (RubyLLM.logger)
+#   - mcp: Passed to RubyLLM::MCP process (RubyLLM::MCP.logger)
 #
 # Configuration is read from AIA.config.logger section:
 #   logger:
@@ -22,6 +22,12 @@
 #
 # Lumberjack provides structured logging, context isolation,
 # automatic log file rolling, and multi-process safe file writes.
+#
+# For testing, use test_mode! to switch to Lumberjack's :test device:
+#   AIA::LoggerManager.test_mode!
+#   # ... run tests ...
+#   AIA::LoggerManager.clear_test_logs!  # between tests
+#   entries = AIA::LoggerManager.aia_logger.device.entries  # inspect logs
 
 require 'lumberjack'
 
@@ -37,6 +43,9 @@ module AIA
     }.freeze
 
     class << self
+      # Track whether we're in test mode
+      attr_accessor :test_mode
+
       # Get or create the AIA application logger
       #
       # @return [Lumberjack::Logger] The AIA logger instance
@@ -93,9 +102,87 @@ module AIA
         @aia_logger = nil
         @llm_logger = nil
         @mcp_logger = nil
+        @test_mode = false
+      end
+
+      # =======================================================================
+      # Test Mode Support
+      # =======================================================================
+      # Use Lumberjack's :test device to capture log entries in memory
+      # for assertions in tests.
+
+      # Enable test mode - all loggers will use Lumberjack's :test device
+      # which captures entries in memory for inspection and assertions.
+      #
+      # @param level [Symbol, String] Log level for test loggers (default: :debug)
+      def test_mode!(level: :debug)
+        reset!
+        @test_mode = true
+        @test_level = LOG_LEVELS.fetch(level.to_s, Lumberjack::Severity::DEBUG)
+
+        # Pre-create loggers with test devices
+        @aia_logger = create_test_logger(:aia)
+        @llm_logger = create_test_logger(:llm)
+        @mcp_logger = create_test_logger(:mcp)
+
+        # Surface logging errors in tests instead of swallowing them
+        Lumberjack.raise_logger_errors = true
+      end
+
+      # Check if test mode is enabled
+      #
+      # @return [Boolean] true if in test mode
+      def test_mode?
+        @test_mode == true
+      end
+
+      # Clear all test log entries (call between tests)
+      def clear_test_logs!
+        return unless test_mode?
+
+        [@aia_logger, @llm_logger, @mcp_logger].each do |logger|
+          logger&.device&.clear if logger&.device.respond_to?(:clear)
+        end
+      end
+
+      # Get all entries from a specific test logger
+      #
+      # @param system [Symbol] The logger to get entries from (:aia, :llm, :mcp)
+      # @return [Array<Lumberjack::LogEntry>] Array of log entries
+      def test_entries(system = :aia)
+        logger = case system
+                 when :aia then aia_logger
+                 when :llm then llm_logger
+                 when :mcp then mcp_logger
+                 else raise ArgumentError, "Unknown logger: #{system}"
+                 end
+
+        return [] unless logger&.device.respond_to?(:entries)
+
+        logger.device.entries
+      end
+
+      # Get the last entry from a specific test logger
+      #
+      # @param system [Symbol] The logger to get entry from (:aia, :llm, :mcp)
+      # @return [Lumberjack::LogEntry, nil] The last log entry or nil
+      def last_test_entry(system = :aia)
+        test_entries(system).last
       end
 
       private
+
+      # Create a test logger with Lumberjack's :test device
+      #
+      # @param system [Symbol] The system name for progname
+      # @return [Lumberjack::Logger] Logger with test device
+      def create_test_logger(system)
+        Lumberjack::Logger.new(
+          :test,
+          level: @test_level || Lumberjack::Severity::DEBUG,
+          progname: system.to_s.upcase
+        )
+      end
 
       # Create a logger instance from configuration
       #

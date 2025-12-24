@@ -21,11 +21,30 @@ class ModelsDirectiveTest < Minitest::Test
     @captured_output = StringIO.new
     $stdout = @captured_output
 
-    # Stub AIA.config with a realistic default to avoid stub contamination issues
-    # This test modifies the model in some tests, so we track changes
-    @test_config = OpenStruct.new(model: 'gpt-4')
-    @original_config_model = @test_config.model
+    # Create nested config structure matching AIA::Config's actual structure
+    @test_config = create_test_config
     AIA.stubs(:config).returns(@test_config)
+  end
+
+  def create_test_config
+    # Models array with ModelSpec-like objects
+    models = [OpenStruct.new(name: 'gpt-4', role: nil, instance: 1, internal_id: 'gpt-4')]
+
+    OpenStruct.new(
+      models: models,
+      prompts: OpenStruct.new(
+        dir: File.join(ENV['HOME'], '.prompts'),
+        roles_prefix: 'roles'
+      ),
+      flags: OpenStruct.new(
+        debug: false,
+        verbose: false
+      ),
+      llm: OpenStruct.new(
+        adapter: 'ruby_llm',
+        temperature: 0.7
+      )
+    )
   end
 
   def teardown
@@ -258,79 +277,63 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_21_available_models_calls_show_rubyllm_when_no_local_provider
     Timeout.timeout(30) do
-      # Temporarily set config to use a non-local provider
-      original_model = AIA.config.model
-      AIA.config.model = 'gpt-4'
-
+      # Config already has non-local provider (gpt-4) from setup
       result = AIA::Directives::Models.available_models
       output = @captured_output.string
 
       assert_includes output, "Available LLMs"
       assert_equal "", result, "available_models should return empty string"
-
-      AIA.config.model = original_model
     end
   rescue Timeout::Error
     flunk "available_models with non-local provider timed out after 30 seconds"
-  rescue => e
-    skip "Test requires config setup: #{e.message}"
   end
 
   def test_22_available_models_handles_string_model_format
     Timeout.timeout(30) do
-      original_model = AIA.config.model
-      AIA.config.model = 'claude-3-sonnet'
+      # Set models to use claude
+      @test_config.models = [OpenStruct.new(name: 'claude-3-sonnet', role: nil, instance: 1, internal_id: 'claude-3-sonnet')]
 
       result = AIA::Directives::Models.available_models
       output = @captured_output.string
 
       # Should process string model and show RubyLLM models
       assert_match /Available LLMs/, output
-
-      AIA.config.model = original_model
     end
   rescue Timeout::Error
     flunk "available_models with string model timed out after 30 seconds"
-  rescue => e
-    skip "Test requires config setup: #{e.message}"
   end
 
   def test_23_available_models_handles_array_model_format
     Timeout.timeout(30) do
-      original_model = AIA.config.model
-      AIA.config.model = ['gpt-4', 'claude-3-sonnet']
+      # Set models array with multiple models
+      @test_config.models = [
+        OpenStruct.new(name: 'gpt-4', role: nil, instance: 1, internal_id: 'gpt-4'),
+        OpenStruct.new(name: 'claude-3-sonnet', role: nil, instance: 1, internal_id: 'claude-3-sonnet')
+      ]
 
       result = AIA::Directives::Models.available_models
       output = @captured_output.string
 
       # Should process array and show RubyLLM models
       assert_match /Available LLMs/, output
-
-      AIA.config.model = original_model
     end
   rescue Timeout::Error
     flunk "available_models with array model timed out after 30 seconds"
-  rescue => e
-    skip "Test requires config setup: #{e.message}"
   end
 
   def test_24_available_models_handles_hash_model_format
     Timeout.timeout(30) do
-      original_model = AIA.config.model
-      AIA.config.model = [{model: 'gpt-4', role: 'assistant'}]
+      # Set models with role (hash-like structure)
+      @test_config.models = [OpenStruct.new(name: 'gpt-4', role: 'assistant', instance: 1, internal_id: 'gpt-4')]
 
       result = AIA::Directives::Models.available_models
       output = @captured_output.string
 
       # Should extract model from hash and show RubyLLM models
       assert_match /Available LLMs/, output
-
-      AIA.config.model = original_model
     end
   rescue Timeout::Error
     flunk "available_models with hash model timed out after 30 seconds"
-  rescue => e
-    skip "Test requires config setup: #{e.message}"
   end
 
   # ============================================================================
@@ -355,51 +358,47 @@ class ModelsDirectiveTest < Minitest::Test
       # Try default Ollama endpoint
       api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
 
-      begin
-        AIA::Directives::Models.show_ollama_models(api_base, nil)
-        output = @captured_output.string
+      AIA::Directives::Models.show_ollama_models(api_base, nil)
+      output = @captured_output.string
 
-        if output.include?('Cannot connect') || output.include?('Error fetching')
-          skip "Ollama service not running at #{api_base}"
-        else
-          # If Ollama is running, check output format
-          assert_match /Ollama Models.*:/, output
-          assert_match /\d+ Ollama model\(s\) available/, output
-        end
-      rescue => e
-        skip "Ollama not available: #{e.message}"
+      if output.include?('Cannot connect') || output.include?('Error fetching')
+        # Service not running - test passes because error handling works
+        assert_match /Cannot connect to Ollama|Error fetching/, output,
+          "Should show appropriate error message when Ollama is not available"
+      else
+        # Service is running - verify output format
+        assert_match /Ollama Models.*:/, output
+        assert_match /\d+ Ollama model\(s\) available/, output
       end
     end
   rescue Timeout::Error
-    skip "Ollama connection timed out - service may not be available"
+    flunk "Ollama connection timed out after 10 seconds"
   end
 
   def test_27_show_ollama_models_filters_by_query
     Timeout.timeout(10) do
       api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
 
-      begin
-        AIA::Directives::Models.show_ollama_models(api_base, ['llama'])
-        output = @captured_output.string
+      AIA::Directives::Models.show_ollama_models(api_base, ['llama'])
+      output = @captured_output.string
 
-        if output.include?('Cannot connect') || output.include?('Error fetching')
-          skip "Ollama service not running"
-        else
-          # If there are results, they should match the query
-          if output =~ /(\d+) Ollama model\(s\) available/
-            # Output should only contain models matching 'llama' query
-            lines = output.split("\n").select { |l| l.start_with?('- ollama/') }
-            lines.each do |line|
-              assert_match /llama/i, line, "Filtered results should match query"
-            end
+      if output.include?('Cannot connect') || output.include?('Error fetching')
+        # Service not running - test passes because error handling works
+        assert_match /Cannot connect to Ollama|Error fetching/, output,
+          "Should show appropriate error message when Ollama is not available"
+      else
+        # If there are results, they should match the query
+        if output =~ /(\d+) Ollama model\(s\) available/
+          # Output should only contain models matching 'llama' query
+          lines = output.split("\n").select { |l| l.start_with?('- ollama/') }
+          lines.each do |line|
+            assert_match /llama/i, line, "Filtered results should match query"
           end
         end
-      rescue => e
-        skip "Ollama not available: #{e.message}"
       end
     end
   rescue Timeout::Error
-    skip "Ollama filtering test timed out"
+    flunk "Ollama filtering test timed out after 10 seconds"
   end
 
   # ============================================================================
@@ -423,50 +422,46 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
 
-      begin
-        AIA::Directives::Models.show_lms_models(api_base, nil)
-        output = @captured_output.string
+      AIA::Directives::Models.show_lms_models(api_base, nil)
+      output = @captured_output.string
 
-        if output.include?('Cannot connect') || output.include?('Error fetching')
-          skip "LM Studio service not running at #{api_base}"
-        else
-          # If LM Studio is running, check output format
-          assert_match /LM Studio Models.*:/, output
-          assert_match /\d+ LM Studio model\(s\) available/, output
-        end
-      rescue => e
-        skip "LM Studio not available: #{e.message}"
+      if output.include?('Cannot connect') || output.include?('Error fetching')
+        # Service not running - test passes because error handling works
+        assert_match /Cannot connect to LM Studio|Error fetching/, output,
+          "Should show appropriate error message when LM Studio is not available"
+      else
+        # Service is running - verify output format
+        assert_match /LM Studio Models.*:/, output
+        assert_match /\d+ LM Studio model\(s\) available/, output
       end
     end
   rescue Timeout::Error
-    skip "LM Studio connection timed out - service may not be available"
+    flunk "LM Studio connection timed out after 10 seconds"
   end
 
   def test_30_show_lms_models_filters_by_query
     Timeout.timeout(10) do
       api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
 
-      begin
-        AIA::Directives::Models.show_lms_models(api_base, ['gpt'])
-        output = @captured_output.string
+      AIA::Directives::Models.show_lms_models(api_base, ['gpt'])
+      output = @captured_output.string
 
-        if output.include?('Cannot connect') || output.include?('Error fetching')
-          skip "LM Studio service not running"
-        else
-          # If there are results, they should match the query
-          if output =~ /(\d+) LM Studio model\(s\) available/
-            lines = output.split("\n").select { |l| l.start_with?('- lms/') }
-            lines.each do |line|
-              assert_match /gpt/i, line, "Filtered results should match query"
-            end
+      if output.include?('Cannot connect') || output.include?('Error fetching')
+        # Service not running - test passes because error handling works
+        assert_match /Cannot connect to LM Studio|Error fetching/, output,
+          "Should show appropriate error message when LM Studio is not available"
+      else
+        # If there are results, they should match the query
+        if output =~ /(\d+) LM Studio model\(s\) available/
+          lines = output.split("\n").select { |l| l.start_with?('- lms/') }
+          lines.each do |line|
+            assert_match /gpt/i, line, "Filtered results should match query"
           end
         end
-      rescue => e
-        skip "LM Studio not available: #{e.message}"
       end
     end
   rescue Timeout::Error
-    skip "LM Studio filtering test timed out"
+    flunk "LM Studio filtering test timed out after 10 seconds"
   end
 
   # ============================================================================
@@ -557,40 +552,32 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_36_available_models_detects_ollama_provider
     Timeout.timeout(10) do
-      original_model = AIA.config.model
-      AIA.config.model = 'ollama/llama2'
+      # Set models to use Ollama provider
+      @test_config.models = [OpenStruct.new(name: 'ollama/llama2', role: nil, instance: 1, internal_id: 'ollama/llama2')]
 
       result = AIA::Directives::Models.available_models
       output = @captured_output.string
 
-      # Should attempt to show local models
-      assert_match /Ollama|Cannot connect/, output
-
-      AIA.config.model = original_model
+      # Should attempt to show local models (either Ollama output or connection error)
+      assert_match /Ollama|Cannot connect|Local LLM/, output
     end
   rescue Timeout::Error
-    skip "Ollama detection test timed out"
-  rescue => e
-    skip "Config setup error: #{e.message}"
+    flunk "Ollama detection test timed out after 10 seconds"
   end
 
   def test_37_available_models_detects_lms_provider
     Timeout.timeout(10) do
-      original_model = AIA.config.model
-      AIA.config.model = 'lms/some-model'
+      # Set models to use LM Studio provider
+      @test_config.models = [OpenStruct.new(name: 'lms/some-model', role: nil, instance: 1, internal_id: 'lms/some-model')]
 
       result = AIA::Directives::Models.available_models
       output = @captured_output.string
 
-      # Should attempt to show local models
-      assert_match /LM Studio|Cannot connect/, output
-
-      AIA.config.model = original_model
+      # Should attempt to show local models (either LM Studio output or connection error)
+      assert_match /LM Studio|Cannot connect|Local LLM/, output
     end
   rescue Timeout::Error
-    skip "LM Studio detection test timed out"
-  rescue => e
-    skip "Config setup error: #{e.message}"
+    flunk "LM Studio detection test timed out after 10 seconds"
   end
 
   def test_38_show_local_models_handles_mixed_providers

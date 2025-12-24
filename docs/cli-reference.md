@@ -469,7 +469,12 @@ aia --rt "network_access" secure_prompt
 
 ### Log Level Options
 
-AIA provides multiple log level options to control logging verbosity. These options set the log level for all three loggers (aia, llm, mcp). Only one log level option should be used at a time.
+AIA provides multiple log level options to control logging verbosity. These options set the log level for all three loggers:
+- **aia**: Used within the AIA codebase for application-level logging
+- **llm**: Passed to the RubyLLM gem's configuration (`RubyLLM.logger`)
+- **mcp**: Passed to the RubyLLM::MCP process (`RubyLLM::MCP.logger`)
+
+Only one log level option should be used at a time.
 
 ### `-d, --debug`
 Enable debug output (most verbose) and set all loggers to DEBUG level. Also sets `$DEBUG_ME = true` for the debug_me gem.

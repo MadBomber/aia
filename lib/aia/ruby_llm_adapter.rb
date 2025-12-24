@@ -411,7 +411,7 @@ module AIA
     MCP_DEFAULT_TIMEOUT = 8_000  # 8 seconds (same as RubyLLM::MCP default)
 
     def support_mcp
-      mcp_log.debug("Starting MCP connection via RubyLLM::MCP.establish_connection")
+      logger.debug("Starting MCP connection via RubyLLM::MCP.establish_connection")
       LoggerManager.configure_mcp_logger
 
       start_time = Time.now
@@ -421,10 +421,10 @@ module AIA
       tool_count = RubyLLM::MCP.tools.size
       @tools += RubyLLM::MCP.tools
 
-      mcp_log.info("MCP connection established in #{elapsed.round(2)}s, loaded #{tool_count} tools")
+      logger.info("MCP connection established", elapsed_seconds: elapsed.round(2), tool_count: tool_count)
     rescue StandardError => e
-      mcp_log.error("Failed to connect MCP clients: #{e.class} - #{e.message}")
-      mcp_log.debug("MCP connection error backtrace: #{e.backtrace&.first(5)&.join("\n")}")
+      logger.error("Failed to connect MCP clients", error_class: e.class.name, error_message: e.message)
+      logger.debug("MCP connection error backtrace", backtrace: e.backtrace&.first(5))
       warn "Warning: Failed to connect MCP clients: #{e.message}"
     end
 
@@ -436,7 +436,7 @@ module AIA
 
     def support_mcp_with_simple_flow
       if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
-        mcp_log.debug("No MCP servers configured, skipping MCP setup")
+        logger.debug("No MCP servers configured, skipping MCP setup")
         return
       end
 
@@ -447,7 +447,7 @@ module AIA
       servers = AIA.config.mcp_servers
       server_names = servers.map { |s| s[:name] || s['name'] }.compact
 
-      mcp_log.info("Starting parallel MCP connection to #{servers.size} servers: #{server_names.join(', ')}")
+      logger.info("Starting parallel MCP connection", server_count: servers.size, servers: server_names)
       $stderr.puts "MCP: Connecting to #{server_names.join(', ')}..."
       $stderr.flush
 
@@ -458,13 +458,13 @@ module AIA
       adapter = self
       steps = servers.map do |server|
         name = (server[:name] || server['name']).to_sym
-        mcp_log.debug("Building connection step for server '#{name}'")
+        logger.debug("Building connection step", server: name)
         [name, adapter.send(:build_mcp_connection_step, server)]
       end
 
       # Build parallel pipeline - each server is independent (depends_on: :none)
       # All servers will connect concurrently using fiber-based async
-      mcp_log.debug("Creating SimpleFlow pipeline with #{steps.size} parallel steps")
+      logger.debug("Creating SimpleFlow pipeline", step_count: steps.size)
       pipeline = SimpleFlow::Pipeline.new(concurrency: :async) do
         steps.each do |name, callable|
           step name, callable, depends_on: :none
@@ -477,7 +477,7 @@ module AIA
       final_result = pipeline.call_parallel(initial_result)
       elapsed = Time.now - start_time
 
-      mcp_log.info("Parallel MCP connection completed in #{elapsed.round(2)}s")
+      logger.info("Parallel MCP connection completed", elapsed_seconds: elapsed.round(2))
 
       # Extract results and populate config arrays for compatibility
       extract_mcp_results(final_result)
@@ -485,19 +485,19 @@ module AIA
 
     def build_mcp_connection_step(server)
       # Capture logger in closure for use within the lambda
-      logger = mcp_log
+      log = logger
 
       ->(result) {
         name = server[:name] || server['name']
         start_time = Time.now
 
         begin
-          logger.debug("[#{name}] Registering MCP client")
+          log.debug("Registering MCP client", server: name)
 
           # Register client with RubyLLM::MCP
           client = register_single_mcp_client(server)
 
-          logger.debug("[#{name}] Starting client connection")
+          log.debug("Starting client connection", server: name)
 
           # Start and verify connection
           client.start
@@ -511,12 +511,13 @@ module AIA
             tools = begin
               client.tools
             rescue StandardError => tool_err
-              logger.warn("[#{name}] Failed to retrieve tools: #{tool_err.message}")
+              log.warn("Failed to retrieve tools", server: name, error: tool_err.message)
               []
             end
 
-            logger.info("[#{name}] Connected successfully in #{elapsed.round(2)}s, #{tools.size} tools available")
-            logger.debug("[#{name}] Tools: #{tools.map { |t| t.respond_to?(:name) ? t.name : t.to_s }.join(', ')}")
+            tool_names = tools.map { |t| t.respond_to?(:name) ? t.name : t.to_s }
+            log.info("Connected successfully", server: name, elapsed_seconds: elapsed.round(2), tool_count: tools.size)
+            log.debug("Available tools", server: name, tools: tool_names)
 
             result
               .with_context(name.to_sym, { status: :connected, tools: tools })
@@ -524,8 +525,8 @@ module AIA
           else
             # Connection issue - determine specific error
             error = determine_mcp_connection_error(client, caps)
-            logger.warn("[#{name}] Connection failed after #{elapsed.round(2)}s: #{error}")
-            logger.debug("[#{name}] Client alive: #{client.alive?}, capabilities: #{caps.inspect}")
+            log.warn("Connection failed", server: name, elapsed_seconds: elapsed.round(2), error: error)
+            log.debug("Connection details", server: name, alive: client.alive?, capabilities: caps.inspect)
 
             result
               .with_error(name.to_sym, error)
@@ -537,8 +538,8 @@ module AIA
           error_msg = e.message.downcase.include?('timeout') ?
             "Connection timed out" : e.message
 
-          logger.error("[#{name}] Connection exception after #{elapsed.round(2)}s: #{e.class} - #{error_msg}")
-          logger.debug("[#{name}] Exception backtrace: #{e.backtrace&.first(3)&.join("\n")}")
+          log.error("Connection exception", server: name, elapsed_seconds: elapsed.round(2), error_class: e.class.name, error: error_msg)
+          log.debug("Exception backtrace", server: name, backtrace: e.backtrace&.first(3))
 
           result
             .with_error(name.to_sym, error_msg)
@@ -560,14 +561,14 @@ module AIA
       request_timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
       request_timeout = [request_timeout, 30_000].min
 
-      mcp_log.debug("[#{name}] Configuring client: command='#{command}', args=#{args.inspect}, timeout=#{request_timeout}ms")
-      mcp_log.debug("[#{name}] Environment variables: #{env.keys.join(', ')}") unless env.empty?
+      logger.debug("Configuring client", server: name, command: command, args: args, timeout_ms: request_timeout)
+      logger.debug("Environment variables", server: name, env_keys: env.keys) unless env.empty?
 
       mcp_config = { command: command, args: Array(args) }
       mcp_config[:env] = env unless env.empty?
 
       begin
-        mcp_log.debug("[#{name}] Adding client to RubyLLM::MCP with request_timeout")
+        logger.debug("Adding client to RubyLLM::MCP with request_timeout", server: name)
         RubyLLM::MCP.add_client(
           name: name,
           transport_type: :stdio,
@@ -578,7 +579,7 @@ module AIA
       rescue ArgumentError => e
         # If request_timeout isn't supported in this version, try without it
         if e.message.include?('timeout')
-          mcp_log.debug("[#{name}] Retrying without request_timeout (unsupported in this RubyLLM::MCP version)")
+          logger.debug("Retrying without request_timeout (unsupported in this RubyLLM::MCP version)", server: name)
           RubyLLM::MCP.add_client(
             name: name,
             transport_type: :stdio,
@@ -586,12 +587,12 @@ module AIA
             start: false
           )
         else
-          mcp_log.error("[#{name}] Failed to add client: #{e.message}")
+          logger.error("Failed to add client", server: name, error: e.message)
           raise
         end
       end
 
-      mcp_log.debug("[#{name}] Client registered successfully")
+      logger.debug("Client registered successfully", server: name)
       RubyLLM::MCP.clients[name]
     end
 
@@ -608,21 +609,21 @@ module AIA
     end
 
     def extract_mcp_results(result)
-      mcp_log.debug("Extracting MCP connection results from SimpleFlow pipeline")
+      logger.debug("Extracting MCP connection results from SimpleFlow pipeline")
       all_tools = []
 
       result.context.each do |server_name, info|
         name = server_name.to_s
         if info[:status] == :connected
           tool_count = (info[:tools] || []).size
-          mcp_log.debug("[#{name}] Extracting #{tool_count} tools from connected server")
+          logger.debug("Extracting tools from connected server", server: name, tool_count: tool_count)
           AIA.config.connected_mcp_servers << name
           all_tools.concat(info[:tools] || [])
         end
       end
 
       result.errors.each do |server_name, messages|
-        mcp_log.debug("[#{server_name}] Recording failure: #{messages.first}")
+        logger.debug("Recording failure", server: server_name, error: messages.first)
         AIA.config.failed_mcp_servers << {
           name: server_name.to_s,
           error: messages.first
@@ -631,7 +632,11 @@ module AIA
 
       @tools += all_tools
 
-      mcp_log.info("MCP results: #{AIA.config.connected_mcp_servers.size} connected, #{AIA.config.failed_mcp_servers.size} failed, #{all_tools.size} total tools")
+      logger.info("MCP results",
+        connected_count: AIA.config.connected_mcp_servers.size,
+        failed_count: AIA.config.failed_mcp_servers.size,
+        total_tools: all_tools.size
+      )
 
       # Report results
       report_mcp_connection_results(all_tools.size)
@@ -639,17 +644,17 @@ module AIA
 
     def report_mcp_connection_results(tool_count)
       if AIA.config.connected_mcp_servers.any?
-        mcp_log.info("Successfully connected to: #{AIA.config.connected_mcp_servers.join(', ')}")
+        logger.info("Successfully connected", servers: AIA.config.connected_mcp_servers)
         $stderr.puts "MCP: Connected to #{AIA.config.connected_mcp_servers.join(', ')} (#{tool_count} tools)"
       end
 
       AIA.config.failed_mcp_servers.each do |failure|
-        mcp_log.warn("Server '#{failure[:name]}' failed: #{failure[:error]}")
+        logger.warn("Server failed", server: failure[:name], error: failure[:error])
         $stderr.puts "⚠️  MCP: '#{failure[:name]}' failed - #{failure[:error]}"
       end
 
       if AIA.config.connected_mcp_servers.empty? && AIA.config.failed_mcp_servers.any?
-        mcp_log.error("No MCP servers connected successfully")
+        logger.error("No MCP servers connected successfully")
         $stderr.puts "MCP: No servers connected successfully"
       end
 
@@ -660,12 +665,12 @@ module AIA
       seen_names = Set.new
       original_size = @tools.size
 
-      mcp_log.debug("Checking #{original_size} tools for duplicates")
+      logger.debug("Checking tools for duplicates", tool_count: original_size)
 
       @tools.select! do |tool|
         tool_name = tool.name
         if seen_names.include?(tool_name)
-          mcp_log.warn("Duplicate tool detected: '#{tool_name}' - keeping first occurrence only")
+          logger.warn("Duplicate tool detected - keeping first occurrence only", tool: tool_name)
           warn "WARNING: Duplicate tool name detected: '#{tool_name}'. Only the first occurrence will be used."
           false
         else
@@ -676,10 +681,10 @@ module AIA
 
       removed_count = original_size - @tools.size
       if removed_count > 0
-        mcp_log.info("Removed #{removed_count} duplicate tools, #{@tools.size} unique tools remaining")
+        logger.info("Removed duplicate tools", removed_count: removed_count, remaining_count: @tools.size)
         warn "Removed #{removed_count} duplicate tools"
       else
-        mcp_log.debug("No duplicate tools found")
+        logger.debug("No duplicate tools found")
       end
     end
 
@@ -1039,9 +1044,9 @@ module AIA
 
     private
 
-    # Helper to access the MCP logger for connection-related logging
-    def mcp_log
-      @mcp_log ||= LoggerManager.mcp_logger
+    # Helper to access the AIA logger for application-level logging
+    def logger
+      @logger ||= LoggerManager.aia_logger
     end
 
     def filter_tools_by_allowed_list

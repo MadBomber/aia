@@ -174,9 +174,9 @@ AIA uses the Lumberjack gem for logging and manages three separate loggers:
 
 | Logger | Purpose |
 |--------|---------|
-| `aia` | AIA application logging |
-| `llm` | RubyLLM gem logging |
-| `mcp` | RubyLLM::MCP gem logging |
+| `aia` | Used within the AIA codebase for application-level logging |
+| `llm` | Passed to the RubyLLM gem's configuration (`RubyLLM.logger`) |
+| `mcp` | Passed to the RubyLLM::MCP process (`RubyLLM::MCP.logger`) |
 
 ### Configuration File Settings
 

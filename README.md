@@ -1347,7 +1347,10 @@ aia --debug --config
 
 ### Debug Mode and Log Level Options
 
-AIA provides multiple log level options to control the verbosity of logging output. These options set the log level for all three loggers (aia, llm, mcp):
+AIA provides multiple log level options to control the verbosity of logging output. These options set the log level for all three loggers:
+- **aia**: Used within the AIA codebase for application-level logging
+- **llm**: Passed to the RubyLLM gem's configuration (`RubyLLM.logger`)
+- **mcp**: Passed to the RubyLLM::MCP process (`RubyLLM::MCP.logger`)
 
 | Option | Description |
 |--------|-------------|
