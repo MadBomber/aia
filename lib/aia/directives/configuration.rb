@@ -7,12 +7,17 @@ module AIA
           args = Array(args)
 
           if args.empty?
-            ap AIA.config
+            ap AIA.config.to_h
             ""
           elsif args.length == 1
             config_item = args.first
-            local_cfg = Hash.new
-            local_cfg[config_item] = AIA.config[config_item]
+            local_cfg = {}
+            # Use method-based access for Anyway::Config
+            if AIA.config.respond_to?(config_item)
+              local_cfg[config_item] = AIA.config.send(config_item)
+            else
+              local_cfg[config_item] = nil
+            end
             ap local_cfg
             ""
           else
@@ -24,7 +29,13 @@ module AIA
               new_value = %w[true t yes y on 1 yea yeah yep yup].include?(new_value.downcase)
             end
 
-            AIA.config[config_item] = new_value
+            # Use method-based setter for Anyway::Config
+            setter = "#{config_item}="
+            if AIA.config.respond_to?(setter)
+              AIA.config.send(setter, new_value)
+            else
+              puts "Warning: Unknown config option '#{config_item}'"
+            end
             ""
           end
         end
@@ -33,29 +44,32 @@ module AIA
           if args.empty?
             # Display details for all configured models
             puts
-            models = Array(AIA.config.model)
+            models = AIA.config.models
 
             if models.size == 1
               puts "Current Model:"
               puts "=============="
-              puts AIA.config.client.model.to_h.pretty_inspect
+              puts AIA.client.model.to_h.pretty_inspect
             else
               puts "Multi-Model Configuration:"
               puts "=========================="
               puts "Model count: #{models.size}"
-              puts "Primary model: #{models.first} (used for consensus when --consensus flag is enabled)"
-              puts "Consensus mode: #{AIA.config.consensus.nil? ? 'auto-detect (disabled by default)' : AIA.config.consensus}"
+              first_model = models.first.respond_to?(:name) ? models.first.name : models.first.to_s
+              puts "Primary model: #{first_model} (used for consensus when --consensus flag is enabled)"
+              consensus = AIA.config.flags.consensus
+              puts "Consensus mode: #{consensus.nil? ? 'auto-detect (disabled by default)' : consensus}"
               puts
               puts "Model Details:"
               puts "-" * 50
 
-              models.each_with_index do |model_name, index|
+              models.each_with_index do |model_spec, index|
+                model_name = model_spec.respond_to?(:name) ? model_spec.name : model_spec.to_s
                 puts "#{index + 1}. #{model_name}#{index == 0 ? ' (primary)' : ''}"
 
                 # Try to get model details if available
                 begin
                   # Access the model details from RubyLLM's model registry
-                  model_info = RubyLLM::Models.find(name: model_name)
+                  model_info = RubyLLM::Models.find(model_name)
                   if model_info
                     puts "   Provider: #{model_info.provider || 'Unknown'}"
                     puts "   Context window: #{model_info.context_window || 'Unknown'}"

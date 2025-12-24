@@ -152,8 +152,8 @@ aia --model gpt-4 my_prompt
 # Command line
 aia --prompts_dir /path/to/prompts my_prompt
 
-# Environment variable
-export AIA_PROMPTS_DIR="/path/to/prompts"
+# Environment variable (uses nested naming convention)
+export AIA_PROMPTS__DIR="/path/to/prompts"
 ```
 
 ## Prompts and Directives
@@ -396,7 +396,7 @@ git push -u origin main
 **A:** This usually means AIA can't locate your prompt file:
 ```bash
 # Check prompts directory
-ls $AIA_PROMPTS_DIR
+ls $AIA_PROMPTS__DIR
 
 # Verify prompt file exists
 ls ~/.prompts/my_prompt.txt

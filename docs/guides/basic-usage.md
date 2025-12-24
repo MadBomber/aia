@@ -415,10 +415,11 @@ Add these powerful aliases and functions to your shell configuration:
 
 ```bash
 # ~/.bashrc_aia (or add to ~/.bashrc)
-export AIA_PROMPTS_DIR=~/.prompts
-export AIA_OUT_FILE=./temp.md
+# Uses nested naming convention with double underscore
+export AIA_PROMPTS__DIR=~/.prompts
+export AIA_OUTPUT__FILE=./temp.md
 export AIA_MODEL=gpt-4o-mini
-export AIA_VERBOSE=true  # Shows spinner while waiting for LLM response
+export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 
 # Quick chat alias
 alias chat='aia --chat --terse'

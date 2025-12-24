@@ -21,14 +21,20 @@ DebugMeDefaultOptions[:skip1] = true
 require_relative 'extensions/openstruct_merge'    # adds self.merge self.get_value
 require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.text_to_text? etc.
 
-require_relative 'refinements/string.rb'        # adds #include_any? #include_all?
-
-
-
+require_relative 'refinements/string' # adds #include_any? #include_all?
 
 require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'
+require_relative 'aia/logger'
+
+# Top-level logger method available anywhere in the application
+def logger
+  AIA::LoggerManager.aia_logger
+end
+
+require_relative 'aia/config/cli_parser'
+require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
 require_relative 'aia/ruby_llm_adapter'
 require_relative 'aia/directive_processor'
@@ -41,86 +47,111 @@ require_relative 'aia/session'
 # provides an interface for interacting with AI models and managing prompts.
 module AIA
   at_exit do
-    STDERR.puts "Exiting AIA application..."
-    # Clean up temporary STDIN file if it exists
-    if @config&.stdin_temp_file && File.exist?(@config.stdin_temp_file)
-      File.unlink(@config.stdin_temp_file)
-    end
+    warn 'Exiting AIA application...'
   end
 
   @config = nil
+  @client = nil
 
-  def self.config
-    @config
-  end
+  class << self
+    attr_accessor :config, :client
 
-  def self.client
-    @config.client
-  end
-
-  def self.client=(client)
-    @config.client = client
-  end
-
-  def self.good_file?(filename)
-    File.exist?(filename) &&
-    File.readable?(filename) &&
-    !File.directory?(filename)
-  end
-
-  def self.bad_file?(filename)
-    !good_file?(filename)
-  end
-
-  def self.build_flags
-    @config.each_pair do |key, value|
-      if [TrueClass, FalseClass].include?(value.class)
-        define_singleton_method("#{key}?") do
-          @config[key]
-        end
-      end
-    end
-  end
-
-  def self.run
-    @config = Config.setup
-
-    build_flags
-
-    # Load Fzf if fuzzy search is enabled and fzf is installed
-    if @config.fuzzy
-      begin
-        # Cache fzf availability check for better performance
-        if system('which fzf >/dev/null 2>&1')
-          require_relative 'aia/fzf'
-        else
-          warn "Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities."
-        end
-      rescue StandardError => e
-        warn "Warning: Failed to load fzf: #{e.message}"
-      end
+    def good_file?(filename)
+      File.exist?(filename) &&
+        File.readable?(filename) &&
+        !File.directory?(filename)
     end
 
-    prompt_handler = PromptHandler.new
 
-    # Initialize the appropriate client adapter based on configuration
-    @config.client = if 'ruby_llm' == @config.adapter
-                      RubyLLMAdapter.new
-                    else
-                      # TODO: ?? some other LLM API wrapper
-                      STDERR.puts "ERROR: There is no adapter for #{@config.adapter}"
-                      exit 1
-                    end
+    def bad_file?(filename)
+      !good_file?(filename)
+    end
 
-    # There are two kinds of sessions: batch and chat
-    # A chat session is started when the --chat CLI option is used
-    # BUT its also possible to start a chat session with an initial prompt AND
-    # within that initial prompt there can be a workflow (aka pipeline)
-    # defined.  If that is the case, then the chat session will not start
-    # until the initial prompt has completed its workflow.
 
-    session        = Session.new(prompt_handler)
+    # Convenience flag accessors (delegate to config.flags section)
+    def chat?
+      @config&.flags&.chat == true
+    end
 
-    session.start
+
+    def debug?
+      @config&.flags&.debug == true
+    end
+
+
+    def verbose?
+      @config&.flags&.verbose == true
+    end
+
+
+    def fuzzy?
+      @config&.flags&.fuzzy == true
+    end
+
+
+    def terse?
+      @config&.flags&.terse == true
+    end
+
+
+    def speak?
+      @config&.flags&.speak == true
+    end
+
+
+    def append?
+      @config&.output&.append == true
+    end
+
+
+    def run
+      # Parse CLI arguments
+      cli_overrides = CLIParser.parse
+
+      # Create config with CLI overrides
+      @config = Config.setup(cli_overrides)
+
+      # Validate and tailor configuration
+      ConfigValidator.tailor(@config)
+
+      # Handle config dump if requested
+      if @config.dump_file
+        ConfigValidator.dump_config(@config, @config.dump_file)
+        exit 0
+      end
+
+      # Load Fzf if fuzzy search is enabled and fzf is installed
+      if @config.flags.fuzzy
+        begin
+          if system('which fzf >/dev/null 2>&1')
+            require_relative 'aia/fzf'
+          else
+            warn 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
+          end
+        rescue StandardError => e
+          warn "Warning: Failed to load fzf: #{e.message}"
+        end
+      end
+
+      prompt_handler = PromptHandler.new
+
+      # Initialize the appropriate client adapter based on configuration
+      @client = if 'ruby_llm' == @config.llm.adapter
+                  RubyLLMAdapter.new
+                else
+                  warn "ERROR: There is no adapter for #{@config.llm.adapter}"
+                  exit 1
+                end
+
+      # There are two kinds of sessions: batch and chat
+      # A chat session is started when the --chat CLI option is used
+      # BUT its also possible to start a chat session with an initial prompt AND
+      # within that initial prompt there can be a workflow (aka pipeline)
+      # defined.  If that is the case, then the chat session will not start
+      # until the initial prompt has completed its workflow.
+
+      session = Session.new(prompt_handler)
+      session.start
+    end
   end
 end

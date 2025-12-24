@@ -1,86 +1,126 @@
+# frozen_string_literal: true
+
 require_relative '../test_helper'
 require 'ostruct'
-require_relative '../../lib/aia'
+
+# Stub anyway_config before loading AIA config
+require 'anyway_config'
+require_relative '../../lib/aia/config/config_section'
+require_relative '../../lib/aia/config/model_spec'
+require_relative '../../lib/aia/config/defaults_loader'
+require_relative '../../lib/aia/config'
 
 class ConfigTest < Minitest::Test
   def setup
-    # Basic mocks to prevent actual file operations
-    AIA.stubs(:good_file?).returns(true)
-    AIA.stubs(:bad_file?).returns(false)
-    
-    @test_config = OpenStruct.new(
-      model: 'test-model',
-      temperature: 0.7,
-      max_tokens: 2048,
-      chat: false,
-      tools: [],
-      fuzzy: false
-    )
+    # Reset any cached config state
+    @original_env = ENV.to_h.dup
   end
 
-  def test_basic_config_creation
-    # Test basic config object creation
-    assert_instance_of OpenStruct, @test_config
-    assert_equal 'test-model', @test_config.model
-    assert_equal 0.7, @test_config.temperature
-    assert_equal 2048, @test_config.max_tokens
+  def teardown
+    # Restore original environment
+    ENV.clear
+    @original_env.each { |k, v| ENV[k] = v }
   end
 
-  def test_boolean_flag_normalization
-    # Test boolean flag normalization functionality
-    config = OpenStruct.new(test_flag: 'true')
-    AIA::Config.normalize_boolean_flag(config, :test_flag)
-    assert_equal true, config.test_flag
-
-    config = OpenStruct.new(test_flag: nil)
-    AIA::Config.normalize_boolean_flag(config, :test_flag)
-    assert_equal false, config.test_flag
+  def test_config_creation
+    # Test that Config can be instantiated
+    config = AIA::Config.new
+    assert_instance_of AIA::Config, config
   end
 
-  def test_environment_variable_parsing
-    # Test environment variable processing
-    ENV['AIA_MODEL'] = 'env-test-model'
-    
-    default_config = OpenStruct.new(model: 'default')
-    cli_config = OpenStruct.new
-    
-    result = AIA::Config.envar_options(default_config, cli_config)
-    assert_equal 'env-test-model', result.model
-    
-    ENV.delete('AIA_MODEL')
+  def test_config_has_llm_section
+    config = AIA::Config.new
+    assert_respond_to config, :llm
+    assert_instance_of AIA::ConfigSection, config.llm
   end
 
-  def test_consensus_environment_variable_parsing
-    # Test AIA_CONSENSUS environment variable processing
-    ENV['AIA_CONSENSUS'] = 'true'
-    
-    default_config = OpenStruct.new(consensus: nil)
-    cli_config = OpenStruct.new
-    
-    result = AIA::Config.envar_options(default_config, cli_config)
-    # After boolean normalization, this should be true (Boolean), not "true" (String)
-    AIA::Config.normalize_boolean_flag(result, :consensus)
-    
-    assert_equal true, result.consensus
-    assert_equal TrueClass, result.consensus.class
-    
-    # Test false case
-    ENV['AIA_CONSENSUS'] = 'false'
-    result = AIA::Config.envar_options(default_config, cli_config)
-    AIA::Config.normalize_boolean_flag(result, :consensus)
-    
-    assert_equal false, result.consensus
-    assert_equal FalseClass, result.consensus.class
-    
-    ENV.delete('AIA_CONSENSUS')
+  def test_config_has_prompts_section
+    config = AIA::Config.new
+    assert_respond_to config, :prompts
+    assert_instance_of AIA::ConfigSection, config.prompts
   end
 
-  def test_config_validation
-    # Test basic config validation
-    config = OpenStruct.new(model: 'valid-model')
-    
-    # Basic validation test
-    assert_equal 'valid-model', config.model
-    assert config.respond_to?(:model)
+  def test_config_has_flags_section
+    config = AIA::Config.new
+    assert_respond_to config, :flags
+    assert_instance_of AIA::ConfigSection, config.flags
+  end
+
+  def test_config_has_default_temperature
+    config = AIA::Config.new
+    assert config.llm.key?(:temperature), "LLM section should have temperature"
+    assert_kind_of Numeric, config.llm.temperature
+  end
+
+  def test_config_has_default_max_tokens
+    config = AIA::Config.new
+    assert config.llm.key?(:max_tokens), "LLM section should have max_tokens"
+    assert_kind_of Integer, config.llm.max_tokens
+  end
+
+  def test_config_nested_llm_section
+    config = AIA::Config.new
+
+    # Test LLM section has expected keys
+    assert config.llm.key?(:adapter), "LLM section should have adapter key"
+    assert config.llm.key?(:temperature), "LLM section should have temperature key"
+    assert config.llm.key?(:max_tokens), "LLM section should have max_tokens key"
+  end
+
+  def test_config_nested_prompts_section
+    config = AIA::Config.new
+
+    # Test prompts section has expected keys
+    assert config.prompts.key?(:dir), "Prompts section should have dir key"
+    assert config.prompts.key?(:roles_prefix), "Prompts section should have roles_prefix key"
+  end
+
+  def test_config_nested_flags_section
+    config = AIA::Config.new
+
+    # Test flags section has expected keys
+    assert config.flags.key?(:chat), "Flags section should have chat key"
+    assert config.flags.key?(:debug), "Flags section should have debug key"
+    assert config.flags.key?(:verbose), "Flags section should have verbose key"
+  end
+
+  def test_config_to_h
+    config = AIA::Config.new
+    hash = config.to_h
+
+    assert_instance_of Hash, hash
+    assert hash.key?(:llm)
+    assert hash.key?(:prompts)
+    assert hash.key?(:flags)
+    assert hash.key?(:models)
+  end
+
+  def test_models_array
+    config = AIA::Config.new
+    assert_respond_to config, :models
+    assert_kind_of Array, config.models
+  end
+
+  def test_pipeline_array
+    config = AIA::Config.new
+    assert_respond_to config, :pipeline
+    assert_kind_of Array, config.pipeline
+  end
+
+  def test_context_files_array
+    config = AIA::Config.new
+    assert_respond_to config, :context_files
+    assert_kind_of Array, config.context_files
+  end
+
+  def test_runtime_attributes
+    config = AIA::Config.new
+
+    # Test runtime attrs can be set
+    config.prompt_id = 'test_prompt'
+    assert_equal 'test_prompt', config.prompt_id
+
+    config.tool_names = 'tool1, tool2'
+    assert_equal 'tool1, tool2', config.tool_names
   end
 end

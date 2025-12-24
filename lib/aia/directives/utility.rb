@@ -14,10 +14,11 @@ module AIA
           width = TTY::Screen.width - indent - 2
           filter = args.first&.downcase
 
-          if AIA.config.tools.empty?
+          loaded_tools = AIA.config.loaded_tools || []
+          if loaded_tools.empty?
             puts "No tools are available"
           else
-            tools_to_display = AIA.config.tools
+            tools_to_display = loaded_tools
 
             if filter
               tools_to_display = tools_to_display.select do |tool|

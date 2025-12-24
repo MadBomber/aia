@@ -8,14 +8,14 @@ require 'erb'
 module AIA
   class PromptHandler
     def initialize
-      @prompts_dir         = AIA.config.prompts_dir
-      @roles_dir           = AIA.config.roles_dir # A sub-directory of @prompts_dir
+      @prompts_dir         = AIA.config.prompts.dir
+      @roles_dir           = AIA.config.prompts.roles_dir # A sub-directory of @prompts_dir
       @directive_processor = AIA::DirectiveProcessor.new
 
       PromptManager::Prompt.storage_adapter =
         PromptManager::Storage::FileSystemAdapter.config do |c|
           c.prompts_dir      = @prompts_dir
-          c.prompt_extension = '.txt'  # default
+          c.prompt_extension = AIA.config.prompts.extname
           c.params_extension = '.json' # default
         end.new
     end
@@ -24,7 +24,7 @@ module AIA
     def get_prompt(prompt_id, role_id = '')
       prompt = fetch_prompt(prompt_id)
 
-      unless role_id.empty?
+      unless role_id.nil? || role_id.empty?
         role_prompt = fetch_role(role_id)
         prompt.text.prepend(role_prompt.text)
       end
@@ -45,8 +45,8 @@ module AIA
           id: prompt_id,
           directives_processor: @directive_processor,
           external_binding: binding,
-          erb_flag: AIA.config.erb,
-          envar_flag: AIA.config.shell
+          erb_flag: AIA.config.flags.erb,
+          envar_flag: AIA.config.flags.shell
         )
 
         # Parameters should be extracted during initialization or to_s
@@ -66,12 +66,8 @@ module AIA
         exit 1
       end
       
-      if AIA.config.fuzzy
+      if AIA.config.flags.fuzzy
         return fuzzy_search_prompt(prompt_id)
-      elsif AIA.config.fuzzy
-        puts "Warning: Fuzzy search is enabled but Fzf tool is not available."
-        STDERR.puts "Error: Could not find prompt with ID: #{prompt_id}"
-        exit 1
       else
         STDERR.puts "Error: Could not find prompt with ID: #{prompt_id}"
         exit 1
@@ -89,8 +85,8 @@ module AIA
         id: new_prompt_id,
         directives_processor: @directive_processor,
         external_binding: binding,
-        erb_flag: AIA.config.erb,
-        envar_flag: AIA.config.shell
+        erb_flag: AIA.config.flags.erb,
+        envar_flag: AIA.config.flags.shell
       )
 
       raise "Error: Could not find prompt with ID: #{prompt_id} even with fuzzy search" if prompt.nil?
@@ -103,8 +99,8 @@ module AIA
       return handle_missing_role("roles/") if role_id.nil?
 
       # Prepend roles_prefix if not already present
-      unless role_id.start_with?(AIA.config.roles_prefix)
-        role_id = "#{AIA.config.roles_prefix}/#{role_id}"
+      unless role_id.start_with?(AIA.config.prompts.roles_prefix)
+        role_id = "#{AIA.config.prompts.roles_prefix}/#{role_id}"
       end
 
       # NOTE: roles_prefix is a sub-directory of the prompts directory
@@ -115,8 +111,8 @@ module AIA
           id: role_id,
           directives_processor: @directive_processor,
           external_binding: binding,
-          erb_flag: AIA.config.erb,
-          envar_flag: AIA.config.shell
+          erb_flag: AIA.config.flags.erb,
+          envar_flag: AIA.config.flags.shell
         )
         return role_prompt if role_prompt
       else
@@ -155,7 +151,7 @@ module AIA
         exit 1
       end
       
-      if AIA.config.fuzzy
+      if AIA.config.flags.fuzzy
         return fuzzy_search_role(role_id)
       else
         STDERR.puts "Error: Could not find role with ID: #{role_id}"
@@ -173,8 +169,8 @@ module AIA
         id: new_role_id,
         directives_processor: @directive_processor,
         external_binding: binding,
-        erb_flag: AIA.config.erb,
-        envar_flag: AIA.config.shell
+        erb_flag: AIA.config.flags.erb,
+        envar_flag: AIA.config.flags.shell
       )
 
       raise "Error: Could not find role with ID: #{role_id} even with fuzzy search" if role_prompt.nil?
@@ -214,8 +210,8 @@ module AIA
         raise "No role ID selected"
       end
 
-      unless role.start_with?(AIA.config.role_prefix)
-        role = AIA.config.role_prefix + '/' + role
+      unless role.start_with?(AIA.config.prompts.roles_prefix)
+        role = AIA.config.prompts.roles_prefix + '/' + role
       end
 
       role

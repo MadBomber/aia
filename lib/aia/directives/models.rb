@@ -31,12 +31,11 @@ module AIA
 
       def self.available_models(args = nil, context_manager = nil)
           # Check if we're using a local provider
-          current_models = AIA.config.model
-          current_models = [current_models] if current_models.is_a?(String)
+          current_models = AIA.config.models
 
-          # Extract model names (handles both String and Hash formats)
+          # Extract model names (handles ModelSpec objects)
           model_names = current_models.map do |m|
-            m.is_a?(Hash) ? m[:model] : m
+            m.respond_to?(:name) ? m.name : m.to_s
           end
 
           using_local_provider = model_names.any? { |m| m.start_with?('ollama/', 'lms/') }

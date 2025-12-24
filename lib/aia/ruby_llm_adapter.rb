@@ -1,6 +1,9 @@
 # lib/aia/ruby_llm_adapter.rb
 
 require 'async'
+require 'fileutils'
+require 'json'
+require 'simple_flow'
 require_relative '../extensions/ruby_llm/provider_fix'
 
 module AIA
@@ -21,13 +24,15 @@ module AIA
 
     def configure_rubyllm
       # TODO: Add some of these configuration items to AIA.config
+      # Note: RubyLLM supports specific providers. Use provider prefix (e.g., "xai/grok-beta")
+      # for providers not directly configured here.
       RubyLLM.configure do |config|
         config.anthropic_api_key  = ENV.fetch('ANTHROPIC_API_KEY', nil)
         config.deepseek_api_key   = ENV.fetch('DEEPSEEK_API_KEY', nil)
         config.gemini_api_key     = ENV.fetch('GEMINI_API_KEY', nil)
         config.gpustack_api_key   = ENV.fetch('GPUSTACK_API_KEY', nil)
         config.mistral_api_key    = ENV.fetch('MISTRAL_API_KEY', nil)
-        config.openrouter_api_key = ENV.fetch('OPENROUTER_API_KEY', nil)
+        config.openrouter_api_key = ENV.fetch('OPEN_ROUTER_API_KEY', nil)
         config.perplexity_api_key = ENV.fetch('PERPLEXITY_API_KEY', nil)
 
         # These providers require a little something extra
@@ -65,20 +70,75 @@ module AIA
         # Connection pooling settings removed - not supported in current RubyLLM version
         # config.connection_pool_size       = 10  # Number of connections to maintain in pool
         # config.connection_pool_timeout    = 60  # Connection pool timeout in seconds
-        # config.log_file   = '/logs/ruby_llm.log'
-        config.log_level = :fatal # debug level can also be set to debug by setting RUBYLLM_DEBUG envar to true
+
+        # Configure RubyLLM logger from centralized LoggerManager
+        config.log_level = LoggerManager.llm_log_level_symbol
       end
+
+      # Configure RubyLLM's logger output destination
+      LoggerManager.configure_llm_logger
     end
 
 
     def refresh_local_model_registry
-      if  AIA.config.refresh.nil?           ||
-          Integer(AIA.config.refresh).zero? ||
-          Date.today > (AIA.config.last_refresh + Integer(AIA.config.refresh))
-        RubyLLM.models.refresh!
-        AIA.config.last_refresh = Date.today
-        AIA::Config.dump_config(AIA.config, AIA.config.config_file) if AIA.config.config_file
+      return if models_json_path.nil? # Skip if no aia_dir configured
+
+      # Coerce refresh_days to integer (env vars come as strings)
+      refresh_days = AIA.config.registry.refresh
+      refresh_days = refresh_days.to_i if refresh_days.respond_to?(:to_i)
+      refresh_days ||= 7 # Default to 7 days if nil
+
+      last_refresh = models_last_refresh
+      models_exist = !last_refresh.nil?
+
+      # If refresh is disabled (0), just save current models if file doesn't exist
+      if refresh_days.zero?
+        save_models_to_json unless models_exist
+        return
       end
+
+      # Determine if refresh is needed:
+      # 1. Always refresh if models.json doesn't exist (initial setup)
+      # 2. Otherwise, refresh if enough time has passed
+      needs_refresh = if !models_exist
+                        true # Initial refresh needed (no models.json)
+                      else
+                        Date.today > (last_refresh + refresh_days)
+                      end
+
+      return unless needs_refresh
+
+      # Refresh models from RubyLLM (fetches latest model info)
+      RubyLLM.models.refresh!
+
+      # Save models to JSON file in aia_dir
+      save_models_to_json
+    end
+
+    def models_json_path
+      aia_dir = AIA.config.paths&.aia_dir
+      return nil if aia_dir.nil?
+
+      File.join(File.expand_path(aia_dir), 'models.json')
+    end
+
+    # Returns the last refresh date based on models.json modification time
+    def models_last_refresh
+      path = models_json_path
+      return nil if path.nil? || !File.exist?(path)
+
+      File.mtime(path).to_date
+    end
+
+    def save_models_to_json
+      return if models_json_path.nil?
+
+      aia_dir = File.expand_path(AIA.config.paths.aia_dir)
+      FileUtils.mkdir_p(aia_dir)
+
+      models_data = RubyLLM.models.all.map(&:to_h)
+
+      File.write(models_json_path, JSON.pretty_generate(models_data))
     end
 
 
@@ -170,7 +230,7 @@ module AIA
       @models = valid_chats.keys
 
       # Update the config to reflect only the valid models (keep as specs)
-      AIA.config.model = @model_specs
+      # Note: models is an array, not directly settable - skip this update
 
       # Report successful models
       if failed_models.any?
@@ -194,16 +254,17 @@ module AIA
       @tools = []
 
       support_local_tools
-      support_mcp_lazy
+      support_mcp_with_simple_flow  # Parallel MCP connections via SimpleFlow
       filter_tools_by_allowed_list
       filter_tools_by_rejected_list
       drop_duplicate_tools
 
       if tools.empty?
         AIA.config.tool_names = ''
+        AIA.config.loaded_tools = []
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
-        AIA.config.tools      = @tools
+        AIA.config.loaded_tools = @tools
       end
     end
 
@@ -221,13 +282,20 @@ module AIA
         AIA.config.tool_names = ''
       else
         AIA.config.tool_names = @tools.map(&:name).join(', ')
-        AIA.config.tools      = @tools
+        AIA.config.loaded_tools = @tools
       end
     end
 
 
     def support_local_tools
-      @tools += ObjectSpace.each_object(Class).select do |klass|
+      # First, load any required libraries specified in config
+      load_require_libs
+
+      # Then, load tool files from tools.paths
+      load_tool_files
+
+      # Now scan ObjectSpace for RubyLLM::Tool subclasses
+      tool_classes = ObjectSpace.each_object(Class).select do |klass|
         next false unless klass < RubyLLM::Tool
 
         # Filter out tools that can't be instantiated without arguments
@@ -240,29 +308,294 @@ module AIA
           false
         end
       end
+
+      @tools += tool_classes
     end
 
+    def load_require_libs
+      require_libs = AIA.config.require_libs
+      return if require_libs.nil? || require_libs.empty?
 
-    def support_mcp_lazy
-      # Only load MCP tools if MCP servers are actually configured
-      return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
+      require_libs.each do |lib|
+        begin
+          # Activate gem and add to load path (bypasses Bundler's restrictions)
+          activate_gem_for_require(lib)
+
+          require lib
+
+          # After requiring, trigger tool loading if the library supports it
+          # This handles gems like shared_tools that use Zeitwerk lazy loading
+          trigger_tool_loading(lib)
+        rescue LoadError => e
+          warn "Warning: Failed to require library '#{lib}': #{e.message}"
+          warn "Hint: Make sure the gem is installed: gem install #{lib}"
+        rescue StandardError => e
+          warn "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
+        end
+      end
+    end
+
+    # Activate a gem and add its lib path to $LOAD_PATH
+    # This bypasses Bundler's restrictions on loading non-bundled gems
+    def activate_gem_for_require(lib)
+      # First try normal activation
+      return if Gem.try_activate(lib)
+
+      # Bundler intercepts Gem::Specification methods, so search gem dirs directly
+      gem_path = find_gem_path(lib)
+      if gem_path
+        lib_path = File.join(gem_path, 'lib')
+        $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+      end
+    end
+
+    # Find gem path by searching gem directories directly
+    # This bypasses Bundler's restrictions
+    def find_gem_path(gem_name)
+      gem_dirs = Gem.path.flat_map do |base|
+        gems_dir = File.join(base, 'gems')
+        next [] unless File.directory?(gems_dir)
+
+        Dir.glob(File.join(gems_dir, "#{gem_name}-*")).select do |path|
+          File.directory?(path) && File.basename(path).match?(/^#{Regexp.escape(gem_name)}-[\d.]+/)
+        end
+      end
+
+      # Return the most recent version
+      gem_dirs.sort.last
+    end
+
+    # Some tool libraries use lazy loading (e.g., Zeitwerk) and need explicit
+    # triggering to load tool classes into ObjectSpace
+    def trigger_tool_loading(lib)
+      # Convert lib name to constant (e.g., 'shared_tools' -> SharedTools)
+      const_name = lib.split(/[_-]/).map(&:capitalize).join
 
       begin
-        RubyLLM::MCP.establish_connection
-        @tools += RubyLLM::MCP.tools
-      rescue StandardError => e
-        warn "Warning: Failed to connect MCP clients: #{e.message}"
+        mod = Object.const_get(const_name)
+
+        # Try common methods that libraries use to load tools
+        if mod.respond_to?(:load_all_tools)
+          mod.load_all_tools
+        elsif mod.respond_to?(:tools)
+          # Calling .tools often triggers lazy loading
+          mod.tools
+        end
+      rescue NameError
+        # Constant doesn't exist, library might use different naming
+      end
+    end
+
+    def load_tool_files
+      paths = AIA.config.tools&.paths
+      return if paths.nil? || paths.empty?
+
+      paths.each do |path|
+        expanded_path = File.expand_path(path)
+        if File.exist?(expanded_path)
+          begin
+            require expanded_path
+          rescue LoadError, StandardError => e
+            warn "Warning: Failed to load tool file '#{path}': #{e.message}"
+          end
+        else
+          warn "Warning: Tool file not found: #{path}"
+        end
       end
     end
 
 
+    # Default timeout for MCP client initialization (in milliseconds)
+    # RubyLLM::MCP expects timeout in milliseconds (e.g., 8000 = 8 seconds)
+    # Using a short timeout to prevent slow servers from blocking startup
+    MCP_DEFAULT_TIMEOUT = 8_000  # 8 seconds (same as RubyLLM::MCP default)
+
     def support_mcp
+      LoggerManager.configure_mcp_logger
       RubyLLM::MCP.establish_connection
       @tools += RubyLLM::MCP.tools
     rescue StandardError => e
       warn "Warning: Failed to connect MCP clients: #{e.message}"
     end
 
+    # =========================================================================
+    # SimpleFlow-based Parallel MCP Connection
+    # =========================================================================
+    # Uses fiber-based concurrency to connect to all MCP servers in parallel.
+    # This reduces total connection time from sum(timeouts) to max(timeouts).
+
+    def support_mcp_with_simple_flow
+      return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
+
+      # Initialize tracking (kept for compatibility with Utility.robot)
+      AIA.config.connected_mcp_servers = []
+      AIA.config.failed_mcp_servers = []
+
+      servers = AIA.config.mcp_servers
+      server_names = servers.map { |s| s[:name] || s['name'] }.compact
+
+      $stderr.puts "MCP: Connecting to #{server_names.join(', ')}..."
+      $stderr.flush
+
+      LoggerManager.configure_mcp_logger
+
+      # Build steps array first (outside the block to preserve self reference)
+      # Each step is a [name, callable] pair for parallel execution
+      adapter = self
+      steps = servers.map do |server|
+        name = (server[:name] || server['name']).to_sym
+        [name, adapter.send(:build_mcp_connection_step, server)]
+      end
+
+      # Build parallel pipeline - each server is independent (depends_on: :none)
+      # All servers will connect concurrently using fiber-based async
+      pipeline = SimpleFlow::Pipeline.new(concurrency: :async) do
+        steps.each do |name, callable|
+          step name, callable, depends_on: :none
+        end
+      end
+
+      # Execute all connections in parallel
+      initial_result = SimpleFlow::Result.new({ tools: [] })
+      final_result = pipeline.call_parallel(initial_result)
+
+      # Extract results and populate config arrays for compatibility
+      extract_mcp_results(final_result)
+    end
+
+    def build_mcp_connection_step(server)
+      ->(result) {
+        name = server[:name] || server['name']
+
+        begin
+          # Register client with RubyLLM::MCP
+          client = register_single_mcp_client(server)
+
+          # Start and verify connection
+          client.start
+          caps = client.capabilities
+          has_capabilities = caps && (caps.is_a?(Hash) ? !caps.empty? : caps)
+
+          if client.alive? && has_capabilities
+            # Success - get tools and record in context
+            tools = begin
+              client.tools
+            rescue StandardError
+              []
+            end
+            result
+              .with_context(name.to_sym, { status: :connected, tools: tools })
+              .continue(result.value)
+          else
+            # Connection issue - determine specific error
+            error = determine_mcp_connection_error(client, caps)
+            result
+              .with_error(name.to_sym, error)
+              .with_context(name.to_sym, { status: :failed })
+              .continue(result.value) # Continue to allow other servers
+          end
+        rescue StandardError => e
+          error_msg = e.message.downcase.include?('timeout') ?
+            "Connection timed out" : e.message
+          result
+            .with_error(name.to_sym, error_msg)
+            .with_context(name.to_sym, { status: :failed })
+            .continue(result.value)
+        end
+      }
+    end
+
+    def register_single_mcp_client(server)
+      name    = server[:name]    || server['name']
+      command = server[:command] || server['command']
+      args    = server[:args]    || server['args'] || []
+      env     = server[:env]     || server['env'] || {}
+
+      raw_timeout = server[:timeout] || server['timeout'] ||
+                    server[:request_timeout] || server['request_timeout'] ||
+                    MCP_DEFAULT_TIMEOUT
+      request_timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
+      request_timeout = [request_timeout, 30_000].min
+
+      mcp_config = { command: command, args: Array(args) }
+      mcp_config[:env] = env unless env.empty?
+
+      begin
+        RubyLLM::MCP.add_client(
+          name: name,
+          transport_type: :stdio,
+          config: mcp_config,
+          request_timeout: request_timeout,
+          start: false
+        )
+      rescue ArgumentError => e
+        # If request_timeout isn't supported in this version, try without it
+        if e.message.include?('timeout')
+          RubyLLM::MCP.add_client(
+            name: name,
+            transport_type: :stdio,
+            config: mcp_config,
+            start: false
+          )
+        else
+          raise
+        end
+      end
+
+      RubyLLM::MCP.clients[name]
+    end
+
+    def determine_mcp_connection_error(client, caps)
+      if !client.alive?
+        "Connection failed"
+      elsif caps.nil?
+        "Connection timed out (no response)"
+      elsif caps.is_a?(Hash) && caps.empty?
+        "Connection timed out (empty capabilities)"
+      else
+        "Connection timed out (no capabilities received)"
+      end
+    end
+
+    def extract_mcp_results(result)
+      all_tools = []
+
+      result.context.each do |server_name, info|
+        name = server_name.to_s
+        if info[:status] == :connected
+          AIA.config.connected_mcp_servers << name
+          all_tools.concat(info[:tools] || [])
+        end
+      end
+
+      result.errors.each do |server_name, messages|
+        AIA.config.failed_mcp_servers << {
+          name: server_name.to_s,
+          error: messages.first
+        }
+      end
+
+      @tools += all_tools
+
+      # Report results
+      report_mcp_connection_results(all_tools.size)
+    end
+
+    def report_mcp_connection_results(tool_count)
+      if AIA.config.connected_mcp_servers.any?
+        $stderr.puts "MCP: Connected to #{AIA.config.connected_mcp_servers.join(', ')} (#{tool_count} tools)"
+      end
+
+      AIA.config.failed_mcp_servers.each do |failure|
+        $stderr.puts "⚠️  MCP: '#{failure[:name]}' failed - #{failure[:error]}"
+      end
+
+      if AIA.config.connected_mcp_servers.empty? && AIA.config.failed_mcp_servers.any?
+        $stderr.puts "MCP: No servers connected successfully"
+      end
+
+      $stderr.flush
+    end
 
     def drop_duplicate_tools
       seen_names = Set.new
@@ -328,7 +661,7 @@ module AIA
       # Get role content using PromptHandler
       # Need to create PromptHandler instance if not already available
       prompt_handler = AIA::PromptHandler.new
-      role_content = prompt_handler.load_role_for_model(spec, AIA.config.role)
+      role_content = prompt_handler.load_role_for_model(spec, AIA.config.prompts.role)
 
       return prompt unless role_content
 
@@ -409,7 +742,7 @@ module AIA
 
     def should_use_consensus_mode?
       # Only use consensus when explicitly enabled with --consensus flag
-      AIA.config.consensus == true
+      AIA.config.flags.consensus == true
     end
 
     def generate_consensus_response(results)
@@ -566,8 +899,8 @@ module AIA
         # Try using a TTS API if available
         # For now, we'll use a mock implementation
         File.write(output_file, 'Mock TTS audio content')
-        if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
-          system("#{AIA.config.speak_command} #{output_file}")
+        if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
+          system("#{AIA.config.audio.speak_command} #{output_file}")
         end
         "Audio generated and saved to: #{output_file}"
       rescue StandardError => e
@@ -640,28 +973,92 @@ module AIA
     private
 
     def filter_tools_by_allowed_list
-      return if AIA.config.allowed_tools.nil?
+      allowed = AIA.config.tools.allowed
+      return if allowed.nil? || allowed.empty?
+
+      # allowed_tools is now an array
+      allowed_list = Array(allowed).map(&:strip)
 
       @tools.select! do |tool|
         tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        AIA.config.allowed_tools
-          .split(',')
-          .map(&:strip)
-          .any? { |allowed| tool_name.include?(allowed) }
+        allowed_list.any? { |allowed_pattern| tool_name.include?(allowed_pattern) }
       end
     end
 
 
     def filter_tools_by_rejected_list
-      return if AIA.config.rejected_tools.nil?
+      rejected = AIA.config.tools.rejected
+      return if rejected.nil? || rejected.empty?
+
+      # rejected_tools is now an array
+      rejected_list = Array(rejected).map(&:strip)
 
       @tools.reject! do |tool|
         tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        AIA.config.rejected_tools
-          .split(',')
-          .map(&:strip)
-          .any? { |rejected| tool_name.include?(rejected) }
+        rejected_list.any? { |rejected_pattern| tool_name.include?(rejected_pattern) }
       end
+    end
+
+
+    # Handles tool execution crashes gracefully
+    # Logs error with short traceback, repairs conversation, and returns error message
+    def handle_tool_crash(chat_instance, exception)
+      error_msg = "Tool error: #{exception.class} - #{exception.message}"
+
+      # Log error with short traceback (first 5 lines)
+      warn "\n⚠️  #{error_msg}"
+      if exception.backtrace
+        short_trace = exception.backtrace.first(5).map { |line| "   #{line}" }.join("\n")
+        warn short_trace
+      end
+      warn "" # blank line for readability
+
+      # Repair incomplete tool calls to maintain conversation integrity
+      repair_incomplete_tool_calls(chat_instance, error_msg)
+
+      # Return error message so conversation can continue
+      error_msg
+    end
+
+
+    # Repairs conversation history when a tool call fails (timeout, error, etc.)
+    # When an MCP tool times out, the conversation gets into an invalid state:
+    # - Assistant message with tool_calls was added to history
+    # - But no tool result message was added (because the tool failed)
+    # - The API requires tool results for each tool_call_id
+    # This method adds synthetic error tool results to fix the conversation.
+    def repair_incomplete_tool_calls(chat_instance, error_message)
+      return unless chat_instance.respond_to?(:messages)
+
+      messages = chat_instance.messages
+      return if messages.empty?
+
+      # Find the last assistant message that has tool_calls
+      last_assistant_with_tools = messages.reverse.find do |msg|
+        msg.role == :assistant && msg.respond_to?(:tool_calls) && msg.tool_calls&.any?
+      end
+
+      return unless last_assistant_with_tools
+
+      # Get the tool_call_ids that need results
+      tool_call_ids = last_assistant_with_tools.tool_calls.keys
+
+      # Check which tool_call_ids already have results
+      existing_tool_results = messages.select { |m| m.role == :tool }.map(&:tool_call_id).compact
+
+      # Add synthetic error results for any missing tool_call_ids
+      tool_call_ids.each do |tool_call_id|
+        next if existing_tool_results.include?(tool_call_id.to_s) || existing_tool_results.include?(tool_call_id)
+
+        # Add a synthetic tool result with the error message
+        chat_instance.add_message(
+          role: :tool,
+          content: "Error: #{error_message}",
+          tool_call_id: tool_call_id
+        )
+      end
+    rescue StandardError
+      # Don't let repair failures cascade
     end
 
 
@@ -704,26 +1101,30 @@ module AIA
 
 
     def extract_models_config
-      models_config = AIA.config.model
+      # Use config.models which returns array of ModelSpec objects
+      models_config = AIA.config.models
 
-      # Handle backward compatibility
-      if models_config.is_a?(String)
-        # Old format: single string
-        [{model: models_config, role: nil, instance: 1, internal_id: models_config}]
-      elsif models_config.is_a?(Array)
-        if models_config.empty?
-          # Empty array - use default
-          [{model: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini'}]
-        elsif models_config.first.is_a?(Hash)
-          # New format: array of hashes with model specs
-          models_config
-        else
-          # Old format: array of strings
-          models_config.map { |m| {model: m, role: nil, instance: 1, internal_id: m} }
-        end
-      else
+      if models_config.nil? || models_config.empty?
         # Fallback to default
         [{model: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini'}]
+      else
+        # Convert ModelSpec objects to hash format expected by adapter
+        models_config.map do |spec|
+          if spec.respond_to?(:name)
+            # ModelSpec object
+            {model: spec.name, role: spec.role, instance: spec.instance, internal_id: spec.internal_id}
+          elsif spec.is_a?(Hash)
+            # Hash format (legacy or from config.model accessor)
+            model_name = spec[:model] || spec[:name]
+            {model: model_name, role: spec[:role], instance: spec[:instance] || 1, internal_id: spec[:internal_id] || model_name}
+          elsif spec.is_a?(String)
+            # String format (legacy)
+            {model: spec, role: nil, instance: 1, internal_id: spec}
+          else
+            # Unknown format, skip
+            nil
+          end
+        end.compact
       end
     end
 
@@ -769,8 +1170,10 @@ module AIA
 
       # Return the full response object to preserve token information
       response
-    rescue StandardError => e
-      e.message
+    rescue Exception => e # rubocop:disable Lint/RescueException
+      # Catch ALL exceptions including LoadError, ScriptError, etc.
+      # Tool crashes should not crash AIA - log and continue gracefully
+      handle_tool_crash(chat_instance, e)
     end
 
 
@@ -792,7 +1195,7 @@ module AIA
       image_name  = extract_image_path(text_prompt)
 
       begin
-        image = RubyLLM.paint(text_prompt, size: AIA.config.image_size)
+        image = RubyLLM.paint(text_prompt, size: AIA.config.image.size)
         if image_name
           image_path = image.save(image_name)
           "Image generated and saved to: #{image_path}"
@@ -837,8 +1240,8 @@ module AIA
         # NOTE: RubyLLM doesn't have a direct TTS feature
         # TODO: This is a placeholder for a custom implementation
         File.write(output_file, text_prompt)
-        if File.exist?(output_file) && system("which #{AIA.config.speak_command} > /dev/null 2>&1")
-          system("#{AIA.config.speak_command} #{output_file}")
+        if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
+          system("#{AIA.config.audio.speak_command} #{output_file}")
         end
         "Audio generated and saved to: #{output_file}"
       rescue StandardError => e

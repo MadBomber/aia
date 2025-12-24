@@ -3,11 +3,15 @@ require_relative '../../lib/aia'
 
 class RubyLLMAdapterTest < Minitest::Test
   def setup
-    # Mock AIA.config to prevent dependency issues
+    # Mock AIA.config with nested structure to prevent dependency issues
     AIA.stubs(:config).returns(OpenStruct.new(
-      model: 'gpt-4o-mini',
-      tools: [],
-      context_files: []
+      models: [OpenStruct.new(name: 'gpt-4o-mini')],
+      tools: OpenStruct.new(paths: []),
+      context_files: [],
+      flags: OpenStruct.new(debug: false),
+      registry: OpenStruct.new(refresh: nil, last_refresh: Date.today),
+      paths: OpenStruct.new(config_file: '/tmp/test_config.yml'),
+      mcp_servers: []
     ))
     
     # Mock RubyLLM to prevent actual API calls

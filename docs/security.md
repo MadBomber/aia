@@ -582,8 +582,8 @@ security_response() {
             echo "AIA disabled due to security alert" | mail -s "AIA Security Alert" admin@company.com
             ;;
         "MEDIUM")
-            # Increase logging level
-            export AIA_LOG_LEVEL=debug
+            # Increase logging level (nested config format)
+            export AIA_LOGGER__AIA__LEVEL=debug
             echo "AIA security monitoring increased" | mail -s "AIA Security Notice" admin@company.com
             ;;
         "LOW")

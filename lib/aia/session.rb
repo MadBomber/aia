@@ -53,8 +53,9 @@ module AIA
     end
 
     def setup_output_file
-      if AIA.config.out_file && !AIA.config.out_file.nil? && !AIA.append? && File.exist?(AIA.config.out_file)
-        File.open(AIA.config.out_file, "w") { } # Truncate the file
+      out_file = AIA.config.output.file
+      if out_file && !out_file.nil? && !AIA.append? && File.exist?(out_file)
+        File.open(out_file, "w") { } # Truncate the file
       end
     end
 
@@ -117,7 +118,7 @@ module AIA
     end
 
     def setup_prompt_processing(prompt_id)
-      role_id = AIA.config.role
+      role_id = AIA.config.prompts.role
 
       begin
         prompt = @prompt_handler.get_prompt(prompt_id, role_id)
@@ -351,8 +352,8 @@ module AIA
 
         break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == "exit" || follow_up_prompt.strip.empty?
 
-        if AIA.config.out_file
-          File.open(AIA.config.out_file, "a") do |file|
+        if AIA.config.output.file
+          File.open(AIA.config.output.file, "a") do |file|
             file.puts "\nYou: #{follow_up_prompt}"
           end
         end

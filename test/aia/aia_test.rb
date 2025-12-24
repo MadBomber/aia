@@ -21,8 +21,4 @@ class AIATest < Minitest::Test
   def test_bad_file_method_exists
     assert_respond_to AIA, :bad_file?, "AIA should respond to the 'bad_file?' method"
   end
-
-  def test_build_flags_method_exists
-    assert_respond_to AIA, :build_flags, "AIA should respond to the 'build_flags' method"
-  end
 end

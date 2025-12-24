@@ -26,8 +26,9 @@ module AIA
       puts "\nAI: "
       format_chat_response(response)
 
-      if AIA.config.out_file && !AIA.config.out_file.nil?
-        File.open(AIA.config.out_file, 'a') do |file|
+      out_file = AIA.config.output.file
+      if out_file && !out_file.nil?
+        File.open(out_file, 'a') do |file|
           file.puts "\nAI: "
           format_chat_response(response, file)
         end
@@ -137,13 +138,14 @@ module AIA
       output_lines.each { |line| puts line }
       
       # Also write to file if configured
-      if AIA.config.out_file && !AIA.config.out_file.nil?
-        File.open(AIA.config.out_file, 'a') do |file|
+      out_file = AIA.config.output.file
+      if out_file && !out_file.nil?
+        File.open(out_file, 'a') do |file|
           output_lines.each { |line| file.puts line }
         end
       end
     end
-    
+
     def display_multi_model_metrics(metrics_list)
       return unless metrics_list && !metrics_list.empty?
       
@@ -227,13 +229,14 @@ module AIA
       output_lines.each { |line| puts line }
       
       # Also write to file if configured
-      if AIA.config.out_file && !AIA.config.out_file.nil?
-        File.open(AIA.config.out_file, 'a') do |file|
+      out_file = AIA.config.output.file
+      if out_file && !out_file.nil?
+        File.open(out_file, 'a') do |file|
           output_lines.each { |line| file.puts line }
         end
       end
     end
-    
+
     private
     
     def display_metrics_basic(metrics)

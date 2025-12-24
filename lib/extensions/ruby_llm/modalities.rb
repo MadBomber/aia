@@ -1,5 +1,7 @@
 # lib/extensions/ruby_llm/modalities.rb
 
+require 'ruby_llm'
+
 class RubyLLM::Model::Modalities
   #
   def text_to_text? = input.include?('text') && output.include?('text')

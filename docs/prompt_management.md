@@ -32,8 +32,8 @@ AIA provides sophisticated prompt management capabilities through the PromptMana
 
 ### Custom Structure
 ```bash
-# Set custom prompts directory
-export AIA_PROMPTS_DIR="/path/to/custom/prompts"
+# Set custom prompts directory (uses nested naming convention)
+export AIA_PROMPTS__DIR="/path/to/custom/prompts"
 aia --prompts_dir /path/to/custom/prompts
 
 # Use project-specific prompts
@@ -381,7 +381,7 @@ git clone git@github.com:team/shared-prompts.git ~/.prompts/shared/
 aia --prompts_dir ~/.prompts/shared/ team_code_review
 
 # Personal + shared prompts
-export AIA_PROMPTS_DIR="~/.prompts:~/.prompts/shared:./project_prompts"
+export AIA_PROMPTS__DIR="~/.prompts:~/.prompts/shared:./project_prompts"
 ```
 
 ### Prompt Documentation

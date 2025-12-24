@@ -2,7 +2,7 @@
 # Setup a prompt completion for use with the fish shell
 #
 # This script assumes that the system environment
-# variable AIA_PROMPTS_DIR has been set correctly
+# variable AIA_PROMPTS__DIR has been set correctly
 
 function __fish_aia_complete
   # Get the command line and current token
@@ -12,9 +12,9 @@ function __fish_aia_complete
   # Check if we are currently completing the option that requires prompt IDs
   if set -q cmd_line[2]
     # Change directory to the prompts directory
-    if test -d $AIA_PROMPTS_DIR
-      pushd $AIA_PROMPTS_DIR
-      # Generate completions based on .txt files in the AIA_PROMPTS_DIR directory
+    if test -d $AIA_PROMPTS__DIR
+      pushd $AIA_PROMPTS__DIR
+      # Generate completions based on .txt files in the AIA_PROMPTS__DIR directory
       for file in (find . -name "*.txt" -type f)
         set file (string replace -r '\.txt$' '' -- $file)
         set file (string replace -r '^\./' '' -- $file)
