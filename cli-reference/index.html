@@ -1467,6 +1467,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#log-level-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log Level Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-d-debug" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1482,6 +1493,50 @@
     <span class="md-ellipsis">
       
         --no-debug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-warn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --warn
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-fatal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --fatal
       
     </span>
   </a>
@@ -2503,6 +2558,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#log-level-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log Level Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-d-debug" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2518,6 +2584,50 @@
     <span class="md-ellipsis">
       
         --no-debug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-warn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --warn
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-fatal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --fatal
       
     </span>
   </a>
@@ -3102,100 +3212,126 @@
 </span><span id="__span-37-3"><a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>aia<span class="w"> </span>--rt<span class="w"> </span><span class="s2">&quot;network_access&quot;</span><span class="w"> </span>secure_prompt
 </span></code></pre></div>
 <h2 id="utility-options">Utility Options<a class="headerlink" href="#utility-options" title="Permanent link">&para;</a></h2>
+<h3 id="log-level-options">Log Level Options<a class="headerlink" href="#log-level-options" title="Permanent link">&para;</a></h3>
+<p>AIA provides multiple log level options to control logging verbosity. These options set the log level for all three loggers (aia, llm, mcp). Only one log level option should be used at a time.</p>
 <h3 id="-d-debug"><code>-d, --debug</code><a class="headerlink" href="#-d-debug" title="Permanent link">&para;</a></h3>
-<p>Enable debug output for troubleshooting.</p>
+<p>Enable debug output (most verbose) and set all loggers to DEBUG level. Also sets <code>$DEBUG_ME = true</code> for the debug_me gem.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>aia<span class="w"> </span>--debug<span class="w"> </span>my_prompt
 </span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>aia<span class="w"> </span>-d<span class="w"> </span>--chat
 </span></code></pre></div>
 <h3 id="-no-debug"><code>--no-debug</code><a class="headerlink" href="#-no-debug" title="Permanent link">&para;</a></h3>
-<p>Explicitly disable debug output.</p>
+<p>Explicitly disable debug output. Sets <code>$DEBUG_ME = false</code>.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>aia<span class="w"> </span>--no-debug<span class="w"> </span>my_prompt
 </span></code></pre></div>
+<h3 id="-info"><code>--info</code><a class="headerlink" href="#-info" title="Permanent link">&para;</a></h3>
+<p>Set all loggers to INFO level. Shows informational messages and above.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>aia<span class="w"> </span>--info<span class="w"> </span>my_prompt
+</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>aia<span class="w"> </span>--info<span class="w"> </span>--chat
+</span></code></pre></div>
+<h3 id="-warn"><code>--warn</code><a class="headerlink" href="#-warn" title="Permanent link">&para;</a></h3>
+<p>Set all loggers to WARN level (this is the default). Shows warnings, errors, and fatal messages.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>aia<span class="w"> </span>--warn<span class="w"> </span>my_prompt
+</span></code></pre></div>
+<h3 id="-error"><code>--error</code><a class="headerlink" href="#-error" title="Permanent link">&para;</a></h3>
+<p>Set all loggers to ERROR level. Shows only errors and fatal messages.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>aia<span class="w"> </span>--error<span class="w"> </span>my_prompt
+</span><span id="__span-42-2"><a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a>aia<span class="w"> </span>--error<span class="w"> </span>--chat
+</span></code></pre></div>
+<h3 id="-fatal"><code>--fatal</code><a class="headerlink" href="#-fatal" title="Permanent link">&para;</a></h3>
+<p>Set all loggers to FATAL level (least verbose). Shows only critical/fatal messages.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>aia<span class="w"> </span>--fatal<span class="w"> </span>my_prompt
+</span></code></pre></div>
+<p><strong>Log Level Hierarchy</strong> (from most to least verbose):
+1. <code>debug</code> - All messages including detailed debugging information
+2. <code>info</code> - Informational messages and above
+3. <code>warn</code> - Warnings, errors, and fatal messages (default)
+4. <code>error</code> - Only errors and fatal messages
+5. <code>fatal</code> - Only critical/fatal messages</p>
 <h3 id="-v-no-verbose"><code>-v, --[no-]verbose</code><a class="headerlink" href="#-v-no-verbose" title="Permanent link">&para;</a></h3>
 <p>Enable/disable verbose output.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="c1"># Verbose mode</span>
-</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>aia<span class="w"> </span>--verbose<span class="w"> </span>my_prompt
-</span><span id="__span-40-3"><a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>aia<span class="w"> </span>-v<span class="w"> </span>my_prompt
-</span><span id="__span-40-4"><a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>
-</span><span id="__span-40-5"><a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="c1"># Quiet mode</span>
-</span><span id="__span-40-6"><a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>aia<span class="w"> </span>--no-verbose<span class="w"> </span>my_prompt
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-44-1"><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="c1"># Verbose mode</span>
+</span><span id="__span-44-2"><a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a>aia<span class="w"> </span>--verbose<span class="w"> </span>my_prompt
+</span><span id="__span-44-3"><a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a>aia<span class="w"> </span>-v<span class="w"> </span>my_prompt
+</span><span id="__span-44-4"><a id="__codelineno-44-4" name="__codelineno-44-4" href="#__codelineno-44-4"></a>
+</span><span id="__span-44-5"><a id="__codelineno-44-5" name="__codelineno-44-5" href="#__codelineno-44-5"></a><span class="c1"># Quiet mode</span>
+</span><span id="__span-44-6"><a id="__codelineno-44-6" name="__codelineno-44-6" href="#__codelineno-44-6"></a>aia<span class="w"> </span>--no-verbose<span class="w"> </span>my_prompt
 </span></code></pre></div>
 <h3 id="-refresh-days"><code>--refresh DAYS</code><a class="headerlink" href="#-refresh-days" title="Permanent link">&para;</a></h3>
 <p>Refresh models database interval in days.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="c1"># Refresh immediately</span>
-</span><span id="__span-41-2"><a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a>aia<span class="w"> </span>--refresh<span class="w"> </span><span class="m">0</span>
-</span><span id="__span-41-3"><a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a>
-</span><span id="__span-41-4"><a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a><span class="c1"># Refresh weekly</span>
-</span><span id="__span-41-5"><a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a>aia<span class="w"> </span>--refresh<span class="w"> </span><span class="m">7</span>
-</span><span id="__span-41-6"><a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a>
-</span><span id="__span-41-7"><a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a><span class="c1"># Refresh monthly</span>
-</span><span id="__span-41-8"><a id="__codelineno-41-8" name="__codelineno-41-8" href="#__codelineno-41-8"></a>aia<span class="w"> </span>--refresh<span class="w"> </span><span class="m">30</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-45-1"><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="c1"># Refresh immediately</span>
+</span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a>aia<span class="w"> </span>--refresh<span class="w"> </span><span class="m">0</span>
+</span><span id="__span-45-3"><a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a>
+</span><span id="__span-45-4"><a id="__codelineno-45-4" name="__codelineno-45-4" href="#__codelineno-45-4"></a><span class="c1"># Refresh weekly</span>
+</span><span id="__span-45-5"><a id="__codelineno-45-5" name="__codelineno-45-5" href="#__codelineno-45-5"></a>aia<span class="w"> </span>--refresh<span class="w"> </span><span class="m">7</span>
+</span><span id="__span-45-6"><a id="__codelineno-45-6" name="__codelineno-45-6" href="#__codelineno-45-6"></a>
+</span><span id="__span-45-7"><a id="__codelineno-45-7" name="__codelineno-45-7" href="#__codelineno-45-7"></a><span class="c1"># Refresh monthly</span>
+</span><span id="__span-45-8"><a id="__codelineno-45-8" name="__codelineno-45-8" href="#__codelineno-45-8"></a>aia<span class="w"> </span>--refresh<span class="w"> </span><span class="m">30</span>
 </span></code></pre></div>
 <h3 id="-dump-file"><code>--dump FILE</code><a class="headerlink" href="#-dump-file" title="Permanent link">&para;</a></h3>
 <p>Dump current configuration to a file for inspection or backup.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>aia<span class="w"> </span>--dump<span class="w"> </span>current_config.yaml
-</span><span id="__span-42-2"><a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a>aia<span class="w"> </span>--dump<span class="w"> </span>/tmp/aia_config_backup.yml
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-46-1"><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>aia<span class="w"> </span>--dump<span class="w"> </span>current_config.yaml
+</span><span id="__span-46-2"><a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a>aia<span class="w"> </span>--dump<span class="w"> </span>/tmp/aia_config_backup.yml
 </span></code></pre></div>
 <h3 id="-completion-shell"><code>--completion SHELL</code><a class="headerlink" href="#-completion-shell" title="Permanent link">&para;</a></h3>
 <p>Show completion script for shell integration.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="c1"># Bash completion</span>
-</span><span id="__span-43-2"><a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a>aia<span class="w"> </span>--completion<span class="w"> </span>bash<span class="w"> </span>&gt;<span class="w"> </span>~/.bash_completion.d/aia
-</span><span id="__span-43-3"><a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a>
-</span><span id="__span-43-4"><a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="c1"># Zsh completion  </span>
-</span><span id="__span-43-5"><a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a>aia<span class="w"> </span>--completion<span class="w"> </span>zsh<span class="w"> </span>&gt;<span class="w"> </span>~/.zsh/completions/_aia
-</span><span id="__span-43-6"><a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a>
-</span><span id="__span-43-7"><a id="__codelineno-43-7" name="__codelineno-43-7" href="#__codelineno-43-7"></a><span class="c1"># Fish completion</span>
-</span><span id="__span-43-8"><a id="__codelineno-43-8" name="__codelineno-43-8" href="#__codelineno-43-8"></a>aia<span class="w"> </span>--completion<span class="w"> </span>fish<span class="w"> </span>&gt;<span class="w"> </span>~/.config/fish/completions/aia.fish
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-47-1"><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="c1"># Bash completion</span>
+</span><span id="__span-47-2"><a id="__codelineno-47-2" name="__codelineno-47-2" href="#__codelineno-47-2"></a>aia<span class="w"> </span>--completion<span class="w"> </span>bash<span class="w"> </span>&gt;<span class="w"> </span>~/.bash_completion.d/aia
+</span><span id="__span-47-3"><a id="__codelineno-47-3" name="__codelineno-47-3" href="#__codelineno-47-3"></a>
+</span><span id="__span-47-4"><a id="__codelineno-47-4" name="__codelineno-47-4" href="#__codelineno-47-4"></a><span class="c1"># Zsh completion  </span>
+</span><span id="__span-47-5"><a id="__codelineno-47-5" name="__codelineno-47-5" href="#__codelineno-47-5"></a>aia<span class="w"> </span>--completion<span class="w"> </span>zsh<span class="w"> </span>&gt;<span class="w"> </span>~/.zsh/completions/_aia
+</span><span id="__span-47-6"><a id="__codelineno-47-6" name="__codelineno-47-6" href="#__codelineno-47-6"></a>
+</span><span id="__span-47-7"><a id="__codelineno-47-7" name="__codelineno-47-7" href="#__codelineno-47-7"></a><span class="c1"># Fish completion</span>
+</span><span id="__span-47-8"><a id="__codelineno-47-8" name="__codelineno-47-8" href="#__codelineno-47-8"></a>aia<span class="w"> </span>--completion<span class="w"> </span>fish<span class="w"> </span>&gt;<span class="w"> </span>~/.config/fish/completions/aia.fish
 </span></code></pre></div>
 <p><strong>Supported shells</strong>: <code>bash</code>, <code>zsh</code>, <code>fish</code></p>
 <h3 id="-version"><code>--version</code><a class="headerlink" href="#-version" title="Permanent link">&para;</a></h3>
 <p>Show AIA version and exit.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-44-1"><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>aia<span class="w"> </span>--version
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-48-1"><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>aia<span class="w"> </span>--version
 </span></code></pre></div>
 <h3 id="-h-help"><code>-h, --help</code><a class="headerlink" href="#-h-help" title="Permanent link">&para;</a></h3>
 <p>Show help message and exit.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-45-1"><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>aia<span class="w"> </span>--help
-</span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a>aia<span class="w"> </span>-h
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-49-1"><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>aia<span class="w"> </span>--help
+</span><span id="__span-49-2"><a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a>aia<span class="w"> </span>-h
 </span></code></pre></div>
 <h2 id="usage-examples">Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">&para;</a></h2>
 <h3 id="basic-examples">Basic Examples<a class="headerlink" href="#basic-examples" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-46-1"><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a><span class="c1"># Simple prompt execution</span>
-</span><span id="__span-46-2"><a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a>aia<span class="w"> </span>hello_world
-</span><span id="__span-46-3"><a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a>
-</span><span id="__span-46-4"><a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a><span class="c1"># Chat mode</span>
-</span><span id="__span-46-5"><a id="__codelineno-46-5" name="__codelineno-46-5" href="#__codelineno-46-5"></a>aia<span class="w"> </span>--chat
-</span><span id="__span-46-6"><a id="__codelineno-46-6" name="__codelineno-46-6" href="#__codelineno-46-6"></a>
-</span><span id="__span-46-7"><a id="__codelineno-46-7" name="__codelineno-46-7" href="#__codelineno-46-7"></a><span class="c1"># Use specific model</span>
-</span><span id="__span-46-8"><a id="__codelineno-46-8" name="__codelineno-46-8" href="#__codelineno-46-8"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4<span class="w"> </span>code_review<span class="w"> </span>my_script.py
-</span><span id="__span-46-9"><a id="__codelineno-46-9" name="__codelineno-46-9" href="#__codelineno-46-9"></a>
-</span><span id="__span-46-10"><a id="__codelineno-46-10" name="__codelineno-46-10" href="#__codelineno-46-10"></a><span class="c1"># Fuzzy prompt selection</span>
-</span><span id="__span-46-11"><a id="__codelineno-46-11" name="__codelineno-46-11" href="#__codelineno-46-11"></a>aia<span class="w"> </span>--fuzzy
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-50-1"><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a><span class="c1"># Simple prompt execution</span>
+</span><span id="__span-50-2"><a id="__codelineno-50-2" name="__codelineno-50-2" href="#__codelineno-50-2"></a>aia<span class="w"> </span>hello_world
+</span><span id="__span-50-3"><a id="__codelineno-50-3" name="__codelineno-50-3" href="#__codelineno-50-3"></a>
+</span><span id="__span-50-4"><a id="__codelineno-50-4" name="__codelineno-50-4" href="#__codelineno-50-4"></a><span class="c1"># Chat mode</span>
+</span><span id="__span-50-5"><a id="__codelineno-50-5" name="__codelineno-50-5" href="#__codelineno-50-5"></a>aia<span class="w"> </span>--chat
+</span><span id="__span-50-6"><a id="__codelineno-50-6" name="__codelineno-50-6" href="#__codelineno-50-6"></a>
+</span><span id="__span-50-7"><a id="__codelineno-50-7" name="__codelineno-50-7" href="#__codelineno-50-7"></a><span class="c1"># Use specific model</span>
+</span><span id="__span-50-8"><a id="__codelineno-50-8" name="__codelineno-50-8" href="#__codelineno-50-8"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4<span class="w"> </span>code_review<span class="w"> </span>my_script.py
+</span><span id="__span-50-9"><a id="__codelineno-50-9" name="__codelineno-50-9" href="#__codelineno-50-9"></a>
+</span><span id="__span-50-10"><a id="__codelineno-50-10" name="__codelineno-50-10" href="#__codelineno-50-10"></a><span class="c1"># Fuzzy prompt selection</span>
+</span><span id="__span-50-11"><a id="__codelineno-50-11" name="__codelineno-50-11" href="#__codelineno-50-11"></a>aia<span class="w"> </span>--fuzzy
 </span></code></pre></div>
 <h3 id="advanced-examples">Advanced Examples<a class="headerlink" href="#advanced-examples" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-47-1"><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="c1"># Multi-model consensus</span>
-</span><span id="__span-47-2"><a id="__codelineno-47-2" name="__codelineno-47-2" href="#__codelineno-47-2"></a>aia<span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;gpt-4,claude-3-sonnet&quot;</span><span class="w"> </span>--consensus<span class="w"> </span>analysis_prompt<span class="w"> </span>data.csv
-</span><span id="__span-47-3"><a id="__codelineno-47-3" name="__codelineno-47-3" href="#__codelineno-47-3"></a>
-</span><span id="__span-47-4"><a id="__codelineno-47-4" name="__codelineno-47-4" href="#__codelineno-47-4"></a><span class="c1"># Creative writing with voice output</span>
-</span><span id="__span-47-5"><a id="__codelineno-47-5" name="__codelineno-47-5" href="#__codelineno-47-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4<span class="w"> </span>--temperature<span class="w"> </span><span class="m">1</span>.2<span class="w"> </span>--speak<span class="w"> </span>--voice<span class="w"> </span>nova<span class="w"> </span>story_prompt
-</span><span id="__span-47-6"><a id="__codelineno-47-6" name="__codelineno-47-6" href="#__codelineno-47-6"></a>
-</span><span id="__span-47-7"><a id="__codelineno-47-7" name="__codelineno-47-7" href="#__codelineno-47-7"></a><span class="c1"># Secure tool usage</span>
-</span><span id="__span-47-8"><a id="__codelineno-47-8" name="__codelineno-47-8" href="#__codelineno-47-8"></a>aia<span class="w"> </span>--tools<span class="w"> </span>./safe_tools/<span class="w"> </span>--allowed_tools<span class="w"> </span><span class="s2">&quot;calculator,file_reader&quot;</span><span class="w"> </span>--rejected_tools<span class="w"> </span><span class="s2">&quot;system_command&quot;</span><span class="w"> </span>analysis_prompt
-</span><span id="__span-47-9"><a id="__codelineno-47-9" name="__codelineno-47-9" href="#__codelineno-47-9"></a>
-</span><span id="__span-47-10"><a id="__codelineno-47-10" name="__codelineno-47-10" href="#__codelineno-47-10"></a><span class="c1"># Pipeline with custom configuration</span>
-</span><span id="__span-47-11"><a id="__codelineno-47-11" name="__codelineno-47-11" href="#__codelineno-47-11"></a>aia<span class="w"> </span>--pipeline<span class="w"> </span><span class="s2">&quot;extract,analyze,summarize&quot;</span><span class="w"> </span>--temperature<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--max_tokens<span class="w"> </span><span class="m">2000</span><span class="w"> </span>--out_file<span class="w"> </span>report.md<span class="w"> </span>data_source.txt
-</span><span id="__span-47-12"><a id="__codelineno-47-12" name="__codelineno-47-12" href="#__codelineno-47-12"></a>
-</span><span id="__span-47-13"><a id="__codelineno-47-13" name="__codelineno-47-13" href="#__codelineno-47-13"></a><span class="c1"># Debug mode with verbose output</span>
-</span><span id="__span-47-14"><a id="__codelineno-47-14" name="__codelineno-47-14" href="#__codelineno-47-14"></a>aia<span class="w"> </span>--debug<span class="w"> </span>--verbose<span class="w"> </span>--model<span class="w"> </span>claude-3-sonnet<span class="w"> </span>problematic_prompt
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-51-1"><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a><span class="c1"># Multi-model consensus</span>
+</span><span id="__span-51-2"><a id="__codelineno-51-2" name="__codelineno-51-2" href="#__codelineno-51-2"></a>aia<span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;gpt-4,claude-3-sonnet&quot;</span><span class="w"> </span>--consensus<span class="w"> </span>analysis_prompt<span class="w"> </span>data.csv
+</span><span id="__span-51-3"><a id="__codelineno-51-3" name="__codelineno-51-3" href="#__codelineno-51-3"></a>
+</span><span id="__span-51-4"><a id="__codelineno-51-4" name="__codelineno-51-4" href="#__codelineno-51-4"></a><span class="c1"># Creative writing with voice output</span>
+</span><span id="__span-51-5"><a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4<span class="w"> </span>--temperature<span class="w"> </span><span class="m">1</span>.2<span class="w"> </span>--speak<span class="w"> </span>--voice<span class="w"> </span>nova<span class="w"> </span>story_prompt
+</span><span id="__span-51-6"><a id="__codelineno-51-6" name="__codelineno-51-6" href="#__codelineno-51-6"></a>
+</span><span id="__span-51-7"><a id="__codelineno-51-7" name="__codelineno-51-7" href="#__codelineno-51-7"></a><span class="c1"># Secure tool usage</span>
+</span><span id="__span-51-8"><a id="__codelineno-51-8" name="__codelineno-51-8" href="#__codelineno-51-8"></a>aia<span class="w"> </span>--tools<span class="w"> </span>./safe_tools/<span class="w"> </span>--allowed_tools<span class="w"> </span><span class="s2">&quot;calculator,file_reader&quot;</span><span class="w"> </span>--rejected_tools<span class="w"> </span><span class="s2">&quot;system_command&quot;</span><span class="w"> </span>analysis_prompt
+</span><span id="__span-51-9"><a id="__codelineno-51-9" name="__codelineno-51-9" href="#__codelineno-51-9"></a>
+</span><span id="__span-51-10"><a id="__codelineno-51-10" name="__codelineno-51-10" href="#__codelineno-51-10"></a><span class="c1"># Pipeline with custom configuration</span>
+</span><span id="__span-51-11"><a id="__codelineno-51-11" name="__codelineno-51-11" href="#__codelineno-51-11"></a>aia<span class="w"> </span>--pipeline<span class="w"> </span><span class="s2">&quot;extract,analyze,summarize&quot;</span><span class="w"> </span>--temperature<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span>--max_tokens<span class="w"> </span><span class="m">2000</span><span class="w"> </span>--out_file<span class="w"> </span>report.md<span class="w"> </span>data_source.txt
+</span><span id="__span-51-12"><a id="__codelineno-51-12" name="__codelineno-51-12" href="#__codelineno-51-12"></a>
+</span><span id="__span-51-13"><a id="__codelineno-51-13" name="__codelineno-51-13" href="#__codelineno-51-13"></a><span class="c1"># Debug mode with verbose output</span>
+</span><span id="__span-51-14"><a id="__codelineno-51-14" name="__codelineno-51-14" href="#__codelineno-51-14"></a>aia<span class="w"> </span>--debug<span class="w"> </span>--verbose<span class="w"> </span>--model<span class="w"> </span>claude-3-sonnet<span class="w"> </span>problematic_prompt
 </span></code></pre></div>
 <h3 id="configuration-examples">Configuration Examples<a class="headerlink" href="#configuration-examples" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-48-1"><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a><span class="c1"># Use custom configuration</span>
-</span><span id="__span-48-2"><a id="__codelineno-48-2" name="__codelineno-48-2" href="#__codelineno-48-2"></a>aia<span class="w"> </span>--config_file<span class="w"> </span>./project_config.yml<span class="w"> </span>--prompts_dir<span class="w"> </span>./project_prompts/<span class="w"> </span>my_prompt
-</span><span id="__span-48-3"><a id="__codelineno-48-3" name="__codelineno-48-3" href="#__codelineno-48-3"></a>
-</span><span id="__span-48-4"><a id="__codelineno-48-4" name="__codelineno-48-4" href="#__codelineno-48-4"></a><span class="c1"># Save output with markdown formatting</span>
-</span><span id="__span-48-5"><a id="__codelineno-48-5" name="__codelineno-48-5" href="#__codelineno-48-5"></a>aia<span class="w"> </span>--out_file<span class="w"> </span>analysis.md<span class="w"> </span>--markdown<span class="w"> </span>--append<span class="w"> </span>data_analysis<span class="w"> </span>dataset.csv
-</span><span id="__span-48-6"><a id="__codelineno-48-6" name="__codelineno-48-6" href="#__codelineno-48-6"></a>
-</span><span id="__span-48-7"><a id="__codelineno-48-7" name="__codelineno-48-7" href="#__codelineno-48-7"></a><span class="c1"># Audio processing</span>
-</span><span id="__span-48-8"><a id="__codelineno-48-8" name="__codelineno-48-8" href="#__codelineno-48-8"></a>aia<span class="w"> </span>--transcription_model<span class="w"> </span>whisper-1<span class="w"> </span>--speech_model<span class="w"> </span>tts-1-hd<span class="w"> </span>--voice<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>audio_prompt<span class="w"> </span>audio_file.wav
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-52-1"><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a><span class="c1"># Use custom configuration</span>
+</span><span id="__span-52-2"><a id="__codelineno-52-2" name="__codelineno-52-2" href="#__codelineno-52-2"></a>aia<span class="w"> </span>--config_file<span class="w"> </span>./project_config.yml<span class="w"> </span>--prompts_dir<span class="w"> </span>./project_prompts/<span class="w"> </span>my_prompt
+</span><span id="__span-52-3"><a id="__codelineno-52-3" name="__codelineno-52-3" href="#__codelineno-52-3"></a>
+</span><span id="__span-52-4"><a id="__codelineno-52-4" name="__codelineno-52-4" href="#__codelineno-52-4"></a><span class="c1"># Save output with markdown formatting</span>
+</span><span id="__span-52-5"><a id="__codelineno-52-5" name="__codelineno-52-5" href="#__codelineno-52-5"></a>aia<span class="w"> </span>--out_file<span class="w"> </span>analysis.md<span class="w"> </span>--markdown<span class="w"> </span>--append<span class="w"> </span>data_analysis<span class="w"> </span>dataset.csv
+</span><span id="__span-52-6"><a id="__codelineno-52-6" name="__codelineno-52-6" href="#__codelineno-52-6"></a>
+</span><span id="__span-52-7"><a id="__codelineno-52-7" name="__codelineno-52-7" href="#__codelineno-52-7"></a><span class="c1"># Audio processing</span>
+</span><span id="__span-52-8"><a id="__codelineno-52-8" name="__codelineno-52-8" href="#__codelineno-52-8"></a>aia<span class="w"> </span>--transcription_model<span class="w"> </span>whisper-1<span class="w"> </span>--speech_model<span class="w"> </span>tts-1-hd<span class="w"> </span>--voice<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>audio_prompt<span class="w"> </span>audio_file.wav
 </span></code></pre></div>
 <h2 id="exit-codes">Exit Codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3208,28 +3344,28 @@
 <h2 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
 <p>Many CLI options have corresponding environment variables with the <code>AIA_</code> prefix.
 Use double underscore (<code>__</code>) for nested configuration sections:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-49-1"><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="c1"># Model configuration (top-level)</span>
-</span><span id="__span-49-2"><a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_MODEL</span><span class="o">=</span><span class="s2">&quot;gpt-4&quot;</span>
-</span><span id="__span-49-3"><a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a>
-</span><span id="__span-49-4"><a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="c1"># Model with inline role syntax</span>
-</span><span id="__span-49-5"><a id="__codelineno-49-5" name="__codelineno-49-5" href="#__codelineno-49-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_MODEL</span><span class="o">=</span><span class="s2">&quot;gpt-4o=architect&quot;</span>
-</span><span id="__span-49-6"><a id="__codelineno-49-6" name="__codelineno-49-6" href="#__codelineno-49-6"></a>
-</span><span id="__span-49-7"><a id="__codelineno-49-7" name="__codelineno-49-7" href="#__codelineno-49-7"></a><span class="c1"># Multiple models with roles</span>
-</span><span id="__span-49-8"><a id="__codelineno-49-8" name="__codelineno-49-8" href="#__codelineno-49-8"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_MODEL</span><span class="o">=</span><span class="s2">&quot;gpt-4o=architect,claude=security,gemini=performance&quot;</span>
-</span><span id="__span-49-9"><a id="__codelineno-49-9" name="__codelineno-49-9" href="#__codelineno-49-9"></a>
-</span><span id="__span-49-10"><a id="__codelineno-49-10" name="__codelineno-49-10" href="#__codelineno-49-10"></a><span class="c1"># LLM settings (nested under llm:)</span>
-</span><span id="__span-49-11"><a id="__codelineno-49-11" name="__codelineno-49-11" href="#__codelineno-49-11"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_LLM__TEMPERATURE</span><span class="o">=</span><span class="s2">&quot;0.8&quot;</span>
-</span><span id="__span-49-12"><a id="__codelineno-49-12" name="__codelineno-49-12" href="#__codelineno-49-12"></a>
-</span><span id="__span-49-13"><a id="__codelineno-49-13" name="__codelineno-49-13" href="#__codelineno-49-13"></a><span class="c1"># Prompts settings (nested under prompts:)</span>
-</span><span id="__span-49-14"><a id="__codelineno-49-14" name="__codelineno-49-14" href="#__codelineno-49-14"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_PROMPTS__DIR</span><span class="o">=</span><span class="s2">&quot;/custom/prompts&quot;</span>
-</span><span id="__span-49-15"><a id="__codelineno-49-15" name="__codelineno-49-15" href="#__codelineno-49-15"></a>
-</span><span id="__span-49-16"><a id="__codelineno-49-16" name="__codelineno-49-16" href="#__codelineno-49-16"></a><span class="c1"># Flags (nested under flags:)</span>
-</span><span id="__span-49-17"><a id="__codelineno-49-17" name="__codelineno-49-17" href="#__codelineno-49-17"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_FLAGS__VERBOSE</span><span class="o">=</span><span class="s2">&quot;true&quot;</span>
-</span><span id="__span-49-18"><a id="__codelineno-49-18" name="__codelineno-49-18" href="#__codelineno-49-18"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_FLAGS__DEBUG</span><span class="o">=</span><span class="s2">&quot;false&quot;</span>
-</span><span id="__span-49-19"><a id="__codelineno-49-19" name="__codelineno-49-19" href="#__codelineno-49-19"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_FLAGS__CHAT</span><span class="o">=</span><span class="s2">&quot;true&quot;</span>
-</span><span id="__span-49-20"><a id="__codelineno-49-20" name="__codelineno-49-20" href="#__codelineno-49-20"></a>
-</span><span id="__span-49-21"><a id="__codelineno-49-21" name="__codelineno-49-21" href="#__codelineno-49-21"></a><span class="c1"># Output settings (nested under output:)</span>
-</span><span id="__span-49-22"><a id="__codelineno-49-22" name="__codelineno-49-22" href="#__codelineno-49-22"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_OUTPUT__FILE</span><span class="o">=</span><span class="s2">&quot;./output.md&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-53-1"><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a><span class="c1"># Model configuration (top-level)</span>
+</span><span id="__span-53-2"><a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_MODEL</span><span class="o">=</span><span class="s2">&quot;gpt-4&quot;</span>
+</span><span id="__span-53-3"><a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a>
+</span><span id="__span-53-4"><a id="__codelineno-53-4" name="__codelineno-53-4" href="#__codelineno-53-4"></a><span class="c1"># Model with inline role syntax</span>
+</span><span id="__span-53-5"><a id="__codelineno-53-5" name="__codelineno-53-5" href="#__codelineno-53-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_MODEL</span><span class="o">=</span><span class="s2">&quot;gpt-4o=architect&quot;</span>
+</span><span id="__span-53-6"><a id="__codelineno-53-6" name="__codelineno-53-6" href="#__codelineno-53-6"></a>
+</span><span id="__span-53-7"><a id="__codelineno-53-7" name="__codelineno-53-7" href="#__codelineno-53-7"></a><span class="c1"># Multiple models with roles</span>
+</span><span id="__span-53-8"><a id="__codelineno-53-8" name="__codelineno-53-8" href="#__codelineno-53-8"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_MODEL</span><span class="o">=</span><span class="s2">&quot;gpt-4o=architect,claude=security,gemini=performance&quot;</span>
+</span><span id="__span-53-9"><a id="__codelineno-53-9" name="__codelineno-53-9" href="#__codelineno-53-9"></a>
+</span><span id="__span-53-10"><a id="__codelineno-53-10" name="__codelineno-53-10" href="#__codelineno-53-10"></a><span class="c1"># LLM settings (nested under llm:)</span>
+</span><span id="__span-53-11"><a id="__codelineno-53-11" name="__codelineno-53-11" href="#__codelineno-53-11"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_LLM__TEMPERATURE</span><span class="o">=</span><span class="s2">&quot;0.8&quot;</span>
+</span><span id="__span-53-12"><a id="__codelineno-53-12" name="__codelineno-53-12" href="#__codelineno-53-12"></a>
+</span><span id="__span-53-13"><a id="__codelineno-53-13" name="__codelineno-53-13" href="#__codelineno-53-13"></a><span class="c1"># Prompts settings (nested under prompts:)</span>
+</span><span id="__span-53-14"><a id="__codelineno-53-14" name="__codelineno-53-14" href="#__codelineno-53-14"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_PROMPTS__DIR</span><span class="o">=</span><span class="s2">&quot;/custom/prompts&quot;</span>
+</span><span id="__span-53-15"><a id="__codelineno-53-15" name="__codelineno-53-15" href="#__codelineno-53-15"></a>
+</span><span id="__span-53-16"><a id="__codelineno-53-16" name="__codelineno-53-16" href="#__codelineno-53-16"></a><span class="c1"># Flags (nested under flags:)</span>
+</span><span id="__span-53-17"><a id="__codelineno-53-17" name="__codelineno-53-17" href="#__codelineno-53-17"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_FLAGS__VERBOSE</span><span class="o">=</span><span class="s2">&quot;true&quot;</span>
+</span><span id="__span-53-18"><a id="__codelineno-53-18" name="__codelineno-53-18" href="#__codelineno-53-18"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_FLAGS__DEBUG</span><span class="o">=</span><span class="s2">&quot;false&quot;</span>
+</span><span id="__span-53-19"><a id="__codelineno-53-19" name="__codelineno-53-19" href="#__codelineno-53-19"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_FLAGS__CHAT</span><span class="o">=</span><span class="s2">&quot;true&quot;</span>
+</span><span id="__span-53-20"><a id="__codelineno-53-20" name="__codelineno-53-20" href="#__codelineno-53-20"></a>
+</span><span id="__span-53-21"><a id="__codelineno-53-21" name="__codelineno-53-21" href="#__codelineno-53-21"></a><span class="c1"># Output settings (nested under output:)</span>
+</span><span id="__span-53-22"><a id="__codelineno-53-22" name="__codelineno-53-22" href="#__codelineno-53-22"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_OUTPUT__FILE</span><span class="o">=</span><span class="s2">&quot;./output.md&quot;</span>
 </span></code></pre></div>
 <p><strong>Note</strong>: The <code>AIA_MODEL</code> environment variable supports the same inline <code>MODEL=ROLE</code> syntax as the <code>--model</code> CLI option.</p>
 <p>See <a href="../configuration/#environment-variables">Configuration</a> for a complete list.</p>
