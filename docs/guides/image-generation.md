@@ -11,7 +11,7 @@ AIA supports AI-powered image generation through various models, enabling you to
 ### Image Model Capabilities
 ```bash
 # Check available image generation models
-aia --available_models text_to_image
+aia --available-models text_to_image
 
 # Example output:
 # - dall-e-3 (openai) text to image
@@ -26,26 +26,26 @@ aia --available_models text_to_image
 aia --model dall-e-3 "A serene mountain lake at sunset"
 
 # Generate with specific size
-aia --model dall-e-3 --image_size 1024x1024 "Modern office workspace"
+aia --model dall-e-3 --image-size 1024x1024 "Modern office workspace"
 
 # Generate with quality settings
-aia --model dall-e-3 --image_quality hd "Professional headshot"
+aia --model dall-e-3 --image-quality hd "Professional headshot"
 ```
 
 ### Image Configuration Options
 
-#### Image Size (`--image_size`, `--is`)
+#### Image Size (`--image-size`, `--is`)
 ```bash
 # Square formats
-aia --image_size 1024x1024 "Square image prompt"
+aia --image-size 1024x1024 "Square image prompt"
 aia --is 512x512 "Smaller square image"
 
 # Landscape formats  
-aia --image_size 1792x1024 "Wide landscape image"
+aia --image-size 1792x1024 "Wide landscape image"
 aia --is 1344x768 "Medium landscape"
 
 # Portrait formats
-aia --image_size 1024x1792 "Tall portrait image"
+aia --image-size 1024x1792 "Tall portrait image"
 aia --is 768x1344 "Medium portrait"
 ```
 
@@ -54,13 +54,13 @@ aia --is 768x1344 "Medium portrait"
 - Landscape: `1792x1024`, `1344x768`
 - Portrait: `1024x1792`, `768x1344`
 
-#### Image Quality (`--image_quality`, `--iq`)
+#### Image Quality (`--image-quality`, `--iq`)
 ```bash
 # Standard quality (faster, less expensive)
-aia --image_quality standard "Quick concept image"
+aia --image-quality standard "Quick concept image"
 
 # HD quality (better detail, more expensive)  
-aia --image_quality hd "High-quality marketing image"
+aia --image-quality hd "High-quality marketing image"
 aia --iq hd "Detailed technical diagram"
 ```
 
@@ -68,13 +68,13 @@ aia --iq hd "Detailed technical diagram"
 - `standard`: Good quality, faster generation, lower cost
 - `hd`: Enhanced detail and resolution, slower, higher cost
 
-#### Image Style (`--style`, `--image_style`)
+#### Image Style (`--style`, `--image-style`)
 ```bash
 # Vivid style (hyper-real, dramatic colors)
-aia --image_style vivid "Dramatic sunset over city skyline"
+aia --image-style vivid "Dramatic sunset over city skyline"
 
 # Natural style (more natural, less stylized)
-aia --image_style natural "Realistic portrait of a person reading"
+aia --image-style natural "Realistic portrait of a person reading"
 aia --style natural "Documentary-style photograph"
 ```
 
@@ -342,30 +342,30 @@ aia --model dall-e-3 "Centered composition, symmetrical balance, rule of thirds,
 #### Resolution and Size Selection
 ```bash
 # Choose size based on use case
-aia --image_size 1792x1024 "Website hero image"      # Landscape
-aia --image_size 1024x1792 "Mobile app screenshot"   # Portrait
-aia --image_size 1024x1024 "Social media post"       # Square
+aia --image-size 1792x1024 "Website hero image"      # Landscape
+aia --image-size 1024x1792 "Mobile app screenshot"   # Portrait
+aia --image-size 1024x1024 "Social media post"       # Square
 ```
 
 #### Quality vs. Cost Balance
 ```bash
 # Standard for concepts/drafts
-aia --image_quality standard "Initial concept image"
+aia --image-quality standard "Initial concept image"
 
 # HD for final/published images
-aia --image_quality hd "Final marketing image"
+aia --image-quality hd "Final marketing image"
 ```
 
 ### Iterative Refinement
 ```bash
 # Generate initial concept
-aia --model dall-e-3 --out_file concept_v1.png "Modern kitchen design"
+aia --model dall-e-3 --output concept_v1.png "Modern kitchen design"
 
 # Refine based on results
-aia --model dall-e-3 --out_file concept_v2.png "Modern kitchen with marble countertops, pendant lighting, minimalist cabinets"
+aia --model dall-e-3 --output concept_v2.png "Modern kitchen with marble countertops, pendant lighting, minimalist cabinets"
 
 # Final version with specific details
-aia --model dall-e-3 --image_quality hd --out_file final_kitchen.png "Ultra-modern kitchen with white marble waterfall countertops, brass pendant lights, handleless cabinets, large island, professional photography"
+aia --model dall-e-3 --image-quality hd --output final_kitchen.png "Ultra-modern kitchen with white marble waterfall countertops, brass pendant lights, handleless cabinets, large island, professional photography"
 ```
 
 ## Troubleshooting Image Generation
@@ -399,7 +399,7 @@ aia --model dall-e-3 "Subject photographed with 50mm lens, f/2.8, natural lighti
 **Solutions**:
 ```bash
 # Specify exact requirements
-aia --model dall-e-3 --image_size 1792x1024 --image_quality hd "Detailed prompt"
+aia --model dall-e-3 --image-size 1792x1024 --image-quality hd "Detailed prompt"
 
 # Match use case to settings
 aia --is 1024x1024 --iq standard "Social media post"  # Standard for social media
@@ -424,10 +424,10 @@ end
 #### Cost Management
 ```bash
 # Use standard quality for iterations
-aia --image_quality standard "Draft version for review"
+aia --image-quality standard "Draft version for review"
 
 # Use HD only for finals
-aia --image_quality hd "Final approved concept"
+aia --image-quality hd "Final approved concept"
 ```
 
 ## Integration Examples

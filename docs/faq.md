@@ -86,7 +86,7 @@ aia --model ollama/llama3.2,gpt-4o-mini my_prompt
 aia --model ollama/mistral,lms/qwen-coder,claude-3-sonnet --consensus decision
 
 # Use local for drafts, cloud for refinement
-aia --model ollama/llama3.2 --out_file draft.md initial_analysis
+aia --model ollama/llama3.2 --output draft.md initial_analysis
 aia --model gpt-4 --include draft.md final_report
 ```
 
@@ -147,10 +147,10 @@ aia --model gpt-4 my_prompt
 ```
 
 ### Q: How do I set a custom prompts directory?
-**A:** Use the `--prompts_dir` option or set it in configuration:
+**A:** Use the `--prompts-dir` option or set it in configuration:
 ```bash
 # Command line
-aia --prompts_dir /path/to/prompts my_prompt
+aia --prompts-dir /path/to/prompts my_prompt
 
 # Environment variable (uses nested naming convention)
 export AIA_PROMPTS__DIR="/path/to/prompts"
@@ -292,7 +292,7 @@ You: /clear
 **A:**
 1. Check your API keys are set correctly
 2. Verify internet connection
-3. Test with: `aia --available_models`
+3. Test with: `aia --available-models`
 
 ### Q: "Permission denied" errors
 **A:**
@@ -409,7 +409,7 @@ aia --fuzzy
 **A:** Check your model name and availability:
 ```bash
 # List available models
-aia --available_models
+aia --available-models
 
 # Check model name spelling
 aia --model gpt-4o-mini  # Correct
@@ -448,7 +448,7 @@ aia --debug --verbose my_prompt
 aia --model gpt-4o-mini my_prompt
 
 # Reduce max tokens
-aia --max_tokens 1000 my_prompt
+aia --max-tokens 1000 my_prompt
 
 # Lower temperature for faster responses
 aia --temperature 0.1 my_prompt
@@ -464,7 +464,7 @@ aia --pipeline "analyze,summarize,report" large_data.csv
 //include specific_section.txt
 
 # Check model context limits
-aia --available_models | grep context
+aia --available-models | grep context
 ```
 
 ### Q: Debug mode - how to get more information?
@@ -485,7 +485,7 @@ aia --debug --config
 | Error | Cause | Solution |
 |-------|-------|----------|
 | "Prompt not found" | Missing prompt file | Check file exists and spelling |
-| "Model not available" | Invalid model name | Use `--available_models` to list valid models |
+| "Model not available" | Invalid model name | Use `--available-models` to list valid models |
 | "Shell command failed" | Invalid shell syntax | Test shell commands separately first |
 | "Configuration error" | Invalid config syntax | Check config file YAML syntax |
 | "API key missing" | No API key configured | Set environment variables for your models |

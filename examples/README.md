@@ -10,17 +10,17 @@ An executable prompt is a special type of prompt file that is structured to allo
 
 1. **Shebang Line**: The first line of the prompt indicates how the file should be executed. For instance:
    ```bash
-   #!/usr/bin/env aia run --no-out_file
+   #!/usr/bin/env aia run --no-output
    ```
 
-   This line tells the system to use the `aia` CLI with the `run` prompt ID for execution, while `--no-out_file` indicates that output should be sent to STDOUT instead of being written to a file.
+   This line tells the system to use the `aia` CLI with the `run` prompt ID for execution, while `--no-output` indicates that output should be sent to STDOUT instead of being written to a file.
 
 2. **Content**: Below the shebang line, users can add the prompt content that will be sent to the AI model for processing. This content can use flexible directives and dynamic parameters.
 
 ### Example of an Executable Prompt
 
 ```bash
-#!/usr/bin/env aia run --no-out_file
+#!/usr/bin/env aia run --no-output
 # File: top10
 # Desc: The top 10 cities by population
 
@@ -45,7 +45,7 @@ The `//config` directive is used to modify configuration settings specifically f
 
 ```bash
 //config model = gpt-4
-//config out_file = results.md
+//config output = results.md
 ```
 
 **Example**: You can control the model and output settings dynamically without changing global or default settings.
@@ -94,11 +94,11 @@ When the prompt runs, users will be prompted to provide a value for `MY_TOPIC`, 
 Create a script that gives information on the top cities in the USA:
 
 ```bash
-#!/usr/bin/env aia run --no-out_file
+#!/usr/bin/env aia run --no-output
 # File: top10
 # Desc: Retrieves top 10 cities by population
 
-//config out_file=top10_cities.md
+//config output=top10_cities.md
 
 What are the top 10 cities by population in the USA? Summarize what people like about living in each city and include links to their respective Wikipedia pages.
 ```

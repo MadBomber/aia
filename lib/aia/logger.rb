@@ -4,9 +4,9 @@
 #
 # Centralized logger management for AIA using Lumberjack.
 # Provides loggers for three systems:
-#   - aia: AIA application logging
-#   - llm: RubyLLM gem logging
-#   - mcp: RubyLLM::MCP gem logging
+#   - aia: Used within the AIA codebase for application-level logging
+#   - llm: Passed to RubyLLM gem's configuration (RubyLLM.logger)
+#   - mcp: Passed to RubyLLM::MCP process (RubyLLM::MCP.logger)
 #
 # Configuration is read from AIA.config.logger section:
 #   logger:
@@ -22,6 +22,12 @@
 #
 # Lumberjack provides structured logging, context isolation,
 # automatic log file rolling, and multi-process safe file writes.
+#
+# For testing, use test_mode! to switch to Lumberjack's :test device:
+#   AIA::LoggerManager.test_mode!
+#   # ... run tests ...
+#   AIA::LoggerManager.clear_test_logs!  # between tests
+#   entries = AIA::LoggerManager.aia_logger.device.entries  # inspect logs
 
 require 'lumberjack'
 
@@ -37,6 +43,9 @@ module AIA
     }.freeze
 
     class << self
+      # Track whether we're in test mode
+      attr_accessor :test_mode
+
       # Get or create the AIA application logger
       #
       # @return [Lumberjack::Logger] The AIA logger instance
@@ -59,23 +68,78 @@ module AIA
       end
 
       # Configure RubyLLM's logger
+      # RubyLLM.logger is a memoized method that uses config.logger or creates a new one.
+      # We need to:
+      # 1. Set config.logger to our logger
+      # 2. Set config.log_file in case the logger gets recreated
+      # 3. Reset the memoized @logger so next call uses our config
       def configure_llm_logger
         return unless defined?(RubyLLM)
 
         logger = llm_logger
-        RubyLLM.logger = logger if RubyLLM.respond_to?(:logger=)
+
+        # Set our logger on the RubyLLM config object
+        if RubyLLM.config.respond_to?(:logger=)
+          RubyLLM.config.logger = logger
+        end
+
+        # Also set log_file and log_level in case the logger gets recreated
+        if RubyLLM.config.respond_to?(:log_file=)
+          file = effective_log_file(logger_config_for(:llm))
+          RubyLLM.config.log_file = resolve_log_file_io(file)
+        end
+
+        if RubyLLM.config.respond_to?(:log_level=)
+          level = effective_log_level(logger_config_for(:llm))
+          RubyLLM.config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+        end
+
+        # Reset the memoized @logger on RubyLLM module so next call uses our config
+        # RubyLLM.logger does: @logger ||= config.logger || Logger.new(...)
+        RubyLLM.instance_variable_set(:@logger, nil) if RubyLLM.instance_variable_defined?(:@logger)
       end
 
       # Configure RubyLLM::MCP's logger
+      # RubyLLM::MCP.config has attr_writer :logger and a memoized getter.
+      # We need to set both the config.logger and reset any memoization.
       def configure_mcp_logger
         return unless defined?(RubyLLM::MCP)
 
         logger = mcp_logger
-        if RubyLLM::MCP.respond_to?(:logger=)
-          RubyLLM::MCP.logger = logger
-        elsif RubyLLM::MCP.respond_to?(:logger)
-          # Some versions only allow setting level on existing logger
-          RubyLLM::MCP.logger.level = logger.level
+
+        # First reset the memoized @logger so our settings take effect
+        # RubyLLM::MCP.config.logger does: @logger ||= Logger.new(...)
+        config = RubyLLM::MCP.config
+        config.instance_variable_set(:@logger, nil) if config.instance_variable_defined?(:@logger)
+
+        # Set our logger on the MCP config object
+        # RubyLLM::MCP.config has attr_writer :logger (which sets @logger directly)
+        if config.respond_to?(:logger=)
+          config.logger = logger
+        end
+
+        # Also set log_file and log_level in case the logger gets recreated
+        if config.respond_to?(:log_file=)
+          file = effective_log_file(logger_config_for(:mcp))
+          config.log_file = resolve_log_file_io(file)
+        end
+
+        if config.respond_to?(:log_level=)
+          level = effective_log_level(logger_config_for(:mcp))
+          config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+        end
+      end
+
+      # Convert log file specification to IO object or file path
+      # RubyLLM::MCP expects an IO object or file path for log_file config
+      def resolve_log_file_io(file)
+        case file.to_s.upcase
+        when 'STDOUT'
+          $stdout
+        when 'STDERR'
+          $stderr
+        else
+          File.expand_path(file)
         end
       end
 
@@ -93,9 +157,87 @@ module AIA
         @aia_logger = nil
         @llm_logger = nil
         @mcp_logger = nil
+        @test_mode = false
+      end
+
+      # =======================================================================
+      # Test Mode Support
+      # =======================================================================
+      # Use Lumberjack's :test device to capture log entries in memory
+      # for assertions in tests.
+
+      # Enable test mode - all loggers will use Lumberjack's :test device
+      # which captures entries in memory for inspection and assertions.
+      #
+      # @param level [Symbol, String] Log level for test loggers (default: :debug)
+      def test_mode!(level: :debug)
+        reset!
+        @test_mode = true
+        @test_level = LOG_LEVELS.fetch(level.to_s, Lumberjack::Severity::DEBUG)
+
+        # Pre-create loggers with test devices
+        @aia_logger = create_test_logger(:aia)
+        @llm_logger = create_test_logger(:llm)
+        @mcp_logger = create_test_logger(:mcp)
+
+        # Surface logging errors in tests instead of swallowing them
+        Lumberjack.raise_logger_errors = true
+      end
+
+      # Check if test mode is enabled
+      #
+      # @return [Boolean] true if in test mode
+      def test_mode?
+        @test_mode == true
+      end
+
+      # Clear all test log entries (call between tests)
+      def clear_test_logs!
+        return unless test_mode?
+
+        [@aia_logger, @llm_logger, @mcp_logger].each do |logger|
+          logger&.device&.clear if logger&.device.respond_to?(:clear)
+        end
+      end
+
+      # Get all entries from a specific test logger
+      #
+      # @param system [Symbol] The logger to get entries from (:aia, :llm, :mcp)
+      # @return [Array<Lumberjack::LogEntry>] Array of log entries
+      def test_entries(system = :aia)
+        logger = case system
+                 when :aia then aia_logger
+                 when :llm then llm_logger
+                 when :mcp then mcp_logger
+                 else raise ArgumentError, "Unknown logger: #{system}"
+                 end
+
+        return [] unless logger&.device.respond_to?(:entries)
+
+        logger.device.entries
+      end
+
+      # Get the last entry from a specific test logger
+      #
+      # @param system [Symbol] The logger to get entry from (:aia, :llm, :mcp)
+      # @return [Lumberjack::LogEntry, nil] The last log entry or nil
+      def last_test_entry(system = :aia)
+        test_entries(system).last
       end
 
       private
+
+      # Create a test logger with Lumberjack's :test device
+      #
+      # @param system [Symbol] The system name for progname
+      # @return [Lumberjack::Logger] Logger with test device
+      def create_test_logger(system)
+        Lumberjack::Logger.new(
+          :test,
+          level: @test_level || Lumberjack::Severity::DEBUG,
+          progname: system.to_s.upcase
+        )
+      end
 
       # Create a logger instance from configuration
       #
@@ -104,7 +246,7 @@ module AIA
       def create_logger(system)
         config = logger_config_for(system)
 
-        file  = config&.file || 'STDOUT'
+        file  = effective_log_file(config)
         level = effective_log_level(config, system)
         flush = config&.flush != false  # default to true
 
@@ -114,6 +256,18 @@ module AIA
           level:    LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN),
           progname: system.to_s.upcase
         )
+      end
+
+      # Get the effective log file, considering any override
+      #
+      # @param config [ConfigSection, nil] The logger config for a specific system
+      # @return [String] The log file path or STDOUT/STDERR
+      def effective_log_file(config)
+        # CLI override (--log-to) takes precedence over per-system config
+        override = AIA.config&.log_file_override
+        return override if override && !override.to_s.empty?
+
+        config&.file || 'STDOUT'
       end
 
       # Get the effective log level, considering any override

@@ -24,6 +24,7 @@ module AIA
         process_prompt_id_from_args(config, remaining_args)
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
+        handle_dump_config(config)
         validate_required_prompt_id(config)
         process_role_configuration(config)
         handle_fuzzy_search_prompt_id(config)
@@ -138,6 +139,13 @@ module AIA
                      end
 
         flags_section.send("#{flag}=", normalized)
+      end
+
+      def handle_dump_config(config)
+        return unless config.dump_file
+
+        dump_config(config, config.dump_file)
+        exit 0
       end
 
       def handle_completion_script(config)

@@ -22,7 +22,7 @@ aia --chat --role assistant my_context.txt
 aia --chat my_initial_prompt
 
 # Chat with system prompt
-aia --chat --system_prompt helpful_assistant
+aia --chat --system-prompt helpful_assistant
 
 # Chat with role-based context
 aia --chat --role code_expert debugging_session
@@ -190,7 +190,7 @@ aia --chat --tools ./my_tools.rb
 aia --chat --tools ./tools/
 
 # Restrict tool access
-aia --chat --tools ./tools/ --allowed_tools "file_reader,calculator"
+aia --chat --tools ./tools/ --allowed-tools "file_reader,calculator"
 ```
 
 #### Using Tools in Conversation
@@ -216,7 +216,7 @@ Available Tools:
 ### Code Review Session
 ```bash
 # Start specialized code review chat
-aia --chat --role code_expert --system_prompt code_reviewer
+aia --chat --role code_expert --system-prompt code_reviewer
 
 You: I need help reviewing this Python function:
 //include my_function.py
@@ -259,7 +259,7 @@ AI: Here's how we can make it more engaging...
 ### Learning Session
 ```bash
 # Start educational chat
-aia --chat --role teacher --system_prompt patient_explainer
+aia --chat --role teacher --system-prompt patient_explainer
 
 You: Explain how blockchain works, but I'm completely new to this
 AI: Let me explain blockchain in simple terms, starting from the basics...
@@ -279,19 +279,19 @@ aia --chat --speak
 aia --chat --speak --voice nova
 
 # Use high-quality speech model
-aia --chat --speak --speech_model tts-1-hd
+aia --chat --speak --speech-model tts-1-hd
 ```
 
 ### Audio Input
 ```bash
 # Use speech-to-text for input
-aia --chat --transcription_model whisper-1 audio_input.wav
+aia --chat --transcription-model whisper-1 audio_input.wav
 ```
 
 ### Interactive Voice Chat
 ```bash
 # Full voice interaction
-aia --chat --speak --voice echo --transcription_model whisper-1
+aia --chat --speak --voice echo --transcription-model whisper-1
 
 # Great for hands-free operation or accessibility
 ```
@@ -498,19 +498,19 @@ aia --pipeline "data_prep,analysis" --chat dataset.csv
 ### Configuration Integration
 ```bash
 # Use predefined configurations in chat
-aia --config_file chat_setup.yml --chat
+aia --config-file chat_setup.yml --chat
 
 # Override specific settings
-aia --chat --temperature 0.9 --max_tokens 3000
+aia --chat --temperature 0.9 --max-tokens 3000
 ```
 
 ### Output Integration
 ```bash
 # Save chat output to file
-aia --chat --out_file discussion.md --markdown
+aia --chat --output discussion.md --markdown
 
 # Append to existing files
-aia --chat --out_file project_log.md --append
+aia --chat --output project_log.md --append
 ```
 
 ## Related Documentation

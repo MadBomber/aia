@@ -55,7 +55,7 @@ aia data_prep --next analysis --next report dataset.csv
 aia --pipeline "step1,step2,step3" input.txt
 
 # Pipeline with output files
-aia --pipeline "extract,transform,load" --out_file results.md data.csv
+aia --pipeline "extract,transform,load" --output results.md data.csv
 
 # Pipeline with model specification
 aia --model gpt-4 --pipeline "review,optimize,test" code.py

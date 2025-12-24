@@ -46,9 +46,9 @@ module AIA
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :show_metrics, :show_cost, :executable_prompt,
+                  :completion, :executable_prompt,
                   :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt,
-                  :log_level_override,
+                  :log_level_override, :log_file_override,
                   :connected_mcp_servers, # Array of successfully connected MCP server names
                   :failed_mcp_servers     # Array of {name:, error:} hashes for failed MCP servers
 
@@ -171,7 +171,10 @@ module AIA
     CLI_TO_NESTED_MAP = {
       # flags section
       chat: [:flags, :chat],
+      cost: [:flags, :cost],
       fuzzy: [:flags, :fuzzy],
+      metrics: [:flags, :metrics],
+      no_mcp: [:flags, :no_mcp],
       terse: [:flags, :terse],
       debug: [:flags, :debug],
       verbose: [:flags, :verbose],
@@ -190,8 +193,8 @@ module AIA
       parameter_regex: [:prompts, :parameter_regex],
       system_prompt: [:prompts, :system_prompt],
       # output section
-      out_file: [:output, :file],
-      log_file: [:output, :log_file],
+      output: [:output, :file],
+      history_file: [:output, :history_file],
       append: [:output, :append],
       markdown: [:output, :markdown],
       # audio section
@@ -284,8 +287,8 @@ module AIA
         prompts.roles_dir = File.expand_path(prompts.roles_dir)
       end
 
-      if output.log_file
-        output.log_file = File.expand_path(output.log_file)
+      if output.history_file
+        output.history_file = File.expand_path(output.history_file)
       end
     end
 

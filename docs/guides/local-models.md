@@ -209,7 +209,7 @@ aia --model ollama/llama3.2,ollama/mistral,gpt-4 --consensus decision_prompt
 
 ```bash
 # 1. Process with local model (private)
-aia --model ollama/llama3.2 --out_file draft.md sensitive_data.txt
+aia --model ollama/llama3.2 --output draft.md sensitive_data.txt
 
 # 2. Review and sanitize draft.md manually
 
@@ -222,7 +222,7 @@ aia --model gpt-4 --include draft.md final_output
 ```bash
 # Bulk tasks with local model
 for i in {1..1000}; do
-  aia --model ollama/mistral --out_file "result_$i.md" process "input_$i.txt"
+  aia --model ollama/mistral --output "result_$i.md" process "input_$i.txt"
 done
 
 # No API costs!

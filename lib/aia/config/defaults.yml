@@ -74,7 +74,7 @@ output:
   file: temp.md
   append: false
   markdown: true
-  log_file: ~/.prompts/_prompts.log
+  history_file: ~/.prompts/_prompts.log
 
 # -----------------------------------------------------------------------------
 # Audio Configuration
@@ -123,9 +123,12 @@ tools:
 # -----------------------------------------------------------------------------
 flags:
   chat: false
+  cost: false
   debug: false
   verbose: false
   fuzzy: false
+  metrics: false
+  no_mcp: false
   speak: false
   terse: false
   shell: true

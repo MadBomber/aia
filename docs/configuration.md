@@ -35,7 +35,7 @@ frequency_penalty: 0.0        # Repetition penalty (-2.0 to 2.0)
 presence_penalty: 0.0         # Topic penalty (-2.0 to 2.0)
 
 # Output Settings
-out_file: null                # Output file (null = no file output)
+output: null                  # Output file (null = no file output)
 append: false                 # Append to output file instead of overwriting
 markdown: true                # Format output with Markdown
 verbose: false                # Show detailed output
@@ -72,7 +72,7 @@ pipeline: []                  # Default prompt pipeline
 executable_prompt: false     # Run prompts as executables
 
 # Logging
-log_file: null               # Log file path (deprecated - see logger config below)
+history_file: null           # Conversation history file for logging prompts and responses
 refresh: 7                   # Model database refresh interval (days)
 
 # Logger Configuration (for detailed logging control)
@@ -174,9 +174,9 @@ AIA uses the Lumberjack gem for logging and manages three separate loggers:
 
 | Logger | Purpose |
 |--------|---------|
-| `aia` | AIA application logging |
-| `llm` | RubyLLM gem logging |
-| `mcp` | RubyLLM::MCP gem logging |
+| `aia` | Used within the AIA codebase for application-level logging |
+| `llm` | Passed to the RubyLLM gem's configuration (`RubyLLM.logger`) |
+| `mcp` | Passed to the RubyLLM::MCP process (`RubyLLM::MCP.logger`) |
 
 ### Configuration File Settings
 
@@ -362,7 +362,7 @@ model: gpt-4
 temperature: 0.3
 verbose: true
 debug: true
-out_file: ./dev_output.md
+output: ./dev_output.md
 prompts_dir: ./prompts
 tool_paths: [./tools]
 ```
@@ -376,7 +376,7 @@ model: gpt-3.5-turbo
 temperature: 0.7
 verbose: false
 debug: false
-log_file: /var/log/aia.log
+history_file: /var/log/aia_history.log
 prompts_dir: /etc/aia/prompts
 tool_paths: [/usr/share/aia-tools]
 allowed_tools: [safe_calculator, file_reader]
@@ -393,7 +393,7 @@ max_tokens: 4000
 speak: true
 voice: nova
 markdown: true
-out_file: ~/writing/aia_output.md
+output: ~/writing/aia_output.md
 append: true
 ```
 
@@ -411,7 +411,7 @@ aia --dump config.yaml
 
 ```bash
 # Test model access
-aia --available_models
+aia --available-models
 
 # Test configuration
 aia --debug --verbose hello_world
@@ -424,7 +424,7 @@ aia --tools ./my_tools --debug test_prompt
 
 #### Model Not Found
 - Check your API keys are set
-- Verify the model name: `aia --available_models`
+- Verify the model name: `aia --available-models`
 - Check network connectivity
 
 #### Permission Errors  

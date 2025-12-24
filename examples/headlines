@@ -1,13 +1,13 @@
-#!/usr/bin/env aia run --no-out_file --exec
+#!/usr/bin/env aia run --no-output --exec
 # NOTE: the --exec option is REQUIRED to run this executable prompt file
 #       This option signals that the contents of this file are to be appended
 #       to the contents of the given prompt ID file.  In this case it is the
 #       "run" prompt ID's text file.
 #
-#       All other AIA options are, well, optional.  The --no-out_file is
+#       All other AIA options are, well, optional.  The --no-output is
 #       used here to cause the response to this executable prompt to be
 #       sent to STDOUT like a good little *nix CLI tool.  Its not necessary.
-#       if you do not use it, the output will go to the default out_file.
+#       if you do not use it, the output will go to the default output file.
 #       You could also specify a specific file to write the output to built
 #       but it is more convential to use the *nix STDOUT redirect "> output.md"
 #

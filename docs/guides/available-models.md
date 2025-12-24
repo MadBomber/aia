@@ -7,21 +7,21 @@ AIA supports a wide range of AI models through the RubyLLM gem. This comprehensi
 ### Command Line Query
 ```bash
 # List all available models
-aia --available_models
+aia --available-models
 
 # Filter by provider
-aia --available_models openai
-aia --available_models anthropic
-aia --available_models google
+aia --available-models openai
+aia --available-models anthropic
+aia --available-models google
 
 # Filter by capability
-aia --available_models vision
-aia --available_models function_calling
-aia --available_models text_to_image
+aia --available-models vision
+aia --available-models function_calling
+aia --available-models text_to_image
 
 # Complex filtering (AND operation)
-aia --available_models openai,gpt,4
-aia --available_models anthropic,claude,sonnet
+aia --available-models openai,gpt,4
+aia --available-models anthropic,claude,sonnet
 ```
 
 ### Within Prompts
@@ -329,7 +329,7 @@ puts "//config model #{model}"
 # Model fallback chain
 //ruby
 preferred_models = ['gpt-4', 'claude-3-sonnet', 'gpt-3.5-turbo']
-available_models = `aia --available_models`.split("\n").map { |line| line.split.first }
+available_models = `aia --available-models`.split("\n").map { |line| line.split.first }
 
 selected_model = preferred_models.find { |model| available_models.include?(model) }
 puts "//config model #{selected_model || 'gpt-3.5-turbo'}"
@@ -338,7 +338,7 @@ puts "//config model #{selected_model || 'gpt-3.5-turbo'}"
 ## Staying Current
 
 ### Model Updates
-- **Check regularly**: `aia --available_models`
+- **Check regularly**: `aia --available-models`
 - **Version changes**: Models are updated periodically
 - **New releases**: Follow provider announcements
 - **Deprecations**: Some models may be retired

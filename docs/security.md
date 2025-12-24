@@ -31,7 +31,7 @@ export OPENAI_API_KEY_FULL="sk-..."          # For full operations
 ### Key Validation and Testing
 ```bash
 # Test API keys safely
-aia --available_models | head -5  # Test without exposing key
+aia --available-models | head -5  # Test without exposing key
 
 # Validate key format before use
 if [[ $OPENAI_API_KEY =~ ^sk-[a-zA-Z0-9]{48}$ ]]; then

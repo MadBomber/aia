@@ -153,7 +153,7 @@ gem install tty-prompt
 ### 1. Check Available Models
 
 ```bash
-aia --available_models
+aia --available-models
 ```
 
 This will show all available AI models.
@@ -191,7 +191,7 @@ This should start an interactive chat session.
 #### "No models available"
 - Check that your API keys are set correctly
 - Verify your internet connection
-- Try: `aia --available_models` to diagnose
+- Try: `aia --available-models` to diagnose
 
 #### "fzf not found" warning
 - Install fzf as described above

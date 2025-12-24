@@ -85,7 +85,7 @@ module AIA
           end
         end
 
-        opts.on('--available_models [QUERY]', 'List (then exit) available models that match the optional query') do |query|
+        opts.on('--available-models [QUERY]', 'List (then exit) available models that match the optional query') do |query|
           list_available_models(query)
         end
       end
@@ -104,27 +104,27 @@ module AIA
           exit 0
         end
 
-        opts.on("--sm", "--speech_model MODEL", "Speech model to use") do |model|
+        opts.on("--sm", "--speech-model MODEL", "Speech model to use") do |model|
           options[:speech_model] = model
         end
 
-        opts.on("--tm", "--transcription_model MODEL", "Transcription model to use") do |model|
+        opts.on("--tm", "--transcription-model MODEL", "Transcription model to use") do |model|
           options[:transcription_model] = model
         end
       end
 
       def setup_file_options(opts, options)
-        opts.on("-c", "--config_file FILE", "Load additional config file") do |file|
+        opts.on("-c", "--config-file FILE", "Load additional config file") do |file|
           options[:extra_config_file] = file
         end
 
-        opts.on("-o", "--[no-]out_file [FILE]", "Output file (default: temp.md)") do |file|
+        opts.on("-o", "--[no-]output [FILE]", "Output file (default: temp.md)") do |file|
           if file == false
-            options[:out_file] = nil
+            options[:output] = nil
           elsif file.nil?
-            options[:out_file] = 'temp.md'
+            options[:output] = 'temp.md'
           else
-            options[:out_file] = File.expand_path(file, Dir.pwd)
+            options[:output] = File.expand_path(file, Dir.pwd)
           end
         end
 
@@ -132,8 +132,8 @@ module AIA
           options[:append] = append
         end
 
-        opts.on("-l", "--[no-]log_file [FILE]", "Log file") do |file|
-          options[:log_file] = file
+        opts.on("--[no-]history-file [FILE]", "Conversation history file") do |file|
+          options[:history_file] = file
         end
 
         opts.on("--md", "--[no-]markdown", "Format with Markdown") do |md|
@@ -142,11 +142,11 @@ module AIA
       end
 
       def setup_prompt_options(opts, options)
-        opts.on("--prompts_dir DIR", "Directory containing prompt files") do |dir|
+        opts.on("--prompts-dir DIR", "Directory containing prompt files") do |dir|
           options[:prompts_dir] = dir
         end
 
-        opts.on("--roles_prefix PREFIX", "Subdirectory name for role files (default: roles)") do |prefix|
+        opts.on("--roles-prefix PREFIX", "Subdirectory name for role files (default: roles)") do |prefix|
           options[:roles_prefix] = prefix
         end
 
@@ -168,7 +168,7 @@ module AIA
           options[:executable_prompt] = value
         end
 
-        opts.on("--system_prompt PROMPT_ID", "System prompt ID to use for chat sessions") do |prompt_id|
+        opts.on("--system-prompt PROMPT_ID", "System prompt ID to use for chat sessions") do |prompt_id|
           options[:system_prompt] = prompt_id
         end
 
@@ -182,19 +182,19 @@ module AIA
           options[:temperature] = temp
         end
 
-        opts.on("--max_tokens TOKENS", Integer, "Maximum tokens for text generation") do |tokens|
+        opts.on("--max-tokens TOKENS", Integer, "Maximum tokens for text generation") do |tokens|
           options[:max_tokens] = tokens
         end
 
-        opts.on("--top_p VALUE", Float, "Top-p sampling value") do |value|
+        opts.on("--top-p VALUE", Float, "Top-p sampling value") do |value|
           options[:top_p] = value
         end
 
-        opts.on("--frequency_penalty VALUE", Float, "Frequency penalty") do |value|
+        opts.on("--frequency-penalty VALUE", Float, "Frequency penalty") do |value|
           options[:frequency_penalty] = value
         end
 
-        opts.on("--presence_penalty VALUE", Float, "Presence penalty") do |value|
+        opts.on("--presence-penalty VALUE", Float, "Presence penalty") do |value|
           options[:presence_penalty] = value
         end
       end
@@ -208,15 +208,15 @@ module AIA
           options[:voice] = voice
         end
 
-        opts.on("--is", "--image_size SIZE", "Image size for image generation") do |size|
+        opts.on("--is", "--image-size SIZE", "Image size for image generation") do |size|
           options[:image_size] = size
         end
 
-        opts.on("--iq", "--image_quality QUALITY", "Image quality for image generation") do |quality|
+        opts.on("--iq", "--image-quality QUALITY", "Image quality for image generation") do |quality|
           options[:image_quality] = quality
         end
 
-        opts.on("--style", "--image_style STYLE", "Style for image generation") do |style|
+        opts.on("--style", "--image-style STYLE", "Style for image generation") do |style|
           options[:image_style] = style
         end
       end
@@ -231,12 +231,12 @@ module AIA
           options[:tool_paths] = process_tools_paths(path_list)
         end
 
-        opts.on("--at", "--allowed_tools TOOLS_LIST", "Allow only these tools to be used") do |tools_list|
+        opts.on("--at", "--allowed-tools TOOLS_LIST", "Allow only these tools to be used") do |tools_list|
           options[:allowed_tools] ||= []
           options[:allowed_tools] += tools_list.split(',').map(&:strip)
         end
 
-        opts.on("--rt", "--rejected_tools TOOLS_LIST", "Reject these tools") do |tools_list|
+        opts.on("--rt", "--rejected-tools TOOLS_LIST", "Reject these tools") do |tools_list|
           options[:rejected_tools] ||= []
           options[:rejected_tools] += tools_list.split(',').map(&:strip)
         end
@@ -270,6 +270,10 @@ module AIA
           options[:log_level_override] = 'fatal'
         end
 
+        opts.on("--log-to FILE", "Direct all loggers to FILE") do |file|
+          options[:log_file_override] = file
+        end
+
         opts.on("-v", "--[no-]verbose", "Be verbose") do |value|
           options[:verbose] = value
         end
@@ -287,12 +291,16 @@ module AIA
         end
 
         opts.on("--metrics", "Display token usage in chat mode") do
-          options[:show_metrics] = true
+          options[:metrics] = true
         end
 
         opts.on("--cost", "Include cost calculations with metrics") do
-          options[:show_cost] = true
-          options[:show_metrics] = true
+          options[:cost] = true
+          options[:metrics] = true  # --cost implies --metrics
+        end
+
+        opts.on("--[no-]mcp", "Enable/disable MCP server processing (default: enabled)") do |mcp|
+          options[:no_mcp] = !mcp
         end
 
         opts.on("--version", "Show version") do

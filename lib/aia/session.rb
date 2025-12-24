@@ -385,7 +385,7 @@ module AIA
         @ui_presenter.display_ai_response(content)
 
         # Display metrics if enabled and available (chat mode only)
-        if AIA.config.show_metrics
+        if AIA.config.flags.metrics
           if multi_metrics
             # Display metrics for each model in multi-model mode
             @ui_presenter.display_multi_model_metrics(multi_metrics)
@@ -472,7 +472,7 @@ module AIA
 
     def cleanup_chat_prompt
       if @chat_prompt_id
-        puts "[DEBUG] Cleaning up chat prompt: #{@chat_prompt_id}" if AIA.debug?
+        logger.debug("Cleaning up chat prompt", chat_prompt_id: @chat_prompt_id)
         begin
           @chat_prompt.delete
           @chat_prompt_id = nil # Prevent repeated attempts if error occurs elsewhere

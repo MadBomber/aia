@@ -34,10 +34,10 @@ AIA provides sophisticated prompt management capabilities through the PromptMana
 ```bash
 # Set custom prompts directory (uses nested naming convention)
 export AIA_PROMPTS__DIR="/path/to/custom/prompts"
-aia --prompts_dir /path/to/custom/prompts
+aia --prompts-dir /path/to/custom/prompts
 
 # Use project-specific prompts
-aia --prompts_dir ./project_prompts my_prompt
+aia --prompts-dir ./project_prompts my_prompt
 ```
 
 ## Prompt File Formats
@@ -126,7 +126,7 @@ Please analyze this system information and provide:
 ### Basic Search
 ```bash
 # List all prompts
-aia --prompts_dir ~/.prompts
+aia --prompts-dir ~/.prompts
 
 # Search by pattern
 find ~/.prompts -name "*code*" -type f
@@ -155,7 +155,7 @@ aia --fuzzy development/
 aia --fuzzy roles/
 
 # Search in specific subdirectory
-aia --prompts_dir ~/.prompts/analysis --fuzzy
+aia --prompts-dir ~/.prompts/analysis --fuzzy
 ```
 
 ## Prompt Organization Strategies
@@ -272,7 +272,7 @@ aia --role software_architect system_design
 aia --role code_expert code_review main.py
 
 # Custom roles directory
-aia --roles_prefix personas --role mentor learning_session
+aia --roles-prefix personas --role mentor learning_session
 ```
 
 ### Context Layering
@@ -378,7 +378,7 @@ Enhanced code review with security focus and structured output.
 ```bash
 # Shared team prompts
 git clone git@github.com:team/shared-prompts.git ~/.prompts/shared/
-aia --prompts_dir ~/.prompts/shared/ team_code_review
+aia --prompts-dir ~/.prompts/shared/ team_code_review
 
 # Personal + shared prompts
 export AIA_PROMPTS__DIR="~/.prompts:~/.prompts/shared:./project_prompts"
@@ -450,11 +450,11 @@ end
 ```bash
 # Batch process multiple files
 for file in data/*.csv; do
-  aia batch_analysis_prompt "$file" --out_file "results/$(basename $file .csv)_analysis.md"
+  aia batch_analysis_prompt "$file" --output "results/$(basename $file .csv)_analysis.md"
 done
 
 # Parallel processing
-parallel -j4 aia analysis_prompt {} --out_file {.}_result.md ::: data/*.txt
+parallel -j4 aia analysis_prompt {} --output {.}_result.md ::: data/*.txt
 ```
 
 ## Troubleshooting Prompts
