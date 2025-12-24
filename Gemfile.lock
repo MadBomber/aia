@@ -7,12 +7,13 @@ PATH
       async
       clipboard
       faraday
-      lumberjack (~> 2.0)
-      prompt_manager (>= 0.5.8)
+      lumberjack
+      prompt_manager
       reline
-      ruby_llm (>= 1.9.1)
-      ruby_llm-mcp (>= 0.8.0)
+      ruby_llm
+      ruby_llm-mcp
       shellwords
+      simple_flow
       tty-screen
       tty-spinner
       word_wrapper
@@ -209,6 +210,7 @@ GEM
       zeitwerk (~> 2.7)
     securerandom (0.4.1)
     shellwords (0.2.2)
+    simple_flow (0.2.0)
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
