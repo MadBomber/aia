@@ -2806,7 +2806,7 @@
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>my_initial_prompt
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Chat with system prompt</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--system_prompt<span class="w"> </span>helpful_assistant
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--system-prompt<span class="w"> </span>helpful_assistant
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Chat with role-based context</span>
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--role<span class="w"> </span>code_expert<span class="w"> </span>debugging_session
@@ -2943,7 +2943,7 @@
 </span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--tools<span class="w"> </span>./tools/
 </span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
 </span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="c1"># Restrict tool access</span>
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--tools<span class="w"> </span>./tools/<span class="w"> </span>--allowed_tools<span class="w"> </span><span class="s2">&quot;file_reader,calculator&quot;</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--tools<span class="w"> </span>./tools/<span class="w"> </span>--allowed-tools<span class="w"> </span><span class="s2">&quot;file_reader,calculator&quot;</span>
 </span></code></pre></div>
 <h4 id="using-tools-in-conversation">Using Tools in Conversation<a class="headerlink" href="#using-tools-in-conversation" title="Permanent link">&para;</a></h4>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>You: Can you analyze the performance metrics in this log file?
@@ -2962,7 +2962,7 @@
 <h2 id="chat-session-types">Chat Session Types<a class="headerlink" href="#chat-session-types" title="Permanent link">&para;</a></h2>
 <h3 id="code-review-session">Code Review Session<a class="headerlink" href="#code-review-session" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Start specialized code review chat</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--role<span class="w"> </span>code_expert<span class="w"> </span>--system_prompt<span class="w"> </span>code_reviewer
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--role<span class="w"> </span>code_expert<span class="w"> </span>--system-prompt<span class="w"> </span>code_reviewer
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
 </span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>You:<span class="w"> </span>I<span class="w"> </span>need<span class="w"> </span><span class="nb">help</span><span class="w"> </span>reviewing<span class="w"> </span>this<span class="w"> </span>Python<span class="w"> </span><span class="k">function</span>:
 </span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>//include<span class="w"> </span>my_function.py
@@ -2999,7 +2999,7 @@
 </span></code></pre></div>
 <h3 id="learning-session">Learning Session<a class="headerlink" href="#learning-session" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Start educational chat</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--role<span class="w"> </span>teacher<span class="w"> </span>--system_prompt<span class="w"> </span>patient_explainer
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--role<span class="w"> </span>teacher<span class="w"> </span>--system-prompt<span class="w"> </span>patient_explainer
 </span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
 </span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>You:<span class="w"> </span>Explain<span class="w"> </span>how<span class="w"> </span>blockchain<span class="w"> </span>works,<span class="w"> </span>but<span class="w"> </span>I<span class="s1">&#39;m completely new to this</span>
 </span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="s1">AI: Let me explain blockchain in simple terms, starting from the basics...</span>
@@ -3016,15 +3016,15 @@
 </span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--speak<span class="w"> </span>--voice<span class="w"> </span>nova
 </span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>
 </span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="c1"># Use high-quality speech model</span>
-</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--speak<span class="w"> </span>--speech_model<span class="w"> </span>tts-1-hd
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--speak<span class="w"> </span>--speech-model<span class="w"> </span>tts-1-hd
 </span></code></pre></div>
 <h3 id="audio-input">Audio Input<a class="headerlink" href="#audio-input" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Use speech-to-text for input</span>
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--transcription_model<span class="w"> </span>whisper-1<span class="w"> </span>audio_input.wav
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--transcription-model<span class="w"> </span>whisper-1<span class="w"> </span>audio_input.wav
 </span></code></pre></div>
 <h3 id="interactive-voice-chat">Interactive Voice Chat<a class="headerlink" href="#interactive-voice-chat" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># Full voice interaction</span>
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--speak<span class="w"> </span>--voice<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>--transcription_model<span class="w"> </span>whisper-1
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--speak<span class="w"> </span>--voice<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>--transcription-model<span class="w"> </span>whisper-1
 </span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>
 </span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="c1"># Great for hands-free operation or accessibility</span>
 </span></code></pre></div>
@@ -3203,17 +3203,17 @@
 </span></code></pre></div>
 <h3 id="configuration-integration">Configuration Integration<a class="headerlink" href="#configuration-integration" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="c1"># Use predefined configurations in chat</span>
-</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>aia<span class="w"> </span>--config_file<span class="w"> </span>chat_setup.yml<span class="w"> </span>--chat
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>aia<span class="w"> </span>--config-file<span class="w"> </span>chat_setup.yml<span class="w"> </span>--chat
 </span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>
 </span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="c1"># Override specific settings</span>
-</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--temperature<span class="w"> </span><span class="m">0</span>.9<span class="w"> </span>--max_tokens<span class="w"> </span><span class="m">3000</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--temperature<span class="w"> </span><span class="m">0</span>.9<span class="w"> </span>--max-tokens<span class="w"> </span><span class="m">3000</span>
 </span></code></pre></div>
 <h3 id="output-integration">Output Integration<a class="headerlink" href="#output-integration" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="c1"># Save chat output to file</span>
-</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--out_file<span class="w"> </span>discussion.md<span class="w"> </span>--markdown
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--output<span class="w"> </span>discussion.md<span class="w"> </span>--markdown
 </span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>
 </span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="c1"># Append to existing files</span>
-</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--out_file<span class="w"> </span>project_log.md<span class="w"> </span>--append
+</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--output<span class="w"> </span>project_log.md<span class="w"> </span>--append
 </span></code></pre></div>
 <h2 id="related-documentation">Related Documentation<a class="headerlink" href="#related-documentation" title="Permanent link">&para;</a></h2>
 <ul>

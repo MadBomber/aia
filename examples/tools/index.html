@@ -1615,10 +1615,10 @@
 </span></code></pre></div>
 <h3 id="tool-security">Tool Security<a class="headerlink" href="#tool-security" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Restrict to specific tools</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>aia<span class="w"> </span>--tools<span class="w"> </span>./tools/<span class="w"> </span>--allowed_tools<span class="w"> </span><span class="s2">&quot;file_analyzer,data_analyzer&quot;</span><span class="w"> </span>safe_analysis
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>aia<span class="w"> </span>--tools<span class="w"> </span>./tools/<span class="w"> </span>--allowed-tools<span class="w"> </span><span class="s2">&quot;file_analyzer,data_analyzer&quot;</span><span class="w"> </span>safe_analysis
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Block potentially dangerous tools</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>aia<span class="w"> </span>--tools<span class="w"> </span>./tools/<span class="w"> </span>--rejected_tools<span class="w"> </span><span class="s2">&quot;system_monitor,process_manager&quot;</span><span class="w"> </span>user_analysis
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>aia<span class="w"> </span>--tools<span class="w"> </span>./tools/<span class="w"> </span>--rejected-tools<span class="w"> </span><span class="s2">&quot;system_monitor,process_manager&quot;</span><span class="w"> </span>user_analysis
 </span></code></pre></div>
 <h3 id="tool-integration-in-prompts">Tool Integration in Prompts<a class="headerlink" href="#tool-integration-in-prompts" title="Permanent link">&para;</a></h3>
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gh"># Use tools within prompts</span>

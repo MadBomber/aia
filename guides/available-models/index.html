@@ -2593,21 +2593,21 @@
 <h2 id="viewing-available-models">Viewing Available Models<a class="headerlink" href="#viewing-available-models" title="Permanent link">&para;</a></h2>
 <h3 id="command-line-query">Command Line Query<a class="headerlink" href="#command-line-query" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># List all available models</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>aia<span class="w"> </span>--available_models
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>aia<span class="w"> </span>--available-models
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Filter by provider</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>openai
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>anthropic
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>google
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>openai
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>anthropic
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>google
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Filter by capability</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>vision
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>function_calling
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>text_to_image
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>vision
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>function_calling
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>text_to_image
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Complex filtering (AND operation)</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>openai,gpt,4
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>aia<span class="w"> </span>--available_models<span class="w"> </span>anthropic,claude,sonnet
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>openai,gpt,4
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>aia<span class="w"> </span>--available-models<span class="w"> </span>anthropic,claude,sonnet
 </span></code></pre></div>
 <h3 id="within-prompts">Within Prompts<a class="headerlink" href="#within-prompts" title="Permanent link">&para;</a></h3>
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gh"># List models in a prompt</span>
@@ -2911,7 +2911,7 @@
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Model fallback chain</span>
 </span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="sr">//</span><span class="n">ruby</span>
 </span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">preferred_models</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span><span class="s1">&#39;gpt-4&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;claude-3-sonnet&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;gpt-3.5-turbo&#39;</span><span class="o">]</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">available_models</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`aia --available_models`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">line</span><span class="o">|</span><span class="w"> </span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="o">.</span><span class="n">first</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">available_models</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`aia --available-models`</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">line</span><span class="o">|</span><span class="w"> </span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="o">.</span><span class="n">first</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
 </span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">selected_model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">preferred_models</span><span class="o">.</span><span class="n">find</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">model</span><span class="o">|</span><span class="w"> </span><span class="n">available_models</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;//config model </span><span class="si">#{</span><span class="n">selected_model</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;gpt-3.5-turbo&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -2919,7 +2919,7 @@
 <h2 id="staying-current">Staying Current<a class="headerlink" href="#staying-current" title="Permanent link">&para;</a></h2>
 <h3 id="model-updates">Model Updates<a class="headerlink" href="#model-updates" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Check regularly</strong>: <code>aia --available_models</code></li>
+<li><strong>Check regularly</strong>: <code>aia --available-models</code></li>
 <li><strong>Version changes</strong>: Models are updated periodically</li>
 <li><strong>New releases</strong>: Follow provider announcements</li>
 <li><strong>Deprecations</strong>: Some models may be retired</li>

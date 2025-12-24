@@ -2728,10 +2728,10 @@
 <h3 id="custom-structure">Custom Structure<a class="headerlink" href="#custom-structure" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Set custom prompts directory (uses nested naming convention)</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_PROMPTS__DIR</span><span class="o">=</span><span class="s2">&quot;/path/to/custom/prompts&quot;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>aia<span class="w"> </span>--prompts_dir<span class="w"> </span>/path/to/custom/prompts
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>aia<span class="w"> </span>--prompts-dir<span class="w"> </span>/path/to/custom/prompts
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Use project-specific prompts</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>aia<span class="w"> </span>--prompts_dir<span class="w"> </span>./project_prompts<span class="w"> </span>my_prompt
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>aia<span class="w"> </span>--prompts-dir<span class="w"> </span>./project_prompts<span class="w"> </span>my_prompt
 </span></code></pre></div>
 <h2 id="prompt-file-formats">Prompt File Formats<a class="headerlink" href="#prompt-file-formats" title="Permanent link">&para;</a></h2>
 <h3 id="basic-text-prompts">Basic Text Prompts<a class="headerlink" href="#basic-text-prompts" title="Permanent link">&para;</a></h3>
@@ -2808,7 +2808,7 @@
 <h2 id="prompt-discovery-and-search">Prompt Discovery and Search<a class="headerlink" href="#prompt-discovery-and-search" title="Permanent link">&para;</a></h2>
 <h3 id="basic-search">Basic Search<a class="headerlink" href="#basic-search" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># List all prompts</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>aia<span class="w"> </span>--prompts_dir<span class="w"> </span>~/.prompts
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>aia<span class="w"> </span>--prompts-dir<span class="w"> </span>~/.prompts
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Search by pattern</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>find<span class="w"> </span>~/.prompts<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*code*&quot;</span><span class="w"> </span>-type<span class="w"> </span>f
@@ -2833,7 +2833,7 @@
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>aia<span class="w"> </span>--fuzzy<span class="w"> </span>roles/
 </span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
 </span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># Search in specific subdirectory</span>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>aia<span class="w"> </span>--prompts_dir<span class="w"> </span>~/.prompts/analysis<span class="w"> </span>--fuzzy
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>aia<span class="w"> </span>--prompts-dir<span class="w"> </span>~/.prompts/analysis<span class="w"> </span>--fuzzy
 </span></code></pre></div>
 <h2 id="prompt-organization-strategies">Prompt Organization Strategies<a class="headerlink" href="#prompt-organization-strategies" title="Permanent link">&para;</a></h2>
 <h3 id="by-domaincategory">By Domain/Category<a class="headerlink" href="#by-domaincategory" title="Permanent link">&para;</a></h3>
@@ -2929,7 +2929,7 @@
 </span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>aia<span class="w"> </span>--role<span class="w"> </span>code_expert<span class="w"> </span>code_review<span class="w"> </span>main.py
 </span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
 </span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="c1"># Custom roles directory</span>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>aia<span class="w"> </span>--roles_prefix<span class="w"> </span>personas<span class="w"> </span>--role<span class="w"> </span>mentor<span class="w"> </span>learning_session
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>aia<span class="w"> </span>--roles-prefix<span class="w"> </span>personas<span class="w"> </span>--role<span class="w"> </span>mentor<span class="w"> </span>learning_session
 </span></code></pre></div>
 <h3 id="context-layering">Context Layering<a class="headerlink" href="#context-layering" title="Permanent link">&para;</a></h3>
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gh"># ~/.prompts/layered_context.txt</span>
@@ -3016,7 +3016,7 @@
 <h3 id="team-prompt-libraries">Team Prompt Libraries<a class="headerlink" href="#team-prompt-libraries" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># Shared team prompts</span>
 </span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:team/shared-prompts.git<span class="w"> </span>~/.prompts/shared/
-</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>aia<span class="w"> </span>--prompts_dir<span class="w"> </span>~/.prompts/shared/<span class="w"> </span>team_code_review
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>aia<span class="w"> </span>--prompts-dir<span class="w"> </span>~/.prompts/shared/<span class="w"> </span>team_code_review
 </span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
 </span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="c1"># Personal + shared prompts</span>
 </span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_PROMPTS__DIR</span><span class="o">=</span><span class="s2">&quot;~/.prompts:~/.prompts/shared:./project_prompts&quot;</span>
@@ -3077,11 +3077,11 @@
 <h3 id="batch-processing">Batch Processing<a class="headerlink" href="#batch-processing" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># Batch process multiple files</span>
 </span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span>data/*.csv<span class="p">;</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">  </span>aia<span class="w"> </span>batch_analysis_prompt<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">&quot;</span><span class="w"> </span>--out_file<span class="w"> </span><span class="s2">&quot;results/</span><span class="k">$(</span>basename<span class="w"> </span><span class="nv">$file</span><span class="w"> </span>.csv<span class="k">)</span><span class="s2">_analysis.md&quot;</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">  </span>aia<span class="w"> </span>batch_analysis_prompt<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">&quot;</span><span class="w"> </span>--output<span class="w"> </span><span class="s2">&quot;results/</span><span class="k">$(</span>basename<span class="w"> </span><span class="nv">$file</span><span class="w"> </span>.csv<span class="k">)</span><span class="s2">_analysis.md&quot;</span>
 </span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="k">done</span>
 </span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>
 </span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="c1"># Parallel processing</span>
-</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>parallel<span class="w"> </span>-j4<span class="w"> </span>aia<span class="w"> </span>analysis_prompt<span class="w"> </span><span class="o">{}</span><span class="w"> </span>--out_file<span class="w"> </span><span class="o">{</span>.<span class="o">}</span>_result.md<span class="w"> </span>:::<span class="w"> </span>data/*.txt
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>parallel<span class="w"> </span>-j4<span class="w"> </span>aia<span class="w"> </span>analysis_prompt<span class="w"> </span><span class="o">{}</span><span class="w"> </span>--output<span class="w"> </span><span class="o">{</span>.<span class="o">}</span>_result.md<span class="w"> </span>:::<span class="w"> </span>data/*.txt
 </span></code></pre></div>
 <h2 id="troubleshooting-prompts">Troubleshooting Prompts<a class="headerlink" href="#troubleshooting-prompts" title="Permanent link">&para;</a></h2>
 <h3 id="debugging-tools">Debugging Tools<a class="headerlink" href="#debugging-tools" title="Permanent link">&para;</a></h3>

@@ -1520,7 +1520,7 @@
 <p>Executable prompts are prompt files with a special shebang line that makes them directly executable from the command line. They combine the power of AIA's prompt processing with the convenience of traditional shell scripts.</p>
 <h2 id="creating-executable-prompts">Creating Executable Prompts<a class="headerlink" href="#creating-executable-prompts" title="Permanent link">&para;</a></h2>
 <h3 id="basic-structure">Basic Structure<a class="headerlink" href="#basic-structure" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># Your prompt description and comments</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Your<span class="w"> </span>prompt<span class="w"> </span>content<span class="w"> </span>here...
@@ -1528,7 +1528,7 @@
 <h3 id="key-components">Key Components<a class="headerlink" href="#key-components" title="Permanent link">&para;</a></h3>
 <ol>
 <li><strong>Shebang Line</strong>: Must include <code>--exec</code> flag to enable prompt processing</li>
-<li><strong>Output Configuration</strong>: Use <code>--no-out_file</code> to send output to STDOUT</li>
+<li><strong>Output Configuration</strong>: Use <code>--no-output</code> to send output to STDOUT</li>
 <li><strong>Executable Permissions</strong>: Make file executable with <code>chmod +x</code></li>
 </ol>
 <h2 id="the-run-prompt-pattern">The <code>run</code> Prompt Pattern<a class="headerlink" href="#the-run-prompt-pattern" title="Permanent link">&para;</a></h2>
@@ -1551,7 +1551,7 @@
 <h2 id="practical-examples">Practical Examples<a class="headerlink" href="#practical-examples" title="Permanent link">&para;</a></h2>
 <h3 id="weather-report-script">Weather Report Script<a class="headerlink" href="#weather-report-script" title="Permanent link">&para;</a></h3>
 <p>Create a weather monitoring executable:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># Get current storm activity for the east and south coast of the US</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>Summarize<span class="w"> </span>the<span class="w"> </span>tropical<span class="w"> </span>storm<span class="w"> </span>outlook<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>Atlantic,<span class="w"> </span>Caribbean<span class="w"> </span>Sea<span class="w"> </span>and<span class="w"> </span>Gulf<span class="w"> </span>of<span class="w"> </span>America.
@@ -1569,7 +1569,7 @@
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>./weather_report<span class="w"> </span><span class="p">|</span><span class="w"> </span>glow
 </span></code></pre></div></p>
 <h3 id="system-status-monitor">System Status Monitor<a class="headerlink" href="#system-status-monitor" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># System health check and analysis</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>Analyze<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>system<span class="w"> </span>status<span class="w"> </span>and<span class="w"> </span>provide<span class="w"> </span>recommendations:
@@ -1589,7 +1589,7 @@
 </span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>Provide<span class="w"> </span>analysis<span class="w"> </span>and<span class="w"> </span>recommendations<span class="w"> </span><span class="k">for</span><span class="w"> </span>system<span class="w"> </span>optimization.
 </span></code></pre></div>
 <h3 id="code-quality-checker">Code Quality Checker<a class="headerlink" href="#code-quality-checker" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Analyze code quality for the current directory</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>//config<span class="w"> </span><span class="nv">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>gpt-4
@@ -1609,7 +1609,7 @@
 </span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>Provide<span class="w"> </span>code<span class="w"> </span>quality<span class="w"> </span>assessment<span class="w"> </span>and<span class="w"> </span>improvement<span class="w"> </span>recommendations.
 </span></code></pre></div>
 <h3 id="daily-standup-generator">Daily Standup Generator<a class="headerlink" href="#daily-standup-generator" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># Generate daily standup report from git activity</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>//config<span class="w"> </span><span class="nv">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>gpt-4o-mini
@@ -1630,7 +1630,7 @@
 <h2 id="advanced-executable-patterns">Advanced Executable Patterns<a class="headerlink" href="#advanced-executable-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="parameterized-executables">Parameterized Executables<a class="headerlink" href="#parameterized-executables" title="Permanent link">&para;</a></h3>
 <p>Create executable prompts that accept command-line parameters:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># Code review for specific file</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Usage: ./code_review &lt;filename&gt;</span>
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
@@ -1646,7 +1646,7 @@
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Chain multiple prompts in an executable workflow:
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>```bash
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>#!/usr/bin/env aia run --no-out_file --exec
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>#!/usr/bin/env aia run --no-output --exec
 </span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a># Complete project analysis pipeline
 </span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
 </span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>//pipeline project_scan,security_check,recommendations
@@ -1654,7 +1654,7 @@
 </span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>Starting comprehensive project analysis...
 </span></code></pre></div></p>
 <h3 id="conditional-logic-executables">Conditional Logic Executables<a class="headerlink" href="#conditional-logic-executables" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># Environment-aware deployment checker</span>
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>//ruby
@@ -1682,7 +1682,7 @@
 </span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>### As Git Hooks
 </span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>```bash
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>#!/usr/bin/env aia run --no-out_file --exec
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>#!/usr/bin/env aia run --no-output --exec
 </span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a># .git/hooks/pre-commit
 </span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a># Automated commit message analysis
 </span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
@@ -1739,7 +1739,7 @@
 </span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>chmod<span class="w"> </span><span class="m">700</span><span class="w"> </span>sensitive_prompt<span class="w">     </span><span class="c1"># Owner only</span>
 </span></code></pre></div>
 <h3 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1"># Robust executable with error handling</span>
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
 </span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>//ruby
@@ -1772,7 +1772,7 @@
 </span></code></pre></div></p>
 <h2 id="debugging-executable-prompts">Debugging Executable Prompts<a class="headerlink" href="#debugging-executable-prompts" title="Permanent link">&para;</a></h2>
 <h3 id="enable-debug-mode">Enable Debug Mode<a class="headerlink" href="#enable-debug-mode" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec --debug --verbose</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec --debug --verbose</span>
 </span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="c1"># Debug version of your executable prompt</span>
 </span></code></pre></div>
 <h3 id="test-components-separately">Test Components Separately<a class="headerlink" href="#test-components-separately" title="Permanent link">&para;</a></h3>
@@ -1813,14 +1813,14 @@
 </tr>
 <tr>
 <td>"Output not appearing"</td>
-<td>Missing --no-out_file</td>
+<td>Missing --no-output</td>
 <td>Add flag to shebang</td>
 </tr>
 </tbody>
 </table>
 <h2 id="advanced-executable-patterns_1">Advanced Executable Patterns<a class="headerlink" href="#advanced-executable-patterns_1" title="Permanent link">&para;</a></h2>
 <h3 id="self-documenting-executables">Self-Documenting Executables<a class="headerlink" href="#self-documenting-executables" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="c1"># Self-documenting code analyzer</span>
 </span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="c1"># Usage: ./code_analyzer [--help] &lt;directory&gt;</span>
 </span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
@@ -1842,7 +1842,7 @@
 </span><span id="__span-19-20"><a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a>end
 </span></code></pre></div>
 <h3 id="multi-stage-executables">Multi-Stage Executables<a class="headerlink" href="#multi-stage-executables" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="ch">#!/usr/bin/env aia run --no-out_file --exec</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="ch">#!/usr/bin/env aia run --no-output --exec</span>
 </span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="c1"># Multi-stage project analysis</span>
 </span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
 </span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>//ruby

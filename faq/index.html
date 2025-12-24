@@ -2032,7 +2032,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>ollama/mistral,lms/qwen-coder,claude-3-sonnet<span class="w"> </span>--consensus<span class="w"> </span>decision
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
 </span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Use local for drafts, cloud for refinement</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>aia<span class="w"> </span>--model<span class="w"> </span>ollama/llama3.2<span class="w"> </span>--out_file<span class="w"> </span>draft.md<span class="w"> </span>initial_analysis
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>aia<span class="w"> </span>--model<span class="w"> </span>ollama/llama3.2<span class="w"> </span>--output<span class="w"> </span>draft.md<span class="w"> </span>initial_analysis
 </span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4<span class="w"> </span>--include<span class="w"> </span>draft.md<span class="w"> </span>final_report
 </span></code></pre></div>
 <h3 id="q-why-does-my-lms-model-show-an-error">Q: Why does my lms/ model show an error?<a class="headerlink" href="#q-why-does-my-lms-model-show-an-error" title="Permanent link">&para;</a></h3>
@@ -2080,9 +2080,9 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4<span class="w"> </span>my_prompt
 </span></code></pre></div></p>
 <h3 id="q-how-do-i-set-a-custom-prompts-directory">Q: How do I set a custom prompts directory?<a class="headerlink" href="#q-how-do-i-set-a-custom-prompts-directory" title="Permanent link">&para;</a></h3>
-<p><strong>A:</strong> Use the <code>--prompts_dir</code> option or set it in configuration:
+<p><strong>A:</strong> Use the <code>--prompts-dir</code> option or set it in configuration:
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Command line</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>aia<span class="w"> </span>--prompts_dir<span class="w"> </span>/path/to/prompts<span class="w"> </span>my_prompt
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>aia<span class="w"> </span>--prompts-dir<span class="w"> </span>/path/to/prompts<span class="w"> </span>my_prompt
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Environment variable (uses nested naming convention)</span>
 </span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AIA_PROMPTS__DIR</span><span class="o">=</span><span class="s2">&quot;/path/to/prompts&quot;</span>
@@ -2188,7 +2188,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 <p><strong>A:</strong>
 1. Check your API keys are set correctly
 2. Verify internet connection
-3. Test with: <code>aia --available_models</code></p>
+3. Test with: <code>aia --available-models</code></p>
 <h3 id="q-permission-denied-errors">Q: "Permission denied" errors<a class="headerlink" href="#q-permission-denied-errors" title="Permanent link">&para;</a></h3>
 <p><strong>A:</strong>
 1. Check file permissions: <code>ls -la ~/.prompts/</code>
@@ -2280,7 +2280,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 <h3 id="q-model-errors-or-model-not-available">Q: Model errors or "Model not available"<a class="headerlink" href="#q-model-errors-or-model-not-available" title="Permanent link">&para;</a></h3>
 <p><strong>A:</strong> Check your model name and availability:
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># List available models</span>
-</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>aia<span class="w"> </span>--available_models
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>aia<span class="w"> </span>--available-models
 </span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>
 </span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="c1"># Check model name spelling</span>
 </span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4o-mini<span class="w">  </span><span class="c1"># Correct</span>
@@ -2313,7 +2313,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4o-mini<span class="w"> </span>my_prompt
 </span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>
 </span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="c1"># Reduce max tokens</span>
-</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>aia<span class="w"> </span>--max_tokens<span class="w"> </span><span class="m">1000</span><span class="w"> </span>my_prompt
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>aia<span class="w"> </span>--max-tokens<span class="w"> </span><span class="m">1000</span><span class="w"> </span>my_prompt
 </span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>
 </span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="c1"># Lower temperature for faster responses</span>
 </span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>aia<span class="w"> </span>--temperature<span class="w"> </span><span class="m">0</span>.1<span class="w"> </span>my_prompt
@@ -2327,7 +2327,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>//include<span class="w"> </span>specific_section.txt
 </span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>
 </span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="c1"># Check model context limits</span>
-</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>aia<span class="w"> </span>--available_models<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>context
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>aia<span class="w"> </span>--available-models<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>context
 </span></code></pre></div></p>
 <h3 id="q-debug-mode-how-to-get-more-information">Q: Debug mode - how to get more information?<a class="headerlink" href="#q-debug-mode-how-to-get-more-information" title="Permanent link">&para;</a></h3>
 <p><strong>A:</strong> Enable debug output for detailed troubleshooting:
@@ -2358,7 +2358,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 <tr>
 <td>"Model not available"</td>
 <td>Invalid model name</td>
-<td>Use <code>--available_models</code> to list valid models</td>
+<td>Use <code>--available-models</code> to list valid models</td>
 </tr>
 <tr>
 <td>"Shell command failed"</td>

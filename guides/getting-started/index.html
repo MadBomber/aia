@@ -2388,7 +2388,7 @@
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>claude-3-sonnet<span class="w"> </span>--chat
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># See all available models</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>aia<span class="w"> </span>--available_models
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>aia<span class="w"> </span>--available-models
 </span></code></pre></div>
 <h3 id="3-adjusting-ai-behavior">3. Adjusting AI Behavior<a class="headerlink" href="#3-adjusting-ai-behavior" title="Permanent link">&para;</a></h3>
 <p>Control the AI's response style:</p>
@@ -2402,7 +2402,7 @@
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>aia<span class="w"> </span>--terse<span class="w"> </span>--chat
 </span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
 </span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1"># Limit response length</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>aia<span class="w"> </span>--max_tokens<span class="w"> </span><span class="m">100</span><span class="w"> </span>--chat
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>aia<span class="w"> </span>--max-tokens<span class="w"> </span><span class="m">100</span><span class="w"> </span>--chat
 </span></code></pre></div>
 <h2 id="creating-your-first-prompt">Creating Your First Prompt<a class="headerlink" href="#creating-your-first-prompt" title="Permanent link">&para;</a></h2>
 <p>Instead of typing questions each time, you can create reusable prompt files.</p>
@@ -2518,13 +2518,13 @@
 <h2 id="saving-output">Saving Output<a class="headerlink" href="#saving-output" title="Permanent link">&para;</a></h2>
 <p>Save AI responses to files:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Save to a file</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>aia<span class="w"> </span>--out_file<span class="w"> </span>response.md<span class="w"> </span>my_prompt
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>aia<span class="w"> </span>--output<span class="w"> </span>response.md<span class="w"> </span>my_prompt
 </span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
 </span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Append to an existing file</span>
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>aia<span class="w"> </span>--out_file<span class="w"> </span>response.md<span class="w"> </span>--append<span class="w"> </span>my_prompt
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>aia<span class="w"> </span>--output<span class="w"> </span>response.md<span class="w"> </span>--append<span class="w"> </span>my_prompt
 </span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>
 </span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="c1"># Format with Markdown</span>
-</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>aia<span class="w"> </span>--out_file<span class="w"> </span>response.md<span class="w"> </span>--markdown<span class="w"> </span>my_prompt
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>aia<span class="w"> </span>--output<span class="w"> </span>response.md<span class="w"> </span>--markdown<span class="w"> </span>my_prompt
 </span></code></pre></div>
 <h2 id="chat-mode-features">Chat Mode Features<a class="headerlink" href="#chat-mode-features" title="Permanent link">&para;</a></h2>
 <h3 id="1-persistent-chat">1. Persistent Chat<a class="headerlink" href="#1-persistent-chat" title="Permanent link">&para;</a></h3>
@@ -2678,7 +2678,7 @@
 <h4 id="model-not-available">"Model not available"<a class="headerlink" href="#model-not-available" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Check your API keys: <code>echo $OPENAI_API_KEY</code></li>
-<li>List available models: <code>aia --available_models</code></li>
+<li>List available models: <code>aia --available-models</code></li>
 <li>Check your internet connection</li>
 </ul>
 <h4 id="permission-denied">"Permission denied"<a class="headerlink" href="#permission-denied" title="Permanent link">&para;</a></h4>
