@@ -3213,7 +3213,11 @@
 </span></code></pre></div>
 <h2 id="utility-options">Utility Options<a class="headerlink" href="#utility-options" title="Permanent link">&para;</a></h2>
 <h3 id="log-level-options">Log Level Options<a class="headerlink" href="#log-level-options" title="Permanent link">&para;</a></h3>
-<p>AIA provides multiple log level options to control logging verbosity. These options set the log level for all three loggers (aia, llm, mcp). Only one log level option should be used at a time.</p>
+<p>AIA provides multiple log level options to control logging verbosity. These options set the log level for all three loggers:
+- <strong>aia</strong>: Used within the AIA codebase for application-level logging
+- <strong>llm</strong>: Passed to the RubyLLM gem's configuration (<code>RubyLLM.logger</code>)
+- <strong>mcp</strong>: Passed to the RubyLLM::MCP process (<code>RubyLLM::MCP.logger</code>)</p>
+<p>Only one log level option should be used at a time.</p>
 <h3 id="-d-debug"><code>-d, --debug</code><a class="headerlink" href="#-d-debug" title="Permanent link">&para;</a></h3>
 <p>Enable debug output (most verbose) and set all loggers to DEBUG level. Also sets <code>$DEBUG_ME = true</code> for the debug_me gem.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>aia<span class="w"> </span>--debug<span class="w"> </span>my_prompt
