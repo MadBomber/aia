@@ -385,7 +385,7 @@ module AIA
         @ui_presenter.display_ai_response(content)
 
         # Display metrics if enabled and available (chat mode only)
-        if AIA.config.show_metrics
+        if AIA.config.flags.metrics
           if multi_metrics
             # Display metrics for each model in multi-model mode
             @ui_presenter.display_multi_model_metrics(multi_metrics)

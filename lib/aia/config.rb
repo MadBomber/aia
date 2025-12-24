@@ -46,7 +46,7 @@ module AIA
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :show_metrics, :show_cost, :executable_prompt,
+                  :completion, :executable_prompt,
                   :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt,
                   :log_level_override, :log_file_override,
                   :connected_mcp_servers, # Array of successfully connected MCP server names
@@ -171,7 +171,9 @@ module AIA
     CLI_TO_NESTED_MAP = {
       # flags section
       chat: [:flags, :chat],
+      cost: [:flags, :cost],
       fuzzy: [:flags, :fuzzy],
+      metrics: [:flags, :metrics],
       terse: [:flags, :terse],
       debug: [:flags, :debug],
       verbose: [:flags, :verbose],

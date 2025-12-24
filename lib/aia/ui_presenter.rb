@@ -126,7 +126,7 @@ module AIA
       output_lines << "═" * 55
       output_lines << "Model: #{metrics[:model_id]}"
       
-      if AIA.config.show_cost
+      if AIA.config.flags.cost
         output_lines.concat(format_metrics_with_cost(metrics))
       else
         output_lines.concat(format_metrics_basic(metrics))
@@ -152,7 +152,7 @@ module AIA
       output_lines = []
       
       # Determine table width based on whether costs are shown
-      if AIA.config.show_cost
+      if AIA.config.flags.cost
         table_width = 80
       else
         table_width = 60
@@ -163,7 +163,7 @@ module AIA
       output_lines << "─" * table_width
       
       # Build header row
-      if AIA.config.show_cost
+      if AIA.config.flags.cost
         output_lines << sprintf("%-20s %10s %10s %10s %12s %10s", 
                                 "Model", "Input", "Output", "Total", "Cost", "x1000")
         output_lines << "─" * table_width
@@ -188,7 +188,7 @@ module AIA
         output_tokens = metrics[:output_tokens] || 0
         total_tokens = input_tokens + output_tokens
         
-        if AIA.config.show_cost
+        if AIA.config.flags.cost
           cost_data = calculate_cost(metrics)
           if cost_data[:available]
             cost_str = "$#{'%.5f' % cost_data[:total_cost]}"
@@ -214,7 +214,7 @@ module AIA
       output_lines << "─" * table_width
       total_tokens = total_input + total_output
       
-      if AIA.config.show_cost && total_cost > 0
+      if AIA.config.flags.cost && total_cost > 0
         cost_str = "$#{'%.5f' % total_cost}"
         x1000_str = "$#{'%.2f' % (total_cost * 1000)}"
         output_lines << sprintf("%-20s %10d %10d %10d %12s %10s",

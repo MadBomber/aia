@@ -123,9 +123,11 @@ tools:
 # -----------------------------------------------------------------------------
 flags:
   chat: false
+  cost: false
   debug: false
   verbose: false
   fuzzy: false
+  metrics: false
   speak: false
   terse: false
   shell: true

@@ -111,14 +111,8 @@ module AIA
       # Create config with CLI overrides
       @config = Config.setup(cli_overrides)
 
-      # Validate and tailor configuration
+      # Validate and tailor configuration (handles --dump early exit)
       ConfigValidator.tailor(@config)
-
-      # Handle config dump if requested
-      if @config.dump_file
-        ConfigValidator.dump_config(@config, @config.dump_file)
-        exit 0
-      end
 
       # Load Fzf if fuzzy search is enabled and fzf is installed
       if @config.flags.fuzzy

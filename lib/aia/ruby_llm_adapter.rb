@@ -874,7 +874,7 @@ module AIA
 
     def format_individual_responses(results)
       # Always collect metrics if available - display logic in session.rb decides whether to show them
-      # This ensures metrics are passed through even when show_metrics is false
+      # This ensures metrics are passed through even when flags.metrics is false
       has_metrics = results.values.any? { |r| r.respond_to?(:input_tokens) && r.respond_to?(:output_tokens) }
 
       if has_metrics

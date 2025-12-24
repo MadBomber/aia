@@ -291,12 +291,12 @@ module AIA
         end
 
         opts.on("--metrics", "Display token usage in chat mode") do
-          options[:show_metrics] = true
+          options[:metrics] = true
         end
 
         opts.on("--cost", "Include cost calculations with metrics") do
-          options[:show_cost] = true
-          options[:show_metrics] = true
+          options[:cost] = true
+          options[:metrics] = true  # --cost implies --metrics
         end
 
         opts.on("--version", "Show version") do
