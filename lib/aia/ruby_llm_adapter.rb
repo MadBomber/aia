@@ -77,6 +77,10 @@ module AIA
 
       # Configure RubyLLM's logger output destination
       LoggerManager.configure_llm_logger
+
+      # Configure RubyLLM::MCP's logger early, before any MCP operations
+      # This ensures all MCP debug/info logs go to the configured log file
+      LoggerManager.configure_mcp_logger
     end
 
 

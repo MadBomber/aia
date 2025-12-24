@@ -29,15 +29,15 @@ module AIA
       end
 
       # Debug output to understand what we're receiving
-      puts "[DEBUG ChatProcessor] Result class: #{result.class}" if AIA.config.flags.debug
-      puts "[DEBUG ChatProcessor] Result inspect: #{result.inspect[0..500]}..." if AIA.config.flags.debug
+      logger.debug("Result received", result_class: result.class.name)
+      logger.debug("Result details", inspect: result.inspect[0..500])
 
       # Preserve token information if available for metrics
       if result.is_a?(String)
-        puts "[DEBUG ChatProcessor] Processing as String" if AIA.config.flags.debug
+        logger.debug("Processing result", type: "String")
         { content: result, metrics: nil }
       elsif result.respond_to?(:multi_model?) && result.multi_model?
-        puts "[DEBUG ChatProcessor] Processing as multi-model response" if AIA.config.flags.debug
+        logger.debug("Processing result", type: "multi-model response")
         # Handle multi-model response with metrics
         {
           content: result.content,
@@ -45,7 +45,7 @@ module AIA
           multi_metrics: result.metrics_list
         }
       elsif result.respond_to?(:content)
-        puts "[DEBUG ChatProcessor] Processing as standard response with content method" if AIA.config.flags.debug
+        logger.debug("Processing result", type: "standard response with content method")
         # Standard response object with content method
         {
           content: result.content,
@@ -56,7 +56,7 @@ module AIA
           }
         }
       else
-        puts "[DEBUG ChatProcessor] Processing as fallback (unexpected type)" if AIA.config.flags.debug
+        logger.debug("Processing result", type: "fallback (unexpected type)")
         # Fallback for unexpected response types
         { content: result.to_s, metrics: nil }
       end
@@ -71,15 +71,15 @@ module AIA
       # Handle per-model conversations (Hash) or single conversation (Array) - ADR-002 revised
       if conversation_or_conversations.is_a?(Hash)
         # Multi-model with per-model contexts: pass Hash directly to adapter
-        puts "[DEBUG ChatProcessor] Sending per-model conversations to client" if AIA.config.flags.debug
+        logger.debug("Sending per-model conversations to client")
         result = AIA.client.chat(conversation_or_conversations)
       else
         # Single conversation for single model
-        puts "[DEBUG ChatProcessor] Sending conversation to client: #{conversation_or_conversations.inspect[0..500]}..." if AIA.config.flags.debug
+        logger.debug("Sending conversation to client", conversation: conversation_or_conversations.inspect[0..500])
         result = AIA.client.chat(conversation_or_conversations)
       end
 
-      puts "[DEBUG ChatProcessor] Client returned: #{result.class} - #{result.inspect[0..500]}..." if AIA.config.flags.debug
+      logger.debug("Client returned", result_class: result.class.name, result: result.inspect[0..500])
       result
     end
 

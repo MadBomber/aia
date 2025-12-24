@@ -68,23 +68,78 @@ module AIA
       end
 
       # Configure RubyLLM's logger
+      # RubyLLM.logger is a memoized method that uses config.logger or creates a new one.
+      # We need to:
+      # 1. Set config.logger to our logger
+      # 2. Set config.log_file in case the logger gets recreated
+      # 3. Reset the memoized @logger so next call uses our config
       def configure_llm_logger
         return unless defined?(RubyLLM)
 
         logger = llm_logger
-        RubyLLM.logger = logger if RubyLLM.respond_to?(:logger=)
+
+        # Set our logger on the RubyLLM config object
+        if RubyLLM.config.respond_to?(:logger=)
+          RubyLLM.config.logger = logger
+        end
+
+        # Also set log_file and log_level in case the logger gets recreated
+        if RubyLLM.config.respond_to?(:log_file=)
+          file = effective_log_file(logger_config_for(:llm))
+          RubyLLM.config.log_file = resolve_log_file_io(file)
+        end
+
+        if RubyLLM.config.respond_to?(:log_level=)
+          level = effective_log_level(logger_config_for(:llm))
+          RubyLLM.config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+        end
+
+        # Reset the memoized @logger on RubyLLM module so next call uses our config
+        # RubyLLM.logger does: @logger ||= config.logger || Logger.new(...)
+        RubyLLM.instance_variable_set(:@logger, nil) if RubyLLM.instance_variable_defined?(:@logger)
       end
 
       # Configure RubyLLM::MCP's logger
+      # RubyLLM::MCP.config has attr_writer :logger and a memoized getter.
+      # We need to set both the config.logger and reset any memoization.
       def configure_mcp_logger
         return unless defined?(RubyLLM::MCP)
 
         logger = mcp_logger
-        if RubyLLM::MCP.respond_to?(:logger=)
-          RubyLLM::MCP.logger = logger
-        elsif RubyLLM::MCP.respond_to?(:logger)
-          # Some versions only allow setting level on existing logger
-          RubyLLM::MCP.logger.level = logger.level
+
+        # First reset the memoized @logger so our settings take effect
+        # RubyLLM::MCP.config.logger does: @logger ||= Logger.new(...)
+        config = RubyLLM::MCP.config
+        config.instance_variable_set(:@logger, nil) if config.instance_variable_defined?(:@logger)
+
+        # Set our logger on the MCP config object
+        # RubyLLM::MCP.config has attr_writer :logger (which sets @logger directly)
+        if config.respond_to?(:logger=)
+          config.logger = logger
+        end
+
+        # Also set log_file and log_level in case the logger gets recreated
+        if config.respond_to?(:log_file=)
+          file = effective_log_file(logger_config_for(:mcp))
+          config.log_file = resolve_log_file_io(file)
+        end
+
+        if config.respond_to?(:log_level=)
+          level = effective_log_level(logger_config_for(:mcp))
+          config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+        end
+      end
+
+      # Convert log file specification to IO object or file path
+      # RubyLLM::MCP expects an IO object or file path for log_file config
+      def resolve_log_file_io(file)
+        case file.to_s.upcase
+        when 'STDOUT'
+          $stdout
+        when 'STDERR'
+          $stderr
+        else
+          File.expand_path(file)
         end
       end
 

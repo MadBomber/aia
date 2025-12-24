@@ -472,7 +472,7 @@ module AIA
 
     def cleanup_chat_prompt
       if @chat_prompt_id
-        puts "[DEBUG] Cleaning up chat prompt: #{@chat_prompt_id}" if AIA.debug?
+        logger.debug("Cleaning up chat prompt", chat_prompt_id: @chat_prompt_id)
         begin
           @chat_prompt.delete
           @chat_prompt_id = nil # Prevent repeated attempts if error occurs elsewhere
