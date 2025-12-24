@@ -749,7 +749,7 @@ class DebuggingTool < RubyLLM::Tool
   end
   
   def debug_mode?
-    ENV['AIA_DEBUG'] == 'true'
+    ENV['AIA_FLAGS__DEBUG'] == 'true'
   end
 end
 ```

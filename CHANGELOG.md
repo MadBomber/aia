@@ -1,4 +1,30 @@
 # Changelog
+## [0.10.1] - 2025-12-24
+
+### New Features
+- **Parallel MCP Connections**: Replaced serial MCP server connections with fiber-based parallel execution using SimpleFlow
+  - MCP servers now connect concurrently instead of sequentially
+  - Total connection time reduced from sum(timeouts) to max(timeouts)
+  - Added `simple_flow` gem dependency for lightweight pipeline-based concurrency
+
+### Improvements
+- **MCP Failure Feedback**: Added per-server error messages when MCP connections fail
+  - Users now see which specific server failed and why (e.g., "⚠️  MCP: 'iMCP' failed - Connection timed out")
+  - Previously only showed generic timeout message without identifying the failing server
+
+### Bug Fixes
+- **Ruby 4.0 Compatibility**: Fixed `NameError` in `lib/extensions/ruby_llm/modalities.rb`
+  - Added `require 'ruby_llm'` before extending `RubyLLM::Model::Modalities`
+  - Resolves "uninitialized constant RubyLLM" error on Ruby 4.0.0-preview2
+
+### Technical Changes
+- Added `simple_flow` gem dependency to gemspec
+- Refactored MCP connection code in `lib/aia/ruby_llm_adapter.rb`:
+  - Added `support_mcp_with_simple_flow` method using SimpleFlow::Pipeline
+  - Added `build_mcp_connection_step`, `register_single_mcp_client`, `extract_mcp_results`, `report_mcp_connection_results` helper methods
+  - Removed old serial methods: `support_mcp_lazy`, `register_mcp_clients`, `start_mcp_clients`, `reconcile_mcp_server_status`, `check_mcp_client_status`
+  - Net reduction of ~60 lines of code with cleaner architecture
+
 ## [0.10.0] - 2025-12-23
 
 ### Breaking Changes

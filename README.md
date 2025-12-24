@@ -254,8 +254,8 @@ AIA determines configuration settings using this order (highest to lowest priori
 **Environment Variables:**
 ```bash
 export AIA_MODEL=gpt-4
-export AIA_PROMPTS_DIR=~/my-prompts
-export AIA_TEMPERATURE=0.8
+export AIA_PROMPTS__DIR=~/my-prompts
+export AIA_LLM__TEMPERATURE=0.8
 ```
 
 **Configuration File** (`~/.aia/config.yml`):
@@ -283,48 +283,48 @@ Your prompt content here...
 |------------------|-------------|---------------|---------------------|
 | adapter | --adapter | ruby_llm | AIA_ADAPTER |
 | aia_dir | | ~/.aia | AIA_DIR |
-| append | -a, --append | false | AIA_APPEND |
-| chat | --chat | false | AIA_CHAT |
-| clear | --clear | false | AIA_CLEAR |
+| append | -a, --append | false | AIA_FLAGS__APPEND |
+| chat | --chat | false | AIA_FLAGS__CHAT |
+| clear | --clear | false | AIA_FLAGS__CLEAR |
 | config_file | -c, --config_file | ~/.aia/config.yml | AIA_CONFIG_FILE |
-| debug | -d, --debug | false | AIA_DEBUG |
-| embedding_model | --em, --embedding_model | text-embedding-ada-002 | AIA_EMBEDDING_MODEL |
-| erb | | true | AIA_ERB |
-| frequency_penalty | --frequency_penalty | 0.0 | AIA_FREQUENCY_PENALTY |
-| fuzzy | -f, --fuzzy | false | AIA_FUZZY |
-| image_quality | --iq, --image_quality | standard | AIA_IMAGE_QUALITY |
-| image_size | --is, --image_size | 1024x1024 | AIA_IMAGE_SIZE |
-| image_style | --style, --image_style | vivid | AIA_IMAGE_STYLE |
-| log_file | -l, --log_file | ~/.prompts/_prompts.log | AIA_LOG_FILE |
-| markdown | --md, --markdown | true | AIA_MARKDOWN |
-| max_tokens | --max_tokens | 2048 | AIA_MAX_TOKENS |
+| debug | -d, --debug | false | AIA_FLAGS__DEBUG |
+| embedding_model | --em, --embedding_model | text-embedding-ada-002 | AIA_LLM__EMBEDDING_MODEL |
+| erb | | true | AIA_FLAGS__ERB |
+| frequency_penalty | --frequency_penalty | 0.0 | AIA_LLM__FREQUENCY_PENALTY |
+| fuzzy | -f, --fuzzy | false | AIA_FLAGS__FUZZY |
+| image_quality | --iq, --image_quality | standard | AIA_IMAGE__QUALITY |
+| image_size | --is, --image_size | 1024x1024 | AIA_IMAGE__SIZE |
+| image_style | --style, --image_style | vivid | AIA_IMAGE__STYLE |
+| log_file | -l, --log_file | ~/.prompts/_prompts.log | AIA_LOG__FILE |
+| markdown | --md, --markdown | true | AIA_OUTPUT__MARKDOWN |
+| max_tokens | --max_tokens | 2048 | AIA_LLM__MAX_TOKENS |
 | model | -m, --model | gpt-4o-mini | AIA_MODEL |
 | next | -n, --next | nil | AIA_NEXT |
-| out_file | -o, --out_file | temp.md | AIA_OUT_FILE |
-| parameter_regex | --regex | '(?-mix:(\[[A-Z _\|]+\]))' | AIA_PARAMETER_REGEX |
+| out_file | -o, --out_file | temp.md | AIA_OUTPUT__FILE |
+| parameter_regex | --regex | '(?-mix:(\[[A-Z _\|]+\]))' | AIA_PROMPTS__PARAMETER_REGEX |
 | pipeline | --pipeline | [] | AIA_PIPELINE |
-| presence_penalty | --presence_penalty | 0.0 | AIA_PRESENCE_PENALTY |
-| prompt_extname | | .txt | AIA_PROMPT_EXTNAME |
-| prompts_dir | -p, --prompts_dir | ~/.prompts | AIA_PROMPTS_DIR |
-| refresh | --refresh | 7 (days) | AIA_REFRESH |
+| presence_penalty | --presence_penalty | 0.0 | AIA_LLM__PRESENCE_PENALTY |
+| prompt_extname | | .txt | AIA_PROMPTS__EXTNAME |
+| prompts_dir | -p, --prompts_dir | ~/.prompts | AIA_PROMPTS__DIR |
+| refresh | --refresh | 7 (days) | AIA_REGISTRY__REFRESH |
 | require_libs | --rq --require | [] | AIA_REQUIRE_LIBS |
 | role | -r, --role | | AIA_ROLE |
-| roles_dir | | ~/.prompts/roles | AIA_ROLES_DIR |
-| roles_prefix | --roles_prefix | roles | AIA_ROLES_PREFIX |
-| shell | | true | AIA_SHELL |
-| speak | --speak | false | AIA_SPEAK |
-| speak_command | | afplay | AIA_SPEAK_COMMAND |
-| speech_model | --sm, --speech_model | tts-1 | AIA_SPEECH_MODEL |
+| roles_dir | | ~/.prompts/roles | AIA_ROLES__DIR |
+| roles_prefix | --roles_prefix | roles | AIA_ROLES__PREFIX |
+| shell | | true | AIA_FLAGS__SHELL |
+| speak | --speak | false | AIA_FLAGS__SPEAK |
+| speak_command | | afplay | AIA_SPEECH__COMMAND |
+| speech_model | --sm, --speech_model | tts-1 | AIA_SPEECH__MODEL |
 | system_prompt | --system_prompt | | AIA_SYSTEM_PROMPT |
-| temperature | -t, --temperature | 0.7 | AIA_TEMPERATURE |
-| terse | --terse | false | AIA_TERSE |
-| tool_paths | --tools | [] | AIA_TOOL_PATHS |
-| allowed_tools | --at --allowed_tools | nil | AIA_ALLOWED_TOOLS |
-| rejected_tools | --rt --rejected_tools | nil | AIA_REJECTED_TOOLS |
-| top_p | --top_p | 1.0 | AIA_TOP_P |
-| transcription_model | --tm, --transcription_model | whisper-1 | AIA_TRANSCRIPTION_MODEL |
-| verbose | -v, --verbose | false | AIA_VERBOSE |
-| voice | --voice | alloy | AIA_VOICE |
+| temperature | -t, --temperature | 0.7 | AIA_LLM__TEMPERATURE |
+| terse | --terse | false | AIA_FLAGS__TERSE |
+| tool_paths | --tools | [] | AIA_TOOLS__PATHS |
+| allowed_tools | --at --allowed_tools | nil | AIA_TOOLS__ALLOWED |
+| rejected_tools | --rt --rejected_tools | nil | AIA_TOOLS__REJECTED |
+| top_p | --top_p | 1.0 | AIA_LLM__TOP_P |
+| transcription_model | --tm, --transcription_model | whisper-1 | AIA_TRANSCRIPTION__MODEL |
+| verbose | -v, --verbose | false | AIA_FLAGS__VERBOSE |
+| voice | --voice | alloy | AIA_SPEECH__VOICE |
 
 </details>
 
@@ -1222,10 +1222,10 @@ Usage: `aia ad_hoc` - perfect for any quick one-shot question without cluttering
 #### Recommended Shell Setup
 ```bash
 # ~/.bashrc_aia
-export AIA_PROMPTS_DIR=~/.prompts
-export AIA_OUT_FILE=./temp.md
+export AIA_PROMPTS__DIR=~/.prompts
+export AIA_OUTPUT__FILE=./temp.md
 export AIA_MODEL=gpt-4o-mini
-export AIA_VERBOSE=true  # Shows spinner while waiting for LLM response
+export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 
 alias chat='aia --chat --terse'
 ask() { echo "$1" | aia run --no-out_file; }
@@ -1287,7 +1287,7 @@ chmod 600 ~/.prompts/*.txt
 **Prompt not found:**
 ```bash
 # Check prompts directory
-ls $AIA_PROMPTS_DIR
+ls $AIA_PROMPTS__DIR
 
 # Verify prompt file exists
 ls ~/.prompts/my_prompt.txt
