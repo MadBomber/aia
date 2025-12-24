@@ -47,7 +47,10 @@ module AIA
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
                   :completion, :show_metrics, :show_cost, :executable_prompt,
-                  :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt
+                  :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt,
+                  :log_level_override,
+                  :connected_mcp_servers, # Array of successfully connected MCP server names
+                  :failed_mcp_servers     # Array of {name:, error:} hashes for failed MCP servers
 
     # Alias for next prompt (for backward compatibility with directives)
     def next

@@ -147,11 +147,7 @@ flags:
 #       All three loggers can write to the same file safely.
 # level: debug, info, warn, error, fatal
 # flush: true = immediate write (no buffering), false = buffered writes
-#
-# log_level_override: When set (via CLI --debug, --info, --warn, --error, --fatal),
-#                     overrides the level for all three loggers.
 # -----------------------------------------------------------------------------
-log_level_override: ~
 logger:
   aia:
     file: STDOUT

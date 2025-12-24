@@ -24,7 +24,7 @@ module AIA
     def get_prompt(prompt_id, role_id = '')
       prompt = fetch_prompt(prompt_id)
 
-      unless role_id.empty?
+      unless role_id.nil? || role_id.empty?
         role_prompt = fetch_role(role_id)
         prompt.text.prepend(role_prompt.text)
       end

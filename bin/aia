@@ -3,4 +3,10 @@
 
 require_relative '../lib/aia'
 
+# Handle Ctrl-C gracefully
+Signal.trap('INT') do
+  warn "\nInterrupted. Exiting..."
+  exit 130
+end
+
 AIA.run

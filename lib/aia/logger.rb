@@ -105,7 +105,7 @@ module AIA
         config = logger_config_for(system)
 
         file  = config&.file || 'STDOUT'
-        level = effective_log_level(config)
+        level = effective_log_level(config, system)
         flush = config&.flush != false  # default to true
 
         device = create_device(file, flush: flush)
@@ -120,7 +120,7 @@ module AIA
       #
       # @param config [ConfigSection, nil] The logger config for a specific system
       # @return [String] The log level to use
-      def effective_log_level(config)
+      def effective_log_level(config, _system = nil)
         # CLI override takes precedence over per-system config
         override = AIA.config&.log_level_override
         return override.to_s.downcase if override && !override.to_s.empty?

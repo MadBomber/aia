@@ -408,20 +408,100 @@ module AIA
       # Only load MCP tools if MCP servers are actually configured
       return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
 
+      # Initialize tracking arrays
+      AIA.config.connected_mcp_servers = []
+      AIA.config.failed_mcp_servers = []
+
+      # Print feedback
+      server_names = AIA.config.mcp_servers.map { |s| s[:name] || s['name'] }.compact
+      $stderr.puts "MCP: Connecting to #{server_names.join(', ')}..."
+      $stderr.flush
+
+      # Configure MCP logger before establishing connections
+      LoggerManager.configure_mcp_logger
+
+      # Register each MCP server with RubyLLM::MCP (deferred start)
+      register_mcp_clients
+
+      # Start each client explicitly
+      successful_clients = start_mcp_clients
+
+      # Reconcile: any configured servers not in connected or failed lists should be marked as failed
+      reconcile_mcp_server_status(server_names)
+
+      # Load tools only from successfully connected clients
       begin
-        # Configure MCP logger before establishing connections
-        LoggerManager.configure_mcp_logger
+        loaded_tools = []
+        successful_clients.each do |name|
+          client = RubyLLM::MCP.clients[name]
+          next unless client
 
-        # Register each MCP server with RubyLLM::MCP
-        register_mcp_clients
+          begin
+            client_tools = client.tools
+            loaded_tools.concat(client_tools)
+          rescue StandardError
+            # Skip clients that can't provide tools
+          end
+        end
 
-        RubyLLM::MCP.establish_connection
-        @tools += RubyLLM::MCP.tools
+        @tools += loaded_tools
+
+        # Report results - using $stderr.puts with flush for immediate display
+        if AIA.config.connected_mcp_servers.any?
+          $stderr.puts "MCP: Connected to #{AIA.config.connected_mcp_servers.join(', ')} (#{loaded_tools.size} tools)"
+        end
+
+        if AIA.config.failed_mcp_servers.any?
+          AIA.config.failed_mcp_servers.each do |failure|
+            $stderr.puts "⚠️  MCP: '#{failure[:name]}' failed - #{failure[:error]}"
+          end
+        end
+
+        if AIA.config.connected_mcp_servers.empty? && AIA.config.failed_mcp_servers.any?
+          $stderr.puts "MCP: No servers connected successfully"
+        end
+
+        $stderr.flush
       rescue StandardError => e
-        warn "Warning: Failed to connect MCP clients: #{e.message}"
+        warn "MCP: Failed to load tools: #{e.message}"
       end
     end
 
+    # Check which MCP clients are actually connected after tools are loaded
+    # Note: This is now handled in start_mcp_clients, kept for backward compatibility
+    def check_mcp_client_status
+      return unless defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:clients)
+
+      configured_names = AIA.config.mcp_servers.map { |s| s[:name] || s['name'] }.compact
+
+      configured_names.each do |name|
+        next if AIA.config.connected_mcp_servers.include?(name)
+        next if AIA.config.failed_mcp_servers.any? { |f| f[:name] == name }
+
+        client = RubyLLM::MCP.clients[name]
+
+        if client.nil?
+          AIA.config.failed_mcp_servers << { name: name, error: "Client not registered" }
+        elsif client.respond_to?(:alive?) && client.alive?
+          if client.respond_to?(:capabilities) && client.capabilities
+            AIA.config.connected_mcp_servers << name
+          else
+            AIA.config.failed_mcp_servers << { name: name, error: "No capabilities received" }
+          end
+        else
+          AIA.config.failed_mcp_servers << { name: name, error: "Connection not alive" }
+        end
+      end
+    end
+
+    # Default timeout for MCP client initialization (in milliseconds)
+    # RubyLLM::MCP expects timeout in milliseconds (e.g., 8000 = 8 seconds)
+    # Using a short timeout to prevent slow servers from blocking startup
+    MCP_DEFAULT_TIMEOUT = 8_000  # 8 seconds (same as RubyLLM::MCP default)
+
+    # Register MCP clients with RubyLLM::MCP
+    # Note: add_client is asynchronous - connections happen in background
+    # Use check_mcp_client_status after calling RubyLLM::MCP.tools to verify connections
     def register_mcp_clients
       AIA.config.mcp_servers.each do |server|
         # Support both symbol and string keys
@@ -429,43 +509,120 @@ module AIA
         command = server[:command] || server['command']
         args    = server[:args]    || server['args'] || []
         env     = server[:env]     || server['env'] || {}
-        timeout = server[:timeout] || server['timeout']
+
+        # Use configured timeout or default (in milliseconds)
+        # RubyLLM::MCP expects timeout in milliseconds, divides by 1000 internally
+        raw_timeout = server[:timeout] || server['timeout'] || server[:request_timeout] || server['request_timeout'] || MCP_DEFAULT_TIMEOUT
+        # Ensure timeout is in milliseconds (if value < 1000, assume it was specified in seconds)
+        request_timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
+        # Cap maximum timeout to prevent excessive blocking during startup (30 seconds max)
+        max_timeout = 30_000
+        request_timeout = [request_timeout, max_timeout].min
 
         # Build config - always include args (even if empty) as RubyLLM::MCP requires it
-        config = {
+        mcp_config = {
           command: command,
           args: Array(args)
         }
-        config[:env] = env unless env.empty?
+        mcp_config[:env] = env unless env.empty?
 
         begin
-          # Build add_client options - timeout is a top-level option, not in config
+          # Build add_client options
+          # Note: RubyLLM::MCP uses 'request_timeout' not 'timeout' (in milliseconds)
+          # start: false defers connection - will start when tools are requested
           client_options = {
             name: name,
             transport_type: :stdio,
-            config: config
+            config: mcp_config,
+            start: false  # Don't block during initialization - start lazily
           }
-          # Some versions of RubyLLM::MCP support timeout as a top-level option
-          client_options[:timeout] = timeout if timeout
+          client_options[:request_timeout] = request_timeout if request_timeout
 
           RubyLLM::MCP.add_client(**client_options)
         rescue ArgumentError => e
-          # If timeout isn't supported, try without it
+          # If request_timeout isn't supported in this version, try without it
           if e.message.include?('timeout')
             RubyLLM::MCP.add_client(
               name: name,
               transport_type: :stdio,
-              config: config
+              config: mcp_config,
+              start: false
             )
           else
-            raise
+            warn "  MCP: Error registering '#{name}': #{e.message}"
           end
-        rescue StandardError => e
-          warn "Warning: Failed to register MCP client '#{name}': #{e.message}"
+        rescue => e
+          warn "  MCP: Error registering '#{name}': #{e.class}: #{e.message}"
         end
       end
     end
 
+    # Start registered MCP clients individually, tracking success/failure
+    # Returns array of successfully started client names
+    def start_mcp_clients
+      return [] unless defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:clients)
+
+      successful_clients = []
+
+      RubyLLM::MCP.clients.each do |name, client|
+        begin
+          client.start
+          # Verify the client actually connected by checking alive and capabilities
+          # Note: Timeouts are logged by the gem but not raised as exceptions,
+          # so we check capabilities to detect failed connections
+          # Also check that capabilities is not empty (empty hash is truthy but indicates failure)
+          caps = client.capabilities
+          has_capabilities = caps && (caps.is_a?(Hash) ? !caps.empty? : caps)
+
+          if client.alive? && has_capabilities
+            successful_clients << name
+            AIA.config.connected_mcp_servers << name
+          else
+            # Determine failure reason
+            error = if !client.alive?
+                      "Connection failed"
+                    elsif caps.nil?
+                      "Connection timed out (no response)"
+                    elsif caps.is_a?(Hash) && caps.empty?
+                      "Connection timed out (empty capabilities)"
+                    else
+                      "Connection timed out (no capabilities received)"
+                    end
+            AIA.config.failed_mcp_servers << { name: name, error: error }
+          end
+        rescue StandardError => e
+          # Catch any exception (timeout errors may vary by gem version)
+          error_msg = e.message.downcase.include?('timeout') ? "Connection timed out" : e.message
+          AIA.config.failed_mcp_servers << { name: name, error: error_msg }
+        end
+      end
+
+      successful_clients
+    end
+
+    # Reconcile MCP server status after all clients have been started.
+    # Any configured server not in connected or failed lists is marked as failed.
+    # This catches cases where timeouts occur but don't raise exceptions.
+    def reconcile_mcp_server_status(configured_names)
+      configured_names.each do |name|
+        # Skip if already tracked
+        next if AIA.config.connected_mcp_servers.include?(name)
+        next if AIA.config.failed_mcp_servers.any? { |f| f[:name] == name }
+
+        # Not tracked - check if we have the client
+        if defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:clients)
+          client = RubyLLM::MCP.clients[name]
+          if client.nil?
+            AIA.config.failed_mcp_servers << { name: name, error: "Client not registered" }
+          else
+            # Client exists but wasn't tracked - likely a timeout that didn't raise
+            AIA.config.failed_mcp_servers << { name: name, error: "Connection failed (server unresponsive)" }
+          end
+        else
+          AIA.config.failed_mcp_servers << { name: name, error: "MCP not available" }
+        end
+      end
+    end
 
     def support_mcp
       LoggerManager.configure_mcp_logger

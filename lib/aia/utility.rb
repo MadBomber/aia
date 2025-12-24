@@ -17,9 +17,26 @@ module AIA
         AIA.config&.mcp_servers && !AIA.config.mcp_servers.empty?
       end
 
+      # Returns only successfully connected MCP server names
       def mcp_server_names
+        # Use connected_mcp_servers if available (populated during MCP setup)
+        connected = AIA.config&.connected_mcp_servers
+        return connected if connected && !connected.empty?
+
+        # Fallback to configured servers if connection status not yet known
         return [] unless mcp_servers?
         AIA.config.mcp_servers.map { |s| s[:name] || s["name"] }.compact
+      end
+
+      # Returns true if there are any connected MCP servers
+      def connected_mcp_servers?
+        connected = AIA.config&.connected_mcp_servers
+        connected && !connected.empty?
+      end
+
+      # Returns list of failed MCP servers with their errors
+      def failed_mcp_servers
+        AIA.config&.failed_mcp_servers || []
       end
 
       def supports_tools?
@@ -55,7 +72,14 @@ module AIA
           'unknown-model'
         end
 
-        mcp_line = mcp_servers? ? "MCP: #{mcp_server_names.join(', ')}" : ''
+        # Build MCP line based on connection status
+        mcp_line = if !mcp_servers?
+          ''  # No MCP servers configured
+        elsif connected_mcp_servers?
+          "MCP: #{mcp_server_names.join(', ')}"
+        else
+          "MCP: (none connected)"
+        end
 
         puts <<-ROBOT
 
