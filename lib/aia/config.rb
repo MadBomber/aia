@@ -39,7 +39,7 @@ module AIA
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
     attr_config :service, :llm, :prompts, :output, :audio, :image, :embedding,
-                :tools, :flags, :registry, :paths
+                :tools, :flags, :registry, :paths, :logger
 
     # Array/collection attributes
     attr_config :models, :pipeline, :require_libs, :mcp_servers, :context_files

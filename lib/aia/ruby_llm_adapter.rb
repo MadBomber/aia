@@ -69,9 +69,13 @@ module AIA
         # Connection pooling settings removed - not supported in current RubyLLM version
         # config.connection_pool_size       = 10  # Number of connections to maintain in pool
         # config.connection_pool_timeout    = 60  # Connection pool timeout in seconds
-        # config.log_file   = '/logs/ruby_llm.log'
-        config.log_level = :fatal # debug level can also be set to debug by setting RUBYLLM_DEBUG envar to true
+
+        # Configure RubyLLM logger from centralized LoggerManager
+        config.log_level = LoggerManager.llm_log_level_symbol
       end
+
+      # Configure RubyLLM's logger output destination
+      LoggerManager.configure_llm_logger
     end
 
 
@@ -405,6 +409,9 @@ module AIA
       return if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
 
       begin
+        # Configure MCP logger before establishing connections
+        LoggerManager.configure_mcp_logger
+
         # Register each MCP server with RubyLLM::MCP
         register_mcp_clients
 
@@ -461,6 +468,7 @@ module AIA
 
 
     def support_mcp
+      LoggerManager.configure_mcp_logger
       RubyLLM::MCP.establish_connection
       @tools += RubyLLM::MCP.tools
     rescue StandardError => e

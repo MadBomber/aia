@@ -37,11 +37,12 @@ Gem::Specification.new do |spec|
   spec.executables    = %w[ aia ]
   spec.require_paths  = %w[ lib ]
 
-  spec.add_dependency "activesupport"
+  # spec.add_dependency "activesupport"
   spec.add_dependency "anyway_config", '~> 2.6'
   spec.add_dependency "amazing_print"
   spec.add_dependency "async"
   spec.add_dependency "clipboard"
+  spec.add_dependency "lumberjack", '~> 2.0'
   spec.add_dependency "faraday"
   spec.add_dependency "prompt_manager", '>= 0.5.8'
   spec.add_dependency "ruby_llm",       '>= 1.9.1'

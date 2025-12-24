@@ -243,14 +243,31 @@ module AIA
       end
 
       def setup_utility_options(opts, options)
-        opts.on("-d", "--debug", "Enable debug output") do
+        opts.on("-d", "--debug", "Enable debug output and set all loggers to DEBUG level") do
           options[:debug] = true
+          options[:log_level_override] = 'debug'
           $DEBUG_ME = true
         end
 
         opts.on("--no-debug", "Disable debug output") do
           options[:debug] = false
           $DEBUG_ME = false
+        end
+
+        opts.on("--info", "Set all loggers to INFO level") do
+          options[:log_level_override] = 'info'
+        end
+
+        opts.on("--warn", "Set all loggers to WARN level") do
+          options[:log_level_override] = 'warn'
+        end
+
+        opts.on("--error", "Set all loggers to ERROR level") do
+          options[:log_level_override] = 'error'
+        end
+
+        opts.on("--fatal", "Set all loggers to FATAL level") do
+          options[:log_level_override] = 'fatal'
         end
 
         opts.on("-v", "--[no-]verbose", "Be verbose") do |value|

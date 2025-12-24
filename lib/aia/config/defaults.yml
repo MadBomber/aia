@@ -134,6 +134,39 @@ flags:
   consensus: false
 
 # -----------------------------------------------------------------------------
+# Logger Configuration
+# Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
+# Env: AIA_LOGGER__AIA__FILE, AIA_LOGGER__LLM__LEVEL, etc.
+#
+# Configures logging for three systems:
+#   aia: AIA application logging
+#   llm: RubyLLM gem logging
+#   mcp: RubyLLM::MCP gem logging
+#
+# file: STDOUT, STDERR, or a file path (e.g., ~/.aia/aia.log)
+#       All three loggers can write to the same file safely.
+# level: debug, info, warn, error, fatal
+# flush: true = immediate write (no buffering), false = buffered writes
+#
+# log_level_override: When set (via CLI --debug, --info, --warn, --error, --fatal),
+#                     overrides the level for all three loggers.
+# -----------------------------------------------------------------------------
+log_level_override: ~
+logger:
+  aia:
+    file: STDOUT
+    level: warn
+    flush: true
+  llm:
+    file: STDOUT
+    level: warn
+    flush: true
+  mcp:
+    file: STDOUT
+    level: warn
+    flush: true
+
+# -----------------------------------------------------------------------------
 # Pipeline/Workflow Configuration
 # Access: AIA.config.pipeline (array of prompt IDs)
 # -----------------------------------------------------------------------------

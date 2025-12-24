@@ -21,11 +21,18 @@ DebugMeDefaultOptions[:skip1] = true
 require_relative 'extensions/openstruct_merge'    # adds self.merge self.get_value
 require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.text_to_text? etc.
 
-require_relative 'refinements/string.rb'        # adds #include_any? #include_all?
+require_relative 'refinements/string' # adds #include_any? #include_all?
 
 require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'
+require_relative 'aia/logger'
+
+# Top-level logger method available anywhere in the application
+def logger
+  AIA::LoggerManager.aia_logger
+end
+
 require_relative 'aia/config/cli_parser'
 require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
@@ -40,7 +47,7 @@ require_relative 'aia/session'
 # provides an interface for interacting with AI models and managing prompts.
 module AIA
   at_exit do
-    STDERR.puts "Exiting AIA application..."
+    warn 'Exiting AIA application...'
   end
 
   @config = nil
@@ -51,42 +58,51 @@ module AIA
 
     def good_file?(filename)
       File.exist?(filename) &&
-      File.readable?(filename) &&
-      !File.directory?(filename)
+        File.readable?(filename) &&
+        !File.directory?(filename)
     end
+
 
     def bad_file?(filename)
       !good_file?(filename)
     end
+
 
     # Convenience flag accessors (delegate to config.flags section)
     def chat?
       @config&.flags&.chat == true
     end
 
+
     def debug?
       @config&.flags&.debug == true
     end
+
 
     def verbose?
       @config&.flags&.verbose == true
     end
 
+
     def fuzzy?
       @config&.flags&.fuzzy == true
     end
+
 
     def terse?
       @config&.flags&.terse == true
     end
 
+
     def speak?
       @config&.flags&.speak == true
     end
 
+
     def append?
       @config&.output&.append == true
     end
+
 
     def run
       # Parse CLI arguments
@@ -110,7 +126,7 @@ module AIA
           if system('which fzf >/dev/null 2>&1')
             require_relative 'aia/fzf'
           else
-            warn "Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities."
+            warn 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
           end
         rescue StandardError => e
           warn "Warning: Failed to load fzf: #{e.message}"
@@ -123,7 +139,7 @@ module AIA
       @client = if 'ruby_llm' == @config.llm.adapter
                   RubyLLMAdapter.new
                 else
-                  STDERR.puts "ERROR: There is no adapter for #{@config.llm.adapter}"
+                  warn "ERROR: There is no adapter for #{@config.llm.adapter}"
                   exit 1
                 end
 

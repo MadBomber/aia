@@ -1,6 +1,6 @@
 # lib/aia/directive_processor.rb
 
-require 'active_support/all'
+# require 'active_support/all'
 require 'faraday'
 require 'word_wrapper'
 require_relative 'directives/registry'
@@ -9,7 +9,7 @@ module AIA
   class DirectiveProcessor
     using Refinements
 
-    EXCLUDED_METHODS = %w[ run initialize private? ]
+    EXCLUDED_METHODS = %w[run initialize private?]
 
     def initialize
       @prefix_size = PromptManager::Prompt::DIRECTIVE_SIGNAL.size
@@ -17,18 +17,24 @@ module AIA
       Directives::WebAndFile.included_files = @included_files
     end
 
+
     def directive?(string)
       Directives::Registry.directive?(string)
     end
+
 
     def process(string, context_manager)
       return string unless directive?(string)
 
       content = if string.is_a?(RubyLLM::Message)
-                 string.content rescue string.to_s
-               else
-                 string.to_s
-               end
+                  begin
+                    string.content
+                  rescue StandardError
+                    string.to_s
+                  end
+                else
+                  string.to_s
+                end
 
       key = content.strip
       sans_prefix = key[@prefix_size..]
@@ -37,6 +43,7 @@ module AIA
 
       Directives::Registry.process(method_name, args, context_manager)
     end
+
 
     def run(directives)
       return {} if directives.nil? || directives.empty?
@@ -75,6 +82,7 @@ module AIA
         super
       end
     end
+
 
     def respond_to_missing?(method_name, include_private = false)
       Directives::Registry.respond_to?(method_name, include_private) || super
