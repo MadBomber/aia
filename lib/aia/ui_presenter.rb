@@ -179,10 +179,11 @@ module AIA
       total_cost = 0.0
       
       metrics_list.each do |metrics|
-        model_name = metrics[:model_id]
+        # Use display_name if available (includes role), otherwise fall back to model_id
+        model_name = metrics[:display_name] || metrics[:model_id]
         # Truncate model name if too long
-        model_name = model_name[0..17] + ".." if model_name.length > 19
-        
+        model_name = model_name[0..17] + ".." if model_name.to_s.length > 19
+
         input_tokens = metrics[:input_tokens] || 0
         output_tokens = metrics[:output_tokens] || 0
         total_tokens = input_tokens + output_tokens

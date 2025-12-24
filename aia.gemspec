@@ -64,4 +64,45 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'tocer'
   spec.add_development_dependency 'webmock'
 
+
+  spec.post_install_message = <<~MSG
+
+    ╔══════════════════════════════════════════════════════════════╗
+    ║               AIA — AI Assistant Installed!                  ║
+    ╚══════════════════════════════════════════════════════════════╝
+
+    ⚠  Note: v0.10+ has breaking changes in config file format and
+       environment variable names. See docs for details.
+
+    Multi-model AI from your command line. 20+ providers supported.
+
+    Quick Start:
+      aia --help              Show all options
+      aia --chat              Start an interactive chat session
+      aia --fuzzy             Select a prompt with fuzzy finder
+      aia my_prompt_file      Run saved prompt(s) in batch mode
+
+    Setup:
+      1. Set your API key(s):  export OPENAI_API_KEY=your_key
+                               export ANTHROPIC_API_KEY=your_key
+                               ... etc.
+      2. Create prompts dir:   mkdir -p ~/.prompts
+      3. Initialize config:    aia --dump ~/.config/aia/aia.yml
+
+    Key Features:
+      • Dynamic prompts with embedded directives (//include, //shell)
+      • Consensus mode: run multiple models, get unified responses
+      • Shell & Ruby (ERB) integration in prompts
+      • Tool callbacks via RubyLLM::Tool
+      • MCP Integration via RubyLLM::MCP
+      • Session history and checkpoints
+      • Pipeline workflows
+      • Concurrently run the same prompt against multiple models
+      • Get cost estimates for prompts against multiple models
+
+    Documentation:  https://madbomber.github.io/aia
+    Source Code:    https://github.com/MadBomber/aia
+
+  MSG
+
 end

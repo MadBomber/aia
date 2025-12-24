@@ -64,10 +64,18 @@ module AIA
 
         mcp_version = defined?(RubyLLM::MCP::VERSION) ? " MCP v" + RubyLLM::MCP::VERSION : ''
 
-        # Extract model names from config (handles ModelSpec objects from ADR-005)
+        # Extract model names from config (handles ModelSpec objects or Hashes)
         model_display = if AIA.config&.models && !AIA.config.models.empty?
           models = AIA.config.models
-          models.map { |spec| spec.respond_to?(:name) ? spec.name : spec.to_s }.join(', ')
+          models.map do |spec|
+            if spec.is_a?(AIA::ModelSpec)
+              spec.name
+            elsif spec.is_a?(Hash)
+              spec[:name] || spec['name'] || spec.to_s
+            else
+              spec.to_s
+            end
+          end.join(', ')
         else
           'unknown-model'
         end

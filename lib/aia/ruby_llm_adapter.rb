@@ -873,14 +873,15 @@ module AIA
     end
 
     def format_individual_responses(results)
-      # For metrics support, return a special structure if all results have token info
-      has_metrics = results.values.all? { |r| r.respond_to?(:input_tokens) && r.respond_to?(:output_tokens) }
+      # Always collect metrics if available - display logic in session.rb decides whether to show them
+      # This ensures metrics are passed through even when show_metrics is false
+      has_metrics = results.values.any? { |r| r.respond_to?(:input_tokens) && r.respond_to?(:output_tokens) }
 
-      if has_metrics && AIA.config.show_metrics
+      if has_metrics
         # Return structured data that preserves metrics for multi-model
         format_multi_model_with_metrics(results)
       else
-        # Original string formatting for non-metrics mode with role labels (ADR-005)
+        # No metrics available - return formatted string
         output = []
         results.each do |internal_id, result|
           # Get model spec to include role in output
@@ -927,16 +928,24 @@ module AIA
       formatted_content = []
       metrics_data = []
 
-      results.each do |model_name, result|
-        formatted_content << "from: #{model_name}"
-        formatted_content << result.content
+      results.each do |internal_id, result|
+        # Get model spec to include role in output
+        spec = get_model_spec(internal_id)
+        display_name = format_model_display_name(spec)
+
+        formatted_content << "from: #{display_name}"
+        content = result.respond_to?(:content) ? result.content : result.to_s
+        formatted_content << content
         formatted_content << ""
 
         # Collect metrics for each model
+        # Use the actual model name (not internal_id) for cost calculation in RubyLLM::Models.find
+        actual_model = spec ? spec[:model] : internal_id
         metrics_data << {
-          model_id: model_name,
-          input_tokens: result.input_tokens,
-          output_tokens: result.output_tokens
+          model_id: actual_model,
+          display_name: display_name,
+          input_tokens: result.respond_to?(:input_tokens) ? result.input_tokens : nil,
+          output_tokens: result.respond_to?(:output_tokens) ? result.output_tokens : nil
         }
       end
 
