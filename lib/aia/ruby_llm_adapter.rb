@@ -415,6 +415,11 @@ module AIA
     MCP_DEFAULT_TIMEOUT = 8_000  # 8 seconds (same as RubyLLM::MCP default)
 
     def support_mcp
+      if AIA.config.flags.no_mcp
+        logger.debug("MCP processing bypassed via --no-mcp flag")
+        return
+      end
+
       logger.debug("Starting MCP connection via RubyLLM::MCP.establish_connection")
       LoggerManager.configure_mcp_logger
 
@@ -439,6 +444,11 @@ module AIA
     # This reduces total connection time from sum(timeouts) to max(timeouts).
 
     def support_mcp_with_simple_flow
+      if AIA.config.flags.no_mcp
+        logger.debug("MCP processing bypassed via --no-mcp flag")
+        return
+      end
+
       if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
         logger.debug("No MCP servers configured, skipping MCP setup")
         return

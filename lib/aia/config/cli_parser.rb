@@ -299,6 +299,10 @@ module AIA
           options[:metrics] = true  # --cost implies --metrics
         end
 
+        opts.on("--[no-]mcp", "Enable/disable MCP server processing (default: enabled)") do |mcp|
+          options[:no_mcp] = !mcp
+        end
+
         opts.on("--version", "Show version") do
           puts AIA::VERSION
           exit

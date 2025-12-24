@@ -174,6 +174,7 @@ module AIA
       cost: [:flags, :cost],
       fuzzy: [:flags, :fuzzy],
       metrics: [:flags, :metrics],
+      no_mcp: [:flags, :no_mcp],
       terse: [:flags, :terse],
       debug: [:flags, :debug],
       verbose: [:flags, :verbose],

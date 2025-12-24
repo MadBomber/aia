@@ -128,6 +128,7 @@ flags:
   verbose: false
   fuzzy: false
   metrics: false
+  no_mcp: false
   speak: false
   terse: false
   shell: true
