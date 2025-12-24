@@ -7,7 +7,7 @@
 
 ---
 
-> ## ⚠️ BREAKING CHANGES ARE COMMING IN v0.10.0 ⚠️
+> ## ⚠️ BREAKING CHANGES IN v0.10.0 ⚠️
 >
 > **Version 0.10.0 will introduce breaking changes affecting:**
 >
@@ -1345,17 +1345,42 @@ aia --debug --config
 | "Shell command failed" | Invalid shell syntax | Test shell commands separately first |
 | "Configuration error" | Invalid config syntax | Check config file YAML syntax |
 
-### Debug Mode
+### Debug Mode and Log Level Options
 
-Enable debug output for troubleshooting:
+AIA provides multiple log level options to control the verbosity of logging output. These options set the log level for all three loggers (aia, llm, mcp):
+
+| Option | Description |
+|--------|-------------|
+| `-d, --debug` | Enable debug output (most verbose) and set all loggers to DEBUG level |
+| `--no-debug` | Disable debug output |
+| `--info` | Set all loggers to INFO level |
+| `--warn` | Set all loggers to WARN level (default) |
+| `--error` | Set all loggers to ERROR level |
+| `--fatal` | Set all loggers to FATAL level (least verbose) |
 
 ```bash
-# Enable debug mode
+# Enable debug mode (most verbose - shows all log messages)
 aia --debug my_prompt
 
 # Combine with verbose for maximum output
 aia --debug --verbose my_prompt
+
+# Use info level for moderate logging
+aia --info my_prompt
+
+# Use error level to only see errors and fatal messages
+aia --error my_prompt
+
+# Use fatal level for minimal logging (only critical errors)
+aia --fatal --chat
 ```
+
+**Log Level Hierarchy** (from most to least verbose):
+1. **debug** - All messages including detailed debugging information
+2. **info** - Informational messages and above
+3. **warn** - Warnings, errors, and fatal messages (default)
+4. **error** - Only errors and fatal messages
+5. **fatal** - Only critical/fatal messages
 
 ### Performance Issues
 

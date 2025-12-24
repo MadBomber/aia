@@ -72,8 +72,23 @@ pipeline: []                  # Default prompt pipeline
 executable_prompt: false     # Run prompts as executables
 
 # Logging
-log_file: null               # Log file path
+log_file: null               # Log file path (deprecated - see logger config below)
 refresh: 7                   # Model database refresh interval (days)
+
+# Logger Configuration (for detailed logging control)
+logger:
+  aia:                       # AIA application logging
+    file: STDOUT             # STDOUT, STDERR, or a file path
+    level: warn              # debug, info, warn, error, fatal
+    flush: true              # Immediate write (no buffering)
+  llm:                       # RubyLLM gem logging
+    file: STDOUT
+    level: warn
+    flush: true
+  mcp:                       # RubyLLM::MCP gem logging
+    file: STDOUT
+    level: warn
+    flush: true
 ```
 
 ### Model-Specific Configuration
@@ -151,6 +166,107 @@ Prompts can contain configuration directives that override all other settings:
 //config max_tokens 1500
 
 Write a creative story about...
+```
+
+## Logger Configuration
+
+AIA uses the Lumberjack gem for logging and manages three separate loggers:
+
+| Logger | Purpose |
+|--------|---------|
+| `aia` | AIA application logging |
+| `llm` | RubyLLM gem logging |
+| `mcp` | RubyLLM::MCP gem logging |
+
+### Configuration File Settings
+
+Each logger can be configured independently in your `~/.aia/config.yml`:
+
+```yaml
+logger:
+  aia:
+    file: STDOUT           # STDOUT, STDERR, or a file path (e.g., ~/.aia/aia.log)
+    level: warn            # debug, info, warn, error, fatal
+    flush: true            # true = immediate write, false = buffered
+  llm:
+    file: STDOUT
+    level: warn
+    flush: true
+  mcp:
+    file: STDOUT
+    level: warn
+    flush: true
+```
+
+**Note**: All three loggers can safely write to the same file path. AIA handles multi-process safe file writes with automatic log file rotation (daily).
+
+### CLI Log Level Override
+
+Command-line log level options override the config file settings for ALL loggers:
+
+```bash
+# Set all loggers to debug level
+aia --debug my_prompt
+
+# Set all loggers to info level
+aia --info my_prompt
+
+# Set all loggers to warn level (default)
+aia --warn my_prompt
+
+# Set all loggers to error level
+aia --error my_prompt
+
+# Set all loggers to fatal level
+aia --fatal my_prompt
+```
+
+### Environment Variables
+
+Logger settings can also be configured via environment variables:
+
+```bash
+# AIA logger settings
+export AIA_LOGGER__AIA__FILE="~/.aia/aia.log"
+export AIA_LOGGER__AIA__LEVEL="debug"
+export AIA_LOGGER__AIA__FLUSH="true"
+
+# LLM logger settings
+export AIA_LOGGER__LLM__FILE="STDOUT"
+export AIA_LOGGER__LLM__LEVEL="info"
+
+# MCP logger settings
+export AIA_LOGGER__MCP__FILE="STDERR"
+export AIA_LOGGER__MCP__LEVEL="warn"
+```
+
+### Log Levels
+
+| Level | Description |
+|-------|-------------|
+| `debug` | Most verbose - all messages including detailed debugging info |
+| `info` | Informational messages and above |
+| `warn` | Warnings, errors, and fatal messages (default) |
+| `error` | Only errors and fatal messages |
+| `fatal` | Least verbose - only critical/fatal messages |
+
+### Example: File-Based Logging
+
+```yaml
+# ~/.aia/config.yml - Log everything to files
+logger:
+  aia:
+    file: ~/.aia/logs/aia.log
+    level: info
+    flush: true
+  llm:
+    file: ~/.aia/logs/llm.log
+    level: debug
+    flush: false
+  mcp:
+    file: ~/.aia/logs/mcp.log
+    level: warn
+    flush: true
 ```
 
 ## Advanced Configuration

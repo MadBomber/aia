@@ -467,8 +467,12 @@ aia --rt "network_access" secure_prompt
 
 ## Utility Options
 
+### Log Level Options
+
+AIA provides multiple log level options to control logging verbosity. These options set the log level for all three loggers (aia, llm, mcp). Only one log level option should be used at a time.
+
 ### `-d, --debug`
-Enable debug output for troubleshooting.
+Enable debug output (most verbose) and set all loggers to DEBUG level. Also sets `$DEBUG_ME = true` for the debug_me gem.
 
 ```bash
 aia --debug my_prompt
@@ -476,11 +480,48 @@ aia -d --chat
 ```
 
 ### `--no-debug`
-Explicitly disable debug output.
+Explicitly disable debug output. Sets `$DEBUG_ME = false`.
 
 ```bash
 aia --no-debug my_prompt
 ```
+
+### `--info`
+Set all loggers to INFO level. Shows informational messages and above.
+
+```bash
+aia --info my_prompt
+aia --info --chat
+```
+
+### `--warn`
+Set all loggers to WARN level (this is the default). Shows warnings, errors, and fatal messages.
+
+```bash
+aia --warn my_prompt
+```
+
+### `--error`
+Set all loggers to ERROR level. Shows only errors and fatal messages.
+
+```bash
+aia --error my_prompt
+aia --error --chat
+```
+
+### `--fatal`
+Set all loggers to FATAL level (least verbose). Shows only critical/fatal messages.
+
+```bash
+aia --fatal my_prompt
+```
+
+**Log Level Hierarchy** (from most to least verbose):
+1. `debug` - All messages including detailed debugging information
+2. `info` - Informational messages and above
+3. `warn` - Warnings, errors, and fatal messages (default)
+4. `error` - Only errors and fatal messages
+5. `fatal` - Only critical/fatal messages
 
 ### `-v, --[no-]verbose`
 Enable/disable verbose output.
