@@ -135,6 +135,8 @@ export GOOGLE_API_KEY="your_key_here"
 export AIA_FLAGS__CHAT="true"
 export AIA_FLAGS__VERBOSE="true"
 export AIA_FLAGS__DEBUG="false"
+export AIA_FLAGS__TOKENS="true"
+export AIA_FLAGS__COST="true"
 
 # Output settings (nested under output:)
 export AIA_OUTPUT__FILE="/tmp/aia_output.md"

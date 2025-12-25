@@ -174,7 +174,7 @@ module AIA
       chat: [:flags, :chat],
       cost: [:flags, :cost],
       fuzzy: [:flags, :fuzzy],
-      metrics: [:flags, :metrics],
+      tokens: [:flags, :tokens],
       no_mcp: [:flags, :no_mcp],
       terse: [:flags, :terse],
       debug: [:flags, :debug],

@@ -240,7 +240,7 @@ Now with the fix:
 ### Usage Examples
 ```bash
 # Multi-model chat now properly isolates each model's context
-bin/aia --chat --model lms/openai/gpt-oss-20b,ollama/gpt-oss:20b --metrics
+bin/aia --chat --model lms/openai/gpt-oss-20b,ollama/gpt-oss:20b --tokens
 
 > pick a random language and say hello
 # LMS: "Habari!" (Swahili)
@@ -375,7 +375,7 @@ aia --model ollama/llama3.2 --chat
 
 ## [0.9.13] 2025-09-02
 ### New Features
-- **NEW FEATURE**: Added `--metrics` flag to show token counts for each model
+- **NEW FEATURE**: Added `--tokens` flag to show token counts for each model
 - **NEW FEATURE**: Added `--cost` flag to enable cost estimation for each model
 
 ### Improvements

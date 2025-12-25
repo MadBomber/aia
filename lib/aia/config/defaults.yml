@@ -127,7 +127,7 @@ flags:
   debug: false
   verbose: false
   fuzzy: false
-  metrics: false
+  tokens: false
   no_mcp: false
   speak: false
   terse: false
