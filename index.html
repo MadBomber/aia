@@ -1627,6 +1627,24 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
       AIA treats prompts as executable programs, complete with configuration, logic, and workflows.
   </div>
 
+<hr />
+<div class="admonition warning">
+<p class="admonition-title">Breaking Changes in v0.10.*</p>
+<p><strong>Version 0.10.0 introduces breaking changes:</strong></p>
+<ul>
+<li>
+<p><strong>Environment Variables</strong> — Naming conventions now use double underscore (<code>__</code>) for nested config sections (e.g., <code>AIA_LLM__TEMPERATURE</code>, <code>AIA_FLAGS__DEBUG</code>). See <a href="configuration/#environment-variables">Environment Variables</a> for the complete list.</p>
+</li>
+<li>
+<p><strong>Configuration Files</strong> — Configuration now uses a nested YAML structure with sections like <code>llm:</code>, <code>prompts:</code>, <code>output:</code>, <code>flags:</code>, etc. See <a href="configuration/">Configuration Guide</a> for details.</p>
+</li>
+<li>
+<p><strong>File Locations</strong> — Configuration files now follow the XDG Base Directory Specification. The default config file location is <code>~/.config/aia/aia.yml</code> instead of <code>~/.aia/config.yml</code>. See <a href="installation/">Installation Guide</a> for setup instructions.</p>
+</li>
+</ul>
+<p><strong>Review the <a href="configuration/">Configuration Guide</a> before upgrading to v0.10.0.</strong></p>
+</div>
+<hr />
 <h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
 <h3 id="dynamic-prompt-management">🚀 Dynamic Prompt Management<a class="headerlink" href="#dynamic-prompt-management" title="Permanent link">&para;</a></h3>
 <ul>
