@@ -24,6 +24,7 @@ require 'date'
 require_relative 'config/config_section'
 require_relative 'config/model_spec'
 require_relative 'config/defaults_loader'
+require_relative 'config/mcp_parser'
 
 module AIA
   class Config < Anyway::Config
@@ -173,7 +174,7 @@ module AIA
       chat: [:flags, :chat],
       cost: [:flags, :cost],
       fuzzy: [:flags, :fuzzy],
-      metrics: [:flags, :metrics],
+      tokens: [:flags, :tokens],
       no_mcp: [:flags, :no_mcp],
       terse: [:flags, :terse],
       debug: [:flags, :debug],
@@ -219,6 +220,7 @@ module AIA
     def initialize(overrides: {})
       super()
       apply_overrides(overrides) if overrides && !overrides.empty?
+      process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
     end
 
     # Apply CLI or runtime overrides to configuration
@@ -301,6 +303,19 @@ module AIA
 
       # Ensure tools.paths is an array
       tools.paths = [] if tools.paths.nil?
+    end
+
+    # Process MCP JSON files and merge servers into mcp_servers
+    #
+    # @param mcp_files [Array<String>] paths to MCP JSON configuration files
+    def process_mcp_files(mcp_files)
+      return if mcp_files.nil? || mcp_files.empty?
+
+      servers_from_files = McpParser.parse_files(mcp_files)
+      return if servers_from_files.empty?
+
+      # Merge with existing mcp_servers (CLI files take precedence)
+      self.mcp_servers = (mcp_servers || []) + servers_from_files
     end
 
     def apply_nested_override(parts, value)

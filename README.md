@@ -79,6 +79,47 @@ For more information on AIA visit these locations:
 
 ```
 
+---
+
+## Concurrent Multi-Model Comparison
+
+One of AIA's most powerful features is the ability to send a single prompt to multiple AI models simultaneously and compare their responses side-by-side—complete with token usage and cost tracking.
+
+```bash
+# Compare responses from 3 models with token counts and cost estimates
+aia --chat -m gpt-4o,claude-3-5-sonnet,gemini-1.5-pro --tokens --cost
+```
+
+**Example output:**
+```
+You: What's the best approach for handling database migrations in a microservices architecture?
+
+from: gpt-4o
+Use a versioned migration strategy with backward compatibility...
+
+from: claude-3-5-sonnet
+Consider the Expand-Contract pattern for zero-downtime migrations...
+
+from: gemini-1.5-pro
+Implement a schema registry with event-driven synchronization...
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Model               │ Input Tokens │ Output Tokens │ Cost      │
+├─────────────────────────────────────────────────────────────────┤
+│ gpt-4o              │ 156          │ 342           │ $0.0089   │
+│ claude-3-5-sonnet   │ 156          │ 418           │ $0.0063   │
+│ gemini-1.5-pro      │ 156          │ 387           │ $0.0041   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why this matters:**
+- **Compare reasoning approaches** - See how different models tackle the same problem
+- **Identify blind spots** - One model might catch something others miss
+- **Cost optimization** - Find the best price/performance ratio for your use case
+- **Consensus building** - Use `--consensus` to synthesize the best answer from all models
+
+---
+
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
 ## Table of Contents
@@ -225,6 +266,8 @@ aia --fuzzy
 | `--list-roles` | List available role files | `aia --list-roles` |
 | `--output FILE` | Specify output file | `aia --output results.md` |
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
+| `--tokens` | Display token usage in chat mode | `aia --chat --tokens` |
+| `--cost` | Include cost calculations with token usage | `aia --chat --cost` |
 | `--help` | Show complete help | `aia --help` |
 
 ### Directory Structure
@@ -332,6 +375,8 @@ Your prompt content here...
 | system_prompt | --system-prompt | | AIA_SYSTEM_PROMPT |
 | temperature | -t, --temperature | 0.7 | AIA_LLM__TEMPERATURE |
 | terse | --terse | false | AIA_FLAGS__TERSE |
+| tokens | --tokens | false | AIA_FLAGS__TOKENS |
+| cost | --cost | false | AIA_FLAGS__COST |
 | tool_paths | --tools | [] | AIA_TOOLS__PATHS |
 | allowed_tools | --at, --allowed-tools | nil | AIA_TOOLS__ALLOWED |
 | rejected_tools | --rt, --rejected-tools | nil | AIA_TOOLS__REJECTED |
@@ -579,6 +624,39 @@ Model Details:
 - **Flexible Output**: Choose between individual responses or synthesized consensus
 - **Error Handling**: Invalid models are reported but don't prevent valid models from working
 - **Batch Mode Support**: Multi-model responses are properly formatted in output files
+
+#### Token Usage and Cost Tracking
+
+Monitor token consumption and estimate costs across all models with `--tokens` and `--cost`:
+
+```bash
+# Display token usage for each model
+aia my_prompt -m gpt-4o,claude-3-sonnet --tokens
+
+# Include cost estimates (automatically enables --tokens)
+aia my_prompt -m gpt-4o,claude-3-sonnet --cost
+
+# In chat mode with full tracking
+aia --chat -m gpt-4o,claude-3-sonnet,gemini-pro --cost
+```
+
+**Token Usage Output:**
+```
+from: gpt-4o
+Here's my analysis of the code...
+
+from: claude-3-sonnet
+Looking at this code, I notice...
+
+Tokens: gpt-4o: input=245, output=312 | claude-3-sonnet: input=245, output=287
+Cost: gpt-4o: $0.0078 | claude-3-sonnet: $0.0045 | Total: $0.0123
+```
+
+**Use Cases for Token/Cost Tracking:**
+- **Budget management** - Monitor API costs in real-time during development
+- **Model comparison** - Identify which models are most cost-effective for your tasks
+- **Optimization** - Find the right balance between response quality and cost
+- **Billing insights** - Track usage patterns across different model providers
 
 ### Local Model Support
 

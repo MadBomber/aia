@@ -48,6 +48,24 @@ aia --terse my_prompt
 aia --terse --chat
 ```
 
+### `--tokens`
+Display token usage information after each response in chat mode. Shows input tokens, output tokens, and model ID.
+
+```bash
+aia --chat --tokens
+aia --chat --tokens --model gpt-4
+```
+
+### `--cost`
+Include cost calculations with token usage. Automatically enables `--tokens`. Shows estimated cost based on the model's pricing.
+
+```bash
+aia --chat --cost
+aia --chat --cost --model gpt-4,claude-3-sonnet
+```
+
+**Note**: `--cost` implies `--tokens`, so you don't need to specify both.
+
 ## Adapter Options
 
 ### `--adapter ADAPTER`

@@ -167,6 +167,84 @@ Model Details:
 - **Error Handling**: Invalid models are reported but don't prevent valid models from working
 - **Batch Mode Support**: Multi-model responses are properly formatted in output files
 
+### Token Usage and Cost Tracking
+
+One of AIA's most powerful capabilities is real-time tracking of token usage and cost estimates across multiple models. This enables informed decisions about model selection based on both quality and cost.
+
+#### Enabling Token Tracking
+
+```bash
+# Display token usage for each model
+aia my_prompt -m gpt-4o,claude-3-sonnet --tokens
+
+# Include cost estimates (automatically enables --tokens)
+aia my_prompt -m gpt-4o,claude-3-sonnet --cost
+
+# In chat mode with full tracking
+aia --chat -m gpt-4o,claude-3-sonnet,gemini-pro --cost
+```
+
+#### Multi-Model Comparison with Metrics
+
+```bash
+# Compare 3 models with cost tracking
+aia --chat -m gpt-4o,claude-3-5-sonnet,gemini-1.5-pro --cost
+```
+
+**Example Output:**
+```
+You: Explain the CAP theorem and its implications for distributed databases.
+
+from: gpt-4o
+The CAP theorem states that a distributed system can only guarantee two of three properties...
+
+from: claude-3-5-sonnet
+CAP theorem, proposed by Eric Brewer, describes fundamental trade-offs in distributed systems...
+
+from: gemini-1.5-pro
+The CAP theorem is a cornerstone principle in distributed computing that states...
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Model               │ Input Tokens │ Output Tokens │ Cost      │
+├─────────────────────────────────────────────────────────────────┤
+│ gpt-4o              │ 42           │ 287           │ $0.0068   │
+│ claude-3-5-sonnet   │ 42           │ 312           │ $0.0053   │
+│ gemini-1.5-pro      │ 42           │ 298           │ $0.0038   │
+└─────────────────────────────────────────────────────────────────┘
+Total: $0.0159
+```
+
+#### Use Cases for Token/Cost Tracking
+
+| Use Case | Description |
+|----------|-------------|
+| **Budget Management** | Monitor API costs in real-time during development |
+| **Model Evaluation** | Compare quality vs. cost across different providers |
+| **Cost Optimization** | Identify the most cost-effective model for your tasks |
+| **Usage Auditing** | Track token consumption for billing and optimization |
+| **A/B Testing** | Compare model performance with objective metrics |
+
+#### Combining with Consensus Mode
+
+```bash
+# Get consensus response with cost breakdown
+aia my_prompt -m gpt-4o,claude-3-sonnet,gemini-pro --consensus --cost
+
+# The consensus response shows combined metrics:
+# Tokens: input=126 (total), output=892 (consensus + individual)
+# Cost: $0.0189 (all models combined)
+```
+
+#### Environment Variables
+
+```bash
+# Enable token tracking by default
+export AIA_FLAGS__TOKENS=true
+
+# Enable cost tracking by default
+export AIA_FLAGS__COST=true
+```
+
 ### Per-Model Roles
 
 Assign specific roles to each model in multi-model mode to get diverse perspectives on your prompts. Each model receives a prepended role prompt that shapes its perspective.

@@ -290,17 +290,22 @@ module AIA
           options[:completion] = shell
         end
 
-        opts.on("--metrics", "Display token usage in chat mode") do
-          options[:metrics] = true
+        opts.on("--tokens", "Display token usage in chat mode") do
+          options[:tokens] = true
         end
 
-        opts.on("--cost", "Include cost calculations with metrics") do
+        opts.on("--cost", "Include cost calculations with token usage") do
           options[:cost] = true
-          options[:metrics] = true  # --cost implies --metrics
+          options[:tokens] = true  # --cost implies --tokens
         end
 
-        opts.on("--[no-]mcp", "Enable/disable MCP server processing (default: enabled)") do |mcp|
-          options[:no_mcp] = !mcp
+        opts.on("--mcp FILE", "Load MCP server(s) from JSON file (can be used multiple times)") do |file|
+          options[:mcp_files] ||= []
+          options[:mcp_files] << file
+        end
+
+        opts.on("--no-mcp", "Disable all MCP server processing") do
+          options[:no_mcp] = true
         end
 
         opts.on("--version", "Show version") do

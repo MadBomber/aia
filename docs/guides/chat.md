@@ -421,6 +421,52 @@ class ChatCommands < RubyLLM::Tool
 end
 ```
 
+## Token Usage and Cost Tracking
+
+### Displaying Token Usage
+Use the `--tokens` flag to see token usage after each response:
+
+```bash
+# Enable token usage display
+aia --chat --tokens
+
+# Example output after a response:
+# AI: Here's my response to your question...
+#
+# Tokens: input=125, output=89, model=gpt-4o-mini
+```
+
+### Cost Estimation
+Use the `--cost` flag to include cost calculations with token usage:
+
+```bash
+# Enable cost estimation (automatically enables --tokens)
+aia --chat --cost
+
+# Example output after a response:
+# AI: Here's my response to your question...
+#
+# Tokens: input=125, output=89, model=gpt-4o-mini
+# Cost: $0.0003 (input: $0.0002, output: $0.0001)
+```
+
+### Multi-Model Token Tracking
+When using multiple models, token usage is displayed for each model:
+
+```bash
+aia --chat --tokens --model gpt-4,claude-3-sonnet
+
+# Example output:
+# from: gpt-4
+# Here's my response...
+#
+# from: claude-3-sonnet
+# Here's my alternative response...
+#
+# Model: gpt-4 - Tokens: input=125, output=89
+# Model: claude-3-sonnet - Tokens: input=125, output=112
+```
+
 ## Troubleshooting Chat Mode
 
 ### Common Issues
