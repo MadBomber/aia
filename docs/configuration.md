@@ -16,79 +16,155 @@ AIA follows a hierarchical configuration system (highest to lowest precedence):
 
 ### Primary Configuration File
 
-The main configuration file is located at `~/.aia/config.yml`:
+The main configuration file is located at `~/.config/aia/aia.yml` (following XDG Base Directory Specification):
 
 ```yaml
-# ~/.aia/config.yml - Main AIA configuration
+# ~/.config/aia/aia.yml - Main AIA configuration
+# Uses nested structure - environment variables use double underscore for nesting
 
-# Core Settings
-adapter: ruby_llm              # AI adapter to use (currently only ruby_llm)
-model: gpt-3.5-turbo          # Default AI model
-prompts_dir: ~/.prompts        # Directory containing prompt files
-roles_prefix: roles            # Subdirectory name for role files
+# Service identification
+service:
+  name: aia
 
-# AI Parameters
-temperature: 0.7               # Creativity/randomness (0.0-2.0)
-max_tokens: 2000              # Maximum response length
-top_p: 1.0                    # Nucleus sampling
-frequency_penalty: 0.0        # Repetition penalty (-2.0 to 2.0)
-presence_penalty: 0.0         # Topic penalty (-2.0 to 2.0)
+# LLM Configuration
+# Access: AIA.config.llm.adapter, AIA.config.llm.temperature, etc.
+# Env: AIA_LLM__ADAPTER, AIA_LLM__TEMPERATURE, etc.
+llm:
+  adapter: ruby_llm           # AI adapter to use (currently only ruby_llm)
+  temperature: 0.7            # Creativity/randomness (0.0-2.0)
+  max_tokens: 2048            # Maximum response length
+  top_p: 1.0                  # Nucleus sampling
+  frequency_penalty: 0.0      # Repetition penalty (-2.0 to 2.0)
+  presence_penalty: 0.0       # Topic penalty (-2.0 to 2.0)
 
-# Output Settings
-output: null                  # Output file (null = no file output)
-append: false                 # Append to output file instead of overwriting
-markdown: true                # Format output with Markdown
-verbose: false                # Show detailed output
-debug: false                  # Enable debug logging
+# Models Configuration
+# Access: AIA.config.models (array of ModelSpec objects)
+# Each model has: name, role, instance, internal_id
+models:
+  - name: gpt-4o-mini
+    role: ~                   # Optional role assignment
 
-# Chat Settings
-chat: false                   # Start in chat mode
-terse: false                  # Request shorter AI responses
-system_prompt: null           # Default system prompt for chat
+# Prompts Configuration
+# Access: AIA.config.prompts.dir, AIA.config.prompts.roles_prefix, etc.
+# Env: AIA_PROMPTS__DIR, AIA_PROMPTS__ROLES_PREFIX, etc.
+prompts:
+  dir: ~/.prompts             # Directory containing prompt files
+  extname: .txt               # Prompt file extension
+  roles_prefix: roles         # Subdirectory name for role files
+  roles_dir: ~/.prompts/roles # Full path to roles directory
+  role: ~                     # Default role
+  system_prompt: ~            # Default system prompt
+  parameter_regex: ~          # Regex for parameter extraction
 
-# Audio/Speech Settings
-speak: false                  # Convert text to speech
-voice: alloy                  # Voice for speech synthesis
-speech_model: tts-1           # Model for text-to-speech
-transcription_model: whisper-1 # Model for speech-to-text
+# Output Configuration
+# Access: AIA.config.output.file, AIA.config.output.append, etc.
+# Env: AIA_OUTPUT__FILE, AIA_OUTPUT__APPEND, etc.
+output:
+  file: temp.md               # Output file (null = no file output)
+  append: false               # Append to output file instead of overwriting
+  markdown: true              # Format output with Markdown
+  history_file: ~/.prompts/_prompts.log  # Conversation history log
 
-# Image Generation Settings
-image_size: 1024x1024         # Default image size
-image_quality: standard       # Image quality (standard/hd)
-image_style: vivid           # Image style (vivid/natural)
+# Audio Configuration
+# Access: AIA.config.audio.voice, AIA.config.audio.speak_command, etc.
+# Env: AIA_AUDIO__VOICE, AIA_AUDIO__SPEAK_COMMAND, etc.
+audio:
+  voice: alloy                # Voice for speech synthesis
+  speak_command: afplay       # Command to play audio files
+  speech_model: tts-1         # Model for text-to-speech
+  transcription_model: whisper-1  # Model for speech-to-text
 
-# Search Settings
-fuzzy: false                  # Enable fuzzy prompt searching
-parameter_regex: null         # Regex for parameter extraction
+# Image Configuration
+# Access: AIA.config.image.model, AIA.config.image.size, etc.
+# Env: AIA_IMAGE__MODEL, AIA_IMAGE__SIZE, etc.
+image:
+  model: dall-e-3             # Image generation model
+  size: 1024x1024             # Default image size
+  quality: standard           # Image quality (standard/hd)
+  style: vivid                # Image style (vivid/natural)
 
-# Tool Settings
-tool_paths: []                # Paths to tool files/directories
-allowed_tools: []             # Whitelist of allowed tools
-rejected_tools: []            # Blacklist of rejected tools
-require_libs: []              # Ruby libraries to require
+# Embedding Configuration
+# Access: AIA.config.embedding.model
+# Env: AIA_EMBEDDING__MODEL
+embedding:
+  model: text-embedding-ada-002  # Embedding model
 
-# Workflow Settings
-pipeline: []                  # Default prompt pipeline
-executable_prompt: false     # Run prompts as executables
+# Tools Configuration
+# Access: AIA.config.tools.paths, AIA.config.tools.allowed, etc.
+# Env: AIA_TOOLS__PATHS, AIA_TOOLS__ALLOWED, etc.
+tools:
+  paths: []                   # Paths to tool files/directories
+  allowed: ~                  # Whitelist of allowed tools
+  rejected: ~                 # Blacklist of rejected tools
 
-# Logging
-history_file: null           # Conversation history file for logging prompts and responses
-refresh: 7                   # Model database refresh interval (days)
+# Flags (Boolean Options)
+# Access: AIA.config.flags.chat, AIA.config.flags.debug, etc.
+# Env: AIA_FLAGS__CHAT=true, AIA_FLAGS__DEBUG=true, etc.
+flags:
+  chat: false                 # Start in chat mode
+  cost: false                 # Show cost calculations
+  debug: false                # Enable debug logging
+  verbose: false              # Show detailed output
+  fuzzy: false                # Enable fuzzy prompt searching
+  tokens: false               # Show token usage
+  no_mcp: false               # Disable MCP server processing
+  speak: false                # Convert text to speech
+  terse: false                # Request shorter AI responses
+  shell: true                 # Enable shell integration
+  erb: true                   # Enable ERB processing
+  clear: false                # Clear conversation history
+  consensus: false            # Enable consensus mode for multi-model
 
-# Logger Configuration (for detailed logging control)
+# Logger Configuration
+# Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
+# Env: AIA_LOGGER__AIA__FILE, AIA_LOGGER__LLM__LEVEL, etc.
 logger:
-  aia:                       # AIA application logging
-    file: STDOUT             # STDOUT, STDERR, or a file path
-    level: warn              # debug, info, warn, error, fatal
-    flush: true              # Immediate write (no buffering)
-  llm:                       # RubyLLM gem logging
+  aia:                        # AIA application logging
+    file: STDOUT              # STDOUT, STDERR, or a file path
+    level: warn               # debug, info, warn, error, fatal
+    flush: true               # Immediate write (no buffering)
+  llm:                        # RubyLLM gem logging
     file: STDOUT
     level: warn
     flush: true
-  mcp:                       # RubyLLM::MCP gem logging
+  mcp:                        # RubyLLM::MCP gem logging
     file: STDOUT
     level: warn
     flush: true
+
+# Pipeline/Workflow Configuration
+# Access: AIA.config.pipeline (array of prompt IDs)
+pipeline: []
+
+# Model Registry Configuration
+# Access: AIA.config.registry.refresh
+# Env: AIA_REGISTRY__REFRESH
+registry:
+  refresh: 7                  # Days between model database refreshes (0 = disable)
+
+# Required Ruby Libraries
+# Access: AIA.config.require_libs (array)
+require_libs: []
+
+# MCP Servers Configuration
+# Access: AIA.config.mcp_servers (array of server configs)
+mcp_servers: []
+#  - name: my-server
+#    command: /path/to/server
+#    args: []
+#    env: {}
+#    timeout: 8000
+
+# Paths Configuration
+# Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
+# Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
+paths:
+  aia_dir: ~/.config/aia
+  config_file: ~/.config/aia/aia.yml
+
+# Context Files (set at runtime)
+# Access: AIA.config.context_files (array of file paths)
+context_files: []
 ```
 
 ### Model-Specific Configuration
@@ -96,16 +172,18 @@ logger:
 You can create model-specific configuration files:
 
 ```yaml
-# ~/.aia/models/gpt-4.yml
-temperature: 0.3
-max_tokens: 4000
-top_p: 0.95
+# ~/.config/aia/models/gpt-4.yml
+llm:
+  temperature: 0.3
+  max_tokens: 4000
+  top_p: 0.95
 ```
 
 ```yaml
-# ~/.aia/models/claude-3.yml  
-temperature: 0.5
-max_tokens: 8000
+# ~/.config/aia/models/claude-3.yml
+llm:
+  temperature: 0.5
+  max_tokens: 8000
 ```
 
 ## Environment Variables
@@ -115,43 +193,90 @@ Use double underscore (`__`) for nested configuration sections:
 
 ```bash
 # LLM settings (nested under llm:)
-export AIA_LLM__TEMPERATURE="0.8"
 export AIA_LLM__ADAPTER="ruby_llm"
+export AIA_LLM__TEMPERATURE="0.8"
+export AIA_LLM__MAX_TOKENS="2048"
+export AIA_LLM__TOP_P="1.0"
+export AIA_LLM__FREQUENCY_PENALTY="0.0"
+export AIA_LLM__PRESENCE_PENALTY="0.0"
 
-# Models (top-level array, supports MODEL=ROLE syntax)
+# Models (top-level, supports MODEL=ROLE syntax)
 export AIA_MODEL="gpt-4"
 export AIA_MODEL="gpt-4o=architect,claude=reviewer"
 
 # Prompts settings (nested under prompts:)
 export AIA_PROMPTS__DIR="/path/to/my/prompts"
+export AIA_PROMPTS__EXTNAME=".txt"
 export AIA_PROMPTS__ROLES_PREFIX="roles"
-
-# API Keys (handled by RubyLLM)
-export OPENAI_API_KEY="your_key_here"
-export ANTHROPIC_API_KEY="your_key_here"
-export GOOGLE_API_KEY="your_key_here"
-
-# Flags (nested under flags:)
-export AIA_FLAGS__CHAT="true"
-export AIA_FLAGS__VERBOSE="true"
-export AIA_FLAGS__DEBUG="false"
-export AIA_FLAGS__TOKENS="true"
-export AIA_FLAGS__COST="true"
+export AIA_PROMPTS__ROLES_DIR="~/.prompts/roles"
+export AIA_PROMPTS__ROLE="expert"
+export AIA_PROMPTS__SYSTEM_PROMPT="my_system_prompt"
+export AIA_PROMPTS__PARAMETER_REGEX='\{\{(\w+)\}\}'
 
 # Output settings (nested under output:)
 export AIA_OUTPUT__FILE="/tmp/aia_output.md"
+export AIA_OUTPUT__APPEND="false"
 export AIA_OUTPUT__MARKDOWN="true"
-export AIA_OUTPUT__LOG_FILE="~/.prompts/_prompts.log"
+export AIA_OUTPUT__HISTORY_FILE="~/.prompts/_prompts.log"
+
+# Audio settings (nested under audio:)
+export AIA_AUDIO__VOICE="alloy"
+export AIA_AUDIO__SPEAK_COMMAND="afplay"
+export AIA_AUDIO__SPEECH_MODEL="tts-1"
+export AIA_AUDIO__TRANSCRIPTION_MODEL="whisper-1"
+
+# Image settings (nested under image:)
+export AIA_IMAGE__MODEL="dall-e-3"
+export AIA_IMAGE__SIZE="1024x1024"
+export AIA_IMAGE__QUALITY="standard"
+export AIA_IMAGE__STYLE="vivid"
+
+# Embedding settings (nested under embedding:)
+export AIA_EMBEDDING__MODEL="text-embedding-ada-002"
 
 # Tools settings (nested under tools:)
 export AIA_TOOLS__PATHS="/path/to/tools"
+export AIA_TOOLS__ALLOWED="calculator,file_reader"
 export AIA_TOOLS__REJECTED="dangerous_tool"
+
+# Flags (nested under flags:)
+export AIA_FLAGS__CHAT="true"
+export AIA_FLAGS__COST="false"
+export AIA_FLAGS__DEBUG="false"
+export AIA_FLAGS__VERBOSE="true"
+export AIA_FLAGS__FUZZY="false"
+export AIA_FLAGS__TOKENS="true"
+export AIA_FLAGS__NO_MCP="false"
+export AIA_FLAGS__SPEAK="false"
+export AIA_FLAGS__TERSE="false"
+export AIA_FLAGS__SHELL="true"
+export AIA_FLAGS__ERB="true"
+export AIA_FLAGS__CLEAR="false"
+export AIA_FLAGS__CONSENSUS="false"
+
+# Logger settings (nested under logger:)
+export AIA_LOGGER__AIA__FILE="~/.aia/aia.log"
+export AIA_LOGGER__AIA__LEVEL="debug"
+export AIA_LOGGER__AIA__FLUSH="true"
+export AIA_LOGGER__LLM__FILE="STDOUT"
+export AIA_LOGGER__LLM__LEVEL="info"
+export AIA_LOGGER__LLM__FLUSH="true"
+export AIA_LOGGER__MCP__FILE="STDERR"
+export AIA_LOGGER__MCP__LEVEL="warn"
+export AIA_LOGGER__MCP__FLUSH="true"
 
 # Registry settings (nested under registry:)
 export AIA_REGISTRY__REFRESH="7"
 
 # Paths settings (nested under paths:)
-export AIA_PATHS__AIA_DIR="~/.aia"
+export AIA_PATHS__AIA_DIR="~/.config/aia"
+export AIA_PATHS__CONFIG_FILE="~/.config/aia/aia.yml"
+
+# API Keys (handled by RubyLLM)
+export OPENAI_API_KEY="your_key_here"
+export ANTHROPIC_API_KEY="your_key_here"
+export GOOGLE_API_KEY="your_key_here"
+export OLLAMA_URL="http://localhost:11434"
 ```
 
 ## Command Line Arguments
@@ -182,7 +307,7 @@ AIA uses the Lumberjack gem for logging and manages three separate loggers:
 
 ### Configuration File Settings
 
-Each logger can be configured independently in your `~/.aia/config.yml`:
+Each logger can be configured independently in your `~/.config/aia/aia.yml`:
 
 ```yaml
 logger:
@@ -255,18 +380,18 @@ export AIA_LOGGER__MCP__LEVEL="warn"
 ### Example: File-Based Logging
 
 ```yaml
-# ~/.aia/config.yml - Log everything to files
+# ~/.config/aia/aia.yml - Log everything to files
 logger:
   aia:
-    file: ~/.aia/logs/aia.log
+    file: ~/.config/aia/logs/aia.log
     level: info
     flush: true
   llm:
-    file: ~/.aia/logs/llm.log
+    file: ~/.config/aia/logs/llm.log
     level: debug
     flush: false
   mcp:
-    file: ~/.aia/logs/mcp.log
+    file: ~/.config/aia/logs/mcp.log
     level: warn
     flush: true
 ```
@@ -275,64 +400,65 @@ logger:
 
 ### Multi-Model Configuration
 
-Configure multiple models with different settings:
+Configure multiple models with role assignments:
 
 ```yaml
+# Configure multiple models with roles
 models:
-  creative_writer:
-    model: gpt-4
-    temperature: 1.2
-    max_tokens: 3000
-    
-  code_analyzer:
-    model: claude-3-sonnet
-    temperature: 0.1
-    max_tokens: 4000
-    
-  quick_helper:
-    model: gpt-3.5-turbo
-    temperature: 0.7
-    max_tokens: 1000
+  - name: gpt-4o
+    role: architect        # Design and architecture decisions
+  - name: claude-3-sonnet
+    role: reviewer         # Code review and analysis
+  - name: gpt-4o-mini
+    role: ~                # No specific role (general use)
 ```
 
-Use with: `aia --model creative_writer my_prompt`
+Use with: `aia --model "gpt-4o=architect,claude=reviewer" my_prompt`
+
+Or use the `--consensus` flag to combine responses:
+```bash
+aia --model "gpt-4,claude-3-sonnet" --consensus my_prompt
+```
 
 ### Tool Configuration
 
 Configure tool paths and permissions:
 
 ```yaml
-# Global tool settings
-tool_paths:
-  - ~/.aia/tools
-  - /usr/local/share/aia-tools
-  - ./project-tools
-
-# Tool access control
-allowed_tools:
-  - file_reader
-  - web_scraper
-  - calculator
-
-rejected_tools:
-  - system_admin
-  - file_writer
+# Tool settings (nested structure)
+tools:
+  paths:
+    - ~/.config/aia/tools
+    - /usr/local/share/aia-tools
+    - ./project-tools
+  allowed:
+    - file_reader
+    - web_scraper
+    - calculator
+  rejected:
+    - system_admin
+    - file_writer
 ```
 
-### MCP Client Configuration
+### MCP Server Configuration
 
-Configure Model Context Protocol clients:
+Configure Model Context Protocol servers:
 
 ```yaml
-mcp_clients:
+# MCP servers (array of server configurations)
+mcp_servers:
   - name: github
-    command: ["node", "/path/to/github-mcp-server"]
+    command: /path/to/github-mcp-server
+    args: []
     env:
       GITHUB_TOKEN: "${GITHUB_TOKEN}"
-      
+    timeout: 8000
+
   - name: filesystem
-    command: ["mcp-server-filesystem"]
-    args: ["/allowed/path1", "/allowed/path2"]
+    command: mcp-server-filesystem
+    args:
+      - /allowed/path1
+      - /allowed/path2
 ```
 
 ### Prompt Directory Structure
@@ -340,17 +466,15 @@ mcp_clients:
 Configure how AIA organizes prompts:
 
 ```yaml
-# Prompt organization
-prompts_dir: ~/.prompts
-roles_prefix: roles          # ~/.prompts/roles/
-examples_prefix: examples    # ~/.prompts/examples/
-templates_prefix: templates  # ~/.prompts/templates/
-
-# Search paths (in order)
-prompt_search_paths:
-  - ~/.prompts
-  - ~/.aia/system_prompts  
-  - /usr/local/share/aia-prompts
+# Prompts configuration (nested structure)
+prompts:
+  dir: ~/.prompts
+  extname: .txt
+  roles_prefix: roles       # ~/.prompts/roles/
+  roles_dir: ~/.prompts/roles
+  role: ~                   # Default role (null = none)
+  system_prompt: ~          # Default system prompt
+  parameter_regex: ~        # Custom parameter extraction regex
 ```
 
 ## Configuration Examples
@@ -358,45 +482,80 @@ prompt_search_paths:
 ### Development Setup
 
 ```yaml
-# ~/.aia/config.yml - Development setup
-adapter: ruby_llm
-model: gpt-4
-temperature: 0.3
-verbose: true
-debug: true
-output: ./dev_output.md
-prompts_dir: ./prompts
-tool_paths: [./tools]
+# ~/.config/aia/aia.yml - Development setup
+llm:
+  adapter: ruby_llm
+  temperature: 0.3
+
+models:
+  - name: gpt-4
+
+prompts:
+  dir: ./prompts
+
+output:
+  file: ./dev_output.md
+
+tools:
+  paths:
+    - ./tools
+
+flags:
+  verbose: true
+  debug: true
 ```
 
 ### Production Setup
 
 ```yaml
-# ~/.aia/config.yml - Production setup  
-adapter: ruby_llm
-model: gpt-3.5-turbo
-temperature: 0.7
-verbose: false
-debug: false
-history_file: /var/log/aia_history.log
-prompts_dir: /etc/aia/prompts
-tool_paths: [/usr/share/aia-tools]
-allowed_tools: [safe_calculator, file_reader]
+# ~/.config/aia/aia.yml - Production setup
+llm:
+  adapter: ruby_llm
+  temperature: 0.7
+
+models:
+  - name: gpt-4o-mini
+
+prompts:
+  dir: /etc/aia/prompts
+
+output:
+  history_file: /var/log/aia_history.log
+
+tools:
+  paths:
+    - /usr/share/aia-tools
+  allowed:
+    - safe_calculator
+    - file_reader
+
+flags:
+  verbose: false
+  debug: false
 ```
 
 ### Creative Writing Setup
 
 ```yaml
-# ~/.aia/config.yml - Creative writing
-adapter: ruby_llm
-model: gpt-4
-temperature: 1.1
-max_tokens: 4000
-speak: true
-voice: nova
-markdown: true
-output: ~/writing/aia_output.md
-append: true
+# ~/.config/aia/aia.yml - Creative writing
+llm:
+  adapter: ruby_llm
+  temperature: 1.1
+  max_tokens: 4000
+
+models:
+  - name: gpt-4
+
+output:
+  file: ~/writing/aia_output.md
+  append: true
+  markdown: true
+
+audio:
+  voice: nova
+
+flags:
+  speak: true
 ```
 
 ## Validation and Troubleshooting
@@ -447,7 +606,7 @@ AIA automatically migrates older configuration formats. To manually update:
 
 ```bash
 # Backup current config
-cp ~/.aia/config.yml ~/.aia/config.yml.backup
+cp ~/.config/aia/aia.yml ~/.config/aia/aia.yml.backup
 
 # Update configuration format
 aia --migrate-config
@@ -459,10 +618,10 @@ Generate configuration templates:
 
 ```bash
 # Generate basic config
-aia --generate-config basic > ~/.aia/config.yml
+aia --generate-config basic > ~/.config/aia/aia.yml
 
 # Generate advanced config with all options
-aia --generate-config full > ~/.aia/config.advanced.yml
+aia --generate-config full > ~/.config/aia/aia.advanced.yml
 ```
 
 ## Best Practices
@@ -478,7 +637,7 @@ aia --generate-config full > ~/.aia/config.advanced.yml
 ## Security Considerations
 
 - Never commit API keys to version control
-- Use restrictive file permissions on config files: `chmod 600 ~/.aia/config.yml`
-- Limit tool access with `allowed_tools` in production
+- Use restrictive file permissions on config files: `chmod 600 ~/.config/aia/aia.yml`
+- Limit tool access with `tools.allowed` in production
 - Use separate configurations for different environments
 - Regularly rotate API keys

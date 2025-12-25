@@ -134,14 +134,17 @@ aia --fuzzy
 ## Configuration
 
 ### Q: Where is the configuration file located?
-**A:** The main configuration file is at `~/.aia/config.yml`. You can create it if it doesn't exist.
+**A:** The main configuration file is at `~/.config/aia/aia.yml` (following XDG Base Directory Specification). You can create it if it doesn't exist.
 
 ### Q: How do I change the default AI model?
 **A:** Set it in your configuration file or use the command line:
-```bash
-# In config file
-model: gpt-4
+```yaml
+# In config file (~/.config/aia/aia.yml)
+models:
+  - name: gpt-4
+```
 
+```bash
 # Command line
 aia --model gpt-4 my_prompt
 ```

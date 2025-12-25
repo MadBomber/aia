@@ -25,23 +25,25 @@ Model Context Protocol (MCP) is a standardized way for AI models to interact wit
 
 ### Configuration
 ```yaml
-# ~/.aia/config.yml
-mcp:
-  enabled: true
-  clients:
-    - name: github
-      command: ["node", "/path/to/github-mcp-server"]
-      env:
-        GITHUB_TOKEN: "${GITHUB_TOKEN}"
-        
-    - name: filesystem
-      command: ["mcp-server-filesystem"]
-      args: ["/allowed/path1", "/allowed/path2"]
-      
-    - name: database
-      command: ["python", "/path/to/db-mcp-server.py"]
-      env:
-        DATABASE_URL: "${DATABASE_URL}"
+# ~/.config/aia/aia.yml
+mcp_servers:
+  - name: github
+    command: /path/to/github-mcp-server
+    args: []
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+    timeout: 8000
+
+  - name: filesystem
+    command: mcp-server-filesystem
+    args:
+      - /allowed/path1
+      - /allowed/path2
+
+  - name: database
+    command: /path/to/db-mcp-server.py
+    env:
+      DATABASE_URL: "${DATABASE_URL}"
 ```
 
 ### Command Line Usage
@@ -65,13 +67,14 @@ Connect to GitHub repositories and operations:
 # Install GitHub MCP server
 npm install -g @anthropic-ai/mcp-server-github
 
-# Configure in ~/.aia/config.yml
-mcp:
-  clients:
-    - name: github
-      command: ["npx", "@anthropic-ai/mcp-server-github"]
-      env:
-        GITHUB_TOKEN: "${GITHUB_TOKEN}"
+# Configure in ~/.config/aia/aia.yml
+mcp_servers:
+  - name: github
+    command: npx
+    args:
+      - "@anthropic-ai/mcp-server-github"
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
 ```
 
 **Capabilities**:

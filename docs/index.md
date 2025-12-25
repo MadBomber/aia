@@ -21,6 +21,22 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
       AIA treats prompts as executable programs, complete with configuration, logic, and workflows.
   </div>
 
+---
+
+!!! warning "Breaking Changes in v0.10.*"
+
+    **Version 0.10.0 introduces breaking changes:**
+
+    - **Environment Variables** — Naming conventions now use double underscore (`__`) for nested config sections (e.g., `AIA_LLM__TEMPERATURE`, `AIA_FLAGS__DEBUG`). See [Environment Variables](configuration.md#environment-variables) for the complete list.
+
+    - **Configuration Files** — Configuration now uses a nested YAML structure with sections like `llm:`, `prompts:`, `output:`, `flags:`, etc. See [Configuration Guide](configuration.md) for details.
+
+    - **File Locations** — Configuration files now follow the XDG Base Directory Specification. The default config file location is `~/.config/aia/aia.yml` instead of `~/.aia/config.yml`. See [Installation Guide](installation.md) for setup instructions.
+
+    **Review the [Configuration Guide](configuration.md) before upgrading to v0.10.0.**
+
+---
+
 ## Key Features
 
 ### 🚀 Dynamic Prompt Management

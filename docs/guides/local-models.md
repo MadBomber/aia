@@ -144,11 +144,13 @@ export LMS_API_BASE=http://localhost:1234/v1
 ### Config File
 
 ```yaml
-# ~/.aia/config.yml
-model: ollama/llama3.2
+# ~/.config/aia/aia.yml
+models:
+  - name: ollama/llama3.2
 
 # Or for LM Studio
-model: lms/qwen/qwen3-coder-30b
+models:
+  - name: lms/qwen/qwen3-coder-30b
 ```
 
 ### In Prompts
