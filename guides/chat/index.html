@@ -1202,6 +1202,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#token-usage-and-cost-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Usage and Cost Tracking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Token Usage and Cost Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#displaying-token-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Displaying Token Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cost-estimation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Estimation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-model-token-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Model Token Tracking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#troubleshooting-chat-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2480,6 +2530,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#token-usage-and-cost-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Usage and Cost Tracking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Token Usage and Cost Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#displaying-token-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Displaying Token Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cost-estimation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Estimation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-model-token-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Model Token Tracking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#troubleshooting-chat-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3137,18 +3237,54 @@
 </span><span id="__span-28-11"><a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-28-12"><a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="k">end</span>
 </span></code></pre></div>
+<h2 id="token-usage-and-cost-tracking">Token Usage and Cost Tracking<a class="headerlink" href="#token-usage-and-cost-tracking" title="Permanent link">&para;</a></h2>
+<h3 id="displaying-token-usage">Displaying Token Usage<a class="headerlink" href="#displaying-token-usage" title="Permanent link">&para;</a></h3>
+<p>Use the <code>--tokens</code> flag to see token usage after each response:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># Enable token usage display</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--tokens
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="c1"># Example output after a response:</span>
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="c1"># AI: Here&#39;s my response to your question...</span>
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="c1">#</span>
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="c1"># Tokens: input=125, output=89, model=gpt-4o-mini</span>
+</span></code></pre></div>
+<h3 id="cost-estimation">Cost Estimation<a class="headerlink" href="#cost-estimation" title="Permanent link">&para;</a></h3>
+<p>Use the <code>--cost</code> flag to include cost calculations with token usage:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># Enable cost estimation (automatically enables --tokens)</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--cost
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="c1"># Example output after a response:</span>
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="c1"># AI: Here&#39;s my response to your question...</span>
+</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="c1">#</span>
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="c1"># Tokens: input=125, output=89, model=gpt-4o-mini</span>
+</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="c1"># Cost: $0.0003 (input: $0.0002, output: $0.0001)</span>
+</span></code></pre></div>
+<h3 id="multi-model-token-tracking">Multi-Model Token Tracking<a class="headerlink" href="#multi-model-token-tracking" title="Permanent link">&para;</a></h3>
+<p>When using multiple models, token usage is displayed for each model:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--tokens<span class="w"> </span>--model<span class="w"> </span>gpt-4,claude-3-sonnet
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="c1"># Example output:</span>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="c1"># from: gpt-4</span>
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="c1"># Here&#39;s my response...</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="c1">#</span>
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="c1"># from: claude-3-sonnet</span>
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="c1"># Here&#39;s my alternative response...</span>
+</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="c1">#</span>
+</span><span id="__span-31-10"><a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="c1"># Model: gpt-4 - Tokens: input=125, output=89</span>
+</span><span id="__span-31-11"><a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="c1"># Model: claude-3-sonnet - Tokens: input=125, output=112</span>
+</span></code></pre></div>
 <h2 id="troubleshooting-chat-mode">Troubleshooting Chat Mode<a class="headerlink" href="#troubleshooting-chat-mode" title="Permanent link">&para;</a></h2>
 <h3 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h3>
 <h4 id="context-too-long">Context Too Long<a class="headerlink" href="#context-too-long" title="Permanent link">&para;</a></h4>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>Error: Context exceeds maximum length
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>Error: Context exceeds maximum length
 </span></code></pre></div>
 <strong>Solution</strong>: Use <code>/clear</code> to clear history or <code>/context trim</code> to keep recent messages only.</p>
 <h4 id="model-not-responding">Model Not Responding<a class="headerlink" href="#model-not-responding" title="Permanent link">&para;</a></h4>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>Error: Model timeout or connection error
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>Error: Model timeout or connection error
 </span></code></pre></div>
 <strong>Solution</strong>: Check your internet connection and API keys, try switching models.</p>
 <h4 id="tool-not-found">Tool Not Found<a class="headerlink" href="#tool-not-found" title="Permanent link">&para;</a></h4>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>Error: Tool &#39;my_tool&#39; not found
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>Error: Tool &#39;my_tool&#39; not found
 </span></code></pre></div>
 <strong>Solution</strong>: Verify tool paths with <code>/tools</code> and check tool file syntax.</p>
 <h3 id="performance-optimization">Performance Optimization<a class="headerlink" href="#performance-optimization" title="Permanent link">&para;</a></h3>
@@ -3165,11 +3301,11 @@
 <li>Optimize tool implementations</li>
 </ul>
 <h4 id="memory-management">Memory Management<a class="headerlink" href="#memory-management" title="Permanent link">&para;</a></h4>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="c1"># Monitor memory usage</span>
-</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--debug<span class="w"> </span>--verbose
-</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
-</span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="c1"># Use memory-efficient models</span>
-</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--model<span class="w"> </span>gpt-3.5-turbo
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="c1"># Monitor memory usage</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--debug<span class="w"> </span>--verbose
+</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>
+</span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="c1"># Use memory-efficient models</span>
+</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--model<span class="w"> </span>gpt-3.5-turbo
 </span></code></pre></div>
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <h3 id="effective-chat-techniques">Effective Chat Techniques<a class="headerlink" href="#effective-chat-techniques" title="Permanent link">&para;</a></h3>
@@ -3196,24 +3332,24 @@
 </ol>
 <h2 id="integration-with-other-aia-features">Integration with Other AIA Features<a class="headerlink" href="#integration-with-other-aia-features" title="Permanent link">&para;</a></h2>
 <h3 id="pipeline-integration">Pipeline Integration<a class="headerlink" href="#pipeline-integration" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="c1"># Start chat after pipeline completion</span>
-</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>aia<span class="w"> </span>--pipeline<span class="w"> </span><span class="s2">&quot;data_prep,analysis&quot;</span><span class="w"> </span>--chat<span class="w"> </span>dataset.csv
-</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>
-</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="c1"># Process results in chat mode</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="c1"># Start chat after pipeline completion</span>
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>aia<span class="w"> </span>--pipeline<span class="w"> </span><span class="s2">&quot;data_prep,analysis&quot;</span><span class="w"> </span>--chat<span class="w"> </span>dataset.csv
+</span><span id="__span-36-3"><a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>
+</span><span id="__span-36-4"><a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="c1"># Process results in chat mode</span>
 </span></code></pre></div>
 <h3 id="configuration-integration">Configuration Integration<a class="headerlink" href="#configuration-integration" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="c1"># Use predefined configurations in chat</span>
-</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>aia<span class="w"> </span>--config-file<span class="w"> </span>chat_setup.yml<span class="w"> </span>--chat
-</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>
-</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="c1"># Override specific settings</span>
-</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--temperature<span class="w"> </span><span class="m">0</span>.9<span class="w"> </span>--max-tokens<span class="w"> </span><span class="m">3000</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="c1"># Use predefined configurations in chat</span>
+</span><span id="__span-37-2"><a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>aia<span class="w"> </span>--config-file<span class="w"> </span>chat_setup.yml<span class="w"> </span>--chat
+</span><span id="__span-37-3"><a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>
+</span><span id="__span-37-4"><a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="c1"># Override specific settings</span>
+</span><span id="__span-37-5"><a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--temperature<span class="w"> </span><span class="m">0</span>.9<span class="w"> </span>--max-tokens<span class="w"> </span><span class="m">3000</span>
 </span></code></pre></div>
 <h3 id="output-integration">Output Integration<a class="headerlink" href="#output-integration" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="c1"># Save chat output to file</span>
-</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--output<span class="w"> </span>discussion.md<span class="w"> </span>--markdown
-</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>
-</span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="c1"># Append to existing files</span>
-</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--output<span class="w"> </span>project_log.md<span class="w"> </span>--append
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="c1"># Save chat output to file</span>
+</span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--output<span class="w"> </span>discussion.md<span class="w"> </span>--markdown
+</span><span id="__span-38-3"><a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>
+</span><span id="__span-38-4"><a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="c1"># Append to existing files</span>
+</span><span id="__span-38-5"><a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--output<span class="w"> </span>project_log.md<span class="w"> </span>--append
 </span></code></pre></div>
 <h2 id="related-documentation">Related Documentation<a class="headerlink" href="#related-documentation" title="Permanent link">&para;</a></h2>
 <ul>
