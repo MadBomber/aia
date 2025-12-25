@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "timeserver": {
-      "command": "python",
-      "args": ["-m", "mcp_simple_timeserver"]
-    }
-  }
-}
