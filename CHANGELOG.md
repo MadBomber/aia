@@ -1,5 +1,13 @@
 # Changelog
-## [0.10.1] - 2025-12-24
+## [0.10.2] - 2025-12-25
+
+**Merry Christmas!**
+
+### Breaking Changes
+- **Renamed `--metrics` to `--tokens`**: The CLI flag for displaying token usage has been renamed
+  - `--metrics` → `--tokens`
+  - Environment variable: `AIA_FLAGS__TOKENS`
+  - The `--cost` flag now automatically enables `--tokens`
 
 ### New Features
 - **Parallel MCP Connections**: Replaced serial MCP server connections with fiber-based parallel execution using SimpleFlow
@@ -24,6 +32,17 @@
   - Added `build_mcp_connection_step`, `register_single_mcp_client`, `extract_mcp_results`, `report_mcp_connection_results` helper methods
   - Removed old serial methods: `support_mcp_lazy`, `register_mcp_clients`, `start_mcp_clients`, `reconcile_mcp_server_status`, `check_mcp_client_status`
   - Net reduction of ~60 lines of code with cleaner architecture
+
+### Documentation
+- **Multi-Model Concurrent Comparison**: Added prominent documentation highlighting the ability to query multiple LLMs simultaneously
+  - Added "Concurrent Multi-Model Comparison" spotlight section to README.md
+  - Added "Token Usage and Cost Tracking" subsection to Multi-Model Support in README.md
+  - Added comprehensive "Token Usage and Cost Tracking" section to `docs/guides/models.md`
+- **Token and Cost Flags**: Added documentation for `--tokens` and `--cost` flags
+  - Updated `docs/cli-reference.md` with full flag descriptions
+  - Updated `docs/configuration.md` with environment variable examples
+  - Added "Token Usage and Cost Tracking" section to `docs/guides/chat.md`
+  - Updated README.md Key Command-Line Options and Configuration tables
 
 ## [0.10.0] - 2025-12-23
 
