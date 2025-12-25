@@ -69,23 +69,32 @@ mkdir -p ~/.prompts
 
 ### 2. Create Configuration Directory
 
-Create the configuration directory:
+Create the configuration directory (following XDG Base Directory Specification):
 
 ```bash
-mkdir -p ~/.aia
+mkdir -p ~/.config/aia
 ```
 
 ### 3. Basic Configuration File (Optional)
 
-Create a basic configuration file at `~/.aia/config.yml`:
+Create a basic configuration file at `~/.config/aia/aia.yml`:
 
 ```yaml
 # Basic AIA configuration
-adapter: ruby_llm
-model: gpt-3.5-turbo
-prompts_dir: ~/.prompts
-temperature: 0.7
-verbose: false
+# Uses nested structure - see docs/configuration.md for full reference
+
+llm:
+  adapter: ruby_llm
+  temperature: 0.7
+
+models:
+  - name: gpt-4o-mini
+
+prompts:
+  dir: ~/.prompts
+
+flags:
+  verbose: false
 ```
 
 ### 4. Set Up API Keys

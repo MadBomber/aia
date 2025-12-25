@@ -66,6 +66,45 @@ aia --chat --cost --model gpt-4,claude-3-sonnet
 
 **Note**: `--cost` implies `--tokens`, so you don't need to specify both.
 
+### `--mcp FILE`
+Load an MCP (Model Context Protocol) server from a JSON configuration file. MCP servers provide additional tools and context to AI models. Multiple `--mcp` options can be used to load multiple servers.
+
+```bash
+# Load a single MCP server
+aia --mcp ~/.config/aia/mcp/github.json my_prompt
+
+# Load multiple MCP servers
+aia --mcp github.json --mcp filesystem.json my_prompt
+
+# Combine with chat mode
+aia --chat --mcp ~/mcp-servers/memory.json
+```
+
+**JSON file format**:
+```json
+{
+  "name": "github",
+  "command": "github-mcp-server",
+  "args": ["stdio"],
+  "env": {
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token"
+  },
+  "timeout": 8000
+}
+```
+
+### `--no-mcp`
+Disable all MCP server processing, including servers defined in the configuration file.
+
+```bash
+# Disable MCP server processing
+aia --no-mcp my_prompt
+```
+
+**Use cases**:
+- Use `--no-mcp` when you want faster responses without MCP tool overhead
+- Use `--no-mcp` to temporarily bypass MCP servers configured in your config file
+
 ## Adapter Options
 
 ### `--adapter ADAPTER`
@@ -675,28 +714,48 @@ Many CLI options have corresponding environment variables with the `AIA_` prefix
 Use double underscore (`__`) for nested configuration sections:
 
 ```bash
-# Model configuration (top-level)
+# Model configuration (top-level, supports MODEL=ROLE syntax)
 export AIA_MODEL="gpt-4"
-
-# Model with inline role syntax
 export AIA_MODEL="gpt-4o=architect"
-
-# Multiple models with roles
 export AIA_MODEL="gpt-4o=architect,claude=security,gemini=performance"
 
 # LLM settings (nested under llm:)
+export AIA_LLM__ADAPTER="ruby_llm"
 export AIA_LLM__TEMPERATURE="0.8"
+export AIA_LLM__MAX_TOKENS="2048"
 
 # Prompts settings (nested under prompts:)
 export AIA_PROMPTS__DIR="/custom/prompts"
-
-# Flags (nested under flags:)
-export AIA_FLAGS__VERBOSE="true"
-export AIA_FLAGS__DEBUG="false"
-export AIA_FLAGS__CHAT="true"
+export AIA_PROMPTS__ROLES_PREFIX="roles"
 
 # Output settings (nested under output:)
 export AIA_OUTPUT__FILE="./output.md"
+export AIA_OUTPUT__APPEND="true"
+export AIA_OUTPUT__HISTORY_FILE="~/.prompts/_prompts.log"
+
+# Audio settings (nested under audio:)
+export AIA_AUDIO__VOICE="alloy"
+export AIA_AUDIO__SPEECH_MODEL="tts-1"
+
+# Image settings (nested under image:)
+export AIA_IMAGE__SIZE="1024x1024"
+export AIA_IMAGE__QUALITY="hd"
+
+# Flags (nested under flags:)
+export AIA_FLAGS__CHAT="true"
+export AIA_FLAGS__VERBOSE="true"
+export AIA_FLAGS__DEBUG="false"
+export AIA_FLAGS__TOKENS="true"
+export AIA_FLAGS__COST="true"
+export AIA_FLAGS__NO_MCP="false"
+export AIA_FLAGS__CONSENSUS="true"
+
+# Registry settings (nested under registry:)
+export AIA_REGISTRY__REFRESH="7"
+
+# Paths settings (nested under paths:)
+export AIA_PATHS__AIA_DIR="~/.config/aia"
+export AIA_PATHS__CONFIG_FILE="~/.config/aia/aia.yml"
 ```
 
 **Note**: The `AIA_MODEL` environment variable supports the same inline `MODEL=ROLE` syntax as the `--model` CLI option.

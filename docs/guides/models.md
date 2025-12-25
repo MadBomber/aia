@@ -345,26 +345,28 @@ aia --model gpt-4o=software/architect,claude=analysis/pessimist design.md
 Define model roles in your configuration file using array format:
 
 ```yaml
-# ~/.aia/config.yml
-model:
-  - model: gpt-4o
+# ~/.config/aia/aia.yml
+models:
+  - name: gpt-4o
     role: architect
-  - model: claude-3-sonnet
+  - name: claude-3-sonnet
     role: security
-  - model: gemini-pro
+  - name: gemini-pro
     role: performance
+```
 
+```yaml
 # Duplicate models with different roles
-model:
-  - model: gpt-4o
+models:
+  - name: gpt-4o
     role: optimist
-  - model: gpt-4o
+  - name: gpt-4o
     role: pessimist
-  - model: gpt-4o
+  - name: gpt-4o
     role: realist
 ```
 
-**Note**: Models without roles work normally - simply omit the `role` key.
+**Note**: Models without roles work normally - simply set `role` to `~` (null).
 
 #### Environment Variable Usage
 
@@ -455,28 +457,31 @@ Different models may work best with different parameters:
 
 #### GPT Models
 ```yaml
-# ~/.aia/models/gpt-4.yml
-temperature: 0.7
-max_tokens: 4000
-top_p: 1.0
-frequency_penalty: 0.0
-presence_penalty: 0.0
+# ~/.config/aia/models/gpt-4.yml
+llm:
+  temperature: 0.7
+  max_tokens: 4000
+  top_p: 1.0
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
 ```
 
 #### Claude Models
 ```yaml
-# ~/.aia/models/claude-3-sonnet.yml
-temperature: 0.8
-max_tokens: 8000
-top_p: 0.9
+# ~/.config/aia/models/claude-3-sonnet.yml
+llm:
+  temperature: 0.8
+  max_tokens: 8000
+  top_p: 0.9
 ```
 
 #### Gemini Models
 ```yaml
-# ~/.aia/models/gemini-pro.yml
-temperature: 0.6
-max_tokens: 2000
-top_p: 0.95
+# ~/.config/aia/models/gemini-pro.yml
+llm:
+  temperature: 0.6
+  max_tokens: 2000
+  top_p: 0.95
 ```
 
 ### Dynamic Model Selection
@@ -688,9 +693,12 @@ aia --model ollama/llama3.2,gpt-4o-mini,claude-3-sonnet my_prompt
 #### Configuration
 
 ```yaml
-# ~/.aia/config.yml
-model: ollama/llama3.2
+# ~/.config/aia/aia.yml
+models:
+  - name: ollama/llama3.2
+```
 
+```bash
 # Optional: Custom Ollama endpoint
 # Set via environment variable
 export OLLAMA_API_BASE=http://custom-host:11434
@@ -745,9 +753,12 @@ aia --model lms/any-loaded-model --chat
 #### Configuration
 
 ```yaml
-# ~/.aia/config.yml
-model: lms/qwen/qwen3-coder-30b
+# ~/.config/aia/aia.yml
+models:
+  - name: lms/qwen/qwen3-coder-30b
+```
 
+```bash
 # Optional: Custom LM Studio endpoint
 # Set via environment variable
 export LMS_API_BASE=http://localhost:1234/v1

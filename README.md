@@ -7,15 +7,17 @@
 
 ---
 
-> ## ⚠️ BREAKING CHANGES IN v0.10.0 ⚠️
+> ## ⚠️ BREAKING CHANGES IN v0.10.* ⚠️
 >
-> **Version 0.10.0 will introduce breaking changes affecting:**
+> **Version 0.10.0 introduces breaking changes affecting:**
 >
-> - **Environment Variables** — Naming conventions for system environment variables will change
-> - **Configuration Files** — Both the content format and structure of configuration files will be updated
-> - **File Locations** — Expected locations for configuration files will change
+> - **Environment Variables** — Naming conventions now use double underscore (`__`) for nested config sections (e.g., `AIA_LLM__TEMPERATURE`, `AIA_FLAGS__DEBUG`). See [Environment Variables](https://madbomber.github.io/aia/configuration/#environment-variables) for the complete list.
 >
-> **Please review the migration guide (coming soon) before upgrading to v0.10.0.**
+> - **Configuration Files** — Configuration now uses a nested YAML structure with sections like `llm:`, `prompts:`, `output:`, `flags:`, etc. The [defaults.yml](lib/aia/config/defaults.yml) file is the single source of truth for all configuration options. See [Configuration Guide](https://madbomber.github.io/aia/configuration/) for details.
+>
+> - **File Locations** — Configuration files now follow the XDG Base Directory Specification. The default config file location is `~/.config/aia/aia.yml`. See [Installation Guide](https://madbomber.github.io/aia/installation/) for setup instructions.
+>
+> **Review the [Configuration Guide](https://madbomber.github.io/aia/configuration/) before upgrading to v0.10.0.**
 
 ---
 
