@@ -38,7 +38,6 @@ module AIA
         OptionParser.new do |opts|
           setup_banner(opts)
           setup_mode_options(opts, options)
-          setup_adapter_options(opts, options)
           setup_model_options(opts, options)
           setup_file_options(opts, options)
           setup_prompt_options(opts, options)
@@ -73,24 +72,11 @@ module AIA
         end
       end
 
-      def setup_adapter_options(opts, options)
-        opts.on("--adapter ADAPTER", "Interface that adapts AIA to the LLM") do |adapter|
-          adapter.downcase!
-          valid_adapters = %w[ruby_llm]
-          if valid_adapters.include?(adapter)
-            options[:adapter] = adapter
-          else
-            STDERR.puts "ERROR: Invalid adapter #{adapter} must be one of these: #{valid_adapters.join(', ')}"
-            exit 1
-          end
-        end
-
+      def setup_model_options(opts, options)
         opts.on('--available-models [QUERY]', 'List (then exit) available models that match the optional query') do |query|
           list_available_models(query)
         end
-      end
 
-      def setup_model_options(opts, options)
         opts.on("-m MODEL", "--model MODEL", "Name of the LLM model(s) to use. Format: MODEL[=ROLE][,MODEL[=ROLE]]...") do |model_string|
           options[:models] = parse_models_with_roles(model_string)
         end

@@ -12,7 +12,7 @@ class AIAPropertyBasedTest < Minitest::Test
 
     # Mock AIA.config with nested structure (matching new config layout)
     @mock_config = OpenStruct.new(
-      llm: OpenStruct.new(adapter: 'ruby_llm', temperature: 0.7, max_tokens: 2048),
+      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
       models: [OpenStruct.new(name: 'test-model')],
       flags: OpenStruct.new(chat: false, debug: false),
       tools: OpenStruct.new(paths: [])

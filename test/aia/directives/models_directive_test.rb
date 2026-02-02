@@ -41,7 +41,6 @@ class ModelsDirectiveTest < Minitest::Test
         verbose: false
       ),
       llm: OpenStruct.new(
-        adapter: 'ruby_llm',
         temperature: 0.7
       )
     )

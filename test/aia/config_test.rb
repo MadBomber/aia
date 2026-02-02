@@ -60,7 +60,6 @@ class ConfigTest < Minitest::Test
     config = AIA::Config.new
 
     # Test LLM section has expected keys
-    assert config.llm.key?(:adapter), "LLM section should have adapter key"
     assert config.llm.key?(:temperature), "LLM section should have temperature key"
     assert config.llm.key?(:max_tokens), "LLM section should have max_tokens key"
   end

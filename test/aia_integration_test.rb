@@ -42,7 +42,6 @@ class AIAIntegrationTest < Minitest::Test
       tool_names: '',
       # Nested sections
       llm: OpenStruct.new(
-        adapter: 'ruby_llm',
         temperature: 0.7,
         max_tokens: 2048
       ),

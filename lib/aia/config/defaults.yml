@@ -23,11 +23,10 @@ defaults:
 
   # ---------------------------------------------------------------------------
   # LLM Configuration
-  # Access: AIA.config.llm.adapter, AIA.config.llm.temperature, etc.
-  # Env: AIA_LLM__ADAPTER, AIA_LLM__TEMPERATURE, etc.
+  # Access: AIA.config.llm.temperature, etc.
+  # Env: AIA_LLM__TEMPERATURE, etc.
   # ---------------------------------------------------------------------------
   llm:
-    adapter: ruby_llm
     temperature: 0.7
     max_tokens: 2048
     top_p: 1.0

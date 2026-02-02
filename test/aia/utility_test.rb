@@ -17,7 +17,7 @@ class UtilityTest < Minitest::Test
 
     # Mock AIA.config with nested structure (matching new config layout)
     config = OpenStruct.new(
-      llm: OpenStruct.new(adapter: 'anthropic'),
+      llm: OpenStruct.new(temperature: 0.7),
       models: [OpenStruct.new(name: 'claude-3-sonnet')],
       tools: OpenStruct.new(paths: []),
       registry: OpenStruct.new(refresh: 7),
@@ -70,7 +70,7 @@ class UtilityTest < Minitest::Test
     
     # Check for version information - flexible pattern matching
     assert_match /AI Assistant \(v[\d.]+\) is Online/, output
-    assert_match /using anthropic \(v[\d.]+(?:\s+MCP\s+v[\d.]+)?\)/, output
+    assert_match /using ruby_llm \(v[\d.]+(?:\s+MCP\s+v[\d.]+)?\)/, output
   end
 
   def test_robot_displays_model_information
@@ -216,7 +216,7 @@ class UtilityTest < Minitest::Test
 
     # Validate interpolated versions and model
     assert_includes output, "AI Assistant (vvX.Y.Z)"
-    assert_match /using anthropic \(vvR\.L\.M(?:\s+MCP\s+v[\d.]+)?\)/, output
+    assert_match /using ruby_llm \(vvR\.L\.M(?:\s+MCP\s+v[\d.]+)?\)/, output
     assert_includes output, 'my-test-model'
 
     # Restore originals
@@ -243,7 +243,7 @@ class UtilityTest < Minitest::Test
     # Clear the existing stub and create a real config object with tools to trigger the missed lines
     AIA.unstub(:config)
     real_config = OpenStruct.new(
-      llm: OpenStruct.new(adapter: 'openai'),
+      llm: OpenStruct.new(temperature: 0.7),
       models: [OpenStruct.new(name: 'gpt-4-turbo')],
       registry: OpenStruct.new(refresh: 7),
       paths: OpenStruct.new(aia_dir: '/tmp/aia_test'),
@@ -280,7 +280,7 @@ class UtilityTest < Minitest::Test
     # Verify the execution hit the key branches
     assert_includes output, "AI Assistant (v"
     assert_includes output, "gpt-4-turbo"
-    assert_includes output, "using openai"
+    assert_includes output, "using ruby_llm"
     assert_includes output, "2024-12-26"
     assert_includes output, "I will also use your tools"  # Line 24 branch
 
@@ -291,7 +291,7 @@ class UtilityTest < Minitest::Test
     else
       # Restore the original stub from setup
       AIA.stubs(:config).returns(OpenStruct.new(
-        llm: OpenStruct.new(adapter: 'anthropic'),
+        llm: OpenStruct.new(temperature: 0.7),
         models: [OpenStruct.new(name: 'claude-3-sonnet')],
         registry: OpenStruct.new(last_refresh: '2024-01-15'),
         tools: OpenStruct.new(paths: []),
@@ -306,7 +306,7 @@ class UtilityTest < Minitest::Test
     AIA.unstub(:config)
 
     real_config = OpenStruct.new(
-      llm: OpenStruct.new(adapter: 'anthropic'),
+      llm: OpenStruct.new(temperature: 0.7),
       models: [OpenStruct.new(name: 'claude-3')],
       registry: OpenStruct.new(last_refresh: '2024-12-26'),
       tools: OpenStruct.new(paths: []),
@@ -325,7 +325,7 @@ class UtilityTest < Minitest::Test
     # Verify the empty tools.paths branch
     assert_includes output, "AI Assistant"
     assert_includes output, "claude-3"
-    assert_includes output, "anthropic"
+    assert_includes output, "ruby_llm"
     assert_includes output, "I did not bring any tools"
     refute_includes output, "My Toolbox contains:"
   end
@@ -353,7 +353,7 @@ class UtilityTest < Minitest::Test
     # This should hit lines 12, 13, 14, 16 without complex mocking
 
     minimal_config = OpenStruct.new(
-      llm: OpenStruct.new(adapter: 'test-adapter'),
+      llm: OpenStruct.new(temperature: 0.7),
       models: [OpenStruct.new(name: 'test-model')],
       registry: OpenStruct.new(last_refresh: 'test-date'),
       tools: OpenStruct.new(paths: []),

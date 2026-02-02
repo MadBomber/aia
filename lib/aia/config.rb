@@ -167,7 +167,6 @@ module AIA
       verbose: [:flags, :verbose],
       consensus: [:flags, :consensus],
       # llm section
-      adapter: [:llm, :adapter],
       temperature: [:llm, :temperature],
       max_tokens: [:llm, :max_tokens],
       top_p: [:llm, :top_p],

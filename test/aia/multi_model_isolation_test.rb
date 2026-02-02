@@ -60,7 +60,6 @@ class MultiModelIsolationTest < Minitest::Test
     )
 
     llm_section = OpenStruct.new(
-      adapter: 'ruby_llm',
       temperature: 0.7,
       max_tokens: 2048
     )
