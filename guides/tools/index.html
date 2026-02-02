@@ -18,7 +18,7 @@
         <link rel="prev" href="../image-generation/">
       
       
-        <link rel="next" href="../../cli-reference/">
+        <link rel="next" href="../shared-tools/">
       
       
         
@@ -498,6 +498,8 @@
       
         
           
+        
+      
         
       
         
@@ -1200,45 +1202,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Shared Tools Collection">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-the-shared-tools-gem" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the Shared Tools Gem
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#available-shared-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Available Shared Tools
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#erb-integration-with-shared-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ERB Integration with Shared Tools
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -1256,6 +1219,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shared-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shared Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2020,45 +2011,6 @@
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Shared Tools Collection">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-the-shared-tools-gem" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the Shared Tools Gem
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#available-shared-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Available Shared Tools
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#erb-integration-with-shared-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ERB Integration with Shared Tools
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2904,33 +2856,14 @@
 - Required environment variables and permissions
 - Network access for external MCP servers</p>
 <h2 id="shared-tools-collection">Shared Tools Collection<a class="headerlink" href="#shared-tools-collection" title="Permanent link">&para;</a></h2>
-<h3 id="using-the-shared-tools-gem">Using the Shared Tools Gem<a class="headerlink" href="#using-the-shared-tools-gem" title="Permanent link">&para;</a></h3>
-<p>AIA can use the <a href="https://github.com/madbomber/shared_tools">shared_tools gem</a> for common functionality:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Access all shared tools (included with AIA)</span>
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools/ruby_llm<span class="w"> </span>--chat
+<p>AIA can use the <a href="https://github.com/madbomber/shared_tools">shared_tools gem</a> which provides a curated collection of ready-to-use tools for LLM-assisted workflows including calculators, web browsing, database access, file operations, DNS lookups, and more.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Load all shared tools</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools<span class="w"> </span>--chat
 </span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
-</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Access specific shared tool</span>
-</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools/ruby_llm/edit_file<span class="w"> </span>--chat
-</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>
-</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="c1"># Combine with custom tools</span>
-</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools/ruby_llm<span class="w"> </span>--tools<span class="w"> </span>~/my-tools/<span class="w"> </span>--chat
-</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>
-</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="c1"># Use in batch prompts</span>
-</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools/ruby_llm<span class="w"> </span>my_prompt<span class="w"> </span>input.txt
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># List available shared tools</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools<span class="w"> </span>--list-tools
 </span></code></pre></div>
-<h3 id="available-shared-tools">Available Shared Tools<a class="headerlink" href="#available-shared-tools" title="Permanent link">&para;</a></h3>
-<p>The shared_tools collection includes:
-- <strong>File Operations</strong>: Reading, writing, editing files
-- <strong>Data Processing</strong>: JSON/CSV manipulation, data transformation
-- <strong>Web Operations</strong>: HTTP requests, web scraping
-- <strong>System Operations</strong>: Process management, system information
-- <strong>Utility Functions</strong>: String processing, date manipulation</p>
-<h3 id="erb-integration-with-shared-tools">ERB Integration with Shared Tools<a class="headerlink" href="#erb-integration-with-shared-tools" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># In prompt files with ERB</span>
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="sr">//</span><span class="n">ruby</span>
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="nb">require</span><span class="w"> </span><span class="s1">&#39;shared_tools/ruby_llm&#39;</span>
-</span></code></pre></div>
-<p>Use shared tools directly within your prompts using Ruby directives.</p>
+<p>See the <strong><a href="../shared-tools/">Shared Tools Guide</a></strong> for installation, usage, and a complete reference of all available tools.</p>
 <h2 id="related-documentation">Related Documentation<a class="headerlink" href="#related-documentation" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../chat/">Chat Mode</a> - Using tools in interactive mode</li>
