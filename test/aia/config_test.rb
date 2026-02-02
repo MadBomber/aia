@@ -3,11 +3,9 @@
 require_relative '../test_helper'
 require 'ostruct'
 
-# Stub anyway_config before loading AIA config
-require 'anyway_config'
-require_relative '../../lib/aia/config/config_section'
+# Load MywayConfig and AIA config
+require 'myway_config'
 require_relative '../../lib/aia/config/model_spec'
-require_relative '../../lib/aia/config/defaults_loader'
 require_relative '../../lib/aia/config'
 
 class ConfigTest < Minitest::Test

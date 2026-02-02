@@ -12,7 +12,7 @@ module AIA
           elsif args.length == 1
             config_item = args.first
             local_cfg = {}
-            # Use method-based access for Anyway::Config
+            # Use method-based access for MywayConfig::Base
             if AIA.config.respond_to?(config_item)
               local_cfg[config_item] = AIA.config.send(config_item)
             else
@@ -29,7 +29,7 @@ module AIA
               new_value = %w[true t yes y on 1 yea yeah yep yup].include?(new_value.downcase)
             end
 
-            # Use method-based setter for Anyway::Config
+            # Use method-based setter for MywayConfig::Base
             setter = "#{config_item}="
             if AIA.config.respond_to?(setter)
               AIA.config.send(setter, new_value)

@@ -38,7 +38,7 @@ Gem::Specification.new do |spec|
   spec.require_paths  = %w[ lib ]
 
   # spec.add_dependency "activesupport"
-  spec.add_dependency "anyway_config", '~> 2.6'
+  spec.add_dependency "myway_config"
   spec.add_dependency "amazing_print"
   spec.add_dependency "async"
   spec.add_dependency "clipboard"

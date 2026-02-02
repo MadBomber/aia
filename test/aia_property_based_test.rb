@@ -46,8 +46,8 @@ class AIAPropertyBasedTest < Minitest::Test
   end
 
   def test_environment_variable_handling
-    # Test that anyway_config handles environment variables
-    # This is now handled automatically by the anyway_config gem
+    # Test that myway_config handles environment variables
+    # This is now handled automatically by the myway_config gem
     # We test that our Config class properly loads from defaults
     config = AIA::Config.new
     assert_respond_to config, :llm
