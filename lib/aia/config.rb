@@ -203,6 +203,7 @@ module AIA
 
     def initialize(overrides: {})
       super()
+      apply_models_env_var unless overrides[:models]
       apply_overrides(overrides) if overrides && !overrides.empty?
       process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
     end
@@ -254,6 +255,15 @@ module AIA
     end
 
     private
+
+    # Apply AIA_MODEL env var if set (supports comma-separated models with optional roles)
+    # Format: MODEL[=ROLE][,MODEL[=ROLE]]...
+    def apply_models_env_var
+      models_env = ENV['AIA_MODEL']
+      return if models_env.nil? || models_env.empty?
+
+      self.models = TO_MODEL_SPECS.call(models_env.split(',').map(&:strip))
+    end
 
     def expand_paths
       # Expand ~ in paths
