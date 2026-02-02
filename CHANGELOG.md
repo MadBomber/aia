@@ -1,4 +1,53 @@
 # Changelog
+## [0.11.0] - 2026-02-02
+
+### New Features
+- **`--list-tools` CLI Option**: List all available tools and exit
+  - Shows tools loaded via `--require` and `--tools` options
+  - Dual-mode output: plain text (word-wrapped, 3-sentence summaries) for terminal, full markdown with nested headings when STDOUT is redirected to a file or pipe
+  - Combine with `--mcp-list` to also initialize and list tools from MCP servers, grouped by source
+  - Example: `aia --require shared_tools --list-tools > tools.md`
+
+- **`--mcp-list` Filtering**: `--mcp-list` now respects `--mcp-use` and `--mcp-skip` filters
+  - When filters are active, header changes from "Configured MCP Servers" to "Active MCP Servers"
+  - Shows only the servers that would actually be connected during a session
+
+- **`--mcp-use` and `--mcp-skip` Server Selection**: Select or exclude specific MCP servers by name
+  - `--mcp-use server1,server2` - whitelist specific servers (takes precedence)
+  - `--mcp-skip server3` - blacklist specific servers
+
+- **Multi-Model Environment Variable Support**: `AIA_MODEL` now supports inline role syntax
+  - Example: `export AIA_MODEL="gpt-4o=architect,claude=security"`
+
+### Breaking Changes
+- **Removed `--adapter` CLI Option**: The LLM adapter configuration has been removed
+  - AIA now exclusively uses `ruby_llm` as its AI interface layer
+  - The `ai_client` adapter option is no longer available
+
+### Improvements
+- **CLI Refactoring**: Streamlined CLI option names and improved help text
+  - Cleaner option grouping and descriptions in `--help` output
+
+### Documentation
+- **`--list-tools` and `--mcp-list`**: Added comprehensive documentation to `docs/cli-reference.md` with examples, output format tables, and usage patterns
+- **README.md**: Added `--mcp-list` and `--list-tools` to Key Command-Line Options table
+- **MCP Integration Guide**: Updated `docs/mcp-integration.md` with current CLI syntax and examples
+- **Shared Tools Guide**: Created dedicated `docs/guides/shared-tools.md` with all 17 tools organized by category (Data & Analysis, Database, File & System Operations, Web & Network, Code Execution, Documents, Scheduling & Time, Workflow & Weather, Development & Reference)
+- **MkDocs Navigation**: Added Shared Tools guide to site navigation
+
+### Technical Changes
+- Added `list_tools` attribute to `AIA::Config` for runtime flag storage
+- Added `--list-tools` option to CLI parser in `setup_tool_options`
+- Added `handle_list_tools` to `ConfigValidator` with dual-mode output (terminal vs redirected)
+- Added `load_local_tools` with gem activation and Zeitwerk lazy-loading support for `--require` libraries
+- Added `load_mcp_tools_grouped` returning tools organized by server name
+- Added `quiet_mcp_logger` to suppress MCP connection noise during tool listing
+- Added `filter_mcp_servers` and `mcp_filter_active?` to `ConfigValidator` for `--mcp-use`/`--mcp-skip` support
+- Added `nest_markdown_headings` to properly nest markdown headings in tool descriptions under parent heading level
+- Added `first_sentences` helper for terminal-mode description truncation
+- Uses `word_wrapper` gem for terminal word wrapping
+- Removed adapter selection logic and `--adapter` CLI option
+
 ## [0.10.2] - 2025-12-25
 
 **Merry Christmas!**
