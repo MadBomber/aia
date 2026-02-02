@@ -805,42 +805,17 @@ MCP clients require:
 
 ## Shared Tools Collection
 
-### Using the Shared Tools Gem
-
-AIA can use the [shared_tools gem](https://github.com/madbomber/shared_tools) for common functionality:
+AIA can use the [shared_tools gem](https://github.com/madbomber/shared_tools) which provides a curated collection of ready-to-use tools for LLM-assisted workflows including calculators, web browsing, database access, file operations, DNS lookups, and more.
 
 ```bash
-# Access all shared tools (included with AIA)
-aia --require shared_tools/ruby_llm --chat
+# Load all shared tools
+aia --require shared_tools --chat
 
-# Access specific shared tool
-aia --require shared_tools/ruby_llm/edit_file --chat
-
-# Combine with custom tools
-aia --require shared_tools/ruby_llm --tools ~/my-tools/ --chat
-
-# Use in batch prompts
-aia --require shared_tools/ruby_llm my_prompt input.txt
+# List available shared tools
+aia --require shared_tools --list-tools
 ```
 
-### Available Shared Tools
-
-The shared_tools collection includes:
-- **File Operations**: Reading, writing, editing files
-- **Data Processing**: JSON/CSV manipulation, data transformation
-- **Web Operations**: HTTP requests, web scraping
-- **System Operations**: Process management, system information
-- **Utility Functions**: String processing, date manipulation
-
-### ERB Integration with Shared Tools
-
-```ruby
-# In prompt files with ERB
-//ruby
-require 'shared_tools/ruby_llm'
-```
-
-Use shared tools directly within your prompts using Ruby directives.
+See the **[Shared Tools Guide](shared-tools.md)** for installation, usage, and a complete reference of all available tools.
 
 ## Related Documentation
 

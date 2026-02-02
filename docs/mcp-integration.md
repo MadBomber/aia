@@ -48,14 +48,26 @@ mcp_servers:
 
 ### Command Line Usage
 ```bash
-# Use specific MCP clients
-aia --mcp github,filesystem my_prompt
+# Load MCP servers from JSON config files
+aia --mcp github.json --mcp filesystem.json my_prompt
 
-# List available MCP clients
-aia --list-mcp-clients
+# List configured MCP servers
+aia --mcp-list
+
+# Use only specific MCP servers
+aia --mcp-use github,filesystem --chat
+
+# Skip specific MCP servers
+aia --mcp-skip playwright --chat
+
+# List all tools including MCP tools
+aia --mcp-list --list-tools
+
+# List tools from a specific MCP server
+aia --mcp-list --mcp-use github --list-tools
 
 # Debug MCP communication
-aia --debug --mcp github github_analysis
+aia --debug --mcp github.json github_analysis
 ```
 
 ## Available MCP Clients

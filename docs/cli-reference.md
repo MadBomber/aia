@@ -106,14 +106,28 @@ aia --no-mcp my_prompt
 - Use `--no-mcp` to temporarily bypass MCP servers configured in your config file
 
 ### `--mcp-list`
-List all configured MCP servers and exit. Useful for verifying which servers are loaded from config files and `--mcp` options.
+List configured MCP servers and exit. Shows the server name and command for each server. Useful for verifying which servers are loaded from config files and `--mcp` options.
+
+When combined with `--mcp-use` or `--mcp-skip`, only the servers that pass the filter are shown. The header changes from "Configured" to "Active" to reflect this.
+
+When combined with `--list-tools`, MCP servers are started and their tools are included in the tool listing (see `--list-tools`).
 
 ```bash
-# List servers from config file
+# List all servers from config file
 aia --mcp-list
 
-# List servers loaded from a specific MCP JSON file
+# List servers loaded from specific MCP JSON files
 aia --mcp github.json --mcp filesystem.json --mcp-list
+
+# List only the servers that would be active after filtering
+aia --mcp-list --mcp-use github,filesystem
+
+# List all configured servers except those skipped
+aia --mcp-list --mcp-skip playwright
+
+# Combine with --list-tools to show MCP tools grouped by server
+aia --mcp-list --list-tools
+aia --mcp-list --list-tools --mcp-use redis
 ```
 
 ### `--mu`, `--mcp-use NAMES`
@@ -563,6 +577,80 @@ Reject/block these tools from being used.
 # Block dangerous tools
 aia --rejected-tools "file_writer,system_command" my_prompt
 aia --rt "network_access" secure_prompt
+```
+
+### `--list-tools`
+List available tools and exit. Loads tools from `--require` and `--tools` options, then displays each tool's name and description.
+
+When combined with `--mcp-list`, MCP servers are also started and their tools are included in the output, grouped by server.
+
+**Output format depends on where stdout is directed:**
+
+| Output | Format | Descriptions |
+|--------|--------|-------------|
+| Terminal | Plain text, word-wrapped | First 3 sentences |
+| File/pipe | Markdown with headings | Full description |
+
+The markdown output uses `#` for the title, `##` for source sections (Local Tools, MCP server groups), and `###` for individual tool names. Any markdown headings within a tool's description are automatically adjusted to nest under the tool's heading level.
+
+```bash
+# List local tools loaded via --require
+aia --require shared_tools --list-tools
+
+# List local tools loaded from a file path
+aia --tools ./my_tools/ --list-tools
+
+# Combine --require and --tools
+aia --require shared_tools --tools ./extras/ --list-tools
+
+# Include MCP server tools (requires --mcp-list)
+aia --require shared_tools --mcp-list --list-tools
+
+# Include only specific MCP servers
+aia --require shared_tools --mcp-list --mcp-use redis --list-tools
+
+# Redirect to a markdown file
+aia --require shared_tools --mcp-list --list-tools > tools.md
+
+# Pipe to a markdown renderer
+aia --require shared_tools --list-tools | glow -
+```
+
+**Example terminal output:**
+```
+Local Tools:
+
+  calculator
+    Perform advanced mathematical calculations with comprehensive
+    error handling and validation. This tool supports basic arithmetic
+    operations, parentheses, and common mathematical functions.
+
+  weather_tool
+    Retrieve comprehensive current weather information for any city
+    worldwide using the OpenWeatherMap API. This tool provides real-time
+    weather data including temperature, atmospheric conditions, humidity,
+    and wind information.
+```
+
+**Example markdown output (when redirected):**
+```markdown
+# Available Tools
+
+> 20 tools from 2 sources
+
+## Local Tools (15)
+
+### `calculator`
+
+Perform advanced mathematical calculations with comprehensive error
+handling and validation. This tool supports basic arithmetic operations,
+parentheses, and common mathematical functions. ...full description...
+
+## MCP: redis (5)
+
+### `set`
+
+Set a Redis string value with an optional expiration time. ...full description...
 ```
 
 ## Utility Options

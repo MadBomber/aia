@@ -15,6 +15,7 @@ Welcome to the AIA guides section! These comprehensive guides will help you mast
 - [Available Models](available-models.md) - Complete list of supported AI models
 - [Image Generation](image-generation.md) - Generate images with AI
 - [Tools Integration](tools.md) - Extend AIA with custom Ruby tools
+- [Shared Tools](shared-tools.md) - Ready-to-use tools from the shared_tools gem
 
 ## Advanced Topics
 

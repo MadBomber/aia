@@ -53,7 +53,7 @@ module AIA
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :mcp_list, :executable_prompt,
+                  :completion, :mcp_list, :list_tools, :executable_prompt,
                   :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt,
                   :log_level_override, :log_file_override,
                   :connected_mcp_servers, # Array of successfully connected MCP server names

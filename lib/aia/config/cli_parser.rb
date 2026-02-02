@@ -239,6 +239,10 @@ module AIA
           options[:rejected_tools] ||= []
           options[:rejected_tools] += tools_list.split(',').map(&:strip)
         end
+
+        opts.on("--list-tools", "List available tools and exit (combine with --mcp-list for MCP tools)") do
+          options[:list_tools] = true
+        end
       end
 
       def setup_utility_options(opts, options)

@@ -270,6 +270,8 @@ aia --fuzzy
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
 | `--tokens` | Display token usage in chat mode | `aia --chat --tokens` |
 | `--cost` | Include cost calculations with token usage | `aia --chat --cost` |
+| `--mcp-list` | List configured MCP servers and exit | `aia --mcp-list` |
+| `--list-tools` | List available tools and exit | `aia --require shared_tools --list-tools` |
 | `--help` | Show complete help | `aia --help` |
 
 ### Directory Structure
