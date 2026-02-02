@@ -49,11 +49,11 @@ module AIA
                 :tools, :flags, :registry, :paths, :logger
 
     # Array/collection attributes
-    attr_config :models, :pipeline, :require_libs, :mcp_servers, :context_files
+    attr_config :models, :pipeline, :require_libs, :mcp_servers, :mcp_use, :mcp_skip, :context_files
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :executable_prompt,
+                  :completion, :mcp_list, :executable_prompt,
                   :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt,
                   :log_level_override, :log_file_override,
                   :connected_mcp_servers, # Array of successfully connected MCP server names
@@ -125,7 +125,9 @@ module AIA
       models: TO_MODEL_SPECS,
       pipeline: { type: :string, array: true },
       require_libs: { type: :string, array: true },
-      context_files: { type: :string, array: true }
+      context_files: { type: :string, array: true },
+      mcp_use: { type: :string, array: true },
+      mcp_skip: { type: :string, array: true }
     )
 
     # ==========================================================================
@@ -250,6 +252,8 @@ module AIA
         pipeline: pipeline,
         require_libs: require_libs,
         mcp_servers: mcp_servers,
+        mcp_use: mcp_use,
+        mcp_skip: mcp_skip,
         context_files: context_files
       }
     end
@@ -294,6 +298,8 @@ module AIA
       self.require_libs = [] if require_libs.nil?
       self.context_files = [] if context_files.nil?
       self.mcp_servers = [] if mcp_servers.nil?
+      self.mcp_use = [] if mcp_use.nil?
+      self.mcp_skip = [] if mcp_skip.nil?
 
       # Ensure tools.paths is an array
       tools.paths = [] if tools.paths.nil?

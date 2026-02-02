@@ -105,6 +105,49 @@ aia --no-mcp my_prompt
 - Use `--no-mcp` when you want faster responses without MCP tool overhead
 - Use `--no-mcp` to temporarily bypass MCP servers configured in your config file
 
+### `--mcp-list`
+List all configured MCP servers and exit. Useful for verifying which servers are loaded from config files and `--mcp` options.
+
+```bash
+# List servers from config file
+aia --mcp-list
+
+# List servers loaded from a specific MCP JSON file
+aia --mcp github.json --mcp filesystem.json --mcp-list
+```
+
+### `--mu`, `--mcp-use NAMES`
+Only connect to the named MCP servers (whitelist). Server names are comma-separated and must match the `name` field in the server configuration.
+
+```bash
+# Only use the github server
+aia --mcp-use github --chat
+
+# Only use github and filesystem servers
+aia --mcp-use github,filesystem --chat
+
+# Can be specified multiple times
+aia --mu github --mu filesystem --chat
+```
+
+**Precedence**: `--no-mcp` overrides `--mcp-use`. If both `--mcp-use` and `--mcp-skip` are specified, `--mcp-use` takes precedence.
+
+### `--ms`, `--mcp-skip NAMES`
+Skip the named MCP servers (blacklist). All other configured servers will still be connected.
+
+```bash
+# Skip the playwright server
+aia --mcp-skip playwright --chat
+
+# Skip multiple servers
+aia --mcp-skip playwright,filesystem --chat
+
+# Can be specified multiple times
+aia --ms playwright --ms filesystem --chat
+```
+
+**Precedence**: `--no-mcp` overrides `--mcp-skip`. If `--mcp-use` is also specified, `--mcp-skip` is ignored.
+
 ## Adapter Options
 
 ### `--adapter ADAPTER`

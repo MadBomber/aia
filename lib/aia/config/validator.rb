@@ -25,6 +25,7 @@ module AIA
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
         handle_dump_config(config)
+        handle_mcp_list(config)
         validate_required_prompt_id(config)
         process_role_configuration(config)
         handle_fuzzy_search_prompt_id(config)
@@ -145,6 +146,29 @@ module AIA
         return unless config.dump_file
 
         dump_config(config, config.dump_file)
+        exit 0
+      end
+
+      def handle_mcp_list(config)
+        return unless config.mcp_list
+
+        servers = config.mcp_servers || []
+
+        if servers.empty?
+          puts "No MCP servers configured."
+        else
+          puts "Configured MCP servers:\n\n"
+          servers.each do |server|
+            name    = server[:name]    || server['name']    || '(unnamed)'
+            command = server[:command] || server['command']  || '(no command)'
+            args    = server[:args]    || server['args']     || []
+            args_str = args.empty? ? '' : " #{args.join(' ')}"
+            puts "  #{name}"
+            puts "    command: #{command}#{args_str}"
+            puts
+          end
+        end
+
         exit 0
       end
 

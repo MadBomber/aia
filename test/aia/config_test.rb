@@ -121,4 +121,44 @@ class ConfigTest < Minitest::Test
     config.tool_names = 'tool1, tool2'
     assert_equal 'tool1, tool2', config.tool_names
   end
+
+  def test_mcp_use_defaults_to_empty_array
+    config = AIA::Config.new
+    assert_respond_to config, :mcp_use
+    assert_kind_of Array, config.mcp_use
+    assert_empty config.mcp_use
+  end
+
+  def test_mcp_skip_defaults_to_empty_array
+    config = AIA::Config.new
+    assert_respond_to config, :mcp_skip
+    assert_kind_of Array, config.mcp_skip
+    assert_empty config.mcp_skip
+  end
+
+  def test_mcp_use_override
+    config = AIA::Config.new(overrides: { mcp_use: ['github'] })
+    assert_equal ['github'], config.mcp_use
+  end
+
+  def test_mcp_skip_override
+    config = AIA::Config.new(overrides: { mcp_skip: ['playwright'] })
+    assert_equal ['playwright'], config.mcp_skip
+  end
+
+  def test_mcp_list_runtime_attribute
+    config = AIA::Config.new
+    assert_respond_to config, :mcp_list
+    assert_nil config.mcp_list
+
+    config.mcp_list = true
+    assert_equal true, config.mcp_list
+  end
+
+  def test_to_h_includes_mcp_use_and_skip
+    config = AIA::Config.new
+    hash = config.to_h
+    assert hash.key?(:mcp_use)
+    assert hash.key?(:mcp_skip)
+  end
 end

@@ -308,6 +308,20 @@ module AIA
           options[:no_mcp] = true
         end
 
+        opts.on("--mcp-list", "List configured MCP servers and exit") do
+          options[:mcp_list] = true
+        end
+
+        opts.on("--mu", "--mcp-use NAMES", "Only use these named MCP servers (comma-separated)") do |names|
+          options[:mcp_use] ||= []
+          options[:mcp_use] += names.split(',').map(&:strip)
+        end
+
+        opts.on("--ms", "--mcp-skip NAMES", "Skip these named MCP servers (comma-separated)") do |names|
+          options[:mcp_skip] ||= []
+          options[:mcp_skip] += names.split(',').map(&:strip)
+        end
+
         opts.on("--version", "Show version") do
           puts AIA::VERSION
           exit
