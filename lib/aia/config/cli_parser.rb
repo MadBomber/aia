@@ -50,12 +50,13 @@ module AIA
 
       def setup_banner(opts)
         opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n" +
-                      "       aia --chat [PROMPT_ID] [CONTEXT_FILE]*\n" +
-                      "       aia --chat [CONTEXT_FILE]*"
+                      "       aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*"
       end
 
       def setup_mode_options(opts, options)
-        opts.on("--chat", "Begin a chat session with the LLM after processing all prompts in the pipeline.") do
+        opts.separator "\nMode Options:"
+
+        opts.on("--chat", "Begin a chat session with the LLM after processing all prompts in the pipeline") do
           options[:chat] = true
         end
 
@@ -67,17 +68,19 @@ module AIA
           options[:fuzzy] = true
         end
 
-        opts.on("--terse", "Adds a special instruction to the prompt asking the AI to keep responses short and to the point") do
+        opts.on("--terse", "Request concise responses from the AI") do
           options[:terse] = true
         end
       end
 
       def setup_model_options(opts, options)
-        opts.on('--available-models [QUERY]', 'List (then exit) available models that match the optional query') do |query|
+        opts.separator "\nModel Options:"
+
+        opts.on('--available-models [QUERY]', 'List available models matching optional query and exit') do |query|
           list_available_models(query)
         end
 
-        opts.on("-m MODEL", "--model MODEL", "Name of the LLM model(s) to use. Format: MODEL[=ROLE][,MODEL[=ROLE]]...") do |model_string|
+        opts.on("-m MODEL", "--model MODEL", "Set LLM model(s) to use. Format: MODEL[=ROLE][,MODEL[=ROLE]]...") do |model_string|
           options[:models] = parse_models_with_roles(model_string)
         end
 
@@ -85,26 +88,28 @@ module AIA
           options[:consensus] = consensus
         end
 
-        opts.on("--list-roles", "List available role files and exit") do
+        opts.on("--list-roles", "List available roles and exit") do
           list_available_roles
           exit 0
         end
 
-        opts.on("--sm", "--speech-model MODEL", "Speech model to use") do |model|
+        opts.on("--sm", "--speech-model MODEL", "Set speech model") do |model|
           options[:speech_model] = model
         end
 
-        opts.on("--tm", "--transcription-model MODEL", "Transcription model to use") do |model|
+        opts.on("--tm", "--transcription-model MODEL", "Set transcription model") do |model|
           options[:transcription_model] = model
         end
       end
 
       def setup_file_options(opts, options)
+        opts.separator "\nFile & Output Options:"
+
         opts.on("-c", "--config-file FILE", "Load additional config file") do |file|
           options[:extra_config_file] = file
         end
 
-        opts.on("-o", "--[no-]output [FILE]", "Output file (default: temp.md)") do |file|
+        opts.on("-o", "--[no-]output [FILE]", "Write response to FILE (default: temp.md; --no-output to disable)") do |file|
           if file == false
             options[:output] = nil
           elsif file.nil?
@@ -118,118 +123,141 @@ module AIA
           options[:append] = append
         end
 
-        opts.on("--[no-]history-file [FILE]", "Conversation history file") do |file|
+        opts.on("--[no-]history-file [FILE]", "Set conversation history file path") do |file|
           options[:history_file] = file
         end
 
-        opts.on("--md", "--[no-]markdown", "Format with Markdown") do |md|
+        opts.on("--md", "--[no-]markdown", "Enable Markdown formatting") do |md|
           options[:markdown] = md
         end
       end
 
       def setup_prompt_options(opts, options)
-        opts.on("--prompts-dir DIR", "Directory containing prompt files") do |dir|
+        opts.separator "\nPrompt Options:"
+
+        opts.on("--prompts-dir DIR", "Set directory containing prompt files") do |dir|
           options[:prompts_dir] = dir
         end
 
-        opts.on("--roles-prefix PREFIX", "Subdirectory name for role files (default: roles)") do |prefix|
+        opts.on("--roles-prefix PREFIX", "Set subdirectory name for role files (default: roles)") do |prefix|
           options[:roles_prefix] = prefix
         end
 
-        opts.on("-r", "--role ROLE_ID", "Role ID to prepend to prompt") do |role|
+        opts.on("-r", "--role ROLE_ID", "Prepend role to prompt") do |role|
           options[:role] = role
         end
 
-        opts.on("-n", "--next PROMPT_ID", "Next prompt to process") do |next_prompt|
+        opts.on("-n", "--next PROMPT_ID", "Set next prompt to process") do |next_prompt|
           options[:pipeline] ||= []
           options[:pipeline] << next_prompt
         end
 
-        opts.on("-p PROMPTS", "--pipeline PROMPTS", "Pipeline of comma-separated prompt IDs to process") do |pipeline|
+        opts.on("-p PROMPTS", "--pipeline PROMPTS", "Set pipeline of comma-separated prompt IDs") do |pipeline|
           options[:pipeline] ||= []
           options[:pipeline] += pipeline.split(',').map(&:strip)
         end
 
-        opts.on("-x", "--[no-]exec", "Used to designate an executable prompt file") do |value|
+        opts.on("-x", "--[no-]exec", "Treat prompt file as executable") do |value|
           options[:executable_prompt] = value
         end
 
-        opts.on("--system-prompt PROMPT_ID", "System prompt ID to use for chat sessions") do |prompt_id|
+        opts.on("--system-prompt PROMPT_ID", "Set system prompt for chat sessions") do |prompt_id|
           options[:system_prompt] = prompt_id
         end
 
-        opts.on('--regex PATTERN', 'Regex pattern to extract parameters from prompt text') do |pattern|
+        opts.on('--regex PATTERN', 'Set regex pattern for extracting prompt parameters') do |pattern|
           options[:parameter_regex] = pattern
         end
       end
 
       def setup_ai_parameters(opts, options)
-        opts.on("-t", "--temperature TEMP", Float, "Temperature for text generation") do |temp|
+        opts.separator "\nGeneration Parameters:"
+
+        opts.on("-t", "--temperature TEMP", Float, "Set temperature for text generation (default: 0.7)") do |temp|
           options[:temperature] = temp
         end
 
-        opts.on("--max-tokens TOKENS", Integer, "Maximum tokens for text generation") do |tokens|
+        opts.on("--max-tokens TOKENS", Integer, "Set maximum tokens for text generation (default: 2048)") do |tokens|
           options[:max_tokens] = tokens
         end
 
-        opts.on("--top-p VALUE", Float, "Top-p sampling value") do |value|
+        opts.on("--top-p VALUE", Float, "Set top-p sampling value") do |value|
           options[:top_p] = value
         end
 
-        opts.on("--frequency-penalty VALUE", Float, "Frequency penalty") do |value|
+        opts.on("--frequency-penalty VALUE", Float, "Set frequency penalty value") do |value|
           options[:frequency_penalty] = value
         end
 
-        opts.on("--presence-penalty VALUE", Float, "Presence penalty") do |value|
+        opts.on("--presence-penalty VALUE", Float, "Set presence penalty value") do |value|
           options[:presence_penalty] = value
         end
       end
 
       def setup_audio_image_options(opts, options)
-        opts.on("--speak", "Convert text to audio and play it") do
+        opts.separator "\nAudio & Image Options:"
+
+        opts.on("--speak", "Convert response to audio and play it") do
           options[:speak] = true
         end
 
-        opts.on("--voice VOICE", "Voice to use for speech") do |voice|
+        opts.on("--voice VOICE", "Set voice for speech output (default: alloy)") do |voice|
           options[:voice] = voice
         end
 
-        opts.on("--is", "--image-size SIZE", "Image size for image generation") do |size|
+        opts.on("--is", "--image-size SIZE", "Set image size for generation (default: 1024x1024)") do |size|
           options[:image_size] = size
         end
 
-        opts.on("--iq", "--image-quality QUALITY", "Image quality for image generation") do |quality|
+        opts.on("--iq", "--image-quality QUALITY", "Set image quality for generation (default: standard)") do |quality|
           options[:image_quality] = quality
         end
 
-        opts.on("--style", "--image-style STYLE", "Style for image generation") do |style|
+        opts.on("--style", "--image-style STYLE", "Set style for image generation") do |style|
           options[:image_style] = style
         end
       end
 
       def setup_tool_options(opts, options)
-        opts.on("--rq LIBS", "--require LIBS", "Ruby libraries to require for Ruby directive") do |libs|
+        opts.separator "\nTool & Extension Options:"
+
+        opts.on("--rq LIBS", "--require LIBS", "Require Ruby libraries for Ruby directive") do |libs|
           options[:require_libs] ||= []
           options[:require_libs] += libs.split(',')
         end
 
-        opts.on("--tools PATH_LIST", "Add tool(s) by path") do |path_list|
+        opts.on("--tools PATH_LIST", "Load tool(s) from path") do |path_list|
           options[:tool_paths] = process_tools_paths(path_list)
         end
 
-        opts.on("--at", "--allowed-tools TOOLS_LIST", "Allow only these tools to be used") do |tools_list|
+        opts.on("--at", "--allowed-tools TOOLS_LIST", "Allow only these tools") do |tools_list|
           options[:allowed_tools] ||= []
           options[:allowed_tools] += tools_list.split(',').map(&:strip)
         end
 
-        opts.on("--rt", "--rejected-tools TOOLS_LIST", "Reject these tools") do |tools_list|
+        opts.on("--rt", "--rejected-tools TOOLS_LIST", "Reject these tools from use") do |tools_list|
           options[:rejected_tools] ||= []
           options[:rejected_tools] += tools_list.split(',').map(&:strip)
         end
       end
 
       def setup_utility_options(opts, options)
-        opts.on("-d", "--debug", "Enable debug output and set all loggers to DEBUG level") do
+        opts.separator "\nUtility Options:"
+
+        opts.on("--log-level LEVEL", "Set log level (debug|info|warn|error|fatal)") do |level|
+          level = level.downcase
+          unless %w[debug info warn error fatal].include?(level)
+            STDERR.puts "ERROR: Invalid log level '#{level}'. Must be one of: debug, info, warn, error, fatal"
+            exit 1
+          end
+          options[:log_level_override] = level
+          if level == 'debug'
+            options[:debug] = true
+            $DEBUG_ME = true
+          end
+        end
+
+        opts.on("-d", "--debug", "Enable debug output (shortcut for --log-level debug)") do
           options[:debug] = true
           options[:log_level_override] = 'debug'
           $DEBUG_ME = true
@@ -240,52 +268,36 @@ module AIA
           $DEBUG_ME = false
         end
 
-        opts.on("--info", "Set all loggers to INFO level") do
-          options[:log_level_override] = 'info'
-        end
-
-        opts.on("--warn", "Set all loggers to WARN level") do
-          options[:log_level_override] = 'warn'
-        end
-
-        opts.on("--error", "Set all loggers to ERROR level") do
-          options[:log_level_override] = 'error'
-        end
-
-        opts.on("--fatal", "Set all loggers to FATAL level") do
-          options[:log_level_override] = 'fatal'
-        end
-
         opts.on("--log-to FILE", "Direct all loggers to FILE") do |file|
           options[:log_file_override] = file
         end
 
-        opts.on("-v", "--[no-]verbose", "Be verbose") do |value|
+        opts.on("-v", "--[no-]verbose", "Enable verbose output") do |value|
           options[:verbose] = value
         end
 
-        opts.on("--refresh DAYS", Integer, "Refresh models database interval in days") do |days|
+        opts.on("--refresh DAYS", Integer, "Set refresh interval (days) for cached models list (default: 7)") do |days|
           options[:refresh] = days || 0
         end
 
-        opts.on("--dump FILE", "Dump config to file") do |file|
+        opts.on("--dump FILE", "Export current configuration to FILE and exit") do |file|
           options[:dump_file] = file
         end
 
-        opts.on("--completion SHELL", "Show completion script for bash|zsh|fish") do |shell|
+        opts.on("--completion SHELL", "Generate shell completion script (bash|zsh|fish) and exit") do |shell|
           options[:completion] = shell
         end
 
-        opts.on("--tokens", "Display token usage in chat mode") do
+        opts.on("--tokens", "Display token usage") do
           options[:tokens] = true
         end
 
-        opts.on("--cost", "Include cost calculations with token usage") do
+        opts.on("--cost", "Display cost calculations (implies --tokens)") do
           options[:cost] = true
           options[:tokens] = true  # --cost implies --tokens
         end
 
-        opts.on("--mcp FILE", "Load MCP server(s) from JSON file (can be used multiple times)") do |file|
+        opts.on("--mcp FILE", "Load MCP server(s) from JSON file (repeatable)") do |file|
           options[:mcp_files] ||= []
           options[:mcp_files] << file
         end
@@ -298,7 +310,7 @@ module AIA
           options[:mcp_list] = true
         end
 
-        opts.on("--mu", "--mcp-use NAMES", "Only use these named MCP servers (comma-separated)") do |names|
+        opts.on("--mu", "--mcp-use NAMES", "Use only these MCP servers (comma-separated)") do |names|
           options[:mcp_use] ||= []
           options[:mcp_use] += names.split(',').map(&:strip)
         end
@@ -308,21 +320,20 @@ module AIA
           options[:mcp_skip] += names.split(',').map(&:strip)
         end
 
-        opts.on("--version", "Show version") do
+        opts.on("--version", "Show version and exit") do
           puts AIA::VERSION
           exit
         end
 
-        opts.on("-h", "--help", "Prints this help") do
+        opts.on("-h", "--help", "Show this help and exit") do
           puts <<~HELP
 
-            AIA your AI Assistant
-              - designed for generative AI workflows,
-              - effortlessly manage AI prompts,
-              - integrate seamlessly with shell and embedded Ruby (ERB),
-              - run batch processes,
-              - engage in interactive chats,
-              - with user defined directives, tools and MCP clients.
+            AIA - Your AI Assistant (v#{AIA::VERSION})
+              - Manage AI prompts with embedded directives
+              - Integrate with shell and Ruby (ERB) processing
+              - Run batch processes and prompt pipelines
+              - Engage in interactive chat sessions
+              - Use custom tools and MCP servers
 
           HELP
 
@@ -331,12 +342,16 @@ module AIA
           puts <<~EXTRA
 
             Explore Further:
-            - AIA Report an Issue:   https://github.com/MadBomber/aia/issues
-            - AIA Documentation:     https://github.com/MadBomber/aia/blob/main/README.md
             - AIA GitHub Repository: https://github.com/MadBomber/aia
-            - PromptManager Docs:    https://github.com/MadBomber/prompt_manager/blob/main/README.md
-            - ERB Documentation:     https://rubyapi.org/o/erb
+            - AIA Documentation:     https://madbomber.github.io/aia
+            - AIA Changelog:         https://github.com/MadBomber/aia/blob/main/CHANGELOG.md
+            - AIA Examples:          https://github.com/MadBomber/aia/tree/main/examples
+            - Report an Issue:       https://github.com/MadBomber/aia/issues
+            - RubyLLM Documentation: https://rubyllm.com
             - RubyLLM Tool Docs:     https://rubyllm.com/guides/tools
+            - PromptManager Docs:    https://madbomber.github.io/prompt_manager
+            - ERB Documentation:     https://docs.ruby-lang.org/en/master/ERB.html
+            - MCP Specification:     https://modelcontextprotocol.io
             - MCP Client Docs:       https://github.com/patvice/ruby_llm-mcp/blob/main/README.md
 
           EXTRA

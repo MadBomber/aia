@@ -216,7 +216,7 @@ module AIA
         and_exit = false
 
         config.pipeline.each do |prompt_id|
-          next if prompt_id.nil? || prompt_id.empty?
+          next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__'
 
           prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}.txt")
           unless File.exist?(prompt_file_path)
