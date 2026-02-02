@@ -42,7 +42,6 @@ class AIAIntegrationTest < Minitest::Test
       tool_names: '',
       # Nested sections
       llm: OpenStruct.new(
-        adapter: 'ruby_llm',
         temperature: 0.7,
         max_tokens: 2048
       ),
@@ -247,7 +246,7 @@ class AIAIntegrationTest < Minitest::Test
   end
 
   def test_configuration_workflow_with_environment_variables
-    # Test that anyway_config handles environment variables
+    # Test that myway_config handles environment variables
     # Environment variables now use nested naming like AIA_LLM__TEMPERATURE
     # This test verifies the config structure is correct
     config = AIA::Config.new

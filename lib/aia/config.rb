@@ -2,7 +2,7 @@
 
 # lib/aia/config.rb
 #
-# AIA Configuration using Anyway Config
+# AIA Configuration using MywayConfig
 #
 # Schema is defined in lib/aia/config/defaults.yml (single source of truth)
 # Configuration uses nested sections for better organization:
@@ -12,42 +12,48 @@
 #
 # Configuration sources (lowest to highest priority):
 # 1. Bundled defaults: lib/aia/config/defaults.yml (ships with gem)
-# 2. User config: ~/.aia/config.yml
+# 2. User config: ~/.config/aia/aia.yml (XDG)
 # 3. Environment variables (AIA_*)
 # 4. CLI arguments (applied via overrides)
 # 5. Embedded directives (//config)
 
-require 'anyway_config'
+require 'myway_config'
 require 'yaml'
 require 'date'
 
-require_relative 'config/config_section'
 require_relative 'config/model_spec'
-require_relative 'config/defaults_loader'
 require_relative 'config/mcp_parser'
 
 module AIA
-  class Config < Anyway::Config
+  # Backward compatibility alias — existing code and tests reference AIA::ConfigSection
+  ConfigSection = MywayConfig::ConfigSection
+
+  class Config < MywayConfig::Base
     config_name :aia
     env_prefix :aia
+    defaults_path File.expand_path('config/defaults.yml', __dir__)
+
+    # AIA is a CLI tool, not a Rails app — no environment sections needed.
+    class << self
+      def validate_environment!
+        # no-op: AIA has no environment sections in defaults.yml
+      end
+    end
 
     # ==========================================================================
-    # Schema Definition (loaded from defaults.yml - single source of truth)
+    # Schema Definition (loaded from defaults.yml via MywayConfig)
     # ==========================================================================
-
-    DEFAULTS_PATH = File.expand_path('config/defaults.yml', __dir__).freeze
-    SCHEMA = Loaders::DefaultsLoader.schema
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
     attr_config :service, :llm, :prompts, :output, :audio, :image, :embedding,
                 :tools, :flags, :registry, :paths, :logger
 
     # Array/collection attributes
-    attr_config :models, :pipeline, :require_libs, :mcp_servers, :context_files
+    attr_config :models, :pipeline, :require_libs, :mcp_servers, :mcp_use, :mcp_skip, :context_files
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :executable_prompt,
+                  :completion, :mcp_list, :list_tools, :executable_prompt,
                   :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt,
                   :log_level_override, :log_file_override,
                   :connected_mcp_servers, # Array of successfully connected MCP server names
@@ -67,28 +73,6 @@ module AIA
     # ==========================================================================
     # Type Coercion
     # ==========================================================================
-
-    # Create a coercion that merges incoming value with SCHEMA defaults for a section
-    def self.config_section_with_defaults(section_key)
-      defaults = SCHEMA[section_key] || {}
-      ->(v) {
-        return v if v.is_a?(ConfigSection)
-        incoming = v || {}
-        merged = deep_merge_hashes(defaults.dup, incoming)
-        ConfigSection.new(merged)
-      }
-    end
-
-    # Deep merge helper for coercion
-    def self.deep_merge_hashes(base, overlay)
-      base.merge(overlay || {}) do |_key, old_val, new_val|
-        if old_val.is_a?(Hash) && new_val.is_a?(Hash)
-          deep_merge_hashes(old_val, new_val)
-        else
-          new_val.nil? ? old_val : new_val
-        end
-      end
-    end
 
     # Convert array of hashes to array of ModelSpec objects
     TO_MODEL_SPECS = ->(v) {
@@ -124,24 +108,26 @@ module AIA
     }
 
     coerce_types(
-      # Nested sections -> ConfigSection objects (with SCHEMA defaults merged)
-      service: config_section_with_defaults(:service),
-      llm: config_section_with_defaults(:llm),
-      prompts: config_section_with_defaults(:prompts),
-      output: config_section_with_defaults(:output),
-      audio: config_section_with_defaults(:audio),
-      image: config_section_with_defaults(:image),
-      embedding: config_section_with_defaults(:embedding),
-      tools: config_section_with_defaults(:tools),
-      flags: config_section_with_defaults(:flags),
-      registry: config_section_with_defaults(:registry),
-      paths: config_section_with_defaults(:paths),
+      # Nested sections -> ConfigSection objects (with schema defaults merged)
+      service: config_section_coercion(:service),
+      llm: config_section_coercion(:llm),
+      prompts: config_section_coercion(:prompts),
+      output: config_section_coercion(:output),
+      audio: config_section_coercion(:audio),
+      image: config_section_coercion(:image),
+      embedding: config_section_coercion(:embedding),
+      tools: config_section_coercion(:tools),
+      flags: config_section_coercion(:flags),
+      registry: config_section_coercion(:registry),
+      paths: config_section_coercion(:paths),
 
       # Arrays
       models: TO_MODEL_SPECS,
       pipeline: { type: :string, array: true },
       require_libs: { type: :string, array: true },
-      context_files: { type: :string, array: true }
+      context_files: { type: :string, array: true },
+      mcp_use: { type: :string, array: true },
+      mcp_skip: { type: :string, array: true }
     )
 
     # ==========================================================================
@@ -181,7 +167,6 @@ module AIA
       verbose: [:flags, :verbose],
       consensus: [:flags, :consensus],
       # llm section
-      adapter: [:llm, :adapter],
       temperature: [:llm, :temperature],
       max_tokens: [:llm, :max_tokens],
       top_p: [:llm, :top_p],
@@ -219,6 +204,7 @@ module AIA
 
     def initialize(overrides: {})
       super()
+      apply_models_env_var unless overrides[:models]
       apply_overrides(overrides) if overrides && !overrides.empty?
       process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
     end
@@ -265,11 +251,22 @@ module AIA
         pipeline: pipeline,
         require_libs: require_libs,
         mcp_servers: mcp_servers,
+        mcp_use: mcp_use,
+        mcp_skip: mcp_skip,
         context_files: context_files
       }
     end
 
     private
+
+    # Apply AIA_MODEL env var if set (supports comma-separated models with optional roles)
+    # Format: MODEL[=ROLE][,MODEL[=ROLE]]...
+    def apply_models_env_var
+      models_env = ENV['AIA_MODEL']
+      return if models_env.nil? || models_env.empty?
+
+      self.models = TO_MODEL_SPECS.call(models_env.split(',').map(&:strip))
+    end
 
     def expand_paths
       # Expand ~ in paths
@@ -300,6 +297,8 @@ module AIA
       self.require_libs = [] if require_libs.nil?
       self.context_files = [] if context_files.nil?
       self.mcp_servers = [] if mcp_servers.nil?
+      self.mcp_use = [] if mcp_use.nil?
+      self.mcp_skip = [] if mcp_skip.nil?
 
       # Ensure tools.paths is an array
       tools.paths = [] if tools.paths.nil?

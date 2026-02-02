@@ -84,6 +84,26 @@ aia --chat --mcp filesystem.json --mcp imcp.json --mcp playwright_server_definit
 aia prompt_id --chat --mcp filesystem.json --mcp imcp.json --mcp playwright_server_definition.json
 ```
 
+## Filtering Servers
+
+You can control which servers are connected using `--mcp-use` (whitelist) and `--mcp-skip` (blacklist):
+
+```bash
+# Only connect to the filesystem server
+aia --chat --mcp filesystem.json --mcp imcp.json --mcp-use filesystem
+
+# Connect to all servers except playwright
+aia --chat --mcp filesystem.json --mcp playwright_server_definition.json --mcp-skip playwright
+
+# List configured servers without connecting
+aia --mcp filesystem.json --mcp imcp.json --mcp-list
+```
+
+Precedence order:
+1. `--no-mcp` disables all MCP (highest priority)
+2. `--mcp-use` connects only to named servers
+3. `--mcp-skip` connects to all except named servers
+
 ## Additional Resources
 
 - [Model Context Protocol Documentation](https://github.com/anthropics/anthropic-cookbook/tree/main/model_context_protocol)

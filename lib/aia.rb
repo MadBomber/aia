@@ -129,13 +129,7 @@ module AIA
 
       prompt_handler = PromptHandler.new
 
-      # Initialize the appropriate client adapter based on configuration
-      @client = if 'ruby_llm' == @config.llm.adapter
-                  RubyLLMAdapter.new
-                else
-                  warn "ERROR: There is no adapter for #{@config.llm.adapter}"
-                  exit 1
-                end
+      @client = RubyLLMAdapter.new
 
       # There are two kinds of sessions: batch and chat
       # A chat session is started when the --chat CLI option is used

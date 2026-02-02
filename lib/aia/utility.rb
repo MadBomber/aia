@@ -94,7 +94,7 @@ module AIA
        ,      ,
        (\\____/) AI Assistant (v#{AIA::VERSION}) is Online
         (_oo_)   #{model_display}#{supports_tools? ? ' (supports tools)' : ''}
-         (O)       using #{AIA.config&.llm&.adapter || 'unknown-adapter'} (v#{RubyLLM::VERSION}#{mcp_version})
+         (O)       using ruby_llm (v#{RubyLLM::VERSION}#{mcp_version})
        __||__    \\) model db was last refreshed on
      [/______\\]  /    #{models_last_refresh || 'unknown'}
     / \\__AI__/ \\/      #{user_tools? ? 'I will also use your tools' : (tools? ? 'You can share my tools' : 'I did not bring any tools')}

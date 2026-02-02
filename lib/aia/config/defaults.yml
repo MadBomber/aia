@@ -6,7 +6,7 @@
 #
 # Loading priority (lowest to highest):
 # 1. This file (bundled defaults)
-# 2. User config (~/.aia/config.yml)
+# 2. User config (~/.config/aia/aia.yml)
 # 3. Environment variables (AIA_*)
 # 4. CLI arguments
 # 5. Embedded directives (//config)
@@ -17,203 +17,205 @@
 #   AIA_PROMPTS__DIR=~/my-prompts
 #   AIA_FLAGS__DEBUG=true
 
-service:
-  name: aia
+defaults:
+  service:
+    name: aia
 
-# -----------------------------------------------------------------------------
-# LLM Configuration
-# Access: AIA.config.llm.adapter, AIA.config.llm.temperature, etc.
-# Env: AIA_LLM__ADAPTER, AIA_LLM__TEMPERATURE, etc.
-# -----------------------------------------------------------------------------
-llm:
-  adapter: ruby_llm
-  temperature: 0.7
-  max_tokens: 2048
-  top_p: 1.0
-  frequency_penalty: 0.0
-  presence_penalty: 0.0
-
-# -----------------------------------------------------------------------------
-# Models Configuration
-# Access: AIA.config.models (array of ModelSpec objects)
-# Each model has: name, role, instance, internal_id
-#
-# Example YAML:
-#   models:
-#     - name: gpt-4o
-#       role: architect
-#     - name: claude-3-opus
-#       role: reviewer
-#
-# Example CLI: --model "gpt-4o=architect,claude-3-opus=reviewer"
-# -----------------------------------------------------------------------------
-models:
-  - name: gpt-4o-mini
-    role: ~
-
-# -----------------------------------------------------------------------------
-# Prompts Configuration
-# Access: AIA.config.prompts.dir, AIA.config.prompts.roles_prefix, etc.
-# Env: AIA_PROMPTS__DIR, AIA_PROMPTS__ROLES_PREFIX, etc.
-# -----------------------------------------------------------------------------
-prompts:
-  dir: ~/.prompts
-  extname: .txt
-  roles_prefix: roles
-  roles_dir: ~/.prompts/roles
-  role: ~
-  system_prompt: ~
-  parameter_regex: ~
-
-# -----------------------------------------------------------------------------
-# Output Configuration
-# Access: AIA.config.output.file, AIA.config.output.append, etc.
-# Env: AIA_OUTPUT__FILE, AIA_OUTPUT__APPEND, etc.
-# -----------------------------------------------------------------------------
-output:
-  file: temp.md
-  append: false
-  markdown: true
-  history_file: ~/.prompts/_prompts.log
-
-# -----------------------------------------------------------------------------
-# Audio Configuration
-# Access: AIA.config.audio.voice, AIA.config.audio.speak_command, etc.
-# Env: AIA_AUDIO__VOICE, AIA_AUDIO__SPEAK_COMMAND, etc.
-# -----------------------------------------------------------------------------
-audio:
-  voice: alloy
-  speak_command: afplay
-  speech_model: tts-1
-  transcription_model: whisper-1
-
-# -----------------------------------------------------------------------------
-# Image Configuration
-# Access: AIA.config.image.model, AIA.config.image.size, etc.
-# Env: AIA_IMAGE__MODEL, AIA_IMAGE__SIZE, etc.
-# -----------------------------------------------------------------------------
-image:
-  model: dall-e-3
-  size: 1024x1024
-  quality: standard
-  style: vivid
-
-# -----------------------------------------------------------------------------
-# Embedding Configuration
-# Access: AIA.config.embedding.model
-# Env: AIA_EMBEDDING__MODEL
-# -----------------------------------------------------------------------------
-embedding:
-  model: text-embedding-ada-002
-
-# -----------------------------------------------------------------------------
-# Tools Configuration
-# Access: AIA.config.tools.paths, AIA.config.tools.allowed, etc.
-# Env: AIA_TOOLS__PATHS, AIA_TOOLS__ALLOWED, etc.
-# -----------------------------------------------------------------------------
-tools:
-  paths: []
-  allowed: ~
-  rejected: ~
-
-# -----------------------------------------------------------------------------
-# Flags (Boolean Options)
-# Access: AIA.config.flags.chat, AIA.config.flags.debug, etc.
-# Env: AIA_FLAGS__CHAT=true, AIA_FLAGS__DEBUG=true, etc.
-# -----------------------------------------------------------------------------
-flags:
-  chat: false
-  cost: false
-  debug: false
-  verbose: false
-  fuzzy: false
-  tokens: false
-  no_mcp: false
-  speak: false
-  terse: false
-  shell: true
-  erb: true
-  clear: false
-  consensus: false
-
-# -----------------------------------------------------------------------------
-# Logger Configuration
-# Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
-# Env: AIA_LOGGER__AIA__FILE, AIA_LOGGER__LLM__LEVEL, etc.
-#
-# Configures logging for three systems:
-#   aia: AIA application logging
-#   llm: RubyLLM gem logging
-#   mcp: RubyLLM::MCP gem logging
-#
-# file: STDOUT, STDERR, or a file path (e.g., ~/.aia/aia.log)
-#       All three loggers can write to the same file safely.
-# level: debug, info, warn, error, fatal
-# flush: true = immediate write (no buffering), false = buffered writes
-# -----------------------------------------------------------------------------
-logger:
-  aia:
-    file: STDOUT
-    level: warn
-    flush: true
+  # ---------------------------------------------------------------------------
+  # LLM Configuration
+  # Access: AIA.config.llm.temperature, etc.
+  # Env: AIA_LLM__TEMPERATURE, etc.
+  # ---------------------------------------------------------------------------
   llm:
-    file: STDOUT
-    level: warn
-    flush: true
-  mcp:
-    file: STDOUT
-    level: warn
-    flush: true
+    temperature: 0.7
+    max_tokens: 2048
+    top_p: 1.0
+    frequency_penalty: 0.0
+    presence_penalty: 0.0
 
-# -----------------------------------------------------------------------------
-# Pipeline/Workflow Configuration
-# Access: AIA.config.pipeline (array of prompt IDs)
-# -----------------------------------------------------------------------------
-pipeline: []
+  # ---------------------------------------------------------------------------
+  # Models Configuration
+  # Access: AIA.config.models (array of ModelSpec objects)
+  # Each model has: name, role, instance, internal_id
+  #
+  # Example YAML:
+  #   models:
+  #     - name: gpt-4o
+  #       role: architect
+  #     - name: claude-3-opus
+  #       role: reviewer
+  #
+  # Example CLI: --model "gpt-4o=architect,claude-3-opus=reviewer"
+  # ---------------------------------------------------------------------------
+  models:
+    - name: gpt-4o-mini
+      role: ~
 
-# -----------------------------------------------------------------------------
-# Model Registry Configuration
-# Access: AIA.config.registry.refresh
-# Env: AIA_REGISTRY__REFRESH
-# Note: last_refresh is derived from models.json file modification time
-# -----------------------------------------------------------------------------
-registry:
-  refresh: 7 # days between refreshes (0 = disable periodic refresh)
+  # ---------------------------------------------------------------------------
+  # Prompts Configuration
+  # Access: AIA.config.prompts.dir, AIA.config.prompts.roles_prefix, etc.
+  # Env: AIA_PROMPTS__DIR, AIA_PROMPTS__ROLES_PREFIX, etc.
+  # ---------------------------------------------------------------------------
+  prompts:
+    dir: ~/.prompts
+    extname: .txt
+    roles_prefix: roles
+    roles_dir: ~/.prompts/roles
+    role: ~
+    system_prompt: ~
+    parameter_regex: ~
 
-# -----------------------------------------------------------------------------
-# Required Ruby Libraries
-# Access: AIA.config.require_libs (array)
-# -----------------------------------------------------------------------------
-require_libs: []
+  # ---------------------------------------------------------------------------
+  # Output Configuration
+  # Access: AIA.config.output.file, AIA.config.output.append, etc.
+  # Env: AIA_OUTPUT__FILE, AIA_OUTPUT__APPEND, etc.
+  # ---------------------------------------------------------------------------
+  output:
+    file: temp.md
+    append: false
+    markdown: true
+    history_file: ~/.prompts/_prompts.log
 
-# -----------------------------------------------------------------------------
-# MCP Servers Configuration
-# Access: AIA.config.mcp_servers (array of server configs)
-#
-# Example:
-#   mcp_servers:
-#     - name: my-server
-#       command: /path/to/server
-#       args: []
-#       env: {}
-#       timeout: 8000
-# -----------------------------------------------------------------------------
-mcp_servers: []
+  # ---------------------------------------------------------------------------
+  # Audio Configuration
+  # Access: AIA.config.audio.voice, AIA.config.audio.speak_command, etc.
+  # Env: AIA_AUDIO__VOICE, AIA_AUDIO__SPEAK_COMMAND, etc.
+  # ---------------------------------------------------------------------------
+  audio:
+    voice: alloy
+    speak_command: afplay
+    speech_model: tts-1
+    transcription_model: whisper-1
 
-# -----------------------------------------------------------------------------
-# Paths Configuration
-# Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
-# Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
-#
-# Note: anyway_config uses XDG Base Directory Specification by default.
-# User config is loaded from ~/.config/aia/aia.yml
-# -----------------------------------------------------------------------------
-paths:
-  aia_dir: ~/.config/aia
-  config_file: ~/.config/aia/aia.yml
+  # ---------------------------------------------------------------------------
+  # Image Configuration
+  # Access: AIA.config.image.model, AIA.config.image.size, etc.
+  # Env: AIA_IMAGE__MODEL, AIA_IMAGE__SIZE, etc.
+  # ---------------------------------------------------------------------------
+  image:
+    model: dall-e-3
+    size: 1024x1024
+    quality: standard
+    style: vivid
 
-# -----------------------------------------------------------------------------
-# Context Files (set at runtime)
-# Access: AIA.config.context_files (array of file paths)
-# -----------------------------------------------------------------------------
-context_files: []
+  # ---------------------------------------------------------------------------
+  # Embedding Configuration
+  # Access: AIA.config.embedding.model
+  # Env: AIA_EMBEDDING__MODEL
+  # ---------------------------------------------------------------------------
+  embedding:
+    model: text-embedding-ada-002
+
+  # ---------------------------------------------------------------------------
+  # Tools Configuration
+  # Access: AIA.config.tools.paths, AIA.config.tools.allowed, etc.
+  # Env: AIA_TOOLS__PATHS, AIA_TOOLS__ALLOWED, etc.
+  # ---------------------------------------------------------------------------
+  tools:
+    paths: []
+    allowed: ~
+    rejected: ~
+
+  # ---------------------------------------------------------------------------
+  # Flags (Boolean Options)
+  # Access: AIA.config.flags.chat, AIA.config.flags.debug, etc.
+  # Env: AIA_FLAGS__CHAT=true, AIA_FLAGS__DEBUG=true, etc.
+  # ---------------------------------------------------------------------------
+  flags:
+    chat: false
+    cost: false
+    debug: false
+    verbose: false
+    fuzzy: false
+    tokens: false
+    no_mcp: false
+    speak: false
+    terse: false
+    shell: true
+    erb: true
+    clear: false
+    consensus: false
+
+  # ---------------------------------------------------------------------------
+  # Logger Configuration
+  # Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
+  # Env: AIA_LOGGER__AIA__FILE, AIA_LOGGER__LLM__LEVEL, etc.
+  #
+  # Configures logging for three systems:
+  #   aia: AIA application logging
+  #   llm: RubyLLM gem logging
+  #   mcp: RubyLLM::MCP gem logging
+  #
+  # file: STDOUT, STDERR, or a file path (e.g., ~/.aia/aia.log)
+  #       All three loggers can write to the same file safely.
+  # level: debug, info, warn, error, fatal
+  # flush: true = immediate write (no buffering), false = buffered writes
+  # ---------------------------------------------------------------------------
+  logger:
+    aia:
+      file: STDOUT
+      level: warn
+      flush: true
+    llm:
+      file: STDOUT
+      level: warn
+      flush: true
+    mcp:
+      file: STDOUT
+      level: warn
+      flush: true
+
+  # ---------------------------------------------------------------------------
+  # Pipeline/Workflow Configuration
+  # Access: AIA.config.pipeline (array of prompt IDs)
+  # ---------------------------------------------------------------------------
+  pipeline: []
+
+  # ---------------------------------------------------------------------------
+  # Model Registry Configuration
+  # Access: AIA.config.registry.refresh
+  # Env: AIA_REGISTRY__REFRESH
+  # Note: last_refresh is derived from models.json file modification time
+  # ---------------------------------------------------------------------------
+  registry:
+    refresh: 7 # days between refreshes (0 = disable periodic refresh)
+
+  # ---------------------------------------------------------------------------
+  # Required Ruby Libraries
+  # Access: AIA.config.require_libs (array)
+  # ---------------------------------------------------------------------------
+  require_libs: []
+
+  # ---------------------------------------------------------------------------
+  # MCP Servers Configuration
+  # Access: AIA.config.mcp_servers (array of server configs)
+  #
+  # Example:
+  #   mcp_servers:
+  #     - name: my-server
+  #       command: /path/to/server
+  #       args: []
+  #       env: {}
+  #       timeout: 8000
+  # ---------------------------------------------------------------------------
+  mcp_servers: []
+  mcp_use: ~
+  mcp_skip: ~
+
+  # ---------------------------------------------------------------------------
+  # Paths Configuration
+  # Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
+  # Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
+  #
+  # Note: MywayConfig uses XDG Base Directory Specification by default.
+  # User config is loaded from ~/.config/aia/aia.yml
+  # ---------------------------------------------------------------------------
+  paths:
+    aia_dir: ~/.config/aia
+    config_file: ~/.config/aia/aia.yml
+
+  # ---------------------------------------------------------------------------
+  # Context Files (set at runtime)
+  # Access: AIA.config.context_files (array of file paths)
+  # ---------------------------------------------------------------------------
+  context_files: []

@@ -270,6 +270,8 @@ aia --fuzzy
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
 | `--tokens` | Display token usage in chat mode | `aia --chat --tokens` |
 | `--cost` | Include cost calculations with token usage | `aia --chat --cost` |
+| `--mcp-list` | List configured MCP servers and exit | `aia --mcp-list` |
+| `--list-tools` | List available tools and exit | `aia --require shared_tools --list-tools` |
 | `--help` | Show complete help | `aia --help` |
 
 ### Directory Structure
@@ -382,6 +384,8 @@ Your prompt content here...
 | tool_paths | --tools | [] | AIA_TOOLS__PATHS |
 | allowed_tools | --at, --allowed-tools | nil | AIA_TOOLS__ALLOWED |
 | rejected_tools | --rt, --rejected-tools | nil | AIA_TOOLS__REJECTED |
+| mcp_use | --mu, --mcp-use | ~ | AIA_MCP_USE |
+| mcp_skip | --ms, --mcp-skip | ~ | AIA_MCP_SKIP |
 | top_p | --top-p | 1.0 | AIA_LLM__TOP_P |
 | transcription_model | --tm, --transcription-model | whisper-1 | AIA_TRANSCRIPTION__MODEL |
 | verbose | -v, --verbose | false | AIA_FLAGS__VERBOSE |

@@ -458,7 +458,7 @@ module AIA
       AIA.config.connected_mcp_servers = []
       AIA.config.failed_mcp_servers = []
 
-      servers = AIA.config.mcp_servers
+      servers = filter_mcp_servers(AIA.config.mcp_servers)
       server_names = servers.map { |s| s[:name] || s['name'] }.compact
 
       logger.info("Starting parallel MCP connection", server_count: servers.size, servers: server_names)
@@ -1085,6 +1085,27 @@ module AIA
       end
     end
 
+
+    def filter_mcp_servers(servers)
+      use_list = Array(AIA.config.mcp_use)
+      skip_list = Array(AIA.config.mcp_skip)
+
+      if !use_list.empty?
+        servers = servers.select do |server|
+          name = server[:name] || server['name']
+          use_list.include?(name)
+        end
+        logger.info("MCP servers filtered by --mcp-use", use: use_list, remaining: servers.size)
+      elsif !skip_list.empty?
+        servers = servers.reject do |server|
+          name = server[:name] || server['name']
+          skip_list.include?(name)
+        end
+        logger.info("MCP servers filtered by --mcp-skip", skip: skip_list, remaining: servers.size)
+      end
+
+      servers
+    end
 
     def filter_tools_by_rejected_list
       rejected = AIA.config.tools.rejected

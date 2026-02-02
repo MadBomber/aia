@@ -155,6 +155,7 @@ nav:
     - Available Models: guides/available-models.md
     - Image Generation: guides/image-generation.md
     - Tools Integration: guides/tools.md
+    - Shared Tools: guides/shared-tools.md
   - Reference:
     - CLI Parameters: cli-reference.md
     - Directives: directives-reference.md

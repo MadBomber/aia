@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'word_wrapper'
+
 # lib/aia/config/validator.rb
 #
 # Validates and tailors configuration after it's been loaded.
@@ -25,6 +27,8 @@ module AIA
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
         handle_dump_config(config)
+        handle_mcp_list(config)
+        handle_list_tools(config)
         validate_required_prompt_id(config)
         process_role_configuration(config)
         handle_fuzzy_search_prompt_id(config)
@@ -148,6 +152,303 @@ module AIA
         exit 0
       end
 
+      def handle_mcp_list(config)
+        return unless config.mcp_list
+        return if config.list_tools  # defer to handle_list_tools for combined output
+
+        servers = filter_mcp_servers(config)
+
+        if servers.empty?
+          puts "No MCP servers configured."
+        else
+          label = mcp_filter_active?(config) ? "Active" : "Configured"
+          puts "#{label} MCP servers:\n\n"
+          servers.each do |server|
+            name    = server[:name]    || server['name']    || '(unnamed)'
+            command = server[:command] || server['command']  || '(no command)'
+            args    = server[:args]    || server['args']     || []
+            args_str = args.empty? ? '' : " #{args.join(' ')}"
+            puts "  #{name}"
+            puts "    command: #{command}#{args_str}"
+            puts
+          end
+        end
+
+        exit 0
+      end
+
+      def handle_list_tools(config)
+        return unless config.list_tools
+
+        local_tools = load_local_tools(config)
+        mcp_tool_groups = {}
+
+        if config.mcp_list
+          mcp_tool_groups = load_mcp_tools_grouped(config)
+        end
+
+        if local_tools.empty? && mcp_tool_groups.empty?
+          $stderr.puts "No tools available."
+          exit 0
+        end
+
+        if $stdout.tty?
+          list_tools_terminal(local_tools, mcp_tool_groups)
+        else
+          list_tools_markdown(local_tools, mcp_tool_groups)
+        end
+
+        exit 0
+      end
+
+      def list_tools_terminal(local_tools, mcp_tool_groups)
+        width  = (ENV['COLUMNS'] || 80).to_i - 4
+        indent = '    '
+
+        unless local_tools.empty?
+          puts "Local Tools:\n\n"
+          local_tools.each { |tool| print_tool_terminal(tool, width, indent) }
+        end
+
+        mcp_tool_groups.each do |server_name, tools|
+          puts "MCP: #{server_name} (#{tools.size} tools)\n\n"
+          tools.each { |tool| print_tool_terminal(tool, width, indent) }
+        end
+      end
+
+      def print_tool_terminal(tool, width, indent)
+        name = tool.respond_to?(:name) ? tool.name : tool.class.name
+        desc = tool.respond_to?(:description) ? tool.description.to_s.strip : ''
+
+        puts "  #{name}"
+        unless desc.empty?
+          brief = first_sentences(desc, 3)
+          wrapped = WordWrapper::MinimumRaggedness.new(width, brief).wrap
+          wrapped.split("\n").each { |line| puts "#{indent}#{line}" }
+        end
+        puts
+      end
+
+      def list_tools_markdown(local_tools, mcp_tool_groups)
+        total = local_tools.size + mcp_tool_groups.values.sum(&:size)
+        sources = 1 + mcp_tool_groups.size
+
+        puts "# Available Tools"
+        puts
+        puts "> #{total} tools from #{sources} source#{'s' if sources > 1}"
+        puts
+
+        unless local_tools.empty?
+          puts "## Local Tools (#{local_tools.size})"
+          puts
+          local_tools.each { |tool| print_tool_markdown(tool) }
+        end
+
+        mcp_tool_groups.each do |server_name, tools|
+          puts "## MCP: #{server_name} (#{tools.size})"
+          puts
+          tools.each { |tool| print_tool_markdown(tool) }
+        end
+      end
+
+      def print_tool_markdown(tool)
+        name = tool.respond_to?(:name) ? tool.name : tool.class.name
+        desc = tool.respond_to?(:description) ? tool.description.to_s.strip : ''
+
+        puts "### `#{name}`"
+        puts
+        unless desc.empty?
+          puts nest_markdown_headings(desc, 3)
+          puts
+        end
+      end
+
+      # Adjusts any markdown headings in text so they nest under the
+      # given parent heading level. e.g. with parent_level=3 (###),
+      # a "# Foo" becomes "#### Foo" and "## Bar" becomes "##### Bar".
+      # Handles headings with optional leading whitespace.
+      def nest_markdown_headings(text, parent_level)
+        text.gsub(/^[ \t]*(\#{1,6})\s/) do |match|
+          existing = $1
+          "#" * (existing.length + parent_level) + " "
+        end
+      end
+
+      def filter_mcp_servers(config)
+        servers  = config.mcp_servers || []
+        use_list  = Array(config.mcp_use)
+        skip_list = Array(config.mcp_skip)
+
+        if !use_list.empty?
+          servers.select { |s| use_list.include?(s[:name] || s['name']) }
+        elsif !skip_list.empty?
+          servers.reject { |s| skip_list.include?(s[:name] || s['name']) }
+        else
+          servers
+        end
+      end
+
+      def mcp_filter_active?(config)
+        !Array(config.mcp_use).empty? || !Array(config.mcp_skip).empty?
+      end
+
+      def load_local_tools(config)
+        # Load required libraries (with gem activation and lazy-load triggering)
+        Array(config.require_libs).each do |lib|
+          begin
+            activate_gem_for_require(lib)
+            require lib
+            trigger_tool_loading(lib)
+          rescue LoadError => e
+            warn "Warning: Failed to require '#{lib}': #{e.message}"
+            warn "Hint: Make sure the gem is installed: gem install #{lib}"
+          rescue StandardError => e
+            warn "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
+          end
+        end
+
+        # Load tool files
+        Array(config.tools&.paths).each do |path|
+          expanded = File.expand_path(path)
+          if File.exist?(expanded)
+            require expanded
+          else
+            warn "Warning: Tool file not found: #{path}"
+          end
+        rescue LoadError, StandardError => e
+          warn "Warning: Failed to load tool '#{path}': #{e.message}"
+        end
+
+        # Scan ObjectSpace for RubyLLM::Tool subclasses
+        ObjectSpace.each_object(Class).select do |klass|
+          next false unless klass < RubyLLM::Tool
+
+          begin
+            klass.new
+            true
+          rescue ArgumentError, LoadError, StandardError
+            false
+          end
+        end
+      end
+
+      # Activate a gem and add its lib path to $LOAD_PATH
+      # Bypasses Bundler's restrictions on loading non-bundled gems
+      def activate_gem_for_require(lib)
+        return if Gem.try_activate(lib)
+
+        gem_path = find_gem_path(lib)
+        if gem_path
+          lib_path = File.join(gem_path, 'lib')
+          $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+        end
+      end
+
+      def find_gem_path(gem_name)
+        gem_dirs = Gem.path.flat_map do |base|
+          gems_dir = File.join(base, 'gems')
+          next [] unless File.directory?(gems_dir)
+
+          Dir.glob(File.join(gems_dir, "#{gem_name}-*")).select do |path|
+            File.directory?(path) && File.basename(path).match?(/^#{Regexp.escape(gem_name)}-[\d.]+/)
+          end
+        end
+
+        gem_dirs.sort.last
+      end
+
+      def first_sentences(text, count)
+        # Normalize whitespace: collapse newlines and multiple spaces
+        normalized = text.gsub(/\s*\n\s*/, ' ').gsub(/\s{2,}/, ' ').strip
+        sentences  = normalized.scan(/[^.!?]*[.!?]/)
+        result     = sentences.first(count).join.strip
+        result.empty? ? normalized : result
+      end
+
+      # Trigger lazy-loaded tool libraries (e.g., Zeitwerk-based gems like shared_tools)
+      def trigger_tool_loading(lib)
+        const_name = lib.split(/[_-]/).map(&:capitalize).join
+
+        begin
+          mod = Object.const_get(const_name)
+
+          if mod.respond_to?(:load_all_tools)
+            mod.load_all_tools
+          elsif mod.respond_to?(:tools)
+            mod.tools
+          end
+        rescue NameError
+          # Constant doesn't exist, library might use different naming
+        end
+      end
+
+      def load_mcp_tools_grouped(config)
+        servers = filter_mcp_servers(config)
+        return {} if servers.empty?
+
+        # Suppress MCP logger noise during listing
+        quiet_mcp_logger
+
+        groups = {}
+        default_timeout = 8_000
+
+        servers.each do |server|
+          name    = server[:name]    || server['name']
+          command = server[:command] || server['command']
+          args    = server[:args]    || server['args'] || []
+          env     = server[:env]     || server['env']  || {}
+
+          raw_timeout = server[:timeout] || server['timeout'] || default_timeout
+          timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
+          timeout = [timeout, 30_000].min
+
+          mcp_config = { command: command, args: Array(args) }
+          mcp_config[:env] = env unless env.empty?
+
+          begin
+            $stderr.print "MCP: Connecting to #{name}..."
+            $stderr.flush
+
+            client = begin
+              RubyLLM::MCP.add_client(
+                name: name, transport_type: :stdio,
+                config: mcp_config, request_timeout: timeout, start: false
+              )
+            rescue ArgumentError
+              RubyLLM::MCP.add_client(
+                name: name, transport_type: :stdio,
+                config: mcp_config, start: false
+              )
+            end
+
+            client = RubyLLM::MCP.clients[name]
+            client.start
+
+            if client.alive?
+              server_tools = client.tools rescue []
+              groups[name] = server_tools
+              $stderr.puts " #{server_tools.size} tools"
+            else
+              $stderr.puts " failed"
+            end
+          rescue StandardError => e
+            $stderr.puts " error: #{e.message}"
+          end
+        end
+
+        groups
+      end
+
+      def quiet_mcp_logger
+        if defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:config)
+          mcp_config = RubyLLM::MCP.config
+          if mcp_config.respond_to?(:logger=)
+            quiet = Logger.new(File::NULL)
+            mcp_config.logger = quiet
+          end
+        end
+      end
+
       def handle_completion_script(config)
         return unless config.completion
 
@@ -192,7 +493,7 @@ module AIA
         and_exit = false
 
         config.pipeline.each do |prompt_id|
-          next if prompt_id.nil? || prompt_id.empty?
+          next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__'
 
           prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}.txt")
           unless File.exist?(prompt_file_path)

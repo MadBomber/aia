@@ -43,7 +43,7 @@ class ChatProcessorServiceTest < Minitest::Test
         verbose: false
       ),
       llm: OpenStruct.new(
-        adapter: 'ruby_llm'
+        temperature: 0.7
       )
     )
     AIA.stubs(:config).returns(@config)
