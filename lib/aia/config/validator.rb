@@ -152,12 +152,13 @@ module AIA
       def handle_mcp_list(config)
         return unless config.mcp_list
 
-        servers = config.mcp_servers || []
+        servers = filter_mcp_servers(config)
 
         if servers.empty?
           puts "No MCP servers configured."
         else
-          puts "Configured MCP servers:\n\n"
+          label = mcp_filter_active?(config) ? "Active" : "Configured"
+          puts "#{label} MCP servers:\n\n"
           servers.each do |server|
             name    = server[:name]    || server['name']    || '(unnamed)'
             command = server[:command] || server['command']  || '(no command)'
@@ -170,6 +171,24 @@ module AIA
         end
 
         exit 0
+      end
+
+      def filter_mcp_servers(config)
+        servers  = config.mcp_servers || []
+        use_list  = Array(config.mcp_use)
+        skip_list = Array(config.mcp_skip)
+
+        if !use_list.empty?
+          servers.select { |s| use_list.include?(s[:name] || s['name']) }
+        elsif !skip_list.empty?
+          servers.reject { |s| skip_list.include?(s[:name] || s['name']) }
+        else
+          servers
+        end
+      end
+
+      def mcp_filter_active?(config)
+        !Array(config.mcp_use).empty? || !Array(config.mcp_skip).empty?
       end
 
       def handle_completion_script(config)
