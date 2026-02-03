@@ -12,13 +12,13 @@
         <meta name="author" content="Dewayne VanHoozer">
       
       
-        <link rel="canonical" href="https://madbomber.github.io/aia/guides/shared-tools/">
+        <link rel="canonical" href="https://madbomber.github.io/aia/guides/migrate-prompts/">
       
       
-        <link rel="prev" href="../tools/">
+        <link rel="prev" href="../shared-tools/">
       
       
-        <link rel="next" href="../migrate-prompts/">
+        <link rel="next" href="../../cli-reference/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>Shared Tools - AIA - AI Assistant</title>
+        <title>Migrating Prompts - AIA - AI Assistant</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#shared-tools" class="md-skip">
+        <a href="#migrating-prompts" class="md-skip">
           Skip to content
         </a>
       
@@ -122,7 +122,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Shared Tools
+              Migrating Prompts
             
           </span>
         </div>
@@ -775,6 +775,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../shared-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shared Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -794,7 +822,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Tools
+    Migrating Prompts
   
 
     
@@ -812,7 +840,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Tools
+    Migrating Prompts
   
 
     
@@ -840,10 +868,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#why-migrate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Installation
+        Why Migrate?
       
     </span>
   </a>
@@ -851,45 +879,61 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#format-comparison" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Usage
+        Format Comparison
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Format Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#old-format-v058" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Old Format (v0.5.8)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-format-v100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Format (v1.0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#available-tools" class="md-nav__link">
+  <a href="#running-the-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Available Tools
+        Running the Migration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Available Tools">
+    <nav class="md-nav" aria-label="Running the Migration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#data-analysis" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Data &amp; Analysis
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Data &amp; Analysis">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calculator" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        calculator
+        Basic Usage
       
     </span>
   </a>
@@ -897,10 +941,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#composite_analysis" class="md-nav__link">
+  <a href="#cli-options" class="md-nav__link">
     <span class="md-ellipsis">
       
-        composite_analysis
+        CLI Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment
       
     </span>
   </a>
@@ -911,24 +966,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#database" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#what-gets-migrated" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Database
+        What Gets Migrated
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Database">
+    <nav class="md-nav" aria-label="What Gets Migrated">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#database_tool" class="md-nav__link">
+  <a href="#placeholders" class="md-nav__link">
     <span class="md-ellipsis">
       
-        database_tool
+        Placeholders
       
     </span>
   </a>
@@ -936,10 +991,54 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#database_query" class="md-nav__link">
+  <a href="#directives" class="md-nav__link">
     <span class="md-ellipsis">
       
-        database_query
+        Directives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metadata
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parameter-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameter History
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-after-__end__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content After __END__
       
     </span>
   </a>
@@ -950,24 +1049,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#file-system-operations" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#flagged-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        File &amp; System Operations
+        Flagged Files
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="File &amp; System Operations">
+    <nav class="md-nav" aria-label="Flagged Files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#disk_tool" class="md-nav__link">
+  <a href="#reviewing-flagged-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        disk_tool
+        Reviewing Flagged Files
       
     </span>
   </a>
@@ -975,32 +1074,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#clipboard" class="md-nav__link">
+  <a href="#reprocessing-flagged-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        clipboard
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#system_info" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        system_info
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#computer_tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        computer_tool
+        Reprocessing Flagged Files
       
     </span>
   </a>
@@ -1011,24 +1088,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#web-network" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-migration-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Web &amp; Network
+        Step-by-Step Migration Workflow
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Web &amp; Network">
+    <nav class="md-nav" aria-label="Step-by-Step Migration Workflow">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#browser_tool" class="md-nav__link">
+  <a href="#1-preview-the-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        browser_tool
+        1. Preview the Migration
       
     </span>
   </a>
@@ -1036,10 +1113,54 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dns" class="md-nav__link">
+  <a href="#2-run-the-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        dns
+        2. Run the Migration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-review-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Review the Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-reprocess-flagged-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Reprocess Flagged Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-handle-remaining-flagged-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Handle Remaining Flagged Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-clean-up-originals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Clean Up Originals
       
     </span>
   </a>
@@ -1050,80 +1171,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#code-execution" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Code Execution
+        Troubleshooting
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Code Execution">
+    <nav class="md-nav" aria-label="Troubleshooting">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#eval_tool" class="md-nav__link">
+  <a href="#no-txt-files-found" class="md-nav__link">
     <span class="md-ellipsis">
       
-        eval_tool
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documents" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Documents
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Documents">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#doc_tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        doc_tool
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#scheduling-time" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scheduling &amp; Time
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Scheduling &amp; Time">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#current_date_time" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        current_date_time
+        "No .txt files found"
       
     </span>
   </a>
@@ -1131,38 +1196,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#cron" class="md-nav__link">
+  <a href="#file-skipped-because-md-already-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        cron
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workflow-weather" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Workflow &amp; Weather
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Workflow &amp; Weather">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#workflow_manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        workflow_manager
+        File skipped because .md already exists
       
     </span>
   </a>
@@ -1170,46 +1207,24 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#weather_tool" class="md-nav__link">
+  <a href="#unrecognized-directive-warnings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        weather_tool
+        Unrecognized directive warnings
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#development-reference" class="md-nav__link">
+  <a href="#placeholder-not-converted" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Development &amp; Reference
+        Placeholder not converted
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Development &amp; Reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#error_handling_tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        error_handling_tool
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1233,34 +1248,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../migrate-prompts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migrating Prompts
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1634,10 +1621,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#why-migrate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Installation
+        Why Migrate?
       
     </span>
   </a>
@@ -1645,45 +1632,61 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#format-comparison" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Usage
+        Format Comparison
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Format Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#old-format-v058" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Old Format (v0.5.8)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-format-v100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Format (v1.0.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#available-tools" class="md-nav__link">
+  <a href="#running-the-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Available Tools
+        Running the Migration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Available Tools">
+    <nav class="md-nav" aria-label="Running the Migration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#data-analysis" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Data &amp; Analysis
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Data &amp; Analysis">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calculator" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        calculator
+        Basic Usage
       
     </span>
   </a>
@@ -1691,10 +1694,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#composite_analysis" class="md-nav__link">
+  <a href="#cli-options" class="md-nav__link">
     <span class="md-ellipsis">
       
-        composite_analysis
+        CLI Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment
       
     </span>
   </a>
@@ -1705,24 +1719,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#database" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#what-gets-migrated" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Database
+        What Gets Migrated
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Database">
+    <nav class="md-nav" aria-label="What Gets Migrated">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#database_tool" class="md-nav__link">
+  <a href="#placeholders" class="md-nav__link">
     <span class="md-ellipsis">
       
-        database_tool
+        Placeholders
       
     </span>
   </a>
@@ -1730,10 +1744,54 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#database_query" class="md-nav__link">
+  <a href="#directives" class="md-nav__link">
     <span class="md-ellipsis">
       
-        database_query
+        Directives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metadata
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parameter-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameter History
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-after-__end__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content After __END__
       
     </span>
   </a>
@@ -1744,24 +1802,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#file-system-operations" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#flagged-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        File &amp; System Operations
+        Flagged Files
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="File &amp; System Operations">
+    <nav class="md-nav" aria-label="Flagged Files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#disk_tool" class="md-nav__link">
+  <a href="#reviewing-flagged-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        disk_tool
+        Reviewing Flagged Files
       
     </span>
   </a>
@@ -1769,32 +1827,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#clipboard" class="md-nav__link">
+  <a href="#reprocessing-flagged-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        clipboard
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#system_info" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        system_info
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#computer_tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        computer_tool
+        Reprocessing Flagged Files
       
     </span>
   </a>
@@ -1805,24 +1841,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#web-network" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-migration-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Web &amp; Network
+        Step-by-Step Migration Workflow
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Web &amp; Network">
+    <nav class="md-nav" aria-label="Step-by-Step Migration Workflow">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#browser_tool" class="md-nav__link">
+  <a href="#1-preview-the-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        browser_tool
+        1. Preview the Migration
       
     </span>
   </a>
@@ -1830,10 +1866,54 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dns" class="md-nav__link">
+  <a href="#2-run-the-migration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        dns
+        2. Run the Migration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-review-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Review the Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-reprocess-flagged-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Reprocess Flagged Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-handle-remaining-flagged-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Handle Remaining Flagged Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-clean-up-originals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Clean Up Originals
       
     </span>
   </a>
@@ -1844,80 +1924,24 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#code-execution" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Code Execution
+        Troubleshooting
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Code Execution">
+    <nav class="md-nav" aria-label="Troubleshooting">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#eval_tool" class="md-nav__link">
+  <a href="#no-txt-files-found" class="md-nav__link">
     <span class="md-ellipsis">
       
-        eval_tool
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documents" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Documents
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Documents">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#doc_tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        doc_tool
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#scheduling-time" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scheduling &amp; Time
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Scheduling &amp; Time">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#current_date_time" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        current_date_time
+        "No .txt files found"
       
     </span>
   </a>
@@ -1925,38 +1949,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#cron" class="md-nav__link">
+  <a href="#file-skipped-because-md-already-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        cron
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workflow-weather" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Workflow &amp; Weather
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Workflow &amp; Weather">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#workflow_manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        workflow_manager
+        File skipped because .md already exists
       
     </span>
   </a>
@@ -1964,46 +1960,24 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#weather_tool" class="md-nav__link">
+  <a href="#unrecognized-directive-warnings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        weather_tool
+        Unrecognized directive warnings
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#development-reference" class="md-nav__link">
+  <a href="#placeholder-not-converted" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Development &amp; Reference
+        Placeholder not converted
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Development &amp; Reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#error_handling_tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        error_handling_tool
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2088,7 +2062,7 @@
 
 
   
-    <a href="https://github.com/madbomber/aia/edit/main/docs/guides/shared-tools.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/madbomber/aia/edit/main/docs/guides/migrate-prompts.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -2097,189 +2071,322 @@
     
       
     
-    <a href="https://github.com/madbomber/aia/raw/main/docs/guides/shared-tools.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/madbomber/aia/raw/main/docs/guides/migrate-prompts.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="shared-tools">Shared Tools<a class="headerlink" href="#shared-tools" title="Permanent link">&para;</a></h1>
-<p>The <a href="https://github.com/madbomber/shared_tools">shared_tools gem</a> provides a curated collection of ready-to-use tools for LLM-assisted workflows. These tools extend AIA's capabilities with file operations, web browsing, database access, system utilities, and more.</p>
-<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<p>The <code>shared_tools</code> gem is installed separately:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>gem<span class="w"> </span>install<span class="w"> </span>shared_tools
+<h1 id="migrating-prompts">Migrating Prompts<a class="headerlink" href="#migrating-prompts" title="Permanent link">&para;</a></h1>
+<p>AIA includes a migration tool for converting prompt files from the legacy prompt_manager v0.5.8 format to the v1.0.0 format. This guide covers the migration process, what changes, and how to handle files that need manual attention.</p>
+<h2 id="why-migrate">Why Migrate?<a class="headerlink" href="#why-migrate" title="Permanent link">&para;</a></h2>
+<p>The prompt_manager gem moved from a two-file format (<code>.txt</code> + <code>.json</code>) with <code>[PLACEHOLDER]</code> syntax to a single <code>.md</code> file with YAML front matter and ERB parameters. The new format provides:</p>
+<ul>
+<li><strong>Self-contained prompts</strong> — metadata, parameters, and body in one file</li>
+<li><strong>Standard ERB</strong> — <code>&lt;%= param %&gt;</code> instead of custom <code>[PARAM]</code> syntax</li>
+<li><strong>YAML front matter</strong> — structured configuration instead of <code>//</code> directives</li>
+<li><strong>Markdown body</strong> — native rendering support in editors and documentation tools</li>
+</ul>
+<h2 id="format-comparison">Format Comparison<a class="headerlink" href="#format-comparison" title="Permanent link">&para;</a></h2>
+<h3 id="old-format-v058">Old Format (v0.5.8)<a class="headerlink" href="#old-format-v058" title="Permanent link">&para;</a></h3>
+<p>Two files per prompt:</p>
+<p><strong><code>my_prompt.txt</code></strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># ~/.prompts/my_prompt.txt
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a># Desc: Summarize the given document
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>//config temperature 0.3
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>//include shared_context.txt
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>Summarize the following [DOCUMENT_TYPE] document:
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>[CONTENT]
+</span></code></pre></div></p>
+<p><strong><code>my_prompt.json</code></strong> (parameter history)
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;[DOCUMENT_TYPE]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;report&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;article&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;paper&quot;</span><span class="p">],</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;[CONTENT]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">]</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h3 id="new-format-v100">New Format (v1.0.0)<a class="headerlink" href="#new-format-v100" title="Permanent link">&para;</a></h3>
+<p>Single file:</p>
+<p><strong><code>my_prompt.md</code></strong>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>---
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>name: my_prompt
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>description: Summarize the given document
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>temperature: 0.3
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>parameters:
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  document_type: paper
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="gu">  content: null</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="gu">---</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>&lt;%= include(&#39;shared_context.txt&#39;) %&gt;
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>Summarize the following &lt;%= document_type %&gt; document:
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>&lt;%= content %&gt;
+</span></code></pre></div></p>
+<h2 id="running-the-migration">Running the Migration<a class="headerlink" href="#running-the-migration" title="Permanent link">&para;</a></h2>
+<p>The migration script is at <code>bin/migrate_prompts</code>. It requires no external dependencies beyond Ruby's standard library.</p>
+<h3 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Scan the entire prompts directory (uses $AIA_PROMPTS__DIR or ~/.prompts)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>bin/migrate_prompts
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Preview changes without modifying files</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>bin/migrate_prompts<span class="w"> </span>--dry-run
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># Migrate with detailed output</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>bin/migrate_prompts<span class="w"> </span>--verbose
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1"># Migrate specific files or directories</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>bin/migrate_prompts<span class="w"> </span>~/.prompts/development/
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>bin/migrate_prompts<span class="w"> </span>~/.prompts/code_review.txt<span class="w"> </span>~/.prompts/debug_help.txt
 </span></code></pre></div>
-<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<p>Load shared tools into AIA with the <code>--require</code> option:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Load all shared tools</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools<span class="w"> </span>--chat
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Load via the ruby_llm entry point (equivalent)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools/ruby_llm<span class="w"> </span>--chat
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Load a specific tool only</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools/ruby_llm/edit_file<span class="w"> </span>--chat
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Combine with your own custom tools</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools<span class="w"> </span>--tools<span class="w"> </span>~/my-tools/<span class="w"> </span>--chat
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># Use in batch prompts (not just chat)</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools<span class="w"> </span>my_prompt<span class="w"> </span>input.txt
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># List what tools are available</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>aia<span class="w"> </span>--require<span class="w"> </span>shared_tools<span class="w"> </span>--list-tools
+<h3 id="cli-options">CLI Options<a class="headerlink" href="#cli-options" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--dry-run</code></td>
+<td>Show what would change without modifying any files</td>
+</tr>
+<tr>
+<td><code>--verbose</code></td>
+<td>Show detailed transformation info for each file</td>
+</tr>
+<tr>
+<td><code>--force</code></td>
+<td>Overwrite existing <code>.md</code> files (default: skip if <code>.md</code> exists)</td>
+</tr>
+<tr>
+<td><code>--reprocess</code></td>
+<td>Re-examine <code>*.txt-review</code> files and recover those that now pass</td>
+</tr>
+<tr>
+<td><code>-h</code>, <code>--help</code></td>
+<td>Show usage help</td>
+</tr>
+</tbody>
+</table>
+<h3 id="environment">Environment<a class="headerlink" href="#environment" title="Permanent link">&para;</a></h3>
+<p>The script uses <code>AIA_PROMPTS__DIR</code> to locate the prompts directory. If unset, it defaults to <code>~/.prompts</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Use a custom prompts directory</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nv">AIA_PROMPTS__DIR</span><span class="o">=</span>~/my-prompts<span class="w"> </span>bin/migrate_prompts<span class="w"> </span>--dry-run
 </span></code></pre></div>
-<p>You can also load shared tools from within a prompt using a Ruby directive:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="sr">//</span><span class="n">ruby</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">require</span><span class="w"> </span><span class="s1">&#39;shared_tools/ruby_llm&#39;</span>
+<h2 id="what-gets-migrated">What Gets Migrated<a class="headerlink" href="#what-gets-migrated" title="Permanent link">&para;</a></h2>
+<h3 id="placeholders">Placeholders<a class="headerlink" href="#placeholders" title="Permanent link">&para;</a></h3>
+<p>Standard <code>[PLACEHOLDER]</code> tokens become ERB expressions:</p>
+<table>
+<thead>
+<tr>
+<th>Old</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[TOPIC]</code></td>
+<td><code>&lt;%= topic %&gt;</code></td>
+</tr>
+<tr>
+<td><code>[FILE_NAME]</code></td>
+<td><code>&lt;%= file_name %&gt;</code></td>
+</tr>
+<tr>
+<td><code>[TECH STACK]</code></td>
+<td><code>&lt;%= tech_stack %&gt;</code> (spaces normalized to underscores)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="directives">Directives<a class="headerlink" href="#directives" title="Permanent link">&para;</a></h3>
+<p>Prompt directives are migrated to YAML front matter or ERB calls:</p>
+<table>
+<thead>
+<tr>
+<th>Old Directive</th>
+<th>New Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>//config temperature 0.3</code></td>
+<td><code>temperature: 0.3</code> in YAML</td>
+</tr>
+<tr>
+<td><code>//config top_p 0.9</code></td>
+<td><code>top_p: 0.9</code> in YAML</td>
+</tr>
+<tr>
+<td><code>//temp 0.5</code></td>
+<td><code>temperature: 0.5</code> in YAML</td>
+</tr>
+<tr>
+<td><code>//topp 0.8</code></td>
+<td><code>top_p: 0.8</code> in YAML</td>
+</tr>
+<tr>
+<td><code>//next follow_up</code></td>
+<td><code>next: follow_up</code> in YAML</td>
+</tr>
+<tr>
+<td><code>//pipeline step1, step2</code></td>
+<td><code>pipeline: [step1, step2]</code> in YAML</td>
+</tr>
+<tr>
+<td><code>//include file.txt</code></td>
+<td><code>&lt;%= include('file.txt') %&gt;</code> in body</td>
+</tr>
+<tr>
+<td><code>//shell command</code></td>
+<td><code>&lt;%= system('command') %&gt;</code> in body</td>
+</tr>
+<tr>
+<td><code>//ruby expression</code></td>
+<td><code>&lt;%= expression %&gt;</code> in body</td>
+</tr>
+<tr>
+<td><code>//backend ...</code></td>
+<td>Silently removed (deprecated)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="comments">Comments<a class="headerlink" href="#comments" title="Permanent link">&para;</a></h3>
+<p>Lines beginning with <code>#</code> (outside of code fences and ERB blocks) are converted to HTML comments:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Old format: this is a comment
 </span></code></pre></div>
-<p>Or using an ERB block:</p>
-<div class="language-erb highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cp">&lt;%=</span><span class="w"> </span><span class="nb">require</span><span class="w"> </span><span class="s1">&#39;shared_tools/ruby_llm&#39;</span><span class="p">;</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="w"> </span><span class="cp">%&gt;</span>
+<p>Becomes:</p>
+<div class="language-html highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="cm">&lt;!-- this is a comment --&gt;</span>
 </span></code></pre></div>
-<h2 id="available-tools">Available Tools<a class="headerlink" href="#available-tools" title="Permanent link">&para;</a></h2>
-<blockquote>
-<p><strong>Tip:</strong> Run <code>aia --require shared_tools --list-tools</code> to see the current list from your installed version. Redirect to a file for full markdown descriptions: <code>aia --require shared_tools --list-tools &gt; tools.md</code></p>
-</blockquote>
-<h3 id="data-analysis">Data &amp; Analysis<a class="headerlink" href="#data-analysis" title="Permanent link">&para;</a></h3>
-<h4 id="calculator"><code>calculator</code><a class="headerlink" href="#calculator" title="Permanent link">&para;</a></h4>
-<p>Perform advanced mathematical calculations with comprehensive error handling and validation.
-This tool supports basic arithmetic operations, parentheses, and common mathematical functions.
-It uses Dentaku for safe evaluation of mathematical expressions without executing arbitrary code,
-making it suitable for use in AI-assisted calculations where security is critical.
-The tool returns formatted results with configurable precision and helpful error messages
-when invalid expressions are provided.</p>
-<p>Supported operations:
-- Basic arithmetic: +, -, *, /, %
-- Parentheses for grouping: ( )
-- Exponentiation: ^ or pow(base, exponent)
-- Comparison operators: =, &lt;, &gt;, &lt;=, &gt;=, !=
-- Logical operators: and, or, not
-- Mathematical functions: sqrt, round, roundup, rounddown, abs
-- Trigonometric functions: sin, cos, tan</p>
-<h4 id="composite_analysis"><code>composite_analysis</code><a class="headerlink" href="#composite_analysis" title="Permanent link">&para;</a></h4>
-<p>Perform comprehensive multi-stage data analysis by orchestrating multiple specialized analysis steps
-to provide complete insights from various data sources. This composite tool automatically
-determines the appropriate data fetching method (web scraping for URLs, file reading for
-local paths), analyzes data structure and content, generates statistical insights,
-and suggests appropriate visualizations based on the data characteristics.
-Ideal for exploratory data analysis workflows where you need a complete picture
-from initial data loading through final insights. Handles CSV, JSON, and text data formats.</p>
-<h3 id="database">Database<a class="headerlink" href="#database" title="Permanent link">&para;</a></h3>
-<h4 id="database_tool"><code>database_tool</code><a class="headerlink" href="#database_tool" title="Permanent link">&para;</a></h4>
-<p>Executes SQL commands (INSERT / UPDATE / SELECT / etc) on a database. Supports full read-write operations for data manipulation and schema management.</p>
-<h4 id="database_query"><code>database_query</code><a class="headerlink" href="#database_query" title="Permanent link">&para;</a></h4>
-<p>Execute safe, read-only database queries with automatic connection management and security controls.
-This tool is designed for secure data retrieval operations only, restricting access to SELECT statements
-to prevent any data modification. It includes automatic connection pooling, query result limiting,
-query timeout support, and comprehensive error handling. The tool supports multiple database configurations
-through environment variables and ensures all connections are properly closed after use.</p>
-<p>Security features:
-- SELECT-only queries (no INSERT, UPDATE, DELETE, DROP, etc.)
-- Automatic LIMIT clause enforcement
-- Query timeout protection
-- Prepared statement support to prevent SQL injection
-- Connection pooling with automatic cleanup</p>
-<p>Supported databases: PostgreSQL, MySQL, SQLite, SQL Server, Oracle, and any database supported by Sequel.</p>
-<h3 id="file-system-operations">File &amp; System Operations<a class="headerlink" href="#file-system-operations" title="Permanent link">&para;</a></h3>
-<h4 id="disk_tool"><code>disk_tool</code><a class="headerlink" href="#disk_tool" title="Permanent link">&para;</a></h4>
-<p>A tool for interacting with a system. It is able to list, create, delete, move and modify directories and files.</p>
-<h4 id="clipboard"><code>clipboard</code><a class="headerlink" href="#clipboard" title="Permanent link">&para;</a></h4>
-<p>Read from or write to the system clipboard.</p>
-<p>This tool provides cross-platform clipboard access:
-- macOS: Uses pbcopy/pbpaste
-- Linux: Uses xclip or xsel (must be installed)
-- Windows: Uses clip/powershell</p>
-<p>Actions: <code>read</code>, <code>write</code>, <code>clear</code>.</p>
-<h4 id="system_info"><code>system_info</code><a class="headerlink" href="#system_info" title="Permanent link">&para;</a></h4>
-<p>Retrieve system information including operating system, CPU, memory, and disk details.</p>
-<p>This tool provides cross-platform system information:
-- macOS: Uses system_profiler, sysctl, and df commands
-- Linux: Uses /proc filesystem and df command
-- Windows: Uses wmic and powershell commands</p>
-<p>Categories: <code>all</code>, <code>os</code>, <code>cpu</code>, <code>memory</code>, <code>disk</code>, <code>network</code>.</p>
-<h4 id="computer_tool"><code>computer_tool</code><a class="headerlink" href="#computer_tool" title="Permanent link">&para;</a></h4>
-<p>A tool for interacting with a computer.</p>
-<h3 id="web-network">Web &amp; Network<a class="headerlink" href="#web-network" title="Permanent link">&para;</a></h3>
-<h4 id="browser_tool"><code>browser_tool</code><a class="headerlink" href="#browser_tool" title="Permanent link">&para;</a></h4>
-<p>Automates a web browser to perform various actions like visiting web pages, clicking elements, inspecting page content, and taking screenshots.</p>
-<p>Actions:
-1. <code>visit</code> - Navigate to a website
-2. <code>page_inspect</code> - Get page HTML or summary
-3. <code>ui_inspect</code> - Find elements by text content
-4. <code>selector_inspect</code> - Find elements by CSS selector
-5. <code>click</code> - Click an element by CSS selector
-6. <code>text_field_set</code> - Enter text in input fields/text areas
-7. <code>screenshot</code> - Take a screenshot of the page or specific element</p>
-<h4 id="dns"><code>dns</code><a class="headerlink" href="#dns" title="Permanent link">&para;</a></h4>
-<p>Perform DNS lookups and reverse DNS queries.</p>
-<p>Uses Ruby's built-in Resolv library for cross-platform DNS resolution.</p>
-<p>Actions:
-- <code>lookup</code> - Resolve a hostname to IP addresses
-- <code>reverse</code> - Perform reverse DNS lookup (IP to hostname)
-- <code>mx</code> - Get MX (mail exchange) records for a domain
-- <code>txt</code> - Get TXT records for a domain
-- <code>ns</code> - Get NS (nameserver) records for a domain
-- <code>all</code> - Get all available DNS records for a domain</p>
-<p>Record types for lookup: <code>A</code> (IPv4), <code>AAAA</code> (IPv6), <code>CNAME</code>, <code>ANY</code>.</p>
-<h3 id="code-execution">Code Execution<a class="headerlink" href="#code-execution" title="Permanent link">&para;</a></h3>
-<h4 id="eval_tool"><code>eval_tool</code><a class="headerlink" href="#eval_tool" title="Permanent link">&para;</a></h4>
-<p>Execute code in various programming languages (Ruby, Python, Shell).</p>
-<p><strong>WARNING</strong>: This tool executes arbitrary code. All code execution requires user authorization for security.</p>
-<p>Actions:
-- <code>ruby</code> - Execute Ruby code
-- <code>python</code> - Execute Python code (requires python3 in system PATH)
-- <code>shell</code> - Execute shell commands</p>
-<h3 id="documents">Documents<a class="headerlink" href="#documents" title="Permanent link">&para;</a></h3>
-<h4 id="doc_tool"><code>doc_tool</code><a class="headerlink" href="#doc_tool" title="Permanent link">&para;</a></h4>
-<p>Read and process various document formats.</p>
-<p>Actions:
-- <code>pdf_read</code> - Read specific pages from a PDF document</p>
-<p>The <code>page_numbers</code> parameter accepts single pages (<code>"5"</code>), multiple pages (<code>"1, 3, 5"</code>), and range notation (<code>"1-10"</code> or <code>"1, 3-5, 10"</code>).</p>
-<h3 id="scheduling-time">Scheduling &amp; Time<a class="headerlink" href="#scheduling-time" title="Permanent link">&para;</a></h3>
-<h4 id="current_date_time"><code>current_date_time</code><a class="headerlink" href="#current_date_time" title="Permanent link">&para;</a></h4>
-<p>Returns the current date, time, and timezone information from the system.
-This tool provides accurate temporal context for AI assistants that need
-to reason about time-sensitive information or schedule-related queries.</p>
-<p>Returns: date (ISO 8601), time (24-hour), timezone name and UTC offset, Unix timestamp, day of week, and week number.</p>
-<h4 id="cron"><code>cron</code><a class="headerlink" href="#cron" title="Permanent link">&para;</a></h4>
-<p>Parse, validate, and explain cron expressions.</p>
-<p>Supports standard 5-field cron format (minute, hour, day of month, month, day of week) with special characters: <code>*</code>, <code>,</code>, <code>-</code>, <code>/</code>.</p>
-<p>Actions:
-- <code>parse</code> - Parse and explain a cron expression
-- <code>validate</code> - Check if a cron expression is valid
-- <code>next</code> - Calculate the next N execution times
-- <code>generate</code> - Generate a cron expression from a description</p>
-<h3 id="workflow-weather">Workflow &amp; Weather<a class="headerlink" href="#workflow-weather" title="Permanent link">&para;</a></h3>
-<h4 id="workflow_manager"><code>workflow_manager</code><a class="headerlink" href="#workflow_manager" title="Permanent link">&para;</a></h4>
-<p>Manage complex multi-step workflows with persistent state tracking across tool invocations.
-This tool enables the creation and management of stateful workflows that can span multiple
-AI interactions and tool calls. It provides workflow initialization, step-by-step execution,
-status monitoring, and completion tracking. Each workflow maintains its state in persistent
-storage, allowing for resumption of long-running processes and coordination between
-multiple tools and AI interactions.</p>
-<p>Workflow lifecycle:
-1. <strong>Start</strong> - Initialize a new workflow with initial data (returns workflow_id)
-2. <strong>Step</strong> - Execute multiple workflow steps using the workflow_id
-3. <strong>Status</strong> - Check workflow progress and state at any time
-4. <strong>Complete</strong> - Finalize the workflow and clean up resources</p>
-<h4 id="weather_tool"><code>weather_tool</code><a class="headerlink" href="#weather_tool" title="Permanent link">&para;</a></h4>
-<p>Retrieve comprehensive current weather information for any city worldwide using the OpenWeatherMap API.
-This tool provides real-time weather data including temperature, atmospheric conditions, humidity,
-and wind information. Requires the <code>OPENWEATHER_API_KEY</code> environment variable.</p>
-<h3 id="development-reference">Development &amp; Reference<a class="headerlink" href="#development-reference" title="Permanent link">&para;</a></h3>
-<h4 id="error_handling_tool"><code>error_handling_tool</code><a class="headerlink" href="#error_handling_tool" title="Permanent link">&para;</a></h4>
-<p>Reference tool demonstrating comprehensive error handling patterns and resilience strategies
-for robust tool development. This tool showcases best practices for handling different
-types of errors including validation errors, network failures, authorization issues,
-and general exceptions. It implements retry mechanisms with exponential backoff,
-proper resource cleanup, detailed error categorization, and user-friendly error messages.</p>
+<p>Multi-line comment blocks are grouped:</p>
+<div class="language-html highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cm">&lt;!--</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="cm">First line of comment</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="cm">Second line of comment</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="cm">--&gt;</span>
+</span></code></pre></div>
+<p>Comments inside code fences (<code>```</code>) and multi-line ERB blocks (<code>&lt;% ... %&gt;</code>) are preserved as-is.</p>
+<h3 id="metadata">Metadata<a class="headerlink" href="#metadata" title="Permanent link">&para;</a></h3>
+<p>The script extracts metadata from the old format's header conventions:</p>
+<ul>
+<li><strong>File path comments</strong> (<code># ~/.prompts/name.txt</code>) — removed</li>
+<li><strong>Description lines</strong> (<code># Desc: ...</code>) — moved to <code>description:</code> in YAML front matter</li>
+<li><strong>Prompt name</strong> — derived from the filename (e.g., <code>code_review.txt</code> → <code>name: code_review</code>)</li>
+</ul>
+<h3 id="parameter-history">Parameter History<a class="headerlink" href="#parameter-history" title="Permanent link">&para;</a></h3>
+<p>If a <code>.json</code> file exists alongside the <code>.txt</code> file, the most recent value for each parameter is used as the default in the YAML <code>parameters:</code> block:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">parameters</span><span class="p">:</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">document_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">paper</span><span class="w">    </span><span class="c1"># last value from JSON history</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">content</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">           </span><span class="c1"># no history available</span>
+</span></code></pre></div>
+<h3 id="content-after-__end__">Content After <code>__END__</code><a class="headerlink" href="#content-after-__end__" title="Permanent link">&para;</a></h3>
+<p>Content below an <code>__END__</code> marker is wrapped in an HTML comment at the end of the <code>.md</code> file:</p>
+<div class="language-html highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="cm">&lt;!--</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="cm">Original content that was below __END__</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="cm">--&gt;</span>
+</span></code></pre></div>
+<h2 id="flagged-files">Flagged Files<a class="headerlink" href="#flagged-files" title="Permanent link">&para;</a></h2>
+<p>Files that contain constructs requiring manual review are renamed to <code>*.txt-review</code> instead of being migrated. The most common reasons a file gets flagged:</p>
+<ul>
+<li><strong>Code fences</strong> (<code>```</code>) — the script cannot reliably distinguish between code fence content and prompt body text that might contain placeholders</li>
+<li><strong>Placeholders inside ERB blocks</strong> — <code>[PARAM]</code> tokens within <code>&lt;% ... %&gt;</code> need manual conversion to Ruby variables</li>
+<li><strong>Ambiguous bracket expressions</strong> — bracket content that looks like a placeholder but doesn't match the clean <code>[ALL_CAPS]</code> pattern</li>
+</ul>
+<h3 id="reviewing-flagged-files">Reviewing Flagged Files<a class="headerlink" href="#reviewing-flagged-files" title="Permanent link">&para;</a></h3>
+<p>After the initial migration, check the flagged files:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># List all flagged files</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>find<span class="w"> </span>~/.prompts<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;*.txt-review&#39;</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Preview what the migration would produce</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>bin/migrate_prompts<span class="w"> </span>--dry-run<span class="w"> </span>--verbose<span class="w"> </span>~/.prompts/my_prompt.txt-review
+</span></code></pre></div>
+<p>For each flagged file, you have three options:</p>
+<ol>
+<li><strong>Reprocess</strong> — if the issue was transient, use <code>--reprocess</code> to try again</li>
+<li><strong>Manual conversion</strong> — create the <code>.md</code> file by hand following the new format</li>
+<li><strong>Leave as-is</strong> — flagged files don't affect AIA's operation with existing prompts</li>
+</ol>
+<h3 id="reprocessing-flagged-files">Reprocessing Flagged Files<a class="headerlink" href="#reprocessing-flagged-files" title="Permanent link">&para;</a></h3>
+<p>The <code>--reprocess</code> option re-examines all <code>*.txt-review</code> files. Files that now pass validation are renamed back to <code>*.txt</code> and migrated to <code>*.md</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Preview which files would be recovered</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>bin/migrate_prompts<span class="w"> </span>--reprocess<span class="w"> </span>--dry-run
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Recover files that now pass</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>bin/migrate_prompts<span class="w"> </span>--reprocess
+</span></code></pre></div>
+<p>The reprocess summary shows how many files were recovered versus still flagged:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Reprocess summary:
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  Recovered: 22 files (*.txt-review → *.txt → *.md)
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  Still flagged: 19 files (unchanged)
+</span></code></pre></div>
+<h2 id="step-by-step-migration-workflow">Step-by-Step Migration Workflow<a class="headerlink" href="#step-by-step-migration-workflow" title="Permanent link">&para;</a></h2>
+<h3 id="1-preview-the-migration">1. Preview the Migration<a class="headerlink" href="#1-preview-the-migration" title="Permanent link">&para;</a></h3>
+<p>Start with a dry run to understand the scope of changes:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>bin/migrate_prompts<span class="w"> </span>--dry-run<span class="w"> </span>--verbose
+</span></code></pre></div>
+<p>Review the output. Note how many files will be migrated, flagged, or skipped.</p>
+<h3 id="2-run-the-migration">2. Run the Migration<a class="headerlink" href="#2-run-the-migration" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>bin/migrate_prompts<span class="w"> </span>--verbose
+</span></code></pre></div>
+<p>The script creates <code>.md</code> files alongside the original <code>.txt</code> files. It does not delete the originals.</p>
+<h3 id="3-review-the-results">3. Review the Results<a class="headerlink" href="#3-review-the-results" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Check the summary counts</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1"># Verify a few migrated files look correct</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>cat<span class="w"> </span>~/.prompts/my_prompt.md
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="c1"># List flagged files</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>find<span class="w"> </span>~/.prompts<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;*.txt-review&#39;</span>
+</span></code></pre></div>
+<h3 id="4-reprocess-flagged-files">4. Reprocess Flagged Files<a class="headerlink" href="#4-reprocess-flagged-files" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>bin/migrate_prompts<span class="w"> </span>--reprocess<span class="w"> </span>--dry-run
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>bin/migrate_prompts<span class="w"> </span>--reprocess
+</span></code></pre></div>
+<h3 id="5-handle-remaining-flagged-files">5. Handle Remaining Flagged Files<a class="headerlink" href="#5-handle-remaining-flagged-files" title="Permanent link">&para;</a></h3>
+<p>For files still flagged after reprocessing, create <code>.md</code> versions manually. Common patterns:</p>
+<p><strong>Files with outer <code>```markdown</code> wrappers</strong> — strip the outer fence, keep nested fences, extract metadata into YAML front matter.</p>
+<p><strong>Files with placeholders inside ERB</strong> — convert <code>[PARAM]</code> to Ruby variable references inside the ERB block:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Old</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="o">&lt;</span><span class="sx">% path </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;[MODEL_FILENAME]&#39;</span><span class="w"> </span><span class="sx">%&gt;</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="sx"># New</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="sx">&lt;% path = model_filename %&gt;</span>
+</span></code></pre></div>
+<p><strong>Files with <code>__END__</code> containing code fences</strong> — wrap the post-<code>__END__</code> content in HTML comments or restructure as needed.</p>
+<h3 id="6-clean-up-originals">6. Clean Up Originals<a class="headerlink" href="#6-clean-up-originals" title="Permanent link">&para;</a></h3>
+<p>Once you've verified the migration is correct, remove the old files:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Remove original .txt files that have corresponding .md files</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>find<span class="w"> </span>~/.prompts<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;*.txt&#39;</span><span class="w"> </span>-exec<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="s1">  for f; do</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="s1">    md=&quot;${f%.txt}.md&quot;</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="s1">    [ -f &quot;$md&quot; ] &amp;&amp; rm &quot;$f&quot;</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="s1">  done</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="s1">&#39;</span><span class="w"> </span>_<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="c1"># Remove .json history files</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>find<span class="w"> </span>~/.prompts<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;*.json&#39;</span><span class="w"> </span>-delete
+</span></code></pre></div>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="no-txt-files-found">"No .txt files found"<a class="headerlink" href="#no-txt-files-found" title="Permanent link">&para;</a></h3>
+<p>The script couldn't find any <code>.txt</code> files in the prompts directory. Verify the path:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$AIA_PROMPTS__DIR</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>ls<span class="w"> </span>~/.prompts/*.txt
+</span></code></pre></div>
+<h3 id="file-skipped-because-md-already-exists">File skipped because .md already exists<a class="headerlink" href="#file-skipped-because-md-already-exists" title="Permanent link">&para;</a></h3>
+<p>By default, the script skips files that already have a corresponding <code>.md</code> file. Use <code>--force</code> to overwrite:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>bin/migrate_prompts<span class="w"> </span>--force<span class="w"> </span>~/.prompts/my_prompt.txt
+</span></code></pre></div>
+<h3 id="unrecognized-directive-warnings">Unrecognized directive warnings<a class="headerlink" href="#unrecognized-directive-warnings" title="Permanent link">&para;</a></h3>
+<p>Directives that the script doesn't know how to convert are preserved in the body as-is and reported as warnings. Review these manually after migration.</p>
+<h3 id="placeholder-not-converted">Placeholder not converted<a class="headerlink" href="#placeholder-not-converted" title="Permanent link">&para;</a></h3>
+<p>The script only converts clean placeholders matching <code>[ALL_CAPS_WITH_UNDERSCORES]</code>. Other bracket patterns (e.g., <code>[camelCase]</code>, <code>[with:colons]</code>) are left unchanged. This is intentional to avoid converting code that happens to contain brackets.</p>
 <h2 id="related-documentation">Related Documentation<a class="headerlink" href="#related-documentation" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../tools/">Tools Guide</a> - Custom tool development and configuration</li>
-<li><a href="../chat/">Chat Mode</a> - Using tools in interactive mode</li>
-<li><a href="../../mcp-integration/">MCP Integration</a> - Model Context Protocol tools</li>
-<li><a href="../../cli-reference/">CLI Reference</a> - <code>--require</code>, <code>--tools</code>, <code>--list-tools</code> options</li>
+<li><a href="../../prompt_management/">Prompt Management</a> — organizing and managing your prompt collection</li>
+<li><a href="../../advanced-prompting/">Advanced Prompting</a> — ERB templates and dynamic prompts</li>
+<li><a href="../../workflows-and-pipelines/">Workflows &amp; Pipelines</a> — multi-step prompt sequences</li>
+<li><a href="../../configuration/">Configuration</a> — AIA configuration reference</li>
 </ul>
 
 
