@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (0.11.0)
+    aia (0.11.1)
       amazing_print
       async
       clipboard

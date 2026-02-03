@@ -29,11 +29,11 @@ module AIA
         handle_dump_config(config)
         handle_mcp_list(config)
         handle_list_tools(config)
+        handle_completion_script(config)
         validate_required_prompt_id(config)
         process_role_configuration(config)
         handle_fuzzy_search_prompt_id(config)
         normalize_boolean_flags(config)
-        handle_completion_script(config)
         validate_final_prompt_requirements(config)
         configure_prompt_manager(config)
         prepare_pipeline(config)
@@ -457,7 +457,7 @@ module AIA
       end
 
       def generate_completion_script(shell)
-        script_path = File.join(File.dirname(__FILE__), "../../aia_completion.#{shell}")
+        script_path = File.join(File.dirname(__FILE__), "../aia_completion.#{shell}")
 
         if File.exist?(script_path)
           puts File.read(script_path)
