@@ -15,7 +15,7 @@
 # 2. User config: ~/.config/aia/aia.yml (XDG)
 # 3. Environment variables (AIA_*)
 # 4. CLI arguments (applied via overrides)
-# 5. Embedded directives (//config)
+# 5. Embedded directives (/config)
 
 require 'myway_config'
 require 'yaml'

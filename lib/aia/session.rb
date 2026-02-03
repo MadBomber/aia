@@ -353,7 +353,7 @@ module AIA
       # Checkpoint-related directives (clear, checkpoint, restore, review) handle
       # everything internally via the Checkpoint module, which operates directly
       # on RubyLLM's Chat.@messages - no additional handling needed here.
-      if follow_up_prompt.strip.start_with?("//clear", "//checkpoint", "//restore", "//review", "//context")
+      if follow_up_prompt.strip.start_with?("/clear", "/checkpoint", "/restore", "/review", "/context")
         @ui_presenter.display_info(directive_output) unless directive_output.nil? || directive_output.strip.empty?
         return nil
       end

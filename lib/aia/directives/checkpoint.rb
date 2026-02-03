@@ -8,7 +8,7 @@ module AIA
   module Directives
     module Checkpoint
       # Module-level state for checkpoints
-      # Note: Using @checkpoint_store to avoid naming conflict with //checkpoints directive
+      # Note: Using @checkpoint_store to avoid naming conflict with /checkpoints directive
       @checkpoint_store = {}
       @checkpoint_counter = 0
       @last_checkpoint_name = nil
@@ -24,7 +24,7 @@ module AIA
         end
       end
 
-      # //checkpoint [name]
+      # /checkpoint [name]
       # Creates a named checkpoint of the current conversation state.
       # If no name is provided, uses an auto-incrementing number.
       def self.checkpoint(args, _unused = nil)
@@ -54,7 +54,7 @@ module AIA
         ""
       end
 
-      # //restore [name]
+      # /restore [name]
       # Restores the conversation state to a previously saved checkpoint.
       # If no name is provided, restores to the previous checkpoint (one step back).
       def self.restore(args, _unused = nil)
@@ -101,7 +101,7 @@ module AIA
         msg
       end
 
-      # //clear
+      # /clear
       # Clears the conversation context, optionally keeping the system prompt.
       def self.clear(args, _unused = nil)
         keep_system = !args.include?('--all')
@@ -127,7 +127,7 @@ module AIA
         "Chat context cleared."
       end
 
-      # //review
+      # /review
       # Displays the current conversation context with checkpoint markers.
       def self.review(args, _unused = nil)
         chats = get_chats
@@ -169,7 +169,7 @@ module AIA
         ""
       end
 
-      # //checkpoints
+      # /checkpoints
       # Lists all available checkpoints with their details.
       def self.checkpoints_list(args, _unused = nil)
         if checkpoint_store.empty?
@@ -213,7 +213,7 @@ module AIA
       end
 
       # Find the previous checkpoint (second-to-last by position)
-      # This is used when //restore is called without a name
+      # This is used when /restore is called without a name
       def self.find_previous_checkpoint
         return nil if checkpoint_store.size < 2
 
@@ -274,7 +274,7 @@ module AIA
         alias_method :ckp, :checkpoint
         alias_method :cp, :checkpoint
         alias_method :context, :review
-        # Route //checkpoints directive to checkpoints_list
+        # Route /checkpoints directive to checkpoints_list
         # (safe now that we renamed attr_accessor to checkpoint_store)
         alias_method :checkpoints, :checkpoints_list
       end

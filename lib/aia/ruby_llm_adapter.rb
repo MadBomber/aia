@@ -1005,7 +1005,7 @@ module AIA
 
 
     # Clear the chat context/history
-    # Needed for the //clear and //restore directives
+    # Needed for the /clear and /restore directives
     # Simplified with ADR-002: Each model has isolated context, no global state to manage
     def clear_context
       old_chats = @chats.dup

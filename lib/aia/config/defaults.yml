@@ -9,7 +9,7 @@
 # 2. User config (~/.config/aia/aia.yml)
 # 3. Environment variables (AIA_*)
 # 4. CLI arguments
-# 5. Embedded directives (//config)
+# 5. Embedded directives (/config)
 #
 # Environment Variable Naming:
 # Use double underscore for nested keys:

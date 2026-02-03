@@ -355,13 +355,13 @@ module AIA
               next unless info
 
               if info[:aliases] && !info[:aliases].empty?
-                with_prefix = info[:aliases].map { |m| PromptManager::Prompt::DIRECTIVE_SIGNAL + m }
+                with_prefix = info[:aliases].map { |m| AIA::DirectiveProcessor::DIRECTIVE_PREFIX + m }
                 alias_text = " (aliases: #{with_prefix.join(', ')})"
               else
                 alias_text = ""
               end
 
-              puts "  //#{directive}#{alias_text}"
+              puts "  #{AIA::DirectiveProcessor::DIRECTIVE_PREFIX}#{directive}#{alias_text}"
               puts "      #{info[:description]}"
               puts
             end
@@ -376,7 +376,7 @@ module AIA
             puts "------"
             uncategorized.sort.each do |directive|
               info = all_directives[directive]
-              puts "  //#{directive}"
+              puts "  #{AIA::DirectiveProcessor::DIRECTIVE_PREFIX}#{directive}"
               puts "      #{info[:description]}"
               puts
             end

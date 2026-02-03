@@ -177,20 +177,20 @@ class ModelsDirectiveTest < Minitest::Test
     AIA::Directives::Models.help
     output = @captured_output.string
 
-    # Check configuration directives are present
-    assert_includes output, "//config"
-    assert_includes output, "//model"
-    assert_includes output, "//temperature"
-    assert_includes output, "//clear"
+    # Check configuration directives are present (single / prefix)
+    assert_includes output, "/config"
+    assert_includes output, "/model"
+    assert_includes output, "/temperature"
+    assert_includes output, "/clear"
   end
 
   def test_14_help_displays_model_directives
     AIA::Directives::Models.help
     output = @captured_output.string
 
-    # Check model directives are present
-    assert_includes output, "//available_models"
-    assert_includes output, "//compare"
+    # Check model directives are present (single / prefix)
+    assert_includes output, "/available_models"
+    assert_includes output, "/compare"
   end
 
   def test_15_help_displays_aliases

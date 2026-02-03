@@ -23,6 +23,7 @@ require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.text_t
 
 require_relative 'refinements/string' # adds #include_any? #include_all?
 
+require_relative 'aia/errors'
 require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'

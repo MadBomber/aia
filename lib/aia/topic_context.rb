@@ -1,9 +1,9 @@
 # lib/aia/topic_context.rb
 # Just thinking about the problem ...
-# maybe a directive like //topic [topic]
+# maybe a directive like /topic [topic]
 # sets manually (when present) or dynamically when not present
-# and //topics - will list current topics
-# thinking about the //checkpoint and //restore directives
+# and /topics - will list current topics
+# thinking about the /checkpoint and /restore directives
 #
 module AIA
   class TopicContext
