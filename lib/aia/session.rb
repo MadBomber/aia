@@ -3,7 +3,7 @@
 require "tty-spinner"
 require "tty-screen"
 require "reline"
-require "prompt_manager"
+require "pm"
 require "json"
 require "fileutils"
 require "amazing_print"
@@ -16,31 +16,12 @@ require_relative "utility"
 
 module AIA
   class Session
-    KW_HISTORY_MAX = 5 # Maximum number of history entries per keyword
-    TERSE_PROMPT = "\nKeep your response short and to the point.\n"
-
     def initialize(prompt_handler)
       @prompt_handler = prompt_handler
-      @chat_prompt_id = nil
       @include_context_flag = true
-      
-      setup_prompt_and_history_manager
+
       initialize_components
       setup_output_file
-    end
-
-    def setup_prompt_and_history_manager
-      # Special handling for chat mode with context files but no prompt ID
-      if AIA.chat? && (AIA.config.prompt_id.nil? || AIA.config.prompt_id.empty?) && AIA.config.context_files && !AIA.config.context_files.empty?
-        prompt_instance = nil
-        @history_manager = nil
-      elsif AIA.chat? && (AIA.config.prompt_id.nil? || AIA.config.prompt_id.empty?)
-        prompt_instance = nil
-        @history_manager = nil
-      else
-        prompt_instance = @prompt_handler.get_prompt(AIA.config.prompt_id)
-        @history_manager = HistoryManager.new(prompt: prompt_instance)
-      end
     end
 
     def initialize_components
@@ -107,40 +88,65 @@ module AIA
 
     # Process a single prompt with all its requirements
     def process_single_prompt(prompt_id)
-      # Skip empty prompt IDs
       return if prompt_id.nil? || prompt_id.empty?
 
-      prompt = setup_prompt_processing(prompt_id)
-      return unless prompt
+      prompt_text = build_prompt_text(prompt_id)
+      return unless prompt_text
 
-      prompt_text = finalize_prompt_text(prompt)
       send_prompt_and_get_response(prompt_text)
     end
 
-    def setup_prompt_processing(prompt_id)
+    def build_prompt_text(prompt_id)
       role_id = AIA.config.prompts.role
 
       begin
-        prompt = @prompt_handler.get_prompt(prompt_id, role_id)
+        prompt_parsed = @prompt_handler.fetch_prompt(prompt_id)
       rescue StandardError => e
         puts "Error processing prompt '#{prompt_id}': #{e.message}"
         return nil
       end
 
-      if @include_context_flag
-        collect_variable_values(prompt)
-        enhance_prompt_with_extras(prompt)
+      return nil unless prompt_parsed
+
+      role_parsed = nil
+      unless role_id.nil? || role_id.empty?
+        begin
+          role_parsed = @prompt_handler.fetch_role(role_id)
+        rescue StandardError => e
+          puts "Warning: Could not load role '#{role_id}': #{e.message}"
+        end
       end
 
-      prompt
-    end
+      # Merge parameters from role and prompt
+      all_params = {}
+      all_params.merge!(role_parsed.metadata.parameters) if role_parsed&.metadata&.parameters
+      all_params.merge!(prompt_parsed.metadata.parameters) if prompt_parsed.metadata&.parameters
 
-    def finalize_prompt_text(prompt)
-      prompt_text = prompt.to_s
+      # Collect parameter values from user
+      values = collect_variable_values(all_params)
+
+      # Render role and prompt
+      parts = []
+      parts << role_parsed.to_s(values) if role_parsed
+      parts << prompt_parsed.to_s(values)
+
+      if @include_context_flag
+        # Process stdin content
+        if AIA.config.stdin_content && !AIA.config.stdin_content.strip.empty?
+          parts << PM.parse(AIA.config.stdin_content).to_s
+        end
+
+        # Add executable prompt file content
+        if AIA.config.executable_prompt_file
+          exec_content = File.read(AIA.config.executable_prompt_file).lines[1..].join
+          parts << exec_content
+        end
+      end
+
+      prompt_text = parts.join("\n\n")
 
       if @include_context_flag
         prompt_text = add_context_files(prompt_text)
-        # SMELL: TODO? empty the AIA.config.context_files array
         @include_context_flag = false
       end
 
@@ -148,50 +154,21 @@ module AIA
     end
 
     # Collect variable values from user input
-    def collect_variable_values(prompt)
-      variables = prompt.parameters.keys
-      return if variables.nil? || variables.empty?
+    def collect_variable_values(parameters)
+      return {} if parameters.nil? || parameters.empty?
 
-      variable_values = {}
-      history_manager = AIA::HistoryManager.new prompt: prompt
+      values = {}
+      input_manager = AIA::HistoryManager.new
 
-      variables.each do |var_name|
-        history = prompt.parameters[var_name]
-
-        value = history_manager.request_variable_value(
-          variable_name: var_name,
-          history_values: history,
+      parameters.each do |name, default|
+        value = input_manager.request_variable_value(
+          variable_name: name,
+          default_value: default,
         )
-
-        variable_values[var_name] = update_variable_history(history, value)
+        values[name] = value
       end
 
-      prompt.parameters = variable_values
-    end
-
-    def update_variable_history(history, value)
-      history.delete(value) if history.include?(value)
-      history << value
-      history.shift if history.size > HistoryManager::MAX_VARIABLE_HISTORY
-      history
-    end
-
-    # Add terse instructions, stdin content, and executable prompt file content
-    def enhance_prompt_with_extras(prompt)
-      # Add terse instruction if needed
-      prompt.text << TERSE_PROMPT if AIA.terse?
-
-      # Add STDIN content
-      if AIA.config.stdin_content && !AIA.config.stdin_content.strip.empty?
-        prompt.text << "\n\n" << AIA.config.stdin_content
-      end
-
-      # Add executable prompt file content
-      if AIA.config.executable_prompt_file
-        prompt.text << "\n\n" << File.read(AIA.config.executable_prompt_file)
-          .lines[1..]
-          .join
-      end
+      values
     end
 
     # Add context files to prompt text
@@ -241,10 +218,7 @@ module AIA
 
     def setup_chat_session
       initialize_chat_ui
-      @chat_prompt_id = generate_chat_prompt_id
-      create_temporary_prompt
       setup_signal_handlers
-      create_chat_prompt_object
       Reline::HISTORY.clear
     end
 
@@ -253,36 +227,8 @@ module AIA
       @ui_presenter.display_chat_header
     end
 
-    def generate_chat_prompt_id
-      now = Time.now
-      "chat_#{now.strftime("%Y%m%d_%H%M%S")}"
-    end
-
-    def create_temporary_prompt
-      now = Time.now
-      PromptManager::Prompt.create(
-        id: @chat_prompt_id,
-        text: "Today's date is #{now.strftime("%Y-%m-%d")} and the current time is #{now.strftime("%H:%M:%S")}",
-      )
-    end
-
     def setup_signal_handlers
-      session_instance = self
-      at_exit { session_instance.send(:cleanup_chat_prompt) }
-      Signal.trap("INT") {
-        session_instance.send(:cleanup_chat_prompt)
-        exit
-      }
-    end
-
-    def create_chat_prompt_object
-      @chat_prompt = PromptManager::Prompt.new(
-        id: @chat_prompt_id,
-        directives_processor: @directive_processor,
-        erb_flag: true,
-        envar_flag: true,
-        external_binding: binding,
-      )
+      Signal.trap("INT") { exit }
     end
 
     def process_initial_context(skip_context_files)
@@ -320,8 +266,7 @@ module AIA
 
         return if piped_input.empty?
 
-        @chat_prompt.text = piped_input
-        processed_input = @chat_prompt.to_s
+        processed_input = PM.parse(piped_input).to_s
 
         # Process the piped input - RubyLLM Chat maintains conversation history internally
         @ui_presenter.display_thinking_animation
@@ -363,8 +308,7 @@ module AIA
           next if follow_up_prompt.nil?
         end
 
-        @chat_prompt.text = follow_up_prompt
-        processed_prompt = @chat_prompt.to_s
+        processed_prompt = PM.parse(follow_up_prompt).to_s
 
         # Process the prompt - RubyLLM Chat maintains conversation history internally
         # via @messages array. Each model's Chat instance tracks its own conversation.
@@ -414,13 +358,9 @@ module AIA
         return nil
       end
 
-      return handle_empty_directive_output if directive_output.nil? || directive_output.strip.empty?
+      return nil if directive_output.nil? || directive_output.strip.empty?
 
       handle_successful_directive(follow_up_prompt, directive_output)
-    end
-
-    def handle_empty_directive_output
-      nil
     end
 
     def handle_successful_directive(follow_up_prompt, directive_output)
@@ -468,19 +408,6 @@ module AIA
       end
 
       responses
-    end
-
-    def cleanup_chat_prompt
-      if @chat_prompt_id
-        logger.debug("Cleaning up chat prompt", chat_prompt_id: @chat_prompt_id)
-        begin
-          @chat_prompt.delete
-          @chat_prompt_id = nil # Prevent repeated attempts if error occurs elsewhere
-        rescue => e
-          STDERR.puts "[ERROR] Failed to delete chat prompt #{@chat_prompt_id}: #{e.class} - #{e.message}"
-          STDERR.puts e.backtrace.join("\n")
-        end
-      end
     end
   end
 end

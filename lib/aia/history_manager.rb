@@ -5,79 +5,45 @@ require 'fileutils'
 
 module AIA
   class HistoryManager
-    MAX_VARIABLE_HISTORY = 5
-
-    # prompt is PromptManager::Prompt instance
-    def initialize(prompt:)
-      @prompt  = prompt
-      @history = []
+    def initialize
+      # No prompt dependency — just handles user input for parameter collection
     end
 
 
-    def history
-      @history
-    end
-
-
-    def history=(new_history)
-      @history = new_history
-    end
-
-
-    def setup_variable_history(history_values)
+    def request_variable_value(variable_name:, default_value: nil)
       Reline::HISTORY.clear
-      history_values.each do |value|
-        Reline::HISTORY.push(value) unless value.nil? || value.empty?
-      end
-    end
 
+      question = if default_value.nil?
+                   "Value for #{variable_name} (required): "
+                 else
+                   "Value for #{variable_name} (#{default_value}): "
+                 end
 
-    def get_variable_history(variable, value = '')
-      return if value.nil? || value.empty?
-
-      values = @prompt.parameters[variable]
-      if values.include?(value)
-        values.delete(value)
-      end
-
-      values << value
-
-      if values.size > MAX_VARIABLE_HISTORY
-        values.shift
-      end
-
-      @prompt.parameters[variable] = values
-    end
-
-
-    def request_variable_value(variable_name:, history_values: [])
-      setup_variable_history(history_values) # Setup Reline's history for completion
-
-      default_value = history_values.last || ''
-      question = "Value for #{variable_name} (#{default_value}): "
-
-      # Ensure Reline is writing to stdout explicitly for this interaction
       Reline.output = $stdout
 
-      # Store the original prompt proc to restore later
       original_prompt_proc = Reline.line_editor.prompt_proc
-
-      # Note: Temporarily setting prompt_proc might not be needed if passing prompt to readline works.
-      # Reline.line_editor.prompt_proc = ->(context) { [question] }
 
       begin
         input = Reline.readline(question, true)
-        return default_value if input.nil? # Handle Ctrl+D -> use default
 
-        chosen_value = input.strip.empty? ? default_value : input.strip
-        # Update the persistent history for this variable
-        get_variable_history(variable_name, chosen_value)
-        return chosen_value
+        if input.nil? # Ctrl+D
+          return default_value if default_value
+          puts "\nParameter '#{variable_name}' is required."
+          exit(1)
+        end
+
+        value = input.strip
+        if value.empty?
+          return default_value if default_value
+          puts "Parameter '#{variable_name}' is required."
+          exit(1)
+        end
+
+        value
       rescue Interrupt
         puts "\nVariable input interrupted."
-        exit(1) # Exit cleanly on Ctrl+C
+        exit(1)
       ensure
-        # Restore the original prompt proc
         Reline.line_editor.prompt_proc = original_prompt_proc
       end
     end

@@ -21,7 +21,7 @@ class AIA::Fzf
       query:      '', # String, the thing be searched for
       subject:    'Prompt IDs', # or 'Role Names'
       prompt:     'Select one:',
-      extension:  '.txt'
+      extension:  '.md'
     )
 
     @list       = list

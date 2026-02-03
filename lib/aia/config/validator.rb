@@ -476,9 +476,11 @@ module AIA
       end
 
       def configure_prompt_manager(config)
-        return unless config.prompts.parameter_regex
-
-        PromptManager::Prompt.parameter_regex = Regexp.new(config.prompts.parameter_regex)
+        # PM v1.0.0 uses ERB parameters (<%= param %>) instead of regex-based extraction.
+        # parameter_regex is deprecated and ignored.
+        if config.prompts.parameter_regex
+          warn "Warning: --regex / parameter_regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
+        end
       end
 
       def prepare_pipeline(config)
@@ -495,7 +497,7 @@ module AIA
         config.pipeline.each do |prompt_id|
           next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__'
 
-          prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}.txt")
+          prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}#{config.prompts.extname}")
           unless File.exist?(prompt_file_path)
             STDERR.puts "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
             and_exit = true

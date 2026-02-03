@@ -6,7 +6,7 @@ require 'word_wrapper'
 module AIA
   module Directives
     module Utility
-      TERSE_PROMPT = "\nKeep your response short and to the point.\n"
+      TERSE_PROMPT = "" # DEPRECATED: terse mode has been removed
 
       def self.tools(args = [], context_manager = nil)
           indent = 4

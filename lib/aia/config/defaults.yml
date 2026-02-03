@@ -58,7 +58,7 @@ defaults:
   # ---------------------------------------------------------------------------
   prompts:
     dir: ~/.prompts
-    extname: .txt
+    extname: .md
     roles_prefix: roles
     roles_dir: ~/.prompts/roles
     role: ~
@@ -130,7 +130,7 @@ defaults:
     tokens: false
     no_mcp: false
     speak: false
-    terse: false
+    terse: false  # DEPRECATED: no longer used
     shell: true
     erb: true
     clear: false
