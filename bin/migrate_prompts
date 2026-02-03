@@ -1,0 +1,758 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Migrates prompt files from prompt_manager v0.5.8 format (.txt + .json)
+# to PM v1.0.0 format (.md with YAML front matter and ERB parameters)
+
+require 'optparse'
+require 'json'
+require 'yaml'
+require 'pathname'
+require 'fileutils'
+
+class PromptMigrator
+  CLEAN_PLACEHOLDER = /\[([A-Z][A-Z0-9_]*)\]/
+  SPACE_PLACEHOLDER = /\[([A-Z][A-Z0-9_ ]*[A-Z0-9_])\]/   # clean except for spaces
+  ALL_BRACKETS      = /\[([^\[\]]+)\]/
+
+  PATH_COMMENT_RE   = /\A#\s+\S*\/\S*\.txt\s*\z/
+  DESC_START_RE     = /\A#\s+Desc:\s*(.*)/
+  DESC_CONT_RE      = /\A#\s{2,}(\S.*)/
+  COMMENT_RE        = /\A#/
+  SHEBANG_RE        = /\A#!/
+  END_MARKER_RE     = /\A__END__\s*\z/
+  CODE_FENCE_RE     = /\A```/
+
+  CONFIG_RE         = /\A\/\/config[.\s]\s*(.*)/i
+  CONFIG_BARE_RE    = /\A\/\/config\s*\z/i
+  TEMP_RE           = /\A\/\/temp\s+(.*)/i
+  TOPP_RE           = /\A\/\/topp\s+(.*)/i
+  NEXT_RE           = /\A\/\/next\s+(.*)/i
+  PIPELINE_RE       = /\A\/\/pipeline\s+(.*)/i
+  INCLUDE_RE        = /\A\/\/include\s+(.*)/i
+  SHELL_RE          = /\A\/\/shell\s+(.*)/i
+  RUBY_RE           = /\A\/\/ruby\s+(.*)/i
+  BACKEND_RE        = /\A\/\/backend(\s|$)/i
+  DIRECTIVE_RE      = /\A\/\/(\w+)/
+
+  def initialize(options)
+    @options = options
+    @stats   = { migrated: 0, flagged: 0, skipped: 0, reprocessed: 0, still_flagged: 0, warnings: [] }
+  end
+
+  def run
+    if @options[:reprocess]
+      run_reprocess
+    else
+      run_migrate
+    end
+  end
+
+  def run_migrate
+    txt_files = resolve_files('.txt')
+
+    if txt_files.empty?
+      log "No .txt files found"
+      return
+    end
+
+    log "Processing #{txt_files.size} .txt file(s)" if @options[:verbose]
+
+    txt_files.each { |f| process_file(f) }
+    print_summary
+  end
+
+  def run_reprocess
+    review_files = resolve_files('.txt-review')
+
+    if review_files.empty?
+      log "No .txt-review files found"
+      return
+    end
+
+    log "Reprocessing #{review_files.size} .txt-review file(s)" if @options[:verbose]
+
+    review_files.each { |f| reprocess_file(f) }
+    print_reprocess_summary
+  end
+
+  private
+
+  def log(msg)
+    $stderr.puts msg
+  end
+
+  # --- File resolution ---
+
+  def resolve_files(ext)
+    args = @options[:args]
+
+    if args.empty?
+      # No args — scan entire prompts directory
+      dir = prompts_dir
+      log "Scanning #{dir}" if @options[:verbose]
+      dir.glob("**/#{glob_pattern(ext)}").sort
+    else
+      # Args provided — could be files, directories, or a mix
+      files = []
+      args.each do |arg|
+        path = Pathname.new(arg).expand_path
+        if path.directory?
+          log "Scanning #{path}" if @options[:verbose]
+          files.concat(path.glob("**/#{glob_pattern(ext)}").sort)
+        elsif path.file? && path.to_s.end_with?(ext)
+          files << path
+        else
+          log "  Warning: skipping #{arg} (not a #{ext} file or directory)"
+        end
+      end
+      files
+    end
+  end
+
+  def glob_pattern(ext)
+    # Pathname#glob needs the pattern without leading dot issues
+    # .txt-review contains a hyphen, so we use the literal extension
+    "*#{ext}"
+  end
+
+  def prompts_dir
+    path = ENV['AIA_PROMPTS__DIR'] || '~/.prompts'
+    dir  = Pathname.new(path).expand_path
+    abort "Error: #{dir} is not a directory" unless dir.directory?
+    dir
+  end
+
+  # --- Per-file orchestration ---
+
+  def process_file(txt_path)
+    md_path  = txt_path.sub_ext('.md')
+    basename = txt_path.basename('.txt').to_s
+
+    if md_path.exist? && !@options[:force]
+      log "  Skip: #{txt_path.basename} (#{md_path.basename} exists)" if @options[:verbose]
+      @stats[:skipped] += 1
+      return
+    end
+
+    lines = txt_path.read.lines.map(&:chomp)
+
+    if needs_review?(lines)
+      flag_for_review(txt_path)
+      return
+    end
+
+    all_params  = extract_all_params(lines)
+    parsed      = parse_file(lines, basename)
+    json_params = load_json_params(txt_path.sub_ext('.json'))
+    params      = merge_params(all_params, json_params)
+    output      = assemble_md(parsed, params)
+
+    if @options[:dry_run]
+      log "  Migrate: #{txt_path.basename} → #{md_path.basename}"
+      show_details(parsed, params) if @options[:verbose]
+    else
+      md_path.write(output)
+      log "  Migrate: #{txt_path.basename} → #{md_path.basename}"
+    end
+
+    parsed[:warnings].each { |w| @stats[:warnings] << "#{txt_path.basename}: #{w}" }
+    @stats[:migrated] += 1
+  end
+
+  # --- Reprocessing previously flagged files ---
+
+  def reprocess_file(review_path)
+    txt_path = Pathname.new(review_path.to_s.sub(/\-review\z/, ''))
+    md_path  = txt_path.sub_ext('.md')
+    basename = txt_path.basename('.txt').to_s
+
+    lines = review_path.read.lines.map(&:chomp)
+
+    if needs_review?(lines)
+      log "  Still flagged: #{review_path.basename}" if @options[:verbose]
+      @stats[:still_flagged] += 1
+      return
+    end
+
+    # File now passes — restore and migrate
+    all_params  = extract_all_params(lines)
+    parsed      = parse_file(lines, basename)
+    json_params = load_json_params(txt_path.sub_ext('.json'))
+    params      = merge_params(all_params, json_params)
+    output      = assemble_md(parsed, params)
+
+    if @options[:dry_run]
+      log "  Reprocess: #{review_path.basename} → #{txt_path.basename} → #{md_path.basename}"
+      show_details(parsed, params) if @options[:verbose]
+    else
+      FileUtils.mv(review_path.to_s, txt_path.to_s)
+      md_path.write(output)
+      log "  Reprocess: #{review_path.basename} → #{txt_path.basename} → #{md_path.basename}"
+    end
+
+    parsed[:warnings].each { |w| @stats[:warnings] << "#{basename}: #{w}" }
+    @stats[:reprocessed] += 1
+  end
+
+  # --- Review detection ---
+
+  def needs_review?(lines)
+    in_erb_block = false
+
+    lines.each do |line|
+      # Files with code fences need manual review
+      return true if line.match?(CODE_FENCE_RE)
+
+      # Track multi-line <% ... %> blocks
+      if line.include?('<%') && !line.include?('%>')
+        in_erb_block = true
+      elsif in_erb_block && line.include?('%>')
+        in_erb_block = false
+        next
+      end
+
+      # Any clean placeholder inside a multi-line ERB block is problematic
+      if in_erb_block && line.match?(CLEAN_PLACEHOLDER)
+        return true
+      end
+
+      # Check for clean placeholders inside single-line ERB tags
+      if line.match?(/<%.+%>/)
+        erb_regions = extract_erb_regions(line)
+        line.scan(CLEAN_PLACEHOLDER) do
+          pos = Regexp.last_match.begin(0)
+          return true if erb_regions.any? { |r| pos >= r[0] && pos < r[1] }
+        end
+      end
+
+      # Check for non-clean bracket expressions that look like placeholder attempts
+      line.scan(ALL_BRACKETS) do |match|
+        inner = match[0]
+        next if inner.match?(/\A[A-Z][A-Z0-9_]*\z/)       # clean placeholder
+        next if fixable_space_placeholder?(inner)            # spaces only — will normalize
+        next if inner.match?(/\A\s/)                        # bash test: [ -z ... ]
+        next if inner.include?(':')                          # type annotation: [ActiveRecord::Base]
+        next if inner.match?(/[a-z][A-Z]/)                  # camelCase: [AccountUser]
+        next if inner.match?(/["']/)                         # code array: ["Berlin", "BE"]
+        next if inner.length >= 50                           # too long to be a placeholder
+        # Flag if it contains an ALL-CAPS word (2+ chars) — likely a placeholder attempt
+        return true if inner.match?(/\b[A-Z]{2,}\b/)
+      end
+    end
+
+    false
+  end
+
+  def extract_erb_regions(line)
+    regions = []
+    line.scan(/<%.*?%>/) { regions << [Regexp.last_match.begin(0), Regexp.last_match.end(0)] }
+    regions
+  end
+
+  def fixable_space_placeholder?(inner)
+    inner.include?(' ') && inner.match?(/\A[A-Z][A-Z0-9_ ]*[A-Z0-9_]\z/)
+  end
+
+  def normalize_placeholder(name)
+    name.tr(' ', '_').downcase
+  end
+
+  def flag_for_review(txt_path)
+    review_path = Pathname.new("#{txt_path}-review")
+    if @options[:dry_run]
+      log "  Flag: #{txt_path.basename} → #{txt_path.basename}-review (needs review)"
+    else
+      FileUtils.mv(txt_path.to_s, review_path.to_s)
+      log "  Flag: #{txt_path.basename} → #{txt_path.basename}-review"
+    end
+    @stats[:flagged] += 1
+  end
+
+  # --- Parameter extraction (before any transformation) ---
+
+  def extract_all_params(lines)
+    params = {}
+    lines.each do |line|
+      line.scan(CLEAN_PLACEHOLDER) do |match|
+        name = match[0].downcase
+        params[name] ||= nil
+      end
+      line.scan(SPACE_PLACEHOLDER) do |match|
+        inner = match[0]
+        next unless fixable_space_placeholder?(inner)
+        name = normalize_placeholder(inner)
+        params[name] ||= nil
+      end
+    end
+    params
+  end
+
+  # --- File parsing ---
+
+  def parse_file(lines, basename)
+    result = {
+      shebang:     nil,
+      name:        basename,
+      description: nil,
+      yaml:        {},
+      body_lines:  [],
+      after_end:   nil,
+      warnings:    []
+    }
+
+    idx = 0
+
+    # Shebang line
+    if idx < lines.size && lines[idx].match?(SHEBANG_RE)
+      result[:shebang] = lines[idx]
+      idx += 1
+    end
+
+    # Path comment (# ~/.prompts/name.txt)
+    if idx < lines.size && lines[idx].match?(PATH_COMMENT_RE)
+      idx += 1
+    end
+
+    # Description (# Desc: ... with continuations)
+    if idx < lines.size && (m = lines[idx].match(DESC_START_RE))
+      desc_parts = [m[1].strip]
+      idx += 1
+      while idx < lines.size && (mc = lines[idx].match(DESC_CONT_RE))
+        desc_parts << mc[1].strip
+        idx += 1
+      end
+      result[:description] = desc_parts.join("\n")
+    end
+
+    # Process remaining lines
+    comment_buffer = []
+    in_code_fence  = false
+    in_erb_block   = false
+
+    while idx < lines.size
+      line = lines[idx]
+
+      # Code fence toggle (``` lines)
+      if line.match?(CODE_FENCE_RE) && !in_erb_block
+        flush_comments(comment_buffer, result[:body_lines])
+        in_code_fence = !in_code_fence
+        result[:body_lines] << line
+        idx += 1
+        next
+      end
+
+      # Inside a code fence — preserve everything as-is
+      if in_code_fence
+        flush_comments(comment_buffer, result[:body_lines])
+        result[:body_lines] << line
+        idx += 1
+        next
+      end
+
+      # ERB block entry (<% without closing %>)
+      if !in_erb_block && line.include?('<%') && !line.include?('%>')
+        flush_comments(comment_buffer, result[:body_lines])
+        in_erb_block = true
+        result[:body_lines] << line
+        idx += 1
+        next
+      end
+
+      # Inside an ERB block — preserve everything as-is
+      if in_erb_block
+        flush_comments(comment_buffer, result[:body_lines])
+        in_erb_block = false if line.include?('%>')
+        result[:body_lines] << line
+        idx += 1
+        next
+      end
+
+      # __END__ marker
+      if line.match?(END_MARKER_RE)
+        flush_comments(comment_buffer, result[:body_lines])
+        idx += 1
+        after_lines = lines[idx..] || []
+        after_content = after_lines.join("\n").strip
+        result[:after_end] = after_content unless after_content.empty?
+        break
+      end
+
+      # Directives (lines starting with //)
+      if line.start_with?('//')
+        flush_comments(comment_buffer, result[:body_lines])
+        handle_directive(line, result)
+        idx += 1
+        next
+      end
+
+      # Comment lines (# ...)
+      if line.match?(COMMENT_RE)
+        text = line.sub(/\A#\s?/, '')
+        comment_buffer << text
+        idx += 1
+        next
+      end
+
+      # Regular body line
+      flush_comments(comment_buffer, result[:body_lines])
+      result[:body_lines] << line
+      idx += 1
+    end
+
+    flush_comments(comment_buffer, result[:body_lines])
+    result
+  end
+
+  # --- Directive handling ---
+
+  def handle_directive(line, result)
+    case line
+    when CONFIG_BARE_RE
+      # Bare //config with no args — ignore
+    when CONFIG_RE
+      parse_config_directive($1, result[:yaml])
+    when TEMP_RE
+      result[:yaml]['temperature'] = parse_value($1.strip)
+    when TOPP_RE
+      result[:yaml]['top_p'] = parse_value($1.strip)
+    when NEXT_RE
+      result[:yaml]['next'] = $1.strip
+    when PIPELINE_RE
+      result[:yaml]['pipeline'] = $1.strip.split(/\s*,\s*/)
+    when BACKEND_RE
+      # Silently ignored (deprecated)
+    when INCLUDE_RE
+      arg = $1.strip
+      result[:body_lines] << "<%= include(#{directive_arg_to_ruby(arg)}) %>"
+    when SHELL_RE
+      arg = $1.strip
+      result[:body_lines] << "<%= system(#{directive_arg_to_ruby(arg)}) %>"
+    when RUBY_RE
+      code = $1.strip
+      code = code.gsub(CLEAN_PLACEHOLDER) { $1.downcase }
+      code = code.gsub(SPACE_PLACEHOLDER) { fixable_space_placeholder?($1) ? normalize_placeholder($1) : $& }
+      result[:body_lines] << "<%= #{code} %>"
+    when DIRECTIVE_RE
+      result[:warnings] << "Unrecognized directive: #{line}"
+      result[:body_lines] << line
+    end
+  end
+
+  def parse_config_directive(args_str, yaml)
+    args_str = args_str.strip
+
+    if args_str.include?('=')
+      key, value = args_str.split(/\s*=\s*/, 2)
+    else
+      key, value = args_str.split(/\s+/, 2)
+    end
+
+    return if key.nil? || key.empty?
+
+    key   = key.strip.delete('?')
+    value = parse_value(value&.strip)
+
+    set_nested(yaml, key, value)
+  end
+
+  def directive_arg_to_ruby(arg)
+    has_clean = arg.match?(CLEAN_PLACEHOLDER)
+    has_space = arg.match?(SPACE_PLACEHOLDER) && arg.scan(SPACE_PLACEHOLDER).any? { |m| fixable_space_placeholder?(m[0]) }
+
+    if arg.match?(/\A\[([A-Z][A-Z0-9_]*)\]\z/)
+      # Entire arg is a single clean placeholder — bare variable reference
+      arg.match(/\A\[([A-Z][A-Z0-9_]*)\]\z/)[1].downcase
+    elsif arg.match?(/\A\[([A-Z][A-Z0-9_ ]*[A-Z0-9_])\]\z/) && fixable_space_placeholder?($1)
+      # Entire arg is a single space placeholder — bare variable reference
+      normalize_placeholder($1)
+    elsif has_clean || has_space
+      # Arg contains embedded placeholders — use double-quoted string with interpolation
+      inner = arg.gsub('"', '\\"')
+      inner = inner.gsub(CLEAN_PLACEHOLDER) { "\#{#{$1.downcase}}" }
+      inner = inner.gsub(SPACE_PLACEHOLDER) do
+        fixable_space_placeholder?($1) ? "\#{#{normalize_placeholder($1)}}" : $&
+      end
+      "\"#{inner}\""
+    else
+      # No placeholders — single-quoted string
+      "'#{arg.gsub("'", "\\\\'")}'"
+    end
+  end
+
+  # --- Comment flushing ---
+
+  def flush_comments(buffer, body_lines)
+    return if buffer.empty?
+
+    # Trim leading/trailing blank lines
+    buffer.shift while buffer.first&.strip&.empty?
+    buffer.pop   while buffer.last&.strip&.empty?
+
+    unless buffer.empty?
+      if buffer.size == 1
+        body_lines << "<!-- #{buffer.first} -->"
+      else
+        body_lines << "<!--"
+        buffer.each { |l| body_lines << l }
+        body_lines << "-->"
+      end
+    end
+
+    buffer.clear
+  end
+
+  # --- JSON parameter loading ---
+
+  def load_json_params(json_path)
+    return {} unless json_path.exist?
+
+    data   = JSON.parse(json_path.read)
+    params = {}
+
+    data.each do |key, values|
+      name = key.gsub(/\A\[|\]\z/, '').tr(' ', '_').downcase
+      if values.is_a?(Array) && !values.empty?
+        params[name] = values.last
+      else
+        params[name] = nil
+      end
+    end
+
+    params
+  rescue JSON::ParserError => e
+    log "  Warning: Could not parse #{json_path.basename}: #{e.message}"
+    {}
+  end
+
+  # --- Parameter merging ---
+
+  def merge_params(all_params, json_params)
+    merged = all_params.dup
+    json_params.each { |name, value| merged[name] = value }
+    merged
+  end
+
+  # --- Body transformation ---
+
+  def transform_body(body_lines)
+    body_lines.map do |line|
+      result = line.gsub(CLEAN_PLACEHOLDER) { "<%= #{$1.downcase} %>" }
+      result.gsub(SPACE_PLACEHOLDER) do
+        inner = $1
+        if fixable_space_placeholder?(inner)
+          "<%= #{normalize_placeholder(inner)} %>"
+        else
+          $&  # leave non-fixable matches unchanged
+        end
+      end
+    end
+  end
+
+  # --- Output assembly ---
+
+  def assemble_md(parsed, params)
+    parts = []
+
+    # Shebang on line 1
+    parts << parsed[:shebang] if parsed[:shebang]
+
+    # YAML front matter
+    parts << "---"
+    parts << build_yaml_string(parsed, params)
+    parts << "---"
+
+    # Body
+    body = transform_body(parsed[:body_lines])
+    parts << ""
+    parts.concat(body)
+
+    # Content after __END__
+    if parsed[:after_end]
+      parts << ""
+      parts << "<!--"
+      parts << parsed[:after_end]
+      parts << "-->"
+    end
+
+    parts.join("\n") + "\n"
+  end
+
+  def build_yaml_string(parsed, params)
+    lines = []
+
+    # name first
+    lines << "name: #{parsed[:name]}"
+
+    # description
+    if parsed[:description]
+      desc = parsed[:description]
+      if desc.include?("\n")
+        lines << "description: |"
+        desc.each_line { |l| lines << "  #{l.rstrip}" }
+      else
+        lines << "description: #{yaml_quote(desc)}"
+      end
+    end
+
+    # config values
+    format_hash(parsed[:yaml], lines, 0)
+
+    # parameters last
+    unless params.empty?
+      lines << "parameters:"
+      params.each do |name, default|
+        if default.nil?
+          lines << "  #{name}: null"
+        else
+          lines << "  #{name}: #{yaml_quote(default.to_s)}"
+        end
+      end
+    end
+
+    lines.join("\n")
+  end
+
+  def format_hash(hash, lines, indent)
+    prefix = "  " * indent
+    hash.each do |key, value|
+      case value
+      when Hash
+        lines << "#{prefix}#{key}:"
+        format_hash(value, lines, indent + 1)
+      when Array
+        formatted = value.map { |v| yaml_quote(v.to_s) }
+        lines << "#{prefix}#{key}: [#{formatted.join(', ')}]"
+      when true, false
+        lines << "#{prefix}#{key}: #{value}"
+      when Numeric
+        lines << "#{prefix}#{key}: #{value}"
+      when NilClass
+        lines << "#{prefix}#{key}: null"
+      else
+        lines << "#{prefix}#{key}: #{yaml_quote(value.to_s)}"
+      end
+    end
+  end
+
+  # --- YAML helpers ---
+
+  def yaml_quote(str)
+    if needs_yaml_quoting?(str)
+      str.inspect
+    else
+      str
+    end
+  end
+
+  def needs_yaml_quoting?(str)
+    return true if str.empty?
+    return true if str.match?(/\A\s|\s\z/)
+    return true if %w[null true false yes no on off].include?(str.downcase)
+    return true if str.match?(/\A-?\d/)
+    return true if str.match?(/[:\{\}\[\],&*#?|<>=!%@`"']/)
+    false
+  end
+
+  def parse_value(str)
+    return nil if str.nil? || str.empty?
+    case str
+    when /\Atrue\z/i  then true
+    when /\Afalse\z/i then false
+    when /\A-?\d+\z/  then str.to_i
+    when /\A-?\d+\.\d+\z/ then str.to_f
+    else str
+    end
+  end
+
+  def set_nested(hash, dotted_key, value)
+    keys    = dotted_key.split('.')
+    current = hash
+    keys[0..-2].each do |k|
+      current[k] ||= {}
+      current = current[k]
+    end
+    current[keys.last] = value
+  end
+
+  # --- Reporting ---
+
+  def show_details(parsed, params)
+    yaml_keys = parsed[:yaml].keys
+    log "    YAML config keys: #{yaml_keys.join(', ')}" unless yaml_keys.empty?
+    log "    Parameters: #{params.keys.join(', ')}" unless params.empty?
+    log "    Description: #{parsed[:description]&.lines&.first&.strip}" if parsed[:description]
+    parsed[:warnings].each { |w| log "    Warning: #{w}" }
+  end
+
+  def print_summary
+    log ""
+    log "Migration summary:"
+    log "  Migrated:           #{@stats[:migrated]} files"
+    log "  Flagged for review: #{@stats[:flagged]} files (*.txt-review)"
+    log "  Skipped:            #{@stats[:skipped]} files (*.md already exists)"
+    if @stats[:warnings].any?
+      log "  Warnings:           #{@stats[:warnings].size}"
+      @stats[:warnings].each { |w| log "    - #{w}" }
+    end
+  end
+
+  def print_reprocess_summary
+    log ""
+    log "Reprocess summary:"
+    log "  Recovered: #{@stats[:reprocessed]} files (*.txt-review → *.txt → *.md)"
+    log "  Still flagged: #{@stats[:still_flagged]} files (unchanged)"
+    if @stats[:warnings].any?
+      log "  Warnings:  #{@stats[:warnings].size}"
+      @stats[:warnings].each { |w| log "    - #{w}" }
+    end
+  end
+end
+
+# --- CLI ---
+
+options = {
+  dry_run:   false,
+  verbose:   false,
+  force:     false,
+  reprocess: false,
+  args:      []
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: migrate_prompts [OPTIONS] [FILE ...] [DIRECTORY ...]"
+  opts.separator ""
+  opts.separator "Migrates prompt files from prompt_manager v0.5.8 (.txt + .json)"
+  opts.separator "to PM v1.0.0 format (.md with YAML front matter)."
+  opts.separator ""
+  opts.separator "With no arguments, scans $AIA_PROMPTS__DIR (default: ~/.prompts)."
+  opts.separator "With arguments, processes only the specified .txt files or directories."
+  opts.separator ""
+
+  opts.on("--dry-run", "Show what would change without modifying files") do
+    options[:dry_run] = true
+  end
+
+  opts.on("--verbose", "Show detailed transformation info") do
+    options[:verbose] = true
+  end
+
+  opts.on("--force", "Overwrite existing .md files") do
+    options[:force] = true
+  end
+
+  opts.on("--reprocess", "Re-examine *.txt-review files; recover those that now pass") do
+    options[:reprocess] = true
+  end
+
+  opts.on("-h", "--help", "Show this help") do
+    puts opts
+    exit
+  end
+end
+
+parser.parse!
+options[:args] = ARGV.dup
+
+migrator = PromptMigrator.new(options)
+migrator.run
