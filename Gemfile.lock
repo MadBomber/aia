@@ -1,7 +1,13 @@
 PATH
+  remote: ../../prompt_manager
+  specs:
+    prompt_manager (1.0.0)
+      ostruct
+
+PATH
   remote: .
   specs:
-    aia (0.11.1)
+    aia (1.0.0.pre.alpha)
       amazing_print
       async
       clipboard
@@ -176,7 +182,6 @@ GEM
       ast (~> 2.4.1)
       racc
     prism (1.9.0)
-    prompt_manager (0.5.8)
     pry (0.16.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -307,6 +312,7 @@ DEPENDENCIES
   minitest-reporters
   mocha
   ostruct
+  prompt_manager!
   rake
   securerandom (~> 0.4.0)
   simplecov

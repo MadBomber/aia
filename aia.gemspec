@@ -90,7 +90,7 @@ Gem::Specification.new do |spec|
       3. Initialize config:    aia --dump ~/.config/aia/aia.yml
 
     Key Features:
-      • Dynamic prompts with embedded directives (//include, //shell)
+      • Dynamic prompts with YAML front matter and ERB directives
       • Consensus mode: run multiple models, get unified responses
       • Shell & Ruby (ERB) integration in prompts
       • Tool callbacks via RubyLLM::Tool

@@ -1,4 +1,21 @@
 # Changelog
+## [0.11.1] - 2026-02-03
+
+### New Features
+- **`bin/migrate_prompts` Script**: Standalone Ruby script for migrating prompt files from prompt_manager v0.5.8 format to v1.0.0 format
+  - Converts `.txt` + `.json` files to `.md` with YAML front matter and ERB parameters
+  - Placeholder conversion: `[PLACEHOLDER]` → `<%= placeholder %>`
+  - Space placeholder normalization: `[TECH STACK]` → `<%= tech_stack %>`
+  - Directive migration: `//config`, `//temp`, `//topp`, `//include`, `//shell`, `//ruby`, `//backend`, `//next`, `//pipeline`
+  - Comment conversion: `#` lines → HTML comments (preserves comments inside code fences and ERB blocks)
+  - Code fence detection: files containing ``` fences are flagged as `.txt-review` for manual review
+  - JSON history file migration: `.json` parameter history converted to YAML `parameters:` block in front matter
+  - `--reprocess` option to re-examine `.txt-review` files and recover those that now process cleanly
+  - `--dry-run` mode for safe previewing of changes
+  - `--verbose` logging with detailed per-file output
+  - `--force` to overwrite existing `.md` files
+  - Supports both directory scanning and specific file arguments
+
 ## [0.11.0] - 2026-02-02
 
 ### New Features
