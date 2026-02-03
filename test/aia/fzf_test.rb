@@ -16,7 +16,7 @@ class FzfTest < Minitest::Test
       query: 'test',
       subject: 'Test Items',
       prompt: 'Choose one:',
-      extension: '.txt'
+      extension: '.md'
     )
   end
 
@@ -26,7 +26,7 @@ class FzfTest < Minitest::Test
     assert_equal 'test', @fzf.query
     assert_equal 'Test Items', @fzf.subject
     assert_equal 'Choose one:', @fzf.prompt
-    assert_equal '.txt', @fzf.extension
+    assert_equal '.md', @fzf.extension
     refute_nil @fzf.command
   end
 
@@ -38,7 +38,7 @@ class FzfTest < Minitest::Test
     assert_equal '', fzf.query
     assert_equal 'Prompt IDs', fzf.subject
     assert_equal 'Select one:', fzf.prompt
-    assert_equal '.txt', fzf.extension
+    assert_equal '.md', fzf.extension
   end
 
   def test_default_parameters_constant
@@ -69,7 +69,7 @@ class FzfTest < Minitest::Test
     assert_match(/--header='Test Items which contain: test/, command)
     
     # Should include preview command  
-    assert_includes command, "--preview='cat /test/dir/{1}.txt'"
+    assert_includes command, "--preview='cat /test/dir/{1}.md'"
     
     # Should include custom prompt
     assert_match(/--prompt=Choose\\ one:/, command)

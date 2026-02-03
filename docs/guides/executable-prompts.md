@@ -30,14 +30,14 @@ The `run` prompt is a special configuration-only prompt file that serves as a fo
 ### Creating the `run` Prompt
 
 ```bash
-# ~/.prompts/run.txt
+# ~/.prompts/run.md
 # Desc: A configuration only prompt file for use with executable prompts
 #       Put whatever you want here to setup the configuration desired.
 #       You could also add a system prompt to preface your intended prompt
 
-//config model = gpt-4o-mini
-//config temperature = 0.7
-//config terse = true
+/config model = gpt-4o-mini
+/config temperature = 0.7
+/config terse = true
 ```
 
 ### Usage Pattern
@@ -61,7 +61,7 @@ Create a weather monitoring executable:
 
 Summarize the tropical storm outlook for the Atlantic, Caribbean Sea and Gulf of America.
 
-//webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
+/webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
 ```
 
 **Setup and Usage:**
@@ -85,16 +85,16 @@ chmod +x weather_report
 Analyze the current system status and provide recommendations:
 
 System Information:
-//shell uname -a
+/shell uname -a
 
 Disk Usage:
-//shell df -h
+/shell df -h
 
 Memory Usage:
-//shell free -h 2>/dev/null || vm_stat
+/shell free -h 2>/dev/null || vm_stat
 
 Running Processes:
-//shell ps aux | head -20
+/shell ps aux | head -20
 
 Provide analysis and recommendations for system optimization.
 ```
@@ -105,19 +105,19 @@ Provide analysis and recommendations for system optimization.
 #!/usr/bin/env aia run --no-output --exec
 # Analyze code quality for the current directory
 
-//config model = gpt-4
-//config temperature = 0.3
+/config model = gpt-4
+/config temperature = 0.3
 
 Review the code structure and quality in this project:
 
 Project Structure:
-//shell find . -type f -name "*.rb" -o -name "*.py" -o -name "*.js" | head -20
+/shell find . -type f -name "*.rb" -o -name "*.py" -o -name "*.js" | head -20
 
 Git Status:
-//shell git status --short 2>/dev/null || echo "Not a git repository"
+/shell git status --short 2>/dev/null || echo "Not a git repository"
 
 Recent Commits:
-//shell git log --oneline -10 2>/dev/null || echo "No git history available"
+/shell git log --oneline -10 2>/dev/null || echo "No git history available"
 
 Provide code quality assessment and improvement recommendations.
 ```
@@ -128,16 +128,16 @@ Provide code quality assessment and improvement recommendations.
 #!/usr/bin/env aia run --no-output --exec
 # Generate daily standup report from git activity
 
-//config model = gpt-4o-mini
-//config temperature = 0.5
+/config model = gpt-4o-mini
+/config temperature = 0.5
 
 Generate a daily standup report based on recent git activity:
 
 Yesterday's Commits:
-//shell git log --since="1 day ago" --author="$(git config user.name)" --oneline
+/shell git log --since="1 day ago" --author="$(git config user.name)" --oneline
 
 Current Branch Status:
-//shell git status --short
+/shell git status --short
 
 Today's Focus:
 Based on the above activity, what should be the key focus areas for today?
@@ -155,14 +155,14 @@ Create executable prompts that accept command-line parameters:
 # Code review for specific file
 # Usage: ./code_review <filename>
 
-//ruby
+/ruby
 filename = ARGV[0] || "[FILENAME]"
 puts "Reviewing file: #{filename}"
 ```
 
 Review this code file for quality, security, and best practices:
 
-//include <%= filename %>
+/include <%= filename %>
 
 Provide specific, actionable feedback for improvements.
 ```
@@ -175,7 +175,7 @@ Chain multiple prompts in an executable workflow:
 #!/usr/bin/env aia run --no-output --exec
 # Complete project analysis pipeline
 
-//pipeline project_scan,security_check,recommendations
+/pipeline project_scan,security_check,recommendations
 
 Starting comprehensive project analysis...
 ```
@@ -186,27 +186,27 @@ Starting comprehensive project analysis...
 #!/usr/bin/env aia run --no-output --exec
 # Environment-aware deployment checker
 
-//ruby
+/ruby
 environment = ENV['RAILS_ENV'] || 'development'
 case environment
 when 'production'
-  puts "//config model = gpt-4"
-  puts "//config temperature = 0.2"
+  puts "/config model = gpt-4"
+  puts "/config temperature = 0.2"
   puts "Production deployment analysis:"
 when 'staging'
-  puts "//config model = gpt-4o-mini"
-  puts "//config temperature = 0.4"
+  puts "/config model = gpt-4o-mini"
+  puts "/config temperature = 0.4"
   puts "Staging deployment analysis:"
 else
-  puts "//config model = gpt-3.5-turbo"
-  puts "//config temperature = 0.6"
+  puts "/config model = gpt-3.5-turbo"
+  puts "/config temperature = 0.6"
   puts "Development deployment analysis:"
 end
 ```
 
 Environment: <%= environment %>
 
-//shell env | grep -E "(DATABASE|REDIS|API)" | sort
+/shell env | grep -E "(DATABASE|REDIS|API)" | sort
 
 Analyze the deployment configuration and provide environment-specific recommendations.
 ```
@@ -223,9 +223,9 @@ Analyze the deployment configuration and provide environment-specific recommenda
 Analyze the staged changes and suggest improvements:
 
 Staged Changes:
-//shell git diff --cached --stat
+/shell git diff --cached --stat
 
-//shell git diff --cached
+/shell git diff --cached
 
 Provide commit message suggestions and code quality feedback.
 ```
@@ -288,7 +288,7 @@ chmod 700 sensitive_prompt     # Owner only
 #!/usr/bin/env aia run --no-output --exec
 # Robust executable with error handling
 
-//ruby
+/ruby
 if ARGV.empty?
   puts "Error: Please provide a filename as argument"
   puts "Usage: #{$0} <filename>"
@@ -304,7 +304,7 @@ end
 
 File analysis for: <%= filename %>
 
-//include <%= filename %>
+/include <%= filename %>
 
 Analyze the file structure, quality, and provide recommendations.
 ```
@@ -313,13 +313,13 @@ Analyze the file structure, quality, and provide recommendations.
 
 ```bash
 # Use faster models for simple tasks
-//config model = gpt-4o-mini
+/config model = gpt-4o-mini
 
 # Reduce token usage for executables
-//config max_tokens = 1500
+/config max_tokens = 1500
 
 # Lower temperature for consistent results
-//config temperature = 0.3
+/config temperature = 0.3
 ```
 
 ## Debugging Executable Prompts
@@ -351,7 +351,7 @@ git status
 |-------|-------|----------|
 | "Permission denied" | File not executable | `chmod +x filename` |
 | "Command not found" | Missing shebang or wrong path | Check shebang line |
-| "Prompt not found" | Missing run prompt | Create ~/.prompts/run.txt |
+| "Prompt not found" | Missing run prompt | Create ~/.prompts/run.md |
 | "Output not appearing" | Missing --no-output | Add flag to shebang |
 
 ## Advanced Executable Patterns
@@ -363,7 +363,7 @@ git status
 # Self-documenting code analyzer
 # Usage: ./code_analyzer [--help] <directory>
 
-//ruby
+/ruby
 if ARGV.include?('--help')
   puts <<~HELP
     Code Analyzer - AI-powered code quality assessment
@@ -387,7 +387,7 @@ end
 #!/usr/bin/env aia run --no-output --exec
 # Multi-stage project analysis
 
-//ruby
+/ruby
 stages = %w[structure security performance documentation]
 current_stage = ENV['STAGE'] || stages.first
 
@@ -395,13 +395,13 @@ puts "=== Stage #{stages.index(current_stage) + 1}: #{current_stage.capitalize} 
 
 case current_stage
 when 'structure'
-  puts "//pipeline structure_analysis,security_check"
-when 'security' 
-  puts "//pipeline security_scan,vulnerability_check"
+  puts "/pipeline structure_analysis,security_check"
+when 'security'
+  puts "/pipeline security_scan,vulnerability_check"
 when 'performance'
-  puts "//pipeline performance_analysis,optimization_suggestions"
+  puts "/pipeline performance_analysis,optimization_suggestions"
 when 'documentation'
-  puts "//pipeline doc_analysis,improvement_suggestions"
+  puts "/pipeline doc_analysis,improvement_suggestions"
 end
 ```
 

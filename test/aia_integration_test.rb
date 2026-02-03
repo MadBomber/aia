@@ -48,7 +48,7 @@ class AIAIntegrationTest < Minitest::Test
       models: [OpenStruct.new(name: 'gpt-4o-mini')],
       prompts: OpenStruct.new(
         dir: @temp_prompts_dir,
-        extname: '.txt',
+        extname: '.md',
         roles_prefix: 'roles',
         roles_dir: File.join(@temp_prompts_dir, 'roles'),
         role: nil,
@@ -106,8 +106,6 @@ class AIAIntegrationTest < Minitest::Test
     mock_adapter.stubs(:tools).returns([])
     AIA::RubyLLMAdapter.stubs(:new).returns(mock_adapter)
 
-    # Mock PromptManager
-    PromptManager::Storage::FileSystemAdapter.stubs(:new).returns(mock('storage_adapter'))
   end
 
   def teardown
@@ -118,7 +116,7 @@ class AIAIntegrationTest < Minitest::Test
 
   def test_batch_mode_single_prompt_workflow
     # Create a test prompt file
-    prompt_file = File.join(@temp_prompts_dir, 'test_prompt.txt')
+    prompt_file = File.join(@temp_prompts_dir, 'test_prompt.md')
     File.write(prompt_file, 'Hello AI, please respond to this test prompt.')
 
     @mock_config.prompt_id = 'test_prompt'
@@ -138,12 +136,12 @@ class AIAIntegrationTest < Minitest::Test
     end
 
     # Check for key components without exact version
-    assert_match(/AI Assistant \(v[\d.]+\) is Online/, output.first) # Should show robot ASCII art
+    assert_match(/AI Assistant \(v[\d.\w-]+\) is Online/, output.first) # Should show robot ASCII art
   end
 
   def test_batch_mode_with_context_files_workflow
     # Create test files
-    prompt_file = File.join(@temp_prompts_dir, 'context_test.txt')
+    prompt_file = File.join(@temp_prompts_dir, 'context_test.md')
     File.write(prompt_file, 'Analyze the following context:')
 
     context_file = Tempfile.new('context')
@@ -168,7 +166,7 @@ class AIAIntegrationTest < Minitest::Test
 
   def test_batch_mode_with_variables_workflow
     # Create a prompt with variables
-    prompt_file = File.join(@temp_prompts_dir, 'variables_test.txt')
+    prompt_file = File.join(@temp_prompts_dir, 'variables_test.md')
     File.write(prompt_file, 'Hello {{name}}, you are {{age}} years old.')
 
     # Create a history file with variable values
@@ -212,10 +210,10 @@ class AIAIntegrationTest < Minitest::Test
 
   def test_pipeline_workflow
     # Create multiple prompt files
-    prompt1_file = File.join(@temp_prompts_dir, 'step1.txt')
+    prompt1_file = File.join(@temp_prompts_dir, 'step1.md')
     File.write(prompt1_file, 'First step')
 
-    prompt2_file = File.join(@temp_prompts_dir, 'step2.txt')
+    prompt2_file = File.join(@temp_prompts_dir, 'step2.md')
     File.write(prompt2_file, 'Second step')
 
     @mock_config.pipeline = ['step1', 'step2']
@@ -301,7 +299,7 @@ class AIAIntegrationTest < Minitest::Test
     @mock_config.prompt_id = 'test_prompt'
 
     # Create test prompt
-    prompt_file = File.join(@temp_prompts_dir, 'test_prompt.txt')
+    prompt_file = File.join(@temp_prompts_dir, 'test_prompt.md')
     File.write(prompt_file, 'Test prompt for output')
 
     # Mock session
@@ -320,7 +318,7 @@ class AIAIntegrationTest < Minitest::Test
     @mock_config.prompt_id = 'stdin_test'
 
     # Create test prompt
-    prompt_file = File.join(@temp_prompts_dir, 'stdin_test.txt')
+    prompt_file = File.join(@temp_prompts_dir, 'stdin_test.md')
     File.write(prompt_file, 'Process this stdin: {{stdin_content}}')
 
     # Mock session
@@ -334,11 +332,11 @@ class AIAIntegrationTest < Minitest::Test
 
   def test_role_based_workflow
     # Create role and prompt files
-    role_file = File.join(@temp_prompts_dir, 'roles', 'developer.txt')
+    role_file = File.join(@temp_prompts_dir, 'roles', 'developer.md')
     FileUtils.mkdir_p(File.dirname(role_file))
     File.write(role_file, 'You are an expert developer.')
 
-    prompt_file = File.join(@temp_prompts_dir, 'debug_task.txt')
+    prompt_file = File.join(@temp_prompts_dir, 'debug_task.md')
     File.write(prompt_file, 'Debug this code issue.')
 
     @mock_config.prompts.role = 'developer'
@@ -358,7 +356,7 @@ class AIAIntegrationTest < Minitest::Test
     @mock_config.prompt_id = 'error_test'
 
     # Create prompt that might cause issues
-    prompt_file = File.join(@temp_prompts_dir, 'error_test.txt')
+    prompt_file = File.join(@temp_prompts_dir, 'error_test.md')
     File.write(prompt_file, 'This will test error recovery.')
 
     # Mock session that fails and recovers

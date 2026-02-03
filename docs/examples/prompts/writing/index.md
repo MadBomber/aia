@@ -5,34 +5,34 @@ Collection of prompts for content creation and writing tasks.
 ## Available Prompts
 
 ### Technical Writing
-- **technical_docs.txt** - Technical documentation creation
-- **api_documentation.txt** - API documentation writing
-- **user_guides.txt** - User guide creation
-- **tutorial_writer.txt** - Step-by-step tutorial generation
+- **technical_docs.md** - Technical documentation creation
+- **api_documentation.md** - API documentation writing
+- **user_guides.md** - User guide creation
+- **tutorial_writer.md** - Step-by-step tutorial generation
 
 ### Blog Posts
-- **blog_post.txt** - General blog post creation
-- **technical_blog.txt** - Technical blog posts
-- **how_to_guide.txt** - How-to article creation
-- **listicle_generator.txt** - List-based article creation
+- **blog_post.md** - General blog post creation
+- **technical_blog.md** - Technical blog posts
+- **how_to_guide.md** - How-to article creation
+- **listicle_generator.md** - List-based article creation
 
 ### Creative Writing
-- **story_generator.txt** - Creative story writing
-- **character_development.txt** - Character creation and development
-- **dialogue_writer.txt** - Dialogue creation
-- **scene_setting.txt** - Scene and setting description
+- **story_generator.md** - Creative story writing
+- **character_development.md** - Character creation and development
+- **dialogue_writer.md** - Dialogue creation
+- **scene_setting.md** - Scene and setting description
 
 ### Business Writing
-- **proposal_writer.txt** - Business proposal creation
-- **report_generator.txt** - Business report writing
-- **email_composer.txt** - Professional email composition
-- **presentation_outline.txt** - Presentation structure creation
+- **proposal_writer.md** - Business proposal creation
+- **report_generator.md** - Business report writing
+- **email_composer.md** - Professional email composition
+- **presentation_outline.md** - Presentation structure creation
 
 ### Editing and Improvement
-- **content_editor.txt** - Content editing and improvement
-- **style_checker.txt** - Writing style analysis
-- **grammar_check.txt** - Grammar and syntax review
-- **readability_improver.txt** - Readability enhancement
+- **content_editor.md** - Content editing and improvement
+- **style_checker.md** - Writing style analysis
+- **grammar_check.md** - Grammar and syntax review
+- **readability_improver.md** - Readability enhancement
 
 ## Usage Examples
 

@@ -62,7 +62,7 @@ aia --tools ./tools/ --allowed-tools "safe_tools" --rejected-tools "dangerous_to
 aia --tools ./tools/ tool_discovery_prompt
 
 # Or within a prompt
-//tools
+/tools
 ```
 
 ## Creating Custom Tools
@@ -566,8 +566,8 @@ end
 
 ### Basic Tool Usage
 ```markdown
-# ~/.prompts/file_analysis.txt
-//tools file_analyzer.rb
+# ~/.prompts/file_analysis.md
+/tools file_analyzer.rb
 
 # File Analysis Report
 
@@ -584,8 +584,8 @@ Provide a comprehensive report with recommendations.
 
 ### Multi-Tool Workflows
 ```markdown
-# ~/.prompts/web_data_analysis.txt
-//tools web_client.rb,data_analyzer.rb
+# ~/.prompts/web_data_analysis.md
+/tools web_client.rb,data_analyzer.rb
 
 # Web Data Analysis Pipeline
 
@@ -607,23 +607,23 @@ Based on the analysis, provide actionable insights and recommendations.
 
 ### Conditional Tool Usage
 ```ruby
-# ~/.prompts/adaptive_analysis.txt
-//ruby
+# ~/.prompts/adaptive_analysis.md
+/ruby
 input_file = '<%= input_file %>'
 file_ext = File.extname(input_file).downcase
 
 case file_ext
 when '.csv'
-  puts "//tools data_analyzer.rb"
+  puts "/tools data_analyzer.rb"
   analysis_type = "CSV data analysis"
 when '.json'
-  puts "//tools data_analyzer.rb"
+  puts "/tools data_analyzer.rb"
   analysis_type = "JSON structure analysis"
 when '.rb', '.py', '.js'
-  puts "//tools file_analyzer.rb"
+  puts "/tools file_analyzer.rb"
   analysis_type = "Code analysis"
 else
-  puts "//tools file_analyzer.rb"
+  puts "/tools file_analyzer.rb"
   analysis_type = "General file analysis"
 end
 

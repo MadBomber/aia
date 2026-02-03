@@ -15,7 +15,7 @@ Let's start with the most basic prompt possible:
 
 ### Step 1: Create Your First Prompt File
 ```bash
-echo "What is Ruby programming language?" > ~/.prompts/what_is_ruby.txt
+echo "What is Ruby programming language?" > ~/.prompts/what_is_ruby.md
 ```
 
 ### Step 2: Run Your Prompt
@@ -34,7 +34,7 @@ Now let's create a prompt that works with files:
 
 ### Step 1: Create a Context-Aware Prompt
 ```bash
-cat > ~/.prompts/explain_code.txt << 'EOF'
+cat > ~/.prompts/explain_code.md << 'EOF'
 Please explain what this code does:
 
 <%= context_file %>
@@ -59,13 +59,13 @@ AIA automatically includes the file content where you specified `<%= context_fil
 
 ## Using Directives
 
-Directives are special commands in prompts that start with `//`. Let's try some:
+Directives are special commands in prompts that start with `/`. Let's try some:
 
 ### Configuration Directives
 ```bash
-cat > ~/.prompts/detailed_analysis.txt << 'EOF'
-//config model gpt-4
-//config temperature 0.3
+cat > ~/.prompts/detailed_analysis.md << 'EOF'
+/config model gpt-4
+/config temperature 0.3
 
 Provide a detailed technical analysis of this code:
 
@@ -81,9 +81,9 @@ EOF
 
 ### File Inclusion Directives
 ```bash
-cat > ~/.prompts/project_overview.txt << 'EOF'
-//include README.md
-//include package.json
+cat > ~/.prompts/project_overview.md << 'EOF'
+/include README.md
+/include package.json
 
 Based on the project files above, provide an overview of:
 - Project purpose and goals
@@ -95,13 +95,13 @@ EOF
 
 ### Shell Command Directives
 ```bash
-cat > ~/.prompts/system_status.txt << 'EOF'
+cat > ~/.prompts/system_status.md << 'EOF'
 Current system status:
 
-//shell date
-//shell whoami
-//shell uptime
-//shell df -h
+/shell date
+/shell whoami
+/shell uptime
+/shell df -h
 
 Please analyze the system status and provide recommendations.
 EOF
@@ -113,9 +113,9 @@ Create prompts that accept parameters:
 
 ### Step 1: Create a Parameterized Prompt
 ```bash
-cat > ~/.prompts/code_review.txt << 'EOF'
-//config model gpt-4
-//config temperature 0.2
+cat > ~/.prompts/code_review.md << 'EOF'
+/config model gpt-4
+/config temperature 0.2
 
 # Code Review: <%= file_name %>
 
@@ -128,7 +128,7 @@ Review this <%= language %> code for:
 Focus level: <%= focus_level || "standard" %>
 
 Code to review:
-//include <%= file_name %>
+/include <%= file_name %>
 
 Please provide specific, actionable feedback.
 EOF
@@ -192,13 +192,13 @@ Chain prompts together for multi-step processes:
 ### Step 1: Create Individual Steps
 ```bash
 # Step 1: Extract requirements
-cat > ~/.prompts/extract_requirements.txt << 'EOF'
-//next analyze_requirements
+cat > ~/.prompts/extract_requirements.md << 'EOF'
+/next analyze_requirements
 
 Extract and list all requirements from this project:
 
-//include README.md
-//include requirements.txt
+/include README.md
+/include requirements.txt
 
 Provide a structured list of:
 - Functional requirements
@@ -208,8 +208,8 @@ Provide a structured list of:
 EOF
 
 # Step 2: Analyze requirements
-cat > ~/.prompts/analyze_requirements.txt << 'EOF'
-//next generate_recommendations
+cat > ~/.prompts/analyze_requirements.md << 'EOF'
+/next generate_recommendations
 
 Based on the requirements extraction, analyze:
 - Completeness of requirements
@@ -219,7 +219,7 @@ Based on the requirements extraction, analyze:
 EOF
 
 # Step 3: Generate recommendations
-cat > ~/.prompts/generate_recommendations.txt << 'EOF'
+cat > ~/.prompts/generate_recommendations.md << 'EOF'
 Based on the requirements and analysis, provide:
 - Implementation recommendations
 - Architecture suggestions
@@ -240,12 +240,12 @@ AIA will automatically run all three prompts in sequence!
 ### ❌ Don't: Create overly complex first prompts
 ```bash
 # Too complex for beginners
-cat > ~/.prompts/bad_first_prompt.txt << 'EOF'
-//config model gpt-4
-//config temperature 0.7
-//ruby complex_calculations
-//shell complex_command | grep something
-//include multiple_files.txt
+cat > ~/.prompts/bad_first_prompt.md << 'EOF'
+/config model gpt-4
+/config temperature 0.7
+/ruby complex_calculations
+/shell complex_command | grep something
+/include multiple_files.txt
 
 Perform complex multi-step analysis with advanced features...
 EOF
@@ -254,7 +254,7 @@ EOF
 ### ✅ Do: Start simple and build up
 ```bash
 # Good first prompt
-cat > ~/.prompts/good_first_prompt.txt << 'EOF'
+cat > ~/.prompts/good_first_prompt.md << 'EOF'
 Summarize this file in simple terms:
 
 <%= context_file %>
@@ -281,10 +281,10 @@ Try these exercises to reinforce what you've learned:
 Create a prompt that analyzes any file type and provides insights.
 
 ```bash
-cat > ~/.prompts/analyze_file.txt << 'EOF'
+cat > ~/.prompts/analyze_file.md << 'EOF'
 Analyze this file:
 
-//include <%= file %>
+/include <%= file %>
 
 Provide:
 - File type and format
@@ -298,12 +298,12 @@ EOF
 Create a prompt that suggests code improvements.
 
 ```bash
-cat > ~/.prompts/improve_code.txt << 'EOF'
-//config temperature 0.3
+cat > ~/.prompts/improve_code.md << 'EOF'
+/config temperature 0.3
 
 Suggest improvements for this code:
 
-//include <%= code_file %>
+/include <%= code_file %>
 
 Focus on:
 - Readability
@@ -317,14 +317,14 @@ EOF
 Create a prompt that generates README content.
 
 ```bash
-cat > ~/.prompts/generate_readme.txt << 'EOF'
+cat > ~/.prompts/generate_readme.md << 'EOF'
 Generate README.md content for this project:
 
 Project structure:
-//shell find . -type f -name "*.py" -o -name "*.rb" -o -name "*.js" | head -10
+/shell find . -type f -name "*.py" -o -name "*.rb" -o -name "*.js" | head -10
 
 Configuration files:
-//shell ls *.json *.yml *.yaml 2>/dev/null || echo "No config files found"
+/shell ls *.json *.yml *.yaml 2>/dev/null || echo "No config files found"
 
 Create a comprehensive README with:
 - Project description
@@ -344,14 +344,14 @@ EOF
 ### Use Descriptive Names
 ```bash
 # Good prompt names
-~/.prompts/analyze_python_code.txt
-~/.prompts/summarize_research_paper.txt
-~/.prompts/generate_api_docs.txt
+~/.prompts/analyze_python_code.md
+~/.prompts/summarize_research_paper.md
+~/.prompts/generate_api_docs.md
 
 # Poor prompt names
-~/.prompts/prompt1.txt
-~/.prompts/test.txt
-~/.prompts/stuff.txt
+~/.prompts/prompt1.md
+~/.prompts/test.md
+~/.prompts/stuff.md
 ```
 
 ### Organize Your Prompts
@@ -360,8 +360,8 @@ EOF
 mkdir -p ~/.prompts/{development,analysis,writing,learning}
 
 # Move prompts to appropriate directories
-mv ~/.prompts/code_review.txt ~/.prompts/development/
-mv ~/.prompts/analyze_file.txt ~/.prompts/analysis/
+mv ~/.prompts/code_review.md ~/.prompts/development/
+mv ~/.prompts/analyze_file.md ~/.prompts/analysis/
 ```
 
 ### Version Control Your Prompts
@@ -411,10 +411,10 @@ After mastering your first prompt, explore:
 ### Prompt Not Found
 ```bash
 # Check if file exists
-ls ~/.prompts/your_prompt.txt
+ls ~/.prompts/your_prompt.md
 
 # Check file permissions
-chmod 644 ~/.prompts/your_prompt.txt
+chmod 644 ~/.prompts/your_prompt.md
 
 # Use full path if needed
 aia --prompts-dir ~/.prompts your_prompt

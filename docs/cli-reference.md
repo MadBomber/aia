@@ -332,7 +332,7 @@ Subdirectory name for role files (default: `roles`).
 # Use custom roles directory
 aia --roles-prefix personas --role expert
 
-# Results in looking for roles in ~/.prompts/personas/expert.txt
+# Results in looking for roles in ~/.prompts/personas/expert.md
 ```
 
 ### `-r, --role ROLE_ID`
@@ -375,7 +375,7 @@ aia --list-roles
 Roles are discovered from:
 - **Default location**: `~/.prompts/roles/`
 - **Custom location**: Set via `--prompts-dir` and `--roles-prefix`
-- **Nested directories**: Supports subdirectories like `roles/software/architect.txt`
+- **Nested directories**: Supports subdirectories like `roles/software/architect.md`
 
 **Use case**: Discover available roles before using them with `--role` or inline `MODEL=ROLE` syntax.
 

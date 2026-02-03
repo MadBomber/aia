@@ -78,7 +78,7 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 3. **Create your first prompt:**
    ```bash
    mkdir -p ~/.prompts
-   echo "What is [TOPIC]?" > ~/.prompts/what_is.txt
+   echo "What is [TOPIC]?" > ~/.prompts/what_is.md
    ```
 
 4. **Run your prompt:**
@@ -141,7 +141,7 @@ graph TD
 - **AIA::Config** - Configuration management with hierarchical precedence
 - **AIA::PromptHandler** - Main prompt processing orchestrator
 - **AIA::ChatProcessorService** - Interactive chat session management
-- **AIA::DirectiveProcessor** - Processes embedded directives (`//command params`)
+- **AIA::DirectiveProcessor** - Processes embedded directives (`/command params`)
 - **AIA::RubyLLMAdapter** - Interfaces with the ruby_llm gem for AI model communication (manages conversation history via RubyLLM's Chat.@messages)
 - **AIA::ShellCommandExecutor** - Executes shell commands safely within prompts
 - **AIA::HistoryManager** - Manages prompt parameter history and user input

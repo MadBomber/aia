@@ -88,11 +88,11 @@ aia --style natural "Documentary-style photograph"
 Create reusable image generation prompts:
 
 ```markdown
-# ~/.prompts/product_photography.txt
-//config model dall-e-3
-//config image_size 1024x1024
-//config image_quality hd
-//config image_style natural
+# ~/.prompts/product_photography.md
+/config model dall-e-3
+/config image_size 1024x1024
+/config image_quality hd
+/config image_style natural
 
 # Product Photography Generator
 
@@ -118,11 +118,11 @@ aia product_photography --product "wireless headphones" --lighting "dramatic sid
 
 ### Complex Image Descriptions
 ```markdown
-# ~/.prompts/detailed_scene.txt
-//config model dall-e-3
-//config image_size 1792x1024
-//config image_quality hd
-//config image_style vivid
+# ~/.prompts/detailed_scene.md
+/config model dall-e-3
+/config image_size 1792x1024
+/config image_quality hd
+/config image_style vivid
 
 # Detailed Scene Generator
 
@@ -150,13 +150,13 @@ set in <%= setting %> during <%= time_of_day %>.
 
 ### Image Series Generation
 ```ruby
-# ~/.prompts/image_series.txt
-//config model dall-e-3
-//config image_size 1024x1024
+# ~/.prompts/image_series.md
+/config model dall-e-3
+/config image_size 1024x1024
 
 # Image Series Generator
 
-//ruby
+/ruby
 series_theme = '<%= theme %>'
 variations = ['<%= var1 %>', '<%= var2 %>', '<%= var3 %>']
 base_prompt = '<%= base_description %>'
@@ -186,8 +186,8 @@ aia image_series \
 
 ### Marketing Asset Pipeline
 ```markdown
-# ~/.prompts/marketing_pipeline.txt
-//pipeline concept_image,hero_image,detail_shots,social_media_variants
+# ~/.prompts/marketing_pipeline.md
+/pipeline concept_image,hero_image,detail_shots,social_media_variants
 
 # Marketing Asset Generation Pipeline
 
@@ -196,24 +196,24 @@ Brand style: <%= brand_style || "modern and clean" %>
 Target audience: <%= audience || "professionals" %>
 
 ## Stage 1: Concept Image
-//config model dall-e-3
-//config image_size 1024x1024
-//config image_style natural
+/config model dall-e-3
+/config image_size 1024x1024
+/config image_style natural
 
 Generate initial concept image for <%= product_name %>:
 - Style: <%= brand_style %>
 - Context: Product introduction
 - Purpose: Initial concept validation
 
-//next hero_image
+/next hero_image
 ```
 
 ### Creative Workflow
 ```markdown
-# ~/.prompts/creative_workflow.txt
-//config model dall-e-3
-//config image_quality hd
-//config image_style vivid
+# ~/.prompts/creative_workflow.md
+/config model dall-e-3
+/config image_quality hd
+/config image_style vivid
 
 # Creative Image Workflow
 
@@ -249,8 +249,8 @@ AI: I'll generate morning, afternoon, and evening versions...
 
 ### Combining Text and Image Generation
 ```markdown
-# ~/.prompts/content_with_visuals.txt
-//config model gpt-4
+# ~/.prompts/content_with_visuals.md
+/config model gpt-4
 
 # Content + Visuals Generator
 
@@ -273,13 +273,13 @@ Based on the content, suggest 3-5 images that would enhance understanding:
 ## Step 3: Generate Image Prompts
 For each suggested visual, provide detailed DALL-E prompts that would create appropriate images.
 
-//next generate_supporting_images
+/next generate_supporting_images
 ```
 
 ### Technical Documentation with Visuals
 ```markdown
-# ~/.prompts/technical_docs_with_images.txt
-//config model gpt-4
+# ~/.prompts/technical_docs_with_images.md
+/config model gpt-4
 
 # Technical Documentation with Visual Aids
 
@@ -306,7 +306,7 @@ For each identified visual need, create detailed prompts for:
 - Appropriate level of detail
 - Consistent visual language
 
-//next technical_image_generation
+/next technical_image_generation
 ```
 
 ## Best Practices for Image Generation
@@ -411,7 +411,7 @@ aia --is 1792x1024 --iq hd "Website banner"           # HD for web headers
 #### Batch Generation
 ```ruby
 # Generate multiple related images
-//ruby
+/ruby
 concepts = ['<%= concept1 %>', '<%= concept2 %>', '<%= concept3 %>']
 base_style = '<%= base_style %>'
 
@@ -434,8 +434,8 @@ aia --image-quality hd "Final approved concept"
 
 ### Blog Post with Custom Images
 ```markdown
-# ~/.prompts/illustrated_blog.txt
-//config model gpt-4
+# ~/.prompts/illustrated_blog.md
+/config model gpt-4
 
 # Illustrated Blog Post Generator
 
@@ -462,13 +462,13 @@ Create detailed DALL-E prompts for each identified visual:
 - Appropriate for <%= audience %>
 - Enhances the written content
 
-//next generate_blog_images
+/next generate_blog_images
 ```
 
 ### Product Documentation
 ```markdown
-# ~/.prompts/product_docs_visual.txt
-//pipeline analyze_product,create_documentation,identify_visuals,generate_images
+# ~/.prompts/product_docs_visual.md
+/pipeline analyze_product,create_documentation,identify_visuals,generate_images
 
 # Product Documentation with Visuals
 
@@ -489,9 +489,9 @@ Identify images needed for effective documentation:
 - User workflow diagrams
 - Conceptual illustrations
 
-//config model dall-e-3
-//config image_quality hd
-//config image_style natural
+/config model dall-e-3
+/config image_quality hd
+/config image_style natural
 ```
 
 ## Related Documentation

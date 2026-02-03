@@ -6,7 +6,7 @@ AIA provides a flexible configuration system with multiple layers of precedence,
 
 AIA follows a hierarchical configuration system (highest to lowest precedence):
 
-1. **Embedded Directives** - `//config` directives in prompt files
+1. **Embedded Directives** - `/config` directives in prompt files
 2. **Command Line Arguments** - CLI flags and options
 3. **Environment Variables** - Shell environment variables
 4. **Configuration Files** - YAML configuration files
@@ -49,7 +49,7 @@ models:
 # Env: AIA_PROMPTS__DIR, AIA_PROMPTS__ROLES_PREFIX, etc.
 prompts:
   dir: ~/.prompts             # Directory containing prompt files
-  extname: .txt               # Prompt file extension
+  extname: .md                # Prompt file extension
   roles_prefix: roles         # Subdirectory name for role files
   roles_dir: ~/.prompts/roles # Full path to roles directory
   role: ~                     # Default role
@@ -206,7 +206,7 @@ export AIA_MODEL="gpt-4o=architect,claude=reviewer"
 
 # Prompts settings (nested under prompts:)
 export AIA_PROMPTS__DIR="/path/to/my/prompts"
-export AIA_PROMPTS__EXTNAME=".txt"
+export AIA_PROMPTS__EXTNAME=".md"
 export AIA_PROMPTS__ROLES_PREFIX="roles"
 export AIA_PROMPTS__ROLES_DIR="~/.prompts/roles"
 export AIA_PROMPTS__ROLE="expert"
@@ -288,9 +288,9 @@ All options can be overridden via command line arguments. See [CLI Reference](cl
 Prompts can contain configuration directives that override all other settings:
 
 ```markdown
-//config model claude-3-sonnet
-//config temperature 0.9
-//config max_tokens 1500
+/config model claude-3-sonnet
+/config temperature 0.9
+/config max_tokens 1500
 
 Write a creative story about...
 ```
@@ -469,7 +469,7 @@ Configure how AIA organizes prompts:
 # Prompts configuration (nested structure)
 prompts:
   dir: ~/.prompts
-  extname: .txt
+  extname: .md
   roles_prefix: roles       # ~/.prompts/roles/
   roles_dir: ~/.prompts/roles
   role: ~                   # Default role (null = none)

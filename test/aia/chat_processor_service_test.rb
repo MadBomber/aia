@@ -272,7 +272,7 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_process_next_prompts_with_directive
-    mock_response = '//config key=value'
+    mock_response = '/config key=value'
     mock_prompt_handler = mock('prompt_handler')
     mock_history_manager = mock('history_manager')
     original_history = [{ role: 'user', content: 'test' }]
@@ -293,7 +293,7 @@ class ChatProcessorServiceTest < Minitest::Test
   end
 
   def test_process_next_prompts_with_directive_no_modified_history
-    mock_response = '//config key=value'
+    mock_response = '/config key=value'
     mock_prompt_handler = mock('prompt_handler')
     mock_history_manager = mock('history_manager')
     original_history = [{ role: 'user', content: 'test' }]

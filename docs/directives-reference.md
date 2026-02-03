@@ -1,106 +1,105 @@
 # Directives Reference
 
-Directives are special commands embedded in prompts that provide dynamic functionality. All directives begin with `//` and are processed before the prompt is sent to the AI model.
+Directives are special commands embedded in prompts that provide dynamic functionality. All directives begin with `/` and are processed before the prompt is sent to the AI model.
 
 ## Directive Syntax
 
 ```markdown
-//directive_name arguments
+/directive_name arguments
 ```
 
 Examples:
 ```markdown
-//config model gpt-4
-//include my_file.txt
-//shell ls -la
+/config model gpt-4
+/include my_file.md
 
 <%= "Hello World" %>
 ```
 
 ## Configuration Directives
 
-### `//config`
+### `/config`
 Configure AIA settings from within prompts.
 
-**Syntax**: `//config [option] [value]`
+**Syntax**: `/config [option] [value]`
 
 **Examples**:
 ```markdown
-//config model gpt-4
-//config temperature 0.8
-//config max_tokens 2000
-//config verbose true
+/config model gpt-4
+/config temperature 0.8
+/config max_tokens 2000
+/config verbose true
 ```
 
 **Usage**:
-- `//config` - Display all configuration
-- `//config option` - Display specific configuration option
-- `//config option value` - Set configuration option
+- `/config` - Display all configuration
+- `/config option` - Display specific configuration option
+- `/config option value` - Set configuration option
 
-**Aliases**: `//cfg`
+**Aliases**: `/cfg`
 
-### `//model`
+### `/model`
 Display or configure the AI model.
 
-**Syntax**: `//model [model_name]`
+**Syntax**: `/model [model_name]`
 
 **Examples**:
 ```markdown
-//model gpt-4
-//model claude-3-sonnet
-//model
+/model gpt-4
+/model claude-3-sonnet
+/model
 ```
 
 **Usage**:
-- `//model` - Display current model configuration and details
-- `//model name` - Set the model to use
+- `/model` - Display current model configuration and details
+- `/model name` - Set the model to use
 
 For multi-model configurations, displays:
 - Model count and primary model
 - Consensus mode status
 - Detailed information for each model including provider, context window, costs, and capabilities
 
-### `//temperature`
+### `/temperature`
 Set the creativity/randomness of AI responses.
 
-**Syntax**: `//temperature value`
+**Syntax**: `/temperature value`
 
 **Examples**:
 ```markdown
-//temperature 0.1    # Very focused
-//temperature 0.7    # Balanced (default)
-//temperature 1.2    # Creative
-//temperature 2.0    # Very creative
+/temperature 0.1    # Very focused
+/temperature 0.7    # Balanced (default)
+/temperature 1.2    # Creative
+/temperature 2.0    # Very creative
 ```
 
-**Aliases**: `//temp`
+**Aliases**: `/temp`
 
-### `//top_p`
+### `/top_p`
 Set nucleus sampling parameter (alternative to temperature).
 
-**Syntax**: `//top_p value`
+**Syntax**: `/top_p value`
 
 **Examples**:
 ```markdown
-//top_p 0.1     # Very focused
-//top_p 0.9     # More diverse
+/top_p 0.1     # Very focused
+/top_p 0.9     # More diverse
 ```
 
-**Aliases**: `//topp`
+**Aliases**: `/topp`
 
 ## File and Web Directives
 
-### `//include`
+### `/include`
 Include content from files or websites.
 
-**Syntax**: `//include path_or_url`
+**Syntax**: `/include path_or_url`
 
 **Examples**:
 ```markdown
-//include README.md
-//include /path/to/config.yml
-//include ~/Documents/notes.txt
-//include https://example.com/page
+/include README.md
+/include /path/to/config.yml
+/include ~/Documents/notes.md
+/include https://example.com/page
 ```
 
 **Features**:
@@ -109,16 +108,16 @@ Include content from files or websites.
 - Can include web pages (requires PUREMD_API_KEY)
 - Handles both absolute and relative file paths
 
-**Aliases**: `//import`
+**Aliases**: `/import`
 
-### `//paste`
+### `/paste`
 Insert content from the system clipboard.
 
-**Syntax**: `//paste`
+**Syntax**: `/paste`
 
 **Examples**:
 ```markdown
-//paste
+/paste
 ```
 
 **Features**:
@@ -127,17 +126,17 @@ Insert content from the system clipboard.
 - Works across different platforms (macOS, Linux, Windows)
 - Handles multi-line clipboard content
 
-**Aliases**: `//clipboard`
+**Aliases**: `/clipboard`
 
-### `//webpage`
+### `/webpage`
 Include content from web pages (requires PUREMD_API_KEY).
 
-**Syntax**: `//webpage url`
+**Syntax**: `/webpage url`
 
 **Examples**:
 ```markdown
-//webpage https://docs.example.com/api
-//webpage https://github.com/user/repo/blob/main/README.md
+/webpage https://docs.example.com/api
+/webpage https://github.com/user/repo/blob/main/README.md
 ```
 
 **Prerequisites**:
@@ -146,65 +145,19 @@ Set the PUREMD_API_KEY environment variable:
 export PUREMD_API_KEY="your_api_key"
 ```
 
-**Aliases**: `//website`, `//web`
+**Aliases**: `/website`, `/web`
 
 ## Execution Directives
 
-### `//shell`
-Execute shell commands and include their output.
-
-**Syntax**: `//shell command arguments`
-
-**Examples**:
-```markdown
-//shell ls -la
-//shell git status
-//shell grep -n "TODO" *.rb
-//shell ps aux | grep ruby
-//shell curl -s https://api.github.com/user | jq '.name'
-```
-
-**Security Note**: Use with caution in shared environments. Commands execute with your current user permissions.
-
-**Aliases**: `//sh`
-
-### `//ruby`
-Execute one line of Ruby code and include the result.
-
-**Syntax**: `//ruby` (followed by Ruby code)
-
-**Examples**:
-```markdown
-//ruby Time.now
-
-//ruby Dir.pwd
-
-//ruby File.read('config.yml')
-
-//ruby [1,2,3,4,5].sum
-
-//ruby "Hello, #{ENV['USER']}!"
-
-//ruby require 'json'; JSON.pretty_generate({hello: 'world'})
-```
-
-**Features**:
-- Full Ruby environment available
-- Can use require for additional libraries (use `--require` CLI option)
-- Access to all Ruby standard library
-- Error handling with descriptive messages
-
-**Aliases**: `//rb`
-
-### `//say`
+### `/say`
 Speak text using system text-to-speech (macOS/Linux).
 
-**Syntax**: `//say text to speak`
+**Syntax**: `/say text to speak`
 
 **Examples**:
 ```markdown
-//say Build completed successfully
-//say Warning: Check the logs
+/say Build completed successfully
+/say Warning: Check the logs
 ```
 
 **Platform Support**:
@@ -213,19 +166,19 @@ Speak text using system text-to-speech (macOS/Linux).
 
 ## Utility Directives
 
-### `//tools`
+### `/tools`
 Display available RubyLLM tools with optional filtering.
 
-**Syntax**: `//tools [filter]`
+**Syntax**: `/tools [filter]`
 
 **Parameters**:
 - `filter` (optional) - Case-insensitive substring to filter tool names
 
 **Examples**:
 ```markdown
-//tools           # List all available tools
-//tools file      # List tools with "file" in the name
-//tools analyzer  # List tools with "analyzer" in the name
+/tools           # List all available tools
+/tools file      # List tools with "file" in the name
+/tools analyzer  # List tools with "analyzer" in the name
 ```
 
 **Example Output** (unfiltered):
@@ -244,7 +197,7 @@ WebScraper
     selectors and filters.
 ```
 
-**Example Output** (filtered with `//tools file`):
+**Example Output** (filtered with `/tools file`):
 ```
 Available Tools (filtered by 'file')
 ====================================
@@ -259,71 +212,71 @@ FileReader
 - When no tools match the filter, displays "No tools match the filter: [filter]"
 - Filtering is case-insensitive (e.g., "File", "FILE", and "file" all match)
 
-### `//next`
+### `/next`
 Set the next prompt to execute in a workflow.
 
-**Syntax**: `//next prompt_id`
+**Syntax**: `/next prompt_id`
 
 **Examples**:
 ```markdown
-//next analyze_results
-//next generate_report
+/next analyze_results
+/next generate_report
 ```
 
 **Usage**:
-- `//next` - Display current next prompt
-- `//next prompt_id` - Set next prompt in workflow
+- `/next` - Display current next prompt
+- `/next prompt_id` - Set next prompt in workflow
 
-### `//pipeline`
+### `/pipeline`
 Define or modify a prompt workflow sequence.
 
-**Syntax**: `//pipeline prompt1,prompt2,prompt3`
+**Syntax**: `/pipeline prompt1,prompt2,prompt3`
 
 **Examples**:
 ```markdown
-//pipeline extract_data,analyze,report
-//pipeline code_review,optimize,test
+/pipeline extract_data,analyze,report
+/pipeline code_review,optimize,test
 ```
 
 **Usage**:
-- `//pipeline` - Display current pipeline
-- `//pipeline prompts` - Set pipeline sequence
+- `/pipeline` - Display current pipeline
+- `/pipeline prompts` - Set pipeline sequence
 - Can use comma-separated or space-separated prompt IDs
 
-**Aliases**: `//workflow`
+**Aliases**: `/workflow`
 
-### `//terse`
+### `/terse`
 Add instruction for brief responses.
 
-**Syntax**: `//terse`
+**Syntax**: `/terse`
 
 **Example**:
 ```markdown
-//terse
+/terse
 Explain machine learning algorithms.
 ```
 
 Adds: "Keep your response short and to the point." to the prompt.
 
-### `//robot`
+### `/robot`
 Generate ASCII art robot.
 
-**Syntax**: `//robot`
+**Syntax**: `/robot`
 
 Inserts a fun ASCII robot character for visual breaks in prompts.
 
 ## Context Management Directives
 
-### `//checkpoint`
+### `/checkpoint`
 Create a named checkpoint of the current conversation context.
 
-**Syntax**: `//checkpoint [name]`
+**Syntax**: `/checkpoint [name]`
 
 **Examples**:
 ```markdown
-//checkpoint                    # Auto-named checkpoint (1, 2, 3...)
-//checkpoint important_decision # Named checkpoint
-//checkpoint before_refactor    # Descriptive name
+/checkpoint                    # Auto-named checkpoint (1, 2, 3...)
+/checkpoint important_decision # Named checkpoint
+/checkpoint before_refactor    # Descriptive name
 ```
 
 **Features**:
@@ -333,21 +286,21 @@ Create a named checkpoint of the current conversation context.
 - **Chat mode only**: Only available during interactive chat sessions
 
 **Usage**:
-- `//checkpoint` - Create an auto-named checkpoint
-- `//checkpoint name` - Create a checkpoint with specific name
+- `/checkpoint` - Create an auto-named checkpoint
+- `/checkpoint name` - Create a checkpoint with specific name
 
-**Aliases**: `//cp`
+**Aliases**: `/cp`
 
-### `//restore`
+### `/restore`
 Restore conversation context to a previously saved checkpoint.
 
-**Syntax**: `//restore [name]`
+**Syntax**: `/restore [name]`
 
 **Examples**:
 ```markdown
-//restore                      # Restore to last checkpoint
-//restore important_decision    # Restore to named checkpoint
-//restore 1                    # Restore to auto-named checkpoint
+/restore                      # Restore to last checkpoint
+/restore important_decision    # Restore to named checkpoint
+/restore 1                    # Restore to auto-named checkpoint
 ```
 
 **Features**:
@@ -357,23 +310,23 @@ Restore conversation context to a previously saved checkpoint.
 - **Client refresh**: Automatically refreshes AI client context
 
 **Usage**:
-- `//restore` - Restore to the last checkpoint created
-- `//restore name` - Restore to a specific named checkpoint
+- `/restore` - Restore to the last checkpoint created
+- `/restore name` - Restore to a specific named checkpoint
 - Returns error message if checkpoint doesn't exist
 
-### `//clear`
+### `/clear`
 Clear conversation context in chat mode.
 
-**Syntax**: `//clear`
+**Syntax**: `/clear`
 
 **Usage**: Only available during chat sessions. Clears the conversation history and all checkpoints while keeping the session active.
 
-### `//review`
+### `/review`
 Display current conversation context with checkpoint markers.
 
-**Syntax**: `//review`
+**Syntax**: `/review`
 
-**Aliases**: `//context`
+**Aliases**: `/context`
 
 **Example Output**:
 ```
@@ -404,18 +357,18 @@ Checkpoints: ruby_basics, oop_concepts
 
 ## Model and Information Directives
 
-### `//available_models`
+### `/available_models`
 List available AI models with filtering.
 
-**Syntax**: `//available_models [filter1,filter2,...]`
+**Syntax**: `/available_models [filter1,filter2,...]`
 
 **Examples**:
 ```markdown
-//available_models
-//available_models openai
-//available_models gpt,4
-//available_models text_to_image
-//available_models claude,sonnet
+/available_models
+/available_models openai
+/available_models gpt,4
+/available_models text_to_image
+/available_models claude,sonnet
 ```
 
 **Filter Options**:
@@ -431,17 +384,17 @@ List available AI models with filtering.
 - Input/output modalities
 - Capabilities
 
-**Aliases**: `//am`, `//available`, `//models`, `//all_models`, `//llms`
+**Aliases**: `/am`, `/available`, `/models`, `/all_models`, `/llms`
 
-### `//compare`
+### `/compare`
 Compare responses from multiple models.
 
-**Syntax**: `//compare prompt --models model1,model2,model3`
+**Syntax**: `/compare prompt --models model1,model2,model3`
 
 **Examples**:
 ```markdown
-//compare "Explain quantum computing" --models gpt-4,claude-3-sonnet,gemini-pro
-//compare "Write a Python function to sort a list" --models gpt-3.5-turbo,gpt-4,claude-3-haiku
+/compare "Explain quantum computing" --models gpt-4,claude-3-sonnet,gemini-pro
+/compare "Write a Python function to sort a list" --models gpt-3.5-turbo,gpt-4,claude-3-haiku
 ```
 
 **Features**:
@@ -449,12 +402,12 @@ Compare responses from multiple models.
 - Error handling for unavailable models
 - Formatted output with clear model labels
 
-**Aliases**: `//cmp`
+**Aliases**: `/cmp`
 
-### `//help`
+### `/help`
 Display available directives and their descriptions.
 
-**Syntax**: `//help`
+**Syntax**: `/help`
 
 **Output**: Complete list of all directives with descriptions and aliases.
 
@@ -462,9 +415,9 @@ Display available directives and their descriptions.
 
 Directives are processed in the order they appear in the prompt:
 
-1. **Configuration directives** (like `//config`, `//model`) are processed first
-2. **File inclusion directives** (`//include`, `//webpage`) are processed next
-3. **Execution directives** (`//shell`, `//ruby`) are processed
+1. **Configuration directives** (like `/config`, `/model`) are processed first
+2. **File inclusion directives** (`/include`, `/webpage`) are processed next
+3. **ERB directives** (`<%= %>`) are processed
 4. **Utility directives** are processed last
 
 ## Advanced Usage Patterns
@@ -472,12 +425,12 @@ Directives are processed in the order they appear in the prompt:
 ### Combining Directives
 
 ```markdown
-//config model gpt-4
-//config temperature 0.3
-//include project_context.md
+/config model gpt-4
+/config temperature 0.3
+/include project_context.md
 
 Based on the project information above:
-//shell git log --oneline -5
+<%= `git log --oneline -5` %>
 
 Analyze these recent commits and suggest improvements.
 ```
@@ -486,8 +439,8 @@ Analyze these recent commits and suggest improvements.
 
 ```markdown
 <% model_name = ENV['PREFERRED_MODEL'] || 'gpt-3.5-turbo' %>
-//config model <%= model_name %>
-//config temperature <%= ENV['AI_TEMPERATURE'] || '0.7' %>
+/config model <%= model_name %>
+/config temperature <%= ENV['AI_TEMPERATURE'] || '0.7' %>
 
 Process this data with optimized settings.
 ```
@@ -496,9 +449,9 @@ Process this data with optimized settings.
 
 ```markdown
 <% if File.exist?('production.yml') %>
-//include production.yml
+/include production.yml
 <% else %>
-//include development.yml
+/include development.yml
 <% end %>
 
 Configure the system based on environment.
@@ -507,9 +460,9 @@ Configure the system based on environment.
 ### Workflow Automation
 
 ```markdown
-//pipeline data_extraction,data_cleaning,analysis,reporting
-//config model claude-3-sonnet
-//config temperature 0.2
+/pipeline data_extraction,data_cleaning,analysis,reporting
+/config model claude-3-sonnet
+/config temperature 0.2
 
 Begin automated data processing workflow.
 ```
@@ -520,7 +473,7 @@ Begin automated data processing workflow.
 
 **File Not Found**:
 ```
-Error: File 'missing.txt' is not accessible
+Error: File 'missing.md' is not accessible
 ```
 
 **Ruby Execution Error**:
@@ -559,7 +512,7 @@ end
 aia --tools examples/directives/ask.rb --chat
 
 # Use the custom directive in prompts
-//ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
+/ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
 ```
 
 ### Best Practices
@@ -572,16 +525,16 @@ aia --tools examples/directives/ask.rb --chat
 
 ## Security Considerations
 
-- **Shell directives** execute with your user permissions
-- **Ruby directives** have full access to the Ruby environment
+- **ERB shell execution** (`<%= \`...\` %>`) executes with your user permissions
+- **ERB Ruby code** (`<%= ... %>`) has full access to the Ruby environment
 - **File inclusion** can access any readable file
 - **Web access** requires API keys and network access
 
 ### Safe Usage Tips
 
-1. **Avoid shell commands** that modify system state in shared prompts
+1. **Avoid ERB shell commands** that modify system state in shared prompts
 2. **Use environment variables** for sensitive data, not hardcoded values
-3. **Validate inputs** in Ruby code before execution
+3. **Validate inputs** in ERB code before execution
 4. **Limit file access** to necessary directories only
 5. **Review prompts** from untrusted sources before execution
 

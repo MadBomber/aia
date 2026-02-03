@@ -14,9 +14,9 @@ function __fish_aia_complete
     # Change directory to the prompts directory
     if test -d $AIA_PROMPTS__DIR
       pushd $AIA_PROMPTS__DIR
-      # Generate completions based on .txt files in the AIA_PROMPTS__DIR directory
-      for file in (find . -name "*.txt" -type f)
-        set file (string replace -r '\.txt$' '' -- $file)
+      # Generate completions based on .md files in the AIA_PROMPTS__DIR directory
+      for file in (find . -name "*.md" -type f)
+        set file (string replace -r '\.md$' '' -- $file)
         set file (string replace -r '^\./' '' -- $file)
         printf "%s\n" $file
       end

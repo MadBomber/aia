@@ -1,10 +1,4 @@
 PATH
-  remote: ../../prompt_manager
-  specs:
-    prompt_manager (1.0.0)
-      ostruct
-
-PATH
   remote: .
   specs:
     aia (1.0.0.pre.alpha)
@@ -14,7 +8,7 @@ PATH
       faraday
       lumberjack
       myway_config
-      prompt_manager
+      prompt_manager (~> 1.0)
       reline
       ruby_llm
       ruby_llm-mcp
@@ -182,6 +176,8 @@ GEM
       ast (~> 2.4.1)
       racc
     prism (1.9.0)
+    prompt_manager (1.0.0)
+      ostruct
     pry (0.16.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -312,7 +308,6 @@ DEPENDENCIES
   minitest-reporters
   mocha
   ostruct
-  prompt_manager!
   rake
   securerandom (~> 0.4.0)
   simplecov

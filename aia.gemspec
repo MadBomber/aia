@@ -45,7 +45,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "simple_flow"
   spec.add_dependency "lumberjack"
   spec.add_dependency "faraday"
-  spec.add_dependency "prompt_manager"
+  spec.add_dependency "prompt_manager", "~> 1.0"
   spec.add_dependency "ruby_llm"
   spec.add_dependency "ruby_llm-mcp"
   spec.add_dependency "reline"
@@ -73,6 +73,9 @@ Gem::Specification.new do |spec|
 
     ⚠  Note: v0.10+ has breaking changes in config file format and
        environment variable names. See docs for details.
+
+    ⚠  Prompt files now use .md extension (was .txt).
+       Run: aia --migrate-prompts to convert existing prompts.
 
     Multi-model AI from your command line. 20+ providers supported.
 

@@ -59,7 +59,7 @@ Many examples can be combined:
 ### Simple Code Review
 ```bash
 # Copy the code review prompt
-cp docs/examples/prompts/development/code_review.txt ~/.prompts/
+cp docs/examples/prompts/development/code_review.md ~/.prompts/
 
 # Use it on your code
 aia code_review src/main.rb
@@ -68,7 +68,7 @@ aia code_review src/main.rb
 ### Data Analysis Workflow
 ```bash
 # Copy the analysis pipeline
-cp docs/examples/prompts/analysis/data_pipeline.txt ~/.prompts/
+cp docs/examples/prompts/analysis/data_pipeline.md ~/.prompts/
 
 # Run the complete workflow
 aia --pipeline "extract_data,analyze_data,generate_report" dataset.csv
@@ -97,7 +97,7 @@ category/
 ```
 
 Individual examples include:
-- **Source file** (`.txt`, `.rb`, `.json`, etc.)
+- **Source file** (`.md`, `.rb`, `.json`, etc.)
 - **Documentation** (`README.md` or inline comments)
 - **Usage examples** with sample inputs/outputs
 - **Customization guide**

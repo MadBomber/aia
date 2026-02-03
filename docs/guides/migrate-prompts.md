@@ -8,7 +8,7 @@ The prompt_manager gem moved from a two-file format (`.txt` + `.json`) with `[PL
 
 - **Self-contained prompts** — metadata, parameters, and body in one file
 - **Standard ERB** — `<%= param %>` instead of custom `[PARAM]` syntax
-- **YAML front matter** — structured configuration instead of `//` directives
+- **YAML front matter** — structured configuration instead of `/` directives
 - **Markdown body** — native rendering support in editors and documentation tools
 
 ## Format Comparison
@@ -17,12 +17,12 @@ The prompt_manager gem moved from a two-file format (`.txt` + `.json`) with `[PL
 
 Two files per prompt:
 
-**`my_prompt.txt`**
+**`my_prompt.md`**
 ```
-# ~/.prompts/my_prompt.txt
+# ~/.prompts/my_prompt.md
 # Desc: Summarize the given document
-//config temperature 0.3
-//include shared_context.txt
+/config temperature 0.3
+/include shared_context.md
 
 Summarize the following [DOCUMENT_TYPE] document:
 
@@ -41,7 +41,7 @@ Summarize the following [DOCUMENT_TYPE] document:
 
 Single file:
 
-**`my_prompt.md`**
+**`my_prompt.md`** (same filename, single file now)
 ```markdown
 ---
 name: my_prompt
@@ -52,7 +52,7 @@ parameters:
   content: null
 ---
 
-<%= include('shared_context.txt') %>
+<%= include('shared_context.md') %>
 
 Summarize the following <%= document_type %> document:
 
@@ -77,7 +77,7 @@ bin/migrate_prompts --verbose
 
 # Migrate specific files or directories
 bin/migrate_prompts ~/.prompts/development/
-bin/migrate_prompts ~/.prompts/code_review.txt ~/.prompts/debug_help.txt
+bin/migrate_prompts ~/.prompts/code_review.md ~/.prompts/debug_help.md
 ```
 
 ### CLI Options
@@ -117,16 +117,16 @@ Prompt directives are migrated to YAML front matter or ERB calls:
 
 | Old Directive | New Location |
 |---------------|--------------|
-| `//config temperature 0.3` | `temperature: 0.3` in YAML |
-| `//config top_p 0.9` | `top_p: 0.9` in YAML |
-| `//temp 0.5` | `temperature: 0.5` in YAML |
-| `//topp 0.8` | `top_p: 0.8` in YAML |
-| `//next follow_up` | `next: follow_up` in YAML |
-| `//pipeline step1, step2` | `pipeline: [step1, step2]` in YAML |
-| `//include file.txt` | `<%= include('file.txt') %>` in body |
-| `//shell command` | `<%= system('command') %>` in body |
-| `//ruby expression` | `<%= expression %>` in body |
-| `//backend ...` | Silently removed (deprecated) |
+| `/config temperature 0.3` | `temperature: 0.3` in YAML |
+| `/config top_p 0.9` | `top_p: 0.9` in YAML |
+| `/temp 0.5` | `temperature: 0.5` in YAML |
+| `/topp 0.8` | `top_p: 0.8` in YAML |
+| `/next follow_up` | `next: follow_up` in YAML |
+| `/pipeline step1, step2` | `pipeline: [step1, step2]` in YAML |
+| `/include file.md` | `<%= include('file.md') %>` in body |
+| `/shell command` | `<%= system('command') %>` in body |
+| `/ruby expression` | `<%= expression %>` in body |
+| `/backend ...` | Silently removed (deprecated) |
 
 ### Comments
 
@@ -157,13 +157,13 @@ Comments inside code fences (` ``` `) and multi-line ERB blocks (`<% ... %>`) ar
 
 The script extracts metadata from the old format's header conventions:
 
-- **File path comments** (`# ~/.prompts/name.txt`) — removed
+- **File path comments** (`# ~/.prompts/name.md`) — removed
 - **Description lines** (`# Desc: ...`) — moved to `description:` in YAML front matter
-- **Prompt name** — derived from the filename (e.g., `code_review.txt` → `name: code_review`)
+- **Prompt name** — derived from the filename (e.g., `code_review.md` → `name: code_review`)
 
 ### Parameter History
 
-If a `.json` file exists alongside the `.txt` file, the most recent value for each parameter is used as the default in the YAML `parameters:` block:
+If a `.json` file exists alongside the `.md` file, the most recent value for each parameter is used as the default in the YAML `parameters:` block:
 
 ```yaml
 parameters:
@@ -316,7 +316,7 @@ ls ~/.prompts/*.txt
 By default, the script skips files that already have a corresponding `.md` file. Use `--force` to overwrite:
 
 ```bash
-bin/migrate_prompts --force ~/.prompts/my_prompt.txt
+bin/migrate_prompts --force ~/.prompts/my_prompt.md
 ```
 
 ### Unrecognized directive warnings

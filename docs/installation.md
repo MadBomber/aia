@@ -172,7 +172,7 @@ This will show all available AI models.
 Create a simple prompt file:
 
 ```bash
-echo "Hello, what can you help me with today?" > ~/.prompts/hello.txt
+echo "Hello, what can you help me with today?" > ~/.prompts/hello.md
 ```
 
 Run it:

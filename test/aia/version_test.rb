@@ -10,7 +10,7 @@ class VersionTest < Minitest::Test
   end
 
   def test_version_format
-    assert_match /^\d+\.\d+\.\d+$/, AIA::VERSION, "AIA::VERSION should be in the format 'X.Y.Z'"
+    assert_match /^\d+\.\d+\.\d+/, AIA::VERSION, "AIA::VERSION should start with 'X.Y.Z'"
   end
   
   def test_version_is_string
@@ -18,13 +18,16 @@ class VersionTest < Minitest::Test
   end
   
   def test_version_components_are_numeric
-    major, minor, patch = AIA::VERSION.split('.')
-    
+    parts = AIA::VERSION.split('.')
+    major = parts[0]
+    minor = parts[1]
+    # Patch may have pre-release suffix like "0-alpha"
+    patch = parts[2].split('-').first
+
     assert_match /^\d+$/, major, "Major version should be numeric"
     assert_match /^\d+$/, minor, "Minor version should be numeric"
     assert_match /^\d+$/, patch, "Patch version should be numeric"
-    
-    # Test that they can be converted to integers
+
     assert_instance_of Integer, major.to_i
     assert_instance_of Integer, minor.to_i
     assert_instance_of Integer, patch.to_i
@@ -59,19 +62,16 @@ class VersionTest < Minitest::Test
   end
   
   def test_version_follows_semantic_versioning
-    # Semantic versioning: MAJOR.MINOR.PATCH
-    # MAJOR version when you make incompatible API changes,
-    # MINOR version when you add functionality in a backwards compatible manner, and
-    # PATCH version when you make backwards compatible bug fixes.
-    
-    version_parts = AIA::VERSION.split('.')
-    assert_equal 3, version_parts.length, "Version should have exactly 3 parts (MAJOR.MINOR.PATCH)"
-    
-    # Each part should contain only digits
-    version_parts.each_with_index do |part, index|
-      part_names = ['major', 'minor', 'patch']
-      assert_match /^\d+$/, part, "#{part_names[index]} version part should contain only digits"
-    end
+    # Semantic versioning: MAJOR.MINOR.PATCH[-prerelease]
+    assert_match /^\d+\.\d+\.\d+/, AIA::VERSION, "Version should start with MAJOR.MINOR.PATCH"
+
+    parts = AIA::VERSION.split('.')
+    assert parts.length >= 3, "Version should have at least 3 dot-separated parts"
+
+    assert_match /^\d+$/, parts[0], "major version part should contain only digits"
+    assert_match /^\d+$/, parts[1], "minor version part should contain only digits"
+    # Patch may include pre-release suffix (e.g., "0-alpha")
+    assert_match /^\d+/, parts[2], "patch version part should start with digits"
   end
   
   def test_version_file_consistency

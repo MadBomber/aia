@@ -1,6 +1,6 @@
 # Prompt Management
 
-AIA provides sophisticated prompt management capabilities through the PromptManager gem, enabling you to organize, version, and efficiently use large collections of prompts.
+AIA provides sophisticated prompt management capabilities through the PM gem, enabling you to organize, version, and efficiently use large collections of prompts.
 
 ## Directory Structure
 
@@ -9,25 +9,25 @@ AIA provides sophisticated prompt management capabilities through the PromptMana
 ~/.prompts/
 ├── README.md                    # Documentation for your prompt collection
 ├── roles/                       # Role-based prompts for context setting
-│   ├── assistant.txt
-│   ├── code_expert.txt
-│   └── teacher.txt
+│   ├── assistant.md
+│   ├── code_expert.md
+│   └── teacher.md
 ├── development/                 # Development-related prompts
-│   ├── code_review.txt
-│   ├── debug_help.txt
-│   └── documentation.txt
+│   ├── code_review.md
+│   ├── debug_help.md
+│   └── documentation.md
 ├── writing/                     # Content creation prompts
-│   ├── blog_post.txt
-│   ├── technical_docs.txt
-│   └── creative_writing.txt
+│   ├── blog_post.md
+│   ├── technical_docs.md
+│   └── creative_writing.md
 ├── analysis/                    # Data and research analysis
-│   ├── data_analysis.txt
-│   ├── research_summary.txt
-│   └── report_generation.txt
+│   ├── data_analysis.md
+│   ├── research_summary.md
+│   └── report_generation.md
 └── workflows/                   # Multi-step prompt sequences
-    ├── code_pipeline.txt
-    ├── content_pipeline.txt
-    └── analysis_pipeline.txt
+    ├── code_pipeline.md
+    ├── content_pipeline.md
+    └── analysis_pipeline.md
 ```
 
 ### Custom Structure
@@ -44,7 +44,7 @@ aia --prompts-dir ./project_prompts my_prompt
 
 ### Basic Text Prompts
 ```markdown
-# ~/.prompts/simple_question.txt
+# ~/.prompts/simple_question.md
 Please answer this question clearly and concisely:
 
 <%= question %>
@@ -54,9 +54,9 @@ Provide examples where helpful.
 
 ### Prompts with Directives
 ```markdown
-# ~/.prompts/code_analysis.txt
-//config model gpt-4
-//config temperature 0.3
+# ~/.prompts/code_analysis.md
+/config model gpt-4
+/config temperature 0.3
 
 # Code Analysis and Review
 
@@ -67,17 +67,17 @@ Analyze the following code for:
 - Potential bugs
 
 ## Code to Review:
-//include <%= file %>
+/include <%= file %>
 
 Provide specific recommendations with code examples.
 ```
 
 ### ERB Template Prompts
 ```erb
-# ~/.prompts/blog_post_generator.txt
-//config model <%= model || "gpt-4" %>
-//config temperature <%= creativity || "0.8" %>
-//config max_tokens <%= length || "2000" %>
+# ~/.prompts/blog_post_generator.md
+/config model <%= model || "gpt-4" %>
+/config temperature <%= creativity || "0.8" %>
+/config max_tokens <%= length || "2000" %>
 
 # Blog Post: <%= title %>
 
@@ -103,13 +103,13 @@ Structure:
 
 ### Executable Prompts
 ```markdown
-# ~/.prompts/system_report.txt
-//config executable true
-//shell hostname
-//shell uptime
-//shell df -h
-//shell free -h
-//shell ps aux | head -10
+# ~/.prompts/system_report.md
+/config executable true
+/shell hostname
+/shell uptime
+/shell df -h
+/shell free -h
+/shell ps aux | head -10
 
 System Status Report
 ===================
@@ -202,8 +202,8 @@ aia --prompts-dir ~/.prompts/analysis --fuzzy
 
 ### ERB Variables
 ```erb
-# ~/.prompts/parameterized_analysis.txt
-//config model <%= model || "gpt-4" %>
+# ~/.prompts/parameterized_analysis.md
+/config model <%= model || "gpt-4" %>
 
 Analyze <%= subject %> focusing on <%= focus_area %>.
 
@@ -217,7 +217,7 @@ Provide a concise summary of key findings.
 <% end %>
 
 Context:
-//include <%= context_file if context_file %>
+/include <%= context_file if context_file %>
 ```
 
 ### Usage with Parameters
@@ -243,7 +243,7 @@ aia --regex '<%=\s*(\w+)\s*%>' erb_prompt
 
 ### Role Definitions
 ```markdown
-# ~/.prompts/roles/software_architect.txt
+# ~/.prompts/roles/software_architect.md
 You are a senior software architect with 15+ years of experience designing scalable systems.
 
 Your expertise includes:
@@ -277,14 +277,14 @@ aia --roles-prefix personas --role mentor learning_session
 
 ### Context Layering
 ```markdown
-# ~/.prompts/layered_context.txt
-//include roles/<%= role || "assistant" %>.txt
+# ~/.prompts/layered_context.md
+/include roles/<%= role || "assistant" %>.md
 
-//config model <%= model || "gpt-4" %>
+/config model <%= model || "gpt-4" %>
 
 Project Context:
-//include README.md
-//include ARCHITECTURE.md
+/include README.md
+/include ARCHITECTURE.md
 
 Current Task:
 <%= task_description %>
@@ -296,15 +296,15 @@ Please provide guidance consistent with the project architecture and your role a
 
 ### Simple Workflows
 ```markdown
-# ~/.prompts/data_workflow_start.txt
-//next data_cleaning
-//pipeline analysis,visualization,reporting
+# ~/.prompts/data_workflow_start.md
+/next data_cleaning
+/pipeline analysis,visualization,reporting
 
 Begin data processing workflow for: <%= dataset %>
 
 Initial data examination:
-//shell head -10 <%= dataset %>
-//shell wc -l <%= dataset %>
+/shell head -10 <%= dataset %>
+/shell wc -l <%= dataset %>
 
 Proceed to data cleaning stage.
 ```
@@ -317,15 +317,15 @@ aia --pipeline "extract_data,validate_data,analyze_patterns,generate_insights,cr
 
 ### Conditional Workflows
 ```ruby
-# ~/.prompts/adaptive_workflow.txt
-//ruby
+# ~/.prompts/adaptive_workflow.md
+/ruby
 data_size = File.size('<%= input_file %>')
 complexity = data_size > 1000000 ? 'complex' : 'simple'
 
 if complexity == 'complex'
-  puts "//pipeline prepare_data,chunk_processing,merge_results,final_analysis"
+  puts "/pipeline prepare_data,chunk_processing,merge_results,final_analysis"
 else
-  puts "//pipeline quick_analysis,summary_report"  
+  puts "/pipeline quick_analysis,summary_report"  
 end
 
 puts "Selected #{complexity} workflow for #{data_size} byte dataset"
@@ -342,7 +342,7 @@ git add .
 git commit -m "Initial prompt collection"
 
 # Track changes
-git add modified_prompt.txt
+git add modified_prompt.md
 git commit -m "Improved code review prompt with security focus"
 
 # Branch for experiments
@@ -364,9 +364,9 @@ git pull origin main
 
 ### Versioned Prompts
 ```markdown
-# ~/.prompts/versioned/code_review_v2.txt
-//config version 2.0
-//config changelog "Added security analysis, improved output format"
+# ~/.prompts/versioned/code_review_v2.md
+/config version 2.0
+/config changelog "Added security analysis, improved output format"
 
 # Code Review v2.0
 Enhanced code review with security focus and structured output.
@@ -435,7 +435,7 @@ time aia version2_prompt input.txt
 ### Caching Strategies
 ```ruby
 # Cache expensive computations
-//ruby
+/ruby
 cache_file = "/tmp/analysis_cache_#{File.basename('<%= input %>')}.json"
 if File.exist?(cache_file) && (Time.now - File.mtime(cache_file)) < 3600
   cached_data = JSON.parse(File.read(cache_file))
@@ -468,7 +468,7 @@ aia --debug --verbose problematic_prompt
 aia --debug prompt_with_directives
 
 # Validate ERB syntax
-erb -T - ~/.prompts/template_prompt.txt < /dev/null
+erb -T - ~/.prompts/template_prompt.md < /dev/null
 ```
 
 ### Common Issues
@@ -482,16 +482,16 @@ aia --regex '<%=\s*(\w+)\s*%>' my_prompt
 
 #### File Not Found
 ```bash
-# Verify file paths in //include directives
-find ~/.prompts -name "missing_file.txt"
+# Verify file paths in /include directives
+find ~/.prompts -name "missing_file.md"
 # Use absolute paths or verify relative paths
 ```
 
 #### Permission Errors
 ```bash
 # Check prompt file permissions
-ls -la ~/.prompts/problematic_prompt.txt
-chmod 644 ~/.prompts/problematic_prompt.txt
+ls -la ~/.prompts/problematic_prompt.md
+chmod 644 ~/.prompts/problematic_prompt.md
 ```
 
 ## Advanced Prompt Techniques
@@ -499,18 +499,18 @@ chmod 644 ~/.prompts/problematic_prompt.txt
 ### Dynamic Prompt Generation
 ```ruby
 # Generate prompts based on context
-//ruby
+/ruby
 project_type = `git config --get remote.origin.url`.include?('rails') ? 'rails' : 'general'
-prompt_template = File.read("templates/#{project_type}_review.txt")
+prompt_template = File.read("templates/#{project_type}_review.md")
 puts prompt_template
 ```
 
 ### Prompt Composition
 ```markdown
-# ~/.prompts/composed_prompt.txt
-//include base/standard_instructions.txt
-//include domain/#{<%= domain %>}_expertise.txt
-//include format/#{<%= output_format %>}_template.txt
+# ~/.prompts/composed_prompt.md
+/include base/standard_instructions.md
+/include domain/#{<%= domain %>}_expertise.md
+/include format/#{<%= output_format %>}_template.md
 
 Task: <%= specific_task %>
 ```
@@ -518,7 +518,7 @@ Task: <%= specific_task %>
 ### Adaptive Prompts
 ```ruby
 # Adjust based on model capabilities
-//ruby
+/ruby
 model = AIA.config.model
 if model.include?('gpt-4')
   puts "Use advanced reasoning and detailed analysis."

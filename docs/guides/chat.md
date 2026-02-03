@@ -56,7 +56,7 @@ or complex queries across multiple lines.
 #### File Upload During Chat
 ```
 You: Please analyze this file:
-//include my_data.csv
+/include my_data.csv
 
 What patterns do you see?
 ```
@@ -64,10 +64,10 @@ What patterns do you see?
 #### Code Execution
 ```
 The current date and time is:
-//ruby Time.now
+/ruby Time.now
 
 Files in the current directory are:
-//shell ls -la
+/shell ls -la
 
 which files are over 1 week old?
 ```
@@ -95,7 +95,7 @@ aia --chat --model "gpt-4,claude-3-sonnet" --no-consensus
 #### Model Comparison
 ```
 You: Compare these approaches to solving the problem:
-//compare "Explain recursion vs iteration" --models gpt-4,claude-3-sonnet
+/compare "Explain recursion vs iteration" --models gpt-4,claude-3-sonnet
 
 Which explanation is clearer?
 ```
@@ -119,20 +119,20 @@ Create savepoints in your conversation to easily return to specific moments:
 You: Let's explore different authentication approaches for Flask.
 AI: I can help you explore various authentication methods...
 
-You: //checkpoint auth_start
+You: /checkpoint auth_start
 
 You: Tell me about JWT authentication.
 AI: JWT (JSON Web Tokens) authentication is a stateless approach...
 
-You: //checkpoint jwt_discussion
+You: /checkpoint jwt_discussion
 
 You: What about OAuth integration?
 AI: OAuth provides a robust framework for authentication...
 
 You: Actually, let's go back to the JWT discussion
-You: //restore jwt_discussion
+You: /restore jwt_discussion
 
-You: //context
+You: /context
 === Chat Context ===
 Total messages: 6
 Checkpoints: auth_start, jwt_discussion
@@ -152,11 +152,11 @@ Checkpoints: auth_start, jwt_discussion
 ```
 
 **Checkpoint Commands**:
-- `//checkpoint` - Create auto-numbered checkpoint (1, 2, 3...)
-- `//checkpoint name` - Create named checkpoint
-- `//restore` - Restore to last checkpoint
-- `//restore name` - Restore to specific checkpoint
-- `//cp name` - Short alias for checkpoint
+- `/checkpoint` - Create auto-numbered checkpoint (1, 2, 3...)
+- `/checkpoint name` - Create named checkpoint
+- `/restore` - Restore to last checkpoint
+- `/restore name` - Restore to specific checkpoint
+- `/cp name` - Short alias for checkpoint
 
 **Use Cases for Checkpoints**:
 - **Exploring alternatives**: Save before trying different approaches
@@ -166,16 +166,16 @@ Checkpoints: auth_start, jwt_discussion
 
 #### Context Inspection
 ```
-You: //context
+You: /context
 # Shows current conversation history with checkpoint markers
 
-You: //review
+You: /review
 # Alternative command for context inspection
 ```
 
 #### Context Clearing
 ```
-You: //clear
+You: /clear
 # Clears conversation history and all checkpoints while keeping session active
 ```
 
@@ -196,8 +196,8 @@ aia --chat --tools ./tools/ --allowed-tools "file_reader,calculator"
 #### Using Tools in Conversation
 ```
 You: Can you analyze the performance metrics in this log file?
-//tools performance_analyzer
-//include /var/log/app.log
+/tools performance_analyzer
+/include /var/log/app.log
 
 AI: I'll analyze the performance data using the performance analyzer tool...
 ```
@@ -219,7 +219,7 @@ Available Tools:
 aia --chat --role code_expert --system-prompt code_reviewer
 
 You: I need help reviewing this Python function:
-//include my_function.py
+/include my_function.py
 
 AI: I'll review this code for bugs, performance issues, and best practices...
 
@@ -236,7 +236,7 @@ AI: Here are comprehensive unit tests for your function...
 aia --chat --tools ./analysis_tools/ --model claude-3-sonnet
 
 You: I have a dataset I need to analyze:
-//include data.csv
+/include data.csv
 
 AI: I can help you analyze this dataset. Let me start by examining its structure...
 
@@ -342,8 +342,8 @@ Verbose mode enabled
 
 ```
 You: I'm researching market trends in AI development
-//include market_report.pdf
-//include competitor_analysis.csv
+/include market_report.pdf
+/include competitor_analysis.csv
 
 AI: I'll help you analyze these market trends...
 
@@ -365,7 +365,7 @@ You: /save ai_market_research.md
 
 ```
 You: Let's review and improve this API endpoint:
-//include api_endpoint.py
+/include api_endpoint.py
 
 AI: I'll review this endpoint for potential improvements...
 
