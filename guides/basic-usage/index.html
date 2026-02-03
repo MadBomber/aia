@@ -1875,10 +1875,10 @@
 <h2 id="parameter-and-variable-usage">Parameter and Variable Usage<a class="headerlink" href="#parameter-and-variable-usage" title="Permanent link">&para;</a></h2>
 <h3 id="erb-template-variables">ERB Template Variables<a class="headerlink" href="#erb-template-variables" title="Permanent link">&para;</a></h3>
 <p>Use variables to make prompts reusable:</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gh"># ~/.prompts/parameterized_review.txt</span>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gh"># ~/.prompts/parameterized_review.md</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Review the &lt;%= file_type %&gt; file for &lt;%= focus_areas %&gt;:
 </span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>File: //include &lt;%= file_path %&gt;
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>File: /include &lt;%= file_path %&gt;
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
 </span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>Provide &lt;%= detail_level %&gt; analysis with recommendations.
 </span></code></pre></div>
@@ -2015,8 +2015,8 @@
 </span></code></pre></div>
 <h3 id="file-and-permission-issues">File and Permission Issues<a class="headerlink" href="#file-and-permission-issues" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># Check file permissions</span>
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>ls<span class="w"> </span>-la<span class="w"> </span>~/.prompts/my_prompt.txt
-</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>~/.prompts/my_prompt.txt
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>ls<span class="w"> </span>-la<span class="w"> </span>~/.prompts/my_prompt.md
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>~/.prompts/my_prompt.md
 </span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>
 </span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="c1"># Verify directory access</span>
 </span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="nb">test</span><span class="w"> </span>-r<span class="w"> </span>~/.prompts<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Prompts directory accessible&quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Permission issue&quot;</span>
@@ -2037,14 +2037,14 @@
 <h2 id="essential-prompt-patterns">Essential Prompt Patterns<a class="headerlink" href="#essential-prompt-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="the-run-prompt-pattern">The <code>run</code> Prompt Pattern<a class="headerlink" href="#the-run-prompt-pattern" title="Permanent link">&para;</a></h3>
 <p>The <code>run</code> prompt is a configuration-only prompt that serves as a foundation for flexible AI interactions:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># ~/.prompts/run.txt</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># ~/.prompts/run.md</span>
 </span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="c1"># Desc: A configuration only prompt file for use with executable prompts</span>
 </span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="c1">#       Put whatever you want here to setup the configuration desired.</span>
 </span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="c1">#       You could also add a system prompt to preface your intended prompt</span>
 </span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>
-</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>//config<span class="w"> </span><span class="nv">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>gpt-4o-mini
-</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>//config<span class="w"> </span><span class="nv">temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>.7
-</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>//config<span class="w"> </span><span class="nv">terse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>/config<span class="w"> </span><span class="nv">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>gpt-4o-mini
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>/config<span class="w"> </span><span class="nv">temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>.7
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>/config<span class="w"> </span><span class="nv">terse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span>
 </span></code></pre></div>
 <p><strong>Usage Examples:</strong>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="c1"># Direct question via pipe</span>
@@ -2061,7 +2061,7 @@
 </span></code></pre></div></p>
 <h3 id="the-ad-hoc-one-shot-prompt">The Ad Hoc One-Shot Prompt<a class="headerlink" href="#the-ad-hoc-one-shot-prompt" title="Permanent link">&para;</a></h3>
 <p>Perfect for quick questions without cluttering your prompt collection:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># ~/.prompts/ad_hoc.txt</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># ~/.prompts/ad_hoc.md</span>
 </span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="o">[</span>WHAT_NOW_HUMAN<span class="o">]</span>
 </span></code></pre></div>
 <p><strong>Usage:</strong>

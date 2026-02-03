@@ -2188,7 +2188,7 @@
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>aia<span class="w"> </span>--tools<span class="w"> </span>./tools/<span class="w"> </span>tool_discovery_prompt
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Or within a prompt</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>//tools
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>/tools
 </span></code></pre></div>
 <h2 id="creating-custom-tools">Creating Custom Tools<a class="headerlink" href="#creating-custom-tools" title="Permanent link">&para;</a></h2>
 <h3 id="basic-tool-structure">Basic Tool Structure<a class="headerlink" href="#basic-tool-structure" title="Permanent link">&para;</a></h3>
@@ -2675,8 +2675,8 @@
 </span></code></pre></div>
 <h2 id="tool-integration-in-prompts">Tool Integration in Prompts<a class="headerlink" href="#tool-integration-in-prompts" title="Permanent link">&para;</a></h2>
 <h3 id="basic-tool-usage">Basic Tool Usage<a class="headerlink" href="#basic-tool-usage" title="Permanent link">&para;</a></h3>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gh"># ~/.prompts/file_analysis.txt</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>//tools file_analyzer.rb
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gh"># ~/.prompts/file_analysis.md</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>/tools file_analyzer.rb
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="gh"># File Analysis Report</span>
 </span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
@@ -2691,8 +2691,8 @@
 </span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>Provide a comprehensive report with recommendations.
 </span></code></pre></div>
 <h3 id="multi-tool-workflows">Multi-Tool Workflows<a class="headerlink" href="#multi-tool-workflows" title="Permanent link">&para;</a></h3>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gh"># ~/.prompts/web_data_analysis.txt</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>//tools web_client.rb,data_analyzer.rb
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gh"># ~/.prompts/web_data_analysis.md</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>/tools web_client.rb,data_analyzer.rb
 </span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
 </span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="gh"># Web Data Analysis Pipeline</span>
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
@@ -2712,27 +2712,27 @@
 </span><span id="__span-11-19"><a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>Based on the analysis, provide actionable insights and recommendations.
 </span></code></pre></div>
 <h3 id="conditional-tool-usage">Conditional Tool Usage<a class="headerlink" href="#conditional-tool-usage" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># ~/.prompts/adaptive_analysis.txt</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="sr">//</span><span class="n">ruby</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">input_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&lt;%= input_file %&gt;&#39;</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">file_ext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">extname</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span><span class="o">.</span><span class="n">downcase</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># ~/.prompts/adaptive_analysis.md</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="sr">/ruby</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="sr">input_file = &#39;&lt;%= input_file %&gt;&#39;</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="sr">file_ext = File.extname(input_file).downcase</span>
 </span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="k">case</span><span class="w"> </span><span class="n">file_ext</span>
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="k">when</span><span class="w"> </span><span class="s1">&#39;.csv&#39;</span>
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;//tools data_analyzer.rb&quot;</span>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="n">analysis_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;CSV data analysis&quot;</span>
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="k">when</span><span class="w"> </span><span class="s1">&#39;.json&#39;</span>
-</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;//tools data_analyzer.rb&quot;</span>
-</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">  </span><span class="n">analysis_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;JSON structure analysis&quot;</span>
-</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="k">when</span><span class="w"> </span><span class="s1">&#39;.rb&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;.py&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;.js&#39;</span>
-</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;//tools file_analyzer.rb&quot;</span>
-</span><span id="__span-12-15"><a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="w">  </span><span class="n">analysis_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Code analysis&quot;</span>
-</span><span id="__span-12-16"><a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="k">else</span>
-</span><span id="__span-12-17"><a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;//tools file_analyzer.rb&quot;</span>
-</span><span id="__span-12-18"><a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="w">  </span><span class="n">analysis_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;General file analysis&quot;</span>
-</span><span id="__span-12-19"><a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="k">end</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="sr">case file_ext</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="sr">when &#39;.csv&#39;</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="sr">  puts &quot;/</span><span class="n">tools</span><span class="w"> </span><span class="n">data_analyzer</span><span class="o">.</span><span class="n">rb</span><span class="s2">&quot;</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="s2">  analysis_type = &quot;</span><span class="no">CSV</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="n">analysis</span><span class="s2">&quot;</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="s2">when &#39;.json&#39;</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="s2">  puts &quot;</span><span class="o">/</span><span class="n">tools</span><span class="w"> </span><span class="n">data_analyzer</span><span class="o">.</span><span class="n">rb</span><span class="s2">&quot;</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="s2">  analysis_type = &quot;</span><span class="no">JSON</span><span class="w"> </span><span class="n">structure</span><span class="w"> </span><span class="n">analysis</span><span class="s2">&quot;</span>
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="s2">when &#39;.rb&#39;, &#39;.py&#39;, &#39;.js&#39;</span>
+</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="s2">  puts &quot;</span><span class="o">/</span><span class="n">tools</span><span class="w"> </span><span class="n">file_analyzer</span><span class="o">.</span><span class="n">rb</span><span class="s2">&quot;</span>
+</span><span id="__span-12-15"><a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="s2">  analysis_type = &quot;</span><span class="no">Code</span><span class="w"> </span><span class="n">analysis</span><span class="s2">&quot;</span>
+</span><span id="__span-12-16"><a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="s2">else</span>
+</span><span id="__span-12-17"><a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="s2">  puts &quot;</span><span class="o">/</span><span class="n">tools</span><span class="w"> </span><span class="n">file_analyzer</span><span class="o">.</span><span class="n">rb</span><span class="s2">&quot;</span>
+</span><span id="__span-12-18"><a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="s2">  analysis_type = &quot;</span><span class="no">General</span><span class="w"> </span><span class="n">file</span><span class="w"> </span><span class="n">analysis</span><span class="s2">&quot;</span>
+</span><span id="__span-12-19"><a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="s2">end</span>
 </span><span id="__span-12-20"><a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>
-</span><span id="__span-12-21"><a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Selected </span><span class="si">#{</span><span class="n">analysis_type</span><span class="si">}</span><span class="s2"> for </span><span class="si">#{</span><span class="n">file_ext</span><span class="si">}</span><span class="s2"> file&quot;</span>
+</span><span id="__span-12-21"><a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="s2">puts &quot;</span><span class="no">Selected</span><span class="w"> </span><span class="c1">#{analysis_type} for #{file_ext} file&quot;</span>
 </span></code></pre></div>
 <p>Perform #{analysis_type} on: &lt;%= input_file %&gt;</p>
 <p>Provide detailed insights appropriate for the file type.

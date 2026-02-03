@@ -2062,12 +2062,12 @@
 - 💰 Zero API costs
 - 🏠 Air-gapped environments</p>
 <h3 id="q-how-do-i-list-available-local-models">Q: How do I list available local models?<a class="headerlink" href="#q-how-do-i-list-available-local-models" title="Permanent link">&para;</a></h3>
-<p><strong>A:</strong> Use the <code>//models</code> directive in a chat session or prompt:</p>
+<p><strong>A:</strong> Use the <code>/models</code> directive in a chat session or prompt:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Start chat with any local model</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>aia<span class="w"> </span>--model<span class="w"> </span>ollama/llama3.2<span class="w"> </span>--chat
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># In the chat session</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>&gt;<span class="w"> </span>//models
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>&gt;<span class="w"> </span>/models
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Output shows:</span>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># - Ollama models from local installation</span>
@@ -2113,7 +2113,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 <h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
 <h3 id="q-how-do-i-create-my-first-prompt">Q: How do I create my first prompt?<a class="headerlink" href="#q-how-do-i-create-my-first-prompt" title="Permanent link">&para;</a></h3>
 <p><strong>A:</strong> Create a text file in your prompts directory:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Explain this code clearly:&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/explain_code.txt
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Explain this code clearly:&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/explain_code.md
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>aia<span class="w"> </span>explain_code<span class="w"> </span>my_script.py
 </span></code></pre></div></p>
 <h3 id="q-whats-the-difference-between-batch-mode-and-chat-mode">Q: What's the difference between batch mode and chat mode?<a class="headerlink" href="#q-whats-the-difference-between-batch-mode-and-chat-mode" title="Permanent link">&para;</a></h3>
@@ -2150,20 +2150,20 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span></code></pre></div></p>
 <h2 id="prompts-and-directives">Prompts and Directives<a class="headerlink" href="#prompts-and-directives" title="Permanent link">&para;</a></h2>
 <h3 id="q-what-are-directives-and-how-do-i-use-them">Q: What are directives and how do I use them?<a class="headerlink" href="#q-what-are-directives-and-how-do-i-use-them" title="Permanent link">&para;</a></h3>
-<p><strong>A:</strong> Directives are special commands in prompts that start with <code>//</code>. Examples:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>//config model gpt-4
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>//include my_file.txt
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>//shell ls -la
+<p><strong>A:</strong> Directives are special commands in prompts that start with <code>/</code>. Examples:
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>/config model gpt-4
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>/include my_file.md
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>/shell ls -la
 </span></code></pre></div></p>
 <p>See the <a href="../directives-reference/">Directives Reference</a> for all available directives.</p>
 <h3 id="q-how-do-i-include-files-in-prompts">Q: How do I include files in prompts?<a class="headerlink" href="#q-how-do-i-include-files-in-prompts" title="Permanent link">&para;</a></h3>
-<p><strong>A:</strong> Use the <code>//include</code> directive:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>//include README.md
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>//include /path/to/file.txt
+<p><strong>A:</strong> Use the <code>/include</code> directive:
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>/include README.md
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>/include /path/to/file.md
 </span></code></pre></div></p>
 <h3 id="q-can-i-use-ruby-code-in-prompts">Q: Can I use Ruby code in prompts?<a class="headerlink" href="#q-can-i-use-ruby-code-in-prompts" title="Permanent link">&para;</a></h3>
-<p><strong>A:</strong> Yes, use the <code>//ruby</code> directive for one-liners:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>//ruby puts &quot;Hello, my name is#{ENV[&#39;USER&#39;]}&quot;
+<p><strong>A:</strong> Yes, use the <code>/ruby</code> directive for one-liners:
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>/ruby puts &quot;Hello, my name is#{ENV[&#39;USER&#39;]}&quot;
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
 </span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gh"># Or for multi-line or conditional code use ERB</span>
 </span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
@@ -2173,9 +2173,9 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>%&gt;
 </span></code></pre></div></p>
 <h3 id="q-how-do-i-create-prompt-workflows">Q: How do I create prompt workflows?<a class="headerlink" href="#q-how-do-i-create-prompt-workflows" title="Permanent link">&para;</a></h3>
-<p><strong>A:</strong> Use the <code>//pipeline</code> or <code>//next</code> directives:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>//pipeline &quot;step1,step2,step3&quot;
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>//next next_prompt_id
+<p><strong>A:</strong> Use the <code>/pipeline</code> or <code>/next</code> directives:
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>/pipeline
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>/next
 </span></code></pre></div></p>
 <h2 id="models-and-performance">Models and Performance<a class="headerlink" href="#models-and-performance" title="Permanent link">&para;</a></h2>
 <h3 id="q-which-ai-model-should-i-use">Q: Which AI model should I use?<a class="headerlink" href="#q-which-ai-model-should-i-use" title="Permanent link">&para;</a></h3>
@@ -2193,7 +2193,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 - Use shorter prompts when possible
 - Choose appropriate models (GPT-3.5 for simple tasks)
 - Use temperature settings wisely
-- Clear chat context regularly with <code>//clear</code></p>
+- Clear chat context regularly with <code>/clear</code></p>
 <h3 id="q-whats-consensus-mode">Q: What's consensus mode?<a class="headerlink" href="#q-whats-consensus-mode" title="Permanent link">&para;</a></h3>
 <p><strong>A:</strong> Consensus mode combines responses from multiple models into a single, refined answer:
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>aia<span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;gpt-4,claude-3-sonnet&quot;</span><span class="w"> </span>--consensus<span class="w"> </span>my_prompt
@@ -2236,7 +2236,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--tools<span class="w"> </span>./tools/
 </span></code></pre></div></p>
 <h3 id="q-how-do-i-clear-chat-history">Q: How do I clear chat history?<a class="headerlink" href="#q-how-do-i-clear-chat-history" title="Permanent link">&para;</a></h3>
-<p><strong>A:</strong> Use the <code>/clear</code> command or <code>//clear</code> directive:
+<p><strong>A:</strong> Use the <code>/clear</code> command or <code>/clear</code> directive:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>You: /clear
 </span></code></pre></div></p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
@@ -2270,11 +2270,11 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 <h2 id="advanced-usage">Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permanent link">&para;</a></h2>
 <h3 id="q-how-do-i-use-aia-for-code-review">Q: How do I use AIA for code review?<a class="headerlink" href="#q-how-do-i-use-aia-for-code-review" title="Permanent link">&para;</a></h3>
 <p><strong>A:</strong> Create a code review prompt:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>//config model gpt-4
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>//config temperature 0.3
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>/config model gpt-4
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>/config temperature 0.3
 </span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
 </span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>Review this code for bugs, security issues, and best practices:
-</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>//include &lt;%= file %&gt;
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>/include &lt;%= file %&gt;
 </span></code></pre></div></p>
 <h3 id="q-can-i-use-aia-for-data-analysis">Q: Can I use AIA for data analysis?<a class="headerlink" href="#q-can-i-use-aia-for-data-analysis" title="Permanent link">&para;</a></h3>
 <p><strong>A:</strong> Yes, create data analysis tools and prompts:
@@ -2333,7 +2333,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>ls<span class="w"> </span><span class="nv">$AIA_PROMPTS__DIR</span>
 </span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>
 </span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="c1"># Verify prompt file exists</span>
-</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>ls<span class="w"> </span>~/.prompts/my_prompt.txt
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>ls<span class="w"> </span>~/.prompts/my_prompt.md
 </span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>
 </span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="c1"># Use fuzzy search to find available prompts</span>
 </span><span id="__span-27-8"><a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>aia<span class="w"> </span>--fuzzy
@@ -2385,7 +2385,7 @@ Choose <strong>LM Studio</strong> if you want a visual interface and easier mode
 </span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>aia<span class="w"> </span>--pipeline<span class="w"> </span><span class="s2">&quot;analyze,summarize,report&quot;</span><span class="w"> </span>large_data.csv
 </span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
 </span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="c1"># Use selective file inclusion</span>
-</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>//include<span class="w"> </span>specific_section.txt
+</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>/include<span class="w"> </span>specific_section.md
 </span><span id="__span-32-6"><a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>
 </span><span id="__span-32-7"><a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="c1"># Check model context limits</span>
 </span><span id="__span-32-8"><a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a>aia<span class="w"> </span>--available-models<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>context

@@ -3360,7 +3360,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># Use custom roles directory</span>
 </span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>aia<span class="w"> </span>--roles-prefix<span class="w"> </span>personas<span class="w"> </span>--role<span class="w"> </span>expert
 </span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
-</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="c1"># Results in looking for roles in ~/.prompts/personas/expert.txt</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="c1"># Results in looking for roles in ~/.prompts/personas/expert.md</span>
 </span></code></pre></div>
 <h3 id="-r-role-role_id"><code>-r, --role ROLE_ID</code><a class="headerlink" href="#-r-role-role_id" title="Permanent link">&para;</a></h3>
 <p>Role ID to prepend to the prompt. This applies the same role to all models.</p>
@@ -3394,7 +3394,7 @@
 <p>Roles are discovered from:
 - <strong>Default location</strong>: <code>~/.prompts/roles/</code>
 - <strong>Custom location</strong>: Set via <code>--prompts-dir</code> and <code>--roles-prefix</code>
-- <strong>Nested directories</strong>: Supports subdirectories like <code>roles/software/architect.txt</code></p>
+- <strong>Nested directories</strong>: Supports subdirectories like <code>roles/software/architect.md</code></p>
 <p><strong>Use case</strong>: Discover available roles before using them with <code>--role</code> or inline <code>MODEL=ROLE</code> syntax.</p>
 <p><strong>See also</strong>: <code>--role</code>, <code>--model</code>, <code>--prompts-dir</code>, <code>--roles-prefix</code></p>
 <h3 id="-n-next-prompt_id"><code>-n, --next PROMPT_ID</code><a class="headerlink" href="#-n-next-prompt_id" title="Permanent link">&para;</a></h3>

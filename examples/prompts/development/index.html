@@ -1395,33 +1395,33 @@
 <h2 id="available-prompts">Available Prompts<a class="headerlink" href="#available-prompts" title="Permanent link">&para;</a></h2>
 <h3 id="code-review">Code Review<a class="headerlink" href="#code-review" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>code_review.txt</strong> - Comprehensive code analysis and review</li>
-<li><strong>security_review.txt</strong> - Security-focused code review</li>
-<li><strong>performance_review.txt</strong> - Performance analysis and optimization</li>
+<li><strong>code_review.md</strong> - Comprehensive code analysis and review</li>
+<li><strong>security_review.md</strong> - Security-focused code review</li>
+<li><strong>performance_review.md</strong> - Performance analysis and optimization</li>
 </ul>
 <h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>generate_docs.txt</strong> - Generate code documentation</li>
-<li><strong>api_docs.txt</strong> - API documentation generation</li>
-<li><strong>readme_generator.txt</strong> - README file creation</li>
+<li><strong>generate_docs.md</strong> - Generate code documentation</li>
+<li><strong>api_docs.md</strong> - API documentation generation</li>
+<li><strong>readme_generator.md</strong> - README file creation</li>
 </ul>
 <h3 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>debug_analysis.txt</strong> - Systematic bug analysis</li>
-<li><strong>error_investigation.txt</strong> - Error investigation and resolution</li>
-<li><strong>performance_debug.txt</strong> - Performance issue diagnosis</li>
+<li><strong>debug_analysis.md</strong> - Systematic bug analysis</li>
+<li><strong>error_investigation.md</strong> - Error investigation and resolution</li>
+<li><strong>performance_debug.md</strong> - Performance issue diagnosis</li>
 </ul>
 <h3 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>architecture_analysis.txt</strong> - System architecture review</li>
-<li><strong>design_patterns.txt</strong> - Design pattern recommendations</li>
-<li><strong>refactoring_guide.txt</strong> - Code refactoring suggestions</li>
+<li><strong>architecture_analysis.md</strong> - System architecture review</li>
+<li><strong>design_patterns.md</strong> - Design pattern recommendations</li>
+<li><strong>refactoring_guide.md</strong> - Code refactoring suggestions</li>
 </ul>
 <h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>test_strategy.txt</strong> - Test strategy development</li>
-<li><strong>unit_test_generator.txt</strong> - Unit test creation</li>
-<li><strong>integration_testing.txt</strong> - Integration test planning</li>
+<li><strong>test_strategy.md</strong> - Test strategy development</li>
+<li><strong>unit_test_generator.md</strong> - Unit test creation</li>
+<li><strong>integration_testing.md</strong> - Integration test planning</li>
 </ul>
 <h2 id="usage-examples">Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Basic code review</span>
@@ -1435,9 +1435,9 @@
 </span></code></pre></div>
 <h2 id="detailed-example-prompts">Detailed Example Prompts<a class="headerlink" href="#detailed-example-prompts" title="Permanent link">&para;</a></h2>
 <h3 id="code-review-prompt">Code Review Prompt<a class="headerlink" href="#code-review-prompt" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># ~/.prompts/code_review.txt</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>//config<span class="w"> </span>model<span class="w"> </span>gpt-4o-mini
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>//config<span class="w"> </span>temperature<span class="w"> </span><span class="m">0</span>.3
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># ~/.prompts/code_review.md</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>/config<span class="w"> </span>model<span class="w"> </span>gpt-4o-mini
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>/config<span class="w"> </span>temperature<span class="w"> </span><span class="m">0</span>.3
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>Review<span class="w"> </span>this<span class="w"> </span>code<span class="w"> </span><span class="k">for</span>:
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>-<span class="w"> </span>Best<span class="w"> </span>practices<span class="w"> </span>adherence
@@ -1449,27 +1449,27 @@
 </span></code></pre></div>
 <p><strong>Usage:</strong> <code>aia code_review mycode.rb</code></p>
 <h3 id="meeting-notes-processor">Meeting Notes Processor<a class="headerlink" href="#meeting-notes-processor" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># ~/.prompts/meeting_notes.txt</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>//config<span class="w"> </span>model<span class="w"> </span>gpt-4o-mini
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>//pipeline<span class="w"> </span>format,action_items
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># ~/.prompts/meeting_notes.md</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>/config<span class="w"> </span>model<span class="w"> </span>gpt-4o-mini
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>/pipeline<span class="w"> </span>format,action_items
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>Raw<span class="w"> </span>meeting<span class="w"> </span>notes:
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>//include<span class="w"> </span><span class="o">[</span>NOTES_FILE<span class="o">]</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>/include<span class="w"> </span><span class="o">[</span>NOTES_FILE<span class="o">]</span>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>Please<span class="w"> </span>clean<span class="w"> </span>up<span class="w"> </span>and<span class="w"> </span>structure<span class="w"> </span>these<span class="w"> </span>meeting<span class="w"> </span>notes.
 </span></code></pre></div>
 <p><strong>Usage:</strong> <code>aia meeting_notes raw_notes.txt</code></p>
 <h3 id="documentation-generator">Documentation Generator<a class="headerlink" href="#documentation-generator" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># ~/.prompts/document.txt</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>//config<span class="w"> </span>model<span class="w"> </span>gpt-4o-mini
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>//shell<span class="w"> </span>find<span class="w"> </span><span class="o">[</span>PROJECT_DIR<span class="o">]</span><span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*.rb&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-10
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># ~/.prompts/document.md</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>/config<span class="w"> </span>model<span class="w"> </span>gpt-4o-mini
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>/shell<span class="w"> </span>find<span class="w"> </span><span class="o">[</span>PROJECT_DIR<span class="o">]</span><span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*.rb&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-10
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>Generate<span class="w"> </span>documentation<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>Ruby<span class="w"> </span>project<span class="w"> </span>shown<span class="w"> </span>above.
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>Include:<span class="w"> </span>API<span class="w"> </span>references,<span class="w"> </span>usage<span class="w"> </span>examples,<span class="w"> </span>and<span class="w"> </span>setup<span class="w"> </span>instructions.
 </span></code></pre></div>
 <p><strong>Usage:</strong> <code>aia document --PROJECT_DIR ./my_project</code></p>
 <h3 id="multi-model-decision-making">Multi-Model Decision Making<a class="headerlink" href="#multi-model-decision-making" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># ~/.prompts/decision_maker.txt</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># ~/.prompts/decision_maker.md</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># Compare different AI perspectives on complex decisions</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>What<span class="w"> </span>are<span class="w"> </span>the<span class="w"> </span>pros<span class="w"> </span>and<span class="w"> </span>cons<span class="w"> </span>of<span class="w"> </span><span class="o">[</span>DECISION_TOPIC<span class="o">]</span>?

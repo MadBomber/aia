@@ -3668,9 +3668,9 @@
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>Response from the third model...
 </span></code></pre></div></p>
 <h3 id="model-configuration-status">Model Configuration Status<a class="headerlink" href="#model-configuration-status" title="Permanent link">&para;</a></h3>
-<p>View your current multi-model configuration using the <code>//model</code> directive:</p>
+<p>View your current multi-model configuration using the <code>/model</code> directive:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># In any prompt file or in chat session</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>//model
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>/model
 </span></code></pre></div>
 <p><strong>Example Output:</strong>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Multi-Model Configuration:
@@ -3824,23 +3824,23 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Default location: ~/.prompts/roles/</span>
 </span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>~/.prompts/
 </span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span>roles/
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span>architect.txt
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span>security.txt
-</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">    </span>performance.txt
-</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">    </span>optimist.txt
-</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">    </span>pessimist.txt
-</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span>realist.txt
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span>architect.md
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span>security.md
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">    </span>performance.md
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">    </span>optimist.md
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">    </span>pessimist.md
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span>realist.md
 </span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>
 </span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="c1"># Nested role organization</span>
 </span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>~/.prompts/
 </span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="w">  </span>roles/
 </span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">    </span>software/
-</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="w">      </span>architect.txt
-</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="w">      </span>developer.txt
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="w">      </span>architect.md
+</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="w">      </span>developer.md
 </span><span id="__span-18-17"><a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="w">    </span>analysis/
-</span><span id="__span-18-18"><a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="w">      </span>optimist.txt
-</span><span id="__span-18-19"><a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="w">      </span>pessimist.txt
-</span><span id="__span-18-20"><a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="w">      </span>realist.txt
+</span><span id="__span-18-18"><a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="w">      </span>optimist.md
+</span><span id="__span-18-19"><a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="w">      </span>pessimist.md
+</span><span id="__span-18-20"><a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="w">      </span>realist.md
 </span></code></pre></div>
 <p><strong>Using Nested Roles:</strong>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Specify full path from roles directory</span>
@@ -3902,7 +3902,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># If role file doesn&#39;t exist</span>
 </span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>$<span class="w"> </span>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4o<span class="o">=</span>nonexistent<span class="w"> </span>my_prompt
 </span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
-</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>ERROR:<span class="w"> </span>Role<span class="w"> </span>file<span class="w"> </span>not<span class="w"> </span>found:<span class="w"> </span>~/.prompts/roles/nonexistent.txt
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>ERROR:<span class="w"> </span>Role<span class="w"> </span>file<span class="w"> </span>not<span class="w"> </span>found:<span class="w"> </span>~/.prompts/roles/nonexistent.md
 </span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
 </span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>Available<span class="w"> </span>roles:
 </span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">  </span>-<span class="w"> </span>architect
@@ -3915,7 +3915,7 @@
 <h4 id="creating-custom-roles">Creating Custom Roles<a class="headerlink" href="#creating-custom-roles" title="Permanent link">&para;</a></h4>
 <p>Create new role files in your roles directory:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># Create a new role</span>
-</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>cat<span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/roles/debugger.txt<span class="w"> </span><span class="s">&lt;&lt; &#39;EOF&#39;</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>cat<span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/roles/debugger.md<span class="w"> </span><span class="s">&lt;&lt; &#39;EOF&#39;</span>
 </span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="s">You are an expert debugging assistant. When analyzing code:</span>
 </span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="s">- Focus on identifying potential bugs and edge cases</span>
 </span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="s">- Suggest specific debugging strategies</span>
@@ -3928,7 +3928,7 @@
 </span></code></pre></div>
 <h3 id="model-comparison-in-prompts">Model Comparison in Prompts<a class="headerlink" href="#model-comparison-in-prompts" title="Permanent link">&para;</a></h3>
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Compare responses from multiple models:
-</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>//compare &quot;Explain quantum computing&quot; --models gpt-4,claude-3-sonnet,gemini-pro
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>/compare &quot;Explain quantum computing&quot; --models gpt-4,claude-3-sonnet,gemini-pro
 </span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>
 </span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>Which explanation is most accessible?
 </span></code></pre></div>
@@ -3961,15 +3961,15 @@
 <h3 id="dynamic-model-selection">Dynamic Model Selection<a class="headerlink" href="#dynamic-model-selection" title="Permanent link">&para;</a></h3>
 <p>Choose models based on task characteristics:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># In prompt with Ruby directive</span>
-</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="sr">//</span><span class="n">ruby</span>
-</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="n">task_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&lt;%= task_type %&gt;&#39;</span>
-</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="n">task_type</span>
-</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;creative&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;gpt-4&#39;</span>
-</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;analytical&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;claude-3-sonnet&#39;</span><span class="w">  </span>
-</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;code&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;codellama-34b&#39;</span>
-</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;gpt-3.5-turbo&#39;</span>
-</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="w">        </span><span class="k">end</span>
-</span><span id="__span-30-10"><a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;//config model </span><span class="si">#{</span><span class="n">model</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="sr">/ruby</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="sr">task_type = &#39;&lt;%= task_type %&gt;&#39;</span>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="sr">model = case task_type</span>
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="sr">        when &#39;creative&#39; then &#39;gpt-4&#39;</span>
+</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="sr">        when &#39;analytical&#39; then &#39;claude-3-sonnet&#39;</span>
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="sr">        when &#39;code&#39; then &#39;codellama-34b&#39;</span>
+</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="sr">        else &#39;gpt-3.5-turbo&#39;</span>
+</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="sr">        end</span>
+</span><span id="__span-30-10"><a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="sr">puts &quot;/</span><span class="n">config</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="c1">#{model}&quot;</span>
 </span></code></pre></div>
 <h2 id="model-performance-optimization">Model Performance Optimization<a class="headerlink" href="#model-performance-optimization" title="Permanent link">&para;</a></h2>
 <h3 id="speed-vs-quality-tradeoffs">Speed vs Quality Tradeoffs<a class="headerlink" href="#speed-vs-quality-tradeoffs" title="Permanent link">&para;</a></h3>
@@ -4006,10 +4006,10 @@
 </span></code></pre></div></p>
 <h4 id="context-aware-processing">Context-Aware Processing<a class="headerlink" href="#context-aware-processing" title="Permanent link">&para;</a></h4>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="c1"># Check document size and choose appropriate model</span>
-</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>//ruby
-</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="nv">file_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>File.size<span class="o">(</span><span class="s1">&#39;&lt;%= file %&gt;&#39;</span><span class="o">)</span><span class="w"> </span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>/ruby
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="nv">file_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>File.size<span class="o">(</span><span class="s1">&#39;&lt;%= file %&gt;&#39;</span><span class="o">)</span>
 </span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="nv">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>file_size<span class="w"> </span>&gt;<span class="w"> </span><span class="m">100000</span><span class="w"> </span>?<span class="w"> </span><span class="s1">&#39;claude-3-sonnet&#39;</span><span class="w"> </span>:<span class="w"> </span><span class="s1">&#39;gpt-4&#39;</span>
-</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>puts<span class="w"> </span><span class="s2">&quot;//config model #{model}&quot;</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>puts<span class="w"> </span><span class="s2">&quot;/config model #{model}&quot;</span>
 </span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>
 </span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="c1"># Process with selected model</span>
 </span></code></pre></div>
@@ -4124,7 +4124,7 @@
 </span><span id="__span-42-6"><a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a>
 </span><span id="__span-42-7"><a id="__codelineno-42-7" name="__codelineno-42-7" href="#__codelineno-42-7"></a><span class="c1"># List Ollama models from AIA</span>
 </span><span id="__span-42-8"><a id="__codelineno-42-8" name="__codelineno-42-8" href="#__codelineno-42-8"></a>aia<span class="w"> </span>--model<span class="w"> </span>ollama/llama3.2<span class="w"> </span>--chat
-</span><span id="__span-42-9"><a id="__codelineno-42-9" name="__codelineno-42-9" href="#__codelineno-42-9"></a>&gt;<span class="w"> </span>//models
+</span><span id="__span-42-9"><a id="__codelineno-42-9" name="__codelineno-42-9" href="#__codelineno-42-9"></a>&gt;<span class="w"> </span>/models
 </span><span id="__span-42-10"><a id="__codelineno-42-10" name="__codelineno-42-10" href="#__codelineno-42-10"></a>
 </span><span id="__span-42-11"><a id="__codelineno-42-11" name="__codelineno-42-11" href="#__codelineno-42-11"></a><span class="c1"># Combine with cloud models for comparison</span>
 </span><span id="__span-42-12"><a id="__codelineno-42-12" name="__codelineno-42-12" href="#__codelineno-42-12"></a>aia<span class="w"> </span>--model<span class="w"> </span>ollama/llama3.2,gpt-4o-mini,claude-3-sonnet<span class="w"> </span>my_prompt
@@ -4168,7 +4168,7 @@
 </span><span id="__span-45-6"><a id="__codelineno-45-6" name="__codelineno-45-6" href="#__codelineno-45-6"></a>
 </span><span id="__span-45-7"><a id="__codelineno-45-7" name="__codelineno-45-7" href="#__codelineno-45-7"></a><span class="c1"># List LM Studio models from AIA</span>
 </span><span id="__span-45-8"><a id="__codelineno-45-8" name="__codelineno-45-8" href="#__codelineno-45-8"></a>aia<span class="w"> </span>--model<span class="w"> </span>lms/any-loaded-model<span class="w"> </span>--chat
-</span><span id="__span-45-9"><a id="__codelineno-45-9" name="__codelineno-45-9" href="#__codelineno-45-9"></a>&gt;<span class="w"> </span>//models
+</span><span id="__span-45-9"><a id="__codelineno-45-9" name="__codelineno-45-9" href="#__codelineno-45-9"></a>&gt;<span class="w"> </span>/models
 </span><span id="__span-45-10"><a id="__codelineno-45-10" name="__codelineno-45-10" href="#__codelineno-45-10"></a>
 </span><span id="__span-45-11"><a id="__codelineno-45-11" name="__codelineno-45-11" href="#__codelineno-45-11"></a><span class="c1"># Model validation</span>
 </span><span id="__span-45-12"><a id="__codelineno-45-12" name="__codelineno-45-12" href="#__codelineno-45-12"></a><span class="c1"># AIA validates model names against LM Studio&#39;s loaded models</span>
@@ -4314,16 +4314,16 @@
 </span></code></pre></div>
 <h3 id="conditional-model-selection">Conditional Model Selection<a class="headerlink" href="#conditional-model-selection" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-56-1"><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a><span class="c1"># Dynamic model selection based on task complexity</span>
-</span><span id="__span-56-2"><a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a><span class="sr">//</span><span class="n">ruby</span>
-</span><span id="__span-56-3"><a id="__codelineno-56-3" name="__codelineno-56-3" href="#__codelineno-56-3"></a><span class="n">content_length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;&lt;%= input_file %&gt;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">length</span>
-</span><span id="__span-56-4"><a id="__codelineno-56-4" name="__codelineno-56-4" href="#__codelineno-56-4"></a><span class="n">complexity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">content_length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10000</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;high&#39;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;low&#39;</span>
+</span><span id="__span-56-2"><a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a><span class="sr">/ruby</span>
+</span><span id="__span-56-3"><a id="__codelineno-56-3" name="__codelineno-56-3" href="#__codelineno-56-3"></a><span class="sr">content_length = File.read(&#39;&lt;%= input_file %&gt;&#39;).length</span>
+</span><span id="__span-56-4"><a id="__codelineno-56-4" name="__codelineno-56-4" href="#__codelineno-56-4"></a><span class="sr">complexity = content_length &gt; 10000 ? &#39;high&#39; : &#39;low&#39;</span>
 </span><span id="__span-56-5"><a id="__codelineno-56-5" name="__codelineno-56-5" href="#__codelineno-56-5"></a>
-</span><span id="__span-56-6"><a id="__codelineno-56-6" name="__codelineno-56-6" href="#__codelineno-56-6"></a><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">case</span><span class="w"> </span><span class="n">complexity</span>
-</span><span id="__span-56-7"><a id="__codelineno-56-7" name="__codelineno-56-7" href="#__codelineno-56-7"></a><span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;high&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;claude-3-sonnet&#39;</span>
-</span><span id="__span-56-8"><a id="__codelineno-56-8" name="__codelineno-56-8" href="#__codelineno-56-8"></a><span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;low&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;gpt-3.5-turbo&#39;</span>
-</span><span id="__span-56-9"><a id="__codelineno-56-9" name="__codelineno-56-9" href="#__codelineno-56-9"></a><span class="w">        </span><span class="k">end</span>
+</span><span id="__span-56-6"><a id="__codelineno-56-6" name="__codelineno-56-6" href="#__codelineno-56-6"></a><span class="sr">model = case complexity</span>
+</span><span id="__span-56-7"><a id="__codelineno-56-7" name="__codelineno-56-7" href="#__codelineno-56-7"></a><span class="sr">        when &#39;high&#39; then &#39;claude-3-sonnet&#39;</span>
+</span><span id="__span-56-8"><a id="__codelineno-56-8" name="__codelineno-56-8" href="#__codelineno-56-8"></a><span class="sr">        when &#39;low&#39; then &#39;gpt-3.5-turbo&#39;</span>
+</span><span id="__span-56-9"><a id="__codelineno-56-9" name="__codelineno-56-9" href="#__codelineno-56-9"></a><span class="sr">        end</span>
 </span><span id="__span-56-10"><a id="__codelineno-56-10" name="__codelineno-56-10" href="#__codelineno-56-10"></a>
-</span><span id="__span-56-11"><a id="__codelineno-56-11" name="__codelineno-56-11" href="#__codelineno-56-11"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;//config model </span><span class="si">#{</span><span class="n">model</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-56-11"><a id="__codelineno-56-11" name="__codelineno-56-11" href="#__codelineno-56-11"></a><span class="sr">puts &quot;/</span><span class="n">config</span><span class="w"> </span><span class="n">model</span><span class="w"> </span><span class="c1">#{model}&quot;</span>
 </span><span id="__span-56-12"><a id="__codelineno-56-12" name="__codelineno-56-12" href="#__codelineno-56-12"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Selected </span><span class="si">#{</span><span class="n">model</span><span class="si">}</span><span class="s2"> for </span><span class="si">#{</span><span class="n">complexity</span><span class="si">}</span><span class="s2"> complexity task&quot;</span>
 </span></code></pre></div>
 <h3 id="model-ensemble-techniques">Model Ensemble Techniques<a class="headerlink" href="#model-ensemble-techniques" title="Permanent link">&para;</a></h3>
@@ -4342,7 +4342,7 @@
 </span><span id="__span-58-6"><a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a>AI:<span class="w"> </span>Switched<span class="w"> </span>to<span class="w"> </span>claude-3-sonnet
 </span><span id="__span-58-7"><a id="__codelineno-58-7" name="__codelineno-58-7" href="#__codelineno-58-7"></a>
 </span><span id="__span-58-8"><a id="__codelineno-58-8" name="__codelineno-58-8" href="#__codelineno-58-8"></a><span class="c1"># Compare models in chat</span>
-</span><span id="__span-58-9"><a id="__codelineno-58-9" name="__codelineno-58-9" href="#__codelineno-58-9"></a>You:<span class="w"> </span>//compare<span class="w"> </span><span class="s2">&quot;Explain this concept&quot;</span><span class="w"> </span>--models<span class="w"> </span>gpt-4,claude-3-sonnet
+</span><span id="__span-58-9"><a id="__codelineno-58-9" name="__codelineno-58-9" href="#__codelineno-58-9"></a>You:<span class="w"> </span>/compare<span class="w"> </span><span class="s2">&quot;Explain this concept&quot;</span><span class="w"> </span>--models<span class="w"> </span>gpt-4,claude-3-sonnet
 </span></code></pre></div>
 <h3 id="pipeline-model-configuration">Pipeline Model Configuration<a class="headerlink" href="#pipeline-model-configuration" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-59-1"><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="c1"># Different models for different pipeline stages</span>

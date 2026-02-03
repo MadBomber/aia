@@ -1749,7 +1749,7 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 <li>
 <p><strong>Create your first prompt:</strong>
    <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>~/.prompts
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;What is [TOPIC]?&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/what_is.txt
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;What is [TOPIC]?&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/what_is.md
 </span></code></pre></div></p>
 </li>
 <li>
@@ -1802,7 +1802,7 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 <li><strong>AIA::Config</strong> - Configuration management with hierarchical precedence</li>
 <li><strong>AIA::PromptHandler</strong> - Main prompt processing orchestrator</li>
 <li><strong>AIA::ChatProcessorService</strong> - Interactive chat session management</li>
-<li><strong>AIA::DirectiveProcessor</strong> - Processes embedded directives (<code>//command params</code>)</li>
+<li><strong>AIA::DirectiveProcessor</strong> - Processes embedded directives (<code>/command params</code>)</li>
 <li><strong>AIA::RubyLLMAdapter</strong> - Interfaces with the ruby_llm gem for AI model communication (manages conversation history via RubyLLM's Chat.<a class="magiclink magiclink-github magiclink-mention" href="https://github.com/messages" title="GitHub User: messages">@messages</a>)</li>
 <li><strong>AIA::ShellCommandExecutor</strong> - Executes shell commands safely within prompts</li>
 <li><strong>AIA::HistoryManager</strong> - Manages prompt parameter history and user input</li>

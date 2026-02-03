@@ -2085,17 +2085,17 @@
 <ul>
 <li><strong>Self-contained prompts</strong> — metadata, parameters, and body in one file</li>
 <li><strong>Standard ERB</strong> — <code>&lt;%= param %&gt;</code> instead of custom <code>[PARAM]</code> syntax</li>
-<li><strong>YAML front matter</strong> — structured configuration instead of <code>//</code> directives</li>
+<li><strong>YAML front matter</strong> — structured configuration instead of <code>/</code> directives</li>
 <li><strong>Markdown body</strong> — native rendering support in editors and documentation tools</li>
 </ul>
 <h2 id="format-comparison">Format Comparison<a class="headerlink" href="#format-comparison" title="Permanent link">&para;</a></h2>
 <h3 id="old-format-v058">Old Format (v0.5.8)<a class="headerlink" href="#old-format-v058" title="Permanent link">&para;</a></h3>
 <p>Two files per prompt:</p>
-<p><strong><code>my_prompt.txt</code></strong>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># ~/.prompts/my_prompt.txt
+<p><strong><code>my_prompt.md</code></strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># ~/.prompts/my_prompt.md
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a># Desc: Summarize the given document
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>//config temperature 0.3
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>//include shared_context.txt
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>/config temperature 0.3
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>/include shared_context.md
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>Summarize the following [DOCUMENT_TYPE] document:
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
@@ -2109,7 +2109,7 @@
 </span></code></pre></div></p>
 <h3 id="new-format-v100">New Format (v1.0.0)<a class="headerlink" href="#new-format-v100" title="Permanent link">&para;</a></h3>
 <p>Single file:</p>
-<p><strong><code>my_prompt.md</code></strong>
+<p><strong><code>my_prompt.md</code></strong> (same filename, single file now)
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>---
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>name: my_prompt
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>description: Summarize the given document
@@ -2119,7 +2119,7 @@
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="gu">  content: null</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="gu">---</span>
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>&lt;%= include(&#39;shared_context.txt&#39;) %&gt;
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>&lt;%= include(&#39;shared_context.md&#39;) %&gt;
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
 </span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>Summarize the following &lt;%= document_type %&gt; document:
 </span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
@@ -2139,7 +2139,7 @@
 </span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
 </span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1"># Migrate specific files or directories</span>
 </span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>bin/migrate_prompts<span class="w"> </span>~/.prompts/development/
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>bin/migrate_prompts<span class="w"> </span>~/.prompts/code_review.txt<span class="w"> </span>~/.prompts/debug_help.txt
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>bin/migrate_prompts<span class="w"> </span>~/.prompts/code_review.md<span class="w"> </span>~/.prompts/debug_help.md
 </span></code></pre></div>
 <h3 id="cli-options">CLI Options<a class="headerlink" href="#cli-options" title="Permanent link">&para;</a></h3>
 <table>
@@ -2213,43 +2213,43 @@
 </thead>
 <tbody>
 <tr>
-<td><code>//config temperature 0.3</code></td>
+<td><code>/config temperature 0.3</code></td>
 <td><code>temperature: 0.3</code> in YAML</td>
 </tr>
 <tr>
-<td><code>//config top_p 0.9</code></td>
+<td><code>/config top_p 0.9</code></td>
 <td><code>top_p: 0.9</code> in YAML</td>
 </tr>
 <tr>
-<td><code>//temp 0.5</code></td>
+<td><code>/temp 0.5</code></td>
 <td><code>temperature: 0.5</code> in YAML</td>
 </tr>
 <tr>
-<td><code>//topp 0.8</code></td>
+<td><code>/topp 0.8</code></td>
 <td><code>top_p: 0.8</code> in YAML</td>
 </tr>
 <tr>
-<td><code>//next follow_up</code></td>
+<td><code>/next follow_up</code></td>
 <td><code>next: follow_up</code> in YAML</td>
 </tr>
 <tr>
-<td><code>//pipeline step1, step2</code></td>
+<td><code>/pipeline step1, step2</code></td>
 <td><code>pipeline: [step1, step2]</code> in YAML</td>
 </tr>
 <tr>
-<td><code>//include file.txt</code></td>
-<td><code>&lt;%= include('file.txt') %&gt;</code> in body</td>
+<td><code>/include file.md</code></td>
+<td><code>&lt;%= include('file.md') %&gt;</code> in body</td>
 </tr>
 <tr>
-<td><code>//shell command</code></td>
+<td><code>/shell command</code></td>
 <td><code>&lt;%= system('command') %&gt;</code> in body</td>
 </tr>
 <tr>
-<td><code>//ruby expression</code></td>
+<td><code>/ruby expression</code></td>
 <td><code>&lt;%= expression %&gt;</code> in body</td>
 </tr>
 <tr>
-<td><code>//backend ...</code></td>
+<td><code>/backend ...</code></td>
 <td>Silently removed (deprecated)</td>
 </tr>
 </tbody>
@@ -2271,12 +2271,12 @@
 <h3 id="metadata">Metadata<a class="headerlink" href="#metadata" title="Permanent link">&para;</a></h3>
 <p>The script extracts metadata from the old format's header conventions:</p>
 <ul>
-<li><strong>File path comments</strong> (<code># ~/.prompts/name.txt</code>) — removed</li>
+<li><strong>File path comments</strong> (<code># ~/.prompts/name.md</code>) — removed</li>
 <li><strong>Description lines</strong> (<code># Desc: ...</code>) — moved to <code>description:</code> in YAML front matter</li>
-<li><strong>Prompt name</strong> — derived from the filename (e.g., <code>code_review.txt</code> → <code>name: code_review</code>)</li>
+<li><strong>Prompt name</strong> — derived from the filename (e.g., <code>code_review.md</code> → <code>name: code_review</code>)</li>
 </ul>
 <h3 id="parameter-history">Parameter History<a class="headerlink" href="#parameter-history" title="Permanent link">&para;</a></h3>
-<p>If a <code>.json</code> file exists alongside the <code>.txt</code> file, the most recent value for each parameter is used as the default in the YAML <code>parameters:</code> block:</p>
+<p>If a <code>.json</code> file exists alongside the <code>.md</code> file, the most recent value for each parameter is used as the default in the YAML <code>parameters:</code> block:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">parameters</span><span class="p">:</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">document_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">paper</span><span class="w">    </span><span class="c1"># last value from JSON history</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">content</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">           </span><span class="c1"># no history available</span>
@@ -2375,7 +2375,7 @@
 </span></code></pre></div>
 <h3 id="file-skipped-because-md-already-exists">File skipped because .md already exists<a class="headerlink" href="#file-skipped-because-md-already-exists" title="Permanent link">&para;</a></h3>
 <p>By default, the script skips files that already have a corresponding <code>.md</code> file. Use <code>--force</code> to overwrite:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>bin/migrate_prompts<span class="w"> </span>--force<span class="w"> </span>~/.prompts/my_prompt.txt
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>bin/migrate_prompts<span class="w"> </span>--force<span class="w"> </span>~/.prompts/my_prompt.md
 </span></code></pre></div>
 <h3 id="unrecognized-directive-warnings">Unrecognized directive warnings<a class="headerlink" href="#unrecognized-directive-warnings" title="Permanent link">&para;</a></h3>
 <p>Directives that the script doesn't know how to convert are preserved in the body as-is and reported as warnings. Review these manually after migration.</p>
