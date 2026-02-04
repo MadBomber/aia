@@ -1768,13 +1768,85 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#chat-mode-model-management" class="md-nav__link">
+  <a href="#switching-models-during-a-chat-session" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Chat Mode Model Management
+        Switching Models During a Chat Session
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Switching Models During a Chat Session">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#single-model-switch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single Model Switch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-provider-switch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Provider Switch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-to-multi-model-mid-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade to Multi-Model Mid-Session
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#return-to-single-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Return to Single Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adjust-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adjust Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compare-models-in-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare Models in Chat
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3429,13 +3501,85 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#chat-mode-model-management" class="md-nav__link">
+  <a href="#switching-models-during-a-chat-session" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Chat Mode Model Management
+        Switching Models During a Chat Session
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Switching Models During a Chat Session">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#single-model-switch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single Model Switch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-provider-switch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Provider Switch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-to-multi-model-mid-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade to Multi-Model Mid-Session
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#return-to-single-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Return to Single Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adjust-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adjust Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compare-models-in-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare Models in Chat
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -4333,35 +4477,61 @@
 </span><span id="__span-57-4"><a id="__codelineno-57-4" name="__codelineno-57-4" href="#__codelineno-57-4"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-3.5-turbo<span class="w"> </span>--include<span class="w"> </span>technical_analysis.md<span class="w"> </span>--include<span class="w"> </span>style_analysis.md<span class="w"> </span>synthesize_reviews
 </span></code></pre></div>
 <h2 id="integration-with-other-features">Integration with Other Features<a class="headerlink" href="#integration-with-other-features" title="Permanent link">&para;</a></h2>
-<h3 id="chat-mode-model-management">Chat Mode Model Management<a class="headerlink" href="#chat-mode-model-management" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-58-1"><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a><span class="c1"># Start chat with specific model</span>
-</span><span id="__span-58-2"><a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a>aia<span class="w"> </span>--chat<span class="w"> </span>--model<span class="w"> </span>gpt-4
-</span><span id="__span-58-3"><a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a>
-</span><span id="__span-58-4"><a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a><span class="c1"># Switch models during chat</span>
-</span><span id="__span-58-5"><a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a>You:<span class="w"> </span>/model<span class="w"> </span>claude-3-sonnet
-</span><span id="__span-58-6"><a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a>AI:<span class="w"> </span>Switched<span class="w"> </span>to<span class="w"> </span>claude-3-sonnet
-</span><span id="__span-58-7"><a id="__codelineno-58-7" name="__codelineno-58-7" href="#__codelineno-58-7"></a>
-</span><span id="__span-58-8"><a id="__codelineno-58-8" name="__codelineno-58-8" href="#__codelineno-58-8"></a><span class="c1"># Compare models in chat</span>
-</span><span id="__span-58-9"><a id="__codelineno-58-9" name="__codelineno-58-9" href="#__codelineno-58-9"></a>You:<span class="w"> </span>/compare<span class="w"> </span><span class="s2">&quot;Explain this concept&quot;</span><span class="w"> </span>--models<span class="w"> </span>gpt-4,claude-3-sonnet
+<h3 id="switching-models-during-a-chat-session">Switching Models During a Chat Session<a class="headerlink" href="#switching-models-during-a-chat-session" title="Permanent link">&para;</a></h3>
+<p>AIA lets you change models — and even providers — mid-conversation without restarting. The switch takes effect immediately.</p>
+<h4 id="single-model-switch">Single Model Switch<a class="headerlink" href="#single-model-switch" title="Permanent link">&para;</a></h4>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-58-1"><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a>/model gpt-4o-mini
+</span></code></pre></div>
+<p>The client is recreated on the spot. The next <code>/model</code> (no arguments) confirms the change:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-59-1"><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a>/model
+</span><span id="__span-59-2"><a id="__codelineno-59-2" name="__codelineno-59-2" href="#__codelineno-59-2"></a>Current Model:
+</span><span id="__span-59-3"><a id="__codelineno-59-3" name="__codelineno-59-3" href="#__codelineno-59-3"></a>==============
+</span><span id="__span-59-4"><a id="__codelineno-59-4" name="__codelineno-59-4" href="#__codelineno-59-4"></a>{id: &quot;gpt-4o-mini&quot;, provider: &quot;openai&quot;, ...}
+</span></code></pre></div>
+<h4 id="cross-provider-switch">Cross-Provider Switch<a class="headerlink" href="#cross-provider-switch" title="Permanent link">&para;</a></h4>
+<p>Move between providers seamlessly:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-60-1"><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a>/model claude-sonnet-4       # Anthropic
+</span><span id="__span-60-2"><a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a>/model gpt-4o                # OpenAI
+</span><span id="__span-60-3"><a id="__codelineno-60-3" name="__codelineno-60-3" href="#__codelineno-60-3"></a>/model gemini-2.0-flash      # Google
+</span><span id="__span-60-4"><a id="__codelineno-60-4" name="__codelineno-60-4" href="#__codelineno-60-4"></a>/model ollama/llama3.2       # Local (Ollama)
+</span></code></pre></div>
+<h4 id="upgrade-to-multi-model-mid-session">Upgrade to Multi-Model Mid-Session<a class="headerlink" href="#upgrade-to-multi-model-mid-session" title="Permanent link">&para;</a></h4>
+<p>Provide a comma-separated list to switch from a single model to multi-model mode:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-61-1"><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a>/model gpt-4o-mini, claude-sonnet-4
+</span></code></pre></div>
+<p>Each model gets its own conversation context and responds independently. You can assign roles using the <code>model=role</code> syntax:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-62-1"><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a>/model gpt-4o=architect, claude-sonnet-4=security, gemini-pro=performance
+</span></code></pre></div>
+<h4 id="return-to-single-model">Return to Single Model<a class="headerlink" href="#return-to-single-model" title="Permanent link">&para;</a></h4>
+<p>Specify one model name to go back:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-63-1"><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a>/model claude-sonnet-4
+</span></code></pre></div>
+<h4 id="adjust-parameters">Adjust Parameters<a class="headerlink" href="#adjust-parameters" title="Permanent link">&para;</a></h4>
+<p>Fine-tune generation settings alongside model changes:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-64-1"><a id="__codelineno-64-1" name="__codelineno-64-1" href="#__codelineno-64-1"></a>/temperature 0.3    # More focused
+</span><span id="__span-64-2"><a id="__codelineno-64-2" name="__codelineno-64-2" href="#__codelineno-64-2"></a>/top_p 0.9          # Nucleus sampling
+</span></code></pre></div>
+<h4 id="compare-models-in-chat">Compare Models in Chat<a class="headerlink" href="#compare-models-in-chat" title="Permanent link">&para;</a></h4>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-65-1"><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a>/compare &quot;Explain this concept&quot; --models gpt-4,claude-3-sonnet
 </span></code></pre></div>
 <h3 id="pipeline-model-configuration">Pipeline Model Configuration<a class="headerlink" href="#pipeline-model-configuration" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-59-1"><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="c1"># Different models for different pipeline stages</span>
-</span><span id="__span-59-2"><a id="__codelineno-59-2" name="__codelineno-59-2" href="#__codelineno-59-2"></a>aia<span class="w"> </span>--config-file<span class="w"> </span>pipeline_config.yml<span class="w"> </span>--pipeline<span class="w"> </span><span class="s2">&quot;extract,analyze,report&quot;</span>
-</span><span id="__span-59-3"><a id="__codelineno-59-3" name="__codelineno-59-3" href="#__codelineno-59-3"></a>
-</span><span id="__span-59-4"><a id="__codelineno-59-4" name="__codelineno-59-4" href="#__codelineno-59-4"></a><span class="c1"># pipeline_config.yml</span>
-</span><span id="__span-59-5"><a id="__codelineno-59-5" name="__codelineno-59-5" href="#__codelineno-59-5"></a>extract:
-</span><span id="__span-59-6"><a id="__codelineno-59-6" name="__codelineno-59-6" href="#__codelineno-59-6"></a><span class="w">  </span>model:<span class="w"> </span>gpt-3.5-turbo
-</span><span id="__span-59-7"><a id="__codelineno-59-7" name="__codelineno-59-7" href="#__codelineno-59-7"></a>analyze:
-</span><span id="__span-59-8"><a id="__codelineno-59-8" name="__codelineno-59-8" href="#__codelineno-59-8"></a><span class="w">  </span>model:<span class="w"> </span>claude-3-sonnet
-</span><span id="__span-59-9"><a id="__codelineno-59-9" name="__codelineno-59-9" href="#__codelineno-59-9"></a>report:
-</span><span id="__span-59-10"><a id="__codelineno-59-10" name="__codelineno-59-10" href="#__codelineno-59-10"></a><span class="w">  </span>model:<span class="w"> </span>gpt-4
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-66-1"><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="c1"># Different models for different pipeline stages</span>
+</span><span id="__span-66-2"><a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a>aia<span class="w"> </span>--config-file<span class="w"> </span>pipeline_config.yml<span class="w"> </span>--pipeline<span class="w"> </span><span class="s2">&quot;extract,analyze,report&quot;</span>
+</span><span id="__span-66-3"><a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a>
+</span><span id="__span-66-4"><a id="__codelineno-66-4" name="__codelineno-66-4" href="#__codelineno-66-4"></a><span class="c1"># pipeline_config.yml</span>
+</span><span id="__span-66-5"><a id="__codelineno-66-5" name="__codelineno-66-5" href="#__codelineno-66-5"></a>extract:
+</span><span id="__span-66-6"><a id="__codelineno-66-6" name="__codelineno-66-6" href="#__codelineno-66-6"></a><span class="w">  </span>model:<span class="w"> </span>gpt-3.5-turbo
+</span><span id="__span-66-7"><a id="__codelineno-66-7" name="__codelineno-66-7" href="#__codelineno-66-7"></a>analyze:
+</span><span id="__span-66-8"><a id="__codelineno-66-8" name="__codelineno-66-8" href="#__codelineno-66-8"></a><span class="w">  </span>model:<span class="w"> </span>claude-3-sonnet
+</span><span id="__span-66-9"><a id="__codelineno-66-9" name="__codelineno-66-9" href="#__codelineno-66-9"></a>report:
+</span><span id="__span-66-10"><a id="__codelineno-66-10" name="__codelineno-66-10" href="#__codelineno-66-10"></a><span class="w">  </span>model:<span class="w"> </span>gpt-4
 </span></code></pre></div>
 <h3 id="tool-integration">Tool Integration<a class="headerlink" href="#tool-integration" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-60-1"><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a><span class="c1"># Use models optimized for function calling with tools</span>
-</span><span id="__span-60-2"><a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-3.5-turbo<span class="w"> </span>--tools<span class="w"> </span>./analysis_tools/<span class="w"> </span>data_processing
-</span><span id="__span-60-3"><a id="__codelineno-60-3" name="__codelineno-60-3" href="#__codelineno-60-3"></a>
-</span><span id="__span-60-4"><a id="__codelineno-60-4" name="__codelineno-60-4" href="#__codelineno-60-4"></a><span class="c1"># Vision models with image processing tools</span>
-</span><span id="__span-60-5"><a id="__codelineno-60-5" name="__codelineno-60-5" href="#__codelineno-60-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4-vision<span class="w"> </span>--tools<span class="w"> </span>./image_tools/<span class="w"> </span>visual_analysis
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-67-1"><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="c1"># Use models optimized for function calling with tools</span>
+</span><span id="__span-67-2"><a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-3.5-turbo<span class="w"> </span>--tools<span class="w"> </span>./analysis_tools/<span class="w"> </span>data_processing
+</span><span id="__span-67-3"><a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a>
+</span><span id="__span-67-4"><a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="c1"># Vision models with image processing tools</span>
+</span><span id="__span-67-5"><a id="__codelineno-67-5" name="__codelineno-67-5" href="#__codelineno-67-5"></a>aia<span class="w"> </span>--model<span class="w"> </span>gpt-4-vision<span class="w"> </span>--tools<span class="w"> </span>./image_tools/<span class="w"> </span>visual_analysis
 </span></code></pre></div>
 <h2 id="related-documentation">Related Documentation<a class="headerlink" href="#related-documentation" title="Permanent link">&para;</a></h2>
 <ul>

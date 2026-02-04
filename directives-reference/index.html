@@ -2405,16 +2405,22 @@
 - <code>/config option value</code> - Set configuration option</p>
 <p><strong>Aliases</strong>: <code>/cfg</code></p>
 <h3 id="model"><code>/model</code><a class="headerlink" href="#model" title="Permanent link">&para;</a></h3>
-<p>Display or configure the AI model.</p>
-<p><strong>Syntax</strong>: <code>/model [model_name]</code></p>
+<p>Display or switch the AI model. Changes take effect immediately — the client is recreated with the new model(s) without restarting the session.</p>
+<p><strong>Syntax</strong>: <code>/model [model_spec]</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/model gpt-4
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>/model claude-3-sonnet
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>/model
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/model                                        # Show current model details
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>/model gpt-4o-mini                            # Switch to a single model
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>/model claude-sonnet-4                        # Switch provider (Anthropic)
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>/model gpt-4o, claude-sonnet-4                # Switch to multi-model
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>/model gpt-4o=architect, claude=security      # Multi-model with roles
 </span></code></pre></div></p>
 <p><strong>Usage</strong>:
 - <code>/model</code> - Display current model configuration and details
-- <code>/model name</code> - Set the model to use</p>
+- <code>/model name</code> - Switch to a single model (any provider)
+- <code>/model name1, name2</code> - Switch to multi-model configuration
+- <code>/model name1=role1, name2=role2</code> - Multi-model with per-model roles</p>
+<p>Comma-separated values follow the same <code>MODEL[=ROLE]</code> syntax used by the <code>--model</code> CLI flag.</p>
+<p>For single-model display, shows full model details including provider, context window, pricing, and capabilities.</p>
 <p>For multi-model configurations, displays:
 - Model count and primary model
 - Consensus mode status
