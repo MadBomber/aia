@@ -1688,21 +1688,106 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
   </div>
 
 <hr />
-<div class="admonition warning">
-<p class="admonition-title">Breaking Changes in v0.10.*</p>
-<p><strong>Version 0.10.0 introduces breaking changes:</strong></p>
+<div class="admonition danger">
+<p class="admonition-title">Breaking Changes in v1.0.0 (from v0.11.2)</p>
+<p><strong>Version 1.0.0 is a major release with breaking changes. Read this section before upgrading.</strong></p>
+</div>
+<div class="admonition failure">
+<p class="admonition-title">Prompt File Format (Critical)</p>
+<p>The prompt file format has changed completely. You <strong>must</strong> migrate your prompts.</p>
 <ul>
-<li>
-<p><strong>Environment Variables</strong> — Naming conventions now use double underscore (<code>__</code>) for nested config sections (e.g., <code>AIA_LLM__TEMPERATURE</code>, <code>AIA_FLAGS__DEBUG</code>). See <a href="configuration/#environment-variables">Environment Variables</a> for the complete list.</p>
-</li>
-<li>
-<p><strong>Configuration Files</strong> — Configuration now uses a nested YAML structure with sections like <code>llm:</code>, <code>prompts:</code>, <code>output:</code>, <code>flags:</code>, etc. See <a href="configuration/">Configuration Guide</a> for details.</p>
-</li>
-<li>
-<p><strong>File Locations</strong> — Configuration files now follow the XDG Base Directory Specification. The default config file location is <code>~/.config/aia/aia.yml</code> instead of <code>~/.aia/config.yml</code>. See <a href="installation/">Installation Guide</a> for setup instructions.</p>
-</li>
+<li><strong>File extension</strong> — <code>.txt</code> is now <code>.md</code></li>
+<li><strong>Parameters</strong> — <code>[PLACEHOLDER]</code> is now <code>&lt;%= placeholder %&gt;</code></li>
+<li><strong>Metadata</strong> — Separate <code>.json</code> history files are now YAML front matter inside the <code>.md</code> file</li>
+<li><strong>Directive embedding</strong> — <code>//config</code>, <code>//pipeline</code>, etc. are now YAML front matter keys</li>
 </ul>
-<p><strong>Review the <a href="configuration/">Configuration Guide</a> before upgrading to v0.10.0.</strong></p>
+<p><strong>Before (v0.11.2):</strong></p>
+<div class="language-text highlight"><pre><span></span><code># ~/.prompts/my_prompt.txt
+//config temperature 0.7
+//pipeline next_prompt, another_prompt
+Tell me about [TOPIC] in [LANGUAGE]
+</code></pre></div>
+<p><strong>After (v1.0.0):</strong></p>
+<div class="language-text highlight"><pre><span></span><code>---
+temperature: 0.7
+pipeline: [next_prompt, another_prompt]
+parameters:
+  topic: null
+  language: null
+---
+Tell me about &lt;%= topic %&gt; in &lt;%= language %&gt;
+</code></pre></div>
+<p><strong>Run the migration tool:</strong></p>
+<div class="language-text highlight"><pre><span></span><code># Back up first (recommended)
+cp -r ~/.prompts ~/.prompts.backup
+
+# Migrate all prompts
+migrate_prompts --verbose ~/.prompts
+
+# Review flagged files (*.txt-review), then recover them
+migrate_prompts --reprocess ~/.prompts
+</code></pre></div>
+<p>The <code>migrate_prompts</code> script is a standalone program in <code>bin/</code>. It handles placeholder conversion, directive migration, history file merging, and flags files with code fences for manual review. See <a href="guides/migrate-prompts/">Migration Guide</a> for details.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Removed and Deprecated CLI Options</p>
+<ul>
+<li><strong><code>--adapter</code> removed</strong> — AIA now exclusively uses <code>ruby_llm</code>. Remove <code>--adapter</code> from any scripts or aliases.</li>
+<li><strong><code>--regex</code> deprecated</strong> — Parameter extraction uses ERB (<code>&lt;%= param %&gt;</code>) instead of regex. The flag prints a warning and has no effect.</li>
+<li><strong><code>--terse</code> deprecated</strong> — No longer supported. The flag prints a warning and has no effect.</li>
+<li><strong><code>--metrics</code> renamed to <code>--tokens</code></strong> — Use <code>--tokens</code> to display token usage. <code>--cost</code> implies <code>--tokens</code>.</li>
+</ul>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Dependency: prompt_manager v0.5 to v1.0</p>
+<p>The <code>prompt_manager</code> gem has been upgraded from <code>~&gt; 0.5.8</code> to <code>~&gt; 1.0</code>. This is the root cause of the prompt file format changes above. The new version uses ERB for parameter interpolation and YAML front matter for metadata. All prompt files must be in the new format.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Environment Variables (from v0.10.0)</p>
+<p>If upgrading from v0.9.x, environment variable names changed in v0.10.0 to use double underscore (<code>__</code>) for nested config sections:</p>
+<table>
+<thead>
+<tr>
+<th>Old (v0.9.x)</th>
+<th>New (v1.0.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AIA_PROMPTS_DIR</code></td>
+<td><code>AIA_PROMPTS__DIR</code></td>
+</tr>
+<tr>
+<td><code>AIA_OUT_FILE</code></td>
+<td><code>AIA_OUTPUT__FILE</code></td>
+</tr>
+<tr>
+<td><code>AIA_VERBOSE</code></td>
+<td><code>AIA_FLAGS__VERBOSE</code></td>
+</tr>
+<tr>
+<td><code>AIA_DEBUG</code></td>
+<td><code>AIA_FLAGS__DEBUG</code></td>
+</tr>
+<tr>
+<td><code>AIA_CHAT</code></td>
+<td><code>AIA_FLAGS__CHAT</code></td>
+</tr>
+<tr>
+<td><code>AIA_TEMPERATURE</code></td>
+<td><code>AIA_LLM__TEMPERATURE</code></td>
+</tr>
+<tr>
+<td><code>AIA_MARKDOWN</code></td>
+<td><code>AIA_OUTPUT__MARKDOWN</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>AIA_MODEL</code> is unchanged. See <a href="configuration/#environment-variables">Environment Variables</a> for the complete list.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Configuration Files (from v0.10.0)</p>
+<p>If upgrading from v0.9.x, configuration files now use a nested YAML structure with sections (<code>llm:</code>, <code>prompts:</code>, <code>output:</code>, <code>flags:</code>, etc.) and follow the XDG Base Directory Specification (<code>~/.config/aia/aia.yml</code>). See <a href="configuration/">Configuration Guide</a> for details.</p>
 </div>
 <hr />
 <h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
@@ -1730,7 +1815,7 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 <h3 id="advanced-features">🎯 Advanced Features<a class="headerlink" href="#advanced-features" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Executable Prompts</strong>: Run prompts as executable scripts</li>
-<li><strong>Parameter Extraction</strong>: Use regex to extract parameters from prompts</li>
+<li><strong>ERB Parameters</strong>: Use embedded Ruby for dynamic prompt parameters</li>
 <li><strong>Image Generation</strong>: Generate images with customizable parameters</li>
 <li><strong>Tool Integration</strong>: Use custom Ruby tools for enhanced functionality</li>
 </ul>
@@ -1749,14 +1834,20 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 <li>
 <p><strong>Create your first prompt:</strong>
    <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>~/.prompts
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;What is [TOPIC]?&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/what_is.md
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>cat<span class="w"> </span>&gt;<span class="w"> </span>~/.prompts/what_is.md<span class="w"> </span><span class="s">&lt;&lt; &#39;EOF&#39;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="s">---</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="s">parameters:</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="s">  topic: null</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="s">---</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="s">What is &lt;%= topic %&gt;?</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="s">EOF</span>
 </span></code></pre></div></p>
 </li>
 <li>
 <p><strong>Run your prompt:</strong>
    <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>aia<span class="w"> </span>what_is
 </span></code></pre></div>
-   You'll be prompted to enter a value for <code>[TOPIC]</code>, then AIA will send your question to the AI model.</p>
+   You'll be prompted to enter a value for <code>topic</code>, then AIA will send your question to the AI model.</p>
 </li>
 <li>
 <p><strong>Start an interactive chat:</strong>
@@ -1769,11 +1860,11 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 </ol>
 <p>When AIA starts, you'll see the friendly robot mascot:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>       ,      ,
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>       (\____/) AI Assistant (v0.9.7) is Online
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        (_oo_)   [&quot;gpt-4o-mini&quot;, &quot;gpt-5-mini&quot;]
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>         (O)       using ruby_llm (v1.6.4 MCP v0.6.1)
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>       (\____/) AI Assistant (v1.0.0) is Online
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        (_oo_)   [&quot;gpt-4o-mini&quot;, &quot;claude-sonnet-4-20250514&quot;]
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>         (O)       using ruby_llm
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>       __||__    \) model db was last refreshed on
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>     [/______\]  /    2025-08-27
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>     [/______\]  /    2026-02-04
 </span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    / \__AI__/ \/      You can share my tools
 </span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>   /    /__\
 </span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  (\   /____\
