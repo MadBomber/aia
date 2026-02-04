@@ -13,6 +13,9 @@ require "simplecov"
 require "simplecov_lcov_formatter"
 
 SimpleCov.start do
+  # Assign a unique command name per test suite so results merge across subprocesses
+  command_name(ENV.fetch('TEST_SUITE', 'unit'))
+
   add_filter "/test/"
 
   # Enable branch coverage for better tracking of conditionals
