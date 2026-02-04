@@ -17,7 +17,12 @@ module AIA
         end
 
       def self.shell(args, context_manager = nil)
-        shell_code = args.join(' ')
+        shell_code = args.join(' ').strip
+
+        if shell_code.empty?
+          puts "Usage: /shell <command>"
+          return ""
+        end
 
         `#{shell_code}`
       end

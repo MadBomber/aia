@@ -88,7 +88,9 @@ module AIA
             end
             puts
           else
-            send(:config, args.prepend('model'), context_manager)
+            model_names = args.join(' ').split(',').map(&:strip).reject(&:empty?)
+            AIA.config.models = AIA::Config::TO_MODEL_SPECS.call(model_names)
+            AIA.client = AIA.client.class.new
           end
 
           return ''

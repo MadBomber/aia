@@ -899,17 +899,71 @@ aia --model gpt-3.5-turbo --include technical_analysis.md --include style_analys
 
 ## Integration with Other Features
 
-### Chat Mode Model Management
-```bash
-# Start chat with specific model
-aia --chat --model gpt-4
+### Switching Models During a Chat Session
 
-# Switch models during chat
-You: /model claude-3-sonnet
-AI: Switched to claude-3-sonnet
+AIA lets you change models — and even providers — mid-conversation without restarting. The switch takes effect immediately.
 
-# Compare models in chat
-You: /compare "Explain this concept" --models gpt-4,claude-3-sonnet
+#### Single Model Switch
+
+```
+/model gpt-4o-mini
+```
+
+The client is recreated on the spot. The next `/model` (no arguments) confirms the change:
+
+```
+/model
+Current Model:
+==============
+{id: "gpt-4o-mini", provider: "openai", ...}
+```
+
+#### Cross-Provider Switch
+
+Move between providers seamlessly:
+
+```
+/model claude-sonnet-4       # Anthropic
+/model gpt-4o                # OpenAI
+/model gemini-2.0-flash      # Google
+/model ollama/llama3.2       # Local (Ollama)
+```
+
+#### Upgrade to Multi-Model Mid-Session
+
+Provide a comma-separated list to switch from a single model to multi-model mode:
+
+```
+/model gpt-4o-mini, claude-sonnet-4
+```
+
+Each model gets its own conversation context and responds independently. You can assign roles using the `model=role` syntax:
+
+```
+/model gpt-4o=architect, claude-sonnet-4=security, gemini-pro=performance
+```
+
+#### Return to Single Model
+
+Specify one model name to go back:
+
+```
+/model claude-sonnet-4
+```
+
+#### Adjust Parameters
+
+Fine-tune generation settings alongside model changes:
+
+```
+/temperature 0.3    # More focused
+/top_p 0.9          # Nucleus sampling
+```
+
+#### Compare Models in Chat
+
+```
+/compare "Explain this concept" --models gpt-4,claude-3-sonnet
 ```
 
 ### Pipeline Model Configuration

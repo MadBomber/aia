@@ -316,19 +316,98 @@ aia --chat --include previous_session.md
 # This loads the conversation as context
 ```
 
-### Session Configuration
-```
-# Change model mid-conversation
-You: /model gpt-4
-Switched to gpt-4
+### Switching Models and Providers Mid-Session
 
+One of AIA's most practical features is the ability to change models — and even providers — on the fly during a chat session. There is no need to restart; the switch takes effect immediately.
+
+#### Switch to a Different Model
+
+```
+Follow up (cntl-D or 'exit' to end) #=>
+/model gpt-4o-mini
+
+Follow up (cntl-D or 'exit' to end) #=>
+/model
+Current Model:
+==============
+{id: "gpt-4o-mini",
+ name: "GPT-4o mini",
+ provider: "openai",
+ ...}
+```
+
+#### Switch Providers
+
+The `/model` directive works across providers. Move from Anthropic to OpenAI to Google (or any supported provider) without leaving your session:
+
+```
+Follow up (cntl-D or 'exit' to end) #=>
+/model claude-sonnet-4
+# Now using Anthropic
+
+Follow up (cntl-D or 'exit' to end) #=>
+/model gpt-4o
+# Now using OpenAI
+
+Follow up (cntl-D or 'exit' to end) #=>
+/model gemini-2.0-flash
+# Now using Google
+```
+
+#### Go from Single Model to Multi-Model
+
+You can switch from a single model to a multi-model configuration by providing a comma-separated list. Each model gets its own conversation context and responds independently:
+
+```
+Follow up (cntl-D or 'exit' to end) #=>
+/model gpt-4o-mini, claude-sonnet-4
+
+Follow up (cntl-D or 'exit' to end) #=>
+/model
+Multi-Model Configuration:
+==========================
+Model count: 2
+Primary model: gpt-4o-mini (used for consensus when --consensus flag is enabled)
+...
+```
+
+You can also assign roles inline using the `model=role` syntax:
+
+```
+Follow up (cntl-D or 'exit' to end) #=>
+/model gpt-4o=architect, claude-sonnet-4=security
+```
+
+#### Go from Multi-Model Back to Single
+
+Specify just one model name to return to single-model mode:
+
+```
+Follow up (cntl-D or 'exit' to end) #=>
+/model claude-sonnet-4
+```
+
+#### View Current Model
+
+Use `/model` with no arguments to inspect the active model configuration:
+
+```
+Follow up (cntl-D or 'exit' to end) #=>
+/model
+```
+
+This shows the model ID, provider, context window, pricing, capabilities, and more.
+
+#### Adjust Generation Parameters
+
+Fine-tune how the active model responds:
+
+```
 # Adjust creativity
 You: /temperature 0.3
-Temperature set to 0.3 (more focused)
 
-# Enable verbose mode
-You: /verbose on
-Verbose mode enabled
+# Adjust nucleus sampling
+You: /top_p 0.9
 ```
 
 ## Chat Workflows

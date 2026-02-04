@@ -39,20 +39,28 @@ Configure AIA settings from within prompts.
 **Aliases**: `/cfg`
 
 ### `/model`
-Display or configure the AI model.
+Display or switch the AI model. Changes take effect immediately — the client is recreated with the new model(s) without restarting the session.
 
-**Syntax**: `/model [model_name]`
+**Syntax**: `/model [model_spec]`
 
 **Examples**:
 ```markdown
-/model gpt-4
-/model claude-3-sonnet
-/model
+/model                                        # Show current model details
+/model gpt-4o-mini                            # Switch to a single model
+/model claude-sonnet-4                        # Switch provider (Anthropic)
+/model gpt-4o, claude-sonnet-4                # Switch to multi-model
+/model gpt-4o=architect, claude=security      # Multi-model with roles
 ```
 
 **Usage**:
 - `/model` - Display current model configuration and details
-- `/model name` - Set the model to use
+- `/model name` - Switch to a single model (any provider)
+- `/model name1, name2` - Switch to multi-model configuration
+- `/model name1=role1, name2=role2` - Multi-model with per-model roles
+
+Comma-separated values follow the same `MODEL[=ROLE]` syntax used by the `--model` CLI flag.
+
+For single-model display, shows full model details including provider, context window, pricing, and capabilities.
 
 For multi-model configurations, displays:
 - Model count and primary model

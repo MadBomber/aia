@@ -308,7 +308,12 @@ module AIA
           next if follow_up_prompt.nil?
         end
 
-        processed_prompt = follow_up_prompt
+        begin
+          processed_prompt = PM.parse(follow_up_prompt).to_s
+        rescue StandardError => e
+          @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
+          next
+        end
 
         # Process the prompt - RubyLLM Chat maintains conversation history internally
         # via @messages array. Each model's Chat instance tracks its own conversation.
