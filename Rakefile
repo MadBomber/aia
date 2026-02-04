@@ -25,6 +25,8 @@ Minitest::TestTask.create(:test) do |t|
   t.libs        << "test"
   t.libs        << "lib"
   t.warning     = false
+  # Load SimpleCov before minitest/autorun so at_exit ordering is correct
+  t.test_prelude = 'require "simplecov_helper"'
   # Include all unit tests under test/, excluding integration tests
   t.test_globs  = ["test/**/*_test.rb", "!test/integration/**/*_test.rb"]
 end
