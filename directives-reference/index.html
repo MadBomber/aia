@@ -1105,6 +1105,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skill
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skills
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1865,6 +1887,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skill
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skills
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2433,13 +2477,49 @@ Set the PUREMD_API_KEY environment variable:
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PUREMD_API_KEY</span><span class="o">=</span><span class="s2">&quot;your_api_key&quot;</span>
 </span></code></pre></div></p>
 <p><strong>Aliases</strong>: <code>/website</code>, <code>/web</code></p>
+<h3 id="skill"><code>/skill</code><a class="headerlink" href="#skill" title="Permanent link">&para;</a></h3>
+<p>Include a Claude Code skill into the conversation context.</p>
+<p><strong>Syntax</strong>: <code>/skill skill_name</code></p>
+<p><strong>Examples</strong>:
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>/skill code-quality          # Exact match
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>/skill code                  # Prefix match (finds first match starting with &quot;code&quot;)
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>/skill frontend-design       # Exact match
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>/skill front                 # Prefix match (finds &quot;frontend-design&quot;)
+</span></code></pre></div></p>
+<p><strong>Features</strong>:
+- Reads <code>SKILL.md</code> from <code>~/.claude/skills/&lt;skill_name&gt;/</code>
+- Supports prefix matching: <code>/skill code</code> finds the first subdirectory starting with "code"
+- Exact matches take priority over prefix matches
+- Returns the skill content for inclusion in the prompt</p>
+<p><strong>Error Handling</strong>:
+- Missing skill name: <code>Error: /skill requires a skill name</code>
+- No matching directory: <code>Error: No skill matching 'name' found in ~/.claude/skills</code>
+- Directory exists but no SKILL.md: <code>Error: Skill directory 'name' has no SKILL.md</code></p>
+<h3 id="skills"><code>/skills</code><a class="headerlink" href="#skills" title="Permanent link">&para;</a></h3>
+<p>List all available Claude Code skills.</p>
+<p><strong>Syntax</strong>: <code>/skills</code></p>
+<p><strong>Example Output</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Available Skills
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>================
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  algorithmic-art
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  api-developer
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  code-assist
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  code-quality
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  frontend-design
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>Total: 5 skills
+</span></code></pre></div></p>
+<p><strong>Features</strong>:
+- Lists subdirectory basenames from <code>~/.claude/skills/</code>
+- Sorted alphabetically
+- Displays to STDOUT only (does not inject content into the prompt)</p>
 <h2 id="execution-directives">Execution Directives<a class="headerlink" href="#execution-directives" title="Permanent link">&para;</a></h2>
 <h3 id="say"><code>/say</code><a class="headerlink" href="#say" title="Permanent link">&para;</a></h3>
 <p>Speak text using system text-to-speech (macOS/Linux).</p>
 <p><strong>Syntax</strong>: <code>/say text to speak</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>/say Build completed successfully
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>/say Warning: Check the logs
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>/say Build completed successfully
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>/say Warning: Check the logs
 </span></code></pre></div></p>
 <p><strong>Platform Support</strong>:
 - macOS: Uses built-in <code>say</code> command
@@ -2451,32 +2531,32 @@ Set the PUREMD_API_KEY environment variable:
 <p><strong>Parameters</strong>:
 - <code>filter</code> (optional) - Case-insensitive substring to filter tool names</p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>/tools           # List all available tools
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>/tools file      # List tools with &quot;file&quot; in the name
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>/tools analyzer  # List tools with &quot;analyzer&quot; in the name
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>/tools           # List all available tools
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>/tools file      # List tools with &quot;file&quot; in the name
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>/tools analyzer  # List tools with &quot;analyzer&quot; in the name
 </span></code></pre></div></p>
 <p><strong>Example Output</strong> (unfiltered):
-<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Available Tools
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>===============
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>FileReader
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>----------
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    Read and analyze file contents with support for multiple formats
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    including text, JSON, YAML, and CSV files.
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>WebScraper
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>----------
-</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    Extract and parse content from web pages with customizable
-</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>    selectors and filters.
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Available Tools
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>===============
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>FileReader
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>----------
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    Read and analyze file contents with support for multiple formats
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    including text, JSON, YAML, and CSV files.
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>WebScraper
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>----------
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>    Extract and parse content from web pages with customizable
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>    selectors and filters.
 </span></code></pre></div></p>
 <p><strong>Example Output</strong> (filtered with <code>/tools file</code>):
-<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Available Tools (filtered by &#39;file&#39;)
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>====================================
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>FileReader
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>----------
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    Read and analyze file contents with support for multiple formats
-</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    including text, JSON, YAML, and CSV files.
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Available Tools (filtered by &#39;file&#39;)
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>====================================
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>FileReader
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>----------
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    Read and analyze file contents with support for multiple formats
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>    including text, JSON, YAML, and CSV files.
 </span></code></pre></div></p>
 <p><strong>Notes</strong>:
 - When no tools match the filter, displays "No tools match the filter: [filter]"
@@ -2485,8 +2565,8 @@ Set the PUREMD_API_KEY environment variable:
 <p>Set the next prompt to execute in a workflow.</p>
 <p><strong>Syntax</strong>: <code>/next prompt_id</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>/next analyze_results
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>/next generate_report
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>/next analyze_results
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>/next generate_report
 </span></code></pre></div></p>
 <p><strong>Usage</strong>:
 - <code>/next</code> - Display current next prompt
@@ -2495,8 +2575,8 @@ Set the PUREMD_API_KEY environment variable:
 <p>Define or modify a prompt workflow sequence.</p>
 <p><strong>Syntax</strong>: <code>/pipeline prompt1,prompt2,prompt3</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>/pipeline extract_data,analyze,report
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>/pipeline code_review,optimize,test
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>/pipeline extract_data,analyze,report
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>/pipeline code_review,optimize,test
 </span></code></pre></div></p>
 <p><strong>Usage</strong>:
 - <code>/pipeline</code> - Display current pipeline
@@ -2507,8 +2587,8 @@ Set the PUREMD_API_KEY environment variable:
 <p>Add instruction for brief responses.</p>
 <p><strong>Syntax</strong>: <code>/terse</code></p>
 <p><strong>Example</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>/terse
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>Explain machine learning algorithms.
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>/terse
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>Explain machine learning algorithms.
 </span></code></pre></div></p>
 <p>Adds: "Keep your response short and to the point." to the prompt.</p>
 <h3 id="robot"><code>/robot</code><a class="headerlink" href="#robot" title="Permanent link">&para;</a></h3>
@@ -2520,9 +2600,9 @@ Set the PUREMD_API_KEY environment variable:
 <p>Create a named checkpoint of the current conversation context.</p>
 <p><strong>Syntax</strong>: <code>/checkpoint [name]</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>/checkpoint                    # Auto-named checkpoint (1, 2, 3...)
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>/checkpoint important_decision # Named checkpoint
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>/checkpoint before_refactor    # Descriptive name
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>/checkpoint                    # Auto-named checkpoint (1, 2, 3...)
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>/checkpoint important_decision # Named checkpoint
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>/checkpoint before_refactor    # Descriptive name
 </span></code></pre></div></p>
 <p><strong>Features</strong>:
 - <strong>Auto-naming</strong>: If no name provided, uses incrementing integers (1, 2, 3...)
@@ -2537,9 +2617,9 @@ Set the PUREMD_API_KEY environment variable:
 <p>Restore conversation context to a previously saved checkpoint.</p>
 <p><strong>Syntax</strong>: <code>/restore [name]</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>/restore                      # Restore to last checkpoint
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>/restore important_decision    # Restore to named checkpoint
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>/restore 1                    # Restore to auto-named checkpoint
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>/restore                      # Restore to last checkpoint
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>/restore important_decision    # Restore to named checkpoint
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>/restore 1                    # Restore to auto-named checkpoint
 </span></code></pre></div></p>
 <p><strong>Features</strong>:
 - <strong>Default behavior</strong>: Without a name, restores to the most recent checkpoint
@@ -2559,22 +2639,22 @@ Set the PUREMD_API_KEY environment variable:
 <p><strong>Syntax</strong>: <code>/review</code></p>
 <p><strong>Aliases</strong>: <code>/context</code></p>
 <p><strong>Example Output</strong>:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>=== Chat Context ===
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>Total messages: 5
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>Checkpoints: ruby_basics, oop_concepts
-</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
-</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>1. [System]: You are a helpful assistant
-</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>2. [User]: Tell me about Ruby programming
-</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>3. [Assistant]: Ruby is a dynamic programming language...
-</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>
-</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>📍 [Checkpoint: ruby_basics]
-</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>----------------------------------------
-</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>4. [User]: Now explain object-oriented programming
-</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>5. [Assistant]: Object-oriented programming (OOP) is...
-</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>
-</span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>📍 [Checkpoint: oop_concepts]
-</span><span id="__span-19-15"><a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>----------------------------------------
-</span><span id="__span-19-16"><a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>=== End of Context ===
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>=== Chat Context ===
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>Total messages: 5
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>Checkpoints: ruby_basics, oop_concepts
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>1. [System]: You are a helpful assistant
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>2. [User]: Tell me about Ruby programming
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>3. [Assistant]: Ruby is a dynamic programming language...
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>📍 [Checkpoint: ruby_basics]
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>----------------------------------------
+</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>4. [User]: Now explain object-oriented programming
+</span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>5. [Assistant]: Object-oriented programming (OOP) is...
+</span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>
+</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>📍 [Checkpoint: oop_concepts]
+</span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>----------------------------------------
+</span><span id="__span-21-16"><a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a>=== End of Context ===
 </span></code></pre></div></p>
 <p><strong>Features</strong>:
 - Shows complete conversation history with message numbers
@@ -2587,11 +2667,11 @@ Set the PUREMD_API_KEY environment variable:
 <p>List available AI models with filtering.</p>
 <p><strong>Syntax</strong>: <code>/available_models [filter1,filter2,...]</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>/available_models
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>/available_models openai
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>/available_models gpt,4
-</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>/available_models text_to_image
-</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>/available_models claude,sonnet
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>/available_models
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>/available_models openai
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>/available_models gpt,4
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>/available_models text_to_image
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>/available_models claude,sonnet
 </span></code></pre></div></p>
 <p><strong>Filter Options</strong>:
 - Provider names: <code>openai</code>, <code>anthropic</code>, <code>google</code>, etc.
@@ -2609,8 +2689,8 @@ Set the PUREMD_API_KEY environment variable:
 <p>Compare responses from multiple models.</p>
 <p><strong>Syntax</strong>: <code>/compare prompt --models model1,model2,model3</code></p>
 <p><strong>Examples</strong>:
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>/compare &quot;Explain quantum computing&quot; --models gpt-4,claude-3-sonnet,gemini-pro
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>/compare &quot;Write a Python function to sort a list&quot; --models gpt-3.5-turbo,gpt-4,claude-3-haiku
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>/compare &quot;Explain quantum computing&quot; --models gpt-4,claude-3-sonnet,gemini-pro
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>/compare &quot;Write a Python function to sort a list&quot; --models gpt-3.5-turbo,gpt-4,claude-3-haiku
 </span></code></pre></div></p>
 <p><strong>Features</strong>:
 - Side-by-side model comparison
@@ -2631,70 +2711,70 @@ Set the PUREMD_API_KEY environment variable:
 </ol>
 <h2 id="advanced-usage-patterns">Advanced Usage Patterns<a class="headerlink" href="#advanced-usage-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="combining-directives">Combining Directives<a class="headerlink" href="#combining-directives" title="Permanent link">&para;</a></h3>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>/config model gpt-4
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>/config temperature 0.3
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>/include project_context.md
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>Based on the project information above:
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>&lt;%= <span class="sb">`git log --oneline -5`</span> %&gt;
-</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>
-</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>Analyze these recent commits and suggest improvements.
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>/config model gpt-4
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>/config temperature 0.3
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>/include project_context.md
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>Based on the project information above:
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>&lt;%= <span class="sb">`git log --oneline -5`</span> %&gt;
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>Analyze these recent commits and suggest improvements.
 </span></code></pre></div>
 <h3 id="dynamic-configuration">Dynamic Configuration<a class="headerlink" href="#dynamic-configuration" title="Permanent link">&para;</a></h3>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>&lt;% model_name = ENV[&#39;PREFERRED_MODEL&#39;] || &#39;gpt-3.5-turbo&#39; %&gt;
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>/config model &lt;%= model_name %&gt;
-</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>/config temperature &lt;%= ENV[&#39;AI_TEMPERATURE&#39;] || &#39;0.7&#39; %&gt;
-</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>
-</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>Process this data with optimized settings.
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>&lt;% model_name = ENV[&#39;PREFERRED_MODEL&#39;] || &#39;gpt-3.5-turbo&#39; %&gt;
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>/config model &lt;%= model_name %&gt;
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>/config temperature &lt;%= ENV[&#39;AI_TEMPERATURE&#39;] || &#39;0.7&#39; %&gt;
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>Process this data with optimized settings.
 </span></code></pre></div>
 <h3 id="conditional-execution">Conditional Execution<a class="headerlink" href="#conditional-execution" title="Permanent link">&para;</a></h3>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>&lt;% if File.exist?(&#39;production.yml&#39;) %&gt;
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>/include production.yml
-</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>&lt;% else %&gt;
-</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>/include development.yml
-</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>&lt;% end %&gt;
-</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>
-</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>Configure the system based on environment.
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>&lt;% if File.exist?(&#39;production.yml&#39;) %&gt;
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>/include production.yml
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>&lt;% else %&gt;
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>/include development.yml
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>&lt;% end %&gt;
+</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>
+</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>Configure the system based on environment.
 </span></code></pre></div>
 <h3 id="workflow-automation">Workflow Automation<a class="headerlink" href="#workflow-automation" title="Permanent link">&para;</a></h3>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>/pipeline data_extraction,data_cleaning,analysis,reporting
-</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>/config model claude-3-sonnet
-</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>/config temperature 0.2
-</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
-</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>Begin automated data processing workflow.
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>/pipeline data_extraction,data_cleaning,analysis,reporting
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>/config model claude-3-sonnet
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>/config temperature 0.2
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>Begin automated data processing workflow.
 </span></code></pre></div>
 <h2 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
 <h3 id="common-errors">Common Errors<a class="headerlink" href="#common-errors" title="Permanent link">&para;</a></h3>
 <p><strong>File Not Found</strong>:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Error: File &#39;missing.md&#39; is not accessible
+<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>Error: File &#39;missing.md&#39; is not accessible
 </span></code></pre></div></p>
 <p><strong>Ruby Execution Error</strong>:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>This ruby code failed: invalid_syntax
-</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>SyntaxError: unexpected token
+<div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>This ruby code failed: invalid_syntax
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>SyntaxError: unexpected token
 </span></code></pre></div></p>
 <p><strong>Web Access Error</strong>:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>ERROR: PUREMD_API_KEY is required in order to include a webpage
+<div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>ERROR: PUREMD_API_KEY is required in order to include a webpage
 </span></code></pre></div></p>
 <h3 id="custom-directives">Custom Directives<a class="headerlink" href="#custom-directives" title="Permanent link">&para;</a></h3>
 <p>You can extend AIA with custom directives by creating Ruby files that define new directive methods:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># examples/directives/ask.rb</span>
-</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="k">module</span><span class="w"> </span><span class="nn">AIA</span>
-</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">  </span><span class="k">class</span><span class="w"> </span><span class="nc">DirectiveProcessor</span>
-</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">    </span><span class="kp">private</span>
-</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">    </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;A meta-prompt to LLM making its response available as part of the primary prompt&quot;</span>
-</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w">    </span><span class="k">def</span><span class="w"> </span><span class="nf">ask</span><span class="p">(</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="n">context_manager</span><span class="o">=</span><span class="kp">nil</span><span class="p">)</span>
-</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">      </span><span class="n">meta_prompt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="o">.</span><span class="n">empty?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="s2">&quot;What is meta-prompting?&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">args</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
-</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w">      </span><span class="no">AIA</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">meta_prompt</span><span class="p">)</span>
-</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># examples/directives/ask.rb</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="k">module</span><span class="w"> </span><span class="nn">AIA</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">  </span><span class="k">class</span><span class="w"> </span><span class="nc">DirectiveProcessor</span>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">    </span><span class="kp">private</span>
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">    </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;A meta-prompt to LLM making its response available as part of the primary prompt&quot;</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">    </span><span class="k">def</span><span class="w"> </span><span class="nf">ask</span><span class="p">(</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="n">context_manager</span><span class="o">=</span><span class="kp">nil</span><span class="p">)</span>
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">      </span><span class="n">meta_prompt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">args</span><span class="o">.</span><span class="n">empty?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="s2">&quot;What is meta-prompting?&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">args</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="w">      </span><span class="no">AIA</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">meta_prompt</span><span class="p">)</span>
+</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-31-10"><a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-31-11"><a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="k">end</span>
 </span></code></pre></div>
 <p><strong>Usage:</strong> Load custom directives with the --tools option:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># Load custom directive</span>
-</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>aia<span class="w"> </span>--tools<span class="w"> </span>examples/directives/ask.rb<span class="w"> </span>--chat
-</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>
-</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="c1"># Use the custom directive in prompts</span>
-</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>/ask<span class="w"> </span>gather<span class="w"> </span>the<span class="w"> </span>latest<span class="w"> </span>closing<span class="w"> </span>data<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>DOW,<span class="w"> </span>NASDAQ,<span class="w"> </span>and<span class="w"> </span>S<span class="p">&amp;</span>P<span class="w"> </span><span class="m">500</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="c1"># Load custom directive</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>aia<span class="w"> </span>--tools<span class="w"> </span>examples/directives/ask.rb<span class="w"> </span>--chat
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
+</span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="c1"># Use the custom directive in prompts</span>
+</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>/ask<span class="w"> </span>gather<span class="w"> </span>the<span class="w"> </span>latest<span class="w"> </span>closing<span class="w"> </span>data<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>DOW,<span class="w"> </span>NASDAQ,<span class="w"> </span>and<span class="w"> </span>S<span class="p">&amp;</span>P<span class="w"> </span><span class="m">500</span>
 </span></code></pre></div>
 <h3 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h3>
 <ol>
