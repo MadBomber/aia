@@ -87,35 +87,28 @@ module AIA
     def refresh_local_model_registry
       return if models_json_path.nil? # Skip if no aia_dir configured
 
+      # On first use, copy the bundled models.json from RubyLLM (no API calls)
+      copy_bundled_models_to_local unless File.exist?(models_json_path)
+
+      # Point RubyLLM at our local registry file for all model lookups
+      RubyLLM.config.model_registry_file = models_json_path
+
       # Coerce refresh_days to integer (env vars come as strings)
       refresh_days = AIA.config.registry.refresh
       refresh_days = refresh_days.to_i if refresh_days.respond_to?(:to_i)
       refresh_days ||= 7 # Default to 7 days if nil
 
+      # If refresh is disabled (0), just use the local file as-is
+      return if refresh_days.zero?
+
+      # Only refresh from provider APIs when enough days have elapsed
       last_refresh = models_last_refresh
-      models_exist = !last_refresh.nil?
+      return unless last_refresh.nil? || Date.today > (last_refresh + refresh_days)
 
-      # If refresh is disabled (0), just save current models if file doesn't exist
-      if refresh_days.zero?
-        save_models_to_json unless models_exist
-        return
-      end
-
-      # Determine if refresh is needed:
-      # 1. Always refresh if models.json doesn't exist (initial setup)
-      # 2. Otherwise, refresh if enough time has passed
-      needs_refresh = if !models_exist
-                        true # Initial refresh needed (no models.json)
-                      else
-                        Date.today > (last_refresh + refresh_days)
-                      end
-
-      return unless needs_refresh
-
-      # Refresh models from RubyLLM (fetches latest model info)
+      # Refresh models from provider APIs and models.dev
       RubyLLM.models.refresh!
 
-      # Save models to JSON file in aia_dir
+      # Save refreshed models to our local JSON file
       save_models_to_json
     end
 
@@ -132,6 +125,22 @@ module AIA
       return nil if path.nil? || !File.exist?(path)
 
       File.mtime(path).to_date
+    end
+
+    def copy_bundled_models_to_local
+      aia_dir = File.expand_path(AIA.config.paths.aia_dir)
+      FileUtils.mkdir_p(aia_dir)
+
+      # RubyLLM.config.model_registry_file points to the gem's bundled models.json
+      # before we redirect it to our local copy
+      bundled_path = RubyLLM.config.model_registry_file
+
+      if bundled_path && File.exist?(bundled_path)
+        FileUtils.cp(bundled_path, models_json_path)
+      else
+        # Fallback: save whatever RubyLLM has loaded from its bundled data
+        save_models_to_json
+      end
     end
 
     def save_models_to_json
