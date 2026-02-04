@@ -1,239 +1,225 @@
 # Executable Prompts
 
-Transform your prompts into standalone executable scripts that can be run directly from the command line, integrated into shell workflows, and used as command-line tools.
+Transform your prompts into standalone executable scripts that can be run directly from the command line, integrated into shell workflows, and used as command-line tools. You can also pipe or redirect any prompt file to AIA without making it executable.
 
 ## What Are Executable Prompts?
 
-Executable prompts are prompt files with a special shebang line that makes them directly executable from the command line. They combine the power of AIA's prompt processing with the convenience of traditional shell scripts.
+Executable prompts are prompt files with a shebang line (`#!`) and executable permission (`chmod +x`) that can be run directly from the command line. When you run an executable prompt, AIA strips the shebang, parses YAML front matter for configuration, processes directives, and sends the body to the AI model.
+
+Any prompt file can also be piped or redirected to AIA without a shebang line or executable permission — see [Piping and Redirection](#piping-and-redirection) below.
 
 ## Creating Executable Prompts
 
 ### Basic Structure
 
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Your prompt description and comments
-
+```markdown
+#!/usr/bin/env aia --no-output
+---
+description: What this prompt does
+---
 Your prompt content here...
 ```
 
 ### Key Components
 
-1. **Shebang Line**: Must include `--exec` flag to enable prompt processing
-2. **Output Configuration**: Use `--no-output` to send output to STDOUT
-3. **Executable Permissions**: Make file executable with `chmod +x`
+1. **Shebang Line**: `#!/usr/bin/env aia` followed by any AIA CLI options
+2. **YAML Front Matter** (optional): Configuration between `---` delimiters
+3. **Prompt Body**: The actual text sent to the AI model
+4. **Executable Permission**: `chmod +x your_prompt.md`
 
-## The `run` Prompt Pattern
+### Minimal Example
 
-The `run` prompt is a special configuration-only prompt file that serves as a foundation for executable prompts:
-
-### Creating the `run` Prompt
-
-```bash
-# ~/.prompts/run.md
-# Desc: A configuration only prompt file for use with executable prompts
-#       Put whatever you want here to setup the configuration desired.
-#       You could also add a system prompt to preface your intended prompt
-
-/config model = gpt-4o-mini
-/config temperature = 0.7
-/config terse = true
+```markdown
+#!/usr/bin/env aia --no-output
+Tell me today's date and what historical events occurred on this day.
 ```
 
-### Usage Pattern
+Save as `daily_history`, make executable, and run:
 
 ```bash
-# Pipe questions directly to the run prompt
-echo "What is the meaning of life?" | aia run
+chmod +x daily_history
+./daily_history
 ```
 
-This pattern allows for quick one-shot questions without creating specific prompt files.
+## Shebang Options
+
+The shebang line accepts any AIA CLI option. Common patterns:
+
+```bash
+#!/usr/bin/env aia --no-output                    # Output to STDOUT
+#!/usr/bin/env aia --no-output --no-mcp           # No MCP servers
+#!/usr/bin/env aia --no-output -m claude-sonnet-4  # Specific model
+#!/usr/bin/env aia -o report.md                   # Output to file
+#!/usr/bin/env aia --no-output --chat             # Start chat after prompt
+```
+
+## Adding CLI Options at Runtime
+
+When running an executable prompt, you can append additional AIA options:
+
+```bash
+# Run with defaults from the shebang
+./weather_report
+
+# Override the model
+./weather_report -m gpt-4
+
+# Add verbose output
+./weather_report --verbose
+
+# Disable MCP servers for this run
+./weather_report --no-mcp
+
+# Send output to a file instead of STDOUT
+./weather_report -o weather.md
+```
+
+Options specified at runtime override those in the shebang line.
+
+## YAML Front Matter
+
+Use front matter for prompt metadata and configuration:
+
+```markdown
+#!/usr/bin/env aia --no-output
+---
+description: Analyze code quality
+model: claude-sonnet-4
+temperature: 0.3
+---
+Review the following code for quality, security, and best practices.
+```
+
+Supported front matter keys include `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell`, and `erb`. See [Configuration](../configuration.md) for details.
+
+## Piping and Redirection
+
+Prompt files do not need a shebang line or executable permission to be processed by AIA. Any prompt file — plain text, YAML front matter, ERB, directives — can be piped or redirected directly:
+
+### Pipe a Prompt File
+
+```bash
+cat my_prompt.md | aia --no-output
+cat my_prompt.md | aia --no-output --no-mcp
+cat my_prompt.md | aia --no-output -m gpt-4
+```
+
+### STDIN Redirection
+
+```bash
+aia --no-output < my_prompt.md
+aia --no-output --no-mcp < my_prompt.md
+```
+
+### Inline Prompts
+
+```bash
+echo "Explain the theory of relativity in one paragraph." | aia --no-output
+```
+
+When content is piped or redirected, AIA automatically detects it and processes it as the prompt — no prompt ID argument is needed. The shebang line is only required when making a file directly executable with `chmod +x`. If piped content happens to start with a shebang line (`#!`), that line is stripped before processing.
 
 ## Practical Examples
 
-### Weather Report Script
+### Weather Report
 
-Create a weather monitoring executable:
+```markdown
+#!/usr/bin/env aia --no-output
+---
+description: Atlantic storm activity summary
+model: gpt-4o-mini
+temperature: 0.3
+---
+Summarize the tropical storm outlook for the Atlantic, Caribbean Sea and
+Gulf of America.
 
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Get current storm activity for the east and south coast of the US
-
-Summarize the tropical storm outlook for the Atlantic, Caribbean Sea and Gulf of America.
-
-/webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
-```
-
-**Setup and Usage:**
-```bash
-# Save as weather_report
-chmod +x weather_report
-
-# Run directly
-./weather_report
-
-# Pipe to markdown viewer
-./weather_report | glow
+/webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/MIATWOAT.shtml
 ```
 
 ### System Status Monitor
 
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# System health check and analysis
-
+```markdown
+#!/usr/bin/env aia --no-output
+---
+description: System health check
+temperature: 0.3
+---
 Analyze the current system status and provide recommendations:
 
 System Information:
-/shell uname -a
+<%= `uname -a` %>
 
 Disk Usage:
-/shell df -h
+<%= `df -h` %>
 
-Memory Usage:
-/shell free -h 2>/dev/null || vm_stat
-
-Running Processes:
-/shell ps aux | head -20
+Top Processes:
+<%= `ps aux | head -20` %>
 
 Provide analysis and recommendations for system optimization.
 ```
 
-### Code Quality Checker
-
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Analyze code quality for the current directory
-
-/config model = gpt-4
-/config temperature = 0.3
-
-Review the code structure and quality in this project:
-
-Project Structure:
-/shell find . -type f -name "*.rb" -o -name "*.py" -o -name "*.js" | head -20
-
-Git Status:
-/shell git status --short 2>/dev/null || echo "Not a git repository"
-
-Recent Commits:
-/shell git log --oneline -10 2>/dev/null || echo "No git history available"
-
-Provide code quality assessment and improvement recommendations.
-```
-
 ### Daily Standup Generator
 
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Generate daily standup report from git activity
-
-/config model = gpt-4o-mini
-/config temperature = 0.5
-
+```markdown
+#!/usr/bin/env aia --no-output
+---
+description: Generate standup report from git activity
+model: gpt-4o-mini
+temperature: 0.5
+---
 Generate a daily standup report based on recent git activity:
 
 Yesterday's Commits:
-/shell git log --since="1 day ago" --author="$(git config user.name)" --oneline
+<%= `git log --since="1 day ago" --author="$(git config user.name)" --oneline` %>
 
 Current Branch Status:
-/shell git status --short
+<%= `git status --short` %>
 
-Today's Focus:
 Based on the above activity, what should be the key focus areas for today?
 Provide a structured standup report.
 ```
 
-## Advanced Executable Patterns
+### Code Quality Checker
 
-### Parameterized Executables
+```markdown
+#!/usr/bin/env aia --no-output
+---
+description: Analyze code quality for the current directory
+model: gpt-4
+temperature: 0.3
+---
+Review the code structure and quality in this project:
 
-Create executable prompts that accept command-line parameters:
+Project Structure:
+<%= `find . -type f -name "*.rb" -o -name "*.py" -o -name "*.js" | head -20` %>
 
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Code review for specific file
-# Usage: ./code_review <filename>
+Git Status:
+<%= `git status --short 2>/dev/null || echo "Not a git repository"` %>
 
-/ruby
-filename = ARGV[0] || "[FILENAME]"
-puts "Reviewing file: #{filename}"
-```
+Recent Commits:
+<%= `git log --oneline -10 2>/dev/null || echo "No git history available"` %>
 
-Review this code file for quality, security, and best practices:
-
-/include <%= filename %>
-
-Provide specific, actionable feedback for improvements.
-```
-
-### Pipeline Executables
-
-Chain multiple prompts in an executable workflow:
-
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Complete project analysis pipeline
-
-/pipeline project_scan,security_check,recommendations
-
-Starting comprehensive project analysis...
-```
-
-### Conditional Logic Executables
-
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Environment-aware deployment checker
-
-/ruby
-environment = ENV['RAILS_ENV'] || 'development'
-case environment
-when 'production'
-  puts "/config model = gpt-4"
-  puts "/config temperature = 0.2"
-  puts "Production deployment analysis:"
-when 'staging'
-  puts "/config model = gpt-4o-mini"
-  puts "/config temperature = 0.4"
-  puts "Staging deployment analysis:"
-else
-  puts "/config model = gpt-3.5-turbo"
-  puts "/config temperature = 0.6"
-  puts "Development deployment analysis:"
-end
-```
-
-Environment: <%= environment %>
-
-/shell env | grep -E "(DATABASE|REDIS|API)" | sort
-
-Analyze the deployment configuration and provide environment-specific recommendations.
+Provide code quality assessment and improvement recommendations.
 ```
 
 ## Integration with Shell Workflows
 
-### As Git Hooks
+### Piping Output
 
 ```bash
-#!/usr/bin/env aia run --no-output --exec
-# .git/hooks/pre-commit
-# Automated commit message analysis
+# Pipe to a markdown viewer
+./weather_report | glow
 
-Analyze the staged changes and suggest improvements:
+# Save and view
+./code_review > review.md && open review.md
 
-Staged Changes:
-/shell git diff --cached --stat
-
-/shell git diff --cached
-
-Provide commit message suggestions and code quality feedback.
+# Chain with other tools
+./summarize_logs | mail -s "Daily Summary" team@example.com
 ```
 
 ### In Makefiles
 
 ```makefile
-# Makefile integration
 analyze-code:
 	@./scripts/code_analyzer
 
@@ -241,6 +227,30 @@ deploy-check:
 	@./scripts/deployment_check | tee deploy-report.md
 
 .PHONY: analyze-code deploy-check
+```
+
+### As Git Hooks
+
+```markdown
+#!/usr/bin/env aia --no-output
+---
+description: Pre-commit code review
+temperature: 0.2
+---
+Analyze the staged changes and suggest improvements:
+
+Staged Changes:
+<%= `git diff --cached --stat` %>
+
+<%= `git diff --cached` %>
+
+Provide commit message suggestions and code quality feedback.
+```
+
+```bash
+# Install as git hook
+cp pre_commit_review .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
 ```
 
 ### In CI/CD Pipelines
@@ -254,95 +264,53 @@ jobs:
   analysis:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.2
-      - name: Install AIA
-        run: gem install aia
+          ruby-version: '3.3'
+      - run: gem install aia
       - name: Run Analysis
-        run: ./scripts/pr_analyzer
+        run: cat ./prompts/pr_analyzer.md | aia --no-output --no-mcp
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
-## Best Practices for Executable Prompts
+## Best Practices
 
-### Security Considerations
+### Security
 
 1. **Review Before Execution**: Always review executable prompts before running
 2. **Limit Permissions**: Use appropriate file permissions
-3. **Validate Inputs**: Check parameters and environment variables
-4. **Avoid Secrets**: Never hardcode API keys or sensitive data
+3. **Avoid Secrets**: Never hardcode API keys or sensitive data
 
 ```bash
-# Set secure permissions
 chmod 750 executable_prompt    # Owner can execute, group can read
 chmod 700 sensitive_prompt     # Owner only
 ```
 
-### Error Handling
+### Performance
 
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Robust executable with error handling
+Use YAML front matter to tune model parameters:
 
-/ruby
-if ARGV.empty?
-  puts "Error: Please provide a filename as argument"
-  puts "Usage: #{$0} <filename>"
-  exit 1
-end
-
-filename = ARGV[0]
-unless File.exist?(filename)
-  puts "Error: File '#{filename}' not found"
-  exit 1
-end
+```yaml
+---
+model: gpt-4o-mini       # Faster model for simple tasks
+temperature: 0.3         # Lower temperature for consistent results
+---
 ```
 
-File analysis for: <%= filename %>
+### Debugging
 
-/include <%= filename %>
-
-Analyze the file structure, quality, and provide recommendations.
-```
-
-### Performance Optimization
+Add `--debug` or `--verbose` at runtime to troubleshoot:
 
 ```bash
-# Use faster models for simple tasks
-/config model = gpt-4o-mini
-
-# Reduce token usage for executables
-/config max_tokens = 1500
-
-# Lower temperature for consistent results
-/config temperature = 0.3
+./my_prompt --debug --verbose
 ```
 
-## Debugging Executable Prompts
-
-### Enable Debug Mode
+Or pipe with debug flags:
 
 ```bash
-#!/usr/bin/env aia run --no-output --exec --debug --verbose
-# Debug version of your executable prompt
-```
-
-### Test Components Separately
-
-```bash
-# Test the underlying prompt
-aia run test_input.txt
-
-# Test with debug output
-aia --debug run test_input.txt
-
-# Test shell commands separately
-date
-git status
+cat my_prompt.md | aia --no-output --debug --verbose
 ```
 
 ### Common Issues
@@ -350,68 +318,14 @@ git status
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | "Permission denied" | File not executable | `chmod +x filename` |
-| "Command not found" | Missing shebang or wrong path | Check shebang line |
-| "Prompt not found" | Missing run prompt | Create ~/.prompts/run.md |
-| "Output not appearing" | Missing --no-output | Add flag to shebang |
-
-## Advanced Executable Patterns
-
-### Self-Documenting Executables
-
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Self-documenting code analyzer
-# Usage: ./code_analyzer [--help] <directory>
-
-/ruby
-if ARGV.include?('--help')
-  puts <<~HELP
-    Code Analyzer - AI-powered code quality assessment
-    
-    Usage: #{$0} <directory>
-    
-    Options:
-      --help    Show this help message
-    
-    Examples:
-      #{$0} ./src
-      #{$0} /path/to/project
-  HELP
-  exit 0
-end
-```
-
-### Multi-Stage Executables
-
-```bash
-#!/usr/bin/env aia run --no-output --exec
-# Multi-stage project analysis
-
-/ruby
-stages = %w[structure security performance documentation]
-current_stage = ENV['STAGE'] || stages.first
-
-puts "=== Stage #{stages.index(current_stage) + 1}: #{current_stage.capitalize} ==="
-
-case current_stage
-when 'structure'
-  puts "/pipeline structure_analysis,security_check"
-when 'security'
-  puts "/pipeline security_scan,vulnerability_check"
-when 'performance'
-  puts "/pipeline performance_analysis,optimization_suggestions"
-when 'documentation'
-  puts "/pipeline doc_analysis,improvement_suggestions"
-end
-```
+| "Command not found" | AIA not in PATH | Check `gem install aia` |
+| Output goes to temp.md | Missing `--no-output` | Add to shebang or CLI |
+| Shebang options ignored | Too many shebang args | Use `#!/usr/bin/env -S aia ...` on Linux |
 
 ## Related Documentation
 
 - [Getting Started](getting-started.md) - Basic AIA usage
-- [Basic Usage](basic-usage.md) - Common usage patterns  
+- [Basic Usage](basic-usage.md) - Common usage patterns
 - [CLI Reference](../cli-reference.md) - Command-line options
-- [Advanced Prompting](../advanced-prompting.md) - Complex prompt techniques and shell integration
-
----
-
-Executable prompts transform AIA from a tool into a platform for creating AI-powered command-line utilities. Start with simple executables and gradually build more sophisticated tools as you become comfortable with the patterns!
+- [Directives Reference](../directives-reference.md) - Available directives
+- [Advanced Prompting](../advanced-prompting.md) - Complex prompt techniques

@@ -308,7 +308,7 @@ module AIA
           next if follow_up_prompt.nil?
         end
 
-        processed_prompt = PM.parse(follow_up_prompt).to_s
+        processed_prompt = follow_up_prompt
 
         # Process the prompt - RubyLLM Chat maintains conversation history internally
         # via @messages array. Each model's Chat instance tracks its own conversation.

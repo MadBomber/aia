@@ -64,6 +64,71 @@ module AIA
       end
 
 
+      SKILLS_DIR = File.expand_path('~/.claude/skills')
+
+      def self.skills(_args = [], _context_manager = nil)
+        unless Dir.exist?(SKILLS_DIR)
+          puts "No skills directory found at #{SKILLS_DIR}"
+          return nil
+        end
+
+        entries = Dir.children(SKILLS_DIR)
+                     .select { |e| Dir.exist?(File.join(SKILLS_DIR, e)) }
+                     .sort
+
+        if entries.empty?
+          puts "No skills found in #{SKILLS_DIR}"
+        else
+          puts "\nAvailable Skills"
+          puts "================"
+          entries.each { |name| puts "  #{name}" }
+          puts "\nTotal: #{entries.size} skills"
+        end
+
+        nil
+      end
+
+
+      def self.skill(args = [], _context_manager = nil)
+        skill_name = args.first&.strip
+        if skill_name.nil? || skill_name.empty?
+          STDERR.puts "Error: /skill requires a skill name"
+          return nil
+        end
+
+        skill_dir = resolve_skill_dir(skill_name)
+        unless skill_dir
+          STDERR.puts "Error: No skill matching '#{skill_name}' found in #{SKILLS_DIR}"
+          return nil
+        end
+
+        skill_path = File.join(skill_dir, 'SKILL.md')
+        unless File.exist?(skill_path)
+          STDERR.puts "Error: Skill directory '#{File.basename(skill_dir)}' has no SKILL.md"
+          return nil
+        end
+
+        File.read(skill_path)
+      end
+
+
+      def self.resolve_skill_dir(skill_name)
+        exact = File.join(SKILLS_DIR, skill_name)
+        return exact if Dir.exist?(exact)
+
+        Dir.children(SKILLS_DIR)
+           .sort
+           .each do |entry|
+          next unless entry.start_with?(skill_name)
+          candidate = File.join(SKILLS_DIR, entry)
+          return candidate if Dir.exist?(candidate)
+        end
+
+        nil
+      end
+      private_class_method :resolve_skill_dir
+
+
       def self.paste(_args = [], _context_manager = nil)
 
         content = Clipboard.paste

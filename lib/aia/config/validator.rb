@@ -26,6 +26,7 @@ module AIA
         process_prompt_id_from_args(config, remaining_args)
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
+        handle_stdin_as_prompt(config)
         handle_dump_config(config)
         handle_mcp_list(config)
         handle_list_tools(config)
@@ -43,7 +44,7 @@ module AIA
       end
 
       def process_stdin_content
-        stdin_content = ''
+        stdin_content = String.new
 
         if !STDIN.tty? && !STDIN.closed?
           begin
@@ -82,9 +83,42 @@ module AIA
       end
 
       def handle_executable_prompt(config)
-        return unless config.executable_prompt && config.context_files && !config.context_files.empty?
+        # Legacy --exec flag path
+        if config.executable_prompt && config.context_files && !config.context_files.empty?
+          config.executable_prompt_file = config.context_files.pop
+          return
+        end
 
-        config.executable_prompt_file = config.context_files.pop
+        # Auto-detect: no prompt_id, first context_file starts with shebang
+        return unless config.prompt_id.nil?
+        return unless config.context_files && !config.context_files.empty?
+
+        candidate = config.context_files.first
+        return unless File.exist?(candidate) && File.readable?(candidate)
+
+        first_line = File.open(candidate, &:readline).strip rescue nil
+        return unless first_line&.start_with?('#!')
+
+        # This is an executable prompt — the file content IS the prompt
+        config.context_files.shift
+        config.executable_prompt_content = File.read(candidate).lines[1..].join
+        config.prompt_id = '__EXECUTABLE_PROMPT__'
+      end
+
+      def handle_stdin_as_prompt(config)
+        return unless config.prompt_id.nil?
+        return unless config.stdin_content && !config.stdin_content.strip.empty?
+
+        content = config.stdin_content
+
+        # Strip shebang line if present (e.g., piped from an executable prompt)
+        if content.lines.first&.strip&.start_with?('#!')
+          content = content.lines[1..].join
+        end
+
+        config.executable_prompt_content = content
+        config.stdin_content = nil  # prevent double-processing in build_prompt_text
+        config.prompt_id = '__EXECUTABLE_PROMPT__'
       end
 
       def validate_required_prompt_id(config)
@@ -495,7 +529,7 @@ module AIA
         and_exit = false
 
         config.pipeline.each do |prompt_id|
-          next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__'
+          next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__' || prompt_id == '__EXECUTABLE_PROMPT__'
 
           prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}#{config.prompts.extname}")
           unless File.exist?(prompt_file_path)

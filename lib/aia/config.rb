@@ -54,7 +54,8 @@ module AIA
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
                   :completion, :mcp_list, :list_tools, :executable_prompt,
-                  :executable_prompt_file, :tool_names, :loaded_tools, :next_prompt,
+                  :executable_prompt_file, :executable_prompt_content,
+                  :tool_names, :loaded_tools, :next_prompt,
                   :log_level_override, :log_file_override,
                   :connected_mcp_servers, # Array of successfully connected MCP server names
                   :failed_mcp_servers     # Array of {name:, error:} hashes for failed MCP servers
@@ -214,8 +215,6 @@ module AIA
     # @param overrides [Hash] key-value pairs to override
     def apply_overrides(overrides)
       overrides.each do |key, value|
-        next if value.nil?
-
         key_sym = key.to_sym
 
         # Check if this is a flat CLI key that maps to a nested location

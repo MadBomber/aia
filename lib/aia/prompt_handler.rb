@@ -37,6 +37,10 @@ module AIA
         return fuzzy_search_prompt('')
       end
 
+      if prompt_id == '__EXECUTABLE_PROMPT__'
+        return fetch_executable_prompt
+      end
+
       prompt_file_path = File.join(@prompts_dir, "#{prompt_id}#{AIA.config.prompts.extname}")
 
       parsed = if File.exist?(prompt_file_path)
@@ -118,6 +122,14 @@ module AIA
     private
 
 
+    def fetch_executable_prompt
+      content = AIA.config.executable_prompt_content
+      parsed = PM.parse(content)
+      apply_metadata_config(parsed) if parsed
+      parsed
+    end
+
+
     # Register all AIA directives with PM so they're available in ERB templates
     # and as a single source of truth for directive lookup.
     # Block signature: (ctx, *args) where ctx is PM::RenderContext (ERB) or nil (chat mode).
@@ -131,6 +143,15 @@ module AIA
 
       PM.register(:paste, :clipboard) do |_ctx, *args|
         Directives::WebAndFile.paste(Array(args).flatten, nil)
+      end
+
+      PM.register(:skill) do |_ctx, *args|
+        Directives::WebAndFile.skill(Array(args).flatten, nil)
+      end
+
+      PM.register(:skills) do |_ctx, *args|
+        Directives::WebAndFile.skills(Array(args).flatten, nil)
+        nil
       end
 
       # Operational directives — perform side effects, return nil

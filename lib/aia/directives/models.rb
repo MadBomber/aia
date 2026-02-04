@@ -246,6 +246,9 @@ module AIA
 
             # Web and File directives
             'webpage' => 'Fetch and include content from a webpage',
+            'paste' => 'Paste content from the system clipboard',
+            'skill' => 'Include a Claude Code skill from ~/.claude/skills/',
+            'skills' => 'List available Claude Code skills',
             'include' => 'Include content from a file',
             'include_file' => 'Include file content (internal use)',
             'included_files' => 'List files that have been included',
@@ -294,7 +297,13 @@ module AIA
                              'checkpoint_positions', 'get_chats', 'deep_copy_message',
                              'format_message_content', 'checkpoints', 'checkpoint_counter',
                              'last_checkpoint_name', 'checkpoints=', 'checkpoint_counter=',
-                             'last_checkpoint_name=']
+                             'last_checkpoint_name=',
+                             'checkpoint_store', 'checkpoint_store=',
+                             'extract_last_user_message', 'find_previous_checkpoint',
+                             'remove_invalid_checkpoints',
+                             'format_bytes', 'show_lms_models', 'show_local_models',
+                             'show_ollama_models', 'show_rubyllm_models',
+                             'clipboard']
 
           # Collect directives from all modules
           all_modules.each do |mod|
@@ -326,6 +335,7 @@ module AIA
             'shell' => ['sh'],
             'webpage' => ['web', 'website'],
             'include' => ['import'],
+            'paste' => ['clipboard'],
             'available_models' => ['models', 'all_models', 'am', 'llms', 'available'],
             'compare' => ['cmp']
           }
@@ -342,7 +352,7 @@ module AIA
             'Configuration' => ['config', 'model', 'temperature', 'top_p', 'clear', 'review', 'checkpoint', 'restore', 'checkpoints_list'],
             'Utility' => ['tools', 'next', 'pipeline', 'terse', 'robot', 'help'],
             'Execution' => ['ruby', 'shell', 'say'],
-            'Web & Files' => ['webpage', 'include'],
+            'Web & Files' => ['webpage', 'paste', 'skill', 'skills', 'include'],
             'Models' => ['available_models', 'compare']
           }
 

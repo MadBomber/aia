@@ -147,6 +147,53 @@ export PUREMD_API_KEY="your_api_key"
 
 **Aliases**: `/website`, `/web`
 
+### `/skill`
+Include a Claude Code skill into the conversation context.
+
+**Syntax**: `/skill skill_name`
+
+**Examples**:
+```markdown
+/skill code-quality          # Exact match
+/skill code                  # Prefix match (finds first match starting with "code")
+/skill frontend-design       # Exact match
+/skill front                 # Prefix match (finds "frontend-design")
+```
+
+**Features**:
+- Reads `SKILL.md` from `~/.claude/skills/<skill_name>/`
+- Supports prefix matching: `/skill code` finds the first subdirectory starting with "code"
+- Exact matches take priority over prefix matches
+- Returns the skill content for inclusion in the prompt
+
+**Error Handling**:
+- Missing skill name: `Error: /skill requires a skill name`
+- No matching directory: `Error: No skill matching 'name' found in ~/.claude/skills`
+- Directory exists but no SKILL.md: `Error: Skill directory 'name' has no SKILL.md`
+
+### `/skills`
+List all available Claude Code skills.
+
+**Syntax**: `/skills`
+
+**Example Output**:
+```
+Available Skills
+================
+  algorithmic-art
+  api-developer
+  code-assist
+  code-quality
+  frontend-design
+
+Total: 5 skills
+```
+
+**Features**:
+- Lists subdirectory basenames from `~/.claude/skills/`
+- Sorted alphabetically
+- Displays to STDOUT only (does not inject content into the prompt)
+
 ## Execution Directives
 
 ### `/say`
