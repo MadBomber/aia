@@ -2,14 +2,18 @@
 
 require 'faraday'
 require 'word_wrapper'
-require_relative 'directives/registry'
+require 'set'
+require_relative 'directive'
+require_relative 'directives/configuration_directives'
+require_relative 'directives/context_directives'
+require_relative 'directives/execution_directives'
+require_relative 'directives/utility_directives'
+require_relative 'directives/web_and_file_directives'
+require_relative 'directives/model_directives'
 
 module AIA
   class DirectiveProcessor
-    # Chat-time directive prefix (single slash).
-    # File paths like /Users/... are rejected because the first word
-    # after the prefix won't match any registered PM directive name.
-    DIRECTIVE_PREFIX = '/'
+    DIRECTIVE_PREFIX = AIA::Directive::DIRECTIVE_PREFIX
 
     def initialize
       @prefix_size = DIRECTIVE_PREFIX.size
@@ -48,12 +52,24 @@ module AIA
       block = PM.directives[method_name.to_sym]
       return "Error: Unknown directive '#{method_name}'" unless block
 
-      # Call with nil context (chat mode, not ERB rendering)
-      block.call(nil, *args)
+      # Provide a RenderContext so PM built-in directives (e.g., :include)
+      # work in chat mode with proper path resolution.  AIA directives
+      # ignore the context parameter, so this is harmless for them.
+      block.call(render_context, *args)
     end
 
 
     private
+
+    def render_context
+      PM::RenderContext.new(
+        directory: Dir.pwd,
+        params:    {},
+        included:  Set.new,
+        depth:     0,
+        metadata:  OpenStruct.new(includes: [])
+      )
+    end
 
     def extract_content(string)
       if string.is_a?(RubyLLM::Message)

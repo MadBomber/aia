@@ -14,18 +14,15 @@ class DirectiveProcessorTest < Minitest::Test
       context_files: []
     ))
 
-    # Register test directives with PM so the processor can find them
-    register_test_directives
+    # PM::Directive.register_all is called at load time, registering
+    # all AIA directive subclasses.  Ensure directives are available.
+    PM.reset_directives!
 
     @processor = AIA::DirectiveProcessor.new
   end
 
-  def teardown
-    PM.reset_directives!
-    super
-  end
-
   def test_initialization
+    refute_nil @processor
     assert_instance_of AIA::DirectiveProcessor, @processor
   end
 
@@ -94,24 +91,9 @@ class DirectiveProcessorTest < Minitest::Test
   def test_process_dispatches_through_pm_directives
     processor = AIA::DirectiveProcessor.new
 
-    # The :config directive registered in setup returns nil (operational)
+    # The real :config directive returns "" after setting a value
     result = processor.process("/config model gpt-4", nil)
-    assert_nil result
+    assert_equal "", result
   end
 
-  private
-
-  # Register directives directly with PM for testing.
-  # In production, PromptHandler#register_pm_directives does this.
-  def register_test_directives
-    PM.reset_directives!
-
-    PM.register(:paste, :clipboard) do |_ctx, *args|
-      AIA::Directives::WebAndFile.paste(Array(args).flatten, nil)
-    end
-
-    PM.register(:config, :cfg) do |_ctx, *args|
-      nil
-    end
-  end
 end

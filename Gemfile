@@ -3,6 +3,7 @@
 source "https://rubygems.org"
 
 gem 'ostruct'       # Required for Ruby 4.0+ compatibility
+gem 'prompt_manager', path: '../../prompt_manager'  # Local dev: PM::Directive not yet published
 gem 'securerandom', '~> 0.4.0'
 group :development do
   gem 'aigcm'

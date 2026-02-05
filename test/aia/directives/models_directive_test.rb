@@ -24,6 +24,8 @@ class ModelsDirectiveTest < Minitest::Test
     # Create nested config structure matching AIA::Config's actual structure
     @test_config = create_test_config
     AIA.stubs(:config).returns(@test_config)
+
+    @instance = AIA::ModelDirectives.new
   end
 
   def create_test_config
@@ -60,41 +62,37 @@ class ModelsDirectiveTest < Minitest::Test
   end
 
   # ============================================================================
-  # Test 01: Module Structure and Method Availability
+  # Test 01: Class Structure and Method Availability
   # ============================================================================
 
-  def test_01_module_exists_and_has_expected_methods
-    assert defined?(AIA::Directives::Models), "Models module should be defined"
+  def test_01_class_exists_and_has_expected_methods
+    assert defined?(AIA::ModelDirectives), "ModelDirectives class should be defined"
 
     # Check core methods exist
-    assert_respond_to AIA::Directives::Models, :available_models
-    assert_respond_to AIA::Directives::Models, :help
-    assert_respond_to AIA::Directives::Models, :compare
-    assert_respond_to AIA::Directives::Models, :format_bytes
-    assert_respond_to AIA::Directives::Models, :show_rubyllm_models
-    assert_respond_to AIA::Directives::Models, :show_local_models
-    assert_respond_to AIA::Directives::Models, :show_ollama_models
-    assert_respond_to AIA::Directives::Models, :show_lms_models
+    assert_respond_to @instance, :available_models
+    assert_respond_to @instance, :compare
+    assert_respond_to @instance, :format_bytes
+    assert_respond_to @instance, :show_rubyllm_models
+    assert_respond_to @instance, :show_local_models
+    assert_respond_to @instance, :show_ollama_models
+    assert_respond_to @instance, :show_lms_models
   end
 
-  def test_02_module_has_alias_methods
+  def test_02_class_has_alias_methods
     # Check aliases exist
-    assert_respond_to AIA::Directives::Models, :am
-    assert_respond_to AIA::Directives::Models, :available
-    assert_respond_to AIA::Directives::Models, :models
-    assert_respond_to AIA::Directives::Models, :all_models
-    assert_respond_to AIA::Directives::Models, :llms
-    assert_respond_to AIA::Directives::Models, :cmp
+    assert_respond_to @instance, :am
+    assert_respond_to @instance, :available
+    assert_respond_to @instance, :models
+    assert_respond_to @instance, :all_models
+    assert_respond_to @instance, :llms
+    assert_respond_to @instance, :cmp
   end
 
   def test_03_aliases_point_to_correct_methods
-    # Verify aliases are properly mapped
-    assert_equal AIA::Directives::Models.method(:available_models),
-                 AIA::Directives::Models.method(:am)
-    assert_equal AIA::Directives::Models.method(:available_models),
-                 AIA::Directives::Models.method(:models)
-    assert_equal AIA::Directives::Models.method(:compare),
-                 AIA::Directives::Models.method(:cmp)
+    # Verify aliases are properly mapped via original_name
+    assert_equal :available_models, @instance.method(:am).original_name
+    assert_equal :available_models, @instance.method(:models).original_name
+    assert_equal :compare, @instance.method(:cmp).original_name
   end
 
   # ============================================================================
@@ -102,58 +100,59 @@ class ModelsDirectiveTest < Minitest::Test
   # ============================================================================
 
   def test_04_format_bytes_handles_zero
-    result = AIA::Directives::Models.format_bytes(0)
+    result = @instance.format_bytes(0)
     assert_equal "0 B", result
   end
 
   def test_05_format_bytes_handles_bytes
-    result = AIA::Directives::Models.format_bytes(512)
+    result = @instance.format_bytes(512)
     assert_equal "512.0 B", result
   end
 
   def test_06_format_bytes_handles_kilobytes
-    result = AIA::Directives::Models.format_bytes(1024)
+    result = @instance.format_bytes(1024)
     assert_equal "1.0 KB", result
 
-    result = AIA::Directives::Models.format_bytes(2048)
+    result = @instance.format_bytes(2048)
     assert_equal "2.0 KB", result
   end
 
   def test_07_format_bytes_handles_megabytes
-    result = AIA::Directives::Models.format_bytes(1024 * 1024)
+    result = @instance.format_bytes(1024 * 1024)
     assert_equal "1.0 MB", result
 
-    result = AIA::Directives::Models.format_bytes(5 * 1024 * 1024)
+    result = @instance.format_bytes(5 * 1024 * 1024)
     assert_equal "5.0 MB", result
   end
 
   def test_08_format_bytes_handles_gigabytes
-    result = AIA::Directives::Models.format_bytes(1024 * 1024 * 1024)
+    result = @instance.format_bytes(1024 * 1024 * 1024)
     assert_equal "1.0 GB", result
 
-    result = AIA::Directives::Models.format_bytes(3.5 * 1024 * 1024 * 1024)
+    result = @instance.format_bytes(3.5 * 1024 * 1024 * 1024)
     assert_equal "3.5 GB", result
   end
 
   def test_09_format_bytes_handles_terabytes
-    result = AIA::Directives::Models.format_bytes(1024 * 1024 * 1024 * 1024)
+    result = @instance.format_bytes(1024 * 1024 * 1024 * 1024)
     assert_equal "1.0 TB", result
   end
 
   def test_10_format_bytes_handles_fractional_values
-    result = AIA::Directives::Models.format_bytes(1536) # 1.5 KB
+    result = @instance.format_bytes(1536) # 1.5 KB
     assert_equal "1.5 KB", result
 
-    result = AIA::Directives::Models.format_bytes(7.5 * 1024 * 1024) # 7.5 MB
+    result = @instance.format_bytes(7.5 * 1024 * 1024) # 7.5 MB
     assert_equal "7.5 MB", result
   end
 
   # ============================================================================
-  # Test 11-15: help method
+  # Test 11-15: help method (now on UtilityDirectives)
   # ============================================================================
 
   def test_11_help_displays_header
-    result = AIA::Directives::Models.help
+    help_instance = AIA::UtilityDirectives.new
+    result = help_instance.help
     output = @captured_output.string
 
     assert_includes output, "Available Directives"
@@ -162,50 +161,51 @@ class ModelsDirectiveTest < Minitest::Test
   end
 
   def test_12_help_displays_categories
-    AIA::Directives::Models.help
+    help_instance = AIA::UtilityDirectives.new
+    help_instance.help
     output = @captured_output.string
 
-    # Check for category headers
+    # Check for category headers (derived from class names)
     assert_includes output, "Configuration:"
-    assert_includes output, "Utility:"
+    assert_includes output, "Context:"
     assert_includes output, "Execution:"
-    assert_includes output, "Web & Files:"
-    assert_includes output, "Models:"
+    assert_includes output, "Utility:"
+    assert_includes output, "Web And File:"
+    assert_includes output, "Model:"
   end
 
   def test_13_help_displays_configuration_directives
-    AIA::Directives::Models.help
+    help_instance = AIA::UtilityDirectives.new
+    help_instance.help
     output = @captured_output.string
 
-    # Check configuration directives are present (single / prefix)
     assert_includes output, "/config"
     assert_includes output, "/model"
     assert_includes output, "/temperature"
-    assert_includes output, "/clear"
   end
 
   def test_14_help_displays_model_directives
-    AIA::Directives::Models.help
+    help_instance = AIA::UtilityDirectives.new
+    help_instance.help
     output = @captured_output.string
 
-    # Check model directives are present (single / prefix)
     assert_includes output, "/available_models"
     assert_includes output, "/compare"
   end
 
   def test_15_help_displays_aliases
-    AIA::Directives::Models.help
+    help_instance = AIA::UtilityDirectives.new
+    help_instance.help
     output = @captured_output.string
 
-    # Check that aliases are shown
     assert_includes output, "aliases:"
   end
 
   def test_16_help_displays_total_count
-    AIA::Directives::Models.help
+    help_instance = AIA::UtilityDirectives.new
+    help_instance.help
     output = @captured_output.string
 
-    # Should show total directive count
     assert_match /Total: \d+ directives available/, output
   end
 
@@ -214,9 +214,8 @@ class ModelsDirectiveTest < Minitest::Test
   # ============================================================================
 
   def test_17_show_rubyllm_models_displays_header_without_query
-    # Run with a short timeout to prevent hanging
     Timeout.timeout(30) do
-      AIA::Directives::Models.show_rubyllm_models(nil)
+      @instance.show_rubyllm_models(nil)
       output = @captured_output.string
 
       assert_includes output, "Available LLMs:"
@@ -224,13 +223,12 @@ class ModelsDirectiveTest < Minitest::Test
   rescue Timeout::Error
     flunk "show_rubyllm_models timed out after 30 seconds"
   rescue => e
-    # If RubyLLM is not available or has issues, skip gracefully
     skip "RubyLLM not available or error: #{e.message}"
   end
 
   def test_18_show_rubyllm_models_displays_header_with_query
     Timeout.timeout(30) do
-      AIA::Directives::Models.show_rubyllm_models(['gpt'])
+      @instance.show_rubyllm_models(['gpt'])
       output = @captured_output.string
 
       assert_includes output, "Available LLMs for gpt:"
@@ -243,11 +241,9 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_19_show_rubyllm_models_lists_models
     Timeout.timeout(30) do
-      AIA::Directives::Models.show_rubyllm_models(nil)
+      @instance.show_rubyllm_models(nil)
       output = @captured_output.string
 
-      # Should list models with standard format
-      # Format: "- model_id (provider) in: $X cw: Y mode: Z caps: W"
       assert_match /- .+ \(.+\) in: \$[\d.]+ cw: \d+/, output
     end
   rescue Timeout::Error
@@ -258,10 +254,9 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_20_show_rubyllm_models_displays_count
     Timeout.timeout(30) do
-      AIA::Directives::Models.show_rubyllm_models(nil)
+      @instance.show_rubyllm_models(nil)
       output = @captured_output.string
 
-      # Should show count of models
       assert_match /\d+ LLMs matching your query/, output
     end
   rescue Timeout::Error
@@ -276,8 +271,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_21_available_models_calls_show_rubyllm_when_no_local_provider
     Timeout.timeout(30) do
-      # Config already has non-local provider (gpt-4) from setup
-      result = AIA::Directives::Models.available_models
+      result = @instance.available_models
       output = @captured_output.string
 
       assert_includes output, "Available LLMs"
@@ -289,13 +283,11 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_22_available_models_handles_string_model_format
     Timeout.timeout(30) do
-      # Set models to use claude
       @test_config.models = [OpenStruct.new(name: 'claude-3-sonnet', role: nil, instance: 1, internal_id: 'claude-3-sonnet')]
 
-      result = AIA::Directives::Models.available_models
+      result = @instance.available_models
       output = @captured_output.string
 
-      # Should process string model and show RubyLLM models
       assert_match /Available LLMs/, output
     end
   rescue Timeout::Error
@@ -304,16 +296,14 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_23_available_models_handles_array_model_format
     Timeout.timeout(30) do
-      # Set models array with multiple models
       @test_config.models = [
         OpenStruct.new(name: 'gpt-4', role: nil, instance: 1, internal_id: 'gpt-4'),
         OpenStruct.new(name: 'claude-3-sonnet', role: nil, instance: 1, internal_id: 'claude-3-sonnet')
       ]
 
-      result = AIA::Directives::Models.available_models
+      result = @instance.available_models
       output = @captured_output.string
 
-      # Should process array and show RubyLLM models
       assert_match /Available LLMs/, output
     end
   rescue Timeout::Error
@@ -322,13 +312,11 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_24_available_models_handles_hash_model_format
     Timeout.timeout(30) do
-      # Set models with role (hash-like structure)
       @test_config.models = [OpenStruct.new(name: 'gpt-4', role: 'assistant', instance: 1, internal_id: 'gpt-4')]
 
-      result = AIA::Directives::Models.available_models
+      result = @instance.available_models
       output = @captured_output.string
 
-      # Should extract model from hash and show RubyLLM models
       assert_match /Available LLMs/, output
     end
   rescue Timeout::Error
@@ -341,11 +329,9 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_25_show_ollama_models_handles_connection_failure
     Timeout.timeout(10) do
-      # Try to connect to a non-existent Ollama instance
-      AIA::Directives::Models.show_ollama_models('http://localhost:99999', nil)
+      @instance.show_ollama_models('http://localhost:99999', nil)
       output = @captured_output.string
 
-      # Should show error message gracefully
       assert_match /Cannot connect to Ollama|Error fetching Ollama models/, output
     end
   rescue Timeout::Error
@@ -354,18 +340,15 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_26_show_ollama_models_displays_models_if_available
     Timeout.timeout(10) do
-      # Try default Ollama endpoint
       api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
 
-      AIA::Directives::Models.show_ollama_models(api_base, nil)
+      @instance.show_ollama_models(api_base, nil)
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        # Service not running - test passes because error handling works
         assert_match /Cannot connect to Ollama|Error fetching/, output,
           "Should show appropriate error message when Ollama is not available"
       else
-        # Service is running - verify output format
         assert_match /Ollama Models.*:/, output
         assert_match /\d+ Ollama model\(s\) available/, output
       end
@@ -378,17 +361,14 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
 
-      AIA::Directives::Models.show_ollama_models(api_base, ['llama'])
+      @instance.show_ollama_models(api_base, ['llama'])
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        # Service not running - test passes because error handling works
         assert_match /Cannot connect to Ollama|Error fetching/, output,
           "Should show appropriate error message when Ollama is not available"
       else
-        # If there are results, they should match the query
         if output =~ /(\d+) Ollama model\(s\) available/
-          # Output should only contain models matching 'llama' query
           lines = output.split("\n").select { |l| l.start_with?('- ollama/') }
           lines.each do |line|
             assert_match /llama/i, line, "Filtered results should match query"
@@ -406,11 +386,9 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_28_show_lms_models_handles_connection_failure
     Timeout.timeout(10) do
-      # Try to connect to a non-existent LM Studio instance
-      AIA::Directives::Models.show_lms_models('http://localhost:99998', nil)
+      @instance.show_lms_models('http://localhost:99998', nil)
       output = @captured_output.string
 
-      # Should show error message gracefully
       assert_match /Cannot connect to LM Studio|Error fetching LM Studio models/, output
     end
   rescue Timeout::Error
@@ -421,15 +399,13 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
 
-      AIA::Directives::Models.show_lms_models(api_base, nil)
+      @instance.show_lms_models(api_base, nil)
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        # Service not running - test passes because error handling works
         assert_match /Cannot connect to LM Studio|Error fetching/, output,
           "Should show appropriate error message when LM Studio is not available"
       else
-        # Service is running - verify output format
         assert_match /LM Studio Models.*:/, output
         assert_match /\d+ LM Studio model\(s\) available/, output
       end
@@ -442,15 +418,13 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
 
-      AIA::Directives::Models.show_lms_models(api_base, ['gpt'])
+      @instance.show_lms_models(api_base, ['gpt'])
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        # Service not running - test passes because error handling works
         assert_match /Cannot connect to LM Studio|Error fetching/, output,
           "Should show appropriate error message when LM Studio is not available"
       else
-        # If there are results, they should match the query
         if output =~ /(\d+) LM Studio model\(s\) available/
           lines = output.split("\n").select { |l| l.start_with?('- lms/') }
           lines.each do |line|
@@ -468,75 +442,61 @@ class ModelsDirectiveTest < Minitest::Test
   # ============================================================================
 
   def test_31_compare_returns_error_for_empty_args
-    result = AIA::Directives::Models.compare([])
+    result = @instance.compare([])
 
     assert_equal 'Error: No prompt provided for comparison', result
   end
 
   def test_32_compare_returns_error_for_no_models
-    result = AIA::Directives::Models.compare(['test prompt'])
+    result = @instance.compare(['test prompt'])
 
     assert_equal 'Error: No models specified. Use --models model1,model2,model3', result
   end
 
   def test_33_compare_parses_models_argument
     Timeout.timeout(60) do
-      # This will fail with actual API calls, but we're testing the parsing
-      result = AIA::Directives::Models.compare(['test prompt', '--models', 'gpt-4,claude-3'])
+      result = @instance.compare(['test prompt', '--models', 'gpt-4,claude-3'])
       output = @captured_output.string
 
-      # Should show comparison header
       assert_includes output, "Comparing responses for: test prompt"
       assert_includes output, "=" * 80
-
-      # Will show errors for each model since we don't have real API keys
-      # but that's OK - we're testing the flow, not the API
     end
   rescue Timeout::Error
     skip "compare test timed out - may require API access"
   rescue => e
-    # Expected to fail without valid API setup, but we tested the parsing
     assert true, "Parsing logic executed as expected"
   end
 
   def test_34_compare_handles_model_errors_gracefully
     Timeout.timeout(60) do
-      # Use non-existent models to trigger errors
-      result = AIA::Directives::Models.compare([
+      result = @instance.compare([
         'test prompt',
         '--models',
         'fake-model-1,fake-model-2'
       ])
       output = @captured_output.string
 
-      # Should show comparison header
       assert_includes output, "Comparing responses"
-
-      # Should show completion message even with errors
       assert_includes output, "Comparison complete!"
     end
   rescue Timeout::Error
     skip "compare error handling test timed out"
   rescue => e
-    # Even with errors, the method should complete
     assert true, "Error handling executed"
   end
 
   def test_35_compare_displays_results_format
     Timeout.timeout(60) do
-      result = AIA::Directives::Models.compare([
+      result = @instance.compare([
         'What is 2+2?',
         '--models',
         'nonexistent-model'
       ])
       output = @captured_output.string
 
-      # Check format elements are present
       assert_includes output, "Comparing responses for: What is 2+2?"
       assert_includes output, "=" * 80
       assert_includes output, "Comparison complete!"
-
-      # Should show model section with emoji
       assert_match /🤖.*nonexistent-model/, output
     end
   rescue Timeout::Error
@@ -551,13 +511,11 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_36_available_models_detects_ollama_provider
     Timeout.timeout(10) do
-      # Set models to use Ollama provider
       @test_config.models = [OpenStruct.new(name: 'ollama/llama2', role: nil, instance: 1, internal_id: 'ollama/llama2')]
 
-      result = AIA::Directives::Models.available_models
+      result = @instance.available_models
       output = @captured_output.string
 
-      # Should attempt to show local models (either Ollama output or connection error)
       assert_match /Ollama|Cannot connect|Local LLM/, output
     end
   rescue Timeout::Error
@@ -566,13 +524,11 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_37_available_models_detects_lms_provider
     Timeout.timeout(10) do
-      # Set models to use LM Studio provider
       @test_config.models = [OpenStruct.new(name: 'lms/some-model', role: nil, instance: 1, internal_id: 'lms/some-model')]
 
-      result = AIA::Directives::Models.available_models
+      result = @instance.available_models
       output = @captured_output.string
 
-      # Should attempt to show local models (either LM Studio output or connection error)
       assert_match /LM Studio|Cannot connect|Local LLM/, output
     end
   rescue Timeout::Error
@@ -581,14 +537,11 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_38_show_local_models_handles_mixed_providers
     Timeout.timeout(20) do
-      # Test with both Ollama and LMS models
       models = ['ollama/llama2', 'lms/gpt']
 
-      AIA::Directives::Models.show_local_models(models, nil)
+      @instance.show_local_models(models, nil)
       output = @captured_output.string
 
-      # Should show headers for both (or error messages if not available)
-      # The output will show "Local LLM Models:" at the start
       assert_includes output, "Local LLM Models:"
     end
   rescue Timeout::Error
@@ -602,26 +555,24 @@ class ModelsDirectiveTest < Minitest::Test
   # ============================================================================
 
   def test_39_format_bytes_with_very_large_numbers
-    # Test with exabyte-scale number (should cap at TB)
     huge_number = 5 * 1024 * 1024 * 1024 * 1024 * 1024
-    result = AIA::Directives::Models.format_bytes(huge_number)
+    result = @instance.format_bytes(huge_number)
 
-    # Should show in TB as it's the largest unit
     assert_match /\d+\.\d+ TB/, result
   end
 
   def test_40_help_with_arguments_is_ignored
-    # Help method accepts args but ignores them
-    result1 = AIA::Directives::Models.help
+    help_instance = AIA::UtilityDirectives.new
+
+    result1 = help_instance.help
     output1 = @captured_output.string
 
     @captured_output = StringIO.new
     $stdout = @captured_output
 
-    result2 = AIA::Directives::Models.help(['some', 'args'])
+    result2 = help_instance.help(['some', 'args'])
     output2 = @captured_output.string
 
-    # Both should produce same output
     assert_equal result1, result2
     assert_equal output1, output2
   end
