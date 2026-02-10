@@ -121,7 +121,7 @@ Docs: [Prompt Management](https://madbomber.github.io/aia/prompt_management/), [
 
 ### 16 — Directives
 
-`16_directives.sh` — Lists all available directives and demonstrates the `include` directive, which inserts and renders another prompt file at render time via `<%= include 'path/to/file' %>`. The demo includes a facts file into a quiz prompt.
+`16_directives.sh` — Lists all available directives and demonstrates two features. Part 1 uses the `include` directive, which inserts and renders another prompt file at render time via `<%= include 'path/to/file' %>`. Part 2 shows how to create a custom directive: a Ruby class inheriting from `AIA::Directive` with `desc`-annotated methods. The custom `timestamp` directive is loaded via `--tools` and used in a prompt with `<%= timestamp %>`.
 
 Docs: [Directives Reference](https://madbomber.github.io/aia/directives-reference/), [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/)
 
@@ -153,6 +153,20 @@ Docs: [Tools Integration — Creating Custom Tools](https://madbomber.github.io/
 
 Docs: [MCP Integration](https://madbomber.github.io/aia/mcp-integration/), [Configuration — MCP Server Configuration](https://madbomber.github.io/aia/configuration/#mcp-server-configuration)
 
+### 21 — Executable Prompts
+
+`21_executable_prompts.sh` — Demonstrates prompt files with a shebang line (`#!/usr/bin/env aia ...`) that can be run directly from the command line. AIA auto-detects the shebang and strips it before processing. Part 1 runs a minimal executable prompt directly. Part 2 runs an executable prompt that combines front matter, ERB, and shell expansion. Part 3 pipes a prompt file (shebang included) to AIA via STDIN, showing that the shebang is stripped automatically from piped input too.
+
+Docs: [Executable Prompts](https://madbomber.github.io/aia/guides/executable-prompts/)
+
+### 22 — Chat Mode
+
+`22_chat_mode.sh` — Demonstrates interactive chat mode via the `--chat` flag. Uses `expect` to script the interactive sessions. Part 1 opens a pure chat with no initial prompt. Part 2 processes a prompt in batch mode first, then enters chat with that context in the conversation history. Part 3 runs a full pipeline (brainstorm, evaluate, pick best) to completion, then enters chat for follow-up questions about the results. Part 4 shows chat-mode directives like `/help`. The key takeaway: all batch processing completes before the chat session begins, and the model retains full context from the batch phase.
+
+**Requires:** `expect` (pre-installed on macOS).
+
+Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Directives Reference](https://madbomber.github.io/aia/directives-reference/), [Workflows and Pipelines](https://madbomber.github.io/aia/workflows-and-pipelines/)
+
 ## Directory Structure
 
 ```
@@ -164,6 +178,7 @@ examples/
     roles/                     # Role files (demo 09)
     includes/                  # Includable files (demo 16)
   context/                     # Context files (demo 08)
+  directives/                  # Custom directive files (demo 16)
   tools/                       # Local tool files (demo 19)
   mcp/                         # MCP server configs (demo 20)
 ```

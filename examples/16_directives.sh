@@ -4,8 +4,9 @@
 # Demonstrates AIA directives — special functions available
 # inside prompt files via ERB and in chat mode via /command.
 #
-# This demo focuses on the 'include' directive, which inserts
+# Part 1 demonstrates the 'include' directive, which inserts
 # the contents of another file into the prompt at render time.
+# Part 2 shows how to create and load your own custom directive.
 #
 # Prerequisites: Run 00_setup_aia.sh first.
 # Usage: cd examples && bash 16_directives.sh
@@ -58,9 +59,9 @@ echo "    /skill    - Include a Claude Code skill"
 echo "    /paste    - Paste from the system clipboard"
 echo
 
-# --- Using include in a prompt ---
+# --- Part 1: Using include in a prompt ---
 
-echo "--- Using 'include' in a prompt file ---"
+echo "--- Part 1: Using 'include' in a prompt file ---"
 echo
 echo "The included file prompts_dir/includes/ruby_facts.md contains:"
 echo "==="
@@ -80,3 +81,33 @@ echo "Running: aia -c ${CONFIG} --no-output quiz_with_include"
 echo
 
 aia -c "${CONFIG}" --no-output quiz_with_include
+
+echo
+echo
+
+# --- Part 2: Creating a custom directive ---
+
+echo "--- Part 2: Creating and using a custom directive ---"
+echo
+echo "You can extend AIA with your own directives. A custom directive"
+echo "is a Ruby class that inherits from AIA::Directive. Define methods"
+echo "with a 'desc' line above them and they become available in both"
+echo "ERB prompts and as /commands in chat mode."
+echo
+echo "The file directives/timestamp_directive.rb contains:"
+echo "==="
+cat directives/timestamp_directive.rb
+echo "==="
+echo
+echo "The prompt file prompts_dir/with_timestamp.md uses it:"
+echo "==="
+cat prompts_dir/with_timestamp.md
+echo "==="
+echo
+echo "Load the custom directive with --tools and it becomes available"
+echo "alongside the built-in directives."
+echo
+echo "Running: aia -c ${CONFIG} --no-output --tools directives/timestamp_directive.rb with_timestamp"
+echo
+
+aia -c "${CONFIG}" --no-output --tools directives/timestamp_directive.rb with_timestamp
