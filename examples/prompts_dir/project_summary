@@ -1,0 +1,12 @@
+#!/usr/bin/env aia -c aia_config.yml --no-output
+---
+temperature: 0.3
+---
+Summarize this project based on the following information:
+
+Gemspec name: <%= `grep 'spec.name' ../../*.gemspec 2>/dev/null`.strip %>
+Ruby version: <%= RUBY_VERSION %>
+Current directory: $(pwd)
+Files in lib/: $(ls ../../lib/aia/*.rb 2>/dev/null | wc -l | tr -d ' ')
+
+Provide a three-sentence overview.
