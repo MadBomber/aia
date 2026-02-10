@@ -1210,6 +1210,8 @@ The above examples show the shared_tools being used within an interactive chat s
 
 ## Examples & Tips
 
+For a hands-on introduction, see the [examples/](examples/) directory. It contains 20 progressive demo scripts that walk through AIA's batch mode features — from basic prompts through pipelines, multi-model comparison, tools, and MCP servers. Each script is self-contained and runnable with a local Ollama model.
+
 ### Practical Examples
 
 #### Code Review Prompt
@@ -1276,15 +1278,15 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo --consensus
 
 ### Executable Prompts
 
-The `--exec` flag is used to create executable prompts.  If it is not present on the shebang line then the prompt file will be treated like any other context file.  That means that the file will be included as context in the prompt but no dynamic content integration or directives will be processed. All other AIA options are, well, optional.  All you need is an initial prompt ID and the --exec flag.
+AIA auto-detects executable prompts by their shebang line (`#!`). Just add a shebang, make the file executable with `chmod +x`, and run it directly. No special flag is needed.
 
-In the example below the option `--no-output` is used to direct the output from the LLM processing of the prompt to STDOUT.  This way the executable prompts can be good citizens on the *nix command line receiving piped in input via STDIN and send its output to STDOUT.
+The option `--no-output` directs the output from the LLM to STDOUT so executable prompts can be good citizens on the *nix command line, receiving piped input via STDIN and sending output to STDOUT.
 
 Create executable prompts:
 
 **weather_report** (make executable with `chmod +x`):
 ```bash
-#!/usr/bin/env aia run --no-output --exec
+#!/usr/bin/env aia run --no-output
 # Get current storm activity for the east and south coast of the US
 
 Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.

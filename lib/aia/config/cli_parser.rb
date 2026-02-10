@@ -157,9 +157,6 @@ module AIA
           options[:pipeline] += pipeline.split(',').map(&:strip)
         end
 
-        opts.on("-x", "--[no-]exec", "Treat prompt file as executable") do |value|
-          options[:executable_prompt] = value
-        end
 
         opts.on("--system-prompt PROMPT_ID", "Set system prompt for chat sessions") do |prompt_id|
           options[:system_prompt] = prompt_id

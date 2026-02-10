@@ -84,12 +84,6 @@ module AIA
       end
 
       def handle_executable_prompt(config)
-        # Legacy --exec flag path
-        if config.executable_prompt && config.context_files && !config.context_files.empty?
-          config.executable_prompt_file = config.context_files.pop
-          return
-        end
-
         # Auto-detect: no prompt_id, first context_file starts with shebang
         return unless config.prompt_id.nil?
         return unless config.context_files && !config.context_files.empty?

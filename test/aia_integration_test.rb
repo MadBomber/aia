@@ -35,7 +35,6 @@ class AIAIntegrationTest < Minitest::Test
       prompt_id: nil,
       context_files: [],
       stdin_content: nil,
-      executable_prompt_file: nil,
       pipeline: [],
       require_libs: [],
       mcp_servers: [],

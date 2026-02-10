@@ -18,7 +18,6 @@ class SessionTest < Minitest::Test
       prompt_id: 'test_prompt',
       context_files: [],
       stdin_content: nil,
-      executable_prompt_file: nil,
       pipeline: ['test_prompt'],
       mcp_servers: [],
       tool_names: '',

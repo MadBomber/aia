@@ -397,16 +397,6 @@ aia --pipeline "analysis,summary,report" my_data
 aia -p "review,optimize,test" my_code.py
 ```
 
-### `-x, --[no-]exec`
-Designate an executable prompt file.
-
-```bash
-# Treat prompt as executable
-aia --exec my_script_prompt
-
-# Treat as regular prompt (default)
-aia --no-exec my_script_prompt
-```
 
 ### `--system-prompt PROMPT_ID`
 System prompt ID to use for chat sessions.

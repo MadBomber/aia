@@ -136,11 +136,6 @@ module AIA
           parts << PM.parse(AIA.config.stdin_content).to_s
         end
 
-        # Add executable prompt file content
-        if AIA.config.executable_prompt_file
-          exec_content = File.read(AIA.config.executable_prompt_file).lines[1..].join
-          parts << exec_content
-        end
       end
 
       prompt_text = parts.join("\n\n")
