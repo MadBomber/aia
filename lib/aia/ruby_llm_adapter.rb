@@ -27,6 +27,12 @@ module AIA
 
     attr_reader :tools, :model_specs, :chats
 
+    # Delegates to the first chat instance's model object.
+    # Used by single-model callers to inspect the active model.
+    def model
+      @chats.values.first&.model
+    end
+
     def initialize
       @model_specs = extract_models_config  # Full specs with role info
       @models = extract_model_names(@model_specs)  # Just model names for backward compat
@@ -36,21 +42,6 @@ module AIA
       Adapter::ProviderConfigurator.configure
       Adapter::ModelRegistry.new.refresh
       setup_chats_with_tools
-    end
-
-    def method_missing(method, *args, &block)
-      # Use the first chat instance for backward compatibility with method_missing
-      first_chat = @chats.values.first
-      if first_chat&.respond_to?(method)
-        first_chat.public_send(method, *args, &block)
-      else
-        super
-      end
-    end
-
-    def respond_to_missing?(method, include_private = false)
-      # Check if any of our chat instances respond to the method
-      @chats.values.any? { |chat| chat.respond_to?(method) } || super
     end
 
     private
