@@ -1,0 +1,22 @@
+# AIA configuration for example demos
+# Used by all demo scripts via: aia -c aia_config.yml ...
+#
+# This file is loaded with the -c / --config-file flag.
+# It replaces the user's personal config (~/.config/aia/aia.yml),
+# starting from bundled defaults + these values only.
+# CLI flags passed directly to aia still take precedence.
+#
+# NOTE: Relative paths resolve against the directory where aia is invoked.
+#       Run demo scripts from the examples/ directory.
+
+prompts:
+  dir: ./prompts_dir
+
+models:
+  - name: ollama/qwen3
+
+output:
+  file: ~
+
+flags:
+  chat: false

@@ -16,6 +16,9 @@
 # 3. Environment variables (AIA_*)
 # 4. CLI arguments (applied via overrides)
 # 5. Embedded directives (/config)
+#
+# When -c / --config-file is used, it REPLACES sources 2 and 3:
+#   defaults → config file → CLI arguments → embedded directives
 
 require 'myway_config'
 require 'yaml'
@@ -188,12 +191,16 @@ module AIA
       rejected_tools: [:tools, :rejected],
       # registry section
       refresh: [:registry, :refresh],
-      # paths section
-      extra_config_file: [:paths, :extra_config_file]
     }.freeze
 
     def initialize(overrides: {})
       super()
+
+      # Load extra config file AFTER base init (defaults + user config + env vars)
+      # but BEFORE CLI overrides, so CLI flags take precedence.
+      extra_config_path = overrides.delete(:extra_config_file)
+      load_extra_config(extra_config_path) if extra_config_path
+
       apply_models_env_var unless overrides[:models]
       apply_overrides(overrides) if overrides && !overrides.empty?
       process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
@@ -246,6 +253,110 @@ module AIA
     end
 
     private
+
+    # Load a config file that REPLACES the user's personal config.
+    # Resets all values to bundled defaults first, then applies the
+    # file's values on top. This means -c gives you a clean slate
+    # based on defaults + the specified file only.
+    #
+    # Uses the same YAML structure as defaults.yml (nested sections).
+    # Supports both flat format and wrapped (defaults:) format.
+    #
+    # @param path [String] path to the YAML config file
+    def load_extra_config(path)
+      path = File.expand_path(path)
+
+      unless File.exist?(path)
+        warn "ERROR: Config file not found: #{path}"
+        exit 1
+        return # guard for test environments that override exit
+      end
+
+      # Reset everything to bundled defaults so the user's personal
+      # config (~/.config/aia/aia.yml) does not bleed through.
+      reset_to_defaults
+
+      raw = YAML.safe_load(
+        File.read(path),
+        permitted_classes: [Symbol],
+        symbolize_names: true,
+        aliases: true
+      ) || {}
+
+      config_hash = raw.key?(:defaults) ? (raw[:defaults] || {}) : raw
+
+      # Store the path for reference (visible in --dump output)
+      paths[:extra_config_file] = path
+
+      config_hash.each do |key, value|
+        case key
+        when :models
+          self.models = TO_MODEL_SPECS.call(Array(value))
+        when :pipeline, :require_libs, :context_files, :mcp_use, :mcp_skip
+          send("#{key}=", Array(value)) if respond_to?("#{key}=")
+        when :mcp_servers
+          self.mcp_servers = Array(value)
+        when :service, :llm, :prompts, :output, :audio, :image, :embedding,
+             :tools, :flags, :registry, :paths, :logger
+          section = send(key)
+          if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
+            merge_into_section(section, value)
+          end
+        end
+      end
+
+      expand_paths
+    end
+
+    # Reset all configuration values to the bundled defaults from
+    # defaults.yml, discarding anything set by the user's personal
+    # config file or environment variables.
+    def reset_to_defaults
+      defaults = self.class.schema
+
+      defaults.each do |key, value|
+        section = respond_to?(key) ? send(key) : nil
+
+        if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
+          reset_section(section, value)
+        elsif key == :models
+          self.models = TO_MODEL_SPECS.call(Array(value))
+        elsif respond_to?("#{key}=")
+          send("#{key}=", value)
+        end
+      end
+    end
+
+    # Recursively reset a ConfigSection to match the given defaults hash.
+    #
+    # @param section [MywayConfig::ConfigSection] target section
+    # @param defaults_hash [Hash] default values to restore
+    def reset_section(section, defaults_hash)
+      defaults_hash.each do |key, value|
+        existing = section[key.to_sym]
+        if existing.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
+          reset_section(existing, value)
+        else
+          section[key.to_sym] = value
+        end
+      end
+    end
+
+    # Recursively merge a hash into a ConfigSection, preserving
+    # existing values for keys not present in the hash.
+    #
+    # @param section [MywayConfig::ConfigSection] target section
+    # @param hash [Hash] values to merge in
+    def merge_into_section(section, hash)
+      hash.each do |key, value|
+        existing = section[key.to_sym]
+        if existing.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
+          merge_into_section(existing, value)
+        else
+          section[key.to_sym] = value
+        end
+      end
+    end
 
     # Apply AIA_MODEL env var if set (supports comma-separated models with optional roles)
     # Format: MODEL[=ROLE][,MODEL[=ROLE]]...
