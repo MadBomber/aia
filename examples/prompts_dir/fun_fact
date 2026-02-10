@@ -1,0 +1,3 @@
+#!/usr/bin/env aia -c aia_config.yml --no-output
+Tell me one surprising fun fact about a random animal.
+Keep it to two sentences.

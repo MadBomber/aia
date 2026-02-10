@@ -82,7 +82,7 @@ Instead of typing questions each time, you can create reusable prompt files.
 
 ```bash
 # Create your first prompt file
-echo "Explain this code and suggest improvements:" > ~/.prompts/code_review.txt
+echo "Explain this code and suggest improvements:" > ~/.prompts/code_review.md
 ```
 
 ### 2. Use the Prompt
@@ -98,7 +98,7 @@ aia code_review my_script.py
 ### 3. Create a More Complex Prompt
 
 ```bash
-cat > ~/.prompts/blog_writer.txt << 'EOF'
+cat > ~/.prompts/blog_writer.md << 'EOF'
 Write a professional blog post about the following topic:
 
 Topic: <%= topic %>
@@ -137,7 +137,7 @@ aia code_review src/*.rb
 
 ```bash
 # Analyze a document
-echo "Summarize this document and extract key points:" > ~/.prompts/summarize.txt
+echo "Summarize this document and extract key points:" > ~/.prompts/summarize.md
 aia summarize report.pdf
 ```
 
@@ -145,7 +145,7 @@ aia summarize report.pdf
 
 ```bash
 # Create a data analysis prompt
-echo "Analyze this data and provide insights:" > ~/.prompts/analyze_data.txt
+echo "Analyze this data and provide insights:" > ~/.prompts/analyze_data.md
 aia analyze_data data.csv
 ```
 
@@ -156,10 +156,10 @@ Prompts can include special directives for dynamic behavior:
 ### 1. Configuration Directives
 
 ```bash
-cat > ~/.prompts/creative_writing.txt << 'EOF'
-//config temperature 1.3
-//config max_tokens 2000
-//config model gpt-4
+cat > ~/.prompts/creative_writing.md << 'EOF'
+/config temperature 1.3
+/config max_tokens 2000
+/config model gpt-4
 
 Write a creative short story about:
 <%= topic %>
@@ -171,12 +171,12 @@ EOF
 ### 2. File Inclusion Directives
 
 ```bash
-cat > ~/.prompts/project_analysis.txt << 'EOF'
+cat > ~/.prompts/project_analysis.md << 'EOF'
 Analyze this project structure and provide recommendations:
 
-//include README.md
-//include package.json
-//include src/
+/include README.md
+/include package.json
+/include src/
 
 Focus on architecture, dependencies, and best practices.
 EOF
@@ -185,17 +185,17 @@ EOF
 ### 3. Shell Command Directives
 
 ```bash
-cat > ~/.prompts/system_status.txt << 'EOF'
+cat > ~/.prompts/system_status.md << 'EOF'
 Here's my current system status:
 
 CPU Usage:
-//shell top -l 1 -n 10 | head -20
+/shell top -l 1 -n 10 | head -20
 
-Disk Usage:  
-//shell df -h
+Disk Usage:
+/shell df -h
 
 Memory Usage:
-//shell free -h
+/shell free -h
 
 Please analyze this and suggest optimizations.
 EOF
@@ -209,7 +209,7 @@ Roles help set context for the AI:
 
 ```bash
 mkdir -p ~/.prompts/roles
-cat > ~/.prompts/roles/code_expert.txt << 'EOF'
+cat > ~/.prompts/roles/code_expert.md << 'EOF'
 You are an expert software developer with 15+ years of experience.
 You specialize in clean code, best practices, and modern development patterns.
 Always provide specific, actionable advice with code examples.
@@ -290,7 +290,7 @@ AI: [Testing strategies specific to the Python example...]
 
 ```bash
 # Set up the workflow
-echo "Review this code for bugs, style, and improvements:" > ~/.prompts/code_review.txt
+echo "Review this code for bugs, style, and improvements:" > ~/.prompts/code_review.md
 
 # Use it regularly
 aia code_review src/new_feature.py
@@ -301,10 +301,10 @@ aia --model claude-3-sonnet code_review complex_algorithm.rb
 
 ```bash
 # Create documentation prompt
-cat > ~/.prompts/document_code.txt << 'EOF'
+cat > ~/.prompts/document_code.md << 'EOF'
 Generate comprehensive documentation for this code:
 
-//include <%= file %>
+/include <%= file %>
 
 Include:
 - Purpose and functionality
@@ -321,9 +321,9 @@ aia document_code --file src/api.py
 
 ```bash
 # Create learning prompt
-cat > ~/.prompts/explain_concept.txt << 'EOF' 
-//config temperature 0.7
-//role teacher
+cat > ~/.prompts/explain_concept.md << 'EOF'
+/config temperature 0.7
+/role teacher
 
 Explain the concept of "<%= concept %>" in simple terms.
 
@@ -351,21 +351,21 @@ aia explain_concept --concept "machine learning" --level "intermediate"
 mkdir -p ~/.prompts/{development,writing,analysis,personal}
 
 # Categorize prompts
-mv ~/.prompts/code_review.txt ~/.prompts/development/
-mv ~/.prompts/blog_writer.txt ~/.prompts/writing/
+mv ~/.prompts/code_review.md ~/.prompts/development/
+mv ~/.prompts/blog_writer.md ~/.prompts/writing/
 ```
 
 ### 2. Use Descriptive Names
 
 ```bash
 # Good prompt names
-~/.prompts/development/code_review_security.txt
-~/.prompts/writing/blog_post_technical.txt
-~/.prompts/analysis/data_insights.txt
+~/.prompts/development/code_review_security.md
+~/.prompts/writing/blog_post_technical.md
+~/.prompts/analysis/data_insights.md
 
 # Avoid generic names
-~/.prompts/prompt1.txt
-~/.prompts/test.txt
+~/.prompts/prompt1.md
+~/.prompts/test.md
 ```
 
 ### 3. Version Control Your Prompts
@@ -377,7 +377,7 @@ git add .
 git commit -m "Initial prompt collection"
 
 # Keep your prompts under version control
-git add new_prompt.txt
+git add new_prompt.md
 git commit -m "Add prompt for API documentation"
 ```
 

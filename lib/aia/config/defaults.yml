@@ -9,7 +9,7 @@
 # 2. User config (~/.config/aia/aia.yml)
 # 3. Environment variables (AIA_*)
 # 4. CLI arguments
-# 5. Embedded directives (//config)
+# 5. Embedded directives (/config)
 #
 # Environment Variable Naming:
 # Use double underscore for nested keys:
@@ -58,7 +58,7 @@ defaults:
   # ---------------------------------------------------------------------------
   prompts:
     dir: ~/.prompts
-    extname: .txt
+    extname: .md
     roles_prefix: roles
     roles_dir: ~/.prompts/roles
     role: ~
@@ -130,7 +130,7 @@ defaults:
     tokens: false
     no_mcp: false
     speak: false
-    terse: false
+    terse: false  # DEPRECATED: no longer used
     shell: true
     erb: true
     clear: false

@@ -47,14 +47,14 @@ Both options provide full AI functionality without internet connection, perfect 
 - 🏠 Air-gapped environments
 
 ### Q: How do I list available local models?
-**A:** Use the `//models` directive in a chat session or prompt:
+**A:** Use the `/models` directive in a chat session or prompt:
 
 ```bash
 # Start chat with any local model
 aia --model ollama/llama3.2 --chat
 
 # In the chat session
-> //models
+> /models
 
 # Output shows:
 # - Ollama models from local installation
@@ -112,7 +112,7 @@ Available LM Studio models:
 ### Q: How do I create my first prompt?
 **A:** Create a text file in your prompts directory:
 ```bash
-echo "Explain this code clearly:" > ~/.prompts/explain_code.txt
+echo "Explain this code clearly:" > ~/.prompts/explain_code.md
 aia explain_code my_script.py
 ```
 
@@ -162,26 +162,26 @@ export AIA_PROMPTS__DIR="/path/to/prompts"
 ## Prompts and Directives
 
 ### Q: What are directives and how do I use them?
-**A:** Directives are special commands in prompts that start with `//`. Examples:
+**A:** Directives are special commands in prompts that start with `/`. Examples:
 ```markdown
-//config model gpt-4
-//include my_file.txt
-//shell ls -la
+/config model gpt-4
+/include my_file.md
+/shell ls -la
 ```
 
 See the [Directives Reference](directives-reference.md) for all available directives.
 
 ### Q: How do I include files in prompts?
-**A:** Use the `//include` directive:
+**A:** Use the `/include` directive:
 ```markdown
-//include README.md
-//include /path/to/file.txt
+/include README.md
+/include /path/to/file.md
 ```
 
 ### Q: Can I use Ruby code in prompts?
-**A:** Yes, use the `//ruby` directive for one-liners:
+**A:** Yes, use the `/ruby` directive for one-liners:
 ```markdown
-//ruby puts "Hello, my name is#{ENV['USER']}"
+/ruby puts "Hello, my name is#{ENV['USER']}"
 
 # Or for multi-line or conditional code use ERB
 
@@ -192,10 +192,10 @@ See the [Directives Reference](directives-reference.md) for all available direct
 ```
 
 ### Q: How do I create prompt workflows?
-**A:** Use the `//pipeline` or `//next` directives:
+**A:** Use the `/pipeline` or `/next` directives:
 ```markdown
-//pipeline "step1,step2,step3"
-//next next_prompt_id
+/pipeline
+/next
 ```
 
 ## Models and Performance
@@ -218,7 +218,7 @@ aia --model "gpt-4,claude-3-sonnet" my_prompt
 - Use shorter prompts when possible
 - Choose appropriate models (GPT-3.5 for simple tasks)
 - Use temperature settings wisely
-- Clear chat context regularly with `//clear`
+- Clear chat context regularly with `/clear`
 
 ### Q: What's consensus mode?
 **A:** Consensus mode combines responses from multiple models into a single, refined answer:
@@ -278,7 +278,7 @@ aia --chat --tools ./tools/
 ```
 
 ### Q: How do I clear chat history?
-**A:** Use the `/clear` command or `//clear` directive:
+**A:** Use the `/clear` command or `/clear` directive:
 ```
 You: /clear
 ```
@@ -322,11 +322,11 @@ You: /clear
 ### Q: How do I use AIA for code review?
 **A:** Create a code review prompt:
 ```markdown
-//config model gpt-4
-//config temperature 0.3
+/config model gpt-4
+/config temperature 0.3
 
 Review this code for bugs, security issues, and best practices:
-//include <%= file %>
+/include <%= file %>
 ```
 
 ### Q: Can I use AIA for data analysis?
@@ -402,7 +402,7 @@ git push -u origin main
 ls $AIA_PROMPTS__DIR
 
 # Verify prompt file exists
-ls ~/.prompts/my_prompt.txt
+ls ~/.prompts/my_prompt.md
 
 # Use fuzzy search to find available prompts
 aia --fuzzy
@@ -464,7 +464,7 @@ aia --temperature 0.1 my_prompt
 aia --pipeline "analyze,summarize,report" large_data.csv
 
 # Use selective file inclusion
-//include specific_section.txt
+/include specific_section.md
 
 # Check model context limits
 aia --available-models | grep context

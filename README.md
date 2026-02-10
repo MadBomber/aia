@@ -25,7 +25,7 @@ AIA is a command-line utility that facilitates interaction with AI models throug
 
 AIA leverages the following Ruby gems:
 
-- **[prompt_manager](https://github.com/madbomber/prompt_manager)** to manage prompts,
+- **[pm](https://github.com/madbomber/prompt_manager)** to manage prompts,
 - **[ruby_llm](https://rubyllm.com)** to access LLM providers,
 - **[ruby_llm-mcp](https://www.rubyllm-mcp.com)** for Model Context Protocol (MCP) support,
 - and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use MCP clients and functions for use with LLMs that support tools.
@@ -50,7 +50,7 @@ For more information on AIA visit these locations:
 3. **Create your first prompt:**
    ```bash
    mkdir -p ~/.prompts
-   echo "What is [TOPIC]?" > ~/.prompts/what_is.txt
+   echo "What is [TOPIC]?" > ~/.prompts/what_is.md
    ```
 
 4. **Run your prompt:**
@@ -278,11 +278,11 @@ aia --fuzzy
 
 ```
 ~/.prompts/              # Default prompts directory
-├── ask.txt             # Simple question prompt
-├── code_review.txt     # Code review prompt
+├── ask.md              # Simple question prompt
+├── code_review.md      # Code review prompt
 ├── roles/              # Role/system prompts
-│   ├── expert.txt      # Expert role
-│   └── teacher.txt     # Teaching role
+│   ├── expert.md       # Expert role
+│   └── teacher.md      # Teaching role
 └── _prompts.log        # History log
 ```
 
@@ -304,7 +304,7 @@ The most commonly used configuration options:
 
 AIA determines configuration settings using this order (highest to lowest priority):
 
-1. **Embedded config directives** (in prompt files): `//config model = gpt-4`
+1. **Embedded config directives** (in prompt files): `/config model = gpt-4`
 2. **Command-line arguments**: `--model gpt-4`
 3. **Environment variables**: `export AIA_MODEL=gpt-4`
 4. **Configuration files**: `~/.aia/config.yml`
@@ -329,8 +329,8 @@ chat: false
 
 **Embedded Directives** (in prompt files):
 ```
-//config model = gpt-4
-//config temperature = 0.8
+/config model = gpt-4
+/config temperature = 0.8
 
 Your prompt content here...
 ```
@@ -365,7 +365,7 @@ Your prompt content here...
 | parameter_regex | --regex | '(?-mix:(\[[A-Z _\|]+\]))' | AIA_PROMPTS__PARAMETER_REGEX |
 | pipeline | --pipeline | [] | AIA_PIPELINE |
 | presence_penalty | --presence-penalty | 0.0 | AIA_LLM__PRESENCE_PENALTY |
-| prompt_extname | | .txt | AIA_PROMPTS__EXTNAME |
+| prompt_extname | | .md | AIA_PROMPTS__EXTNAME |
 | prompts_dir | --prompts-dir | ~/.prompts | AIA_PROMPTS__DIR |
 | refresh | --refresh | 7 (days) | AIA_REGISTRY__REFRESH |
 | require_libs | --rq --require | [] | AIA_REQUIRE_LIBS |
@@ -397,27 +397,27 @@ Your prompt content here...
 
 ### Prompt Directives
 
-Directives are special commands in prompt files that begin with `//` and provide dynamic functionality:
+Directives are special commands in prompt files that begin with `/` and provide dynamic functionality:
 
 | Directive | Description | Example |
 |-----------|-------------|---------|
-| `//config` | Set configuration values | `//config model = gpt-4` |
-| `//context` | Show context for this conversation with checkpoint markers | `//context` |
-| `//checkpoint` | Create a named checkpoint of current context | `//checkpoint save_point` |
-| `//restore` | Restore context to a previous checkpoint | `//restore save_point` |
-| `//include` | Insert file contents | `//include path/to/file.txt` |
-| `//paste` | Insert clipboard contents | `//paste` |
-| `//shell` | Execute shell commands | `//shell ls -la` |
-| `//robot` | Show the pet robot ASCII art w/versions | `//robot` |
-| `//ruby` | Execute Ruby code | `//ruby puts "Hello World"` |
-| `//next` | Set next prompt in sequence | `//next summary` |
-| `//pipeline` | Set prompt workflow | `//pipeline analyze,summarize,report` |
-| `//clear` | Clear conversation history | `//clear` |
-| `//help` | Show available directives | `//help` |
-| `//model` | Show current model configuration | `//model` |
-| `//available_models` | List available models | `//available_models` |
-| `//tools` | Show available tools (optional filter by name) | `//tools` or `//tools file` |
-| `//review` | Review current context with checkpoint markers | `//review` |
+| `/config` | Set configuration values | `/config model = gpt-4` |
+| `/context` | Show context for this conversation with checkpoint markers | `/context` |
+| `/checkpoint` | Create a named checkpoint of current context | `/checkpoint save_point` |
+| `/restore` | Restore context to a previous checkpoint | `/restore save_point` |
+| `/include` | Insert file contents | `/include path/to/file.txt` |
+| `/paste` | Insert clipboard contents | `/paste` |
+| `/shell` | Execute shell commands | `/shell ls -la` |
+| `/robot` | Show the pet robot ASCII art w/versions | `/robot` |
+| `/ruby` | Execute Ruby code | `/ruby puts "Hello World"` |
+| `/next` | Set next prompt in sequence | `/next summary` |
+| `/pipeline` | Set prompt workflow | `/pipeline analyze,summarize,report` |
+| `/clear` | Clear conversation history | `/clear` |
+| `/help` | Show available directives | `/help` |
+| `/model` | Show current model configuration | `/model` |
+| `/available_models` | List available models | `/available_models` |
+| `/tools` | Show available tools (optional filter by name) | `/tools` or `/tools file` |
+| `/review` | Review current context with checkpoint markers | `/review` |
 
 Directives can also be used in the interactive chat sessions.
 
@@ -425,12 +425,12 @@ Directives can also be used in the interactive chat sessions.
 
 ```bash
 # Set model and temperature for this prompt
-//config model = gpt-4
-//config temperature = 0.9
+/config model = gpt-4
+/config temperature = 0.9
 
 # Enable chat mode and terse responses
-//config chat = true
-//config terse = true
+/config chat = true
+/config terse = true
 
 Your prompt content here...
 ```
@@ -439,16 +439,16 @@ Your prompt content here...
 
 ```bash
 # Include file contents
-//include ~/project/README.md
+/include ~/project/README.md
 
 # Paste clipboard contents
-//paste
+/paste
 
 # Execute shell commands
-//shell git log --oneline -10
+/shell git log --oneline -10
 
 # Run Ruby code
-//ruby require 'json'; puts JSON.pretty_generate({status: "ready"})
+/ruby require 'json'; puts JSON.pretty_generate({status: "ready"})
 
 Analyze the above information and provide insights.
 ```
@@ -459,19 +459,19 @@ AIA provides powerful context management capabilities in chat mode through check
 
 ```bash
 # Create a checkpoint with automatic naming (1, 2, 3...)
-//checkpoint
+/checkpoint
 
 # Create a named checkpoint
-//checkpoint important_decision
+/checkpoint important_decision
 
 # Restore to the last checkpoint
-//restore
+/restore
 
 # Restore to a specific checkpoint
-//restore important_decision
+/restore important_decision
 
 # View context with checkpoint markers
-//context
+/context
 ```
 
 **Example Chat Session:**
@@ -479,17 +479,17 @@ AIA provides powerful context management capabilities in chat mode through check
 You: Tell me about Ruby programming
 AI: Ruby is a dynamic programming language...
 
-You: //checkpoint ruby_basics
+You: /checkpoint ruby_basics
 
 You: Now explain object-oriented programming
 AI: Object-oriented programming (OOP) is...
 
-You: //checkpoint oop_concepts
+You: /checkpoint oop_concepts
 
 You: Actually, let's go back to Ruby basics
-You: //restore ruby_basics
+You: /restore ruby_basics
 
-You: //context
+You: /context
 === Chat Context ===
 Total messages: 4
 Checkpoints: ruby_basics, oop_concepts
@@ -506,10 +506,10 @@ Checkpoints: ruby_basics, oop_concepts
 
 **Key Features:**
 - **Auto-naming**: Checkpoints without names use incrementing integers (1, 2, 3...)
-- **Named checkpoints**: Use meaningful names like `//checkpoint before_refactor`
-- **Default restore**: `//restore` without a name restores to the last checkpoint
-- **Context visualization**: `//context` shows checkpoint markers in conversation history
-- **Clean slate**: `//clear` removes all context and checkpoints
+- **Named checkpoints**: Use meaningful names like `/checkpoint before_refactor`
+- **Default restore**: `/restore` without a name restores to the last checkpoint
+- **Context visualization**: `/context` shows checkpoint markers in conversation history
+- **Clean slate**: `/clear` removes all context and checkpoints
 
 #### Custom Directive Examples
 
@@ -535,7 +535,7 @@ end
 aia --tools examples/directives/ask.rb --chat
 
 # Use the results of the custom directive as input to a prompt
-//ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
+/ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
 ```
 
 ### Multi-Model Support
@@ -602,11 +602,11 @@ Response from the third model...
 
 #### Model Information
 
-View your current multi-model configuration using the `//model` directive:
+View your current multi-model configuration using the `/model` directive:
 
 ```bash
 # In any prompt file or chat session
-//model
+/model
 ```
 
 **Example Output:**
@@ -722,11 +722,11 @@ export LMS_API_BASE=http://localhost:1234/v1
 
 #### Listing Local Models
 
-The `//models` directive automatically detects local providers and queries their endpoints:
+The `/models` directive automatically detects local providers and queries their endpoints:
 
 ```bash
 # In a prompt file or chat session
-//models
+/models
 
 # Output will show:
 # - Ollama models from http://localhost:11434/api/tags
@@ -792,8 +792,8 @@ Chain multiple prompts for complex workflows:
 aia analyze --next summarize --next report
 
 # In prompt files
-# analyze.txt contains: //next summarize
-# summarize.txt contains: //next report
+# analyze.md contains: /next summarize
+# summarize.md contains: /next report
 ```
 
 #### Using --pipeline
@@ -803,31 +803,31 @@ aia analyze --next summarize --next report
 aia research --pipeline analyze,summarize,report,present
 
 # In prompt file
-//pipeline analyze,summarize,report,present
+/pipeline analyze,summarize,report,present
 ```
 
 #### Example Workflow
 
-**research.txt:**
+**research.md:**
 ```
-//config model = gpt-4
-//next analyze
+/config model = gpt-4
+/next analyze
 
 Research the topic: [RESEARCH_TOPIC]
 Provide comprehensive background information.
 ```
 
-**analyze.txt:**
+**analyze.md:**
 ```
-//config output = analysis.md
-//next summarize
+/config output = analysis.md
+/next summarize
 
 Analyze the research data and identify key insights.
 ```
 
-**summarize.txt:**
+**summarize.md:**
 ```
-//config output = summary.md
+/config output = summary.md
 
 Create a concise summary of the analysis with actionable recommendations.
 ```
@@ -841,7 +841,7 @@ Roles define the context and personality for AI responses:
 aia --role expert analyze_code.rb
 
 # Roles are stored in ~/.prompts/roles/
-# expert.txt might contain:
+# expert.md might contain:
 # "You are a senior software engineer with 15 years of experience..."
 ```
 
@@ -849,7 +849,7 @@ aia --role expert analyze_code.rb
 
 ```bash
 # Create a code reviewer role
-cat > ~/.prompts/roles/code_reviewer.txt << EOF
+cat > ~/.prompts/roles/code_reviewer.md << EOF
 You are an experienced code reviewer. Focus on:
 - Code quality and best practices
 - Security vulnerabilities
@@ -928,7 +928,7 @@ Roles can be organized in subdirectories:
 ```bash
 # Create nested role structure
 mkdir -p ~/.prompts/roles/specialized
-echo "You are a senior software architect..." > ~/.prompts/roles/specialized/senior_architect.txt
+echo "You are a senior software architect..." > ~/.prompts/roles/specialized/senior_architect.md
 
 # Use nested roles
 aia --model gpt-4o=specialized/senior_architect design.md
@@ -1144,11 +1144,11 @@ When MCP servers are configured, AIA displays them in the startup robot:
   (\   /____\
 ```
 
-Use the `//tools` directive in chat mode to see all available tools including those from MCP servers:
+Use the `/tools` directive in chat mode to see all available tools including those from MCP servers:
 
 ```bash
 aia --chat
-> //tools
+> /tools
 
 Available Tools:
 - github_create_issue: Create a new GitHub issue
@@ -1158,7 +1158,7 @@ Available Tools:
 ...
 
 # Filter tools by name (case-insensitive)
-> //tools github
+> /tools github
 
 Available Tools (filtered by 'github')
 - github_create_issue: Create a new GitHub issue
@@ -1206,17 +1206,19 @@ aia --require shared_tools/ruby_llm/edit_file --chat
 aia --require shared_tools/ruby_llm --tools ~/my-tools/ --chat
 ```
 
-The above examples show the shared_tools being used within an interactive chat session.  They are also available in batch prompts as well using the same --require option.  You can also use the //ruby directive to require the shared_tools as well and using a require statement within an ERB block.
+The above examples show the shared_tools being used within an interactive chat session.  They are also available in batch prompts as well using the same --require option.  You can also use the /ruby directive to require the shared_tools as well and using a require statement within an ERB block.
 
 ## Examples & Tips
+
+For a hands-on introduction, see the [examples/](examples/) directory. It contains 20 progressive demo scripts that walk through AIA's batch mode features — from basic prompts through pipelines, multi-model comparison, tools, and MCP servers. Each script is self-contained and runnable with a local Ollama model.
 
 ### Practical Examples
 
 #### Code Review Prompt
 ```bash
-# ~/.prompts/code_review.txt
-//config model = gpt-4o-mini
-//config temperature = 0.3
+# ~/.prompts/code_review.md
+/config model = gpt-4o-mini
+/config temperature = 0.3
 
 Review this code for:
 - Best practices adherence
@@ -1231,21 +1233,21 @@ Usage: `aia code_review mycode.rb`
 
 #### Meeting Notes Processor
 ```bash
-# ~/.prompts/meeting_notes.txt
-//config model = gpt-4o-mini
-//pipeline format,action_items
+# ~/.prompts/meeting_notes.md
+/config model = gpt-4o-mini
+/pipeline format,action_items
 
 Raw meeting notes:
-//include [NOTES_FILE]
+/include [NOTES_FILE]
 
 Please clean up and structure these meeting notes.
 ```
 
 #### Documentation Generator
 ```bash
-# ~/.prompts/document.txt
-//config model = gpt-4o-mini
-//shell find [PROJECT_DIR] -name "*.rb" | head -10
+# ~/.prompts/document.md
+/config model = gpt-4o-mini
+/shell find [PROJECT_DIR] -name "*.rb" | head -10
 
 Generate documentation for the Ruby project shown above.
 Include: API references, usage examples, and setup instructions.
@@ -1253,7 +1255,7 @@ Include: API references, usage examples, and setup instructions.
 
 #### Multi-Model Decision Making
 ```bash
-# ~/.prompts/decision_maker.txt
+# ~/.prompts/decision_maker.md
 # Compare different AI perspectives on complex decisions
 
 What are the pros and cons of [DECISION_TOPIC]?
@@ -1276,20 +1278,20 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo --consensus
 
 ### Executable Prompts
 
-The `--exec` flag is used to create executable prompts.  If it is not present on the shebang line then the prompt file will be treated like any other context file.  That means that the file will be included as context in the prompt but no dynamic content integration or directives will be processed. All other AIA options are, well, optional.  All you need is an initial prompt ID and the --exec flag.
+AIA auto-detects executable prompts by their shebang line (`#!`). Just add a shebang, make the file executable with `chmod +x`, and run it directly. No special flag is needed.
 
-In the example below the option `--no-output` is used to direct the output from the LLM processing of the prompt to STDOUT.  This way the executable prompts can be good citizens on the *nix command line receiving piped in input via STDIN and send its output to STDOUT.
+The option `--no-output` directs the output from the LLM to STDOUT so executable prompts can be good citizens on the *nix command line, receiving piped input via STDIN and sending output to STDOUT.
 
 Create executable prompts:
 
 **weather_report** (make executable with `chmod +x`):
 ```bash
-#!/usr/bin/env aia run --no-output --exec
+#!/usr/bin/env aia run --no-output
 # Get current storm activity for the east and south coast of the US
 
 Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.
 
-//webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
+/webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
 ```
 
 Usage:
@@ -1302,7 +1304,7 @@ Usage:
 
 #### The run Prompt
 ```bash
-# ~/.prompts/run.txt
+# ~/.prompts/run.md
 # Desc: A configuration only prompt file for use with executable prompts
 #       Put whatever you want here to setup the configuration desired.
 #       You could also add a system prompt to preface your intended prompt
@@ -1312,7 +1314,7 @@ Usage: `echo "What is the meaning of life?" | aia run`
 
 #### The Ad Hoc One-shot Prompt
 ```bash
-# ~/.prompts/ad_hoc.txt
+# ~/.prompts/ad_hoc.md
 [WHAT_NOW_HUMAN]
 ```
 Usage: `aia ad_hoc` - perfect for any quick one-shot question without cluttering shell history.
@@ -1358,16 +1360,16 @@ AIA executes shell commands and Ruby code embedded in prompts. This provides pow
 
 ```bash
 # ✅ Good: Use parameters for sensitive data
-//config api_key = [API_KEY]
+/config api_key = [API_KEY]
 
 # ❌ Bad: Hardcode secrets
-//config api_key = sk-1234567890abcdef
+/config api_key = sk-1234567890abcdef
 
 # ✅ Good: Validate shell commands
-//shell ls -la /safe/directory
+/shell ls -la /safe/directory
 
 # ❌ Bad: Dangerous shell commands
-//shell rm -rf / # Never do this!
+/shell rm -rf / # Never do this!
 ```
 
 ### Recommended Security Setup
@@ -1375,7 +1377,7 @@ AIA executes shell commands and Ruby code embedded in prompts. This provides pow
 ```bash
 # Set restrictive permissions on prompts directory
 chmod 700 ~/.prompts
-chmod 600 ~/.prompts/*.txt
+chmod 600 ~/.prompts/*.md
 ```
 
 ## Troubleshooting
@@ -1388,7 +1390,7 @@ chmod 600 ~/.prompts/*.txt
 ls $AIA_PROMPTS__DIR
 
 # Verify prompt file exists
-ls ~/.prompts/my_prompt.txt
+ls ~/.prompts/my_prompt.md
 
 # Use fuzzy search
 aia --fuzzy
@@ -1478,7 +1480,7 @@ aia --fatal --chat
 
 **Large prompt processing:**
 - Break into smaller prompts using `--pipeline`
-- Use `//include` selectively instead of large files
+- Use `/include` selectively instead of large files
 - Consider model context limits
 
 ## Development

@@ -17,11 +17,6 @@ module AIA
     end
 
 
-    def display_thinking_animation
-      puts "\n⏳ Processing...\n"
-    end
-
-
     def display_ai_response(response)
       puts "\nAI: "
       format_chat_response(response)
@@ -103,20 +98,16 @@ module AIA
     end
 
     def with_spinner(message = "Processing", operation_type = nil)
-      if AIA.verbose?
-        spinner_message = operation_type ? "#{message} #{operation_type}..." : "#{message}..."
-        spinner = TTY::Spinner.new("[:spinner] #{spinner_message}", format: :bouncing_ball)
-        spinner.auto_spin
+      spinner_message = operation_type ? "#{message} #{operation_type}..." : "#{message}..."
+      spinner = TTY::Spinner.new("[:spinner] #{spinner_message}", format: :bouncing_ball)
+      spinner.auto_spin
 
-        begin
-          result = yield
-        ensure
-          spinner.stop
-        end
-        result
-      else
-        yield
+      begin
+        result = yield
+      ensure
+        spinner.stop
       end
+      result
     end
 
     def display_token_metrics(metrics)

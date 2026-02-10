@@ -5,29 +5,29 @@ Collection of prompts for software development tasks.
 ## Available Prompts
 
 ### Code Review
-- **code_review.txt** - Comprehensive code analysis and review
-- **security_review.txt** - Security-focused code review
-- **performance_review.txt** - Performance analysis and optimization
+- **code_review.md** - Comprehensive code analysis and review
+- **security_review.md** - Security-focused code review
+- **performance_review.md** - Performance analysis and optimization
 
 ### Documentation
-- **generate_docs.txt** - Generate code documentation
-- **api_docs.txt** - API documentation generation
-- **readme_generator.txt** - README file creation
+- **generate_docs.md** - Generate code documentation
+- **api_docs.md** - API documentation generation
+- **readme_generator.md** - README file creation
 
 ### Debugging
-- **debug_analysis.txt** - Systematic bug analysis
-- **error_investigation.txt** - Error investigation and resolution
-- **performance_debug.txt** - Performance issue diagnosis
+- **debug_analysis.md** - Systematic bug analysis
+- **error_investigation.md** - Error investigation and resolution
+- **performance_debug.md** - Performance issue diagnosis
 
 ### Architecture
-- **architecture_analysis.txt** - System architecture review
-- **design_patterns.txt** - Design pattern recommendations
-- **refactoring_guide.txt** - Code refactoring suggestions
+- **architecture_analysis.md** - System architecture review
+- **design_patterns.md** - Design pattern recommendations
+- **refactoring_guide.md** - Code refactoring suggestions
 
 ### Testing
-- **test_strategy.txt** - Test strategy development
-- **unit_test_generator.txt** - Unit test creation
-- **integration_testing.txt** - Integration test planning
+- **test_strategy.md** - Test strategy development
+- **unit_test_generator.md** - Unit test creation
+- **integration_testing.md** - Integration test planning
 
 ## Usage Examples
 
@@ -46,9 +46,9 @@ aia generate_docs --format markdown src/
 
 ### Code Review Prompt
 ```bash
-# ~/.prompts/code_review.txt
-//config model gpt-4o-mini
-//config temperature 0.3
+# ~/.prompts/code_review.md
+/config model gpt-4o-mini
+/config temperature 0.3
 
 Review this code for:
 - Best practices adherence
@@ -63,12 +63,12 @@ Code to review:
 
 ### Meeting Notes Processor
 ```bash
-# ~/.prompts/meeting_notes.txt
-//config model gpt-4o-mini
-//pipeline format,action_items
+# ~/.prompts/meeting_notes.md
+/config model gpt-4o-mini
+/pipeline format,action_items
 
 Raw meeting notes:
-//include [NOTES_FILE]
+/include [NOTES_FILE]
 
 Please clean up and structure these meeting notes.
 ```
@@ -77,9 +77,9 @@ Please clean up and structure these meeting notes.
 
 ### Documentation Generator  
 ```bash
-# ~/.prompts/document.txt
-//config model gpt-4o-mini
-//shell find [PROJECT_DIR] -name "*.rb" | head -10
+# ~/.prompts/document.md
+/config model gpt-4o-mini
+/shell find [PROJECT_DIR] -name "*.rb" | head -10
 
 Generate documentation for the Ruby project shown above.
 Include: API references, usage examples, and setup instructions.
@@ -89,7 +89,7 @@ Include: API references, usage examples, and setup instructions.
 
 ### Multi-Model Decision Making
 ```bash
-# ~/.prompts/decision_maker.txt
+# ~/.prompts/decision_maker.md
 # Compare different AI perspectives on complex decisions
 
 What are the pros and cons of [DECISION_TOPIC]?

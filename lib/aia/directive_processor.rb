@@ -1,91 +1,86 @@
 # lib/aia/directive_processor.rb
 
-# require 'active_support/all'
 require 'faraday'
 require 'word_wrapper'
-require_relative 'directives/registry'
+require 'set'
+require_relative 'directive'
+require_relative 'directives/configuration_directives'
+require_relative 'directives/context_directives'
+require_relative 'directives/execution_directives'
+require_relative 'directives/utility_directives'
+require_relative 'directives/web_and_file_directives'
+require_relative 'directives/model_directives'
 
 module AIA
   class DirectiveProcessor
-    using Refinements
-
-    EXCLUDED_METHODS = %w[run initialize private?]
+    DIRECTIVE_PREFIX = AIA::Directive::DIRECTIVE_PREFIX
 
     def initialize
-      @prefix_size = PromptManager::Prompt::DIRECTIVE_SIGNAL.size
-      @included_files = []
-      Directives::WebAndFile.included_files = @included_files
+      @prefix_size = DIRECTIVE_PREFIX.size
     end
 
 
+    # Checks whether a string looks like a chat-time directive.
+    # Uses PM.directives as the source of truth for known directive names.
     def directive?(string)
-      Directives::Registry.directive?(string)
+      content = extract_content(string)
+      stripped = content.strip
+
+      return false unless stripped.start_with?(DIRECTIVE_PREFIX)
+
+      # Extract the directive name and check it's registered
+      sans_prefix = stripped[@prefix_size..]
+      method_name = sans_prefix.split(' ').first&.downcase
+      return false if method_name.nil? || method_name.empty?
+
+      PM.directives.key?(method_name.to_sym)
     end
 
 
-    def process(string, context_manager)
+    # Process a chat-time directive by dispatching through PM.directives.
+    # Returns the block's return value: non-blank string for content directives,
+    # nil for operational directives.
+    def process(string, _context_manager = nil)
       return string unless directive?(string)
 
-      content = if string.is_a?(RubyLLM::Message)
-                  begin
-                    string.content
-                  rescue StandardError
-                    string.to_s
-                  end
-                else
-                  string.to_s
-                end
-
+      content = extract_content(string)
       key = content.strip
       sans_prefix = key[@prefix_size..]
       args = sans_prefix.split(' ')
       method_name = args.shift.downcase
 
-      Directives::Registry.process(method_name, args, context_manager)
+      block = PM.directives[method_name.to_sym]
+      return "Error: Unknown directive '#{method_name}'" unless block
+
+      # Provide a RenderContext so PM built-in directives (e.g., :include)
+      # work in chat mode with proper path resolution.  AIA directives
+      # ignore the context parameter, so this is harmless for them.
+      block.call(render_context, *args)
     end
 
-
-    def run(directives)
-      return {} if directives.nil? || directives.empty?
-
-      directives.each do |key, _|
-        sans_prefix = key[@prefix_size..]
-        args = sans_prefix.split(' ')
-        method_name = args.shift.downcase
-
-        # Use the new module-based directive system
-        # Pass nil as context_manager since it's not available at the prompt processing level
-        directives[key] = Directives::Registry.process(method_name, args, nil)
-      end
-
-      directives
-    end
 
     private
 
-    def private?(method_name)
-      !respond_to?(method_name) && respond_to?(method_name, true)
+    def render_context
+      PM::RenderContext.new(
+        directory: Dir.pwd,
+        params:    {},
+        included:  Set.new,
+        depth:     0,
+        metadata:  OpenStruct.new(includes: [])
+      )
     end
 
-    ################
-    ## Directives ##
-    ################
-
-    # All directive implementations are now in separate modules
-    # and are accessed through the Registry
-
-    # Keep backward compatibility by delegating to Registry
-    def method_missing(method_name, *args, &block)
-      if Directives::Registry.respond_to?(method_name, true)
-        Directives::Registry.send(method_name, *args, &block)
+    def extract_content(string)
+      if string.is_a?(RubyLLM::Message)
+        begin
+          string.content
+        rescue StandardError
+          string.to_s
+        end
       else
-        super
+        string.to_s
       end
-    end
-
-
-    def respond_to_missing?(method_name, include_private = false)
-      Directives::Registry.respond_to?(method_name, include_private) || super
     end
   end
 end

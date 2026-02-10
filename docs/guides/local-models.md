@@ -156,8 +156,8 @@ models:
 ### In Prompts
 
 ```
-//config model = ollama/mistral
-//config temperature = 0.7
+/config model = ollama/mistral
+/config temperature = 0.7
 
 Your prompt here...
 ```
@@ -168,7 +168,7 @@ Your prompt here...
 
 ```bash
 aia --model ollama/llama3.2 --chat
-> //models
+> /models
 ```
 
 **Ollama Output:**
@@ -267,7 +267,7 @@ ollama pull llama3.2
 **Problem:** "Model not listed"
 1. Load model in LM Studio
 2. Start local server
-3. Run `//models` directive
+3. Run `/models` directive
 
 ### Performance Issues
 

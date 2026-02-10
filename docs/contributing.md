@@ -119,7 +119,7 @@ docs(examples): add MCP client integration examples
 ```
 docs/examples/prompts/category/
 ├── index.md                    # Category overview
-├── example_name.txt           # Prompt file
+├── example_name.md            # Prompt file
 └── example_name_usage.md      # Usage documentation
 ```
 

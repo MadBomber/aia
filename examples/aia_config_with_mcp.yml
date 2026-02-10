@@ -1,0 +1,21 @@
+# AIA configuration with MCP server defined in YAML.
+# Equivalent to using --mcp mcp/filesystem.json but
+# keeps everything in one config file.
+
+prompts:
+  dir: ./prompts_dir
+
+models:
+  - name: ollama/qwen3
+
+output:
+  file: ~
+
+flags:
+  chat: false
+
+mcp_servers:
+  - name: filesystem
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "./prompts_dir"]
+    timeout: 10000

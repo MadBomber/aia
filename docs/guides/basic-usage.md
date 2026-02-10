@@ -162,10 +162,10 @@ aia --include tests/ code_quality_check src/
 Use variables to make prompts reusable:
 
 ```markdown
-# ~/.prompts/parameterized_review.txt
+# ~/.prompts/parameterized_review.md
 Review the <%= file_type %> file for <%= focus_areas %>:
 
-File: //include <%= file_path %>
+File: /include <%= file_path %>
 
 Provide <%= detail_level %> analysis with recommendations.
 ```
@@ -339,8 +339,8 @@ echo $OPENAI_API_KEY | cut -c1-10  # Show first 10 chars only
 ### File and Permission Issues
 ```bash
 # Check file permissions
-ls -la ~/.prompts/my_prompt.txt
-chmod 644 ~/.prompts/my_prompt.txt
+ls -la ~/.prompts/my_prompt.md
+chmod 644 ~/.prompts/my_prompt.md
 
 # Verify directory access
 test -r ~/.prompts && echo "Prompts directory accessible" || echo "Permission issue"
@@ -368,14 +368,14 @@ aia --model gpt-3.5-turbo quick_test
 The `run` prompt is a configuration-only prompt that serves as a foundation for flexible AI interactions:
 
 ```bash
-# ~/.prompts/run.txt
+# ~/.prompts/run.md
 # Desc: A configuration only prompt file for use with executable prompts
 #       Put whatever you want here to setup the configuration desired.
 #       You could also add a system prompt to preface your intended prompt
 
-//config model = gpt-4o-mini
-//config temperature = 0.7
-//config terse = true
+/config model = gpt-4o-mini
+/config temperature = 0.7
+/config terse = true
 ```
 
 **Usage Examples:**
@@ -398,7 +398,7 @@ echo "Explain quantum computing" | aia run --model gpt-4 --temperature 1.0
 Perfect for quick questions without cluttering your prompt collection:
 
 ```bash
-# ~/.prompts/ad_hoc.txt
+# ~/.prompts/ad_hoc.md
 [WHAT_NOW_HUMAN]
 ```
 

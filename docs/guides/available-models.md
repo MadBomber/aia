@@ -27,10 +27,10 @@ aia --available-models anthropic,claude,sonnet
 ### Within Prompts
 ```markdown
 # List models in a prompt
-//available_models
+/available_models
 
 # Filter models
-//available_models openai,gpt
+/available_models openai,gpt
 ```
 
 ## Model Categories
@@ -304,15 +304,15 @@ analysis:
 ### Multi-Model Strategies
 ```bash
 # Use different models for different aspects
-aia --model gpt-3.5-turbo initial_analysis.txt
-aia --model gpt-4 --include initial_analysis.txt detailed_review.txt
-aia --model claude-3-sonnet --include detailed_review.txt final_synthesis.txt
+aia --model gpt-3.5-turbo initial_analysis.md
+aia --model gpt-4 --include initial_analysis.md detailed_review.md
+aia --model claude-3-sonnet --include detailed_review.md final_synthesis.md
 ```
 
 ### Model Switching Based on Content
 ```ruby
 # Dynamic model selection
-//ruby
+/ruby
 content_size = File.read('<%= input %>').length
 complexity = content_size > 10000 ? 'high' : 'low'
 
@@ -320,19 +320,19 @@ model = case complexity
         when 'high' then 'claude-3-sonnet'
         when 'low' then 'gpt-3.5-turbo'
         end
-        
-puts "//config model #{model}"
+
+puts "/config model #{model}"
 ```
 
 ### Fallback Strategies
 ```ruby
 # Model fallback chain
-//ruby
+/ruby
 preferred_models = ['gpt-4', 'claude-3-sonnet', 'gpt-3.5-turbo']
 available_models = `aia --available-models`.split("\n").map { |line| line.split.first }
 
 selected_model = preferred_models.find { |model| available_models.include?(model) }
-puts "//config model #{selected_model || 'gpt-3.5-turbo'}"
+puts "/config model #{selected_model || 'gpt-3.5-turbo'}"
 ```
 
 ## Staying Current

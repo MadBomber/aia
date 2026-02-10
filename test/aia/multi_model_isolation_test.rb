@@ -37,7 +37,7 @@ class MultiModelIsolationTest < Minitest::Test
       roles_prefix: 'roles',
       role: '',
       system_prompt: 'test system prompt',
-      extname: '.txt',
+      extname: '.md',
       parameter_regex: '\[\[(?<name>[A-Z_]+)\]\]'
     )
 
@@ -159,7 +159,7 @@ class MultiModelIsolationTest < Minitest::Test
   end
 
   def create_test_prompt_file(id, text)
-    File.write(File.join(@temp_prompts_dir, "#{id}.txt"), text)
+    File.write(File.join(@temp_prompts_dir, "#{id}.md"), text)
   end
 
 end

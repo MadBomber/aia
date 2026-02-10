@@ -1,4 +1,76 @@
 # Changelog
+## [1.0.0-beta] - 2026-02-10
+
+### Breaking Changes
+- **Removed `--exec` / `-x` CLI Option**: Shebang auto-detection fully replaces the legacy `--exec` flag
+  - Prompt files with `#!/usr/bin/env aia ...` on the first line are auto-detected and processed as executable prompts
+  - Removed `executable_prompt` and `executable_prompt_file` config attributes
+  - Removed legacy code path in validator and session
+- **Removed deprecated `next` and `pipeline` directives**: These utility directive methods have been removed
+  - `next` and `pipeline` are now handled exclusively via CLI flags and front matter
+  - Removed `next` and `next=` methods from `AIA::Config`
+- **Upgraded to prompt_manager gem v1.0.2**: Directive system now uses PM::Directive base class hierarchy
+  - AIA directives inherit from `AIA::Directive < PM::Directive`
+  - Directive registration uses centralized `PM::Directive.directive_subclasses`
+
+### New Features
+- **`/skill` and `/skills` Directives**: Access Claude Code skills from within AIA
+  - `/skills` lists all available skills from `~/.claude/skills/`
+  - `/skill <name>` includes a specific skill's context into the conversation
+- **`model` Accessor on RubyLLMAdapter**: Added `model` method for programmatic access to the current model
+- **Comprehensive Examples Directory**: 23 progressive demo scripts (00–22) covering all AIA features
+  - Demos 00–05: Setup, basic usage, front matter, shell integration, ERB, shell+ERB
+  - Demos 06–07: Prompt chaining and pipelines
+  - Demos 08–10: Context files, roles, STDIN piping
+  - Demos 11–13: Multi-model comparison, token usage, cost tracking
+  - Demos 14–15: Output files and prompt parameters
+  - Demo 16: Directives (built-in `include` and custom directive creation)
+  - Demos 17–20: Require/conditionals, tools, local tools, MCP servers
+  - Demo 21: Executable prompts (shebang auto-detection, frontmatter+ERB, STDIN piping)
+  - Demo 22: Interactive chat mode (pure chat, prompt+chat, pipeline+chat, directives, live session)
+  - All demos use isolated `aia_config.yml` via `-c` flag for reproducible runs
+  - `common.sh` clears all `AIA_*` environment variables to prevent leakage
+
+### Improvements
+- **Directive Processor Refactoring**: Simplified directive detection and prefix handling
+  - Improved directive prefix and method name validation
+  - Streamlined directive processing logic
+- **Enhanced Prompt Handler**: Added pipeline override logging and logger method
+- **Error Handling Module**: Added `lib/aia/errors.rb` for centralized exception management
+- **Test Coverage Improvements**: Added SimpleCov prelude, CLI parser tests, and enhanced Ollama adapter tests
+
+### Documentation
+- **Examples README**: Comprehensive guide with prerequisites, API key configuration, and per-demo documentation links to https://madbomber.github.io/aia/
+- **Main README**: Added examples directory reference in "Examples & Tips" section; rewrote executable prompts section for shebang auto-detection
+- **CLI Reference**: Removed `--exec` section; updated executable prompt documentation
+- **Directives Reference**: Added `/skill` and `/skills` directive documentation
+- **Model Directive**: Updated with detailed usage examples
+
+### Technical Changes
+- Bumped version from 0.11.1 to 1.0.0-beta
+- Updated prompt_manager dependency to v1.0.2
+- Updated json gem to 2.18.1
+- Simplified directive registry (`lib/aia/directives/registry.rb`)
+- Enhanced PromptHandler with expanded prompt processing logic (326+ lines added)
+- Added `lib/aia/errors.rb` error handling module
+
+## [0.11.1] - 2026-02-03
+
+### New Features
+- **`bin/migrate_prompts` Script**: Standalone Ruby script for migrating prompt files from prompt_manager v0.5.8 format to v1.0.0 format
+  - Converts `.txt` + `.json` files to `.md` with YAML front matter and ERB parameters
+  - Placeholder conversion: `[PLACEHOLDER]` → `<%= placeholder %>`
+  - Space placeholder normalization: `[TECH STACK]` → `<%= tech_stack %>`
+  - Directive migration: `//config`, `//temp`, `//topp`, `//include`, `//shell`, `//ruby`, `//backend`, `//next`, `//pipeline`
+  - Comment conversion: `#` lines → HTML comments (preserves comments inside code fences and ERB blocks)
+  - Code fence detection: files containing ``` fences are flagged as `.txt-review` for manual review
+  - JSON history file migration: `.json` parameter history converted to YAML `parameters:` block in front matter
+  - `--reprocess` option to re-examine `.txt-review` files and recover those that now process cleanly
+  - `--dry-run` mode for safe previewing of changes
+  - `--verbose` logging with detailed per-file output
+  - `--force` to overwrite existing `.md` files
+  - Supports both directory scanning and specific file arguments
+
 ## [0.11.0] - 2026-02-02
 
 ### New Features

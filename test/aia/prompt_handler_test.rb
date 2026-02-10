@@ -13,7 +13,7 @@ class PromptHandlerTest < Minitest::Test
       context_files: [],
       prompts: OpenStruct.new(
         dir: '/tmp/test_prompts',
-        extname: '.txt',
+        extname: '.md',
         roles_dir: '/tmp/test_prompts/roles',
         roles_prefix: 'roles',
         role: nil,
@@ -37,7 +37,6 @@ class PromptHandlerTest < Minitest::Test
 
   def test_basic_functionality
     # Test that handler has expected methods
-    assert_respond_to @handler, :get_prompt
     assert_respond_to @handler, :fetch_prompt
     assert_respond_to @handler, :fetch_role
   end
@@ -53,7 +52,6 @@ class PromptHandlerTest < Minitest::Test
     handler = AIA::PromptHandler.new
     
     # These methods should exist
-    assert handler.respond_to?(:get_prompt)
     assert handler.respond_to?(:fetch_prompt)
     assert handler.respond_to?(:fetch_role)
   end

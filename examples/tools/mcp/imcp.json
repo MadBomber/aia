@@ -1,7 +1,0 @@
-{
-  "mcpservers": {
-    "iMCP": {
-      "command": "/Applications/iMCP.app/Contents/MacOS/imcp-server 2> /dev/null"
-    }
-  }
-}

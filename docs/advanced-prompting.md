@@ -13,9 +13,9 @@ environment = ENV['RAILS_ENV'] || 'development'
 config_file = "config/#{environment}.yml"
 if File.exist?(config_file)
 %>
-//include <%= config_file %><%
+/include <%= config_file %><%
 <% else %>
-//include config/default.yml
+/include config/default.yml
 <% end %>
 ```
 
@@ -37,7 +37,7 @@ Provide thorough analysis with emphasis on reasoning process.
 Adjust settings based on content or context:
 
 ```markdown
-//ruby
+/ruby
 <%
 task_type = '<%= task_type %>'
 temperature = case task_type
@@ -47,7 +47,7 @@ temperature = case task_type
              else 0.7
              end
 %>
-//config temperature <%= temperature %>
+/config temperature <%= temperature %>
 ```
 
 ```markdown
@@ -56,8 +56,8 @@ content_size = File.read('<%= input_file %>').length
 model = content_size > 50000 ? 'claude-3-sonnet' : 'gpt-4'
 max_tokens = content_size > 50000 ? 8000 : 4000
 %>
-//config model <%= model %>
-//config max_tokens <%= max_tokens %>
+/config model <%= model %>
+/config max_tokens <%= max_tokens %>
 ```
 
 ## Complex Workflow Patterns
@@ -67,18 +67,18 @@ Create sophisticated analysis workflows with intermediate processing:
 
 ```markdown
 # Stage 1: Data Preparation
-//config model gpt-3.5-turbo
-//config temperature 0.2
+/config model gpt-3.5-turbo
+/config temperature 0.2
 
 # Data Analysis Pipeline - Stage 1: Preparation
 
 ## Input Data Overview
-//shell file <%= input_file %>
-//shell wc -l <%= input_file %>
+/shell file <%= input_file %>
+/shell wc -l <%= input_file %>
 <%= "File size: #{File.size('<%= input_file %>')} bytes" %>
 
 ## Data Quality Assessment
-//include <%= input_file %>
+/include <%= input_file %>
 
 Analyze the data structure and identify:
 1. Data format and schema
@@ -88,8 +88,8 @@ Analyze the data structure and identify:
 
 Save findings to: preprocessing_notes.md
 
-//next data_cleaning
-//pipeline analysis_deep_dive,pattern_recognition,insight_generation,final_report
+/next data_cleaning
+/pipeline analysis_deep_dive,pattern_recognition,insight_generation,final_report
 ```
 
 ### Adaptive Decision Trees
@@ -104,19 +104,19 @@ file_size = File.size('<%= code_file %>')
 if file_size > 10000
   analysis_type = 'comprehensive'
 %>
-//config model gpt-4
-//config max_tokens 6000
+/config model gpt-4
+/config max_tokens 6000
 <%
 elsif file_ext == '.py'
   analysis_type = 'python_specific'
 %>
-//config model gpt-4
+/config model gpt-4
 Including Python-specific analysis patterns
 <%
 else
   analysis_type = 'standard'
 %>
-//config model gpt-3.5-turbo
+/config model gpt-3.5-turbo
 <%
 end
 %>
@@ -130,8 +130,8 @@ Build context progressively through multiple layers:
 
 ```markdown
 # Layer 1: Project Context
-//include README.md
-//include ARCHITECTURE.md
+/include README.md
+/include ARCHITECTURE.md
 
 # Layer 2: Domain Context
 <%
@@ -139,13 +139,13 @@ domain = '<%= domain || "general" %>'
 domain_file = "docs/#{domain}_context.md"
 if File.exist?(domain_file)
 %>
-//include <%= domain_file %>
+/include <%= domain_file %>
 <% end %>
 ```
 
 # Layer 3: Task-Specific Context
 <% if task_context_file %>
-//include <%= task_context_file %>
+/include <%= task_context_file %>
 <% end %>
 
 # Layer 4: Historical Context
@@ -153,7 +153,7 @@ if File.exist?(domain_file)
 history_file = ".aia/history/#{Date.today.strftime('%Y%m')}_context.md"
 if File.exist?(history_file)
 %>
-//include <%= history_file %>
+/include <%= history_file %>
 <% end %>
 ```
 
@@ -167,7 +167,7 @@ Quick data insertion from clipboard:
 # Code Review with Clipboard Content
 
 ## Code to Review
-//paste
+/paste
 
 ## Review Guidelines
 - Check for best practices
@@ -198,7 +198,7 @@ context_files.each do |file|
     file_size = File.read(file).length
     if total_size + file_size <= max_context_size
 %>
-//include <%= file %>
+/include <%= file %>
 <%
       total_size += file_size
     else
@@ -220,8 +220,8 @@ Create flexible templates that adapt to different scenarios:
 
 ```erb
 # Multi-format document generator
-//config model <%= model || "gpt-4" %>
-//config temperature <%= creativity || "0.7" %>
+/config model <%= model || "gpt-4" %>
+/config temperature <%= creativity || "0.7" %>
 
 # <%= document_type.capitalize %> Document
 
@@ -252,18 +252,18 @@ Generate an academic document with:
 <% end %>
 
 ## Source Material
-//include <%= source_file %>
+/include <%= source_file %>
 
 ## Additional Context
 <% if context_files %>
 <% context_files.each do |file| %>
-//include <%= file %>
+/include <%= file %>
 <% end %>
 <% end %>
 
 ## Clipboard Content (if applicable)
 <% if include_clipboard %>
-//paste
+/paste
 <% end %>
 
 Target audience: <%= audience || "general professional" %>
@@ -282,18 +282,18 @@ tasks.each do |task|
   prompt_content = <<~PROMPT
     # #{domain.capitalize} #{task.capitalize} Prompt
 
-    //config model gpt-4
-    //config temperature 0.5
+    /config model gpt-4
+    /config temperature 0.5
 
     You are a #{domain} expert performing #{task} tasks.
 
     Task: <%= specific_task %>
-    Context: //include <%= context_file %>
+    Context: /include <%= context_file %>
 
     Provide expert-level guidance specific to #{domain} #{task}.
   PROMPT
 
-  filename = "generated_#{domain}_#{task}.txt"
+  filename = "generated_#{domain}_#{task}.md"
   File.write(filename, prompt_content)
 %>
 Generated: <%= filename %>
@@ -307,7 +307,7 @@ Coordinate multiple models for complex tasks:
 
 ```markdown
 # Multi-model analysis system
-//config consensus false
+/config consensus false
 
 ## Phase 1: Creative Ideation (High Temperature)
 <%= "Using GPT-4 for creative brainstorming..." %>
@@ -373,7 +373,7 @@ Include <%= context_depth %> for comprehensive understanding.
 Create sophisticated tool integration patterns:
 
 ```markdown
-//tools advanced_analysis_tools.rb
+/tools advanced_analysis_tools.rb
 
 <%
 # Initialize analysis workflow
@@ -409,7 +409,7 @@ tools << 'web_scraper' if content.match?(/https?:\/\//)
 %>
 Selected tools: <%= tools.join(', ') %>
 <% tools.each do |tool| %>
-//tools <%= tool %>.rb
+/tools <%= tool %>.rb
 <% end %>
 ```
 
@@ -419,7 +419,7 @@ Selected tools: <%= tools.join(', ') %>
 Generate output in multiple formats simultaneously:
 
 ```markdown
-//config model gpt-4
+/config model gpt-4
 
 # Multi-Format Report Generator
 
@@ -450,7 +450,7 @@ Extract concrete action items with:
 - Assigned roles
 - Success criteria
 
-Source: //include <%= source_file %>
+Source: /include <%= source_file %>
 ```
 
 ### Structured Data Extraction
@@ -458,8 +458,8 @@ Extract structured data from unstructured content:
 
 ```ruby
 # Structured data extraction
-//config model gpt-4
-//config temperature 0.1
+/config model gpt-4
+/config temperature 0.1
 
 Extract structured information from the following content and format as JSON:
 
@@ -472,7 +472,7 @@ Required fields:
 - opportunities: Growth and improvement opportunities
 
 Content:
-//include <%= unstructured_content %>
+/include <%= unstructured_content %>
 
 Output valid JSON only, no explanatory text.
 
@@ -500,7 +500,7 @@ Handle errors and provide fallback options:
 <%=
 begin
   primary_content = File.read('<%= primary_source %>')
-  puts "//include <%= primary_source %>"
+  puts "/include <%= primary_source %>"
 rescue => e
   puts "Primary source unavailable (#{e.message})"
 
@@ -511,7 +511,7 @@ rescue => e
   fallback_sources.each do |source|
     if File.exist?(source)
       puts "Using fallback source: #{source}"
-      puts "//include #{source}"
+      puts "/include #{source}"
       fallback_found = true
       break
     end
@@ -594,14 +594,14 @@ puts "Processing #{files.length} files in batches of #{batch_size}"
 
 # Switch to faster model for large batches
 if files.length > model_switching_threshold
-  puts "//config model gpt-3.5-turbo  # Using faster model for large batch"
+  puts "/config model gpt-3.5-turbo  # Using faster model for large batch"
 else
-  puts "//config model gpt-4  # Using quality model for small batch"
+  puts "/config model gpt-4  # Using quality model for small batch"
 end
 
 files.each_slice(batch_size).with_index do |batch, index|
   puts "\n## Batch #{index + 1}: #{batch.map(&:basename).join(', ')}"
-  batch.each { |file| puts "//include #{file}" }
+  batch.each { |file| puts "/include #{file}" }
   puts "\nAnalyze this batch focusing on common patterns and unique aspects."
 end
 %>
@@ -639,9 +639,9 @@ end
 A comprehensive code review system using multiple models and tools:
 
 ```markdown
-# enterprise_code_review.txt
-//config model gpt-4
-//tools security_scanner.rb,performance_analyzer.rb,style_checker.rb
+# enterprise_code_review.md
+/config model gpt-4
+/tools security_scanner.rb,performance_analyzer.rb,style_checker.rb
 
 # Enterprise Code Review System
 
@@ -657,22 +657,22 @@ phases = {
 current_phase = '<%= phase || "security" %>'
 config = phases[current_phase.to_sym]
 
-puts "//config model #{config[:model]}"
-puts "//config temperature #{config[:temperature]}"
-config[:tools].each { |tool| puts "//tools #{tool}.rb" }
+puts "/config model #{config[:model]}"
+puts "/config temperature #{config[:temperature]}"
+config[:tools].each { |tool| puts "/tools #{tool}.rb" }
 
 puts "\n## Phase: #{current_phase.capitalize} Review"
 %>
 ```
 
 ### Code to Analyze:
-//include <%= code_file %>
+/include <%= code_file %>
 
 Perform comprehensive <%= current_phase %> analysis following enterprise standards.
 
 <%=
 next_phase = phases.keys[phases.keys.index(current_phase.to_sym) + 1]
-puts next_phase ? "//next enterprise_code_review --phase #{next_phase}" : "# Review complete"
+puts next_phase ? "/next enterprise_code_review --phase #{next_phase}" : "# Review complete"
 %>
 ```
 
@@ -681,18 +681,18 @@ A research system that adapts its approach based on query complexity:
 
 ```markdown
 <%=
-# adaptive_research_assistant.txt
+# adaptive_research_assistant.md
 query = research_query
 complexity = query.split.length > 10 ? 'complex' : 'simple'
 domain = domain || "general"
 
 if complexity == 'complex'
-  puts "//config model claude-3-sonnet"
-  puts "//config max_tokens 6000"
+  puts "/config model claude-3-sonnet"
+  puts "/config max_tokens 6000"
   research_depth = 'comprehensive'
 else
-  puts "//config model gpt-4"
-  puts "//config max_tokens 3000"
+  puts "/config model gpt-4"
+  puts "/config max_tokens 3000"
   research_depth = 'focused'
 end
 
@@ -716,7 +716,7 @@ source_map = {
 sources = source_map[domain] || source_map['general']
 sources.each do |source|
   if File.exist?(source) || Dir.exist?(source)
-    puts "//include #{source}"
+    puts "/include #{source}"
   end
 end
 %>
@@ -731,8 +731,8 @@ Provide <%= research_depth %> research analysis addressing:
 
 <%=
 if research_depth == 'comprehensive'
-  puts "//next citation_generator"
-  puts "//pipeline fact_checker,source_validator,bibliography_creator"
+  puts "/next citation_generator"
+  puts "/pipeline fact_checker,source_validator,bibliography_creator"
 end
 %>
 ```

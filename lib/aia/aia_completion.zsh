@@ -20,8 +20,8 @@ _aia_completion() {
     # Change directory to the prompts directory
     cd "$AIA_PROMPTS__DIR" || return
 
-    # Generate a list of relative paths from the ~/.prompts directory (without .txt extension)
-    local files=($(find . -name "*.txt" -type f | sed 's|^\./||' | sed 's/\.txt$//'))
+    # Generate a list of relative paths from the ~/.prompts directory (without .md extension)
+    local files=($(find . -name "*.md" -type f | sed 's|^\./||' | sed 's/\.md$//'))
 
     # Change back to the initial directory
     cd "$initial_pwd" || return

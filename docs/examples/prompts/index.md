@@ -69,7 +69,7 @@ Educational and knowledge acquisition prompts:
 ### 1. Copy to Your Prompts Directory
 ```bash
 # Copy individual prompts
-cp docs/examples/prompts/development/code_review.txt ~/.prompts/
+cp docs/examples/prompts/development/code_review.md ~/.prompts/
 
 # Copy entire categories
 cp -r docs/examples/prompts/development/ ~/.prompts/
@@ -100,10 +100,10 @@ aia --pipeline "code_review,optimize,test" my_project/
 ## Featured Examples
 
 ### Code Review Prompt
-**File**: `development/code_review.txt`
+**File**: `development/code_review.md`
 ```markdown
-//config model gpt-4
-//config temperature 0.3
+/config model gpt-4
+/config temperature 0.3
 
 # Code Review Analysis
 
@@ -115,7 +115,7 @@ Review the following code for:
 - **Best Practices**: Design patterns, industry standards
 
 ## Code to Review:
-//include <%= file %>
+/include <%= file %>
 
 ## Review Format:
 Provide your analysis in the following structure:
@@ -137,11 +137,11 @@ Highlight what's done well in the code.
 ```
 
 ### Blog Post Generator
-**File**: `writing/blog_post.txt`
+**File**: `writing/blog_post.md`
 ```markdown
-//config model gpt-4
-//config temperature 1.0
-//config max_tokens 3000
+/config model gpt-4
+/config temperature 1.0
+/config max_tokens 3000
 
 # Technical Blog Post Generator
 
@@ -155,7 +155,7 @@ Create an engaging, well-structured blog post about: **<%= topic %>**
 
 ## Context:
 <% if context_file %>
-//include <%= context_file %>
+/include <%= context_file %>
 <% end %>
 
 ## Structure:
@@ -177,19 +177,19 @@ Please ensure the post is SEO-friendly with good header structure and includes r
 ```
 
 ### Data Analysis Workflow
-**File**: `analysis/data_pipeline.txt`
+**File**: `analysis/data_pipeline.md`
 ```markdown
-//config model claude-3-sonnet
-//config temperature 0.2
+/config model claude-3-sonnet
+/config temperature 0.2
 
 # Data Analysis Pipeline
 
 Analyze the provided dataset and generate comprehensive insights.
 
 ## Dataset Information:
-//shell head -5 <%= dataset_file %>
-//shell wc -l <%= dataset_file %>
-//shell file <%= dataset_file %>
+/shell head -5 <%= dataset_file %>
+/shell wc -l <%= dataset_file %>
+/shell file <%= dataset_file %>
 
 ## Analysis Steps:
 
@@ -219,7 +219,7 @@ Analyze the provided dataset and generate comprehensive insights.
 - Actionable business insights
 
 ## Data Sample:
-//include <%= dataset_file %>
+/include <%= dataset_file %>
 
 Please provide a thorough analysis with specific findings and quantitative metrics where possible.
 ```
@@ -229,8 +229,8 @@ Please provide a thorough analysis with specific findings and quantitative metri
 ### Parameterization Pattern
 Make prompts reusable with variables:
 ```markdown
-//config model <%= model || "gpt-4" %>
-//config temperature <%= temperature || "0.7" %>
+/config model <%= model || "gpt-4" %>
+/config temperature <%= temperature || "0.7" %>
 
 Task: <%= task_description %>
 Context: <%= context || "General" %>
@@ -241,9 +241,9 @@ Output Format: <%= format || "Markdown" %>
 Include different content based on conditions:
 ```markdown
 <% if File.exist?('production.yml') %>
-//include production.yml
+/include production.yml
 <% else %>
-//include development.yml
+/include development.yml
 <% end %>
 
 <% if ENV['DETAILED_ANALYSIS'] == 'true' %>
@@ -256,8 +256,8 @@ Provide summary analysis.
 ### Multi-Stage Pipeline Pattern
 Chain related prompts together:
 ```markdown
-//next data_cleaning
-//pipeline analysis,visualization,reporting
+/next data_cleaning
+/pipeline analysis,visualization,reporting
 
 Initial data processing completed.
 Ready for next stage: <%= next_stage %>
@@ -267,7 +267,7 @@ Ready for next stage: <%= next_stage %>
 Incorporate external tools:
 ```markdown
 # Get a list of tools that are available
-//tools
+/tools
 
 Using advanced analysis tools:
 

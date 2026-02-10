@@ -18,19 +18,19 @@ AIA's workflow system allows you to chain prompts together, creating sophisticat
 
 ### Sequential Processing
 ```markdown
-# first_prompt.txt
-//next second_prompt
-//config model gpt-4
+# first_prompt.md
+/next second_prompt
+/config model gpt-4
 
 Analyze the following data and prepare it for detailed analysis:
-//include <%= data_file %>
+/include <%= data_file %>
 
 Key findings summary:
 ```
 
 ```markdown  
-# second_prompt.txt
-//config model claude-3-sonnet
+# second_prompt.md
+/config model claude-3-sonnet
 
 Based on the initial analysis, provide detailed insights and recommendations:
 
@@ -63,9 +63,9 @@ aia --model gpt-4 --pipeline "review,optimize,test" code.py
 
 ### Directive-Based Pipelines
 ```markdown
-# pipeline_starter.txt
-//pipeline analyze_data,generate_insights,create_visualization,write_report
-//config model claude-3-sonnet
+# pipeline_starter.md
+/pipeline analyze_data,generate_insights,create_visualization,write_report
+/config model claude-3-sonnet
 
 # Data Analysis Pipeline
 
@@ -80,8 +80,8 @@ Initial data examination and basic statistics.
 
 ### Dynamic Pipeline Generation
 ```ruby
-# adaptive_pipeline.txt
-//ruby
+# adaptive_pipeline.md
+/ruby
 data_size = File.size('<%= input_file %>')
 complexity = data_size > 100000 ? 'complex' : 'simple'
 
@@ -91,7 +91,7 @@ else
   pipeline = ['quick_analysis', 'summary_report']
 end
 
-puts "//pipeline #{pipeline.join(',')}"
+puts "/pipeline #{pipeline.join(',')}"
 puts "Selected #{complexity} pipeline (#{pipeline.length} stages)"
 ```
 
@@ -101,8 +101,8 @@ puts "Selected #{complexity} pipeline (#{pipeline.length} stages)"
 Execute different paths based on intermediate results:
 
 ```ruby
-# conditional_workflow.txt
-//ruby
+# conditional_workflow.md
+/ruby
 # Analyze input to determine workflow path
 content = File.read('<%= input_file %>')
 file_type = File.extname('<%= input_file %>')
@@ -117,7 +117,7 @@ else
   workflow = ['generic_analysis', 'quality_check', 'recommendations']
 end
 
-puts "//pipeline #{workflow.join(',')}"
+puts "/pipeline #{workflow.join(',')}"
 puts "Detected #{file_type} file, using #{workflow.first.split('_').first} workflow"
 ```
 
@@ -125,8 +125,8 @@ puts "Detected #{file_type} file, using #{workflow.first.split('_').first} workf
 Handle multiple inputs simultaneously:
 
 ```ruby
-# parallel_processing.txt
-//ruby
+# parallel_processing.md
+/ruby
 input_files = Dir.glob('<%= pattern %>')
 batch_size = 3
 
@@ -136,7 +136,7 @@ input_files.each_slice(batch_size).with_index do |batch, index|
   puts "\n## Batch #{index + 1}"
   batch.each_with_index do |file, file_index|
     puts "### File #{file_index + 1}: #{File.basename(file)}"
-    puts "//include #{file}"
+    puts "/include #{file}"
   end
   
   puts "\nProcess this batch focusing on:"
@@ -145,9 +145,9 @@ input_files.each_slice(batch_size).with_index do |batch, index|
   puts "- Batch-level patterns"
   
   if index < (input_files.length / batch_size.to_f).ceil - 1
-    puts "//next parallel_processing_batch_#{index + 2}"
+    puts "/next parallel_processing_batch_#{index + 2}"
   else
-    puts "//next merge_parallel_results"
+    puts "/next merge_parallel_results"
   end
 end
 ```
@@ -156,20 +156,20 @@ end
 Handle failures gracefully:
 
 ```markdown
-# robust_workflow.txt
-//config model gpt-4
-//config temperature 0.3
+# robust_workflow.md
+/config model gpt-4
+/config temperature 0.3
 
 # Robust Analysis Workflow
 
-//ruby
+/ruby
 begin
   primary_data = File.read('<%= primary_input %>')
   puts "Using primary data source"
-  puts "//include <%= primary_input %>"
+  puts "/include <%= primary_input %>"
   
   # Set success path
-  puts "//next detailed_analysis"
+  puts "/next detailed_analysis"
   
 rescue => e
   puts "Primary data unavailable: #{e.message}"
@@ -177,11 +177,11 @@ rescue => e
   
   # Check for fallback options
   if File.exist?('<%= fallback_input %>')
-    puts "//include <%= fallback_input %>"  
-    puts "//next basic_analysis"
+    puts "/include <%= fallback_input %>"  
+    puts "/next basic_analysis"
   else
     puts "No data sources available"
-    puts "//next manual_input_prompt"
+    puts "/next manual_input_prompt"
   end
 end
 ```
@@ -192,8 +192,8 @@ end
 Maintain state across workflow stages:
 
 ```ruby
-# stateful_workflow.txt
-//ruby
+# stateful_workflow.md
+/ruby
 # Initialize or load workflow state
 state_file = '/tmp/workflow_state.json'
 
@@ -228,8 +228,8 @@ puts "Workflow state saved: #{state['workflow_id']}"
 Pass structured data between workflow stages:
 
 ```ruby
-# data_passing_example.txt
-//ruby
+# data_passing_example.md
+/ruby
 # Stage data management
 stage_data_file = "/tmp/stage_data_#{ENV['WORKFLOW_ID'] || 'default'}.json"
 
@@ -253,7 +253,7 @@ Previous stage results:
 ## Analysis Task
 Perform analysis considering previous stage results.
 
-//ruby
+/ruby
 # Prepare data for next stage (this would be set by the AI response processing)
 current_results = {
   'stage' => current_stage,
@@ -272,12 +272,12 @@ puts "Stage data template prepared for: #{current_stage}"
 Create workflows that manage other workflows:
 
 ```ruby
-# master_controller.txt
-//config model gpt-4
+# master_controller.md
+/config model gpt-4
 
 # Master Workflow Controller
 
-//ruby
+/ruby
 project_type = '<%= project_type %>'
 complexity = '<%= complexity || "standard" %>'
 
@@ -300,7 +300,7 @@ workflows = {
 }
 
 selected_workflow = workflows[project_type][complexity]
-puts "//pipeline #{selected_workflow.join(',')}"
+puts "/pipeline #{selected_workflow.join(',')}"
 
 puts "Initiating #{project_type} workflow (#{complexity} complexity)"
 puts "Stages: #{selected_workflow.length}"
@@ -311,8 +311,8 @@ puts "Estimated duration: #{selected_workflow.length * 5} minutes"
 Track workflow execution and performance:
 
 ```ruby
-# workflow_monitor.txt
-//ruby
+# workflow_monitor.md
+/ruby
 require 'logger'
 
 # Setup workflow logging
@@ -338,8 +338,8 @@ puts "Workflow monitoring active (ID: #{workflow_id})"
 Choose optimal models for each workflow stage:
 
 ```ruby
-# model_optimized_workflow.txt
-//ruby
+# model_optimized_workflow.md
+/ruby
 stages = {
   'data_extraction' => { model: 'gpt-3.5-turbo', temperature: 0.2 },
   'analysis' => { model: 'claude-3-sonnet', temperature: 0.3 },
@@ -352,11 +352,11 @@ current_stage = '<%= current_stage %>'
 stage_config = stages[current_stage]
 
 if stage_config
-  puts "//config model #{stage_config[:model]}"
-  puts "//config temperature #{stage_config[:temperature]}"
+  puts "/config model #{stage_config[:model]}"
+  puts "/config temperature #{stage_config[:temperature]}"
   puts "Optimized for #{current_stage}: #{stage_config[:model]} at #{stage_config[:temperature]} temperature"
 else
-  puts "//config model gpt-4"
+  puts "/config model gpt-4"
   puts "Using default model for unknown stage: #{current_stage}"
 end
 ```
@@ -365,8 +365,8 @@ end
 Implement caching for workflow efficiency:
 
 ```ruby
-# cached_workflow.txt
-//ruby
+# cached_workflow.md
+/ruby
 require 'digest'
 
 # Create cache key from inputs and configuration
@@ -388,7 +388,7 @@ if File.exist?(cache_file) && (Time.now - File.mtime(cache_file)) < cache_durati
   
   # Skip to next stage if available
   if cached_result['next_stage']
-    puts "//next #{cached_result['next_stage']}"
+    puts "/next #{cached_result['next_stage']}"
   end
   
   exit  # Skip AI processing
@@ -404,13 +404,13 @@ end
 Complete software development workflow:
 
 ```markdown
-# software_dev_pipeline.txt
-//pipeline requirements_analysis,architecture_design,implementation_plan,code_review,testing_strategy,documentation,deployment_guide
+# software_dev_pipeline.md
+/pipeline requirements_analysis,architecture_design,implementation_plan,code_review,testing_strategy,documentation,deployment_guide
 
 # Software Development Pipeline
 
 Project: <%= project_name %>
-Repository: //include README.md
+Repository: /include README.md
 
 ## Pipeline Stages:
 1. **Requirements Analysis** - Extract and analyze requirements
@@ -423,16 +423,16 @@ Repository: //include README.md
 
 Starting requirements analysis phase...
 
-//config model gpt-4
-//config temperature 0.4
+/config model gpt-4
+/config temperature 0.4
 ```
 
 ### Content Creation Workflow
 Multi-stage content creation pipeline:
 
 ```markdown
-# content_creation_pipeline.txt
-//pipeline research_phase,outline_creation,content_draft,expert_review,content_revision,final_edit,seo_optimization
+# content_creation_pipeline.md
+/pipeline research_phase,outline_creation,content_draft,expert_review,content_revision,final_edit,seo_optimization
 
 # Content Creation Pipeline
 
@@ -441,21 +441,21 @@ Target Audience: <%= audience %>
 Content Type: <%= content_type %>
 
 ## Research Phase
-//include source_materials.md
-//shell curl -s "https://api.example.com/research/<%= topic %>" | jq '.'
+/include source_materials.md
+/shell curl -s "https://api.example.com/research/<%= topic %>" | jq '.'
 
 Initial research and source gathering...
 
-//config model claude-3-sonnet
-//config temperature 0.6
+/config model claude-3-sonnet
+/config temperature 0.6
 ```
 
 ### Data Science Workflow
 Comprehensive data analysis pipeline:
 
 ```ruby
-# data_science_workflow.txt
-//ruby
+# data_science_workflow.md
+/ruby
 dataset_size = File.size('<%= dataset %>')
 complexity = dataset_size > 10000000 ? 'enterprise' : 'standard'
 
@@ -465,7 +465,7 @@ pipelines = {
 }
 
 selected_pipeline = pipelines[complexity]
-puts "//pipeline #{selected_pipeline.join(',')}"
+puts "/pipeline #{selected_pipeline.join(',')}"
 
 puts "Selected #{complexity} data science pipeline"
 puts "Dataset size: #{dataset_size} bytes"
@@ -473,12 +473,12 @@ puts "Dataset size: #{dataset_size} bytes"
 
 # Data Science Analysis Pipeline
 
-Dataset: //include <%= dataset %>
+Dataset: /include <%= dataset %>
 
 Pipeline optimized for <%= complexity %> analysis with <%= selected_pipeline.length %> stages.
 
-//config model claude-3-sonnet
-//config temperature 0.3
+/config model claude-3-sonnet
+/config temperature 0.3
 ```
 
 ## Workflow Best Practices
@@ -521,22 +521,22 @@ aia --pipeline "failed_stage,remaining_stages" --resume-from failed_stage
 #### Context Size Issues
 ```ruby
 # Handle large contexts in workflows
-//ruby
+/ruby
 context_size = File.read('<%= context_file %>').length
 max_context = 50000
 
 if context_size > max_context
   puts "Context too large (#{context_size} chars), implementing chunking strategy"
-  puts "//pipeline chunk_processing,merge_results,final_analysis"
+  puts "/pipeline chunk_processing,merge_results,final_analysis"
 else
-  puts "//pipeline standard_analysis,final_report"
+  puts "/pipeline standard_analysis,final_report"
 end
 ```
 
 #### Model Rate Limiting
 ```ruby
 # Handle rate limiting in workflows
-//ruby
+/ruby
 stage_delays = {
   'heavy_analysis' => 30,  # seconds
   'api_calls' => 10,

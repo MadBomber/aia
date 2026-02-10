@@ -68,8 +68,8 @@ module AIA
           options[:fuzzy] = true
         end
 
-        opts.on("--terse", "Request concise responses from the AI") do
-          options[:terse] = true
+        opts.on("--terse", "[DEPRECATED] No longer supported") do
+          warn "Warning: --terse is deprecated and has no effect."
         end
       end
 
@@ -157,15 +157,13 @@ module AIA
           options[:pipeline] += pipeline.split(',').map(&:strip)
         end
 
-        opts.on("-x", "--[no-]exec", "Treat prompt file as executable") do |value|
-          options[:executable_prompt] = value
-        end
 
         opts.on("--system-prompt PROMPT_ID", "Set system prompt for chat sessions") do |prompt_id|
           options[:system_prompt] = prompt_id
         end
 
-        opts.on('--regex PATTERN', 'Set regex pattern for extracting prompt parameters') do |pattern|
+        opts.on('--regex PATTERN', '[DEPRECATED] Parameter regex (PM v1.0.0 uses ERB parameters)') do |pattern|
+          warn "Warning: --regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
           options[:parameter_regex] = pattern
         end
       end
@@ -419,7 +417,7 @@ module AIA
           role_id = "#{roles_prefix}/#{role_id}"
         end
 
-        role_file_path = File.join(prompts_dir, "#{role_id}.txt")
+        role_file_path = File.join(prompts_dir, "#{role_id}.md")
 
         unless File.exist?(role_file_path)
           available_roles = list_available_role_names(prompts_dir, roles_prefix)
@@ -449,7 +447,7 @@ module AIA
 
           if roles.empty?
             puts "No role files found in #{roles_dir}"
-            puts "Create .txt files in this directory to define roles."
+            puts "Create .md files in this directory to define roles."
           else
             puts "Available roles in #{roles_dir}:"
             roles.each { |role| puts "  - #{role}" }
@@ -464,8 +462,8 @@ module AIA
         roles_dir = File.join(prompts_dir, roles_prefix)
         return [] unless Dir.exist?(roles_dir)
 
-        Dir.glob("**/*.txt", base: roles_dir)
-          .map { |f| f.chomp('.txt') }
+        Dir.glob("**/*.md", base: roles_dir)
+          .map { |f| f.chomp('.md') }
           .sort
       end
 

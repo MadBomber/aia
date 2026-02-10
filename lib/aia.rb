@@ -10,7 +10,7 @@ require 'ruby_llm/mcp'
 # NOTE: Complex parameters are now supported natively in ruby_llm-mcp >= 0.8.0
 #       The support_complex_parameters! method has been removed.
 
-require 'prompt_manager'
+require 'pm'
 
 
 require 'debug_me'
@@ -23,6 +23,7 @@ require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.text_t
 
 require_relative 'refinements/string' # adds #include_any? #include_all?
 
+require_relative 'aia/errors'
 require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'
@@ -86,11 +87,6 @@ module AIA
 
     def fuzzy?
       @config&.flags&.fuzzy == true
-    end
-
-
-    def terse?
-      @config&.flags&.terse == true
     end
 
 

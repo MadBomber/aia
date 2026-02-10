@@ -1,14 +1,14 @@
 PATH
   remote: .
   specs:
-    aia (0.11.1)
+    aia (1.0.0.pre.beta)
       amazing_print
       async
       clipboard
       faraday
       lumberjack
       myway_config
-      prompt_manager
+      prompt_manager (~> 1.0.2)
       reline
       ruby_llm
       ruby_llm-mcp
@@ -38,7 +38,7 @@ GEM
       traces (~> 0.18)
     backports (3.25.3)
     base64 (0.3.0)
-    bigdecimal (3.3.1)
+    bigdecimal (4.0.1)
     binding_of_caller (1.0.1)
       debug_inspector (>= 1.2.0)
     builder (3.3.0)
@@ -102,7 +102,7 @@ GEM
       dry-logic (~> 1.6)
       dry-types (~> 1.8)
       zeitwerk (~> 2.6)
-    dry-types (1.9.0)
+    dry-types (1.9.1)
       bigdecimal (>= 3.0)
       concurrent-ruby (~> 1.0)
       dry-core (~> 1.0)
@@ -118,7 +118,7 @@ GEM
       versionaire (~> 15.0)
       zeitwerk (~> 2.7)
     event_stream_parser (1.0.0)
-    faraday (2.14.0)
+    faraday (2.14.1)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
@@ -135,17 +135,16 @@ GEM
     hashdiff (1.2.1)
     highline (3.1.2)
       reline
-    http-2 (1.1.1)
+    http-2 (1.1.2)
     httpx (1.7.2)
       http-2 (>= 1.0.0)
     infusible (5.1.0)
       marameters (~> 5.0)
     io-console (0.8.2)
     io-event (1.14.2)
-    json (2.18.0)
-    json-schema (5.2.2)
+    json (2.18.1)
+    json-schema (5.1.0)
       addressable (~> 2.8)
-      bigdecimal (~> 3.1)
     logger (1.7.0)
     lumberjack (2.0.4)
       logger
@@ -176,7 +175,8 @@ GEM
       ast (~> 2.4.1)
       racc
     prism (1.9.0)
-    prompt_manager (0.5.8)
+    prompt_manager (1.0.2)
+      ostruct
     pry (0.16.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -286,17 +286,8 @@ GEM
     zeitwerk (2.7.4)
 
 PLATFORMS
-  aarch64-linux-gnu
-  aarch64-linux-musl
-  arm-linux-gnu
-  arm-linux-musl
-  arm64-darwin
+  arm64-darwin-25
   ruby
-  x86-linux-gnu
-  x86-linux-musl
-  x86_64-darwin
-  x86_64-linux-gnu
-  x86_64-linux-musl
 
 DEPENDENCIES
   aia!
@@ -314,5 +305,121 @@ DEPENDENCIES
   tocer
   webmock
 
+CHECKSUMS
+  addressable (2.8.8) sha256=7c13b8f9536cf6364c03b9d417c19986019e28f7c00ac8132da4eb0fe393b057
+  aia (1.0.0.pre.beta)
+  aigcm (0.3.2) sha256=eda5055a4bc1dd021f860b08134bf122f9df2e283da5be6719d1dde98a23428a
+  amazing_print (2.0.0) sha256=2e36aba46ac78d37ed27ca0e2056afe3583183bb5c64f157c246b267355e5d6a
+  ansi (1.5.0) sha256=5408253274e33d9d27d4a98c46d2998266fd51cba58a7eb9d08f50e57ed23592
+  anyway_config (2.8.0) sha256=f6797a7231f81202dcd3d0c07284e836e45713e761d320180348b13a5c7c9306
+  ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
+  async (2.36.0) sha256=090623f4c65706664355c9efa6c7bfb86771a513e65cd681c51cb27747530550
+  backports (3.25.3) sha256=94298d32dc3c40ca15633b54e282780b49e2db0c045f602ea1907e4f63a17235
+  base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
+  bigdecimal (4.0.1) sha256=8b07d3d065a9f921c80ceaea7c9d4ae596697295b584c296fe599dd0ad01c4a7
+  binding_of_caller (1.0.1) sha256=2b2902abff4246ddcfbc4da9b69bc4a019e22aeb300c2ff6289a173d4b90b29a
+  builder (3.3.0) sha256=497918d2f9dca528fdca4b88d84e4ef4387256d984b8154e9d5d3fe5a9c8835f
+  clipboard (2.0.0) sha256=88d048fd2097506451c382d3ecf3acd9cdf24f581d8119437e55c1efc04e01c8
+  coderay (1.1.3) sha256=dc530018a4684512f8f38143cd2a096c9f02a1fc2459edcfe534787a7fc77d4b
+  cogger (2.1.0) sha256=8fa3cf964856dca5d0175aa5e9e1f64ededad917700bb29efc5e7471c33902ef
+  concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
+  console (1.34.2) sha256=1c036abf606ccec83f9dc28f0c31710fe5936ffe7ba5d235ae2865590a482d58
+  containable (2.1.0) sha256=2430f95f00a15282551e2131f5ee56d36df9cfaded712290ad8c579f2179f916
+  core (3.1.0) sha256=1a59b8a5dea5af46ab9ff0aeb464c17d2c671ecf93c6d2ec276a3016ca6cac4b
+  crack (1.0.1) sha256=ff4a10390cd31d66440b7524eb1841874db86201d5b70032028553130b6d4c7e
+  debug_inspector (1.2.0) sha256=9bdfa02eebc3da163833e6a89b154084232f5766087e59573b70521c77ea68a2
+  debug_me (1.1.3) sha256=ae8cf61993350d9b3cbe337a7f9a0f595be5b4976c10891a4e1eacc63d09f717
+  deep-cover (1.1.0) sha256=bada62fe8c7b4bca998178ee1986f02503b93ff98f5d98851f10713b5c48ee9f
+  deep-cover-core (1.1.0) sha256=4e3f4eab54bd35359f0bd8f3196f27705d2173c38e31e4e1afd431146c15b3d0
+  docile (1.4.1) sha256=96159be799bfa73cdb721b840e9802126e4e03dfc26863db73647204c727f21e
+  dry-configurable (1.3.0) sha256=882d862858567fc1210d2549d4c090f34370fc1bb7c5c1933de3fe792e18afa8
+  dry-core (1.2.0) sha256=0cc5a7da88df397f153947eeeae42e876e999c1e30900f3c536fb173854e96a1
+  dry-inflector (1.3.1) sha256=7fb0c2bb04f67638f25c52e7ba39ab435d922a3a5c3cd196120f63accb682dcc
+  dry-initializer (3.2.0) sha256=37d59798f912dc0a1efe14a4db4a9306989007b302dcd5f25d0a2a20c166c4e3
+  dry-logic (1.6.0) sha256=da6fedbc0f90fc41f9b0cc7e6f05f5d529d1efaef6c8dcc8e0733f685745cea2
+  dry-monads (1.9.0) sha256=9348a67b5c862c7a876342dbd94737fdf3fb3c17978382cf6801a85b27215816
+  dry-schema (1.15.0) sha256=0f2a34adba4206bd6d46ec1b6b7691b402e198eecaff1d8349a7d48a77d82cd2
+  dry-types (1.9.1) sha256=baebeecdb9f8395d6c9d227b62011279440943e3ef2468fe8ccc1ba11467f178
+  etcher (4.1.0) sha256=cdac3e890c188f1b13200d28d46fc021c7d870060a272e17ef31086efcb3782a
+  event_stream_parser (1.0.0) sha256=a2683bab70126286f8184dc88f7968ffc4028f813161fb073ec90d171f7de3c8
+  faraday (2.14.1) sha256=a43cceedc1e39d188f4d2cdd360a8aaa6a11da0c407052e426ba8d3fb42ef61c
+  faraday-multipart (1.2.0) sha256=7d89a949693714176f612323ca13746a2ded204031a6ba528adee788694ef757
+  faraday-net_http (3.4.2) sha256=f147758260d3526939bf57ecf911682f94926a3666502e24c69992765875906c
+  faraday-retry (2.4.0) sha256=7b79c48fb7e56526faf247b12d94a680071ff40c9fda7cf1ec1549439ad11ebe
+  fiber-annotation (0.2.0) sha256=7abfadf1d119f508867d4103bf231c0354d019cc39a5738945dec2edadaf6c03
+  fiber-local (1.1.0) sha256=c885f94f210fb9b05737de65d511136ea602e00c5105953748aa0f8793489f06
+  fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
+  hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
+  highline (3.1.2) sha256=67cbd34d19f6ef11a7ee1d82ffab5d36dfd5b3be861f450fc1716c7125f4bb4a
+  http-2 (1.1.2) sha256=8c1cb40203fc60b521c491509fee96c7b08092975eb30036465992433715ed40
+  httpx (1.7.2) sha256=10cdcd5b03794de743bec87e8cdba2ca93e2124084b6cdb1ad01b00c192a51f7
+  infusible (5.1.0) sha256=1ff82227b67749fc0fb277ad06035c31746825d40817c75a256a972b618250f5
+  io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
+  io-event (1.14.2) sha256=b0a069190eafe86005c22f7464f744971b5bd82f153740d34e6ab49548d4f613
+  json (2.18.1) sha256=fe112755501b8d0466b5ada6cf50c8c3f41e897fa128ac5d263ec09eedc9f986
+  json-schema (5.1.0) sha256=c12729e346dce58ecc9be07301f4f247aeba1e3daae208e867278f3d27c64eb7
+  logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
+  lumberjack (2.0.4) sha256=9a87a3a16800a66e0447c768ba4f76c05848b5cc32a4a11959c6fa419a42ff45
+  marameters (5.1.0) sha256=6705114dae6cbbe72c586a7522eab9ec5131f565b52434381b787d52180f95e0
+  marcel (1.1.0) sha256=fdcfcfa33cc52e93c4308d40e4090a5d4ea279e160a7f6af988260fa970e0bee
+  method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5
+  metrics (0.15.0) sha256=61ded5bac95118e995b1bc9ed4a5f19bc9814928a312a85b200abbdac9039072
+  minitest (6.0.1) sha256=7854c74f48e2e975969062833adc4013f249a4b212f5e7b9d5c040bf838d54bb
+  minitest-reporters (1.7.1) sha256=5060413a0c95b8c32fe73e0606f3631c173a884d7900e50013e15094eb50562c
+  mize (0.6.1) sha256=4031558979ff5426fda24c75a149b4e4c0faf4cacf2fae8938f83866ab94b780
+  mocha (3.0.1) sha256=74f82c5959e3df6cfa2757d60aa420dcb151ac7c5eb61dcebf1cd4e368ed7469
+  multipart-post (2.4.1) sha256=9872d03a8e552020ca096adadbf5e3cb1cd1cdd6acd3c161136b8a5737cdb4a8
+  myway_config (0.1.2) sha256=c91741ded05babc443fcf5d012741ded8a1a1998c40a689cb32af27940b66be3
+  net-http (0.9.1) sha256=25ba0b67c63e89df626ed8fac771d0ad24ad151a858af2cc8e6a716ca4336996
+  optparse (0.8.1) sha256=42bea10d53907ccff4f080a69991441d611fbf8733b60ed1ce9ee365ce03bd1a
+  ostruct (0.6.3) sha256=95a2ed4a4bd1d190784e666b47b2d3f078e4a9efda2fccf18f84ddc6538ed912
+  parser (3.3.10.1) sha256=06f6a725d2cd91e5e7f2b7c32ba143631e1f7c8ae2fb918fc4cebec187e6a688
+  prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
+  prompt_manager (1.0.2) sha256=ec19631fc90d092df1d7d08aa3d523636f55a3725b90635afc1fae7d60609e31
+  pry (0.16.0) sha256=d76c69065698ed1f85e717bd33d7942c38a50868f6b0673c636192b3d1b6054e
+  public_suffix (7.0.2) sha256=9114090c8e4e7135c1fd0e7acfea33afaab38101884320c65aaa0ffb8e26a857
+  racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
+  rake (13.3.1) sha256=8c9e89d09f66a26a01264e7e3480ec0607f0c497a861ef16063604b1b08eb19c
+  readline (0.0.4) sha256=6138eef17be2b98298b672c3ea63bf9cb5158d401324f26e1e84f235879c1d6a
+  refinements (14.2.0) sha256=0d69befeb1bf118087584e7a111e763528e46961b22da0e404d71e4c8df5ca0f
+  reline (0.6.3) sha256=1198b04973565b36ec0f11542ab3f5cfeeec34823f4e54cebde90968092b1835
+  rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
+  ruby-next-core (1.2.0) sha256=f6a7d00bb5186cecbb02f7f1845a0f3a2c9788d35b6ccff5c9be3f0d46799b86
+  ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
+  ruby2_keywords (0.0.5) sha256=ffd13740c573b7301cf7a2e61fc857b2a8e3d3aff32545d6f8300d8bae10e3ef
+  ruby_llm (1.11.0) sha256=c1bc17bb02a7e805d8f62ea6ada2ecfe7782fc955e9440b53a2fdbd00e5ec9cc
+  ruby_llm-mcp (0.8.0) sha256=74350b6c08eeb8bf1c387dc7192bb21bad8415d21277b9a922c182b2e8c29915
+  ruby_llm-schema (0.2.5) sha256=b08cd42e8de7100325e2e868672a56f1915eb23692bb808f51f214e41392104f
+  runcom (13.1.0) sha256=58a4dd848408fa0fb342f4489c13074a8013ff0af74d0d04c16383a3d3f05ce5
+  securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1
+  shellwords (0.2.2) sha256=b8695a791de2f71472de5abdc3f4332f6535a4177f55d8f99e7e44266cd32f94
+  simple_flow (0.3.0) sha256=f365506159d25625836db44d19484f7a337fdcd75aa06eae6d4d24c333ad618c
+  simplecov (0.22.0) sha256=fe2622c7834ff23b98066bb0a854284b2729a569ac659f82621fc22ef36213a5
+  simplecov-html (0.13.2) sha256=bd0b8e54e7c2d7685927e8d6286466359b6f16b18cb0df47b508e8d73c777246
+  simplecov_json_formatter (0.1.4) sha256=529418fbe8de1713ac2b2d612aa3daa56d316975d307244399fa4838c601b428
+  simplecov_lcov_formatter (0.9.0) sha256=4c1839bb31dcf7a8f7a6474c94ed228aa03b994e9dd5e1965e58b4121b049bed
+  sod (2.1.0) sha256=768eac6dbd6675f33b54dfd9e9884bc51012497515af3ef5a1941232e06400c7
+  spek (5.1.0) sha256=7f4ad0f6016ab0c60d50133bce14a4f59de3ea6b8b2b49e68e59e6130409237a
+  sync (0.5.0) sha256=668356cc07c59ac7ed9ecf34fec3929831f179c07adb1f3e1c3b7a1609a638fd
+  term-ansicolor (1.11.3) sha256=8c01ec3abd095eb94dca8aed5a127d36e594239eb525eb306259c9e930534603
+  terminal-table (4.0.0) sha256=f504793203f8251b2ea7c7068333053f0beeea26093ec9962e62ea79f94301d2
+  thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
+  tins (1.51.1) sha256=cc17bc37e62bd2dd2e8bc2a706b9cf419dfd4766407b84b341a67db947f8e44a
+  tocer (20.1.0) sha256=ed7680a448fbf9be06f142cc104213e082752ff37df81e2f66510c035b69f3c4
+  tone (3.1.0) sha256=2e2e77f4f43e77d05ae9160c5b16306502b3efc3da1e418c342051f3f4cb2995
+  traces (0.18.2) sha256=80f1649cb4daace1d7174b81f3b3b7427af0b93047759ba349960cb8f315e214
+  tty-cursor (0.7.1) sha256=79534185e6a777888d88628b14b6a1fdf5154a603f285f80b1753e1908e0bf48
+  tty-screen (0.8.2) sha256=c090652115beae764336c28802d633f204fb84da93c6a968aa5d8e319e819b50
+  tty-spinner (0.9.3) sha256=0e036f047b4ffb61f2aa45f5a770ec00b4d04130531558a94bfc5b192b570542
+  unicode-display_width (3.2.0) sha256=0cdd96b5681a5949cdbc2c55e7b420facae74c4aaf9a9815eee1087cb1853c42
+  unicode-emoji (4.2.0) sha256=519e69150f75652e40bf736106cfbc8f0f73aa3fb6a65afe62fefa7f80b0f80f
+  uri (1.1.1) sha256=379fa58d27ffb1387eaada68c749d1426738bd0f654d812fcc07e7568f5c57c6
+  versionaire (15.1.0) sha256=10584edf130282016869dddb6167c221b979f1f7827d3764b14b08473d80e478
+  webmock (3.26.1) sha256=4f696fb57c90a827c20aadb2d4f9058bbff10f7f043bd0d4c3f58791143b1cd7
+  with_progress (1.0.1) sha256=15e3cbc95e0c9f9e4a2fe842c446e7e894383fefea67502079670f4c3df8f511
+  word_wrapper (0.5.0) sha256=ca636087a979c541508737e2b1742c5763d0fd48168370d76e6fdc4be6f65d3a
+  xdg (10.1.0) sha256=a7128ccbed0d80af663587ad1f6e04caee21d5dd5aa6c62e748e3e26d1e24d9c
+  zeitwerk (2.7.4) sha256=2bef90f356bdafe9a6c2bd32bcd804f83a4f9b8bc27f3600fff051eb3edcec8b
+
 BUNDLED WITH
-   2.7.2
+  4.0.5

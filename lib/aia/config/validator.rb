@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'word_wrapper'
+require_relative '../adapter/gem_activator'
 
 # lib/aia/config/validator.rb
 #
@@ -26,6 +27,7 @@ module AIA
         process_prompt_id_from_args(config, remaining_args)
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
+        handle_stdin_as_prompt(config)
         handle_dump_config(config)
         handle_mcp_list(config)
         handle_list_tools(config)
@@ -43,7 +45,7 @@ module AIA
       end
 
       def process_stdin_content
-        stdin_content = ''
+        stdin_content = String.new
 
         if !STDIN.tty? && !STDIN.closed?
           begin
@@ -82,9 +84,36 @@ module AIA
       end
 
       def handle_executable_prompt(config)
-        return unless config.executable_prompt && config.context_files && !config.context_files.empty?
+        # Auto-detect: no prompt_id, first context_file starts with shebang
+        return unless config.prompt_id.nil?
+        return unless config.context_files && !config.context_files.empty?
 
-        config.executable_prompt_file = config.context_files.pop
+        candidate = config.context_files.first
+        return unless File.exist?(candidate) && File.readable?(candidate)
+
+        first_line = File.open(candidate, &:readline).strip rescue nil
+        return unless first_line&.start_with?('#!')
+
+        # This is an executable prompt — the file content IS the prompt
+        config.context_files.shift
+        config.executable_prompt_content = File.read(candidate).lines[1..].join
+        config.prompt_id = '__EXECUTABLE_PROMPT__'
+      end
+
+      def handle_stdin_as_prompt(config)
+        return unless config.prompt_id.nil?
+        return unless config.stdin_content && !config.stdin_content.strip.empty?
+
+        content = config.stdin_content
+
+        # Strip shebang line if present (e.g., piped from an executable prompt)
+        if content.lines.first&.strip&.start_with?('#!')
+          content = content.lines[1..].join
+        end
+
+        config.executable_prompt_content = content
+        config.stdin_content = nil  # prevent double-processing in build_prompt_text
+        config.prompt_id = '__EXECUTABLE_PROMPT__'
       end
 
       def validate_required_prompt_id(config)
@@ -296,9 +325,9 @@ module AIA
         # Load required libraries (with gem activation and lazy-load triggering)
         Array(config.require_libs).each do |lib|
           begin
-            activate_gem_for_require(lib)
+            Adapter::GemActivator.activate_gem_for_require(lib)
             require lib
-            trigger_tool_loading(lib)
+            Adapter::GemActivator.trigger_tool_loading(lib)
           rescue LoadError => e
             warn "Warning: Failed to require '#{lib}': #{e.message}"
             warn "Hint: Make sure the gem is installed: gem install #{lib}"
@@ -332,54 +361,12 @@ module AIA
         end
       end
 
-      # Activate a gem and add its lib path to $LOAD_PATH
-      # Bypasses Bundler's restrictions on loading non-bundled gems
-      def activate_gem_for_require(lib)
-        return if Gem.try_activate(lib)
-
-        gem_path = find_gem_path(lib)
-        if gem_path
-          lib_path = File.join(gem_path, 'lib')
-          $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-        end
-      end
-
-      def find_gem_path(gem_name)
-        gem_dirs = Gem.path.flat_map do |base|
-          gems_dir = File.join(base, 'gems')
-          next [] unless File.directory?(gems_dir)
-
-          Dir.glob(File.join(gems_dir, "#{gem_name}-*")).select do |path|
-            File.directory?(path) && File.basename(path).match?(/^#{Regexp.escape(gem_name)}-[\d.]+/)
-          end
-        end
-
-        gem_dirs.sort.last
-      end
-
       def first_sentences(text, count)
         # Normalize whitespace: collapse newlines and multiple spaces
         normalized = text.gsub(/\s*\n\s*/, ' ').gsub(/\s{2,}/, ' ').strip
         sentences  = normalized.scan(/[^.!?]*[.!?]/)
         result     = sentences.first(count).join.strip
         result.empty? ? normalized : result
-      end
-
-      # Trigger lazy-loaded tool libraries (e.g., Zeitwerk-based gems like shared_tools)
-      def trigger_tool_loading(lib)
-        const_name = lib.split(/[_-]/).map(&:capitalize).join
-
-        begin
-          mod = Object.const_get(const_name)
-
-          if mod.respond_to?(:load_all_tools)
-            mod.load_all_tools
-          elsif mod.respond_to?(:tools)
-            mod.tools
-          end
-        rescue NameError
-          # Constant doesn't exist, library might use different naming
-        end
       end
 
       def load_mcp_tools_grouped(config)
@@ -476,9 +463,11 @@ module AIA
       end
 
       def configure_prompt_manager(config)
-        return unless config.prompts.parameter_regex
-
-        PromptManager::Prompt.parameter_regex = Regexp.new(config.prompts.parameter_regex)
+        # PM v1.0.0 uses ERB parameters (<%= param %>) instead of regex-based extraction.
+        # parameter_regex is deprecated and ignored.
+        if config.prompts.parameter_regex
+          warn "Warning: --regex / parameter_regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
+        end
       end
 
       def prepare_pipeline(config)
@@ -493,9 +482,9 @@ module AIA
         and_exit = false
 
         config.pipeline.each do |prompt_id|
-          next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__'
+          next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__' || prompt_id == '__EXECUTABLE_PROMPT__'
 
-          prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}.txt")
+          prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}#{config.prompts.extname}")
           unless File.exist?(prompt_file_path)
             STDERR.puts "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
             and_exit = true

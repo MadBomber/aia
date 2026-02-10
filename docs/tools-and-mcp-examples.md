@@ -970,9 +970,9 @@ if __name__ == "__main__":
 
 ### Full-Stack Application Analysis
 ```markdown
-# ~/.prompts/full_stack_analysis.txt
-//tools file_analyzer.rb,code_quality.rb,config_manager.rb
-//mcp github,filesystem,database
+# ~/.prompts/full_stack_analysis.md
+/tools file_analyzer.rb,code_quality.rb,config_manager.rb
+/mcp github,filesystem,database
 
 # Full-Stack Application Analysis
 
@@ -1029,9 +1029,9 @@ Generate comprehensive analysis with actionable insights for each identified are
 
 ### DevOps Pipeline Assessment
 ```markdown
-# ~/.prompts/devops_pipeline_analysis.txt
-//tools log_analyzer.rb,config_manager.rb
-//mcp github,filesystem
+# ~/.prompts/devops_pipeline_analysis.md
+/tools log_analyzer.rb,config_manager.rb
+/mcp github,filesystem
 
 # DevOps Pipeline Analysis
 

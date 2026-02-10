@@ -156,6 +156,7 @@ nav:
     - Image Generation: guides/image-generation.md
     - Tools Integration: guides/tools.md
     - Shared Tools: guides/shared-tools.md
+    - Migrating Prompts: guides/migrate-prompts.md
   - Reference:
     - CLI Parameters: cli-reference.md
     - Directives: directives-reference.md

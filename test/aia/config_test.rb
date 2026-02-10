@@ -160,4 +160,137 @@ class ConfigTest < Minitest::Test
     assert hash.key?(:mcp_use)
     assert hash.key?(:mcp_skip)
   end
+
+  # =========================================================================
+  # Extra config file tests (-c / --config-file)
+  # =========================================================================
+
+  def test_extra_config_file_overrides_prompts_dir
+    config_file = create_temp_config(<<~YAML)
+      prompts:
+        dir: /tmp/test_prompts
+    YAML
+
+    config = AIA::Config.new(overrides: { extra_config_file: config_file })
+    assert_equal '/tmp/test_prompts', config.prompts.dir
+  end
+
+  def test_extra_config_file_overrides_model
+    # Clear AIA_MODEL env var so it doesn't interfere
+    original_model = ENV.delete('AIA_MODEL')
+
+    config_file = create_temp_config(<<~YAML)
+      models:
+        - name: ollama/qwen3
+    YAML
+
+    config = AIA::Config.new(overrides: { extra_config_file: config_file })
+    assert_equal 1, config.models.size
+    assert_equal 'ollama/qwen3', config.models.first.name
+  ensure
+    ENV['AIA_MODEL'] = original_model if original_model
+  end
+
+  def test_extra_config_file_preserves_unset_defaults
+    config_file = create_temp_config(<<~YAML)
+      llm:
+        temperature: 0.2
+    YAML
+
+    config = AIA::Config.new(overrides: { extra_config_file: config_file })
+    assert_equal 0.2, config.llm.temperature
+    # max_tokens should still have its bundled default
+    assert_equal 2048, config.llm.max_tokens
+  end
+
+  def test_extra_config_file_resets_to_defaults_not_user_config
+    # Without -c, the user's personal config may set a custom model.
+    # With -c, only bundled defaults + the config file should apply.
+    original_model = ENV.delete('AIA_MODEL')
+
+    config_file = create_temp_config(<<~YAML)
+      llm:
+        temperature: 0.1
+    YAML
+
+    config = AIA::Config.new(overrides: { extra_config_file: config_file })
+
+    # Model should be the bundled default (gpt-4o-mini), not whatever
+    # the user has in their personal ~/.config/aia/aia.yml
+    assert_equal 'gpt-4o-mini', config.models.first.name
+    # prompts.dir should be the bundled default, not a user override
+    assert_equal File.expand_path('~/.prompts'), config.prompts.dir
+  ensure
+    ENV['AIA_MODEL'] = original_model if original_model
+  end
+
+  def test_cli_overrides_take_precedence_over_extra_config
+    config_file = create_temp_config(<<~YAML)
+      llm:
+        temperature: 0.2
+    YAML
+
+    config = AIA::Config.new(overrides: {
+      extra_config_file: config_file,
+      temperature: 0.9
+    })
+    assert_equal 0.9, config.llm.temperature
+  end
+
+  def test_extra_config_file_supports_defaults_wrapper
+    config_file = create_temp_config(<<~YAML)
+      defaults:
+        llm:
+          temperature: 0.3
+    YAML
+
+    config = AIA::Config.new(overrides: { extra_config_file: config_file })
+    assert_equal 0.3, config.llm.temperature
+  end
+
+  def test_extra_config_file_stores_path
+    config_file = create_temp_config(<<~YAML)
+      llm:
+        temperature: 0.5
+    YAML
+
+    config = AIA::Config.new(overrides: { extra_config_file: config_file })
+    assert_equal File.expand_path(config_file), config.paths[:extra_config_file]
+  end
+
+  def test_extra_config_file_merges_flags
+    config_file = create_temp_config(<<~YAML)
+      flags:
+        debug: true
+    YAML
+
+    config = AIA::Config.new(overrides: { extra_config_file: config_file })
+    assert_equal true, config.flags.debug
+    # chat should still have its default
+    assert_equal false, config.flags.chat
+  end
+
+  def test_extra_config_file_missing_file_does_not_crash
+    # exit is overridden in test_helper to not terminate;
+    # verify config still initializes when file is missing
+    original_stderr = $stderr
+    $stderr = StringIO.new
+
+    config = AIA::Config.new(overrides: { extra_config_file: '/nonexistent/path.yml' })
+    assert_instance_of AIA::Config, config
+  ensure
+    $stderr = original_stderr
+  end
+
+  private
+
+  def create_temp_config(yaml_content)
+    require 'tempfile'
+    file = Tempfile.new(['aia_test_config', '.yml'])
+    file.write(yaml_content)
+    file.close
+    @temp_files ||= []
+    @temp_files << file
+    file.path
+  end
 end

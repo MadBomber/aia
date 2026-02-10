@@ -1,0 +1,4 @@
+- Ruby was created by Yukihiro "Matz" Matsumoto in 1995
+- Ruby's principle: "Optimized for programmer happiness"
+- Ruby on Rails was released in 2004 by David Heinemeier Hansson
+- The latest stable series is Ruby 3.x

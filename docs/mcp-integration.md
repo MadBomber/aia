@@ -151,8 +151,8 @@ async def call_tool(name: str, arguments: dict):
 
 ### GitHub Analysis
 ```markdown
-# ~/.prompts/github_analysis.txt
-//mcp github
+# ~/.prompts/github_analysis.md
+/mcp github
 
 # GitHub Repository Analysis
 
@@ -178,8 +178,8 @@ Provide comprehensive analysis with actionable recommendations.
 
 ### File System Operations
 ```markdown
-# ~/.prompts/project_analysis.txt
-//mcp filesystem
+# ~/.prompts/project_analysis.md
+/mcp filesystem
 
 # Project Structure Analysis
 
@@ -205,8 +205,8 @@ Generate detailed project assessment with improvement suggestions.
 
 ### Database Schema Analysis
 ```markdown
-# ~/.prompts/database_analysis.txt
-//mcp database
+# ~/.prompts/database_analysis.md
+/mcp database
 
 # Database Schema Analysis
 
@@ -235,8 +235,8 @@ Provide recommendations for schema improvements and optimizations.
 
 ### Multi-Client Workflows
 ```markdown
-# ~/.prompts/full_project_audit.txt
-//mcp github,filesystem,database
+# ~/.prompts/full_project_audit.md
+/mcp github,filesystem,database
 
 # Comprehensive Project Audit
 
@@ -277,8 +277,8 @@ Generate comprehensive audit report with prioritized recommendations.
 
 ### Conditional MCP Usage
 ```ruby
-# ~/.prompts/adaptive_mcp.txt
-//ruby
+# ~/.prompts/adaptive_mcp.md
+/ruby
 project_type = '<%= project_type %>'
 has_database = '<%= has_database %>' == 'true'
 is_open_source = '<%= is_open_source %>' == 'true'
@@ -288,7 +288,7 @@ mcp_clients << 'filesystem'  # Always analyze file structure
 mcp_clients << 'github' if is_open_source
 mcp_clients << 'database' if has_database
 
-puts "//mcp #{mcp_clients.join(',')}"
+puts "/mcp #{mcp_clients.join(',')}"
 puts "Selected MCP clients for #{project_type} project: #{mcp_clients.join(', ')}"
 ```
 
@@ -428,7 +428,7 @@ mcp:
 ### Access Control
 ```ruby
 # MCP access control in prompts
-//ruby
+/ruby
 user_role = '<%= user_role %>'
 allowed_mcp = case user_role
              when 'admin'
@@ -444,7 +444,7 @@ allowed_mcp = case user_role
 if allowed_mcp.empty?
   puts "No MCP access for role: #{user_role}"
 else
-  puts "//mcp #{allowed_mcp.join(',')}"
+  puts "/mcp #{allowed_mcp.join(',')}"
   puts "MCP access granted: #{allowed_mcp.join(', ')}"
 end
 ```
@@ -542,8 +542,8 @@ async def debug_mcp_call(client, tool, args):
 
 ### GitHub Repository Analysis
 ```markdown
-# ~/.prompts/mcp_examples/github_repo_health.txt
-//mcp github
+# ~/.prompts/mcp_examples/github_repo_health.md
+/mcp github
 
 # GitHub Repository Health Check
 
@@ -579,8 +579,8 @@ Generate detailed health score with specific improvement recommendations.
 
 ### File System Audit
 ```markdown
-# ~/.prompts/mcp_examples/filesystem_audit.txt
-//mcp filesystem
+# ~/.prompts/mcp_examples/filesystem_audit.md
+/mcp filesystem
 
 # File System Security and Organization Audit
 

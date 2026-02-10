@@ -37,7 +37,7 @@ aia --require shared_tools --list-tools
 You can also load shared tools from within a prompt using a Ruby directive:
 
 ```ruby
-//ruby
+/ruby
 require 'shared_tools/ruby_llm'
 ```
 

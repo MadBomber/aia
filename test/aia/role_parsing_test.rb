@@ -14,17 +14,17 @@ class RoleParsingTest < Minitest::Test
     FileUtils.mkdir_p(@roles_dir)
 
     # Create test role files
-    File.write(File.join(@roles_dir, 'architect.txt'), 'You are an architect')
-    File.write(File.join(@roles_dir, 'security.txt'), 'You are a security expert')
-    File.write(File.join(@roles_dir, 'performance.txt'), 'You are a performance expert')
-    File.write(File.join(@roles_dir, 'optimist.txt'), 'You are an optimist')
-    File.write(File.join(@roles_dir, 'pessimist.txt'), 'You are a pessimist')
-    File.write(File.join(@roles_dir, 'realist.txt'), 'You are a realist')
+    File.write(File.join(@roles_dir, 'architect.md'), 'You are an architect')
+    File.write(File.join(@roles_dir, 'security.md'), 'You are a security expert')
+    File.write(File.join(@roles_dir, 'performance.md'), 'You are a performance expert')
+    File.write(File.join(@roles_dir, 'optimist.md'), 'You are an optimist')
+    File.write(File.join(@roles_dir, 'pessimist.md'), 'You are a pessimist')
+    File.write(File.join(@roles_dir, 'realist.md'), 'You are a realist')
 
     # Create nested role
     nested_dir = File.join(@roles_dir, 'specialized')
     FileUtils.mkdir_p(nested_dir)
-    File.write(File.join(nested_dir, 'senior_architect.txt'), 'You are a senior architect')
+    File.write(File.join(nested_dir, 'senior_architect.md'), 'You are a senior architect')
 
     # Set environment variables for testing (using nested config format with double underscore)
     ENV['AIA_PROMPTS__DIR'] = @temp_dir

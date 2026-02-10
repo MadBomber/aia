@@ -81,7 +81,7 @@ aia --tools ./tools/ --rejected-tools "system_monitor,process_manager" user_anal
 ### Tool Integration in Prompts
 ```markdown
 # Use tools within prompts
-//tools file_analyzer.rb,web_client.rb
+/tools file_analyzer.rb,web_client.rb
 
 Analyze the project structure and check API endpoints:
 1. Use file_analyzer to examine project files

@@ -69,7 +69,7 @@ class UtilityTest < Minitest::Test
     output = @captured_output.string
     
     # Check for version information - flexible pattern matching
-    assert_match /AI Assistant \(v[\d.]+\) is Online/, output
+    assert_match /AI Assistant \(v[\d.\w-]+\) is Online/, output
     assert_match /using ruby_llm \(v[\d.]+(?:\s+MCP\s+v[\d.]+)?\)/, output
   end
 
@@ -379,7 +379,7 @@ class UtilityTest < Minitest::Test
 
     output = @captured_output.string
     # Check for key components without exact version
-    assert_match /AI Assistant \(v[\d.]+\) is Online/, output
+    assert_match /AI Assistant \(v[\d.\w-]+\) is Online/, output
 
   ensure
     # Restore originals

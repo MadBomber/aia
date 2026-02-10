@@ -180,8 +180,8 @@ aia --mcp github repo_analysis --owner microsoft --repo vscode
 ```
 
 ```markdown
-# github_analysis.txt
-//mcp github
+# github_analysis.md
+/mcp github
 
 # GitHub Repository Analysis
 
@@ -207,8 +207,8 @@ aia --mcp database schema_analysis --schema public
 ```
 
 ```markdown
-# database_analysis.txt
-//mcp database
+# database_analysis.md
+/mcp database
 
 # Database Schema Analysis
 
@@ -226,8 +226,8 @@ Provide actionable optimization recommendations.
 
 ### Multi-Client Integration
 ```markdown
-# comprehensive_project_audit.txt
-//mcp github,filesystem,database
+# comprehensive_project_audit.md
+/mcp github,filesystem,database
 
 # Comprehensive Project Audit
 

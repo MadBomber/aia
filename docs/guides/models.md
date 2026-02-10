@@ -138,11 +138,11 @@ Response from the third model...
 
 ### Model Configuration Status
 
-View your current multi-model configuration using the `//model` directive:
+View your current multi-model configuration using the `/model` directive:
 
 ```bash
 # In any prompt file or in chat session
-//model
+/model
 ```
 
 **Example Output:**
@@ -315,23 +315,23 @@ Roles are stored as text files in your prompts directory:
 # Default location: ~/.prompts/roles/
 ~/.prompts/
   roles/
-    architect.txt
-    security.txt
-    performance.txt
-    optimist.txt
-    pessimist.txt
-    realist.txt
+    architect.md
+    security.md
+    performance.md
+    optimist.md
+    pessimist.md
+    realist.md
 
 # Nested role organization
 ~/.prompts/
   roles/
     software/
-      architect.txt
-      developer.txt
+      architect.md
+      developer.md
     analysis/
-      optimist.txt
-      pessimist.txt
-      realist.txt
+      optimist.md
+      pessimist.md
+      realist.md
 ```
 
 **Using Nested Roles:**
@@ -413,7 +413,7 @@ AIA validates role files exist at parse time and provides helpful error messages
 # If role file doesn't exist
 $ aia --model gpt-4o=nonexistent my_prompt
 
-ERROR: Role file not found: ~/.prompts/roles/nonexistent.txt
+ERROR: Role file not found: ~/.prompts/roles/nonexistent.md
 
 Available roles:
   - architect
@@ -430,7 +430,7 @@ Create new role files in your roles directory:
 
 ```bash
 # Create a new role
-cat > ~/.prompts/roles/debugger.txt << 'EOF'
+cat > ~/.prompts/roles/debugger.md << 'EOF'
 You are an expert debugging assistant. When analyzing code:
 - Focus on identifying potential bugs and edge cases
 - Suggest specific debugging strategies
@@ -445,7 +445,7 @@ aia --model gpt-4o=debugger analyze_bug.py
 ### Model Comparison in Prompts
 ```markdown
 Compare responses from multiple models:
-//compare "Explain quantum computing" --models gpt-4,claude-3-sonnet,gemini-pro
+/compare "Explain quantum computing" --models gpt-4,claude-3-sonnet,gemini-pro
 
 Which explanation is most accessible?
 ```
@@ -489,15 +489,15 @@ Choose models based on task characteristics:
 
 ```ruby
 # In prompt with Ruby directive
-//ruby
+/ruby
 task_type = '<%= task_type %>'
 model = case task_type
         when 'creative' then 'gpt-4'
-        when 'analytical' then 'claude-3-sonnet'  
+        when 'analytical' then 'claude-3-sonnet'
         when 'code' then 'codellama-34b'
         else 'gpt-3.5-turbo'
         end
-puts "//config model #{model}"
+puts "/config model #{model}"
 ```
 
 ## Model Performance Optimization
@@ -545,10 +545,10 @@ aia --model gpt-4-turbo comprehensive_analysis.md
 #### Context-Aware Processing
 ```bash
 # Check document size and choose appropriate model
-//ruby
-file_size = File.size('<%= file %>') 
+/ruby
+file_size = File.size('<%= file %>')
 model = file_size > 100000 ? 'claude-3-sonnet' : 'gpt-4'
-puts "//config model #{model}"
+puts "/config model #{model}"
 
 # Process with selected model
 ```
@@ -684,7 +684,7 @@ aia --chat --model ollama/mistral
 
 # List Ollama models from AIA
 aia --model ollama/llama3.2 --chat
-> //models
+> /models
 
 # Combine with cloud models for comparison
 aia --model ollama/llama3.2,gpt-4o-mini,claude-3-sonnet my_prompt
@@ -738,7 +738,7 @@ aia --chat --model lms/llama-3.2-3b-instruct
 
 # List LM Studio models from AIA
 aia --model lms/any-loaded-model --chat
-> //models
+> /models
 
 # Model validation
 # AIA validates model names against LM Studio's loaded models
@@ -876,7 +876,7 @@ aia --model gpt-4-vision --include final.md image_analysis charts/
 ### Conditional Model Selection
 ```ruby
 # Dynamic model selection based on task complexity
-//ruby
+/ruby
 content_length = File.read('<%= input_file %>').length
 complexity = content_length > 10000 ? 'high' : 'low'
 
@@ -884,8 +884,8 @@ model = case complexity
         when 'high' then 'claude-3-sonnet'
         when 'low' then 'gpt-3.5-turbo'
         end
-        
-puts "//config model #{model}"
+
+puts "/config model #{model}"
 puts "Selected #{model} for #{complexity} complexity task"
 ```
 
@@ -899,17 +899,71 @@ aia --model gpt-3.5-turbo --include technical_analysis.md --include style_analys
 
 ## Integration with Other Features
 
-### Chat Mode Model Management
-```bash
-# Start chat with specific model
-aia --chat --model gpt-4
+### Switching Models During a Chat Session
 
-# Switch models during chat
-You: /model claude-3-sonnet
-AI: Switched to claude-3-sonnet
+AIA lets you change models — and even providers — mid-conversation without restarting. The switch takes effect immediately.
 
-# Compare models in chat
-You: //compare "Explain this concept" --models gpt-4,claude-3-sonnet
+#### Single Model Switch
+
+```
+/model gpt-4o-mini
+```
+
+The client is recreated on the spot. The next `/model` (no arguments) confirms the change:
+
+```
+/model
+Current Model:
+==============
+{id: "gpt-4o-mini", provider: "openai", ...}
+```
+
+#### Cross-Provider Switch
+
+Move between providers seamlessly:
+
+```
+/model claude-sonnet-4       # Anthropic
+/model gpt-4o                # OpenAI
+/model gemini-2.0-flash      # Google
+/model ollama/llama3.2       # Local (Ollama)
+```
+
+#### Upgrade to Multi-Model Mid-Session
+
+Provide a comma-separated list to switch from a single model to multi-model mode:
+
+```
+/model gpt-4o-mini, claude-sonnet-4
+```
+
+Each model gets its own conversation context and responds independently. You can assign roles using the `model=role` syntax:
+
+```
+/model gpt-4o=architect, claude-sonnet-4=security, gemini-pro=performance
+```
+
+#### Return to Single Model
+
+Specify one model name to go back:
+
+```
+/model claude-sonnet-4
+```
+
+#### Adjust Parameters
+
+Fine-tune generation settings alongside model changes:
+
+```
+/temperature 0.3    # More focused
+/top_p 0.9          # Nucleus sampling
+```
+
+#### Compare Models in Chat
+
+```
+/compare "Explain this concept" --models gpt-4,claude-3-sonnet
 ```
 
 ### Pipeline Model Configuration
