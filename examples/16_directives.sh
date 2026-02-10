@@ -19,8 +19,10 @@ echo "Directives are built-in functions available in prompts (via ERB)"
 echo "and in chat mode (via /command). Here are the available directives:"
 echo
 echo "  Prompt Manager Core:"
-echo "    include   - Include and render another prompt file"
-echo "    insert    - Insert raw file contents (aliases: read)"
+echo "    include   - Include recursively and render another prompt file(s)"
+echo "    insert    - Insert (non-recursive) raw file contents (aliases: read)"
+echo
+echo "The remaining directives are more useful as /commands in chat mode:"
 echo
 echo "  Configuration:"
 echo "    /config   - View or set configuration values"
