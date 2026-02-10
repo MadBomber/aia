@@ -44,7 +44,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'faraday'
   spec.add_dependency 'lumberjack'
   spec.add_dependency 'myway_config'
-  spec.add_dependency 'prompt_manager', '~> 1.0.1'
+  spec.add_dependency 'prompt_manager', '~> 1.0.2'
   spec.add_dependency 'reline'
   spec.add_dependency 'ruby_llm'
   spec.add_dependency 'ruby_llm-mcp'

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'word_wrapper'
+require_relative '../adapter/gem_activator'
 
 # lib/aia/config/validator.rb
 #
@@ -330,9 +331,9 @@ module AIA
         # Load required libraries (with gem activation and lazy-load triggering)
         Array(config.require_libs).each do |lib|
           begin
-            activate_gem_for_require(lib)
+            Adapter::GemActivator.activate_gem_for_require(lib)
             require lib
-            trigger_tool_loading(lib)
+            Adapter::GemActivator.trigger_tool_loading(lib)
           rescue LoadError => e
             warn "Warning: Failed to require '#{lib}': #{e.message}"
             warn "Hint: Make sure the gem is installed: gem install #{lib}"
@@ -366,54 +367,12 @@ module AIA
         end
       end
 
-      # Activate a gem and add its lib path to $LOAD_PATH
-      # Bypasses Bundler's restrictions on loading non-bundled gems
-      def activate_gem_for_require(lib)
-        return if Gem.try_activate(lib)
-
-        gem_path = find_gem_path(lib)
-        if gem_path
-          lib_path = File.join(gem_path, 'lib')
-          $LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
-        end
-      end
-
-      def find_gem_path(gem_name)
-        gem_dirs = Gem.path.flat_map do |base|
-          gems_dir = File.join(base, 'gems')
-          next [] unless File.directory?(gems_dir)
-
-          Dir.glob(File.join(gems_dir, "#{gem_name}-*")).select do |path|
-            File.directory?(path) && File.basename(path).match?(/^#{Regexp.escape(gem_name)}-[\d.]+/)
-          end
-        end
-
-        gem_dirs.sort.last
-      end
-
       def first_sentences(text, count)
         # Normalize whitespace: collapse newlines and multiple spaces
         normalized = text.gsub(/\s*\n\s*/, ' ').gsub(/\s{2,}/, ' ').strip
         sentences  = normalized.scan(/[^.!?]*[.!?]/)
         result     = sentences.first(count).join.strip
         result.empty? ? normalized : result
-      end
-
-      # Trigger lazy-loaded tool libraries (e.g., Zeitwerk-based gems like shared_tools)
-      def trigger_tool_loading(lib)
-        const_name = lib.split(/[_-]/).map(&:capitalize).join
-
-        begin
-          mod = Object.const_get(const_name)
-
-          if mod.respond_to?(:load_all_tools)
-            mod.load_all_tools
-          elsif mod.respond_to?(:tools)
-            mod.tools
-          end
-        rescue NameError
-          # Constant doesn't exist, library might use different naming
-        end
       end
 
       def load_mcp_tools_grouped(config)

@@ -264,7 +264,7 @@ module AIA
 
         return if piped_input.empty?
 
-        processed_input = PM.parse(piped_input).to_s
+        processed_input = PM.parse_string(piped_input).to_s
 
         # Process the piped input - RubyLLM Chat maintains conversation history internally
           response_data = @chat_processor.process_prompt(processed_input)
@@ -306,7 +306,7 @@ module AIA
         end
 
         begin
-          processed_prompt = PM.parse(follow_up_prompt).to_s
+          processed_prompt = PM.parse_string(follow_up_prompt).to_s
         rescue StandardError => e
           @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
           next
