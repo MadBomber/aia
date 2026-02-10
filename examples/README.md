@@ -15,6 +15,24 @@ bash 00_setup_aia.sh
 
 The setup script pulls the `qwen3` model and writes `aia_config.yml`, which all demos use via the `-c` flag for isolated, reproducible runs.
 
+### Using Your Own API Keys and Models
+
+These demos default to Ollama with the `qwen3` model so they run locally with no API keys required. However, local models can be slow depending on your hardware — some demos may take a while to complete.
+
+For a faster experience, consider using a cloud provider's least expensive tool-capable model. Both `gpt-4o-mini` (OpenAI) and `claude-haiku-4-5` (Anthropic) are inexpensive, fast, support tool use, and will run these demos for pennies. You can easily change the setup to use any provider and model available through the [ruby_llm](https://rubyllm.com) gem. AIA supports OpenAI, Anthropic, Google Gemini, DeepSeek, Mistral, Perplexity, OpenRouter, AWS Bedrock, and local providers like Ollama and LM Studio.
+
+To switch providers, edit `aia_config.yml` and change the model name:
+
+```yaml
+models:
+  - name: gpt-4o-mini           # OpenAI  — fast and cheap
+  - name: claude-haiku-4-5      # Anthropic — fast and cheap
+  - name: gemini-2.0-flash      # Google
+  - name: ollama/qwen3          # Ollama (local, no API key needed)
+```
+
+Set the corresponding API key as an environment variable (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`). See the [RubyLLM configuration guide](https://rubyllm.com/configuration) for the full list of supported providers and their settings.
+
 ## Demo Scripts
 
 ### 00 — Setup
