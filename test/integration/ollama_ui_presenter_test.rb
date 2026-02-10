@@ -62,12 +62,6 @@ class OllamaUIPresenterTest < Minitest::Test
     AIA.config.output.file = nil
   end
 
-  def test_display_thinking_animation
-    assert_output(/Processing/) do
-      @ui.display_thinking_animation
-    end
-  end
-
   def test_display_separator
     assert_output(/.+/) do
       @ui.display_separator

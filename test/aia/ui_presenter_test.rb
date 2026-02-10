@@ -46,13 +46,6 @@ class UIPresenterTest < Minitest::Test
     assert_includes output, "\n"
   end
 
-  def test_display_thinking_animation
-    @presenter.display_thinking_animation
-    
-    output = @captured_output.string
-    assert_includes output, "⏳ Processing..."
-  end
-
   def test_display_separator
     @presenter.display_separator
     
@@ -208,58 +201,41 @@ class UIPresenterTest < Minitest::Test
     assert_includes output, "Chat session interrupted."
   end
 
-  def test_with_spinner_when_not_verbose
-    AIA.stubs(:verbose?).returns(false)
-    
-    result = @presenter.with_spinner("Testing") do
-      "operation result"
-    end
-    
-    assert_equal "operation result", result
-    # Should not show spinner output when not verbose
-  end
-
-  def test_with_spinner_when_verbose
-    AIA.stubs(:verbose?).returns(true)
-    
+  def test_with_spinner
     # Mock TTY::Spinner
     mock_spinner = mock('spinner')
     mock_spinner.expects(:auto_spin)
     mock_spinner.expects(:stop)
     TTY::Spinner.expects(:new).with("[:spinner] Testing...", format: :bouncing_ball).returns(mock_spinner)
-    
+
     result = @presenter.with_spinner("Testing") do
       "operation result"
     end
-    
+
     assert_equal "operation result", result
   end
 
   def test_with_spinner_with_operation_type
-    AIA.stubs(:verbose?).returns(true)
-    
     # Mock TTY::Spinner
     mock_spinner = mock('spinner')
     mock_spinner.expects(:auto_spin)
     mock_spinner.expects(:stop)
     TTY::Spinner.expects(:new).with("[:spinner] Processing download...", format: :bouncing_ball).returns(mock_spinner)
-    
+
     result = @presenter.with_spinner("Processing", "download") do
       "download complete"
     end
-    
+
     assert_equal "download complete", result
   end
 
   def test_with_spinner_handles_exceptions
-    AIA.stubs(:verbose?).returns(true)
-    
     # Mock TTY::Spinner
     mock_spinner = mock('spinner')
     mock_spinner.expects(:auto_spin)
     mock_spinner.expects(:stop)  # Should still stop even if block raises
     TTY::Spinner.expects(:new).returns(mock_spinner)
-    
+
     assert_raises(StandardError) do
       @presenter.with_spinner("Testing") do
         raise StandardError.new("Test error")

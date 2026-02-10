@@ -186,7 +186,6 @@ module AIA
     # RubyLLM's Chat automatically adds user messages and responses to its internal @messages
     def send_prompt_and_get_response(prompt_text)
       # Process the prompt - RubyLLM Chat maintains conversation history internally
-      @ui_presenter.display_thinking_animation
       response_data = @chat_processor.process_prompt(prompt_text)
 
       # Handle response format (may include metrics)
@@ -241,7 +240,6 @@ module AIA
       return if context.empty?
 
       # Process the context - RubyLLM Chat maintains conversation history internally
-      @ui_presenter.display_thinking_animation
       response_data = @chat_processor.process_prompt(context)
 
       # Handle response format (may include metrics)
@@ -269,8 +267,7 @@ module AIA
         processed_input = PM.parse(piped_input).to_s
 
         # Process the piped input - RubyLLM Chat maintains conversation history internally
-        @ui_presenter.display_thinking_animation
-        response_data = @chat_processor.process_prompt(processed_input)
+          response_data = @chat_processor.process_prompt(processed_input)
 
         # Handle response format (may include metrics)
         content = response_data.is_a?(Hash) ? response_data[:content] : response_data
@@ -317,8 +314,7 @@ module AIA
 
         # Process the prompt - RubyLLM Chat maintains conversation history internally
         # via @messages array. Each model's Chat instance tracks its own conversation.
-        @ui_presenter.display_thinking_animation
-        response_data = @chat_processor.process_prompt(processed_prompt)
+          response_data = @chat_processor.process_prompt(processed_prompt)
 
         # Handle new response format with metrics
         if response_data.is_a?(Hash)

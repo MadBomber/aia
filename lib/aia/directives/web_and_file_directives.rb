@@ -13,7 +13,7 @@ module AIA
       if PUREMD_API_KEY.nil?
         'ERROR: PUREMD_API_KEY is required in order to include a webpage'
       else
-        url = `echo #{args.shift}`.strip
+        url = args.shift.to_s.strip
         puremd_url = "https://pure.md/#{url}"
 
         response = Faraday.get(puremd_url) do |req|
@@ -88,17 +88,26 @@ module AIA
     private
 
     def resolve_skill_dir(skill_name)
+      return nil unless Dir.exist?(SKILLS_DIR)
+
       exact = File.join(SKILLS_DIR, skill_name)
-      return exact if Dir.exist?(exact)
+      return safe_skill_path(exact)  if Dir.exist?(exact)
 
       Dir.children(SKILLS_DIR)
          .sort
          .each do |entry|
         next unless entry.start_with?(skill_name)
         candidate = File.join(SKILLS_DIR, entry)
-        return candidate if Dir.exist?(candidate)
+        return safe_skill_path(candidate) if Dir.exist?(candidate)
       end
 
+      nil
+    end
+
+    def safe_skill_path(path)
+      resolved = File.realpath(path)
+      resolved.start_with?(File.realpath(SKILLS_DIR)) ? resolved : nil
+    rescue Errno::ENOENT
       nil
     end
   end

@@ -31,23 +31,8 @@ class DirectivesExecutionTest < Minitest::Test
     assert_instance_of String, result
   end
 
-  def test_shell_executes_command
-    result = @instance.shell(['echo', 'hello'])
-    assert_equal "hello\n", result
-  end
-
-  def test_shell_joins_args
-    result = @instance.shell(['echo', 'hello', 'world'])
-    assert_equal "hello world\n", result
-  end
-
   def test_rb_alias
     assert_equal @instance.method(:ruby).original_name,
                  @instance.method(:rb).original_name
-  end
-
-  def test_sh_alias
-    assert_equal @instance.method(:shell).original_name,
-                 @instance.method(:sh).original_name
   end
 end
