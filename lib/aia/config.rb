@@ -55,21 +55,10 @@ module AIA
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
                   :completion, :mcp_list, :list_tools, :executable_prompt,
                   :executable_prompt_file, :executable_prompt_content,
-                  :tool_names, :loaded_tools, :next_prompt,
+                  :tool_names, :loaded_tools,
                   :log_level_override, :log_file_override,
                   :connected_mcp_servers, # Array of successfully connected MCP server names
                   :failed_mcp_servers     # Array of {name:, error:} hashes for failed MCP servers
-
-    # Alias for next prompt (for backward compatibility with directives)
-    def next
-      @next_prompt
-    end
-
-    def next=(value)
-      @next_prompt = value
-      # Also prepend to pipeline
-      pipeline.unshift(value) if value && !value.empty?
-    end
 
     # ==========================================================================
     # Type Coercion

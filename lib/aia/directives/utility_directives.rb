@@ -46,29 +46,6 @@ module AIA
       ''
     end
 
-    desc "Set the next prompt in the sequence"
-    def next(args = [], context_manager = nil)
-      if args.empty?
-        ap AIA.config.next
-      else
-        AIA.config.next = args.shift
-      end
-      ''
-    end
-
-    desc "Set or view the prompt workflow sequence"
-    def pipeline(args = [], context_manager = nil)
-      if args.empty?
-        ap AIA.config.pipeline
-      elsif 1 == args.size
-        AIA.config.pipeline += args.first.split(',').map(&:strip).reject { |id| id.empty? }
-      else
-        AIA.config.pipeline += args.map { |id| id.gsub(',', '').strip }.reject { |id| id.empty? }
-      end
-      ''
-    end
-    alias_method :workflow, :pipeline
-
     desc "Add instruction for concise responses"
     def terse(args, context_manager = nil)
       "" # DEPRECATED: terse mode has been removed

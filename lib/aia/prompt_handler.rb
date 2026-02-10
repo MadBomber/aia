@@ -189,12 +189,18 @@ module AIA
       # next → AIA.config.pipeline (replace)
       next_val = meta_hash['next'] || meta_hash[:next]
       if next_val
+        if AIA.config.pipeline.any?
+          logger.info "Prompt metadata 'next: #{next_val}' overrides remaining pipeline #{AIA.config.pipeline.inspect}"
+        end
         AIA.config.pipeline = [next_val]
       end
 
       # pipeline → AIA.config.pipeline (replace)
       pipeline_val = meta_hash['pipeline'] || meta_hash[:pipeline]
       if pipeline_val
+        if AIA.config.pipeline.any?
+          logger.info "Prompt metadata 'pipeline' overrides remaining pipeline #{AIA.config.pipeline.inspect}"
+        end
         AIA.config.pipeline = Array(pipeline_val)
       end
 
@@ -211,6 +217,10 @@ module AIA
       end
     end
 
+
+    def logger
+      @logger ||= LoggerManager.aia_logger
+    end
 
     # Deep merge config: section into AIA.config
     def deep_merge_config(config_section)
