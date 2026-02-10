@@ -189,10 +189,27 @@ module AIA
       response_data = @chat_processor.process_prompt(prompt_text)
 
       # Handle response format (may include metrics)
-      content = response_data.is_a?(Hash) ? response_data[:content] : response_data
+      if response_data.is_a?(Hash)
+        content = response_data[:content]
+        metrics = response_data[:metrics]
+        multi_metrics = response_data[:multi_metrics]
+      else
+        content = response_data
+        metrics = nil
+        multi_metrics = nil
+      end
 
       # Output the response
       @chat_processor.output_response(content)
+
+      # Display token usage if enabled and available
+      if AIA.config.flags.tokens
+        if multi_metrics
+          @ui_presenter.display_multi_model_metrics(multi_metrics)
+        elsif metrics
+          @ui_presenter.display_token_metrics(metrics)
+        end
+      end
 
       # Process any directives in the response
       if @directive_processor.directive?(content)
