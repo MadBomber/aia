@@ -3151,6 +3151,9 @@
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>which files are over 1 week old?
 </span></code></pre></div>
+<blockquote>
+<p><strong>Security Warning</strong>: The <code>/ruby</code> and <code>/shell</code> directives execute code directly on your machine with your user permissions. <code>/ruby</code> runs arbitrary Ruby via <code>eval()</code> and <code>/shell</code> invokes system commands. Only use these directives with trusted prompts. Never run prompts from untrusted sources that contain these directives without reviewing them first.</p>
+</blockquote>
 <h2 id="advanced-chat-features">Advanced Chat Features<a class="headerlink" href="#advanced-chat-features" title="Permanent link">&para;</a></h2>
 <h3 id="multi-model-conversations">Multi-Model Conversations<a class="headerlink" href="#multi-model-conversations" title="Permanent link">&para;</a></h3>
 <h4 id="consensus-mode">Consensus Mode<a class="headerlink" href="#consensus-mode" title="Permanent link">&para;</a></h4>
@@ -3568,10 +3571,12 @@
 </ol>
 <h3 id="security-considerations">Security Considerations<a class="headerlink" href="#security-considerations" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Sensitive Data</strong>: Avoid sharing confidential information</li>
-<li><strong>Tool Access</strong>: Restrict tool permissions appropriately</li>
-<li><strong>Session Management</strong>: Clear sensitive conversations</li>
-<li><strong>API Keys</strong>: Keep credentials secure</li>
+<li><strong>Code Execution Directives</strong>: <code>/ruby</code> executes arbitrary Ruby code and <code>/shell</code> runs system commands with your user permissions. Only use trusted prompts containing these directives</li>
+<li><strong>Sensitive Data</strong>: Avoid sharing confidential information in prompts or chat</li>
+<li><strong>Tool Access</strong>: Restrict tool permissions with <code>--allowed-tools</code> and <code>--rejected-tools</code></li>
+<li><strong>MCP Servers</strong>: Control which MCP servers can run with <code>--mcp-use</code> and <code>--mcp-skip</code></li>
+<li><strong>Session Management</strong>: Clear sensitive conversations with <code>/clear</code></li>
+<li><strong>API Keys</strong>: Keep credentials secure; never embed them in prompt files</li>
 </ol>
 <h3 id="productivity-tips">Productivity Tips<a class="headerlink" href="#productivity-tips" title="Permanent link">&para;</a></h3>
 <ol>
