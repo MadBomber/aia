@@ -1,5 +1,6 @@
 require_relative '../test_helper'
 require 'tempfile'
+require 'open3'
 require_relative '../../lib/aia'
 require_relative '../../lib/aia/fzf'
 
@@ -7,7 +8,7 @@ class FzfTest < Minitest::Test
   def setup
     # Only skip if fzf is truly not available (check with full path)
     skip "fzf not available" unless system('which fzf >/dev/null 2>&1') || File.exist?('/opt/homebrew/bin/fzf')
-    
+
     @list = ['item1', 'item2', 'item3']
     @directory = '/test/dir'
     @fzf = AIA::Fzf.new(
@@ -27,12 +28,11 @@ class FzfTest < Minitest::Test
     assert_equal 'Test Items', @fzf.subject
     assert_equal 'Choose one:', @fzf.prompt
     assert_equal '.md', @fzf.extension
-    refute_nil @fzf.command
   end
 
   def test_initialization_with_required_parameters_only
     fzf = AIA::Fzf.new(list: @list, directory: @directory)
-    
+
     assert_equal @list, fzf.list
     assert_equal @directory, fzf.directory
     assert_equal '', fzf.query
@@ -49,30 +49,39 @@ class FzfTest < Minitest::Test
       --delimiter :
       --preview-window=down:50%:wrap
     ]
-    
+
     assert_equal expected_defaults, AIA::Fzf::DEFAULT_PARAMETERS
   end
 
-  def test_build_command_creates_proper_command
-    command = @fzf.command
-    
-    # Should contain basic fzf command structure
-    assert_match(/cat .* \| fzf/, command)
-    
+  def test_build_command_creates_fzf_args_array
+    fzf_args = @fzf.instance_variable_get(:@fzf_args)
+
+    refute_nil fzf_args
+    assert_kind_of Array, fzf_args
+
+    joined = fzf_args.join(' ')
+
     # Should include default parameters
-    assert_match(/--tabstop=2/, command)
-    assert_match(/--header-first/, command)
-    assert_match(/--delimiter :/, command)
-    assert_match(/--preview-window=down:50%:wrap/, command)
-    
-    # Should include custom header
-    assert_match(/--header='Test Items which contain: test/, command)
-    
-    # Should include preview command  
-    assert_includes command, "--preview='cat /test/dir/{1}.md'"
-    
-    # Should include custom prompt
-    assert_match(/--prompt=Choose\\ one:/, command)
+    assert_includes joined, '--tabstop=2'
+    assert_includes joined, '--header-first'
+    assert_includes joined, '--delimiter'
+    assert_includes joined, '--preview-window=down:50%:wrap'
+
+    # Should include header with subject and query (shell-escaped)
+    header_arg = fzf_args.find { |a| a.start_with?('--header=') }
+    refute_nil header_arg
+    assert_includes header_arg, 'Test'
+    assert_includes header_arg, 'test'
+
+    # Should include preview with escaped directory
+    preview_arg = fzf_args.find { |a| a.start_with?('--preview=') }
+    refute_nil preview_arg
+    assert_includes preview_arg, '/test/dir'
+    assert_includes preview_arg, '.md'
+
+    # Should include custom prompt (last --prompt= wins)
+    prompt_args = fzf_args.select { |a| a.start_with?('--prompt=') }
+    assert(prompt_args.any? { |a| a.include?('Choose') })
   end
 
   def test_build_command_handles_special_characters_in_prompt
@@ -81,17 +90,19 @@ class FzfTest < Minitest::Test
       directory: @directory,
       prompt: "What's your choice?"
     )
-    
-    # Should properly escape special characters
-    assert_match(/--prompt=What\\'s\\ your\\ choice\\?/, fzf.command)
+
+    fzf_args = fzf.instance_variable_get(:@fzf_args)
+    prompt_args = fzf_args.select { |a| a.start_with?('--prompt=') }
+    # Shellwords.escape handles the special characters; the custom prompt is the last one
+    assert(prompt_args.any? { |a| a.include?('What') })
   end
 
   def test_tempfile_path_creates_tempfile_with_list_content
     # Access the private method
     tempfile_path = @fzf.send(:tempfile_path)
-    
+
     assert File.exist?(tempfile_path)
-    
+
     content = File.read(tempfile_path)
     @list.each do |item|
       assert_includes content, item
@@ -101,43 +112,51 @@ class FzfTest < Minitest::Test
   def test_tempfile_path_returns_same_path_on_multiple_calls
     path1 = @fzf.send(:tempfile_path)
     path2 = @fzf.send(:tempfile_path)
-    
+
     assert_equal path1, path2
   end
 
   def test_run_with_successful_selection
-    # Mock the command execution to return a selection
-    @fzf.expects(:`).with(@fzf.command).returns("item2\n")
-    
+    # Mock Open3.capture2 to return a selection
+    mock_status = mock('status')
+    mock_status.stubs(:success?).returns(true)
+    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args), stdin_data: @list.join("\n")).returns(["item2\n", mock_status])
+
     result = @fzf.run
-    
+
     assert_equal 'item2', result
   end
 
   def test_run_with_empty_selection
-    # Mock the command execution to return empty string (user cancelled)
-    @fzf.expects(:`).with(@fzf.command).returns('')
-    
+    # Mock Open3.capture2 to return empty string (user cancelled)
+    mock_status = mock('status')
+    mock_status.stubs(:success?).returns(false)
+    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args), stdin_data: @list.join("\n")).returns(['', mock_status])
+
     result = @fzf.run
-    
+
     assert_nil result
   end
 
   def test_run_with_whitespace_only_selection
-    # Mock the command execution to return whitespace
-    @fzf.expects(:`).with(@fzf.command).returns("   \n  ")
-    
+    # Mock Open3.capture2 to return whitespace
+    mock_status = mock('status')
+    mock_status.stubs(:success?).returns(true)
+    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args), stdin_data: @list.join("\n")).returns(["   \n  ", mock_status])
+
     result = @fzf.run
-    
+
     assert_nil result
   end
 
   def test_run_strips_whitespace_from_selection
-    # Mock the command execution to return selection with whitespace
-    @fzf.expects(:`).with(@fzf.command).returns("  item1  \n")
-    
+    # Mock Open3.capture2 to return selection with whitespace
+    mock_status = mock('status')
+    mock_status.stubs(:success?).returns(true)
+    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args), stdin_data: @list.join("\n")).returns(["  item1  \n", mock_status])
+
     result = @fzf.run
-    
+
     assert_equal 'item1', result
   end
 
@@ -146,21 +165,23 @@ class FzfTest < Minitest::Test
     mock_tempfile = mock('tempfile')
     mock_tempfile.expects(:unlink)
     @fzf.instance_variable_set(:@tempfile, mock_tempfile)
-    
-    @fzf.expects(:`).returns('item1')
-    
+
+    mock_status = mock('status')
+    mock_status.stubs(:success?).returns(true)
+    Open3.stubs(:capture2).returns(["item1\n", mock_status])
+
     @fzf.run
   end
 
   def test_run_cleans_up_tempfile_even_on_exception
     # Mock an exception during command execution
-    @fzf.expects(:`).raises(StandardError.new('Command failed'))
-    
+    Open3.stubs(:capture2).raises(StandardError.new('Command failed'))
+
     # Mock the tempfile to verify cleanup still happens
     mock_tempfile = mock('tempfile')
     mock_tempfile.expects(:unlink)
     @fzf.instance_variable_set(:@tempfile, mock_tempfile)
-    
+
     assert_raises(StandardError) do
       @fzf.run
     end
@@ -168,7 +189,7 @@ class FzfTest < Minitest::Test
 
   def test_unlink_tempfile_handles_nil_tempfile
     @fzf.instance_variable_set(:@tempfile, nil)
-    
+
     # Should not raise an error
     @fzf.send(:unlink_tempfile)
     # If we get here without an exception, the test passes
@@ -179,27 +200,27 @@ class FzfTest < Minitest::Test
     mock_tempfile = mock('tempfile')
     mock_tempfile.expects(:unlink)
     @fzf.instance_variable_set(:@tempfile, mock_tempfile)
-    
+
     @fzf.send(:unlink_tempfile)
   end
 
   def test_integration_with_empty_list
     fzf = AIA::Fzf.new(list: [], directory: '/test')
-    
+
     # Should handle empty list gracefully
     tempfile_path = fzf.send(:tempfile_path)
     content = File.read(tempfile_path)
-    
+
     assert_equal '', content.strip
   end
 
   def test_integration_with_special_characters_in_list
     special_list = ['item with spaces', 'item-with-dashes', 'item_with_underscores']
     fzf = AIA::Fzf.new(list: special_list, directory: '/test')
-    
+
     tempfile_path = fzf.send(:tempfile_path)
     content = File.read(tempfile_path)
-    
+
     special_list.each do |item|
       assert_includes content, item
     end

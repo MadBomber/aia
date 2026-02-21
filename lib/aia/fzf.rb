@@ -2,6 +2,7 @@
 # fzf is a general-purpose command-line fuzzy finder
 
 require 'shellwords'
+require 'open3'
 require 'tempfile'
 
 class AIA::Fzf
@@ -37,19 +38,19 @@ class AIA::Fzf
 
   def build_command
     fzf_options = DEFAULT_PARAMETERS.dup
-    fzf_options << "--header='#{subject} which contain: #{query}\nPress ESC to cancel.'"
-    fzf_options << "--preview='cat #{directory}/{1}#{extension}'"
+    escaped_dir = Shellwords.escape(directory)
+    escaped_ext = Shellwords.escape(extension)
+    fzf_options << "--header=#{Shellwords.escape("#{subject} which contain: #{query}\nPress ESC to cancel.")}"
+    fzf_options << "--preview=#{Shellwords.escape("cat #{escaped_dir}/{1}#{escaped_ext}")}"
     fzf_options << "--prompt=#{Shellwords.escape(prompt)}"
 
-    fzf_command = "fzf #{fzf_options.join(' ')}"
-
-    @command = "cat #{tempfile_path} | #{fzf_command}"
+    @fzf_args = fzf_options
   end
 
 
   def run
-    # puts "Executing: #{@command}"
-    selected = `#{@command}`.strip
+    input = list.join("\n")
+    selected, status = Open3.capture2('fzf', *@fzf_args, stdin_data: input)
 
     selected.strip.empty? ? nil : selected.strip
   ensure

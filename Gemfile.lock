@@ -10,8 +10,8 @@ PATH
       myway_config
       prompt_manager (~> 1.0.2)
       reline
-      ruby_llm
-      ruby_llm-mcp
+      ruby_llm (~> 1.12)
+      ruby_llm-mcp (~> 0.8)
       shellwords
       simple_flow
       tty-screen

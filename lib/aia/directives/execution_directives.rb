@@ -10,7 +10,7 @@ module AIA
 
       begin
         String(eval(ruby_code))
-      rescue Exception => e
+      rescue StandardError => e
         <<~ERROR
           This ruby code failed: #{ruby_code}
           #{e.message}

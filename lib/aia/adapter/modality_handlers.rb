@@ -17,8 +17,9 @@ module AIA
         # This is a placeholder for a custom implementation or external service
         begin
           File.write(output_file, 'Mock TTS audio content')
-          if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
-            system("#{AIA.config.audio.speak_command} #{output_file}")
+          speak_cmd = AIA.config.audio.speak_command
+          if File.exist?(output_file) && system('which', speak_cmd, out: File::NULL, err: File::NULL)
+            system(speak_cmd, output_file)
           end
           "Audio generated and saved to: #{output_file}"
         rescue StandardError => e
@@ -55,8 +56,7 @@ module AIA
 
         # Return the full response object to preserve token information
         response
-      rescue Exception => e # rubocop:disable Lint/RescueException
-        # Catch ALL exceptions including LoadError, ScriptError, etc.
+      rescue StandardError => e
         # Tool crashes should not crash AIA - log and continue gracefully
         handle_tool_crash(chat_instance, e)
       end
@@ -120,8 +120,9 @@ module AIA
           # NOTE: RubyLLM doesn't have a direct TTS feature
           # TODO: This is a placeholder for a custom implementation
           File.write(output_file, text_prompt)
-          if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
-            system("#{AIA.config.audio.speak_command} #{output_file}")
+          speak_cmd = AIA.config.audio.speak_command
+          if File.exist?(output_file) && system('which', speak_cmd, out: File::NULL, err: File::NULL)
+            system(speak_cmd, output_file)
           end
           "Audio generated and saved to: #{output_file}"
         rescue StandardError => e

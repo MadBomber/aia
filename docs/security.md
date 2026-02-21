@@ -42,6 +42,53 @@ else
 fi
 ```
 
+## Code Execution Directives
+
+AIA includes directives that execute code directly on your machine. Understand their security implications:
+
+### /ruby Directive
+
+The `/ruby` directive executes arbitrary Ruby code using `eval()` with your full user permissions. It can read files, make network calls, modify your filesystem, and execute system commands.
+
+```
+# These execute with YOUR permissions:
+/ruby File.read('/etc/hosts')
+/ruby system('whoami')
+/ruby Dir.glob('**/*')
+```
+
+**Mitigations**:
+- Only run prompts from trusted sources
+- Review any prompt file before executing if it contains `/ruby` directives
+- Be cautious with prompts shared by others or downloaded from the internet
+
+### /shell Directive
+
+The `/shell` directive executes system commands with your user permissions:
+
+```
+# Executes directly in your shell:
+/shell ls -la
+/shell cat /path/to/file
+```
+
+**Mitigations**:
+- Same precautions as `/ruby` — only use with trusted prompts
+- Consider the implications of any shell command before running it
+
+### ERB Processing
+
+Prompts with `.md` extension are processed through ERB, which also executes Ruby code:
+
+```markdown
+The current user is: <%= `whoami`.strip %>
+Today's date is: <%= Date.today %>
+```
+
+**Mitigations**:
+- Review prompt files before running them, especially from untrusted sources
+- ERB processing is always enabled and cannot be disabled per-prompt
+
 ## Prompt Security
 
 ### Input Sanitization
