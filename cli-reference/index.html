@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -1802,17 +1802,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#exit-codes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Exit Codes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2970,17 +2959,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#exit-codes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Exit Codes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3284,7 +3262,7 @@
 <h3 id="-c-config-file-file"><code>-c, --config-file FILE</code><a class="headerlink" href="#-c-config-file-file" title="Permanent link">&para;</a></h3>
 <p>Load configuration from a specific file.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>aia<span class="w"> </span>--config-file<span class="w"> </span>/path/to/config.yml<span class="w"> </span>my_prompt
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>aia<span class="w"> </span>-c<span class="w"> </span>~/.aia/custom_config.yml<span class="w"> </span>my_prompt
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>aia<span class="w"> </span>-c<span class="w"> </span>~/.config/aia/custom_config.yml<span class="w"> </span>my_prompt
 </span></code></pre></div>
 <h3 id="-o-no-output-file"><code>-o, --[no-]output [FILE]</code><a class="headerlink" href="#-o-no-output-file" title="Permanent link">&para;</a></h3>
 <p>Output file for saving AI responses.</p>
@@ -3708,14 +3686,6 @@
 </span><span id="__span-62-7"><a id="__codelineno-62-7" name="__codelineno-62-7" href="#__codelineno-62-7"></a><span class="c1"># Audio processing</span>
 </span><span id="__span-62-8"><a id="__codelineno-62-8" name="__codelineno-62-8" href="#__codelineno-62-8"></a>aia<span class="w"> </span>--transcription-model<span class="w"> </span>whisper-1<span class="w"> </span>--speech-model<span class="w"> </span>tts-1-hd<span class="w"> </span>--voice<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>audio_prompt<span class="w"> </span>audio_file.wav
 </span></code></pre></div>
-<h2 id="exit-codes">Exit Codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>0</code> - Success</li>
-<li><code>1</code> - General error (invalid arguments, file not found, etc.)</li>
-<li><code>2</code> - Configuration error</li>
-<li><code>3</code> - Model/API error</li>
-<li><code>4</code> - Tool execution error</li>
-</ul>
 <h2 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
 <p>Many CLI options have corresponding environment variables with the <code>AIA_</code> prefix.
 Use double underscore (<code>__</code>) for nested configuration sections:</p>
