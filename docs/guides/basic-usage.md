@@ -93,13 +93,13 @@ aia write_content --outline outline.md --style "technical" --examples "include"
 Set up different configurations for different environments:
 
 ```yaml
-# ~/.aia/dev_config.yml
+# ~/.config/aia/dev_config.yml
 model: gpt-3.5-turbo
 temperature: 0.7
 verbose: true
 debug: true
 
-# ~/.aia/prod_config.yml  
+# ~/.config/aia/prod_config.yml  
 model: gpt-4
 temperature: 0.3
 verbose: false
@@ -108,8 +108,8 @@ debug: false
 
 ```bash
 # Use environment-specific configs
-aia --config-file ~/.aia/dev_config.yml development_task
-aia --config-file ~/.aia/prod_config.yml production_analysis
+aia --config-file ~/.config/aia/dev_config.yml development_task
+aia --config-file ~/.config/aia/prod_config.yml production_analysis
 ```
 
 ### Task-Specific Model Selection

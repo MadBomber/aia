@@ -29,7 +29,7 @@ We welcome contributions to AIA! This guide will help you get started with contr
 ## Getting Started
 
 ### Prerequisites
-- Ruby 3.0+ installed
+- Ruby 3.2+ installed
 - Git for version control
 - Familiarity with AI/LLM concepts
 - Understanding of command-line tools
@@ -329,4 +329,4 @@ Questions? Feel free to open an issue or start a discussion on GitHub.
 
 ---
 
-*Last updated: December 2024*
+*Last updated: February 2026*

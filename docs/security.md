@@ -368,95 +368,46 @@ sanitize_environment() {
 ## Tool and MCP Security
 
 ### Tool Access Control
-```yaml
-# Secure tool configuration
-tools:
-  security:
-    default_policy: deny
-    audit_log: /var/log/aia-tools.log
-    
-  allowed_tools:
-    - name: file_reader
-      max_file_size: 1048576  # 1MB
-      allowed_extensions: [.txt, .md, .json]
-      allowed_directories: [/home/user/safe, /tmp/workspace]
-      
-    - name: web_client  
-      allowed_domains: [api.github.com, api.openai.com]
-      max_request_size: 1048576
-      timeout: 30
-      
-  blocked_tools:
-    - system_admin
-    - file_writer
-    - shell_executor
+
+Use CLI flags to control which tools and MCP servers are available:
+
+```bash
+# Allow only specific tools
+aia --allowed-tools file_reader,web_client --chat
+
+# Block specific tools
+aia --rejected-tools shell_executor --chat
+
+# Control MCP server access
+aia --mcp-use github,filesystem --chat
+aia --mcp-skip database --chat
 ```
 
-### MCP Security Configuration
+### MCP Server Configuration Security
+
+Restrict MCP server capabilities through their configuration:
+
 ```yaml
-# Secure MCP configuration
-mcp:
-  security:
-    sandbox_mode: true
-    network_isolation: true
-    file_system_jail: /tmp/mcp-sandbox
-    
-  resource_limits:
-    max_memory: 256MB
-    max_cpu_time: 30s
-    max_file_descriptors: 100
-    
-  clients:
-    - name: github
-      security_profile: network_readonly
-      allowed_operations: [read, list]
-      rate_limit: 100/hour
-      
-    - name: filesystem
-      security_profile: filesystem_readonly  
-      jail_directory: /home/user/safe
-      max_file_size: 10MB
+# ~/.config/aia/aia.yml
+mcp_servers:
+  - name: filesystem
+    command: mcp-server-filesystem
+    args:
+      - /safe/path/only    # Restrict to specific directories
+
+  - name: database
+    command: database-mcp-server
+    env:
+      DB_READ_ONLY: "true"  # Use server-level restrictions
+      DATABASE_URL: "${DATABASE_URL}"
+    timeout: 8000
 ```
 
-## Environment-Specific Security
+### Environment-Specific Tips
 
-### Development Environment
-```yaml
-# ~/.aia/dev_security.yml
-security:
-  level: relaxed
-  allow_debug: true
-  allow_local_files: true
-  allowed_models: [gpt-3.5-turbo, gpt-4]
-  log_all_requests: true
-```
-
-### Production Environment  
-```yaml
-# ~/.aia/prod_security.yml
-security:
-  level: strict
-  allow_debug: false
-  allow_local_files: false
-  allowed_models: [gpt-3.5-turbo]  # Cost control
-  content_filtering: strict
-  audit_logging: enabled
-  network_restrictions: strict
-```
-
-### Shared/Multi-user Environment
-```yaml
-# ~/.aia/shared_security.yml
-security:
-  level: paranoid
-  user_isolation: true
-  resource_quotas:
-    max_requests_per_hour: 100
-    max_tokens_per_day: 50000
-  content_filtering: aggressive
-  tool_restrictions: strict
-  mcp_disabled: true
-```
+- **Development**: Use `--debug` and verbose logging to monitor tool/MCP behavior
+- **Production scripts**: Use `--mcp-use` and `--allowed-tools` to restrict available capabilities
+- **Shared environments**: Use environment variables for API keys; avoid storing secrets in config files
 
 ## Monitoring and Auditing
 

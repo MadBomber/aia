@@ -68,14 +68,11 @@ Gem::Specification.new do |spec|
   spec.post_install_message = <<~MSG
 
     ╔══════════════════════════════════════════════════════════════╗
-    ║               AIA — AI Assistant Installed!                  ║
+    ║               AIA — AI Assistant v1.0                       ║
     ╚══════════════════════════════════════════════════════════════╝
 
-    ⚠  Note: v0.10+ has breaking changes in config file format and
-       environment variable names. See docs for details.
-
-    ⚠  Prompt files now use .md extension (was .txt).
-       Run: aia --migrate-prompts to convert existing prompts.
+    ⚠  Upgrading from v0.x? Prompt files now use .md extension.
+       Run: bin/migrate_prompts ~/.prompts to convert existing prompts.
 
     Multi-model AI from your command line. 20+ providers supported.
 
@@ -97,11 +94,12 @@ Gem::Specification.new do |spec|
       • Consensus mode: run multiple models, get unified responses
       • Shell & Ruby (ERB) integration in prompts
       • Tool callbacks via RubyLLM::Tool
-      • MCP Integration via RubyLLM::MCP
+      • MCP integration via RubyLLM::MCP
       • Session history and checkpoints
-      • Pipeline workflows
+      • Pipeline workflows and prompt chaining
       • Concurrently run the same prompt against multiple models
-      • Get cost estimates for prompts against multiple models
+      • Executable prompts with shebang auto-detection
+      • Cost estimates for prompts against multiple models
 
     Documentation:  https://madbomber.github.io/aia
     Source Code:    https://github.com/MadBomber/aia

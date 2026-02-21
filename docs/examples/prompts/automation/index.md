@@ -89,8 +89,9 @@ aia --tools log_analyzer.rb incident_analysis /var/log/app.log
 ```
 
 ### MCP Integration
-```markdown
-/mcp filesystem,monitoring
+```bash
+# Run with MCP servers for filesystem access
+aia --mcp-use filesystem my_prompt
 ```
 
 ## Customization Parameters

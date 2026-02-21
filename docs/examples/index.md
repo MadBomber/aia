@@ -77,10 +77,10 @@ aia --pipeline "extract_data,analyze_data,generate_report" dataset.csv
 ### Custom Tool Integration
 ```bash
 # Copy a useful tool
-cp docs/examples/tools/file_analyzer.rb ~/.aia/tools/
+cp docs/examples/tools/file_analyzer.rb ~/.config/aia/tools/
 
 # Use it in a prompt
-aia --tools ~/.aia/tools/file_analyzer.rb analyze_project
+aia --tools ~/.config/aia/tools/file_analyzer.rb analyze_project
 ```
 
 ## Example Structure

@@ -544,31 +544,33 @@ ERROR: PUREMD_API_KEY is required in order to include a webpage
 
 ### Custom Directives
 
-You can extend AIA with custom directives by creating Ruby files that define new directive methods:
+You can extend AIA with custom directives by subclassing `AIA::Directive`:
 
 ```ruby
-# examples/directives/ask.rb
+# examples/directives/timestamp_directive.rb
 module AIA
-  class DirectiveProcessor
-    private
-    desc "A meta-prompt to LLM making its response available as part of the primary prompt"
-    def ask(args, context_manager=nil)
-      meta_prompt = args.empty? ? "What is meta-prompting?" : args.join(' ')
-      AIA.config.client.chat(meta_prompt)
+  class CustomDirectives < Directive
+    desc "Insert current timestamp (optional strftime format, default: %Y-%m-%d %H:%M:%S)"
+    def timestamp(args = [], context_manager = nil)
+      format = args.empty? ? '%Y-%m-%d %H:%M:%S' : args.join(' ')
+      Time.now.strftime(format)
     end
   end
 end
 ```
 
-**Usage:** Load custom directives with the --tools option:
+**Usage:** Load custom directives with the `--tools` option:
 
 ```bash
 # Load custom directive
-aia --tools examples/directives/ask.rb --chat
+aia --tools examples/directives/timestamp_directive.rb --chat
 
-# Use the custom directive in prompts
-/ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
+# Use in chat mode
+/timestamp
+/timestamp %Y-%m-%d
 ```
+
+See `examples/directives/` for more examples.
 
 ### Best Practices
 

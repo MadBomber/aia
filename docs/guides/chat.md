@@ -461,44 +461,45 @@ AI: Here are comprehensive unit tests...
 ## Customization and Configuration
 
 ### Chat-Specific Configuration
+
+Chat mode uses the same configuration as regular AIA usage. Relevant settings in `~/.config/aia/aia.yml`:
+
 ```yaml
-# ~/.aia/chat_config.yml
-chat:
-  default_model: gpt-4
-  save_conversations: true
-  conversation_dir: ~/aia_conversations
-  auto_save_interval: 300  # seconds
-  max_context_length: 16000
-  show_token_count: true
+# Model selection
+models:
+  - name: gpt-4o
 
-speech:
-  enabled: false
+# LLM parameters
+llm:
+  temperature: 0.7
+  max_tokens: 2048
+
+# Audio for /say directive
+audio:
   voice: alloy
-  auto_play: true
-
-tools:
-  auto_discover: true
-  default_paths: [~/.aia/tools, ./tools]
-  security_mode: safe
+  speak_command: afplay
 ```
 
-### Custom Chat Commands
-You can define custom chat commands by creating tool functions:
+Start chat with specific options via CLI:
 
-```ruby
-# ~/.aia/tools/chat_commands.rb
-class ChatCommands < RubyLLM::Tool
-  def summarize_conversation
-    # Custom command to summarize the current conversation
-    "<%= AIA.chat.context.summarize %>"
-  end
-
-  def export_code_snippets
-    # Extract and export all code snippets from conversation
-    "<%= AIA.chat.extract_code_blocks %>"
-  end
-end
+```bash
+aia --chat --model gpt-4o --tools ./tools/ my_system_prompt
+aia --chat --output conversation.md my_prompt  # Save output
 ```
+
+### Using Tools in Chat
+
+Load custom RubyLLM tools into chat sessions:
+
+```bash
+# Load tools into a chat session
+aia --chat --tools ./tools/file_analyzer.rb my_prompt
+
+# Load tools from a directory
+aia --chat --tools ./tools/ my_prompt
+```
+
+The AI model can call these tools during the conversation when relevant. See [Tools Guide](tools.md) for details on creating tools.
 
 ## Token Usage and Cost Tracking
 

@@ -8,7 +8,7 @@ This comprehensive collection showcases real-world examples of RubyLLM tools and
 
 #### Advanced Log Analyzer
 ```ruby
-# ~/.aia/tools/log_analyzer.rb
+# ~/.config/aia/tools/log_analyzer.rb
 require 'time'
 require 'json'
 
@@ -177,7 +177,7 @@ end
 
 #### Configuration File Manager
 ```ruby
-# ~/.aia/tools/config_manager.rb
+# ~/.config/aia/tools/config_manager.rb
 require 'yaml'
 require 'json'
 require 'fileutils'
@@ -350,7 +350,7 @@ end
 
 #### Code Quality Analyzer
 ```ruby
-# ~/.aia/tools/code_quality.rb
+# ~/.config/aia/tools/code_quality.rb
 class CodeQualityAnalyzer < RubyLLM::Tool
   description "Analyzes code quality metrics, complexity, and best practices"
   
@@ -972,7 +972,8 @@ if __name__ == "__main__":
 ```markdown
 # ~/.prompts/full_stack_analysis.md
 /tools file_analyzer.rb,code_quality.rb,config_manager.rb
-/mcp github,filesystem,database
+# Requires MCP servers: github, filesystem, database
+# Run with: aia --mcp-use github,filesystem,database --tools file_analyzer.rb,code_quality.rb,config_manager.rb full_stack_analysis
 
 # Full-Stack Application Analysis
 
@@ -1031,7 +1032,8 @@ Generate comprehensive analysis with actionable insights for each identified are
 ```markdown
 # ~/.prompts/devops_pipeline_analysis.md
 /tools log_analyzer.rb,config_manager.rb
-/mcp github,filesystem
+# Requires MCP servers: github, filesystem
+# Run with: aia --mcp-use github,filesystem --tools log_analyzer.rb,config_manager.rb devops_pipeline_analysis
 
 # DevOps Pipeline Analysis
 
@@ -1081,7 +1083,7 @@ Provide implementation timeline and impact assessment for each recommendation.
 
 ### Multi-Environment Consistency Checker
 ```ruby
-# ~/.aia/tools/environment_checker.rb
+# ~/.config/aia/tools/environment_checker.rb
 class EnvironmentChecker < RubyLLM::Tool
   description "Compares configurations and deployments across multiple environments"
   

@@ -510,12 +510,8 @@ Pipeline optimized for <%= complexity %> analysis with <%= selected_pipeline.len
 
 #### Workflow Interruption
 ```bash
-# Resume interrupted workflow
-export WORKFLOW_ID="previous_workflow_id"
-aia --resume-workflow $WORKFLOW_ID
-
-# Or restart from specific stage
-aia --pipeline "failed_stage,remaining_stages" --resume-from failed_stage
+# Restart from a specific stage by specifying the remaining pipeline
+aia --pipeline "failed_stage,remaining_stages" input_file
 ```
 
 #### Context Size Issues
