@@ -1,5 +1,5 @@
 # Changelog
-## [1.0.0] - 2026-02-21
+## [1.0.0] - 2026-02-22
 
 ### Security Fixes
 - **Command Injection Prevention**: Replaced backtick and string-interpolated `system()` calls with safe array-form invocations

@@ -71,38 +71,8 @@ Gem::Specification.new do |spec|
     ║               AIA — AI Assistant v1.0                       ║
     ╚══════════════════════════════════════════════════════════════╝
 
-    ⚠  Upgrading from v0.x? Prompt files now use .md extension.
-       Run: bin/migrate_prompts ~/.prompts to convert existing prompts.
-
-    Multi-model AI from your command line. 20+ providers supported.
-
-    Quick Start:
-      aia --help              Show all options
-      aia --chat              Start an interactive chat session
-      aia --fuzzy             Select a prompt with fuzzy finder
-      aia my_prompt_file      Run saved prompt(s) in batch mode
-
-    Setup:
-      1. Set your API key(s):  export OPENAI_API_KEY=your_key
-                               export ANTHROPIC_API_KEY=your_key
-                               ... etc.
-      2. Create prompts dir:   mkdir -p ~/.prompts
-      3. Initialize config:    aia --dump ~/.config/aia/aia.yml
-
-    Key Features:
-      • Dynamic prompts with YAML front matter and ERB directives
-      • Consensus mode: run multiple models, get unified responses
-      • Shell & Ruby (ERB) integration in prompts
-      • Tool callbacks via RubyLLM::Tool
-      • MCP integration via RubyLLM::MCP
-      • Session history and checkpoints
-      • Pipeline workflows and prompt chaining
-      • Concurrently run the same prompt against multiple models
-      • Executable prompts with shebang auto-detection
-      • Cost estimates for prompts against multiple models
-
-    Documentation:  https://madbomber.github.io/aia
-    Source Code:    https://github.com/MadBomber/aia
+    Get started:  aia --help
+    Full docs:    https://madbomber.github.io/aia
 
   MSG
 
