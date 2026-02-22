@@ -55,6 +55,7 @@ module AIA
 
     desc "Include a Claude Code skill from ~/.claude/skills/"
     def skill(args = [], _context_manager = nil)
+      args = Array(args)
       skill_name = args.first&.strip
       if skill_name.nil? || skill_name.empty?
         warn "Error: /skill requires a skill name"

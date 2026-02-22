@@ -467,6 +467,8 @@ Directives are special commands in prompt files that begin with `/` and provide 
 | `/restore` | Restore context to a previous checkpoint | `/restore save_point` |
 | `/include` | Insert file contents | `/include path/to/file.txt` |
 | `/paste` | Insert clipboard contents | `/paste` |
+| `/skill` | Include a Claude Code skill | `/skill code-quality` |
+| `/skills` | List available Claude Code skills | `/skills` |
 | `/shell` | Execute shell commands | `/shell ls -la` |
 | `/robot` | Show the pet robot ASCII art w/versions | `/robot` |
 | `/ruby` | Execute Ruby code | `/ruby puts "Hello World"` |
