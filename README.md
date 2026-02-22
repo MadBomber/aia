@@ -7,17 +7,17 @@
 
 ---
 
-> ## ⚠️ BREAKING CHANGES IN v0.10.* ⚠️
->
-> **Version 0.10.0 introduces breaking changes affecting:**
->
-> - **Environment Variables** — Naming conventions now use double underscore (`__`) for nested config sections (e.g., `AIA_LLM__TEMPERATURE`, `AIA_FLAGS__DEBUG`). See [Environment Variables](https://madbomber.github.io/aia/configuration/#environment-variables) for the complete list.
->
-> - **Configuration Files** — Configuration now uses a nested YAML structure with sections like `llm:`, `prompts:`, `output:`, `flags:`, etc. The [defaults.yml](lib/aia/config/defaults.yml) file is the single source of truth for all configuration options. See [Configuration Guide](https://madbomber.github.io/aia/configuration/) for details.
->
-> - **File Locations** — Configuration files now follow the XDG Base Directory Specification. The default config file location is `~/.config/aia/aia.yml`. See [Installation Guide](https://madbomber.github.io/aia/installation/) for setup instructions.
->
-> **Review the [Configuration Guide](https://madbomber.github.io/aia/configuration/) before upgrading to v0.10.0.**
+<details>
+<summary><strong>Upgrading from v0.x?</strong> Click to see migration notes.</summary>
+
+- **Prompt files** now use `.md` extension. Run `bin/migrate_prompts ~/.prompts` to convert existing prompts.
+- **Environment variables** use double underscore (`__`) for nested config sections (e.g., `AIA_LLM__TEMPERATURE`, `AIA_FLAGS__DEBUG`).
+- **Configuration files** use a nested YAML structure with sections like `llm:`, `prompts:`, `output:`, `flags:`, etc. See [defaults.yml](lib/aia/config/defaults.yml) for the complete schema.
+- **File locations** follow the XDG Base Directory Specification. Config file is now at `~/.config/aia/aia.yml`.
+
+See the [Configuration Guide](https://madbomber.github.io/aia/configuration/) for details.
+
+</details>
 
 ---
 
@@ -70,9 +70,9 @@ For more information on AIA visit these locations:
 ```plain
 
        ,      ,
-       (\____/) AI Assistant (v0.9.7) is Online
+       (\____/) AI Assistant (v1.0.0) is Online
         (_oo_)   gpt-4o-mini
-         (O)       using ruby_llm (v1.3.1)
+         (O)       using ruby_llm
        __||__    \) model db was last refreshed on
      [/______\]  /    2025-06-18
     / \__AI__/ \/      You can share my tools
@@ -307,8 +307,10 @@ AIA determines configuration settings using this order (highest to lowest priori
 1. **Embedded config directives** (in prompt files): `/config model = gpt-4`
 2. **Command-line arguments**: `--model gpt-4`
 3. **Environment variables**: `export AIA_MODEL=gpt-4`
-4. **Configuration files**: `~/.aia/config.yml`
-5. **Default values**
+4. **Configuration files**: `~/.config/aia/aia.yml`
+5. **Default values**: [defaults.yml](lib/aia/config/defaults.yml)
+
+**Note:** When `-c` / `--config-file` is used, it replaces the user config and environment variables. Configuration resets to bundled defaults, then the specified file is applied, then CLI arguments take precedence.
 
 ### Configuration Methods
 
@@ -319,12 +321,16 @@ export AIA_PROMPTS__DIR=~/my-prompts
 export AIA_LLM__TEMPERATURE=0.8
 ```
 
-**Configuration File** (`~/.aia/config.yml`):
+**Configuration File** (`~/.config/aia/aia.yml`):
 ```yaml
-model: gpt-4
-prompts_dir: ~/my-prompts
-temperature: 0.8
-chat: false
+models:
+  - name: gpt-4
+prompts:
+  dir: ~/my-prompts
+llm:
+  temperature: 0.8
+flags:
+  chat: false
 ```
 
 **Embedded Directives** (in prompt files):
@@ -340,56 +346,110 @@ Your prompt content here...
 <details>
 <summary>Click to view all configuration options</summary>
 
-| Config Item Name | CLI Options | Default Value | Environment Variable |
-|------------------|-------------|---------------|---------------------|
-| adapter | --adapter | ruby_llm | AIA_ADAPTER |
-| aia_dir | | ~/.aia | AIA_DIR |
-| append | -a, --append | false | AIA_FLAGS__APPEND |
-| chat | --chat | false | AIA_FLAGS__CHAT |
-| clear | --clear | false | AIA_FLAGS__CLEAR |
-| config_file | -c, --config-file | ~/.aia/config.yml | AIA_CONFIG_FILE |
-| debug | -d, --debug | false | AIA_FLAGS__DEBUG |
-| embedding_model | --em, --embedding_model | text-embedding-ada-002 | AIA_LLM__EMBEDDING_MODEL |
-| erb | | true | AIA_FLAGS__ERB |
-| frequency_penalty | --frequency-penalty | 0.0 | AIA_LLM__FREQUENCY_PENALTY |
-| fuzzy | -f, --fuzzy | false | AIA_FLAGS__FUZZY |
-| image_quality | --iq, --image-quality | standard | AIA_IMAGE__QUALITY |
-| image_size | --is, --image-size | 1024x1024 | AIA_IMAGE__SIZE |
-| image_style | --style, --image-style | vivid | AIA_IMAGE__STYLE |
-| history_file | --history-file | ~/.prompts/_prompts.log | AIA_OUTPUT__HISTORY_FILE |
-| markdown | --md, --markdown | true | AIA_OUTPUT__MARKDOWN |
-| max_tokens | --max-tokens | 2048 | AIA_LLM__MAX_TOKENS |
-| model | -m, --model | gpt-4o-mini | AIA_MODEL |
-| next | -n, --next | nil | AIA_NEXT |
-| output | -o, --output | temp.md | AIA_OUTPUT__FILE |
-| parameter_regex | --regex | '(?-mix:(\[[A-Z _\|]+\]))' | AIA_PROMPTS__PARAMETER_REGEX |
-| pipeline | --pipeline | [] | AIA_PIPELINE |
-| presence_penalty | --presence-penalty | 0.0 | AIA_LLM__PRESENCE_PENALTY |
-| prompt_extname | | .md | AIA_PROMPTS__EXTNAME |
-| prompts_dir | --prompts-dir | ~/.prompts | AIA_PROMPTS__DIR |
-| refresh | --refresh | 7 (days) | AIA_REGISTRY__REFRESH |
-| require_libs | --rq --require | [] | AIA_REQUIRE_LIBS |
-| role | -r, --role | | AIA_ROLE |
-| roles_dir | | ~/.prompts/roles | AIA_ROLES__DIR |
-| roles_prefix | --roles-prefix | roles | AIA_ROLES__PREFIX |
-| shell | | true | AIA_FLAGS__SHELL |
-| speak | --speak | false | AIA_FLAGS__SPEAK |
-| speak_command | | afplay | AIA_SPEECH__COMMAND |
-| speech_model | --sm, --speech-model | tts-1 | AIA_SPEECH__MODEL |
-| system_prompt | --system-prompt | | AIA_SYSTEM_PROMPT |
-| temperature | -t, --temperature | 0.7 | AIA_LLM__TEMPERATURE |
-| terse | --terse | false | AIA_FLAGS__TERSE |
-| tokens | --tokens | false | AIA_FLAGS__TOKENS |
-| cost | --cost | false | AIA_FLAGS__COST |
-| tool_paths | --tools | [] | AIA_TOOLS__PATHS |
-| allowed_tools | --at, --allowed-tools | nil | AIA_TOOLS__ALLOWED |
-| rejected_tools | --rt, --rejected-tools | nil | AIA_TOOLS__REJECTED |
-| mcp_use | --mu, --mcp-use | ~ | AIA_MCP_USE |
-| mcp_skip | --ms, --mcp-skip | ~ | AIA_MCP_SKIP |
-| top_p | --top-p | 1.0 | AIA_LLM__TOP_P |
-| transcription_model | --tm, --transcription-model | whisper-1 | AIA_TRANSCRIPTION__MODEL |
-| verbose | -v, --verbose | false | AIA_FLAGS__VERBOSE |
-| voice | --voice | alloy | AIA_SPEECH__VOICE |
+The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.yml). Environment variables use the `AIA_` prefix with double underscores for nested keys.
+
+**Mode & Display Flags:**
+
+| Config Path | CLI Options | Default | Environment Variable |
+|-------------|-------------|---------|---------------------|
+| `flags.chat` | `--chat` | `false` | `AIA_FLAGS__CHAT` |
+| `flags.fuzzy` | `-f`, `--fuzzy` | `false` | `AIA_FLAGS__FUZZY` |
+| `flags.debug` | `-d`, `--debug` | `false` | `AIA_FLAGS__DEBUG` |
+| `flags.verbose` | `-v`, `--verbose` | `false` | `AIA_FLAGS__VERBOSE` |
+| `flags.tokens` | `--tokens` | `false` | `AIA_FLAGS__TOKENS` |
+| `flags.cost` | `--cost` | `false` | `AIA_FLAGS__COST` |
+| `flags.consensus` | `--[no-]consensus` | `false` | `AIA_FLAGS__CONSENSUS` |
+| `flags.speak` | `--speak` | `false` | `AIA_FLAGS__SPEAK` |
+| `flags.shell` | | `true` | `AIA_FLAGS__SHELL` |
+| `flags.erb` | | `true` | `AIA_FLAGS__ERB` |
+| `flags.clear` | `--clear` | `false` | `AIA_FLAGS__CLEAR` |
+| `flags.no_mcp` | `--no-mcp` | `false` | `AIA_FLAGS__NO_MCP` |
+
+**Model & LLM Parameters:**
+
+| Config Path | CLI Options | Default | Environment Variable |
+|-------------|-------------|---------|---------------------|
+| `models` | `-m`, `--model` | `gpt-4o-mini` | `AIA_MODEL` |
+| `llm.temperature` | `-t`, `--temperature` | `0.7` | `AIA_LLM__TEMPERATURE` |
+| `llm.max_tokens` | `--max-tokens` | `2048` | `AIA_LLM__MAX_TOKENS` |
+| `llm.top_p` | `--top-p` | `1.0` | `AIA_LLM__TOP_P` |
+| `llm.frequency_penalty` | `--frequency-penalty` | `0.0` | `AIA_LLM__FREQUENCY_PENALTY` |
+| `llm.presence_penalty` | `--presence-penalty` | `0.0` | `AIA_LLM__PRESENCE_PENALTY` |
+
+**Prompts & Roles:**
+
+| Config Path | CLI Options | Default | Environment Variable |
+|-------------|-------------|---------|---------------------|
+| `prompts.dir` | `--prompts-dir` | `~/.prompts` | `AIA_PROMPTS__DIR` |
+| `prompts.extname` | | `.md` | `AIA_PROMPTS__EXTNAME` |
+| `prompts.roles_prefix` | `--roles-prefix` | `roles` | `AIA_PROMPTS__ROLES_PREFIX` |
+| `prompts.roles_dir` | | `~/.prompts/roles` | `AIA_PROMPTS__ROLES_DIR` |
+| `prompts.role` | `-r`, `--role` | | `AIA_PROMPTS__ROLE` |
+| `prompts.system_prompt` | `--system-prompt` | | `AIA_PROMPTS__SYSTEM_PROMPT` |
+| `pipeline` | `-p`, `--pipeline` | `[]` | |
+| | `-n`, `--next` | | |
+
+**Output & Files:**
+
+| Config Path | CLI Options | Default | Environment Variable |
+|-------------|-------------|---------|---------------------|
+| `output.file` | `-o`, `--[no-]output` | `temp.md` | `AIA_OUTPUT__FILE` |
+| `output.append` | `-a`, `--[no-]append` | `false` | `AIA_OUTPUT__APPEND` |
+| `output.markdown` | `--md`, `--[no-]markdown` | `true` | `AIA_OUTPUT__MARKDOWN` |
+| `output.history_file` | `--history-file` | `~/.prompts/_prompts.log` | `AIA_OUTPUT__HISTORY_FILE` |
+| `paths.aia_dir` | | `~/.config/aia` | `AIA_PATHS__AIA_DIR` |
+| `paths.config_file` | `-c`, `--config-file` | `~/.config/aia/aia.yml` | `AIA_PATHS__CONFIG_FILE` |
+
+**Audio & Image:**
+
+| Config Path | CLI Options | Default | Environment Variable |
+|-------------|-------------|---------|---------------------|
+| `audio.voice` | `--voice` | `alloy` | `AIA_AUDIO__VOICE` |
+| `audio.speak_command` | | `afplay` | `AIA_AUDIO__SPEAK_COMMAND` |
+| `audio.speech_model` | `--sm`, `--speech-model` | `tts-1` | `AIA_AUDIO__SPEECH_MODEL` |
+| `audio.transcription_model` | `--tm`, `--transcription-model` | `whisper-1` | `AIA_AUDIO__TRANSCRIPTION_MODEL` |
+| `image.size` | `--is`, `--image-size` | `1024x1024` | `AIA_IMAGE__SIZE` |
+| `image.quality` | `--iq`, `--image-quality` | `standard` | `AIA_IMAGE__QUALITY` |
+| `image.style` | `--style`, `--image-style` | `vivid` | `AIA_IMAGE__STYLE` |
+| `embedding.model` | | `text-embedding-ada-002` | `AIA_EMBEDDING__MODEL` |
+
+**Tools & MCP:**
+
+| Config Path | CLI Options | Default | Environment Variable |
+|-------------|-------------|---------|---------------------|
+| `tools.paths` | `--tools` | `[]` | `AIA_TOOLS__PATHS` |
+| `tools.allowed` | `--at`, `--allowed-tools` | | `AIA_TOOLS__ALLOWED` |
+| `tools.rejected` | `--rt`, `--rejected-tools` | | `AIA_TOOLS__REJECTED` |
+| `mcp_servers` | | `[]` | |
+| `mcp_use` | `--mu`, `--mcp-use` | | `AIA_MCP_USE` |
+| `mcp_skip` | `--ms`, `--mcp-skip` | | `AIA_MCP_SKIP` |
+| | `--mcp FILE` | | |
+| | `--mcp-list` | | |
+| `require_libs` | `--rq`, `--require` | `[]` | |
+
+**Logging:**
+
+| Config Path | CLI Options | Default | Environment Variable |
+|-------------|-------------|---------|---------------------|
+| `logger.aia.level` | `--log-level` | `warn` | `AIA_LOGGER__AIA__LEVEL` |
+| `logger.aia.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__AIA__FILE` |
+| `logger.llm.level` | `--log-level` | `warn` | `AIA_LOGGER__LLM__LEVEL` |
+| `logger.llm.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__LLM__FILE` |
+| `logger.mcp.level` | `--log-level` | `warn` | `AIA_LOGGER__MCP__LEVEL` |
+| `logger.mcp.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__MCP__FILE` |
+| `registry.refresh` | `--refresh` | `7` (days) | `AIA_REGISTRY__REFRESH` |
+
+**Utility:**
+
+| CLI Options | Description |
+|-------------|-------------|
+| `--dump FILE` | Export current configuration to FILE and exit |
+| `--completion SHELL` | Generate shell completion script (bash/zsh/fish) and exit |
+| `--available-models [QUERY]` | List available models and exit |
+| `--list-roles` | List available role files and exit |
+| `--list-tools` | List available tools and exit |
+| `--version` | Show version and exit |
+| `-h`, `--help` | Show help and exit |
 
 </details>
 
@@ -407,6 +467,8 @@ Directives are special commands in prompt files that begin with `/` and provide 
 | `/restore` | Restore context to a previous checkpoint | `/restore save_point` |
 | `/include` | Insert file contents | `/include path/to/file.txt` |
 | `/paste` | Insert clipboard contents | `/paste` |
+| `/skill` | Include a Claude Code skill | `/skill code-quality` |
+| `/skills` | List available Claude Code skills | `/skills` |
 | `/shell` | Execute shell commands | `/shell ls -la` |
 | `/robot` | Show the pet robot ASCII art w/versions | `/robot` |
 | `/ruby` | Execute Ruby code | `/ruby puts "Hello World"` |
@@ -513,29 +575,29 @@ Checkpoints: ruby_basics, oop_concepts
 
 #### Custom Directive Examples
 
-You can extend AIA with custom directives by creating Ruby files that define new directive methods:
+You can extend AIA with custom directives by subclassing `AIA::Directive`. Use `desc` before a method to register it as a directive. Aliases are detected automatically via `alias_method`.
 
 ```ruby
-# examples/directives/ask.rb
+# examples/directives/timestamp_directive.rb
 module AIA
-  class DirectiveProcessor
-    private
-    desc "A meta-prompt to LLM making its response available as part of the primary prompt"
-    def ask(args, context_manager=nil)
-      meta_prompt = args.empty? ? "What is meta-prompting?" : args.join(' ')
-      AIA.config.client.chat(meta_prompt)
+  class CustomDirectives < Directive
+    desc "Insert current timestamp (optional strftime format, default: %Y-%m-%d %H:%M:%S)"
+    def timestamp(args = [], context_manager = nil)
+      format = args.empty? ? '%Y-%m-%d %H:%M:%S' : args.join(' ')
+      Time.now.strftime(format)
     end
   end
 end
 ```
 
-**Usage:** Use the --tools option to specific a specific directive file or a directory full of files
+**Usage:** Use the `--tools` option to load a directive file or a directory of files:
 ```bash
 # Load custom directive
-aia --tools examples/directives/ask.rb --chat
+aia --tools examples/directives/timestamp_directive.rb --chat
 
-# Use the results of the custom directive as input to a prompt
-/ask gather the latest closing data for the DOW, NASDAQ, and S&P 500
+# Use the custom directive in chat mode
+/timestamp
+/timestamp %Y-%m-%d
 ```
 
 ### Multi-Model Support
@@ -934,25 +996,25 @@ echo "You are a senior software architect..." > ~/.prompts/roles/specialized/sen
 aia --model gpt-4o=specialized/senior_architect design.md
 ```
 
-**Using Config Files for Model Roles** (v2):
+**Using Config Files for Model Roles:**
 
-Define model-role assignments in your config file (`~/.aia/config.yml`) for reusable setups:
+Define model-role assignments in your config file (`~/.config/aia/aia.yml`) for reusable setups:
 
 ```yaml
 # Array of hashes format (mirrors internal structure)
-model:
-  - model: gpt-4o
+models:
+  - name: gpt-4o
     role: architect
-  - model: claude
+  - name: claude
     role: security
-  - model: gemini
+  - name: gemini
     role: performance
 
 # Also supports models without roles
-model:
-  - model: gpt-4o
+models:
+  - name: gpt-4o
     role: architect
-  - model: claude      # No role assigned
+  - name: claude      # No role assigned
 ```
 
 Then simply run:
@@ -961,7 +1023,7 @@ Then simply run:
 aia design_doc.md  # Uses model configuration from config file
 ```
 
-**Using Environment Variables** (v2):
+**Using Environment Variables:**
 
 Set default model-role assignments via environment variable:
 
@@ -980,8 +1042,7 @@ When model roles are specified in multiple places, the precedence is:
 1. **Command-line inline** (highest): `--model gpt-4o=architect`
 2. **Command-line flag**: `--model gpt-4o --role architect`
 3. **Environment variable**: `AIA_MODEL="gpt-4o=architect"`
-4. **Config file** (lowest): `model` array in `~/.aia/config.yml`
-```
+4. **Config file** (lowest): `models` array in `~/.config/aia/aia.yml`
 
 ### RubyLLM::Tool Support
 
@@ -1023,14 +1084,14 @@ These MCP clients require the `ruby_llm-mcp` gem and provide access to external 
 
 ### MCP Server Configuration
 
-AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time.
+AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time. When multiple MCP servers are configured, AIA connects to them **in parallel** using fiber-based concurrency (via the `simple_flow` gem) for faster startup.
 
 #### Configuration Format
 
-Add MCP servers to your `~/.aia/config.yml` file:
+Add MCP servers to your `~/.config/aia/aia.yml` file:
 
 ```yaml
-:mcp_servers:
+mcp_servers:
   - name: "server-name"
     command: "server_command"
     args: ["arg1", "arg2"]
@@ -1054,8 +1115,8 @@ Add MCP servers to your `~/.aia/config.yml` file:
 The GitHub MCP server provides access to GitHub repositories, issues, pull requests, and more:
 
 ```yaml
-# ~/.aia/config.yml
-:mcp_servers:
+# ~/.config/aia/aia.yml
+mcp_servers:
   - name: "github"
     command: "github-mcp-server"
     args: ["stdio"]
@@ -1087,8 +1148,8 @@ See the [full HTM documentation](https://madbomber.github.io/htm) for database c
 A custom Ruby-based MCP server for accessing database-backed long term memory:
 
 ```yaml
-# ~/.aia/config.yml
-:mcp_servers:
+# ~/.config/aia/aia.yml
+mcp_servers:
   - name: "htm"
     command: "htm_mcp.rb"
     args: ["stdio"]
@@ -1108,8 +1169,8 @@ A custom Ruby-based MCP server for accessing database-backed long term memory:
 You can configure multiple MCP servers to provide different capabilities:
 
 ```yaml
-# ~/.aia/config.yml
-:mcp_servers:
+# ~/.config/aia/aia.yml
+mcp_servers:
   - name: "github"
     command: "github-mcp-server"
     args: ["stdio"]
@@ -1134,11 +1195,11 @@ When MCP servers are configured, AIA displays them in the startup robot:
 
 ```
        ,      ,
-       (\____/) AI Assistant (v0.9.23) is Online
+       (\____/) AI Assistant (v1.0.0) is Online
         (_oo_)   gpt-4o-mini (supports tools)
-         (O)       using ruby_llm (v1.9.0 MCP v0.6.1)
+         (O)       using ruby_llm
        __||__    \) model db was last refreshed on
-     [/______\]  /    2025-06-03
+     [/______\]  /    2025-06-18
     / \__AI__/ \/      You can share my tools
    /    /__\              MCP: github, htm
   (\   /____\
@@ -1415,11 +1476,11 @@ echo "Home: $HOME"    # Should show home directory
 
 **Configuration issues:**
 ```bash
-# Check current configuration
-aia --config
+# Dump current configuration to a file
+aia --dump config_snapshot.yml
 
 # Debug configuration loading
-aia --debug --config
+aia --debug my_prompt
 ```
 
 ### Error Messages
@@ -1553,7 +1614,6 @@ rake test
 
 - **Enhanced Search**: Restore full-text search within prompt files
 - **UI Improvements**: Better configuration management for fzf and rg tools
-- **Logging**: Enhanced logging using Ruby Logger class; integration with RubyLLM and RubyLLM::MCP logging
 
 ## License
 

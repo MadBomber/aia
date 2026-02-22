@@ -117,14 +117,16 @@ module AIA
 
         # Report failed models but continue with valid ones
         unless failed_models.empty?
-          puts "\nFailed to initialize the following models:"
-          failed_models.each { |failure| puts "   - #{failure}" }
+          warn "\nFailed to initialize the following models:"
+          failed_models.each { |failure| warn "   - #{failure}" }
+          logger = LoggerManager.aia_logger
+          failed_models.each { |failure| logger.error("Model initialization failed: #{failure}") }
         end
 
         # If no models initialized successfully, exit
         if valid_chats.empty?
-          puts "\nNo valid models could be initialized. Exiting."
-          puts "\nAvailable models can be listed with: bin/aia --help models"
+          warn "\nNo valid models could be initialized. Exiting."
+          warn "\nAvailable models can be listed with: bin/aia --help models"
           exit 1
         end
 
@@ -135,8 +137,7 @@ module AIA
 
         # Report successful models
         if failed_models.any?
-          puts "\nSuccessfully initialized: #{@models.join(', ')}"
-          puts
+          warn "\nSuccessfully initialized: #{@models.join(', ')}"
         end
 
         # Use the first chat to determine tool support (assuming all models have similar tool support)
@@ -222,7 +223,8 @@ module AIA
         mcp_connector = McpConnector.new
         tool_loader = ToolLoader.new(mcp_connector)
 
-        @tools = tool_loader.load_tools_with_mcp
+        @tools = tool_loader.load_tools
+        ToolFilter.detect_conflicts
         @tools = ToolFilter.filter_allowed(@tools)
         @tools = ToolFilter.filter_rejected(@tools)
         @tools = ToolFilter.drop_duplicates(@tools)

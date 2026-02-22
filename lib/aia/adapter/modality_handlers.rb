@@ -1,6 +1,8 @@
 # lib/aia/adapter/modality_handlers.rb
 # frozen_string_literal: true
 
+require 'tempfile'
+
 module AIA
   module Adapter
     module ModalityHandlers
@@ -11,18 +13,21 @@ module AIA
       end
 
       def speak(_text)
-        output_file = "#{Time.now.to_i}.mp3"
-
         # NOTE: RubyLLM doesn't have a direct text-to-speech feature
         # This is a placeholder for a custom implementation or external service
+        tmpfile = Tempfile.new(['aia-tts-', '.mp3'])
         begin
-          File.write(output_file, 'Mock TTS audio content')
-          if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
-            system("#{AIA.config.audio.speak_command} #{output_file}")
+          tmpfile.write('Mock TTS audio content')
+          tmpfile.close
+          speak_cmd = AIA.config.audio.speak_command
+          if system('which', speak_cmd, out: File::NULL, err: File::NULL)
+            system(speak_cmd, tmpfile.path)
           end
-          "Audio generated and saved to: #{output_file}"
+          "Audio generated successfully"
         rescue StandardError => e
           "Error generating audio: #{e.message}"
+        ensure
+          tmpfile.unlink
         end
       end
 
@@ -55,8 +60,7 @@ module AIA
 
         # Return the full response object to preserve token information
         response
-      rescue Exception => e # rubocop:disable Lint/RescueException
-        # Catch ALL exceptions including LoadError, ScriptError, etc.
+      rescue StandardError => e
         # Tool crashes should not crash AIA - log and continue gracefully
         handle_tool_crash(chat_instance, e)
       end
@@ -114,18 +118,22 @@ module AIA
 
       def text_to_audio_single(prompt, model_name)
         text_prompt = extract_text_prompt(prompt)
-        output_file = "#{Time.now.to_i}.mp3"
 
+        # NOTE: RubyLLM doesn't have a direct TTS feature
+        # TODO: This is a placeholder for a custom implementation
+        tmpfile = Tempfile.new(['aia-tts-', '.mp3'])
         begin
-          # NOTE: RubyLLM doesn't have a direct TTS feature
-          # TODO: This is a placeholder for a custom implementation
-          File.write(output_file, text_prompt)
-          if File.exist?(output_file) && system("which #{AIA.config.audio.speak_command} > /dev/null 2>&1")
-            system("#{AIA.config.audio.speak_command} #{output_file}")
+          tmpfile.write(text_prompt)
+          tmpfile.close
+          speak_cmd = AIA.config.audio.speak_command
+          if system('which', speak_cmd, out: File::NULL, err: File::NULL)
+            system(speak_cmd, tmpfile.path)
           end
-          "Audio generated and saved to: #{output_file}"
+          "Audio generated successfully"
         rescue StandardError => e
           "Error generating audio: #{e.message}"
+        ensure
+          tmpfile.unlink
         end
       end
 

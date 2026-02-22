@@ -28,7 +28,7 @@ class SkillDirectiveTest < Minitest::Test
     $stdout = @captured_stdout
 
     @stderr_messages = []
-    STDERR.stubs(:puts).with { |msg| @stderr_messages << msg; true }
+    @instance.stubs(:warn).with { |msg| @stderr_messages << msg; true }
   end
 
   def teardown
@@ -150,6 +150,71 @@ class SkillDirectiveTest < Minitest::Test
 
     refute_includes output, "_patterns.md"
     assert_includes output, "Total: 4 skills"
+  end
+
+  # --- Security tests for safe_skill_path / path traversal ---
+
+  def test_skill_path_traversal_blocked
+    result = @instance.skill(['../../etc'])
+    assert_nil result
+    assert @stderr_messages.any? { |m| m.include?("No skill matching") }
+  end
+
+  def test_skill_symlink_outside_skills_dir_blocked
+    # Create an external skill directory with a SKILL.md
+    external_dir = Dir.mktmpdir('evil_skill')
+    File.write(File.join(external_dir, 'SKILL.md'), '# Evil Skill')
+
+    # Create a symlink inside SKILLS_DIR pointing outside
+    symlink_path = File.join(@test_skills_dir, 'evil-link')
+    File.symlink(external_dir, symlink_path)
+
+    result = @instance.skill(['evil-link'])
+    assert_nil result
+  ensure
+    FileUtils.rm_rf(external_dir)
+  end
+
+  def test_skill_broken_symlink_returns_nil
+    # Create a symlink pointing to a nonexistent target
+    symlink_path = File.join(@test_skills_dir, 'broken-link')
+    File.symlink('/nonexistent/target/dir', symlink_path)
+
+    result = @instance.skill(['broken-link'])
+    assert_nil result
+  end
+
+  # --- Edge cases for resolve_skill_dir ---
+
+  def test_skill_nil_argument_returns_nil
+    result = @instance.skill(nil)
+    assert_nil result
+    assert @stderr_messages.any? { |m| m.include?("Error: /skill requires a skill name") }
+  end
+
+  def test_skill_multiple_arguments_uses_first
+    result = @instance.skill(['code-quality', 'extra-arg'])
+    assert_equal "# Code Quality\nEnforce SOLID principles.", result
+  end
+
+  def test_skill_with_leading_trailing_whitespace
+    result = @instance.skill(['  code-quality  '])
+    assert_equal "# Code Quality\nEnforce SOLID principles.", result
+  end
+
+  # --- File system edge cases ---
+
+  def test_skills_only_counts_directories
+    # Add a regular file alongside skill directories
+    File.write(File.join(@test_skills_dir, 'not-a-skill.txt'), 'just a file')
+    create_skill('real-skill', '# Real Skill')
+
+    @instance.skills
+    output = @captured_stdout.string
+
+    refute_includes output, 'not-a-skill.txt'
+    assert_includes output, 'real-skill'
+    assert_includes output, "Total: 5 skills"  # 4 original + real-skill
   end
 
   private

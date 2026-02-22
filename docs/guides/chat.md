@@ -72,6 +72,8 @@ Files in the current directory are:
 which files are over 1 week old?
 ```
 
+> **Security Warning**: The `/ruby` and `/shell` directives execute code directly on your machine with your user permissions. `/ruby` runs arbitrary Ruby via `eval()` and `/shell` invokes system commands. Only use these directives with trusted prompts. Never run prompts from untrusted sources that contain these directives without reviewing them first.
+
 ## Advanced Chat Features
 
 ### Multi-Model Conversations
@@ -461,44 +463,45 @@ AI: Here are comprehensive unit tests...
 ## Customization and Configuration
 
 ### Chat-Specific Configuration
+
+Chat mode uses the same configuration as regular AIA usage. Relevant settings in `~/.config/aia/aia.yml`:
+
 ```yaml
-# ~/.aia/chat_config.yml
-chat:
-  default_model: gpt-4
-  save_conversations: true
-  conversation_dir: ~/aia_conversations
-  auto_save_interval: 300  # seconds
-  max_context_length: 16000
-  show_token_count: true
+# Model selection
+models:
+  - name: gpt-4o
 
-speech:
-  enabled: false
+# LLM parameters
+llm:
+  temperature: 0.7
+  max_tokens: 2048
+
+# Audio for /say directive
+audio:
   voice: alloy
-  auto_play: true
-
-tools:
-  auto_discover: true
-  default_paths: [~/.aia/tools, ./tools]
-  security_mode: safe
+  speak_command: afplay
 ```
 
-### Custom Chat Commands
-You can define custom chat commands by creating tool functions:
+Start chat with specific options via CLI:
 
-```ruby
-# ~/.aia/tools/chat_commands.rb
-class ChatCommands < RubyLLM::Tool
-  def summarize_conversation
-    # Custom command to summarize the current conversation
-    "<%= AIA.chat.context.summarize %>"
-  end
-
-  def export_code_snippets
-    # Extract and export all code snippets from conversation
-    "<%= AIA.chat.extract_code_blocks %>"
-  end
-end
+```bash
+aia --chat --model gpt-4o --tools ./tools/ my_system_prompt
+aia --chat --output conversation.md my_prompt  # Save output
 ```
+
+### Using Tools in Chat
+
+Load custom RubyLLM tools into chat sessions:
+
+```bash
+# Load tools into a chat session
+aia --chat --tools ./tools/file_analyzer.rb my_prompt
+
+# Load tools from a directory
+aia --chat --tools ./tools/ my_prompt
+```
+
+The AI model can call these tools during the conversation when relevant. See [Tools Guide](tools.md) for details on creating tools.
 
 ## Token Usage and Cost Tracking
 
@@ -599,10 +602,12 @@ aia --chat --model gpt-3.5-turbo
 5. **Save Progress**: Regular saves prevent loss of valuable insights
 
 ### Security Considerations
-1. **Sensitive Data**: Avoid sharing confidential information
-2. **Tool Access**: Restrict tool permissions appropriately
-3. **Session Management**: Clear sensitive conversations
-4. **API Keys**: Keep credentials secure
+1. **Code Execution Directives**: `/ruby` executes arbitrary Ruby code and `/shell` runs system commands with your user permissions. Only use trusted prompts containing these directives
+2. **Sensitive Data**: Avoid sharing confidential information in prompts or chat
+3. **Tool Access**: Restrict tool permissions with `--allowed-tools` and `--rejected-tools`
+4. **MCP Servers**: Control which MCP servers can run with `--mcp-use` and `--mcp-skip`
+5. **Session Management**: Clear sensitive conversations with `/clear`
+6. **API Keys**: Keep credentials secure; never embed them in prompt files
 
 ### Productivity Tips
 1. **Keyboard Shortcuts**: Learn and use available shortcuts

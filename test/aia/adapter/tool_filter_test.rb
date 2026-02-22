@@ -185,4 +185,83 @@ class ToolFilterTest < Minitest::Test
     assert entries.any? { |e| e.message.to_s.include?('Duplicate tool detected') },
            "Expected logger to record duplicate tool warning"
   end
+
+  # --- detect_conflicts ---
+
+  def test_detect_conflicts_returns_empty_when_no_allowed
+    AIA.stubs(:config).returns(OpenStruct.new(
+      tools: OpenStruct.new(allowed: nil, rejected: ['calculator'])
+    ))
+
+    result = AIA::Adapter::ToolFilter.detect_conflicts
+    assert_empty result
+  end
+
+  def test_detect_conflicts_returns_empty_when_no_rejected
+    AIA.stubs(:config).returns(OpenStruct.new(
+      tools: OpenStruct.new(allowed: ['calculator'], rejected: nil)
+    ))
+
+    result = AIA::Adapter::ToolFilter.detect_conflicts
+    assert_empty result
+  end
+
+  def test_detect_conflicts_returns_empty_when_no_overlap
+    AIA.stubs(:config).returns(OpenStruct.new(
+      tools: OpenStruct.new(allowed: ['calculator'], rejected: ['web_search'])
+    ))
+
+    result = AIA::Adapter::ToolFilter.detect_conflicts
+    assert_empty result
+  end
+
+  def test_detect_conflicts_detects_overlapping_patterns
+    AIA.stubs(:config).returns(OpenStruct.new(
+      tools: OpenStruct.new(allowed: ['calculator', 'web'], rejected: ['calculator', 'file'])
+    ))
+
+    stderr_messages = []
+    AIA::Adapter::ToolFilter.stubs(:warn).with { |msg| stderr_messages << msg; true }
+
+    result = AIA::Adapter::ToolFilter.detect_conflicts
+    assert_equal ['calculator'], result
+    assert stderr_messages.any? { |m| m.match?(/calculator.*both/) }
+  end
+
+  def test_detect_conflicts_detects_multiple_overlaps
+    AIA.stubs(:config).returns(OpenStruct.new(
+      tools: OpenStruct.new(allowed: ['calc', 'web', 'file'], rejected: ['web', 'file'])
+    ))
+
+    stderr_messages = []
+    AIA::Adapter::ToolFilter.stubs(:warn).with { |msg| stderr_messages << msg; true }
+
+    result = AIA::Adapter::ToolFilter.detect_conflicts
+    assert_equal ['web', 'file'], result
+    assert stderr_messages.any? { |m| m.match?(/web.*both/) }
+    assert stderr_messages.any? { |m| m.match?(/file.*both/) }
+  end
+
+  def test_detect_conflicts_logs_warnings
+    AIA.stubs(:config).returns(OpenStruct.new(
+      tools: OpenStruct.new(allowed: ['calculator'], rejected: ['calculator'])
+    ))
+
+    capture_io do
+      AIA::Adapter::ToolFilter.detect_conflicts
+    end
+
+    entries = AIA::LoggerManager.test_entries(:aia)
+    assert entries.any? { |e| e.message.to_s.include?("calculator") && e.message.to_s.include?("both") },
+           "Expected logger to record conflict warning"
+  end
+
+  def test_detect_conflicts_returns_empty_when_both_empty
+    AIA.stubs(:config).returns(OpenStruct.new(
+      tools: OpenStruct.new(allowed: [], rejected: [])
+    ))
+
+    result = AIA::Adapter::ToolFilter.detect_conflicts
+    assert_empty result
+  end
 end

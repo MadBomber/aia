@@ -103,12 +103,14 @@ Safe file system operations with sandboxing:
 # Install filesystem MCP server
 npm install -g @anthropic-ai/mcp-server-filesystem
 
-# Configure with allowed paths
-mcp:
-  clients:
-    - name: filesystem
-      command: ["npx", "@anthropic-ai/mcp-server-filesystem"]
-      args: ["/home/user/projects", "/tmp/aia-workspace"]
+# Configure in ~/.config/aia/aia.yml
+mcp_servers:
+  - name: filesystem
+    command: npx
+    args:
+      - "@anthropic-ai/mcp-server-filesystem"
+      - /home/user/projects
+      - /tmp/aia-workspace
 ```
 
 **Capabilities**:
@@ -152,7 +154,7 @@ async def call_tool(name: str, arguments: dict):
 ### GitHub Analysis
 ```markdown
 # ~/.prompts/github_analysis.md
-/mcp github
+# Requires MCP server "github" configured in ~/.config/aia/aia.yml
 
 # GitHub Repository Analysis
 
@@ -179,7 +181,7 @@ Provide comprehensive analysis with actionable recommendations.
 ### File System Operations
 ```markdown
 # ~/.prompts/project_analysis.md
-/mcp filesystem
+# Requires MCP server "filesystem" configured in ~/.config/aia/aia.yml
 
 # Project Structure Analysis
 
@@ -206,7 +208,7 @@ Generate detailed project assessment with improvement suggestions.
 ### Database Schema Analysis
 ```markdown
 # ~/.prompts/database_analysis.md
-/mcp database
+# Requires MCP server "database" configured in ~/.config/aia/aia.yml
 
 # Database Schema Analysis
 
@@ -236,7 +238,7 @@ Provide recommendations for schema improvements and optimizations.
 ### Multi-Client Workflows
 ```markdown
 # ~/.prompts/full_project_audit.md
-/mcp github,filesystem,database
+# Requires MCP server "github" configured in ~/.config/aia/aia.yml,filesystem,database
 
 # Comprehensive Project Audit
 
@@ -276,26 +278,27 @@ Generate comprehensive audit report with prioritized recommendations.
 ```
 
 ### Conditional MCP Usage
-```ruby
-# ~/.prompts/adaptive_mcp.md
-/ruby
-project_type = '<%= project_type %>'
-has_database = '<%= has_database %>' == 'true'
-is_open_source = '<%= is_open_source %>' == 'true'
 
-mcp_clients = []
-mcp_clients << 'filesystem'  # Always analyze file structure
-mcp_clients << 'github' if is_open_source
-mcp_clients << 'database' if has_database
+Use `--mcp-use` on the command line to select which MCP servers to activate:
 
-puts "/mcp #{mcp_clients.join(',')}"
-puts "Selected MCP clients for #{project_type} project: #{mcp_clients.join(', ')}"
+```bash
+# Use only specific MCP servers for a prompt
+aia --mcp-use github,filesystem my_prompt
+
+# Skip specific servers
+aia --mcp-skip database my_prompt
 ```
+
+Within prompts, you can document which MCP servers are expected:
+
+```markdown
+# ~/.prompts/adaptive_analysis.md
+# Requires MCP servers: github, filesystem, database
+# Run with: aia --mcp-use github,filesystem,database adaptive_analysis
 
 # Adaptive Project Analysis
 
 Project type: <%= project_type %>
-Analysis scope: <%= mcp_clients.join(', ') %>
 
 Perform comprehensive analysis using available MCP clients to provide insights specific to this project type.
 ```
@@ -398,90 +401,44 @@ server.connect();
 
 ## MCP Security and Best Practices
 
-### Security Configuration
-```yaml
-# Secure MCP configuration
-mcp:
-  security:
-    sandbox_mode: true
-    allowed_operations: ["read", "list"]
-    blocked_operations: ["delete", "execute"]
-    
-  resource_limits:
-    max_file_size: 10485760  # 10MB
-    max_query_results: 1000
-    timeout_seconds: 30
-    
-  clients:
-    - name: filesystem
-      command: ["mcp-server-filesystem"]
-      args: ["/safe/path/only"]
-      security_context: "restricted"
-      
-    - name: database
-      command: ["database-mcp-server"]
-      security_context: "read_only"
-      env:
-        DB_READ_ONLY: "true"
-```
-
 ### Access Control
-```ruby
-# MCP access control in prompts
-/ruby
-user_role = '<%= user_role %>'
-allowed_mcp = case user_role
-             when 'admin'
-               ['github', 'filesystem', 'database']
-             when 'developer'
-               ['github', 'filesystem']  
-             when 'analyst'
-               ['database']
-             else
-               []
-             end
 
-if allowed_mcp.empty?
-  puts "No MCP access for role: #{user_role}"
-else
-  puts "/mcp #{allowed_mcp.join(',')}"
-  puts "MCP access granted: #{allowed_mcp.join(', ')}"
-end
+Control which MCP servers are available using CLI flags:
+
+```bash
+# Allow only specific MCP servers
+aia --mcp-use github,filesystem --chat
+
+# Skip specific MCP servers
+aia --mcp-skip database --chat
+
+# Use --allowed-tools and --rejected-tools to filter MCP tools
+aia --mcp-use github --allowed-tools "github_*" --chat
 ```
 
-## Performance Optimization
+### Server Configuration Security
 
-### Connection Pooling
+Limit what each MCP server can access through its own configuration:
+
 ```yaml
-mcp:
-  connection_pooling:
-    enabled: true
-    max_connections: 5
-    idle_timeout: 300
-    
-  caching:
-    enabled: true
-    ttl: 3600  # 1 hour
-    max_size: 100  # Cache entries
+# ~/.config/aia/aia.yml
+mcp_servers:
+  - name: filesystem
+    command: mcp-server-filesystem
+    args:
+      - /safe/path/only    # Restrict to specific directories
+
+  - name: database
+    command: database-mcp-server
+    env:
+      DB_READ_ONLY: "true"  # Use server-level env vars for restrictions
+      DATABASE_URL: "${DATABASE_URL}"
+    timeout: 8000
 ```
 
-### Async Operations
-```python
-# Async MCP server for better performance
-import asyncio
-import aiohttp
-from mcp.server import Server
+### Parallel Connections
 
-server = Server("async-service")
-
-@server.call_tool()
-async def call_tool(name: str, arguments: dict):
-    if name == "fetch_data":
-        async with aiohttp.ClientSession() as session:
-            async with session.get(arguments["url"]) as response:
-                data = await response.text()
-                return TextContent(type="text", text=data)
-```
+When multiple MCP servers are configured, AIA connects to them in parallel using fiber-based concurrency (via the `simple_flow` gem) for faster startup.
 
 ## Troubleshooting MCP
 
@@ -490,52 +447,31 @@ async def call_tool(name: str, arguments: dict):
 #### Client Connection Failures
 ```bash
 # Debug MCP client connections
-aia --debug --mcp github test_prompt
+aia --debug --mcp github.json test_prompt
 
-# Check client status
-aia --mcp-status
+# List configured servers to verify setup
+aia --mcp-list
 
-# Test individual client
-aia --test-mcp github
+# List MCP server tools to verify connectivity
+aia --mcp-list --list-tools
 ```
 
 #### Protocol Errors
+
+Enable detailed MCP logging via the logger configuration:
+
 ```yaml
-# Enable detailed MCP logging
-mcp:
-  logging:
-    level: debug
+# ~/.config/aia/aia.yml
+logger:
+  mcp:
     file: /tmp/aia-mcp.log
-    
-  error_handling:
-    retry_attempts: 3
-    retry_delay: 1000  # milliseconds
-    fallback_mode: graceful
+    level: debug
+    flush: true
 ```
 
-#### Performance Issues
+Or via CLI:
 ```bash
-# Monitor MCP performance
-aia --mcp-metrics github filesystem
-
-# Profile MCP operations
-aia --profile --mcp database analysis_prompt
-```
-
-### Debugging Tools
-```python
-# MCP debugging utilities
-async def debug_mcp_call(client, tool, args):
-    start_time = time.time()
-    try:
-        result = await client.call_tool(tool, args)
-        duration = time.time() - start_time
-        print(f"MCP call successful: {tool} in {duration:.2f}s")
-        return result
-    except Exception as e:
-        duration = time.time() - start_time
-        print(f"MCP call failed: {tool} after {duration:.2f}s - {e}")
-        raise
+aia --debug my_prompt  # Sets all loggers to debug level
 ```
 
 ## MCP Examples Repository
@@ -543,7 +479,7 @@ async def debug_mcp_call(client, tool, args):
 ### GitHub Repository Analysis
 ```markdown
 # ~/.prompts/mcp_examples/github_repo_health.md
-/mcp github
+# Requires MCP server "github" configured in ~/.config/aia/aia.yml
 
 # GitHub Repository Health Check
 
@@ -580,7 +516,7 @@ Generate detailed health score with specific improvement recommendations.
 ### File System Audit
 ```markdown
 # ~/.prompts/mcp_examples/filesystem_audit.md
-/mcp filesystem
+# Requires MCP server "filesystem" configured in ~/.config/aia/aia.yml
 
 # File System Security and Organization Audit
 

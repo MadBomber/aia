@@ -142,22 +142,9 @@ class ToolLoaderTest < Minitest::Test
            "Expected a warn call matching /Failed to require library/, got: #{warn_messages.inspect}"
   end
 
-  # --- load_tools_with_mcp ---
+  # --- load_tools ---
 
-  def test_load_tools_with_mcp_calls_mcp_connector
-    AIA.stubs(:config).returns(OpenStruct.new(
-      require_libs: nil,
-      tools: OpenStruct.new(paths: nil)
-    ))
-
-    @mock_mcp.expects(:support_mcp_with_simple_flow).with(kind_of(Array))
-
-    @loader.load_tools_with_mcp
-  end
-
-  # --- load_tools_legacy ---
-
-  def test_load_tools_legacy_calls_support_mcp
+  def test_load_tools_calls_mcp_connector
     AIA.stubs(:config).returns(OpenStruct.new(
       require_libs: nil,
       tools: OpenStruct.new(paths: nil)
@@ -165,6 +152,6 @@ class ToolLoaderTest < Minitest::Test
 
     @mock_mcp.expects(:support_mcp).with(kind_of(Array))
 
-    @loader.load_tools_legacy
+    @loader.load_tools
   end
 end

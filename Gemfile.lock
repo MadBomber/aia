@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (1.0.0.pre.beta)
+    aia (1.0.0)
       amazing_print
       async
       clipboard
@@ -10,8 +10,8 @@ PATH
       myway_config
       prompt_manager (~> 1.0.2)
       reline
-      ruby_llm
-      ruby_llm-mcp
+      ruby_llm (~> 1.12)
+      ruby_llm-mcp (~> 0.8)
       shellwords
       simple_flow
       tty-screen
@@ -39,7 +39,7 @@ GEM
     backports (3.25.3)
     base64 (0.3.0)
     bigdecimal (4.0.1)
-    binding_of_caller (1.0.1)
+    binding_of_caller (2.0.0)
       debug_inspector (>= 1.2.0)
     builder (3.3.0)
     clipboard (2.0.0)
@@ -51,7 +51,7 @@ GEM
       tone (~> 3.0)
       zeitwerk (~> 2.7)
     concurrent-ruby (1.3.6)
-    console (1.34.2)
+    console (1.34.3)
       fiber-annotation
       fiber-local (~> 1.1)
       json
@@ -162,7 +162,7 @@ GEM
       minitest (>= 5.0)
       ruby-progressbar
     mize (0.6.1)
-    mocha (3.0.1)
+    mocha (3.0.2)
       ruby2_keywords (>= 0.0.5)
     multipart-post (2.4.1)
     myway_config (0.1.2)
@@ -171,7 +171,7 @@ GEM
       uri (>= 0.11.1)
     optparse (0.8.1)
     ostruct (0.6.3)
-    parser (3.3.10.1)
+    parser (3.3.10.2)
       ast (~> 2.4.1)
       racc
     prism (1.9.0)
@@ -193,22 +193,22 @@ GEM
     ruby-next-core (1.2.0)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
-    ruby_llm (1.11.0)
+    ruby_llm (1.12.1)
       base64
       event_stream_parser (~> 1)
-      faraday (>= 1.10.0)
+      faraday (>= 2.0)
       faraday-multipart (>= 1)
       faraday-net_http (>= 1)
-      faraday-retry (>= 1)
-      marcel (~> 1.0)
-      ruby_llm-schema (~> 0.2.1)
+      faraday-retry (>= 2.0)
+      marcel (~> 1)
+      ruby_llm-schema (~> 0)
       zeitwerk (~> 2)
     ruby_llm-mcp (0.8.0)
       httpx (~> 1.4)
       json-schema (~> 5.0)
       ruby_llm (~> 1.9)
       zeitwerk (~> 2)
-    ruby_llm-schema (0.2.5)
+    ruby_llm-schema (0.3.0)
     runcom (13.1.0)
       refinements (~> 14.0)
       xdg (~> 10.0)
@@ -283,7 +283,7 @@ GEM
       ruby-progressbar (~> 1.4)
     word_wrapper (0.5.0)
     xdg (10.1.0)
-    zeitwerk (2.7.4)
+    zeitwerk (2.7.5)
 
 PLATFORMS
   arm64-darwin-25
@@ -307,7 +307,7 @@ DEPENDENCIES
 
 CHECKSUMS
   addressable (2.8.8) sha256=7c13b8f9536cf6364c03b9d417c19986019e28f7c00ac8132da4eb0fe393b057
-  aia (1.0.0.pre.beta)
+  aia (1.0.0)
   aigcm (0.3.2) sha256=eda5055a4bc1dd021f860b08134bf122f9df2e283da5be6719d1dde98a23428a
   amazing_print (2.0.0) sha256=2e36aba46ac78d37ed27ca0e2056afe3583183bb5c64f157c246b267355e5d6a
   ansi (1.5.0) sha256=5408253274e33d9d27d4a98c46d2998266fd51cba58a7eb9d08f50e57ed23592
@@ -317,13 +317,13 @@ CHECKSUMS
   backports (3.25.3) sha256=94298d32dc3c40ca15633b54e282780b49e2db0c045f602ea1907e4f63a17235
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   bigdecimal (4.0.1) sha256=8b07d3d065a9f921c80ceaea7c9d4ae596697295b584c296fe599dd0ad01c4a7
-  binding_of_caller (1.0.1) sha256=2b2902abff4246ddcfbc4da9b69bc4a019e22aeb300c2ff6289a173d4b90b29a
+  binding_of_caller (2.0.0) sha256=e53eebf8428a85587aede7b43a83e7419eb85b8b690938a96aa330d03052d517
   builder (3.3.0) sha256=497918d2f9dca528fdca4b88d84e4ef4387256d984b8154e9d5d3fe5a9c8835f
   clipboard (2.0.0) sha256=88d048fd2097506451c382d3ecf3acd9cdf24f581d8119437e55c1efc04e01c8
   coderay (1.1.3) sha256=dc530018a4684512f8f38143cd2a096c9f02a1fc2459edcfe534787a7fc77d4b
   cogger (2.1.0) sha256=8fa3cf964856dca5d0175aa5e9e1f64ededad917700bb29efc5e7471c33902ef
   concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
-  console (1.34.2) sha256=1c036abf606ccec83f9dc28f0c31710fe5936ffe7ba5d235ae2865590a482d58
+  console (1.34.3) sha256=869fbd74697efc4c606f102d2812b0b008e4e7fd738a91c591e8577140ec0dcc
   containable (2.1.0) sha256=2430f95f00a15282551e2131f5ee56d36df9cfaded712290ad8c579f2179f916
   core (3.1.0) sha256=1a59b8a5dea5af46ab9ff0aeb464c17d2c671ecf93c6d2ec276a3016ca6cac4b
   crack (1.0.1) sha256=ff4a10390cd31d66440b7524eb1841874db86201d5b70032028553130b6d4c7e
@@ -367,13 +367,13 @@ CHECKSUMS
   minitest (6.0.1) sha256=7854c74f48e2e975969062833adc4013f249a4b212f5e7b9d5c040bf838d54bb
   minitest-reporters (1.7.1) sha256=5060413a0c95b8c32fe73e0606f3631c173a884d7900e50013e15094eb50562c
   mize (0.6.1) sha256=4031558979ff5426fda24c75a149b4e4c0faf4cacf2fae8938f83866ab94b780
-  mocha (3.0.1) sha256=74f82c5959e3df6cfa2757d60aa420dcb151ac7c5eb61dcebf1cd4e368ed7469
+  mocha (3.0.2) sha256=3d8029531d8b71bff5ae07040758f77fdf578174189ffda1bef7749a59e92df8
   multipart-post (2.4.1) sha256=9872d03a8e552020ca096adadbf5e3cb1cd1cdd6acd3c161136b8a5737cdb4a8
   myway_config (0.1.2) sha256=c91741ded05babc443fcf5d012741ded8a1a1998c40a689cb32af27940b66be3
   net-http (0.9.1) sha256=25ba0b67c63e89df626ed8fac771d0ad24ad151a858af2cc8e6a716ca4336996
   optparse (0.8.1) sha256=42bea10d53907ccff4f080a69991441d611fbf8733b60ed1ce9ee365ce03bd1a
   ostruct (0.6.3) sha256=95a2ed4a4bd1d190784e666b47b2d3f078e4a9efda2fccf18f84ddc6538ed912
-  parser (3.3.10.1) sha256=06f6a725d2cd91e5e7f2b7c32ba143631e1f7c8ae2fb918fc4cebec187e6a688
+  parser (3.3.10.2) sha256=6f60c84aa4bdcedb6d1a2434b738fe8a8136807b6adc8f7f53b97da9bc4e9357
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
   prompt_manager (1.0.2) sha256=ec19631fc90d092df1d7d08aa3d523636f55a3725b90635afc1fae7d60609e31
   pry (0.16.0) sha256=d76c69065698ed1f85e717bd33d7942c38a50868f6b0673c636192b3d1b6054e
@@ -387,9 +387,9 @@ CHECKSUMS
   ruby-next-core (1.2.0) sha256=f6a7d00bb5186cecbb02f7f1845a0f3a2c9788d35b6ccff5c9be3f0d46799b86
   ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
   ruby2_keywords (0.0.5) sha256=ffd13740c573b7301cf7a2e61fc857b2a8e3d3aff32545d6f8300d8bae10e3ef
-  ruby_llm (1.11.0) sha256=c1bc17bb02a7e805d8f62ea6ada2ecfe7782fc955e9440b53a2fdbd00e5ec9cc
+  ruby_llm (1.12.1) sha256=154722483f2ab1c08d474eb696f56ed4ea046f8ac12fceb2c16a67f0a475c125
   ruby_llm-mcp (0.8.0) sha256=74350b6c08eeb8bf1c387dc7192bb21bad8415d21277b9a922c182b2e8c29915
-  ruby_llm-schema (0.2.5) sha256=b08cd42e8de7100325e2e868672a56f1915eb23692bb808f51f214e41392104f
+  ruby_llm-schema (0.3.0) sha256=a591edc5ca1b7f0304f0e2261de61ba4b3bea17be09f5cf7558153adfda3dec6
   runcom (13.1.0) sha256=58a4dd848408fa0fb342f4489c13074a8013ff0af74d0d04c16383a3d3f05ce5
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1
   shellwords (0.2.2) sha256=b8695a791de2f71472de5abdc3f4332f6535a4177f55d8f99e7e44266cd32f94
@@ -419,7 +419,7 @@ CHECKSUMS
   with_progress (1.0.1) sha256=15e3cbc95e0c9f9e4a2fe842c446e7e894383fefea67502079670f4c3df8f511
   word_wrapper (0.5.0) sha256=ca636087a979c541508737e2b1742c5763d0fd48168370d76e6fdc4be6f65d3a
   xdg (10.1.0) sha256=a7128ccbed0d80af663587ad1f6e04caee21d5dd5aa6c62e748e3e26d1e24d9c
-  zeitwerk (2.7.4) sha256=2bef90f356bdafe9a6c2bd32bcd804f83a4f9b8bc27f3600fff051eb3edcec8b
+  zeitwerk (2.7.5) sha256=d8da92128c09ea6ec62c949011b00ed4a20242b255293dd66bf41545398f73dd
 
 BUNDLED WITH
-  4.0.5
+  4.0.6

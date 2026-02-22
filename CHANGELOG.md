@@ -1,4 +1,42 @@
 # Changelog
+## [1.0.0] - 2026-02-22
+
+### Security Fixes
+- **Command Injection Prevention**: Replaced backtick and string-interpolated `system()` calls with safe array-form invocations
+  - `chat_processor_service.rb`: `` `#{cmd} #{file}` `` → `system(cmd, file)`
+  - `fzf.rb`: Replaced backtick shell execution with `Open3.capture2('fzf', *args, stdin_data: input)`
+  - `modality_handlers.rb`: Fixed 3 sites of `system("#{cmd} #{file}")` → `system(cmd, file)` with safe `which` check via `system('which', cmd, out: File::NULL, err: File::NULL)`
+- **Audio Tempfile Hardening**: Replaced predictable audio file names with `Tempfile`
+  - `speak()` and `text_to_audio_single()` use `Tempfile.new(['aia-tts-', '.mp3'])` with `ensure` cleanup via `unlink`
+- **Narrowed Exception Handling**: Changed `rescue Exception` → `rescue StandardError` in `modality_handlers.rb` and `execution_directives.rb` to stop swallowing `Interrupt`, `SystemExit`, and `NoMemoryError`
+- **Pinned Critical Dependencies**: Added pessimistic version constraints — `ruby_llm ~> 1.12`, `ruby_llm-mcp ~> 0.8`
+
+### New Features
+- **Error Class Hierarchy**: Six domain-specific error subclasses under `AIA::Error < StandardError` — `ConfigurationError`, `PromptError`, `ToolError`, `MCPError`, `AdapterError`, `DirectiveError`
+- **`run_all.sh` Batch Runner**: Executes 18 non-interactive example scripts with timestamped log output, pass/fail summary, `--no-save` mode, and version banner
+
+### Improvements
+- **Consolidated MCP Connection**: Removed legacy synchronous MCP path; only the SimpleFlow fiber-based parallel implementation remains
+  - Renamed `support_mcp_with_simple_flow` → `support_mcp`, `load_tools_with_mcp` → `load_tools`
+- **Fzf Refactoring**: Replaced shell-string command building with array-based args via `Open3.capture2`
+
+### Testing
+- **Coverage**: Line 57% → 69%, branch 39% → 51%, 161 new tests (613 → 774 total)
+  - `config/validator.rb`: 26% → 63% — prompt ID, context files, executable prompts, stdin, roles, fuzzy search, MCP listing, completion scripts, pipeline validation
+  - `config/cli_parser.rb`: 26% → 81% — role validation, role listing, all 40+ CLI flags
+  - `prompt_handler.rb`: 19% → 83% — prompt/role fetching, metadata application, shorthand conflicts, helper methods, error handling
+
+### Documentation
+- Added security documentation for `/ruby`, `/shell`, and ERB directives in `docs/security.md` and `docs/guides/chat.md`
+- Corrected 19 documentation accuracy issues — removed fabricated features, fixed config paths, corrected front matter keys
+- Added `run_all.sh` documentation to examples README
+- Pre-release architecture review at `.architecture/reviews/1-0-0.md`
+
+### Technical Changes
+- Bumped version from 1.0.0-beta to 1.0.0
+- Updated gem dependencies to latest compatible versions
+- Full test suite: 774 runs, 0 failures, 0 errors, 0 skips
+
 ## [1.0.0-beta] - 2026-02-10
 
 ### Breaking Changes

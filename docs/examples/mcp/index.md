@@ -110,62 +110,56 @@ server.connect();
 
 ### Basic MCP Configuration
 ```yaml
-# ~/.aia/config.yml
-mcp:
-  enabled: true
-  clients:
-    - name: github
-      command: ["python", "github_analyzer.py"]
-      env:
-        GITHUB_TOKEN: "${GITHUB_TOKEN}"
-        
-    - name: filesystem
-      command: ["node", "filesystem_analyzer.js"]
-      args: ["/allowed/path"]
-      
-    - name: database
-      command: ["python", "postgres_analyzer.py"]
-      env:
-        DATABASE_URL: "${DATABASE_URL}"
+# ~/.config/aia/aia.yml
+mcp_servers:
+  - name: github
+    command: python
+    args:
+      - github_analyzer.py
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+
+  - name: filesystem
+    command: node
+    args:
+      - filesystem_analyzer.js
+      - /allowed/path
+
+  - name: database
+    command: python
+    args:
+      - postgres_analyzer.py
+    env:
+      DATABASE_URL: "${DATABASE_URL}"
 ```
 
-### Advanced MCP Configuration
+### MCP Configuration with Timeouts
 ```yaml
-mcp:
-  enabled: true
-  security:
-    sandbox_mode: true
-    timeout: 30000  # 30 seconds
-    max_memory: "512MB"
-    
-  clients:
-    - name: github
-      command: ["python", "mcp_clients/github_analyzer.py"]
-      working_directory: "/opt/aia-mcp"
-      env:
-        GITHUB_TOKEN: "${GITHUB_TOKEN}"
-        LOG_LEVEL: "INFO"
-      security:
-        network_access: true
-        file_access: false
-        
-    - name: filesystem
-      command: ["node", "mcp_clients/filesystem_analyzer.js"]
-      args: ["/home/user/projects", "/tmp/workspace"]
-      security:
-        network_access: false
-        file_access: true
-        allowed_paths: ["/home/user/projects", "/tmp"]
-        
-    - name: database
-      command: ["python", "mcp_clients/postgres_analyzer.py"]
-      env:
-        DATABASE_URL: "${READ_ONLY_DB_URL}"
-        MAX_QUERY_TIME: "10000"
-      security:
-        network_access: true
-        file_access: false
-        read_only: true
+# ~/.config/aia/aia.yml
+mcp_servers:
+  - name: github
+    command: python
+    args:
+      - mcp_clients/github_analyzer.py
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+      LOG_LEVEL: "INFO"
+    timeout: 30000
+
+  - name: filesystem
+    command: node
+    args:
+      - mcp_clients/filesystem_analyzer.js
+      - /home/user/projects
+      - /tmp/workspace
+
+  - name: database
+    command: python
+    args:
+      - mcp_clients/postgres_analyzer.py
+    env:
+      DATABASE_URL: "${READ_ONLY_DB_URL}"
+    timeout: 10000
 ```
 
 ## Usage Examples
@@ -181,7 +175,7 @@ aia --mcp github repo_analysis --owner microsoft --repo vscode
 
 ```markdown
 # github_analysis.md
-/mcp github
+# Requires MCP server "github" configured in ~/.config/aia/aia.yml
 
 # GitHub Repository Analysis
 
@@ -208,7 +202,7 @@ aia --mcp database schema_analysis --schema public
 
 ```markdown
 # database_analysis.md
-/mcp database
+# Requires MCP server "database" configured in ~/.config/aia/aia.yml
 
 # Database Schema Analysis
 
@@ -227,7 +221,8 @@ Provide actionable optimization recommendations.
 ### Multi-Client Integration
 ```markdown
 # comprehensive_project_audit.md
-/mcp github,filesystem,database
+# Requires MCP servers: github, filesystem, database
+# Run with: aia --mcp-use github,filesystem,database comprehensive_project_audit
 
 # Comprehensive Project Audit
 
@@ -264,38 +259,36 @@ Generate unified recommendations with implementation priority.
 ## Security Considerations
 
 ### MCP Security Best Practices
+
+Control MCP server access using CLI flags:
+
+```bash
+# Allow only specific MCP servers
+aia --mcp-use github,filesystem --chat
+
+# Skip specific MCP servers
+aia --mcp-skip database --chat
+
+# Disable all MCP servers
+aia --no-mcp --chat
+```
+
+Limit what each MCP server can access through its configuration:
+
 ```yaml
-# Secure MCP configuration
-mcp:
-  security:
-    # Global security settings
-    default_timeout: 30000
-    max_memory_per_client: "256MB"
-    sandbox_mode: true
-    
-    # Network restrictions
-    allowed_domains: ["api.github.com", "localhost"]
-    blocked_domains: ["*.suspicious-domain.com"]
-    
-    # File system restrictions
-    allowed_paths: ["/home/user/projects", "/tmp/aia-workspace"]
-    blocked_paths: ["/etc", "/var", "/usr"]
-    
-  clients:
-    - name: github
-      security_profile: "network_only"
-      allowed_operations: ["read", "list"]
-      blocked_operations: ["write", "delete"]
-      
-    - name: filesystem
-      security_profile: "filesystem_readonly"
-      max_file_size: "10MB"
-      max_files_per_request: 100
-      
-    - name: database
-      security_profile: "database_readonly"
-      query_timeout: 10000
-      max_rows_per_query: 1000
+# ~/.config/aia/aia.yml
+mcp_servers:
+  - name: filesystem
+    command: mcp-server-filesystem
+    args:
+      - /home/user/projects     # Restrict to safe directories
+      - /tmp/aia-workspace
+
+  - name: database
+    command: database-mcp-server
+    env:
+      DATABASE_URL: "${READ_ONLY_DB_URL}"  # Use read-only credentials
+    timeout: 10000
 ```
 
 ### Access Control
@@ -388,18 +381,21 @@ python github_analyzer.py --test
 ```
 
 #### Protocol Errors
+
+Enable detailed MCP logging via the logger configuration:
+
 ```yaml
-# Enable detailed MCP logging
-mcp:
-  logging:
+# ~/.config/aia/aia.yml
+logger:
+  mcp:
+    file: /tmp/aia-mcp.log
     level: debug
-    file: /var/log/aia-mcp.log
-    include_request_response: true
-    
-  error_handling:
-    retry_attempts: 3
-    retry_delay: 1000
-    fallback_mode: graceful
+    flush: true
+```
+
+Or via CLI:
+```bash
+aia --debug my_prompt  # Sets all loggers to debug level
 ```
 
 #### Performance Issues

@@ -129,7 +129,7 @@ Tools that can modify files or system state:
 
 ### Example Tool Template
 ```ruby
-# ~/.aia/tools/example_tool.rb
+# ~/.config/aia/tools/example_tool.rb
 require 'json'
 
 class ExampleTool < RubyLLM::Tool
@@ -205,43 +205,33 @@ end
 ### Local Tool Directory
 ```bash
 # Create tool directory structure
-mkdir -p ~/.aia/tools/{core,development,analysis,web,system}
+mkdir -p ~/.config/aia/tools/{core,development,analysis,web,system}
 
 # Copy tools to appropriate directories
-cp file_analyzer.rb ~/.aia/tools/core/
-cp code_quality.rb ~/.aia/tools/development/
-cp data_analyzer.rb ~/.aia/tools/analysis/
+cp file_analyzer.rb ~/.config/aia/tools/core/
+cp code_quality.rb ~/.config/aia/tools/development/
+cp data_analyzer.rb ~/.config/aia/tools/analysis/
 ```
 
-### Tool Libraries
-```yaml
-# ~/.aia/tool_config.yml
-tool_libraries:
-  core:
-    path: ~/.aia/tools/core
-    security_level: safe
-    
-  development:
-    path: ~/.aia/tools/development
-    security_level: safe
-    
-  web:
-    path: ~/.aia/tools/web
-    security_level: network
-    
-  system:
-    path: ~/.aia/tools/system
-    security_level: system
-    restricted: true
+### Loading Tools by Directory
+```bash
+# Load all tools from a directory
+aia --tools ~/.config/aia/tools/core/ my_prompt
+
+# Load tools from multiple directories
+aia --tools ~/.config/aia/tools/core/ --tools ~/.config/aia/tools/development/ my_prompt
+
+# Filter to specific tools
+aia --tools ~/.config/aia/tools/ --allowed-tools FileAnalyzer,CodeQuality my_prompt
 ```
 
 ### Shared Tool Repositories
 ```bash
 # Clone shared tool repositories
-git clone https://github.com/team/aia-tools.git ~/.aia/shared-tools
+git clone https://github.com/team/aia-tools.git ~/.config/aia/shared-tools
 
 # Use shared tools
-aia --tools ~/.aia/shared-tools/web/ api_analysis
+aia --tools ~/.config/aia/shared-tools/web/ api_analysis
 ```
 
 ## Performance Considerations

@@ -97,6 +97,14 @@ module AIA
       puts "\n#{message}"
     end
 
+    def display_error(message)
+      warn "ERROR: #{message}"
+    end
+
+    def display_warning(message)
+      warn "WARNING: #{message}"
+    end
+
     def with_spinner(message = "Processing", operation_type = nil)
       spinner_message = operation_type ? "#{message} #{operation_type}..." : "#{message}..."
       spinner = TTY::Spinner.new("[:spinner] #{spinner_message}", format: :bouncing_ball)

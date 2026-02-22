@@ -46,8 +46,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'myway_config'
   spec.add_dependency 'prompt_manager', '~> 1.0.2'
   spec.add_dependency 'reline'
-  spec.add_dependency 'ruby_llm'
-  spec.add_dependency 'ruby_llm-mcp'
+  spec.add_dependency 'ruby_llm',     '~> 1.12'
+  spec.add_dependency 'ruby_llm-mcp', '~> 0.8'
   spec.add_dependency 'shellwords'
   spec.add_dependency 'simple_flow'
   spec.add_dependency 'tty-screen'
@@ -68,43 +68,11 @@ Gem::Specification.new do |spec|
   spec.post_install_message = <<~MSG
 
     ╔══════════════════════════════════════════════════════════════╗
-    ║               AIA — AI Assistant Installed!                  ║
+    ║               AIA — AI Assistant v1.0                       ║
     ╚══════════════════════════════════════════════════════════════╝
 
-    ⚠  Note: v0.10+ has breaking changes in config file format and
-       environment variable names. See docs for details.
-
-    ⚠  Prompt files now use .md extension (was .txt).
-       Run: aia --migrate-prompts to convert existing prompts.
-
-    Multi-model AI from your command line. 20+ providers supported.
-
-    Quick Start:
-      aia --help              Show all options
-      aia --chat              Start an interactive chat session
-      aia --fuzzy             Select a prompt with fuzzy finder
-      aia my_prompt_file      Run saved prompt(s) in batch mode
-
-    Setup:
-      1. Set your API key(s):  export OPENAI_API_KEY=your_key
-                               export ANTHROPIC_API_KEY=your_key
-                               ... etc.
-      2. Create prompts dir:   mkdir -p ~/.prompts
-      3. Initialize config:    aia --dump ~/.config/aia/aia.yml
-
-    Key Features:
-      • Dynamic prompts with YAML front matter and ERB directives
-      • Consensus mode: run multiple models, get unified responses
-      • Shell & Ruby (ERB) integration in prompts
-      • Tool callbacks via RubyLLM::Tool
-      • MCP Integration via RubyLLM::MCP
-      • Session history and checkpoints
-      • Pipeline workflows
-      • Concurrently run the same prompt against multiple models
-      • Get cost estimates for prompts against multiple models
-
-    Documentation:  https://madbomber.github.io/aia
-    Source Code:    https://github.com/MadBomber/aia
+    Get started:  aia --help
+    Full docs:    https://madbomber.github.io/aia
 
   MSG
 

@@ -34,76 +34,28 @@ class McpConnectorTest < Minitest::Test
 
     tools = []
     @connector.support_mcp(tools)
-
     assert_empty tools
   end
 
-  def test_support_mcp_calls_establish_connection
-    AIA.stubs(:config).returns(OpenStruct.new(
-      flags: OpenStruct.new(no_mcp: false)
-    ))
-
-    AIA::LoggerManager.stubs(:configure_mcp_logger)
-
-    mock_tools = [mock('tool')]
-    RubyLLM::MCP.expects(:establish_connection).once
-    RubyLLM::MCP.stubs(:tools).returns(mock_tools)
-
-    tools = []
-    @connector.support_mcp(tools)
-
-    assert_equal 1, tools.size
-  end
-
-  def test_support_mcp_handles_errors_gracefully
-    AIA.stubs(:config).returns(OpenStruct.new(
-      flags: OpenStruct.new(no_mcp: false)
-    ))
-
-    AIA::LoggerManager.stubs(:configure_mcp_logger)
-    RubyLLM::MCP.stubs(:establish_connection).raises(StandardError, 'connection failed')
-
-    # The mock logger should receive the error call
-    @logger.expects(:error).with('Failed to connect MCP clients', has_entries(error_message: 'connection failed'))
-    @connector.stubs(:warn)  # suppress warn output
-
-    tools = []
-    @connector.support_mcp(tools)
-
-    assert_empty tools
-  end
-
-  # --- support_mcp_with_simple_flow ---
-
-  def test_simple_flow_skips_when_no_mcp_flag
-    AIA.stubs(:config).returns(OpenStruct.new(
-      flags: OpenStruct.new(no_mcp: true)
-    ))
-
-    tools = []
-    @connector.support_mcp_with_simple_flow(tools)
-    assert_empty tools
-  end
-
-  def test_simple_flow_skips_when_no_servers
+  def test_support_mcp_skips_when_no_servers
     AIA.stubs(:config).returns(OpenStruct.new(
       flags: OpenStruct.new(no_mcp: false),
       mcp_servers: nil
     ))
 
     tools = []
-    @connector.support_mcp_with_simple_flow(tools)
+    @connector.support_mcp(tools)
     assert_empty tools
   end
 
-  def test_simple_flow_skips_when_servers_empty
+  def test_support_mcp_skips_when_servers_empty
     AIA.stubs(:config).returns(OpenStruct.new(
       flags: OpenStruct.new(no_mcp: false),
       mcp_servers: []
     ))
 
     tools = []
-    @connector.support_mcp_with_simple_flow(tools)
+    @connector.support_mcp(tools)
     assert_empty tools
   end
 

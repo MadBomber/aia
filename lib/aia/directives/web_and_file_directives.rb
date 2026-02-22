@@ -55,21 +55,25 @@ module AIA
 
     desc "Include a Claude Code skill from ~/.claude/skills/"
     def skill(args = [], _context_manager = nil)
+      args = Array(args)
       skill_name = args.first&.strip
       if skill_name.nil? || skill_name.empty?
-        STDERR.puts "Error: /skill requires a skill name"
+        warn "Error: /skill requires a skill name"
+        AIA::LoggerManager.aia_logger.error("/skill requires a skill name")
         return nil
       end
 
       skill_dir = resolve_skill_dir(skill_name)
       unless skill_dir
-        STDERR.puts "Error: No skill matching '#{skill_name}' found in #{SKILLS_DIR}"
+        warn "Error: No skill matching '#{skill_name}' found in #{SKILLS_DIR}"
+        AIA::LoggerManager.aia_logger.error("No skill matching '#{skill_name}' found in #{SKILLS_DIR}")
         return nil
       end
 
       skill_path = File.join(skill_dir, 'SKILL.md')
       unless File.exist?(skill_path)
-        STDERR.puts "Error: Skill directory '#{File.basename(skill_dir)}' has no SKILL.md"
+        warn "Error: Skill directory '#{File.basename(skill_dir)}' has no SKILL.md"
+        AIA::LoggerManager.aia_logger.error("Skill directory '#{File.basename(skill_dir)}' has no SKILL.md")
         return nil
       end
 

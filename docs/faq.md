@@ -5,7 +5,7 @@ Common questions and answers about using AIA.
 ## Installation and Setup
 
 ### Q: What Ruby version is required for AIA?
-**A:** AIA requires Ruby 3.0 or higher. You can check your Ruby version with `ruby --version`.
+**A:** AIA requires Ruby 3.2 or higher. You can check your Ruby version with `ruby --version`.
 
 ### Q: How do I install AIA?
 **A:** The easiest way is through RubyGems:
@@ -266,9 +266,9 @@ aia --chat --model gpt-4
 ```
 
 ### Q: How do I save chat conversations?
-**A:** Use the `/save` command within chat:
-```
-You: /save conversation.md
+**A:** Use the `--output` flag to save responses to a file:
+```bash
+aia --chat --output conversation.md
 ```
 
 ### Q: Can I use tools in chat mode?
@@ -434,13 +434,10 @@ which git
 ### Q: Configuration issues
 **A:** Debug your configuration setup:
 ```bash
-# Check current configuration
-aia --config
+# Dump current configuration to a file for inspection
+aia --dump config_snapshot.yml
 
-# Debug configuration loading
-aia --debug --config
-
-# Test with verbose output
+# Test with verbose and debug output
 aia --debug --verbose my_prompt
 ```
 
@@ -479,8 +476,8 @@ aia --debug my_prompt
 # Maximum debugging output
 aia --debug --verbose my_prompt
 
-# Check configuration in debug mode
-aia --debug --config
+# Dump configuration for inspection
+aia --dump config_snapshot.yml
 ```
 
 ### Q: Common error messages and solutions

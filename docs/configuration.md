@@ -167,25 +167,6 @@ paths:
 context_files: []
 ```
 
-### Model-Specific Configuration
-
-You can create model-specific configuration files:
-
-```yaml
-# ~/.config/aia/models/gpt-4.yml
-llm:
-  temperature: 0.3
-  max_tokens: 4000
-  top_p: 0.95
-```
-
-```yaml
-# ~/.config/aia/models/claude-3.yml
-llm:
-  temperature: 0.5
-  max_tokens: 8000
-```
-
 ## Environment Variables
 
 All configuration options can be set via environment variables with the `AIA_` prefix.
@@ -255,7 +236,7 @@ export AIA_FLAGS__CLEAR="false"
 export AIA_FLAGS__CONSENSUS="false"
 
 # Logger settings (nested under logger:)
-export AIA_LOGGER__AIA__FILE="~/.aia/aia.log"
+export AIA_LOGGER__AIA__FILE="~/.config/aia/aia.log"
 export AIA_LOGGER__AIA__LEVEL="debug"
 export AIA_LOGGER__AIA__FLUSH="true"
 export AIA_LOGGER__LLM__FILE="STDOUT"
@@ -312,7 +293,7 @@ Each logger can be configured independently in your `~/.config/aia/aia.yml`:
 ```yaml
 logger:
   aia:
-    file: STDOUT           # STDOUT, STDERR, or a file path (e.g., ~/.aia/aia.log)
+    file: STDOUT           # STDOUT, STDERR, or a file path (e.g., ~/.config/aia/aia.log)
     level: warn            # debug, info, warn, error, fatal
     flush: true            # true = immediate write, false = buffered
   llm:
@@ -354,7 +335,7 @@ Logger settings can also be configured via environment variables:
 
 ```bash
 # AIA logger settings
-export AIA_LOGGER__AIA__FILE="~/.aia/aia.log"
+export AIA_LOGGER__AIA__FILE="~/.config/aia/aia.log"
 export AIA_LOGGER__AIA__LEVEL="debug"
 export AIA_LOGGER__AIA__FLUSH="true"
 
@@ -602,27 +583,17 @@ aia --tools ./my_tools --debug test_prompt
 
 ### Updating from Older Versions
 
-AIA automatically migrates older configuration formats. To manually update:
+If upgrading from an earlier version of AIA, back up and recreate your configuration:
 
 ```bash
 # Backup current config
 cp ~/.config/aia/aia.yml ~/.config/aia/aia.yml.backup
 
-# Update configuration format
-aia --migrate-config
+# Dump current running configuration as a starting point
+aia --dump ~/.config/aia/aia.yml
 ```
 
-### Configuration Templates
-
-Generate configuration templates:
-
-```bash
-# Generate basic config
-aia --generate-config basic > ~/.config/aia/aia.yml
-
-# Generate advanced config with all options
-aia --generate-config full > ~/.config/aia/aia.advanced.yml
-```
+Review the dumped file and merge any custom settings from your backup.
 
 ## Best Practices
 

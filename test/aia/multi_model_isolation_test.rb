@@ -103,12 +103,12 @@ class MultiModelIsolationTest < Minitest::Test
   # ========================================
 
   def test_parse_multi_model_response
-    # Given: A real Session instance with the parser method
-    session = create_real_session
+    # Given: A ChatLoop instance with the parser method
+    chat_loop = create_chat_loop
 
     # When: We parse a combined multi-model response
     combined = "from: lms/model-1\nHello in Spanish: Hola!\n\nfrom: ollama/model-2\nHello in French: Bonjour!"
-    parsed = session.send(:parse_multi_model_response, combined)
+    parsed = chat_loop.send(:parse_multi_model_response, combined)
 
     # Then: Should extract individual model responses
     assert_equal 2, parsed.keys.size
@@ -117,21 +117,21 @@ class MultiModelIsolationTest < Minitest::Test
   end
 
   def test_parse_multi_model_response_with_empty_input
-    # Given: A real Session instance
-    session = create_real_session
+    # Given: A ChatLoop instance
+    chat_loop = create_chat_loop
 
     # When: We parse empty or nil input
-    assert_equal({}, session.send(:parse_multi_model_response, nil))
-    assert_equal({}, session.send(:parse_multi_model_response, ""))
+    assert_equal({}, chat_loop.send(:parse_multi_model_response, nil))
+    assert_equal({}, chat_loop.send(:parse_multi_model_response, ""))
   end
 
   def test_parse_multi_model_response_with_multiline_responses
-    # Given: A real Session instance
-    session = create_real_session
+    # Given: A ChatLoop instance
+    chat_loop = create_chat_loop
 
     # When: Model responses contain multiple lines
     combined = "from: model-1\nLine 1\nLine 2\nLine 3\n\nfrom: model-2\nResponse A\nResponse B"
-    parsed = session.send(:parse_multi_model_response, combined)
+    parsed = chat_loop.send(:parse_multi_model_response, combined)
 
     # Then: Should preserve multiline content
     assert_equal "Line 1\nLine 2\nLine 3", parsed["model-1"]
@@ -146,16 +146,11 @@ class MultiModelIsolationTest < Minitest::Test
 
   # Helper methods for creating real test objects
 
-  def create_real_session
-    # Create a real session with a real prompt handler
-    # First create a test prompt file
-    create_test_prompt_file('test_prompt', 'This is a test prompt')
-
-    prompt_handler = AIA::PromptHandler.new
-    AIA::Session.new(prompt_handler)
-  rescue => e
-    # If session creation fails due to dependencies, skip the test
-    skip "Cannot create session: #{e.message}"
+  def create_chat_loop
+    chat_processor      = mock('chat_processor')
+    ui_presenter        = mock('ui_presenter')
+    directive_processor = mock('directive_processor')
+    AIA::ChatLoop.new(chat_processor, ui_presenter, directive_processor)
   end
 
   def create_test_prompt_file(id, text)

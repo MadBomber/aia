@@ -17,35 +17,6 @@ module AIA
           return
         end
 
-        logger.debug("Starting MCP connection via RubyLLM::MCP.establish_connection")
-        LoggerManager.configure_mcp_logger
-
-        start_time = Time.now
-        RubyLLM::MCP.establish_connection
-        elapsed = Time.now - start_time
-
-        tool_count = RubyLLM::MCP.tools.size
-        tools.concat(RubyLLM::MCP.tools)
-
-        logger.info("MCP connection established", elapsed_seconds: elapsed.round(2), tool_count: tool_count)
-      rescue StandardError => e
-        logger.error("Failed to connect MCP clients", error_class: e.class.name, error_message: e.message)
-        logger.debug("MCP connection error backtrace", backtrace: e.backtrace&.first(5))
-        warn "Warning: Failed to connect MCP clients: #{e.message}"
-      end
-
-      # =========================================================================
-      # SimpleFlow-based Parallel MCP Connection
-      # =========================================================================
-      # Uses fiber-based concurrency to connect to all MCP servers in parallel.
-      # This reduces total connection time from sum(timeouts) to max(timeouts).
-
-      def support_mcp_with_simple_flow(tools)
-        if AIA.config.flags.no_mcp
-          logger.debug("MCP processing bypassed via --no-mcp flag")
-          return
-        end
-
         if AIA.config.mcp_servers.nil? || AIA.config.mcp_servers.empty?
           logger.debug("No MCP servers configured, skipping MCP setup")
           return

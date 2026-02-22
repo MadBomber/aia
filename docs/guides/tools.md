@@ -69,7 +69,7 @@ aia --tools ./tools/ tool_discovery_prompt
 
 ### Basic Tool Structure
 ```ruby
-# ~/.aia/tools/file_analyzer.rb
+# ~/.config/aia/tools/file_analyzer.rb
 class FileAnalyzer < RubyLLM::Tool
   description "Analyzes files for structure, content, and metadata"
   
@@ -167,7 +167,7 @@ end
 
 ### Web Integration Tool
 ```ruby
-# ~/.aia/tools/web_client.rb
+# ~/.config/aia/tools/web_client.rb
 require 'net/http'
 require 'json'
 require 'uri'
@@ -257,7 +257,7 @@ end
 
 ### Data Analysis Tool
 ```ruby
-# ~/.aia/tools/data_analyzer.rb
+# ~/.config/aia/tools/data_analyzer.rb
 require 'csv'
 require 'json'
 
@@ -680,7 +680,7 @@ end
 ### Tool Libraries
 ```bash
 # Organize tools in libraries
-~/.aia/tools/
+~/.config/aia/tools/
 ├── core/           # Essential tools
 │   ├── file_ops.rb
 │   ├── web_client.rb

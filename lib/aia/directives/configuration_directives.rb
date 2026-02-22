@@ -32,7 +32,8 @@ module AIA
         if AIA.config.respond_to?(setter)
           AIA.config.send(setter, new_value)
         else
-          puts "Warning: Unknown config option '#{config_item}'"
+          warn "Warning: Unknown config option '#{config_item}'"
+          AIA::LoggerManager.aia_logger.warn("Unknown config option '#{config_item}'")
         end
         ""
       end

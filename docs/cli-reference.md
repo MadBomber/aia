@@ -259,7 +259,7 @@ Load configuration from a specific file.
 
 ```bash
 aia --config-file /path/to/config.yml my_prompt
-aia -c ~/.aia/custom_config.yml my_prompt
+aia -c ~/.config/aia/custom_config.yml my_prompt
 ```
 
 ### `-o, --[no-]output [FILE]`
@@ -820,14 +820,6 @@ aia --output analysis.md --markdown --append data_analysis dataset.csv
 # Audio processing
 aia --transcription-model whisper-1 --speech-model tts-1-hd --voice echo audio_prompt audio_file.wav
 ```
-
-## Exit Codes
-
-- `0` - Success
-- `1` - General error (invalid arguments, file not found, etc.)
-- `2` - Configuration error
-- `3` - Model/API error
-- `4` - Tool execution error
 
 ## Environment Variables
 
