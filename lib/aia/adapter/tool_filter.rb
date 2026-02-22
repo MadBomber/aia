@@ -30,6 +30,27 @@ module AIA
         end
       end
 
+      def self.detect_conflicts
+        allowed  = AIA.config.tools.allowed
+        rejected = AIA.config.tools.rejected
+        return [] if allowed.nil? || allowed.empty? || rejected.nil? || rejected.empty?
+
+        allowed_list  = Array(allowed).map(&:strip)
+        rejected_list = Array(rejected).map(&:strip)
+
+        conflicts = allowed_list & rejected_list
+        return [] if conflicts.empty?
+
+        logger = LoggerManager.aia_logger
+        conflicts.each do |pattern|
+          msg = "Tool pattern '#{pattern}' appears in both --allowed-tools and --rejected-tools. Rejected takes precedence."
+          logger.warn(msg)
+          warn "WARNING: #{msg}"
+        end
+
+        conflicts
+      end
+
       def self.drop_duplicates(tools)
         seen_names = Set.new
         original_size = tools.size

@@ -247,16 +247,13 @@ class ChatProcessorServiceTest < Minitest::Test
   def test_speak_when_enabled_without_speech_model
     AIA.stubs(:speak?).returns(true)
     @config.audio.speech_model = nil
-    
-    captured_output = StringIO.new
-    original_stdout = $stdout
-    $stdout = captured_output
-    
+
+    stderr_messages = []
+    @service.stubs(:warn).with { |msg| stderr_messages << msg; true }
+
     @service.speak('Test text')
-    
-    $stdout = original_stdout
-    
-    assert_includes captured_output.string, "Warning: Unable to speak. Speech model not configured properly."
+
+    assert stderr_messages.any? { |m| m.include?("Warning: Unable to speak. Speech model not configured properly.") }
   end
 
   def test_process_next_prompts_without_directive

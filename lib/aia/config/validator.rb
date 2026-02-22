@@ -75,7 +75,7 @@ module AIA
 
         bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
         if bad_files.any?
-          STDERR.puts "Error: The following files do not exist: #{bad_files.join(', ')}"
+          warn "Error: The following files do not exist: #{bad_files.join(', ')}"
           exit 1
         end
 
@@ -119,7 +119,7 @@ module AIA
       def validate_required_prompt_id(config)
         return unless config.prompt_id.nil? && !(config.flags.chat == true) && !(config.flags.fuzzy == true)
 
-        STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
+        warn "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
         exit 1
       end
 
@@ -449,7 +449,7 @@ module AIA
         if File.exist?(script_path)
           puts File.read(script_path)
         else
-          STDERR.puts "ERROR: The shell '#{shell}' is not supported or the completion script is missing."
+          warn "ERROR: The shell '#{shell}' is not supported or the completion script is missing."
         end
       end
 
@@ -457,7 +457,7 @@ module AIA
         chat_mode = config.flags.chat == true
         fuzzy_mode = config.flags.fuzzy == true
         if !chat_mode && !fuzzy_mode && (config.prompt_id.nil? || config.prompt_id.empty?) && (config.context_files.nil? || config.context_files.empty?)
-          STDERR.puts "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
+          warn "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
           exit 1
         end
       end
@@ -486,7 +486,7 @@ module AIA
 
           prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}#{config.prompts.extname}")
           unless File.exist?(prompt_file_path)
-            STDERR.puts "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
+            warn "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
             and_exit = true
           end
         end

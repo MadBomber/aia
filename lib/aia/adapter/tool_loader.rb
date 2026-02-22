@@ -8,15 +8,7 @@ module AIA
         @mcp_connector = mcp_connector
       end
 
-      def load_tools_with_mcp
-        tools = []
-
-        tools += scan_local_tools
-        @mcp_connector.support_mcp_with_simple_flow(tools)
-        tools
-      end
-
-      def load_tools_legacy
+      def load_tools
         tools = []
 
         tools += scan_local_tools

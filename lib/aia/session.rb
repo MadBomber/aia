@@ -1,4 +1,5 @@
 # lib/aia/session.rb
+# frozen_string_literal: true
 
 require "tty-spinner"
 require "tty-screen"
@@ -13,24 +14,49 @@ require_relative "ui_presenter"
 require_relative "chat_processor_service"
 require_relative "prompt_handler"
 require_relative "utility"
+require_relative "input_collector"
+require_relative "prompt_pipeline"
+require_relative "chat_loop"
 
 module AIA
   class Session
     def initialize(prompt_handler)
       @prompt_handler = prompt_handler
-      @include_context_flag = true
 
       initialize_components
       setup_output_file
     end
 
+    # Starts the session, processing all prompts in the pipeline and then
+    # optionally starting an interactive chat session.
+    def start
+      # Handle special chat-only cases first
+      if should_start_chat_immediately?
+        AIA::Utility.robot
+        @chat_loop.start
+        return
+      end
+
+      # Process all prompts in the pipeline
+      @prompt_pipeline.process_all
+
+      # Start chat mode after all prompts are processed
+      if AIA.chat?
+        AIA::Utility.robot
+        @ui_presenter.display_separator
+        @chat_loop.start(skip_context_files: true)
+      end
+    end
+
+    private
+
     def initialize_components
-      # RubyLLM's Chat instances maintain conversation history internally
-      # via @messages array. No separate context manager needed.
-      # Checkpoint/restore directives access Chat.@messages directly via AIA.client.chats
-      @ui_presenter = UIPresenter.new
+      @ui_presenter        = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
-      @chat_processor = ChatProcessorService.new(@ui_presenter, @directive_processor)
+      @chat_processor      = ChatProcessorService.new(@ui_presenter, @directive_processor)
+      @input_collector     = InputCollector.new
+      @prompt_pipeline     = PromptPipeline.new(@prompt_handler, @chat_processor, @ui_presenter, @input_collector)
+      @chat_loop           = ChatLoop.new(@chat_processor, @ui_presenter, @directive_processor)
     end
 
     def setup_output_file
@@ -40,387 +66,11 @@ module AIA
       end
     end
 
-    # Starts the session, processing all prompts in the pipeline and then
-    # optionally starting an interactive chat session.
-    def start
-      # Handle special chat-only cases first
-      if should_start_chat_immediately?
-        AIA::Utility.robot
-        start_chat
-        return
-      end
-
-      # Process all prompts in the pipeline
-      process_all_prompts
-
-      # Start chat mode after all prompts are processed
-      if AIA.chat?
-        AIA::Utility.robot
-        @ui_presenter.display_separator
-        start_chat(skip_context_files: true)
-      end
-    end
-
-    private
-
     # Check if we should start chat immediately without processing any prompts
     def should_start_chat_immediately?
       return false unless AIA.chat?
 
-      # If pipeline is empty or only contains empty prompt_ids, go straight to chat
       AIA.config.pipeline.empty? || AIA.config.pipeline.all? { |id| id.nil? || id.empty? }
-    end
-
-    # Process all prompts in the pipeline sequentially
-    def process_all_prompts
-      prompt_count = 0
-      total_prompts = AIA.config.pipeline.size
-
-      until AIA.config.pipeline.empty?
-        prompt_count += 1
-        prompt_id = AIA.config.pipeline.shift
-
-        puts "\n--- Processing prompt #{prompt_count}/#{total_prompts}: #{prompt_id} ---" if AIA.verbose? && total_prompts > 1
-
-        process_single_prompt(prompt_id)
-      end
-    end
-
-    # Process a single prompt with all its requirements
-    def process_single_prompt(prompt_id)
-      return if prompt_id.nil? || prompt_id.empty?
-
-      prompt_text = build_prompt_text(prompt_id)
-      return unless prompt_text
-
-      send_prompt_and_get_response(prompt_text)
-    end
-
-    def build_prompt_text(prompt_id)
-      role_id = AIA.config.prompts.role
-
-      begin
-        prompt_parsed = @prompt_handler.fetch_prompt(prompt_id)
-      rescue StandardError => e
-        puts "Error processing prompt '#{prompt_id}': #{e.message}"
-        return nil
-      end
-
-      return nil unless prompt_parsed
-
-      role_parsed = nil
-      unless role_id.nil? || role_id.empty?
-        begin
-          role_parsed = @prompt_handler.fetch_role(role_id)
-        rescue StandardError => e
-          puts "Warning: Could not load role '#{role_id}': #{e.message}"
-        end
-      end
-
-      # Merge parameters from role and prompt
-      all_params = {}
-      all_params.merge!(role_parsed.metadata.parameters) if role_parsed&.metadata&.parameters
-      all_params.merge!(prompt_parsed.metadata.parameters) if prompt_parsed.metadata&.parameters
-
-      # Collect parameter values from user
-      values = collect_variable_values(all_params)
-
-      # Render role and prompt
-      parts = []
-      parts << role_parsed.to_s(values) if role_parsed
-      parts << prompt_parsed.to_s(values)
-
-      if @include_context_flag
-        # Process stdin content
-        if AIA.config.stdin_content && !AIA.config.stdin_content.strip.empty?
-          parts << PM.parse(AIA.config.stdin_content).to_s
-        end
-
-      end
-
-      prompt_text = parts.join("\n\n")
-
-      if @include_context_flag
-        prompt_text = add_context_files(prompt_text)
-        @include_context_flag = false
-      end
-
-      prompt_text
-    end
-
-    # Collect variable values from user input
-    def collect_variable_values(parameters)
-      return {} if parameters.nil? || parameters.empty?
-
-      values = {}
-      input_manager = AIA::HistoryManager.new
-
-      parameters.each do |name, default|
-        value = input_manager.request_variable_value(
-          variable_name: name,
-          default_value: default,
-        )
-        values[name] = value
-      end
-
-      values
-    end
-
-    # Add context files to prompt text
-    def add_context_files(prompt_text)
-      return prompt_text unless AIA.config.context_files && !AIA.config.context_files.empty?
-
-      context = AIA.config.context_files.map do |file|
-        File.read(file) rescue "Error reading file: #{file}"
-      end.join("\n\n")
-
-      "#{prompt_text}\n\nContext:\n#{context}"
-    end
-
-    # Send prompt to AI and handle the response
-    # RubyLLM's Chat automatically adds user messages and responses to its internal @messages
-    def send_prompt_and_get_response(prompt_text)
-      # Process the prompt - RubyLLM Chat maintains conversation history internally
-      response_data = @chat_processor.process_prompt(prompt_text)
-
-      # Handle response format (may include metrics)
-      if response_data.is_a?(Hash)
-        content = response_data[:content]
-        metrics = response_data[:metrics]
-        multi_metrics = response_data[:multi_metrics]
-      else
-        content = response_data
-        metrics = nil
-        multi_metrics = nil
-      end
-
-      # Output the response
-      @chat_processor.output_response(content)
-
-      # Display token usage if enabled and available
-      if AIA.config.flags.tokens
-        if multi_metrics
-          @ui_presenter.display_multi_model_metrics(multi_metrics)
-        elsif metrics
-          @ui_presenter.display_token_metrics(metrics)
-        end
-      end
-
-      # Process any directives in the response
-      if @directive_processor.directive?(content)
-        directive_result = @directive_processor.process(content, nil)
-        puts "\nDirective output: #{directive_result}" if directive_result && !directive_result.strip.empty?
-      end
-    end
-
-    # Starts the interactive chat session.
-    # NOTE: there could have been an initial prompt sent into this session
-    #       via a prompt_id on the command line, piped in text, or context files.
-    def start_chat(skip_context_files: false)
-      setup_chat_session
-      process_initial_context(skip_context_files)
-      handle_piped_input
-      run_chat_loop
-    ensure
-      @ui_presenter.display_chat_end
-    end
-
-    private
-
-    def setup_chat_session
-      initialize_chat_ui
-      setup_signal_handlers
-      Reline::HISTORY.clear
-    end
-
-    def initialize_chat_ui
-      puts "\nEntering interactive chat mode..."
-      @ui_presenter.display_chat_header
-    end
-
-    def setup_signal_handlers
-      Signal.trap("INT") { exit }
-    end
-
-    def process_initial_context(skip_context_files)
-      return if skip_context_files || !AIA.config.context_files || AIA.config.context_files.empty?
-
-      context = AIA.config.context_files.map do |file|
-        File.read(file) rescue "Error reading file: #{file}"
-      end.join("\n\n")
-
-      return if context.empty?
-
-      # Process the context - RubyLLM Chat maintains conversation history internally
-      response_data = @chat_processor.process_prompt(context)
-
-      # Handle response format (may include metrics)
-      content = response_data.is_a?(Hash) ? response_data[:content] : response_data
-
-      # Output the response
-      @chat_processor.output_response(content)
-      @chat_processor.speak(content)
-      @ui_presenter.display_separator
-    end
-
-    def handle_piped_input
-      return if STDIN.tty?
-
-      # Additional check: see if /dev/tty is available before attempting to use it
-      return unless File.exist?("/dev/tty") && File.readable?("/dev/tty") && File.writable?("/dev/tty")
-
-      begin
-        original_stdin = STDIN.dup
-        piped_input = STDIN.read.strip
-        STDIN.reopen("/dev/tty")
-
-        return if piped_input.empty?
-
-        processed_input = PM.parse_string(piped_input).to_s
-
-        # Process the piped input - RubyLLM Chat maintains conversation history internally
-          response_data = @chat_processor.process_prompt(processed_input)
-
-        # Handle response format (may include metrics)
-        content = response_data.is_a?(Hash) ? response_data[:content] : response_data
-
-        @chat_processor.output_response(content)
-        @chat_processor.speak(content) if AIA.speak?
-        @ui_presenter.display_separator
-
-        STDIN.reopen(original_stdin)
-      rescue Errno::ENXIO => e
-        # Handle case where /dev/tty is not available (e.g., in some containerized environments)
-        warn "Warning: Unable to handle piped input due to TTY unavailability: #{e.message}"
-        return
-      rescue StandardError => e
-        # Handle any other errors gracefully
-        warn "Warning: Error handling piped input: #{e.message}"
-        return
-      end
-    end
-
-    def run_chat_loop
-      loop do
-        follow_up_prompt = @ui_presenter.ask_question
-
-        break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == "exit" || follow_up_prompt.strip.empty?
-
-        if AIA.config.output.file
-          File.open(AIA.config.output.file, "a") do |file|
-            file.puts "\nYou: #{follow_up_prompt}"
-          end
-        end
-
-        if @directive_processor.directive?(follow_up_prompt)
-          follow_up_prompt = process_chat_directive(follow_up_prompt)
-          next if follow_up_prompt.nil?
-        end
-
-        begin
-          processed_prompt = PM.parse_string(follow_up_prompt).to_s
-        rescue StandardError => e
-          @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
-          next
-        end
-
-        # Process the prompt - RubyLLM Chat maintains conversation history internally
-        # via @messages array. Each model's Chat instance tracks its own conversation.
-          response_data = @chat_processor.process_prompt(processed_prompt)
-
-        # Handle new response format with metrics
-        if response_data.is_a?(Hash)
-          content = response_data[:content]
-          metrics = response_data[:metrics]
-          multi_metrics = response_data[:multi_metrics]
-        else
-          content = response_data
-          metrics = nil
-          multi_metrics = nil
-        end
-
-        @ui_presenter.display_ai_response(content)
-
-        # Display token usage if enabled and available (chat mode only)
-        if AIA.config.flags.tokens
-          if multi_metrics
-            # Display metrics for each model in multi-model mode
-            @ui_presenter.display_multi_model_metrics(multi_metrics)
-          elsif metrics
-            # Display metrics for single model
-            @ui_presenter.display_token_metrics(metrics)
-          end
-        end
-
-        @chat_processor.speak(content)
-
-        @ui_presenter.display_separator
-      end
-    end
-
-    def process_chat_directive(follow_up_prompt)
-      # Directives now access RubyLLM's Chat.@messages directly via AIA.client
-      # The second parameter is no longer used by checkpoint/restore/clear/review
-      directive_output = @directive_processor.process(follow_up_prompt, nil)
-
-      # Checkpoint-related directives (clear, checkpoint, restore, review) handle
-      # everything internally via the Checkpoint module, which operates directly
-      # on RubyLLM's Chat.@messages - no additional handling needed here.
-      if follow_up_prompt.strip.start_with?("/clear", "/checkpoint", "/restore", "/review", "/context")
-        @ui_presenter.display_info(directive_output) unless directive_output.nil? || directive_output.strip.empty?
-        return nil
-      end
-
-      return nil if directive_output.nil? || directive_output.strip.empty?
-
-      handle_successful_directive(follow_up_prompt, directive_output)
-    end
-
-    def handle_successful_directive(follow_up_prompt, directive_output)
-      puts "\n#{directive_output}\n"
-      "I executed this directive: #{follow_up_prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
-    end
-
-    # Parse multi-model response into per-model responses (ADR-002 revised + ADR-005)
-    # Input:  "from: lms/model #2 (role)\nHabari!\n\nfrom: ollama/model\nKaixo!"
-    # Output: {"lms/model#2" => "Habari!", "ollama/model" => "Kaixo!"}
-    def parse_multi_model_response(combined_response)
-      return {} if combined_response.nil? || combined_response.empty?
-
-      responses = {}
-      current_model = nil
-      current_content = []
-
-      combined_response.each_line do |line|
-        if line =~ /^from:\s+(.+)$/
-          # Save previous model's response
-          if current_model
-            responses[current_model] = current_content.join.strip
-          end
-
-          # Extract internal_id from display name (ADR-005)
-          # Display format: "model_name #N (role)" or "model_name (role)" or "model_name #N" or "model_name"
-          display_name = $1.strip
-
-          # Remove role part: " (role_name)"
-          internal_id = display_name.sub(/\s+\([^)]+\)\s*$/, '')
-
-          # Remove space before instance number: "model #2" -> "model#2"
-          internal_id = internal_id.sub(/\s+#/, '#')
-
-          current_model = internal_id
-          current_content = []
-        elsif current_model
-          current_content << line
-        end
-      end
-
-      # Save last model's response
-      if current_model
-        responses[current_model] = current_content.join.strip
-      end
-
-      responses
     end
   end
 end

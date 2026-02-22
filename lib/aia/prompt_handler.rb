@@ -46,7 +46,8 @@ module AIA
       parsed = if File.exist?(prompt_file_path)
                  PM.parse(prompt_id)
                else
-                 puts "Warning: Invalid prompt ID or file not found: #{prompt_id}"
+                 warn "Warning: Invalid prompt ID or file not found: #{prompt_id}"
+                 logger.warn("Invalid prompt ID or file not found: #{prompt_id}")
                  handle_missing_prompt(prompt_id)
                end
 
@@ -67,7 +68,8 @@ module AIA
       parsed = if File.exist?(role_file_path)
                  PM.parse(role_id)
                else
-                 puts "Warning: Invalid role ID or file not found: #{role_id}"
+                 warn "Warning: Invalid role ID or file not found: #{role_id}"
+                 logger.warn("Invalid role ID or file not found: #{role_id}")
                  handle_missing_role(role_id)
                end
 
@@ -90,7 +92,8 @@ module AIA
       role_parsed = fetch_role(role_id)
       role_parsed.to_s
     rescue => e
-      puts "Warning: Could not load role '#{role_id}' for model: #{e.message}"
+      warn "Warning: Could not load role '#{role_id}' for model: #{e.message}"
+      logger.warn("Could not load role '#{role_id}' for model: #{e.message}")
       nil
     end
 
@@ -280,14 +283,14 @@ module AIA
     def handle_missing_prompt(prompt_id)
       prompt_id = prompt_id.to_s.strip
       if prompt_id.empty?
-        STDERR.puts "Error: Prompt ID cannot be empty"
+        warn "Error: Prompt ID cannot be empty"
         exit 1
       end
 
       if AIA.config.flags.fuzzy
         fuzzy_search_prompt(prompt_id)
       else
-        STDERR.puts "Error: Could not find prompt with ID: #{prompt_id}"
+        warn "Error: Could not find prompt with ID: #{prompt_id}"
         exit 1
       end
     end
@@ -307,14 +310,14 @@ module AIA
     def handle_missing_role(role_id)
       role_id = role_id.to_s.strip
       if role_id.empty? || role_id == "roles/"
-        STDERR.puts "Error: Role ID cannot be empty"
+        warn "Error: Role ID cannot be empty"
         exit 1
       end
 
       if AIA.config.flags.fuzzy
         fuzzy_search_role(role_id)
       else
-        STDERR.puts "Error: Could not find role with ID: #{role_id}"
+        warn "Error: Could not find role with ID: #{role_id}"
         exit 1
       end
     end

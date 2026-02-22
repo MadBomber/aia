@@ -17,7 +17,7 @@ module AIA
       if @speaker
         system(AIA.config.audio.speak_command, @speaker.speak(text).path)
       else
-        puts "Warning: Unable to speak. Speech model not configured properly."
+        warn "Warning: Unable to speak. Speech model not configured properly."
       end
     end
 

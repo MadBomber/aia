@@ -28,7 +28,7 @@ class SkillDirectiveTest < Minitest::Test
     $stdout = @captured_stdout
 
     @stderr_messages = []
-    STDERR.stubs(:puts).with { |msg| @stderr_messages << msg; true }
+    @instance.stubs(:warn).with { |msg| @stderr_messages << msg; true }
   end
 
   def teardown

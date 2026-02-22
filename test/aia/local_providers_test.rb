@@ -88,17 +88,19 @@ class LocalProvidersTest < Minitest::Test
         headers: { 'Content-Type' => 'application/json' }
       )
 
-    # Capture the output to check error message is displayed
-    output = capture_io do
-      adapter = AIA::RubyLLMAdapter.new
-      # Adapter will fail to initialize the model but won't raise
-      assert_instance_of AIA::RubyLLMAdapter, adapter
-    end.first
+    # Capture warn messages since warn doesn't go through $stderr in Ruby 4.0
+    stderr_messages = []
+    AIA::RubyLLMAdapter.any_instance.stubs(:warn).with { |msg| stderr_messages << msg; true }
 
-    assert_match(/Failed to initialize the following models/, output)
-    assert_match(/not a valid LM Studio model/, output)
-    assert_match(/lms\/different-model/, output)
-    assert_match(/lms\/another-model/, output)
+    adapter = AIA::RubyLLMAdapter.new
+    # Adapter will fail to initialize the model but won't raise
+    assert_instance_of AIA::RubyLLMAdapter, adapter
+
+    combined = stderr_messages.join("\n")
+    assert_match(/Failed to initialize the following models/, combined)
+    assert_match(/not a valid LM Studio model/, combined)
+    assert_match(/lms\/different-model/, combined)
+    assert_match(/lms\/another-model/, combined)
   end
 
   def test_lms_model_validation_failure_no_models_loaded
@@ -110,13 +112,15 @@ class LocalProvidersTest < Minitest::Test
         headers: { 'Content-Type' => 'application/json' }
       )
 
-    output = capture_io do
-      adapter = AIA::RubyLLMAdapter.new
-      assert_instance_of AIA::RubyLLMAdapter, adapter
-    end.first
+    stderr_messages = []
+    AIA::RubyLLMAdapter.any_instance.stubs(:warn).with { |msg| stderr_messages << msg; true }
 
-    assert_match(/Failed to initialize the following models/, output)
-    assert_match(/No models are currently loaded in LM Studio/, output)
+    adapter = AIA::RubyLLMAdapter.new
+    assert_instance_of AIA::RubyLLMAdapter, adapter
+
+    combined = stderr_messages.join("\n")
+    assert_match(/Failed to initialize the following models/, combined)
+    assert_match(/No models are currently loaded in LM Studio/, combined)
   end
 
   def test_lms_model_validation_failure_cannot_connect
@@ -124,13 +128,15 @@ class LocalProvidersTest < Minitest::Test
     stub_request(:get, "http://localhost:1234/v1/models")
       .to_return(status: 500)
 
-    output = capture_io do
-      adapter = AIA::RubyLLMAdapter.new
-      assert_instance_of AIA::RubyLLMAdapter, adapter
-    end.first
+    stderr_messages = []
+    AIA::RubyLLMAdapter.any_instance.stubs(:warn).with { |msg| stderr_messages << msg; true }
 
-    assert_match(/Failed to initialize the following models/, output)
-    assert_match(/Cannot connect to LM Studio/, output)
+    adapter = AIA::RubyLLMAdapter.new
+    assert_instance_of AIA::RubyLLMAdapter, adapter
+
+    combined = stderr_messages.join("\n")
+    assert_match(/Failed to initialize the following models/, combined)
+    assert_match(/Cannot connect to LM Studio/, combined)
   end
 
   def test_lms_custom_api_base

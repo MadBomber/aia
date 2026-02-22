@@ -42,6 +42,9 @@ require_relative 'aia/directive_processor'
 require_relative 'aia/history_manager'
 require_relative 'aia/ui_presenter'
 require_relative 'aia/chat_processor_service'
+require_relative 'aia/input_collector'
+require_relative 'aia/prompt_pipeline'
+require_relative 'aia/chat_loop'
 require_relative 'aia/session'
 
 # The AIA module serves as the namespace for the AIA application, which
