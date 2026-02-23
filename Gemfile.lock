@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aia (1.0.0)
+    aia (1.0.1)
       amazing_print
       async
       clipboard
@@ -244,7 +244,7 @@ GEM
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
     thor (1.5.0)
-    tins (1.51.1)
+    tins (1.52.0)
       bigdecimal
       mize (~> 0.6)
       readline
@@ -307,7 +307,7 @@ DEPENDENCIES
 
 CHECKSUMS
   addressable (2.8.8) sha256=7c13b8f9536cf6364c03b9d417c19986019e28f7c00ac8132da4eb0fe393b057
-  aia (1.0.0)
+  aia (1.0.1)
   aigcm (0.3.2) sha256=eda5055a4bc1dd021f860b08134bf122f9df2e283da5be6719d1dde98a23428a
   amazing_print (2.0.0) sha256=2e36aba46ac78d37ed27ca0e2056afe3583183bb5c64f157c246b267355e5d6a
   ansi (1.5.0) sha256=5408253274e33d9d27d4a98c46d2998266fd51cba58a7eb9d08f50e57ed23592
@@ -404,7 +404,7 @@ CHECKSUMS
   term-ansicolor (1.11.3) sha256=8c01ec3abd095eb94dca8aed5a127d36e594239eb525eb306259c9e930534603
   terminal-table (4.0.0) sha256=f504793203f8251b2ea7c7068333053f0beeea26093ec9962e62ea79f94301d2
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
-  tins (1.51.1) sha256=cc17bc37e62bd2dd2e8bc2a706b9cf419dfd4766407b84b341a67db947f8e44a
+  tins (1.52.0) sha256=d1dc69fb108a51a264a2f464fd48f4c32dd5de576c48b75e685b6b9ae29405a4
   tocer (20.1.0) sha256=ed7680a448fbf9be06f142cc104213e082752ff37df81e2f66510c035b69f3c4
   tone (3.1.0) sha256=2e2e77f4f43e77d05ae9160c5b16306502b3efc3da1e418c342051f3f4cb2995
   traces (0.18.2) sha256=80f1649cb4daace1d7174b81f3b3b7427af0b93047759ba349960cb8f315e214
