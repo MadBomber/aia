@@ -68,7 +68,7 @@ Gem::Specification.new do |spec|
   spec.post_install_message = <<~MSG
 
     ╔══════════════════════════════════════════════════════════════╗
-    ║               AIA — AI Assistant v1.0                       ║
+    ║               AIA — AI Assistant v1.0                        ║
     ╚══════════════════════════════════════════════════════════════╝
 
     Get started:  aia --help
