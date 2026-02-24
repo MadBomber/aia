@@ -22,7 +22,6 @@ class AIAIntegrationTest < Minitest::Test
     AIA.stubs(:chat?).returns(false)
     AIA.stubs(:append?).returns(false)
     AIA.stubs(:verbose?).returns(false)
-    AIA.stubs(:terse?).returns(false)
     AIA.stubs(:speak?).returns(false)
     AIA.stubs(:debug?).returns(false)
     
@@ -65,7 +64,7 @@ class AIAIntegrationTest < Minitest::Test
         fuzzy: false,
         debug: false,
         verbose: false,
-        terse: false,
+
         speak: false,
         erb: true,
         shell: true
@@ -93,22 +92,18 @@ class AIAIntegrationTest < Minitest::Test
     # Add client.model structure for utility methods
     mock_model = mock('model')
     mock_model.stubs(:supports_functions?).returns(true)
-    mock_client = mock('client')
-    mock_client.stubs(:model).returns(mock_model)
-    @mock_config.client = mock_client
-    
-    AIA.stubs(:config).returns(@mock_config)
+    mock_robot = mock('robot')
+    mock_robot.stubs(:model).returns(mock_model)
+    mock_robot.stubs(:name).returns('test-robot')
+    AIA.client = mock_robot
 
-    # Mock external dependencies
-    mock_adapter = mock('adapter')
-    mock_adapter.stubs(:chat).returns('AI Response')
-    mock_adapter.stubs(:tools).returns([])
-    AIA::RubyLLMAdapter.stubs(:new).returns(mock_adapter)
+    AIA.stubs(:config).returns(@mock_config)
 
   end
 
   def teardown
     FileUtils.rm_rf(@temp_prompts_dir) if @temp_prompts_dir && Dir.exist?(@temp_prompts_dir)
+    AIA.client = nil
     # Call super to ensure Mocha cleanup runs properly
     super
   end
@@ -277,15 +272,10 @@ class AIAIntegrationTest < Minitest::Test
 
     @mock_config.tools.paths = [tool_file.path]
 
-    # Test tool loading
-    mock_adapter = mock('adapter')
-    mock_adapter.stubs(:chat).returns('Tool response')
-    mock_adapter.stubs(:tools).returns([TestTool])
-    AIA::RubyLLMAdapter.stubs(:new).returns(mock_adapter)
-
-    adapter = AIA::RubyLLMAdapter.new
-    assert_equal 1, adapter.tools.size
-    assert_equal 'TestTool', adapter.tools.first.name
+    # v2: tools are loaded by RobotFactory and stored in config
+    @mock_config.loaded_tools = [TestTool]
+    assert_equal 1, @mock_config.loaded_tools.size
+    assert_equal 'TestTool', @mock_config.loaded_tools.first.name
 
     tool_file.unlink
   end

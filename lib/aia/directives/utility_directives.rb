@@ -12,7 +12,14 @@ module AIA
       width = TTY::Screen.width - indent - 2
       filter = args.first&.downcase
 
-      loaded_tools = AIA.config.loaded_tools || []
+      loaded_tools = Array(AIA.config.loaded_tools)
+
+      # Include MCP tools from the robot (populated after first run)
+      robot = AIA.client
+      if robot&.respond_to?(:mcp_tools)
+        loaded_tools = loaded_tools + Array(robot.mcp_tools)
+      end
+
       if loaded_tools.empty?
         puts "No tools are available"
       else

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'word_wrapper'
-require_relative '../adapter/gem_activator'
 
 # lib/aia/config/validator.rb
 #
@@ -84,7 +83,6 @@ module AIA
       end
 
       def handle_executable_prompt(config)
-        # Auto-detect: no prompt_id, first context_file starts with shebang
         return unless config.prompt_id.nil?
         return unless config.context_files && !config.context_files.empty?
 
@@ -94,7 +92,6 @@ module AIA
         first_line = File.open(candidate, &:readline).strip rescue nil
         return unless first_line&.start_with?('#!')
 
-        # This is an executable prompt — the file content IS the prompt
         config.context_files.shift
         config.executable_prompt_content = File.read(candidate).lines[1..].join
         config.prompt_id = '__EXECUTABLE_PROMPT__'
@@ -106,13 +103,12 @@ module AIA
 
         content = config.stdin_content
 
-        # Strip shebang line if present (e.g., piped from an executable prompt)
         if content.lines.first&.strip&.start_with?('#!')
           content = content.lines[1..].join
         end
 
         config.executable_prompt_content = content
-        config.stdin_content = nil  # prevent double-processing in build_prompt_text
+        config.stdin_content = nil
         config.prompt_id = '__EXECUTABLE_PROMPT__'
       end
 
@@ -183,7 +179,7 @@ module AIA
 
       def handle_mcp_list(config)
         return unless config.mcp_list
-        return if config.list_tools  # defer to handle_list_tools for combined output
+        return if config.list_tools
 
         servers = filter_mcp_servers(config)
 
@@ -292,10 +288,6 @@ module AIA
         end
       end
 
-      # Adjusts any markdown headings in text so they nest under the
-      # given parent heading level. e.g. with parent_level=3 (###),
-      # a "# Foo" becomes "#### Foo" and "## Bar" becomes "##### Bar".
-      # Handles headings with optional leading whitespace.
       def nest_markdown_headings(text, parent_level)
         text.gsub(/^[ \t]*(\#{1,6})\s/) do |match|
           existing = $1
@@ -322,12 +314,10 @@ module AIA
       end
 
       def load_local_tools(config)
-        # Load required libraries (with gem activation and lazy-load triggering)
+        # Load required libraries
         Array(config.require_libs).each do |lib|
           begin
-            Adapter::GemActivator.activate_gem_for_require(lib)
             require lib
-            Adapter::GemActivator.trigger_tool_loading(lib)
           rescue LoadError => e
             warn "Warning: Failed to require '#{lib}': #{e.message}"
             warn "Hint: Make sure the gem is installed: gem install #{lib}"
@@ -350,7 +340,7 @@ module AIA
 
         # Scan ObjectSpace for RubyLLM::Tool subclasses
         ObjectSpace.each_object(Class).select do |klass|
-          next false unless klass < RubyLLM::Tool
+          next false unless defined?(RubyLLM::Tool) && klass < RubyLLM::Tool
 
           begin
             klass.new
@@ -362,7 +352,6 @@ module AIA
       end
 
       def first_sentences(text, count)
-        # Normalize whitespace: collapse newlines and multiple spaces
         normalized = text.gsub(/\s*\n\s*/, ' ').gsub(/\s{2,}/, ' ').strip
         sentences  = normalized.scan(/[^.!?]*[.!?]/)
         result     = sentences.first(count).join.strip
@@ -373,7 +362,6 @@ module AIA
         servers = filter_mcp_servers(config)
         return {} if servers.empty?
 
-        # Suppress MCP logger noise during listing
         quiet_mcp_logger
 
         groups = {}
@@ -464,10 +452,6 @@ module AIA
 
       def configure_prompt_manager(config)
         # PM v1.0.0 uses ERB parameters (<%= param %>) instead of regex-based extraction.
-        # parameter_regex is deprecated and ignored.
-        if config.prompts.parameter_regex
-          warn "Warning: --regex / parameter_regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
-        end
       end
 
       def prepare_pipeline(config)
@@ -494,16 +478,11 @@ module AIA
         exit(1) if and_exit
       end
 
-      # Dump configuration to file
-      #
-      # @param config [AIA::Config] the configuration to dump
-      # @param file [String] the file path to dump to
       def dump_config(config, file)
         ext = File.extname(file).downcase
 
         config_hash = config.to_h
 
-        # Remove runtime keys
         config_hash.delete(:prompt_id)
         config_hash.delete(:dump_file)
 

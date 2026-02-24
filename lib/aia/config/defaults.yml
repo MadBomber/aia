@@ -1,4 +1,4 @@
-# AIA Configuration Schema and Defaults
+# AIA v2 Configuration Schema and Defaults
 #
 # This file is the SINGLE SOURCE OF TRUTH for AIA configuration.
 # All attributes must be declared here to be recognized.
@@ -63,7 +63,6 @@ defaults:
     roles_dir: ~/.prompts/roles
     role: ~
     system_prompt: ~
-    parameter_regex: ~
 
   # ---------------------------------------------------------------------------
   # Output Configuration
@@ -130,7 +129,6 @@ defaults:
     tokens: false
     no_mcp: false
     speak: false
-    terse: false  # DEPRECATED: no longer used
     shell: true
     erb: true
     clear: false
@@ -140,16 +138,6 @@ defaults:
   # Logger Configuration
   # Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
   # Env: AIA_LOGGER__AIA__FILE, AIA_LOGGER__LLM__LEVEL, etc.
-  #
-  # Configures logging for three systems:
-  #   aia: AIA application logging
-  #   llm: RubyLLM gem logging
-  #   mcp: RubyLLM::MCP gem logging
-  #
-  # file: STDOUT, STDERR, or a file path (e.g., ~/.aia/aia.log)
-  #       All three loggers can write to the same file safely.
-  # level: debug, info, warn, error, fatal
-  # flush: true = immediate write (no buffering), false = buffered writes
   # ---------------------------------------------------------------------------
   logger:
     aia:
@@ -175,7 +163,6 @@ defaults:
   # Model Registry Configuration
   # Access: AIA.config.registry.refresh
   # Env: AIA_REGISTRY__REFRESH
-  # Note: last_refresh is derived from models.json file modification time
   # ---------------------------------------------------------------------------
   registry:
     refresh: 7 # days between refreshes (0 = disable periodic refresh)
@@ -189,14 +176,6 @@ defaults:
   # ---------------------------------------------------------------------------
   # MCP Servers Configuration
   # Access: AIA.config.mcp_servers (array of server configs)
-  #
-  # Example:
-  #   mcp_servers:
-  #     - name: my-server
-  #       command: /path/to/server
-  #       args: []
-  #       env: {}
-  #       timeout: 8000
   # ---------------------------------------------------------------------------
   mcp_servers: []
   mcp_use: ~
@@ -206,13 +185,19 @@ defaults:
   # Paths Configuration
   # Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
   # Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
-  #
-  # Note: MywayConfig uses XDG Base Directory Specification by default.
-  # User config is loaded from ~/.config/aia/aia.yml
   # ---------------------------------------------------------------------------
   paths:
     aia_dir: ~/.config/aia
     config_file: ~/.config/aia/aia.yml
+
+  # ---------------------------------------------------------------------------
+  # Rules Configuration (NEW in v2)
+  # Access: AIA.config.rules.dir, AIA.config.rules.enabled
+  # Env: AIA_RULES__DIR, AIA_RULES__ENABLED
+  # ---------------------------------------------------------------------------
+  rules:
+    dir: ~/.config/aia/rules
+    enabled: true
 
   # ---------------------------------------------------------------------------
   # Context Files (set at runtime)

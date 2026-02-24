@@ -200,9 +200,23 @@ module AIA
 
     private
 
+    # In v2, AIA.client is a RobotLab::Robot which wraps a RubyLLM::Chat.
+    # We expose a single chat keyed by the robot's name.
     def get_chats
-      return nil unless AIA.client.respond_to?(:chats)
-      AIA.client.chats
+      robot = AIA.client
+      return nil unless robot
+
+      # Robot has a @chat instance variable (RubyLLM::Chat)
+      chat = if robot.respond_to?(:chat, true)
+               robot.send(:chat)
+             elsif robot.instance_variable_defined?(:@chat)
+               robot.instance_variable_get(:@chat)
+             end
+
+      return nil unless chat
+
+      name = robot.respond_to?(:name) ? robot.name : "default"
+      { name => chat }
     end
 
     def deep_copy_message(msg)

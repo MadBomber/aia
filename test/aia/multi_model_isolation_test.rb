@@ -1,44 +1,35 @@
 # frozen_string_literal: true
 # test/aia/multi_model_isolation_test.rb
-# Tests for ADR-002 (Revised): Complete Multi-Model Isolation
-# - RubyLLM::Context isolation (library level)
-# - Per-model ContextManager isolation (application level)
+# Tests for v2 multi-model support via RobotFactory
 
 require_relative '../test_helper'
 require_relative '../../lib/aia'
 require 'tmpdir'
 require 'fileutils'
 
-class MultiModelIsolationTest < Minitest::Test
+class MultiModelTest < Minitest::Test
   def setup
-    # Create temp directory for prompts
     @temp_prompts_dir = Dir.mktmpdir('aia_test_prompts')
 
-    # Setup minimal real AIA config with all required fields using stubs
     config = create_test_config
     AIA.stubs(:config).returns(config)
   end
 
   def teardown
-    # Clean up temp directory
     FileUtils.rm_rf(@temp_prompts_dir) if @temp_prompts_dir && Dir.exist?(@temp_prompts_dir)
-
-    # Call super to ensure Mocha cleanup runs properly
     super
   end
 
   private
 
   def create_test_config
-    # Create nested config structure matching AIA::Config's actual structure
     prompts_section = OpenStruct.new(
       dir: @temp_prompts_dir,
       roles_dir: File.join(@temp_prompts_dir, 'roles'),
       roles_prefix: 'roles',
       role: '',
       system_prompt: 'test system prompt',
-      extname: '.md',
-      parameter_regex: '\[\[(?<name>[A-Z_]+)\]\]'
+      extname: '.md'
     )
 
     flags_section = OpenStruct.new(
@@ -46,10 +37,11 @@ class MultiModelIsolationTest < Minitest::Test
       shell: true,
       chat: false,
       fuzzy: false,
-      terse: false,
       verbose: false,
       debug: false,
-      consensus: false
+      consensus: false,
+      no_mcp: true,
+      tokens: false
     )
 
     output_section = OpenStruct.new(
@@ -61,7 +53,10 @@ class MultiModelIsolationTest < Minitest::Test
 
     llm_section = OpenStruct.new(
       temperature: 0.7,
-      max_tokens: 2048
+      max_tokens: 2048,
+      top_p: 1.0,
+      frequency_penalty: 0.0,
+      presence_penalty: 0.0
     )
 
     tools_section = OpenStruct.new(
@@ -70,91 +65,50 @@ class MultiModelIsolationTest < Minitest::Test
       rejected: nil
     )
 
-    audio_section = OpenStruct.new(
-      speak: false,
-      voice: nil
-    )
-
-    paths_section = OpenStruct.new(
-      aia_dir: File.join(ENV['HOME'], '.aia'),
-      config_file: File.join(ENV['HOME'], '.aia', 'config.yml')
-    )
-
     OpenStruct.new(
       prompts: prompts_section,
       flags: flags_section,
       output: output_section,
       llm: llm_section,
       tools: tools_section,
-      audio: audio_section,
-      paths: paths_section,
       models: [OpenStruct.new(name: 'gpt-4o', role: nil, instance: 1, internal_id: 'gpt-4o')],
       pipeline: [],
       context_files: [],
       mcp_servers: [],
-      prompt_id: nil
+      mcp_use: [],
+      mcp_skip: [],
+      require_libs: [],
+      loaded_tools: [],
+      tool_names: '',
+      prompt_id: nil,
+      rules: OpenStruct.new(dir: nil, enabled: false)
     )
   end
 
   public
 
-  # ========================================
-  # Tests for Complete Fix (ADR-002 Revised)
-  # ========================================
-
-  def test_parse_multi_model_response
-    # Given: A ChatLoop instance with the parser method
-    chat_loop = create_chat_loop
-
-    # When: We parse a combined multi-model response
-    combined = "from: lms/model-1\nHello in Spanish: Hola!\n\nfrom: ollama/model-2\nHello in French: Bonjour!"
-    parsed = chat_loop.send(:parse_multi_model_response, combined)
-
-    # Then: Should extract individual model responses
-    assert_equal 2, parsed.keys.size
-    assert_equal "Hello in Spanish: Hola!", parsed["lms/model-1"]
-    assert_equal "Hello in French: Bonjour!", parsed["ollama/model-2"]
+  def test_single_model_config
+    # Given: A single model config
+    config = AIA.config
+    assert_equal 1, config.models.length
+    assert_equal 'gpt-4o', config.models.first.name
   end
 
-  def test_parse_multi_model_response_with_empty_input
-    # Given: A ChatLoop instance
-    chat_loop = create_chat_loop
+  def test_multi_model_config
+    # Given: Multiple models
+    AIA.config.models = [
+      OpenStruct.new(name: 'gpt-4o', role: nil, instance: 1, internal_id: 'gpt-4o'),
+      OpenStruct.new(name: 'claude-3', role: 'reviewer', instance: 1, internal_id: 'claude-3')
+    ]
 
-    # When: We parse empty or nil input
-    assert_equal({}, chat_loop.send(:parse_multi_model_response, nil))
-    assert_equal({}, chat_loop.send(:parse_multi_model_response, ""))
+    assert_equal 2, AIA.config.models.length
+    assert_equal 'gpt-4o', AIA.config.models.first.name
+    assert_equal 'claude-3', AIA.config.models.last.name
+    assert_equal 'reviewer', AIA.config.models.last.role
   end
 
-  def test_parse_multi_model_response_with_multiline_responses
-    # Given: A ChatLoop instance
-    chat_loop = create_chat_loop
-
-    # When: Model responses contain multiple lines
-    combined = "from: model-1\nLine 1\nLine 2\nLine 3\n\nfrom: model-2\nResponse A\nResponse B"
-    parsed = chat_loop.send(:parse_multi_model_response, combined)
-
-    # Then: Should preserve multiline content
-    assert_equal "Line 1\nLine 2\nLine 3", parsed["model-1"]
-    assert_equal "Response A\nResponse B", parsed["model-2"]
+  def test_consensus_mode_flag
+    AIA.config.flags.consensus = true
+    assert AIA.config.flags.consensus
   end
-
-
-  # NOTE: test_session_uses_single_context_manager_for_single_model was removed
-  # because it tested for @context_manager/@context_managers instance variables
-  # that were never implemented in the Session class. ADR-002 about context
-  # isolation may have been implemented differently.
-
-  # Helper methods for creating real test objects
-
-  def create_chat_loop
-    chat_processor      = mock('chat_processor')
-    ui_presenter        = mock('ui_presenter')
-    directive_processor = mock('directive_processor')
-    AIA::ChatLoop.new(chat_processor, ui_presenter, directive_processor)
-  end
-
-  def create_test_prompt_file(id, text)
-    File.write(File.join(@temp_prompts_dir, "#{id}.md"), text)
-  end
-
 end

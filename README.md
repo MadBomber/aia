@@ -1347,7 +1347,7 @@ Create executable prompts:
 
 **weather_report** (make executable with `chmod +x`):
 ```bash
-#!/usr/bin/env aia run --no-output
+#!/usr/bin/env aia --no-output
 # Get current storm activity for the east and south coast of the US
 
 Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.
@@ -1371,7 +1371,7 @@ Usage:
 #       You could also add a system prompt to preface your intended prompt
 ```
 
-Usage: `echo "What is the meaning of life?" | aia run`
+Usage: `echo "What is the meaning of life?" | aia`
 
 #### The Ad Hoc One-shot Prompt
 ```bash
@@ -1389,7 +1389,7 @@ export AIA_MODEL=gpt-4o-mini
 export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 
 alias chat='aia --chat --terse'
-ask() { echo "$1" | aia run --no-output; }
+ask() { echo "$1" | aia --no-output; }
 ```
 
 The `chat` alias and the `ask` function (shown above in HASH) are two powerful tools for interacting with the AI assistant. The `chat` alias allows you to engage in an interactive conversation with the AI assistant, while the `ask` function allows you to ask a question and receive a response. Later in this document the `run` prompt ID is discussed.  Besides using the run prompt ID here its also used in making executable prompt files.

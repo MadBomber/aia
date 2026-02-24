@@ -35,8 +35,10 @@ module AIA
       indent = '   '
 
       # Convert RubyLLM::Message to string if necessary
-      response_text = if response.is_a?(RubyLLM::Message)
+      response_text = if defined?(RubyLLM::Message) && response.is_a?(RubyLLM::Message)
                         response.content.to_s
+                      elsif response.respond_to?(:reply)
+                        response.reply.to_s
                       elsif response.respond_to?(:to_s)
                         response.to_s
                       else

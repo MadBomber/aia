@@ -381,16 +381,16 @@ The `run` prompt is a configuration-only prompt that serves as a foundation for 
 **Usage Examples:**
 ```bash
 # Direct question via pipe
-echo "What is the meaning of life?" | aia run
+echo "What is the meaning of life?" | aia
 
 # File analysis
-aia run my_code.py
+aia my_code.py
 
 # Multiple files
-aia run *.txt
+aia *.txt
 
 # With custom configuration
-echo "Explain quantum computing" | aia run --model gpt-4 --temperature 1.0
+echo "Explain quantum computing" | aia --model gpt-4 --temperature 1.0
 ```
 
 ### The Ad Hoc One-Shot Prompt
@@ -425,7 +425,7 @@ export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 alias chat='aia --chat --terse'
 
 # Quick question function
-ask() { echo "$1" | aia run --no-output; }
+ask() { echo "$1" | aia --no-output; }
 ```
 
 **Usage Examples:**

@@ -163,11 +163,13 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     mock_object = mock('object')
     mock_object.stubs(:is_a?).with(RubyLLM::Message).returns(false)
+    mock_object.stubs(:respond_to?).with(:reply).returns(false)
+    mock_object.stubs(:respond_to?).with(:content).returns(false)
     mock_object.stubs(:respond_to?).with(:to_s).returns(true)
     mock_object.stubs(:to_s).returns("Object as string")
-    
+
     @presenter.format_chat_response(mock_object, output_buffer)
-    
+
     assert_equal "   Object as string\n", output_buffer.string
   end
 

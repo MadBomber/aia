@@ -49,7 +49,13 @@ module AIA
         if models.size == 1
           puts "Current Model:"
           puts "=============="
-          puts AIA.client.model.to_h.pretty_inspect
+          model_name = models.first.respond_to?(:name) ? models.first.name : models.first.to_s
+          begin
+            model_info = RubyLLM::Models.find(model_name)
+            puts model_info.to_h.pretty_inspect if model_info
+          rescue StandardError
+            puts "  #{model_name}"
+          end
         else
           puts "Multi-Model Configuration:"
           puts "=========================="
@@ -88,7 +94,7 @@ module AIA
       else
         model_names = args.join(' ').split(',').map(&:strip).reject(&:empty?)
         AIA.config.models = AIA::Config::TO_MODEL_SPECS.call(model_names)
-        AIA.client = AIA.client.class.new
+        AIA.client = RobotFactory.rebuild(AIA.config)
       end
 
       ''

@@ -72,12 +72,14 @@ module AIA
     end
 
     def extract_content(string)
-      if string.is_a?(RubyLLM::Message)
+      if defined?(RubyLLM::Message) && string.is_a?(RubyLLM::Message)
         begin
           string.content
         rescue StandardError
           string.to_s
         end
+      elsif string.respond_to?(:content)
+        string.content.to_s
       else
         string.to_s
       end

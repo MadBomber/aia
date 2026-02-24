@@ -14,24 +14,25 @@ module AIA
       end
 
       def mcp_servers?
-        AIA.config&.mcp_servers && !AIA.config.mcp_servers.empty?
+        names = effective_mcp_server_names
+        !names.empty?
       end
 
-      # Returns only successfully connected MCP server names
+      # Returns MCP server names the robot is configured to use.
+      # After first run, returns actually connected server names.
       def mcp_server_names
-        # Use connected_mcp_servers if available (populated during MCP setup)
-        connected = AIA.config&.connected_mcp_servers
-        return connected if connected && !connected.empty?
+        # After first run, robot has actual connection info
+        robot = AIA.client
+        if robot&.respond_to?(:mcp_clients) && !robot.mcp_clients.empty?
+          return robot.mcp_clients.keys
+        end
 
-        # Fallback to configured servers if connection status not yet known
-        return [] unless mcp_servers?
-        AIA.config.mcp_servers.map { |s| s[:name] || s["name"] }.compact
+        effective_mcp_server_names
       end
 
-      # Returns true if there are any connected MCP servers
+      # Returns true if there are MCP servers configured for the robot
       def connected_mcp_servers?
-        connected = AIA.config&.connected_mcp_servers
-        connected && !connected.empty?
+        !mcp_server_names.empty?
       end
 
       # Returns list of failed MCP servers with their errors
@@ -39,8 +40,51 @@ module AIA
         AIA.config&.failed_mcp_servers || []
       end
 
+      # Returns server names after applying --mcp-use / --mcp-skip / --no-mcp filters
+      def effective_mcp_server_names
+        return [] if AIA.config&.flags&.no_mcp
+
+        servers = AIA.config&.mcp_servers || []
+        return [] if servers.empty?
+
+        use_list  = Array(AIA.config.mcp_use)
+        skip_list = Array(AIA.config.mcp_skip)
+
+        if !use_list.empty?
+          servers = servers.select { |s| use_list.include?(server_name(s)) }
+        elsif !skip_list.empty?
+          servers = servers.reject { |s| skip_list.include?(server_name(s)) }
+        end
+
+        servers.map { |s| server_name(s) }.compact
+      end
+
+      # Extract name from a server config (Hash with string or symbol keys, or object)
+      def server_name(s)
+        if s.is_a?(Hash)
+          s[:name] || s['name']
+        elsif s.respond_to?(:name)
+          s.name
+        else
+          s.to_s
+        end
+      end
+
       def supports_tools?
-        AIA.client&.model&.supports_functions? || false
+        robot = AIA.client
+        return false unless robot
+
+        # In v2, AIA.client is a RobotLab::Robot
+        if robot.respond_to?(:model)
+          model = robot.model
+          if model.respond_to?(:supports_functions?)
+            model.supports_functions?
+          else
+            false
+          end
+        else
+          false
+        end
       end
 
       # Returns the last refresh date from models.json modification time
@@ -80,13 +124,11 @@ module AIA
           'unknown-model'
         end
 
-        # Build MCP line based on connection status
-        mcp_line = if !mcp_servers?
-          ''  # No MCP servers configured
-        elsif connected_mcp_servers?
+        # Build MCP line showing configured servers
+        mcp_line = if mcp_servers?
           "MCP: #{mcp_server_names.join(', ')}"
         else
-          "MCP: (none connected)"
+          "MCP: (none configured)"
         end
 
         puts <<-ROBOT
