@@ -102,7 +102,10 @@ module AIA
     def show_ollama_models(api_base, args)
       begin
         uri = URI("#{api_base}/api/tags")
-        response = Net::HTTP.get_response(uri)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.open_timeout = 5
+        http.read_timeout = 5
+        response = http.request(Net::HTTP::Get.new(uri))
 
         unless response.is_a?(Net::HTTPSuccess)
           puts "❌ Cannot connect to Ollama at #{api_base}"
@@ -145,7 +148,10 @@ module AIA
     def show_lms_models(api_base, args)
       begin
         uri = URI("#{api_base.gsub(%r{/v1/?$}, '')}/v1/models")
-        response = Net::HTTP.get_response(uri)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.open_timeout = 5
+        http.read_timeout = 5
+        response = http.request(Net::HTTP::Get.new(uri))
 
         unless response.is_a?(Net::HTTPSuccess)
           puts "❌ Cannot connect to LM Studio at #{api_base}"

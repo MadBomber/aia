@@ -13,9 +13,9 @@ module AIA
     # @return [RobotLab::Network] a consensus network with verifiers + reconciler
     def self.build(config)
       model = config.models.first
-      run_config = RobotFactory.send(:build_run_config, config)
-      tools = RobotFactory.send(:filtered_tools, config)
-      mcp = RobotFactory.send(:mcp_server_configs, config)
+      run_config = RobotFactory.build_run_config(config)
+      tools = RobotFactory.filtered_tools(config)
+      mcp = RobotFactory.mcp_server_configs(config)
 
       RobotLab.create_network(name: "aia-verification") do
         worker_a = RobotLab.build(

@@ -2,75 +2,102 @@
 
 # lib/aia/trakflow_bridge.rb
 #
-# Bridge between AIA and TrakFlow's MCP interface.
-# TrakFlow is a distributed task tracking system for AI agents.
-# It manages plans, workflows, tasks, and dependencies.
+# Bridge between AIA and TrakFlow task tracking.
+# Uses the trak_flow gem directly as a Ruby library —
+# no MCP server or LLM intermediation needed.
+
+require "trak_flow"
 
 module AIA
   class TrakFlowBridge
-    def initialize(robot)
-      @robot = robot
+    def initialize
+      @db = connect_database
     end
 
-    # Check if TrakFlow MCP server is available.
+    # Whether a TrakFlow project is initialized and the database is accessible.
     #
     # @return [Boolean]
     def available?
-      return false unless @robot
-
-      if @robot.respond_to?(:mcp_servers)
-        Array(@robot.mcp_servers).any? { |s| server_name(s) == "trak_flow" }
-      elsif @robot.respond_to?(:mcp_tools)
-        Array(@robot.mcp_tools).any? { |t| t_name = t.respond_to?(:name) ? t.name : t.to_s; t_name.include?("trak_flow") }
-      else
-        false
-      end
-    rescue StandardError
-      false
+      !@db.nil?
     end
 
     # Create a TrakFlow plan from a pipeline of prompt IDs.
+    # Each step blocks the next, enforcing sequential execution.
     #
     # @param pipeline [Array<String>] prompt IDs in pipeline order
-    # @return [String, nil] plan creation result
+    # @return [String, nil] summary of created plan
     def create_plan_from_pipeline(pipeline)
       return nil unless available?
 
-      steps = pipeline.map.with_index { |p, i| "Step #{i + 1}: #{p}" }.join(', ')
-      plan_name = "Pipeline: #{pipeline.join(' → ')}"
+      plan_title = "Pipeline: #{pipeline.join(' → ')}"
+      plan = TrakFlow::Models::Task.new(title: plan_title, plan: true, type: "task")
+      plan = @db.create_task(plan)
 
-      run_trakflow_command(
-        "Create a TrakFlow plan named '#{plan_name}' with these sequential steps: #{steps}. " \
-        "Each step should block the next one."
-      )
+      prev_step = nil
+      pipeline.each_with_index do |prompt_id, i|
+        step = @db.create_child_task(plan.id, {
+          title: "Step #{i + 1}: #{prompt_id}",
+          type:  "task"
+        })
+
+        if prev_step
+          @db.add_dependency(TrakFlow::Models::Dependency.new(
+            source_id: prev_step.id,
+            target_id: step.id,
+            type:      "blocks"
+          ))
+        end
+
+        prev_step = step
+      end
+
+      "Plan '#{plan_title}' created with #{pipeline.size} steps."
+    rescue StandardError => e
+      warn "Warning: TrakFlow plan creation failed: #{e.message}"
+      nil
     end
 
     # Update a task's status in TrakFlow.
     #
-    # @param step_name [String] task/step name
+    # @param step_name [String] task title to find
     # @param status [Symbol] :started, :completed, or :failed
-    # @param reason [String, nil] reason for failure (when status is :failed)
+    # @param reason [String, nil] reason for failure
     def update_step_status(step_name, status, reason: nil)
       return unless available?
 
+      task = find_task_by_title(step_name)
+      return unless task
+
       case status
       when :started
-        run_trakflow_command("Start TrakFlow task '#{step_name}'")
+        task.status = "in_progress"
+        @db.update_task(task)
       when :completed
-        run_trakflow_command("Close TrakFlow task '#{step_name}'")
+        task.close!(reason: reason || "Completed")
+        @db.update_task(task)
       when :failed
-        msg = "Block TrakFlow task '#{step_name}'"
-        msg += " with reason: #{reason}" if reason
-        run_trakflow_command(msg)
+        task.status = "blocked"
+        task.append_trace("blocked", reason) if reason
+        @db.update_task(task)
       end
+    rescue StandardError => e
+      warn "Warning: TrakFlow status update failed: #{e.message}"
     end
 
-    # Check for ready tasks (tasks with no open blockers).
+    # List ready tasks (tasks with no open blockers).
     #
-    # @return [String, nil] description of ready tasks
+    # @return [String, nil] formatted list of ready tasks
     def check_ready_tasks
       return nil unless available?
-      run_trakflow_command("List all ready TrakFlow tasks (tasks with no open blockers)")
+
+      tasks = @db.ready_tasks
+      return nil if tasks.empty?
+
+      lines = tasks.map { |t| "  - [#{t.id}] #{t.title} (#{t.status})" }
+      "Ready tasks (#{tasks.size}):\n#{lines.join("\n")}"
+    rescue StandardError => e
+      warn "Warning: TrakFlow ready tasks query failed: #{e.message}"
+      nil
     end
 
     # Get a summary of the current TrakFlow project state.
@@ -78,53 +105,67 @@ module AIA
     # @return [String, nil] project summary
     def project_summary
       return nil unless available?
-      run_trakflow_command("Show TrakFlow project summary including task counts and status")
+
+      all = @db.list_tasks({})
+      by_status = all.group_by(&:status)
+
+      lines = ["TrakFlow Project Summary (#{all.size} tasks):"]
+      by_status.sort.each do |status, tasks|
+        lines << "  #{status}: #{tasks.size}"
+      end
+
+      ready = @db.ready_tasks
+      lines << "  ready (unblocked): #{ready.size}" unless ready.empty?
+
+      lines.join("\n")
+    rescue StandardError => e
+      warn "Warning: TrakFlow summary failed: #{e.message}"
+      nil
     end
 
     # Create a task in TrakFlow.
     #
     # @param title [String] task title
     # @param description [String, nil] task description
-    # @param labels [Array<String>] labels in dimension:value format
-    # @return [String, nil] task creation result
+    # @param labels [Array<String>] labels to attach
+    # @return [String, nil] confirmation message
     def create_task(title, description: nil, labels: [])
       return nil unless available?
 
-      cmd = "Create a TrakFlow task titled '#{title}'"
-      cmd += " with description: #{description}" if description
-      cmd += " with labels: #{labels.join(', ')}" if labels.any?
+      task = TrakFlow::Models::Task.new(
+        title:       title,
+        description: description,
+        type:        "task"
+      )
+      task = @db.create_task(task)
 
-      run_trakflow_command(cmd)
+      labels.each do |label_name|
+        @db.add_label(TrakFlow::Models::Label.new(task_id: task.id, name: label_name))
+      end
+
+      "Task created: [#{task.id}] #{title}"
+    rescue StandardError => e
+      warn "Warning: TrakFlow task creation failed: #{e.message}"
+      nil
     end
 
     private
 
-    def run_trakflow_command(prompt)
-      result = @robot.run(prompt, mcp: :inherit, tools: :none)
-      extract_content(result)
-    rescue StandardError => e
-      warn "Warning: TrakFlow command failed: #{e.message}"
+    # Connect to the TrakFlow database if a project is initialized.
+    def connect_database
+      return nil unless TrakFlow.initialized?
+
+      db = TrakFlow::Storage::Database.new(TrakFlow.database_path)
+      db.connect
+      db
+    rescue StandardError
       nil
     end
 
-    def extract_content(result)
-      if result.respond_to?(:reply)
-        result.reply
-      elsif result.respond_to?(:content)
-        result.content
-      else
-        result.to_s
-      end
-    end
-
-    def server_name(server)
-      if server.respond_to?(:name)
-        server.name
-      elsif server.is_a?(Hash)
-        server[:name] || server["name"]
-      else
-        server.to_s
-      end
+    # Find a task by its title (partial match).
+    def find_task_by_title(title)
+      tasks = @db.list_tasks(title: title)
+      tasks.first
     end
   end
 end

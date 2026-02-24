@@ -18,7 +18,12 @@ module AIA
       def build(config = AIA.config)
         @namer = RobotNamer.new
         configure_robot_lab(config)
-        load_tools(config)
+        if @tool_cache
+          config.loaded_tools = @tool_cache
+          config.tool_names = @tool_cache.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
+        else
+          load_tools(config)
+        end
 
         if config.pipeline.length > 1
           build_pipeline_network(config)
@@ -29,15 +34,13 @@ module AIA
         end
       rescue RubyLLM::ModelNotFoundError => e
         model_names = config.models.map(&:name).join(', ')
-        $stderr.puts "ERROR: #{e.message}"
-        $stderr.puts "Requested model(s): #{model_names}"
-        $stderr.puts "Run 'aia --available-models' to see available models."
-        $stdout.puts "ERROR: #{e.message}"
-        exit 1
+        raise AIA::ConfigurationError,
+              "#{e.message}\nRequested model(s): #{model_names}\nRun 'aia --available-models' to see available models."
       end
 
       # Rebuild robot(s) after config changes (e.g., /model, /config directives).
       # Supports conversation history transfer modes.
+      # Reuses cached tools from the initial build (I4/I5).
       #
       # @param config [AIA::Config] the AIA configuration
       # @param history_mode [Symbol] :clean, :replay, or :summarize
@@ -54,6 +57,12 @@ module AIA
         end
 
         new_robot
+      end
+
+      # Clear the cached tool discovery results.
+      # Call when tool paths change via /config directive.
+      def clear_tool_cache!
+        @tool_cache = nil
       end
 
       # Build a concurrent MCP network where independent server groups
@@ -76,10 +85,10 @@ module AIA
               model:         model_spec.name,
               system_prompt: system_prompt,
               local_tools:   tools,
-              mcp_servers:   group.map { |s| RobotFactory.send(:normalize_mcp_config, s) },
+              mcp_servers:   group.map { |s| RobotFactory.normalize_mcp_config( s) },
               config:        run_config
             }
-            build_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+            build_opts[:provider] = RobotFactory.resolve_provider( model_spec) if model_spec.provider
             robot = RobotLab.build(**build_opts)
             task :"mcp_worker_#{i}", robot, depends_on: :none
           end
@@ -92,7 +101,7 @@ module AIA
                            "Preserve all relevant information. Resolve contradictions.",
             config:        run_config
           }
-          synth_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+          synth_opts[:provider] = RobotFactory.resolve_provider( model_spec) if model_spec.provider
           synthesizer = RobotLab.build(**synth_opts)
           task :synthesize, synthesizer,
                depends_on: server_groups.each_index.map { |i| :"mcp_worker_#{i}" }
@@ -119,9 +128,125 @@ module AIA
           on_content:    build_streaming_callback(config),
           config:        build_run_config(config)
         }
-        build_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+        build_opts[:provider] = resolve_provider(model_spec) if model_spec.provider
 
         RobotLab.build(**build_opts)
+      end
+
+      # --- Public helpers used by ExpertRouter, VerificationNetwork, etc. ---
+
+      # Resolve system prompt from config (including role)
+      def resolve_system_prompt(config, model_spec = nil)
+        system_prompt = config.prompts.system_prompt
+
+        role_id = model_spec&.role || config.prompts.role
+        if role_id && !role_id.empty?
+          role_content = load_role_content(config, role_id)
+          if role_content
+            system_prompt = [system_prompt, role_content].compact.join("\n\n")
+          end
+        end
+
+        system_prompt
+      end
+
+      # Filter tools based on allowed/rejected lists
+      def filtered_tools(config)
+        tools = config.loaded_tools || []
+        allowed = config.tools&.allowed
+        rejected = config.tools&.rejected
+
+        if allowed && !allowed.empty?
+          allowed_list = Array(allowed).map(&:strip).map(&:downcase)
+          tools = tools.select do |t|
+            name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
+            allowed_list.any? { |a| name.include?(a) }
+          end
+        end
+
+        if rejected && !rejected.empty?
+          rejected_list = Array(rejected).map(&:strip).map(&:downcase)
+          tools = tools.reject do |t|
+            name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
+            rejected_list.any? { |r| name.include?(r) }
+          end
+        end
+
+        seen = {}
+        tools.select do |t|
+          name = t.respond_to?(:name) ? t.name : t.class.name
+          if seen[name]
+            false
+          else
+            seen[name] = true
+            true
+          end
+        end
+      end
+
+      # Build RunConfig from AIA configuration.
+      def build_run_config(config)
+        params = {
+          temperature: config.llm.temperature,
+          top_p:       config.llm.top_p,
+          max_tokens:  config.llm.max_tokens
+        }
+
+        fp = config.llm.frequency_penalty
+        params[:frequency_penalty] = fp if fp && fp != 0.0
+
+        pp = config.llm.presence_penalty
+        params[:presence_penalty] = pp if pp && pp != 0.0
+
+        RobotLab::RunConfig.new(**params)
+      end
+
+      # Build MCP server configs for robot_lab from AIA config.
+      def mcp_server_configs(config)
+        return [] if config.flags.no_mcp
+        servers = config.mcp_servers || []
+        return [] if servers.empty?
+
+        use_list  = Array(config.mcp_use)
+        skip_list = Array(config.mcp_skip)
+
+        if !use_list.empty?
+          servers = servers.select { |s| Utility.server_name(s) }
+                          .select { |s| use_list.include?(Utility.server_name(s)) }
+        elsif !skip_list.empty?
+          servers = servers.reject { |s| skip_list.include?(Utility.server_name(s)) }
+        end
+
+        servers.map { |s| normalize_mcp_config(s) }
+      end
+
+      # Normalize MCP server config to robot_lab's nested transport format.
+      # McpParser now outputs this format natively; this method provides
+      # backward compatibility for any configs that still use flat format.
+      def normalize_mcp_config(server)
+        server = server.is_a?(Hash) ? server.transform_keys(&:to_sym) : server.to_h.transform_keys(&:to_sym)
+
+        # Already in robot_lab format — pass through
+        return server if server[:transport]
+
+        # Legacy flat format: wrap command/args/env into transport
+        name = server[:name]
+        transport = { type: server[:type] || 'stdio' }
+        transport[:command] = server[:command] if server[:command]
+        transport[:args]    = Array(server[:args]) if server[:args]
+        transport[:env]     = server[:env] if server[:env]
+
+        result = { name: name, transport: transport }
+        result[:timeout] = server[:timeout] if server[:timeout]
+        result
+      end
+
+      # Map AIA provider aliases to RubyLLM provider slugs.
+      def resolve_provider(model_spec)
+        case model_spec.provider
+        when 'lms' then 'openai'
+        else model_spec.provider
+        end
       end
 
       private
@@ -166,16 +291,8 @@ module AIA
         end
       end
 
-      # Map AIA provider aliases to RubyLLM provider slugs for chat creation.
-      # 'lms' maps to 'openai' since LM Studio is OpenAI-compatible.
-      def resolve_provider(model_spec)
-        case model_spec.provider
-        when 'lms' then 'openai'
-        else model_spec.provider
-        end
-      end
-
-      # Load tools from require_libs and tool paths
+      # Load tools from require_libs and tool paths, then cache the result.
+      # Subsequent calls to build() skip this entirely if @tool_cache exists.
       def load_tools(config)
         # Load required libraries (may be outside the bundle)
         Array(config.require_libs).each do |lib|
@@ -207,8 +324,9 @@ module AIA
         # (e.g., shared_tools provides .load_all_tools for this purpose)
         eager_load_gem_tools
 
-        # Discover loaded tools via ObjectSpace
+        # Discover loaded tools via ObjectSpace and cache the result
         tools = discover_tools
+        @tool_cache = tools
         config.loaded_tools = tools
         config.tool_names = tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
       end
@@ -258,109 +376,6 @@ module AIA
         end
       end
 
-      # Filter tools based on allowed/rejected lists
-      def filtered_tools(config)
-        tools = config.loaded_tools || []
-        allowed = config.tools&.allowed
-        rejected = config.tools&.rejected
-
-        if allowed && !allowed.empty?
-          allowed_list = Array(allowed).map(&:strip).map(&:downcase)
-          tools = tools.select do |t|
-            name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
-            allowed_list.any? { |a| name.include?(a) }
-          end
-        end
-
-        if rejected && !rejected.empty?
-          rejected_list = Array(rejected).map(&:strip).map(&:downcase)
-          tools = tools.reject do |t|
-            name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
-            rejected_list.any? { |r| name.include?(r) }
-          end
-        end
-
-        # Deduplicate by name
-        seen = {}
-        tools.select do |t|
-          name = t.respond_to?(:name) ? t.name : t.class.name
-          if seen[name]
-            false
-          else
-            seen[name] = true
-            true
-          end
-        end
-      end
-
-      # Build MCP server configs for robot_lab from AIA config.
-      # Converts AIA's flat format (name, command, args, env, timeout)
-      # to robot_lab's nested transport format:
-      #   { name: "server", transport: { type: "stdio", command: "cmd", args: [...] } }
-      def mcp_server_configs(config)
-        return [] if config.flags.no_mcp
-        servers = config.mcp_servers || []
-        return [] if servers.empty?
-
-        # Apply mcp_use/mcp_skip filters
-        use_list  = Array(config.mcp_use)
-        skip_list = Array(config.mcp_skip)
-
-        if !use_list.empty?
-          servers = servers.select { |s| server_config_name(s) }
-                          .select { |s| use_list.include?(server_config_name(s)) }
-        elsif !skip_list.empty?
-          servers = servers.reject { |s| skip_list.include?(server_config_name(s)) }
-        end
-
-        # Convert to robot_lab's expected format
-        servers.map { |s| normalize_mcp_config(s) }
-      end
-
-      # Extract server name from a config entry (handles string/symbol keys and objects)
-      def server_config_name(s)
-        if s.is_a?(Hash)
-          s[:name] || s['name']
-        elsif s.respond_to?(:name)
-          s.name
-        end
-      end
-
-      # Convert AIA's flat MCP config to robot_lab's nested transport format
-      def normalize_mcp_config(server)
-        server = server.is_a?(Hash) ? server.transform_keys(&:to_sym) : server.to_h.transform_keys(&:to_sym)
-
-        # Already in robot_lab format (has transport key)
-        return server if server[:transport]
-
-        # Convert flat format to nested transport
-        name = server[:name]
-        transport = { type: 'stdio' }
-        transport[:command] = server[:command] if server[:command]
-        transport[:args]    = Array(server[:args]) if server[:args]
-        transport[:env]     = server[:env] if server[:env]
-
-        result = { name: name, transport: transport }
-        result[:timeout] = server[:timeout] if server[:timeout]
-        result
-      end
-
-      # Resolve system prompt from config (including role)
-      def resolve_system_prompt(config, model_spec = nil)
-        system_prompt = config.prompts.system_prompt
-
-        # Load role content if specified
-        role_id = model_spec&.role || config.prompts.role
-        if role_id && !role_id.empty?
-          role_content = load_role_content(config, role_id)
-          if role_content
-            system_prompt = [system_prompt, role_content].compact.join("\n\n")
-          end
-        end
-
-        system_prompt
-      end
-
       # Build an identity preamble so each robot knows its own name,
       # model, and the other robots in the network.
       #
@@ -401,26 +416,13 @@ module AIA
         nil
       end
 
-      # Build RunConfig from AIA configuration.
-      # Only includes non-default penalty values since some providers
-      # (e.g., Anthropic) reject unsupported parameters.
-      def build_run_config(config)
-        params = {
-          temperature: config.llm.temperature,
-          top_p:       config.llm.top_p,
-          max_tokens:  config.llm.max_tokens
-        }
-
-        fp = config.llm.frequency_penalty
-        params[:frequency_penalty] = fp if fp && fp != 0.0
-
-        pp = config.llm.presence_penalty
-        params[:presence_penalty] = pp if pp && pp != 0.0
-
-        RobotLab::RunConfig.new(**params)
-      end
-
       # Replay conversation history from an old robot to a new one.
+      #
+      # Performance: O(N) API calls where N = number of user messages.
+      # Each user message triggers a full LLM round-trip on the new model.
+      # For a 10-turn conversation with a local model (~1s/turn), expect ~10s.
+      # For a cloud model (~2-5s/turn), expect 20-50s. MCP/tools are disabled
+      # during replay to avoid side effects.
       def replay_history(old_robot, new_robot)
         return unless old_robot.respond_to?(:messages)
 
@@ -433,6 +435,12 @@ module AIA
       end
 
       # Summarize conversation history and inject into new robot.
+      #
+      # Performance: Exactly 2 API calls regardless of conversation length.
+      # 1) Summarize on old model (input tokens proportional to conversation)
+      # 2) Inject summary into new model (small fixed-size prompt)
+      # Faster than :replay for conversations with >2 turns, but loses
+      # per-turn context fidelity. Total latency ~4-10s for cloud models.
       def summarize_history(old_robot, new_robot)
         return unless old_robot.respond_to?(:messages) && old_robot.messages.any?
 
@@ -488,7 +496,7 @@ module AIA
               mcp_servers:   mcp,
               config:        run_config
             }
-            build_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+            build_opts[:provider] = RobotFactory.resolve_provider( model_spec) if model_spec.provider
             robot = RobotLab.build(**build_opts)
             task task_name, robot, depends_on: prev ? [prev] : :none
             prev = task_name
@@ -509,8 +517,8 @@ module AIA
         RobotLab.create_network(name: "aia-parallel") do
           roster.each do |entry|
             spec = entry[:spec]
-            identity = RobotFactory.send(:build_identity_prompt, entry[:name], spec, roster)
-            base_prompt = RobotFactory.send(:resolve_system_prompt, aia_config, spec)
+            identity = RobotFactory.build_identity_prompt( entry[:name], spec, roster)
+            base_prompt = RobotFactory.resolve_system_prompt( aia_config, spec)
             system_prompt = [identity, base_prompt].compact.join("\n\n")
 
             build_opts = {
@@ -521,7 +529,7 @@ module AIA
               mcp_servers:   mcp,
               config:        run_config
             }
-            build_opts[:provider] = RobotFactory.send(:resolve_provider, spec) if spec.provider
+            build_opts[:provider] = RobotFactory.resolve_provider( spec) if spec.provider
             robot = RobotLab.build(**build_opts)
             task spec.internal_id.to_sym, robot, depends_on: :none
           end
@@ -543,8 +551,8 @@ module AIA
           # All models run in parallel
           roster.each do |entry|
             spec = entry[:spec]
-            identity = RobotFactory.send(:build_identity_prompt, entry[:name], spec, roster)
-            base_prompt = RobotFactory.send(:resolve_system_prompt, aia_config, spec)
+            identity = RobotFactory.build_identity_prompt( entry[:name], spec, roster)
+            base_prompt = RobotFactory.resolve_system_prompt( aia_config, spec)
             system_prompt = [identity, base_prompt].compact.join("\n\n")
 
             build_opts = {
@@ -555,7 +563,7 @@ module AIA
               mcp_servers:   mcp,
               config:        run_config
             }
-            build_opts[:provider] = RobotFactory.send(:resolve_provider, spec) if spec.provider
+            build_opts[:provider] = RobotFactory.resolve_provider( spec) if spec.provider
             robot = RobotLab.build(**build_opts)
             task spec.internal_id.to_sym, robot, depends_on: :none
           end
@@ -567,7 +575,7 @@ module AIA
             model:         primary.name,
             config:        run_config
           }
-          synth_opts[:provider] = RobotFactory.send(:resolve_provider, primary) if primary.provider
+          synth_opts[:provider] = RobotFactory.resolve_provider( primary) if primary.provider
           synthesizer = RobotLab.build(**synth_opts)
           task :consensus, synthesizer,
                depends_on: config.models.map { |s| s.internal_id.to_sym }

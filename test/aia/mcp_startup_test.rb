@@ -79,7 +79,7 @@ class MCPStartupTest < Minitest::Test
     mock_robot.stubs(:respond_to?).with(:mcp_config).returns(true)
     mock_robot.stubs(:respond_to?).with(:robots).returns(false)
     mock_robot.stubs(:mcp_config).returns(server_configs)
-    mock_robot.stubs(:instance_variable_set)
+    mock_robot.stubs(:inject_mcp!)
     mock_robot
   end
 

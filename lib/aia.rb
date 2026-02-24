@@ -12,6 +12,8 @@ $DEBUG_ME = false
 DebugMeDefaultOptions[:skip1] = true
 
 require_relative 'aia/errors'
+require_relative 'aia/turn_state'
+require_relative 'aia/content_extractor'
 require_relative 'aia/utility'
 require_relative 'aia/version'
 require_relative 'aia/config'
@@ -41,6 +43,10 @@ require_relative 'aia/expert_router'
 require_relative 'aia/verification_network'
 require_relative 'aia/prompt_decomposer'
 require_relative 'aia/session_tracker'
+require_relative 'aia/streaming_runner'
+require_relative 'aia/mention_router'
+require_relative 'aia/special_mode_handler'
+require_relative 'aia/mcp_connection_manager'
 require_relative 'aia/trakflow_bridge'
 require_relative 'aia/chat_loop'
 require_relative 'aia/session'
@@ -54,9 +60,11 @@ module AIA
 
   @config = nil
   @client = nil
+  @session_tracker = nil
+  @turn_state = TurnState.new
 
   class << self
-    attr_accessor :config, :client
+    attr_accessor :config, :client, :session_tracker, :turn_state
 
     def good_file?(filename)
       File.exist?(filename) &&
@@ -123,6 +131,11 @@ module AIA
 
       session = Session.new(prompt_handler)
       session.start
+    rescue AIA::EarlyExit
+      # Informational command completed (--dump, --mcp-list, --list-tools, --completion)
+    rescue AIA::ConfigurationError => e
+      warn e.message
+      exit 1
     end
   end
 end

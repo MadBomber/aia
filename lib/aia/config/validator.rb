@@ -74,8 +74,7 @@ module AIA
 
         bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
         if bad_files.any?
-          warn "Error: The following files do not exist: #{bad_files.join(', ')}"
-          exit 1
+          raise AIA::ConfigurationError, "The following files do not exist: #{bad_files.join(', ')}"
         end
 
         config.context_files ||= []
@@ -115,8 +114,8 @@ module AIA
       def validate_required_prompt_id(config)
         return unless config.prompt_id.nil? && !(config.flags.chat == true) && !(config.flags.fuzzy == true)
 
-        warn "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
-        exit 1
+        raise AIA::ConfigurationError,
+              "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
       end
 
       def process_role_configuration(config)
@@ -174,7 +173,7 @@ module AIA
         return unless config.dump_file
 
         dump_config(config, config.dump_file)
-        exit 0
+        raise AIA::EarlyExit
       end
 
       def handle_mcp_list(config)
@@ -189,17 +188,18 @@ module AIA
           label = mcp_filter_active?(config) ? "Active" : "Configured"
           puts "#{label} MCP servers:\n\n"
           servers.each do |server|
-            name    = server[:name]    || server['name']    || '(unnamed)'
-            command = server[:command] || server['command']  || '(no command)'
-            args    = server[:args]    || server['args']     || []
-            args_str = args.empty? ? '' : " #{args.join(' ')}"
+            name      = server[:name] || server['name'] || '(unnamed)'
+            transport = server[:transport] || server['transport'] || {}
+            command   = transport[:command] || transport['command'] || server[:command] || server['command'] || '(no command)'
+            args      = transport[:args] || transport['args'] || server[:args] || server['args'] || []
+            args_str  = args.empty? ? '' : " #{args.join(' ')}"
             puts "  #{name}"
             puts "    command: #{command}#{args_str}"
             puts
           end
         end
 
-        exit 0
+        raise AIA::EarlyExit
       end
 
       def handle_list_tools(config)
@@ -214,7 +214,7 @@ module AIA
 
         if local_tools.empty? && mcp_tool_groups.empty?
           $stderr.puts "No tools available."
-          exit 0
+          raise AIA::EarlyExit
         end
 
         if $stdout.tty?
@@ -223,7 +223,7 @@ module AIA
           list_tools_markdown(local_tools, mcp_tool_groups)
         end
 
-        exit 0
+        raise AIA::EarlyExit
       end
 
       def list_tools_terminal(local_tools, mcp_tool_groups)
@@ -368,10 +368,11 @@ module AIA
         default_timeout = 8_000
 
         servers.each do |server|
-          name    = server[:name]    || server['name']
-          command = server[:command] || server['command']
-          args    = server[:args]    || server['args'] || []
-          env     = server[:env]     || server['env']  || {}
+          name      = server[:name] || server['name']
+          transport = server[:transport] || server['transport'] || {}
+          command   = transport[:command] || transport['command'] || server[:command] || server['command']
+          args      = transport[:args] || transport['args'] || server[:args] || server['args'] || []
+          env       = transport[:env] || transport['env'] || server[:env] || server['env'] || {}
 
           raw_timeout = server[:timeout] || server['timeout'] || default_timeout
           timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
@@ -428,7 +429,7 @@ module AIA
         return unless config.completion
 
         generate_completion_script(config.completion)
-        exit
+        raise AIA::EarlyExit
       end
 
       def generate_completion_script(shell)
@@ -445,8 +446,8 @@ module AIA
         chat_mode = config.flags.chat == true
         fuzzy_mode = config.flags.fuzzy == true
         if !chat_mode && !fuzzy_mode && (config.prompt_id.nil? || config.prompt_id.empty?) && (config.context_files.nil? || config.context_files.empty?)
-          warn "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
-          exit 1
+          raise AIA::ConfigurationError,
+                "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
         end
       end
 
@@ -475,7 +476,7 @@ module AIA
           end
         end
 
-        exit(1) if and_exit
+        raise AIA::ConfigurationError, "One or more prompt IDs do not exist." if and_exit
       end
 
       def dump_config(config, file)

@@ -120,6 +120,45 @@ class RobotFactoryTest < Minitest::Test
     assert_nil result
   end
 
+  # I4/I5: Tool caching tests
+  def test_clear_tool_cache_resets_cache
+    # Set up a cache
+    AIA::RobotFactory.instance_variable_set(:@tool_cache, [:fake_tool])
+    assert_equal [:fake_tool], AIA::RobotFactory.instance_variable_get(:@tool_cache)
+
+    AIA::RobotFactory.clear_tool_cache!
+    assert_nil AIA::RobotFactory.instance_variable_get(:@tool_cache)
+  end
+
+  def test_load_tools_populates_cache
+    AIA::RobotFactory.clear_tool_cache!
+    AIA::RobotFactory.send(:load_tools, @config)
+
+    cache = AIA::RobotFactory.instance_variable_get(:@tool_cache)
+    assert_kind_of Array, cache
+  end
+
+  def test_build_skips_load_tools_when_cache_exists
+    tool = mock('cached_tool')
+    tool.stubs(:name).returns('CachedTool')
+    AIA::RobotFactory.instance_variable_set(:@tool_cache, [tool])
+
+    # build() should assign cached tools to config without calling load_tools
+    AIA::RobotFactory.stubs(:configure_robot_lab)
+    AIA::RobotFactory.expects(:load_tools).never
+
+    # Stub the actual robot building
+    mock_robot = mock('robot')
+    AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+
+    AIA::RobotFactory.build(@config)
+
+    assert_equal [tool], @config.loaded_tools
+    assert_equal 'CachedTool', @config.tool_names
+  ensure
+    AIA::RobotFactory.clear_tool_cache!
+  end
+
   private
 
   def create_test_config

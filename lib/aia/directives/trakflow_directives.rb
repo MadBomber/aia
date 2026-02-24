@@ -8,8 +8,8 @@ module AIA
   class TrakFlowDirectives < Directive
     desc "Show TrakFlow ready tasks and project summary"
     def tasks(args, context_manager = nil)
-      bridge = build_bridge
-      return "TrakFlow not available. Connect the trak_flow MCP server." unless bridge&.available?
+      bridge = TrakFlowBridge.new
+      return "TrakFlow not available. Run 'tf init' to initialize a project." unless bridge.available?
 
       if args.first == "summary"
         bridge.project_summary || "No summary available."
@@ -21,34 +21,24 @@ module AIA
 
     desc "Create a TrakFlow plan from a description"
     def plan(args, context_manager = nil)
-      bridge = build_bridge
-      return "TrakFlow not available. Connect the trak_flow MCP server." unless bridge&.available?
+      bridge = TrakFlowBridge.new
+      return "TrakFlow not available. Run 'tf init' to initialize a project." unless bridge.available?
 
       description = args.join(' ')
       return "Usage: /plan <description>" if description.empty?
 
-      AIA.client.run(
-        "Create a TrakFlow plan: #{description}",
-        mcp: :inherit, tools: :none
-      ).to_s
+      bridge.create_task(description) || "Failed to create plan."
     end
 
     desc "Create a TrakFlow task"
     def task(args, context_manager = nil)
-      bridge = build_bridge
-      return "TrakFlow not available. Connect the trak_flow MCP server." unless bridge&.available?
+      bridge = TrakFlowBridge.new
+      return "TrakFlow not available. Run 'tf init' to initialize a project." unless bridge.available?
 
       title = args.join(' ')
       return "Usage: /task <title>" if title.empty?
 
       bridge.create_task(title) || "Failed to create task."
-    end
-
-    private
-
-    def build_bridge
-      return nil unless AIA.client
-      TrakFlowBridge.new(AIA.client)
     end
   end
 end

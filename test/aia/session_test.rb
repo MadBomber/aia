@@ -262,12 +262,14 @@ class ChatLoopTest < Minitest::Test
     super
   end
 
-  def test_handle_successful_directive_returns_formatted_string
+  def test_process_directive_returns_formatted_string
     follow_up_prompt = '/test command'
     directive_output = 'command output'
 
+    @directive_processor.stubs(:process).returns(directive_output)
+
     output = capture_io do
-      result = @chat_loop.send(:handle_successful_directive, follow_up_prompt, directive_output)
+      result = @chat_loop.send(:process_directive, follow_up_prompt)
       expected = "I executed this directive: #{follow_up_prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
       assert_equal expected, result
     end
@@ -277,6 +279,7 @@ class ChatLoopTest < Minitest::Test
 
   def test_extract_content_from_reply
     mock_result = mock('result')
+    mock_result.stubs(:respond_to?).with(:reply).returns(true)
     mock_result.stubs(:reply).returns('AI reply')
 
     result = @chat_loop.send(:extract_content, mock_result)

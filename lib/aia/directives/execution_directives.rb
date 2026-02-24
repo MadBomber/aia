@@ -29,20 +29,20 @@ module AIA
 
     desc "Execute next prompt with concurrent MCP server access"
     def concurrent(args, context_manager = nil)
-      AIA.config.instance_variable_set(:@force_concurrent_mcp, true)
+      AIA.turn_state.force_concurrent_mcp = true
       "Concurrent MCP mode enabled for next prompt."
     end
     alias_method :conc, :concurrent
 
     desc "Run next prompt through verification (two independent answers + reconciliation)"
     def verify(args, context_manager = nil)
-      AIA.config.instance_variable_set(:@force_verify, true)
+      AIA.turn_state.force_verify = true
       "Verification mode enabled for next prompt."
     end
 
     desc "Decompose next prompt into parallel sub-tasks"
     def decompose(args, context_manager = nil)
-      AIA.config.instance_variable_set(:@force_decompose, true)
+      AIA.turn_state.force_decompose = true
       "Decomposition mode enabled for next prompt."
     end
   end

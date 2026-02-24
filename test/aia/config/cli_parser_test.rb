@@ -158,3 +158,86 @@ class CLIParserToolsPathsTest < Minitest::Test
     assert_equal [], result
   end
 end
+
+
+# P1: Verify CLI_TO_NESTED_MAP covers all flat CLI keys that need mapping
+class CLIToNestedMapCompletenessTest < Minitest::Test
+  # Keys handled specially in Config#apply_overrides or Config#initialize
+  # (not routed through CLI_TO_NESTED_MAP)
+  SPECIAL_KEYS = %i[
+    models
+    extra_config_file
+    mcp_files
+    pipeline
+    require_libs
+    context_files
+    mcp_use
+    mcp_skip
+    mcp_servers
+  ].freeze
+
+  # Runtime attributes set on Config but not routed to nested sections
+  RUNTIME_KEYS = %i[
+    remaining_args
+    prompt_id
+    dump_file
+    completion
+    mcp_list
+    list_tools
+    log_level_override
+    log_file_override
+    executable_prompt_content
+    stdin_content
+    parameter_regex
+  ].freeze
+
+  def test_all_cli_parser_keys_are_accounted_for
+    # Extract all option keys that CLIParser can set
+    cli_keys = extract_cli_parser_keys
+
+    mapped_keys = AIA::Config::CLI_TO_NESTED_MAP.keys
+    all_known = mapped_keys + SPECIAL_KEYS + RUNTIME_KEYS
+
+    unmapped = cli_keys - all_known
+
+    assert_empty unmapped,
+      "CLI parser keys not in CLI_TO_NESTED_MAP, SPECIAL_KEYS, or RUNTIME_KEYS: #{unmapped.inspect}\n" \
+      "Add them to the appropriate location."
+  end
+
+  def test_cli_to_nested_map_targets_valid_sections
+    schema_sections = %i[service llm prompts output audio image embedding tools flags registry paths logger rules]
+
+    AIA::Config::CLI_TO_NESTED_MAP.each do |cli_key, (section, _nested_key)|
+      assert_includes schema_sections, section,
+        "CLI_TO_NESTED_MAP[:#{cli_key}] targets unknown section :#{section}"
+    end
+  end
+
+  # I12: Validate that every nested key in CLI_TO_NESTED_MAP exists in defaults.yml
+  def test_cli_to_nested_map_targets_valid_schema_keys
+    defaults_path = File.expand_path('../../../../lib/aia/config/defaults.yml', __FILE__)
+    schema = YAML.safe_load(File.read(defaults_path), permitted_classes: [Symbol], symbolize_names: true)
+    defaults = schema[:defaults] || schema
+
+    AIA::Config::CLI_TO_NESTED_MAP.each do |cli_key, (section, nested_key)|
+      section_hash = defaults[section]
+      assert section_hash.is_a?(Hash),
+        "CLI_TO_NESTED_MAP[:#{cli_key}] targets section :#{section} which is not a Hash in defaults.yml"
+
+      assert section_hash.key?(nested_key),
+        "CLI_TO_NESTED_MAP[:#{cli_key}] targets :#{section}.#{nested_key} which does not exist in defaults.yml. " \
+        "Add :#{nested_key} to the :#{section} section in defaults.yml or fix the mapping."
+    end
+  end
+
+  private
+
+  def extract_cli_parser_keys
+    # Parse the CLI parser source to find all `options[:key]` assignments
+    parser_path = File.expand_path('../../../../lib/aia/config/cli_parser.rb', __FILE__)
+    source = File.read(parser_path)
+
+    source.scan(/options\[:(\w+)\]/).flatten.map(&:to_sym).uniq
+  end
+end

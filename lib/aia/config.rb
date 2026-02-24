@@ -176,8 +176,8 @@ module AIA
       history_file: [:output, :history_file],
       append: [:output, :append],
       markdown: [:output, :markdown],
-      # audio section
-      speak: [:audio, :speak],
+      # audio section (speak is a flag, not audio config)
+      speak: [:flags, :speak],
       voice: [:audio, :voice],
       speech_model: [:audio, :speech_model],
       transcription_model: [:audio, :transcription_model],

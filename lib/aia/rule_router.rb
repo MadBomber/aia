@@ -513,7 +513,7 @@ module AIA
     end
 
     def assert_session_facts(kb)
-      tracker = AIA.instance_variable_get(:@session_tracker)
+      tracker = AIA.session_tracker
       return unless tracker
 
       kb.assert(:session_stats, **tracker.to_facts)
@@ -522,7 +522,7 @@ module AIA
     def assert_response_facts(kb, outcome)
       kb.assert(:response_outcome, **outcome) if outcome.is_a?(Hash) && outcome.any?
 
-      tracker = AIA.instance_variable_get(:@session_tracker)
+      tracker = AIA.session_tracker
       kb.assert(:session_stats, **tracker.to_facts) if tracker
     end
 

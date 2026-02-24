@@ -10,6 +10,8 @@ require 'json'
 
 module AIA
   class PromptDecomposer
+    include ContentExtractor
+
     DECOMPOSITION_PROMPT = <<~PROMPT
       Analyze this user request and determine if it can be broken into independent sub-tasks.
       If it can, output a JSON array of sub-task descriptions.
@@ -75,14 +77,6 @@ module AIA
 
     private
 
-    def extract_content(result)
-      if result.respond_to?(:reply)
-        result.reply
-      elsif result.respond_to?(:content)
-        result.content
-      else
-        result.to_s
-      end
-    end
+    # extract_content provided by ContentExtractor module
   end
 end

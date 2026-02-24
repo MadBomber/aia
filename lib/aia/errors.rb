@@ -24,4 +24,9 @@ module AIA
 
   # Raised when a quality gate blocks prompt execution
   class GateError < Error; end
+
+  # Raised by ConfigValidator for informational early exits
+  # (--dump, --mcp-list, --list-tools, --completion).
+  # Caught by AIA.run to exit cleanly without error.
+  class EarlyExit < Error; end
 end

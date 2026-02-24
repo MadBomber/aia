@@ -64,16 +64,16 @@ module AIA
       end
 
       checkpoint_data = @checkpoint_store[name]
-      chats = get_chats
+      robots = get_robots
 
-      return "Error: No active chat sessions found." if chats.nil? || chats.empty?
+      return "Error: No active chat sessions found." if robots.nil? || robots.empty?
 
       checkpoint_data[:messages].each do |model_id, saved_messages|
-        chat = chats[model_id]
-        next unless chat
+        robot = robots[model_id]
+        next unless robot
 
         restored_messages = saved_messages.map { |msg| deep_copy_message(msg) }
-        chat.instance_variable_set(:@messages, restored_messages)
+        robot.replace_messages(restored_messages)
       end
 
       restored_position = checkpoint_data[:position]
@@ -90,17 +90,11 @@ module AIA
     def clear(args, _unused = nil)
       keep_system = !args.include?('--all')
 
-      chats = get_chats
-      return "Error: No active chat sessions found." if chats.nil? || chats.empty?
+      robots = get_robots
+      return "Error: No active chat sessions found." if robots.nil? || robots.empty?
 
-      chats.each do |_model_id, chat|
-        if keep_system
-          system_msg = chat.messages.find { |m| m.role == :system }
-          chat.instance_variable_set(:@messages, [])
-          chat.add_message(system_msg) if system_msg
-        else
-          chat.instance_variable_set(:@messages, [])
-        end
+      robots.each_value do |robot|
+        robot.clear_messages(keep_system: keep_system)
       end
 
       @checkpoint_store.clear
@@ -201,22 +195,22 @@ module AIA
     private
 
     # In v2, AIA.client is a RobotLab::Robot which wraps a RubyLLM::Chat.
-    # We expose a single chat keyed by the robot's name.
-    def get_chats
+    # Returns a hash of { name => Robot } for checkpoint operations.
+    def get_robots
       robot = AIA.client
       return nil unless robot
 
-      # Robot has a @chat instance variable (RubyLLM::Chat)
-      chat = if robot.respond_to?(:chat, true)
-               robot.send(:chat)
-             elsif robot.instance_variable_defined?(:@chat)
-               robot.instance_variable_get(:@chat)
-             end
-
-      return nil unless chat
-
       name = robot.respond_to?(:name) ? robot.name : "default"
-      { name => chat }
+      { name => robot }
+    end
+
+    # Return { name => RubyLLM::Chat } for operations that need direct chat access.
+    # Uses Robot#chat public API.
+    def get_chats
+      robots = get_robots
+      return nil unless robots
+
+      robots.transform_values { |robot| robot.chat }
     end
 
     def deep_copy_message(msg)

@@ -1,0 +1,132 @@
+# frozen_string_literal: true
+
+# lib/aia/mention_router.rb
+#
+# Handles @mention routing in multi-model networks.
+# Scans prompts for @name tokens, matches them to robots in the
+# network, and sends the prompt only to mentioned robots.
+
+module AIA
+  class MentionRouter
+    include ContentExtractor
+
+    def initialize(ui_presenter:, tracker:, streaming_runner:)
+      @ui_presenter = ui_presenter
+      @tracker = tracker
+      @streaming_runner = streaming_runner
+    end
+
+    # Scan prompt for @mentions and route to matching robots.
+    # Returns true if mentions were handled, false otherwise.
+    #
+    # @param robot [RobotLab::Network] the network
+    # @param prompt [String] the user prompt
+    # @return [Boolean]
+    def handle(robot, prompt)
+      return false unless robot.is_a?(RobotLab::Network)
+
+      mention_tokens = prompt.scan(/@(\w+)/i).flatten
+      return false if mention_tokens.empty?
+
+      all_robots = robot.robots.values
+      matched = mention_tokens.filter_map do |token|
+        all_robots.find { |r| r.name.downcase == token.downcase }
+      end.uniq(&:name)
+
+      return false if matched.empty?
+
+      report_unknown_mentions(mention_tokens, all_robots)
+      run_mentioned_robots(matched, prompt)
+      true
+    end
+
+    private
+
+    def report_unknown_mentions(mention_tokens, all_robots)
+      known_names = all_robots.map { |r| r.name.downcase }
+      unknown = mention_tokens.reject { |t| known_names.include?(t.downcase) }
+      return unless unknown.any?
+
+      available = all_robots.map(&:name).join(', ')
+      unknown.each do |name|
+        @ui_presenter.display_info("Unknown robot: @#{name}  (available: #{available})")
+      end
+    end
+
+    def run_mentioned_robots(robots, prompt)
+      parts = []
+
+      robots.each do |bot|
+        begin
+          result, streamed_content, elapsed = @streaming_runner.run(
+            bot, prompt,
+            header: "\nAI (#{bot.name}):\n   ",
+            spinner_message: "#{bot.name} processing..."
+          )
+        rescue StandardError => e
+          @ui_presenter.display_info("Error from #{bot.name}: #{e.class}: #{e.message}")
+          next
+        end
+
+        content = streamed_content || extract_content(result)
+
+        @tracker.record_turn(
+          model: bot.model || 'unknown',
+          input: prompt,
+          result: result
+        )
+
+        if streamed_content
+          puts
+          @ui_presenter.display_info("(#{format_duration(elapsed)})")
+        else
+          model_label = bot.model || 'unknown'
+          header = "**#{bot.name}** [#{model_label}] (#{format_duration(elapsed)}):"
+          parts << "#{header}\n#{content}"
+        end
+
+        output_to_file(content)
+        display_metrics(result)
+        speak(content)
+      end
+
+      unless parts.empty?
+        @ui_presenter.display_ai_response(parts.join("\n\n"))
+      end
+
+      @ui_presenter.display_separator
+    end
+
+    def output_to_file(content)
+      out_file = AIA.config.output.file
+      return unless out_file
+
+      File.open(out_file, 'a') { |f| f.puts "\nAI: #{content}" }
+    end
+
+    def display_metrics(result)
+      return unless AIA.config.flags.tokens
+
+      if result.respond_to?(:output) && result.output.any?
+        last_msg = result.output.last
+        if last_msg.respond_to?(:input_tokens)
+          metrics = {
+            model_id: result.respond_to?(:robot_name) ? result.robot_name : "unknown",
+            input_tokens: last_msg.input_tokens,
+            output_tokens: last_msg.output_tokens
+          }
+          @ui_presenter.display_token_metrics(metrics)
+        end
+      end
+    end
+
+    def speak(content)
+      return unless AIA.speak?
+
+      command = AIA.config.audio.speak_command || 'say'
+      system(command, content.to_s)
+    rescue StandardError => e
+      warn "Warning: Speech failed: #{e.message}"
+    end
+  end
+end

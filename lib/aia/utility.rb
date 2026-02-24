@@ -29,18 +29,11 @@ module AIA
         robot = AIA.client
         return 0 unless robot
 
-        # Single robot with mcp_tools
-        if robot.respond_to?(:mcp_tools)
-          return Array(robot.mcp_tools).size
-        end
+        return Array(robot.mcp_tools).size if robot.respond_to?(:mcp_tools)
 
-        # Network: check instance variable on first robot
         if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
           first_robot = robot.robots.values.first
-          if first_robot
-            tools = first_robot.instance_variable_get(:@mcp_tools)
-            return Array(tools).size
-          end
+          return Array(first_robot.mcp_tools).size if first_robot
         end
 
         0

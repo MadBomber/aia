@@ -43,11 +43,11 @@ module AIA
 
       RobotLab.build(
         name:          "aia-expert-#{classification[:domain]}",
-        system_prompt: RobotFactory.send(:resolve_system_prompt, config),
+        system_prompt: RobotFactory.resolve_system_prompt(config),
         model:         model_name,
-        local_tools:   RobotFactory.send(:filtered_tools, config),
-        mcp_servers:   mcp_configs.map { |s| RobotFactory.send(:normalize_mcp_config, s) },
-        config:        RobotFactory.send(:build_run_config, config)
+        local_tools:   RobotFactory.filtered_tools(config),
+        mcp_servers:   mcp_configs.map { |s| RobotFactory.normalize_mcp_config(s) },
+        config:        RobotFactory.build_run_config(config)
       )
     end
 

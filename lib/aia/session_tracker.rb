@@ -91,13 +91,39 @@ module AIA
         cost = 0.0
 
         if last_msg.respond_to?(:input_tokens)
-          tokens = (last_msg.input_tokens || 0) + (last_msg.output_tokens || 0)
+          input_tokens = last_msg.input_tokens || 0
+          output_tokens = last_msg.output_tokens || 0
+          tokens = input_tokens + output_tokens
+
+          cost = compute_cost(result, input_tokens, output_tokens)
         end
 
         { tokens: tokens, cost: cost, latency: 0 }
       else
         { tokens: 0, cost: 0.0, latency: 0 }
       end
+    end
+
+    # Compute cost from token counts and model pricing.
+    # Falls back to 0.0 if pricing info is unavailable.
+    def compute_cost(result, input_tokens, output_tokens)
+      model_id = if result.respond_to?(:robot_name)
+                   result.robot_name
+                 elsif result.respond_to?(:model_id)
+                   result.model_id
+                 end
+
+      return 0.0 unless model_id && defined?(RubyLLM::Models)
+
+      model_info = RubyLLM::Models.find(model_id)
+      return 0.0 unless model_info
+
+      input_price = model_info.respond_to?(:input_price_per_million) ? (model_info.input_price_per_million || 0) : 0
+      output_price = model_info.respond_to?(:output_price_per_million) ? (model_info.output_price_per_million || 0) : 0
+
+      (input_tokens * input_price / 1_000_000.0) + (output_tokens * output_price / 1_000_000.0)
+    rescue StandardError
+      0.0
     end
   end
 end

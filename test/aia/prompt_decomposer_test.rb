@@ -81,6 +81,7 @@ class PromptDecomposerTest < Minitest::Test
   def test_decompose_uses_content_method_as_fallback
     mock_result = mock('result')
     mock_result.stubs(:respond_to?).with(:reply).returns(false)
+    mock_result.stubs(:respond_to?).with(:last_text_content).returns(false)
     mock_result.stubs(:respond_to?).with(:content).returns(true)
     mock_result.stubs(:content).returns('["task one", "task two"]')
     @mock_robot.stubs(:run).returns(mock_result)
@@ -95,6 +96,7 @@ class PromptDecomposerTest < Minitest::Test
   def test_decompose_uses_to_s_as_last_resort
     mock_result = mock('result')
     mock_result.stubs(:respond_to?).with(:reply).returns(false)
+    mock_result.stubs(:respond_to?).with(:last_text_content).returns(false)
     mock_result.stubs(:respond_to?).with(:content).returns(false)
     mock_result.stubs(:to_s).returns('["fallback task"]')
     @mock_robot.stubs(:run).returns(mock_result)

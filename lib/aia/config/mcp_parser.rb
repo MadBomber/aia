@@ -3,9 +3,19 @@
 # lib/aia/config/mcp_parser.rb
 #
 # Parses MCP server JSON configuration files and converts them
-# to the format expected by AIA's config system.
+# to the nested transport format expected by robot_lab.
 #
-# Supports two JSON formats:
+# Output format (robot_lab native):
+#   {
+#     name: "server_name",
+#     transport: { type: "stdio", command: "npx", args: [...], env: {...} },
+#     timeout: 8000,
+#     topics: ["routing"],     # AIA routing metadata (optional)
+#     independent: false,      # AIA concurrency metadata (optional)
+#     group: "services"        # AIA grouping metadata (optional)
+#   }
+#
+# Supports two JSON input formats:
 #
 # 1. Simple format (single server):
 #    {
@@ -31,9 +41,10 @@ module AIA
   module McpParser
     class << self
       # Parse MCP server configuration files and return array of server configs
+      # in robot_lab's nested transport format.
       #
       # @param file_paths [Array<String>] paths to JSON configuration files
-      # @return [Array<Hash>] array of server configurations
+      # @return [Array<Hash>] array of server configurations with nested transport
       def parse_files(file_paths)
         return [] if file_paths.nil? || file_paths.empty?
 
@@ -76,56 +87,32 @@ module AIA
         end
       end
 
-      # Convert mcpServers format to config format
+      # Convert mcpServers format to robot_lab nested transport format
       #
       # @param mcp_servers [Hash] the mcpServers hash from JSON
       # @return [Array<Hash>] array of server configurations
       def convert_mcp_servers_format(mcp_servers)
         mcp_servers.map do |name, config|
-          server = { name: name }
+          transport = { type: config['type'] || 'stdio' }
+          transport[:command] = config['command'] if config['command']
+          transport[:args]    = Array(config['args']) if config['args']
+          transport[:env]     = config['env'] if config['env']
+          transport[:url]     = config['url'] if config['url']
+          transport[:headers] = config['headers'] if config['headers']
 
-          if config['command']
-            server[:command] = config['command']
-          end
+          server = { name: name, transport: transport }
+          server[:timeout] = config['timeout'].to_i if config['timeout']
 
-          if config['args']
-            server[:args] = Array(config['args'])
-          end
-
-          if config['env']
-            server[:env] = config['env']
-          end
-
-          if config['timeout']
-            server[:timeout] = config['timeout'].to_i
-          end
-
-          if config['url']
-            server[:url] = config['url']
-          end
-
-          if config['headers']
-            server[:headers] = config['headers']
-          end
-
-          # Preserve routing metadata for KBS
-          if config['topics']
-            server[:topics] = Array(config['topics'])
-          end
-
-          if config['independent'] != nil
-            server[:independent] = config['independent']
-          end
-
-          if config['group']
-            server[:group] = config['group']
-          end
+          # Preserve routing metadata for KBS/AIA
+          server[:topics]      = Array(config['topics']) if config['topics']
+          server[:independent] = config['independent'] if config['independent'] != nil
+          server[:group]       = config['group'] if config['group']
 
           server
         end
       end
 
-      # Convert simple format to config format
+      # Convert simple format to robot_lab nested transport format
       #
       # @param parsed [Hash] parsed JSON with type and command
       # @param file_path [String] file path for deriving server name
@@ -134,28 +121,21 @@ module AIA
         # Derive name from filename (e.g., "filesystem.json" -> "filesystem")
         name = File.basename(file_path, '.*')
 
-        server = { name: name }
+        transport = { type: parsed['type'] || 'stdio' }
 
         if parsed['command'].is_a?(Array)
           # Command is an array: first element is command, rest are args
-          server[:command] = parsed['command'].first
-          server[:args] = parsed['command'][1..] || []
+          transport[:command] = parsed['command'].first
+          transport[:args] = parsed['command'][1..] || []
         elsif parsed['command']
-          server[:command] = parsed['command']
-          server[:args] = parsed['args'] || []
+          transport[:command] = parsed['command']
+          transport[:args] = parsed['args'] || []
         end
 
-        if parsed['env']
-          server[:env] = parsed['env']
-        end
+        transport[:env] = parsed['env'] if parsed['env']
 
-        if parsed['timeout']
-          server[:timeout] = parsed['timeout'].to_i
-        end
-
-        if parsed['type']
-          server[:type] = parsed['type']
-        end
+        server = { name: name, transport: transport }
+        server[:timeout] = parsed['timeout'].to_i if parsed['timeout']
 
         [server]
       end

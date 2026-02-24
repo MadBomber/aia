@@ -39,16 +39,17 @@ class McpParserTest < Minitest::Test
       assert_equal 2, servers.size
 
       fs = servers.find { |s| s[:name] == "filesystem" }
-      assert_equal "npx", fs[:command]
-      assert_equal ["-y", "@modelcontextprotocol/server-filesystem"], fs[:args]
-      assert_equal({ "HOME" => "/tmp" }, fs[:env])
+      assert_equal "npx", fs[:transport][:command]
+      assert_equal ["-y", "@modelcontextprotocol/server-filesystem"], fs[:transport][:args]
+      assert_equal({ "HOME" => "/tmp" }, fs[:transport][:env])
       assert_equal 5000, fs[:timeout]
+      assert_equal "stdio", fs[:transport][:type]
 
       db = servers.find { |s| s[:name] == "database" }
-      assert_equal "python", db[:command]
-      assert_equal ["-m", "db_server"], db[:args]
-      assert_equal "http://localhost:3000", db[:url]
-      assert_equal({ "Authorization" => "Bearer token" }, db[:headers])
+      assert_equal "python", db[:transport][:command]
+      assert_equal ["-m", "db_server"], db[:transport][:args]
+      assert_equal "http://localhost:3000", db[:transport][:url]
+      assert_equal({ "Authorization" => "Bearer token" }, db[:transport][:headers])
     end
   end
 
@@ -68,9 +69,9 @@ class McpParserTest < Minitest::Test
       server = servers.first
       # Name derived from temp file basename
       assert_kind_of String, server[:name]
-      assert_equal "npx", server[:command]
-      assert_equal ["-y", "@server/name", "/path"], server[:args]
-      assert_equal "stdio", server[:type]
+      assert_equal "npx", server[:transport][:command]
+      assert_equal ["-y", "@server/name", "/path"], server[:transport][:args]
+      assert_equal "stdio", server[:transport][:type]
     end
   end
 
@@ -87,9 +88,9 @@ class McpParserTest < Minitest::Test
       assert_equal 1, servers.size
 
       server = servers.first
-      assert_equal "python", server[:command]
-      assert_equal ["-m", "module_name"], server[:args]
-      assert_equal({ "KEY" => "value" }, server[:env])
+      assert_equal "python", server[:transport][:command]
+      assert_equal ["-m", "module_name"], server[:transport][:args]
+      assert_equal({ "KEY" => "value" }, server[:transport][:env])
       assert_equal 3000, server[:timeout]
     end
   end
@@ -132,9 +133,9 @@ class McpParserTest < Minitest::Test
       servers = AIA::McpParser.parse_files([path])
       assert_equal 1, servers.size
       assert_equal "minimal", servers.first[:name]
-      assert_equal "node", servers.first[:command]
-      assert_nil servers.first[:args]
-      assert_nil servers.first[:env]
+      assert_equal "node", servers.first[:transport][:command]
+      assert_nil servers.first[:transport][:args]
+      assert_nil servers.first[:transport][:env]
       assert_nil servers.first[:timeout]
     end
   end
@@ -206,6 +207,60 @@ class McpParserTest < Minitest::Test
       assert_equal 1, servers.size
       assert_equal "valid", servers.first[:name]
     end
+  end
+
+  # Transport structure tests
+  def test_output_has_nested_transport_structure
+    json = {
+      "mcpServers" => {
+        "example" => {
+          "command" => "node",
+          "args" => ["server.js"],
+          "env" => { "PORT" => "3000" }
+        }
+      }
+    }
+
+    with_temp_json(json) do |path|
+      servers = AIA::McpParser.parse_files([path])
+      server = servers.first
+
+      assert server.key?(:transport), "Expected :transport key"
+      assert_kind_of Hash, server[:transport]
+      assert_equal "stdio", server[:transport][:type]
+      assert_equal "node", server[:transport][:command]
+      assert_equal ["server.js"], server[:transport][:args]
+      assert_equal({ "PORT" => "3000" }, server[:transport][:env])
+    end
+  end
+
+  def test_simple_format_has_nested_transport_structure
+    json = {
+      "type" => "stdio",
+      "command" => "python",
+      "args" => ["-m", "server"]
+    }
+
+    with_temp_json(json) do |path|
+      servers = AIA::McpParser.parse_files([path])
+      server = servers.first
+
+      assert server.key?(:transport), "Expected :transport key"
+      assert_equal "stdio", server[:transport][:type]
+      assert_equal "python", server[:transport][:command]
+    end
+  end
+
+  def test_normalize_is_pass_through_for_transport_format
+    # Verify that normalize_mcp_config is a no-op for already-normalized configs
+    server = {
+      name: "test",
+      transport: { type: "stdio", command: "node", args: ["server.js"] },
+      timeout: 5000
+    }
+
+    result = AIA::RobotFactory.normalize_mcp_config(server)
+    assert_equal server, result
   end
 
   private

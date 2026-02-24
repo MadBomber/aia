@@ -4,6 +4,35 @@ require_relative '../../test_helper'
 require 'ostruct'
 require 'tmpdir'
 
+# Helper to capture stdout when the block raises an exception (e.g. EarlyExit)
+module ValidatorTestHelpers
+  def capture_stdout_through_exception
+    old_stdout = $stdout
+    $stdout = StringIO.new
+    begin
+      yield
+    rescue AIA::EarlyExit, AIA::ConfigurationError
+      # expected
+    end
+    $stdout.string
+  ensure
+    $stdout = old_stdout
+  end
+
+  def capture_stderr_through_exception
+    old_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      yield
+    rescue AIA::EarlyExit, AIA::ConfigurationError
+      # expected
+    end
+    $stderr.string
+  ensure
+    $stderr = old_stderr
+  end
+end
+
 class ValidatorProcessPromptIdTest < Minitest::Test
   def test_extracts_prompt_id_when_prompt_file_exists
     Dir.mktmpdir do |dir|
@@ -68,11 +97,10 @@ class ValidatorContextFilesTest < Minitest::Test
     config = OpenStruct.new(context_files: [])
     AIA.stubs(:good_file?).with('/nonexistent/file.rb').returns(false)
 
-    stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['/nonexistent/file.rb'])
-    assert stderr_messages.any? { |m| m.include?('do not exist') }
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['/nonexistent/file.rb'])
+    end
+    assert_includes error.message, 'do not exist'
   end
 
   def test_does_nothing_with_empty_args
@@ -211,11 +239,10 @@ class ValidatorRequiredPromptIdTest < Minitest::Test
       flags: OpenStruct.new(chat: false, fuzzy: false)
     )
 
-    stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    AIA::ConfigValidator.send(:validate_required_prompt_id, config)
-    assert stderr_messages.any? { |m| m.include?('prompt ID is required') }
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_required_prompt_id, config)
+    end
+    assert_includes error.message, 'prompt ID is required'
   end
 
   def test_skips_when_prompt_id_present
@@ -379,8 +406,10 @@ class ValidatorDumpConfigTest < Minitest::Test
         setting: 'value'
       )
 
-      _out, _err = capture_io do
-        AIA::ConfigValidator.send(:handle_dump_config, config)
+      assert_raises(AIA::EarlyExit) do
+        capture_io do
+          AIA::ConfigValidator.send(:handle_dump_config, config)
+        end
       end
       assert File.exist?(dump_path)
     end
@@ -396,6 +425,8 @@ end
 
 
 class ValidatorMcpListTest < Minitest::Test
+  include ValidatorTestHelpers
+
   def test_lists_mcp_servers
     config = OpenStruct.new(
       mcp_list: true,
@@ -408,7 +439,7 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/github/, out)
@@ -428,7 +459,7 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/Active MCP servers/, out)
@@ -444,7 +475,7 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/No MCP servers configured/, out)
@@ -481,7 +512,7 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/test-server/, out)
@@ -530,11 +561,10 @@ class ValidatorFinalPromptRequirementsTest < Minitest::Test
       context_files: nil
     )
 
-    stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
-    assert stderr_messages.any? { |m| m.include?('prompt ID is required') }
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+    end
+    assert_includes error.message, 'prompt ID is required'
   end
 
   def test_passes_with_prompt_id
@@ -608,11 +638,12 @@ class ValidatorPipelineTest < Minitest::Test
         prompts: OpenStruct.new(dir: dir, extname: '.md')
       )
 
-      stderr_messages = []
-      AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-      AIA::ConfigValidator.send(:validate_pipeline_prompts, config)
-      assert stderr_messages.any? { |m| m.include?('does not exist') }
+      error = assert_raises(AIA::ConfigurationError) do
+        capture_io do
+          AIA::ConfigValidator.send(:validate_pipeline_prompts, config)
+        end
+      end
+      assert_includes error.message, 'do not exist'
     end
   end
 
@@ -664,6 +695,8 @@ end
 
 
 class ValidatorListToolsTest < Minitest::Test
+  include ValidatorTestHelpers
+
   def test_handle_list_tools_skips_when_not_set
     config = OpenStruct.new(list_tools: nil)
 
@@ -682,7 +715,7 @@ class ValidatorListToolsTest < Minitest::Test
     # Stub ObjectSpace to return no tool subclasses
     ObjectSpace.stubs(:each_object).with(Class).returns([].each)
 
-    _out, err = capture_io do
+    err = capture_stderr_through_exception do
       AIA::ConfigValidator.send(:handle_list_tools, config)
     end
     assert_match(/No tools available/, err)

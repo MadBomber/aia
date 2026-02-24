@@ -176,7 +176,7 @@ module AIA
       puts "    Wage:     #{wage_for(model_name)}"
 
       local_count = Array(bot.local_tools).size
-      mcp_count = Array(bot.respond_to?(:mcp_tools) ? bot.mcp_tools : bot.instance_variable_get(:@mcp_tools)).size
+      mcp_count = Array(bot.mcp_tools).size
       total = local_count + mcp_count
       tool_parts = []
       tool_parts << "#{local_count} local" if local_count > 0
@@ -203,13 +203,9 @@ module AIA
     end
 
     def chat_provider(bot)
-      return nil unless bot.instance_variable_defined?(:@chat)
-
-      chat = bot.instance_variable_get(:@chat)
-      if chat.respond_to?(:model)
-        m = chat.model
-        m.respond_to?(:provider) ? m.provider : nil
-      end
+      bot.chat_provider
+    rescue StandardError
+      nil
     end
 
     def role_for(bot)
@@ -226,16 +222,11 @@ module AIA
       robot = AIA.client
       return [] unless robot
 
-      if robot.respond_to?(:mcp_tools)
-        return Array(robot.mcp_tools)
-      end
+      return Array(robot.mcp_tools) if robot.respond_to?(:mcp_tools)
 
       if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
         first_robot = robot.robots.values.first
-        if first_robot
-          tools = first_robot.instance_variable_get(:@mcp_tools)
-          return Array(tools)
-        end
+        return Array(first_robot.mcp_tools) if first_robot
       end
 
       []
