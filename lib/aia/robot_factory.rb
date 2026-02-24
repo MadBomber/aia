@@ -6,6 +6,8 @@
 # Builds RobotLab::Robot or RobotLab::Network instances from AIA configuration.
 # Replaces the entire lib/aia/adapter/ directory from v1.
 
+require_relative 'robot_namer'
+
 module AIA
   class RobotFactory
     class << self
@@ -14,6 +16,7 @@ module AIA
       # @param config [AIA::Config] the AIA configuration
       # @return [RobotLab::Robot, RobotLab::Network] the built robot or network
       def build(config = AIA.config)
+        @namer = RobotNamer.new
         configure_robot_lab(config)
         load_tools(config)
 
@@ -64,11 +67,12 @@ module AIA
         tools = filtered_tools(config)
         model_spec = config.models.first
         system_prompt = resolve_system_prompt(config, model_spec)
+        namer = @namer
 
         RobotLab.create_network(name: "aia-concurrent-mcp") do
           server_groups.each_with_index do |group, i|
             build_opts = {
-              name:          "mcp-worker-#{i}",
+              name:          "#{namer.name_for(model_spec.name)}-w#{i}",
               model:         model_spec.name,
               system_prompt: system_prompt,
               local_tools:   tools,
@@ -81,7 +85,7 @@ module AIA
           end
 
           synth_opts = {
-            name:          "mcp-synthesizer",
+            name:          "Weaver",
             model:         model_spec.name,
             system_prompt: "You are a synthesizer. Merge the following results from " \
                            "multiple specialized queries into a coherent response. " \
@@ -101,9 +105,14 @@ module AIA
       # @return [RobotLab::Robot]
       def build_single_robot(config)
         model_spec = config.models.first
+        robot_name = @namer.name_for(model_spec.name)
+        identity = build_identity_prompt(robot_name, model_spec, [{ name: robot_name, spec: model_spec }])
+        base_prompt = resolve_system_prompt(config, model_spec)
+        system_prompt = [identity, base_prompt].compact.join("\n\n")
+
         build_opts = {
-          name:          "aia-#{model_spec.internal_id}",
-          system_prompt: resolve_system_prompt(config, model_spec),
+          name:          robot_name,
+          system_prompt: system_prompt,
           model:         model_spec.name,
           local_tools:   filtered_tools(config),
           mcp_servers:   mcp_server_configs(config),
@@ -352,6 +361,30 @@ module AIA
         system_prompt
       end
 
+      # Build an identity preamble so each robot knows its own name,
+      # model, and the other robots in the network.
+      #
+      # @param robot_name [String] this robot's creative name
+      # @param spec [ModelSpec] this robot's model spec
+      # @param roster [Array<Hash>] all robots: [{ name:, spec: }, ...]
+      # @return [String]
+      def build_identity_prompt(robot_name, spec, roster)
+        provider_label = spec.provider ? " (#{spec.provider})" : ""
+        lines = ["You are #{robot_name}, powered by #{spec.name}#{provider_label}."]
+
+        if roster.size > 1
+          lines << "You are part of a team of AI robots:"
+          roster.each do |entry|
+            p = entry[:spec].provider ? " (#{entry[:spec].provider})" : ""
+            marker = entry[:name] == robot_name ? " ← you" : ""
+            lines << "  - #{entry[:name]}: #{entry[:spec].name}#{p}#{marker}"
+          end
+          lines << "Users can address a specific robot with @name mentions."
+        end
+
+        lines.join("\n")
+      end
+
       # Load role file content
       def load_role_content(config, role_id)
         roles_prefix = config.prompts.roles_prefix
@@ -441,13 +474,14 @@ module AIA
         tools = filtered_tools(config)
         mcp = mcp_server_configs(config)
         model_spec = config.models.first
+        namer = @namer
 
         RobotLab.create_network(name: "aia-pipeline") do
           prev = nil
           prompts.each_with_index do |prompt_id, i|
             task_name = :"step_#{i}"
             build_opts = {
-              name:          "aia-pipeline-#{i}",
+              name:          "#{namer.name_for(model_spec.name)}-s#{i}",
               system_prompt: nil,
               model:         model_spec.name,
               local_tools:   tools,
@@ -467,14 +501,21 @@ module AIA
         run_config = build_run_config(config)
         tools = filtered_tools(config)
         mcp = mcp_server_configs(config)
-        model_specs = config.models
         aia_config = config
 
+        # Pre-generate names so each robot can see the full roster
+        roster = config.models.map { |spec| { name: @namer.name_for(spec.name), spec: spec } }
+
         RobotLab.create_network(name: "aia-parallel") do
-          model_specs.each do |spec|
+          roster.each do |entry|
+            spec = entry[:spec]
+            identity = RobotFactory.send(:build_identity_prompt, entry[:name], spec, roster)
+            base_prompt = RobotFactory.send(:resolve_system_prompt, aia_config, spec)
+            system_prompt = [identity, base_prompt].compact.join("\n\n")
+
             build_opts = {
-              name:          "aia-#{spec.internal_id}",
-              system_prompt: RobotFactory.send(:resolve_system_prompt, aia_config, spec),
+              name:          entry[:name],
+              system_prompt: system_prompt,
               model:         spec.name,
               local_tools:   tools,
               mcp_servers:   mcp,
@@ -492,16 +533,23 @@ module AIA
         run_config = build_run_config(config)
         tools = filtered_tools(config)
         mcp = mcp_server_configs(config)
-        model_specs = config.models
-        primary = model_specs.first
+        primary = config.models.first
         aia_config = config
+
+        # Pre-generate names so each robot can see the full roster
+        roster = config.models.map { |spec| { name: @namer.name_for(spec.name), spec: spec } }
 
         RobotLab.create_network(name: "aia-consensus") do
           # All models run in parallel
-          model_specs.each do |spec|
+          roster.each do |entry|
+            spec = entry[:spec]
+            identity = RobotFactory.send(:build_identity_prompt, entry[:name], spec, roster)
+            base_prompt = RobotFactory.send(:resolve_system_prompt, aia_config, spec)
+            system_prompt = [identity, base_prompt].compact.join("\n\n")
+
             build_opts = {
-              name:          "aia-#{spec.internal_id}",
-              system_prompt: RobotFactory.send(:resolve_system_prompt, aia_config, spec),
+              name:          entry[:name],
+              system_prompt: system_prompt,
               model:         spec.name,
               local_tools:   tools,
               mcp_servers:   mcp,
@@ -514,7 +562,7 @@ module AIA
 
           # Synthesizer collects all responses
           synth_opts = {
-            name:          "aia-synthesizer",
+            name:          "Weaver",
             system_prompt: "You are a synthesizer. Review the responses from multiple AI models and create a unified, coherent response that captures the best insights from each.",
             model:         primary.name,
             config:        run_config
@@ -522,7 +570,7 @@ module AIA
           synth_opts[:provider] = RobotFactory.send(:resolve_provider, primary) if primary.provider
           synthesizer = RobotLab.build(**synth_opts)
           task :consensus, synthesizer,
-               depends_on: model_specs.map { |s| s.internal_id.to_sym }
+               depends_on: config.models.map { |s| s.internal_id.to_sym }
         end
       end
     end

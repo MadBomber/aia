@@ -141,6 +141,23 @@ module AIA
         File.mtime(models_file).strftime('%Y-%m-%d %H:%M')
       end
 
+      # Build the "Today's crew:" line from robot names
+      def build_crew_line
+        client = AIA.client
+        return '' unless client
+
+        names = if client.is_a?(RobotLab::Network)
+                  client.robots.values.map(&:name)
+                else
+                  [client.name]
+                end
+
+        return '' if names.empty?
+
+        mentions = names.map { |n| "@#{n.downcase}" }.join(', ')
+        "Today's crew: #{mentions}"
+      end
+
       # Displays the AIA robot ASCII art
       # Yes, its slightly frivolous but it does contain some
       # useful configuration information.
@@ -193,6 +210,8 @@ module AIA
                               "has not been refreshed"
                             end
 
+        # Build crew line from robot names
+        crew_line = build_crew_line
 
         puts <<-ROBOT
 
@@ -204,7 +223,7 @@ module AIA
      [/______\\]  /   #{model_db_refresh}
     / \\__AI__/ \\/      #{tools? ? "I brought #{total_tool_count} tools to share" : 'I did not bring any tools'}
    /    /__\\              #{mcp_line}
-  (\\   /____\\
+  (\\   /____\\           #{crew_line}
         ROBOT
       end
     end

@@ -98,6 +98,25 @@ module AIA
       ''
     end
 
+    desc "Show active robot configuration"
+    def robots(args = [], context_manager = nil)
+      client = AIA.client
+      unless client
+        puts "No active robots"
+        return ''
+      end
+
+      puts
+      if client.is_a?(RobotLab::Network)
+        show_network(client)
+      else
+        show_single_robot(client)
+      end
+      puts
+
+      ''
+    end
+
     desc "Add instruction for concise responses"
     def terse(args, context_manager = nil)
       "" # DEPRECATED: terse mode has been removed
@@ -115,6 +134,92 @@ module AIA
     end
 
     private
+
+    def show_network(network)
+      robot_count = network.robots.size
+      mode = if AIA.config.flags.consensus
+               "Consensus"
+             elsif AIA.config.pipeline.length > 1
+               "Pipeline"
+             else
+               "Parallel"
+             end
+
+      header = "Active Robots"
+      puts header
+      puts "=" * header.length
+      puts "Mode: #{mode} Network (#{robot_count} robots)"
+
+      network.robots.each_value do |bot|
+        puts
+        show_robot_detail(bot)
+      end
+    end
+
+    def show_single_robot(bot)
+      header = "Active Robot"
+      puts header
+      puts "=" * header.length
+      puts "Mode: Single"
+      puts
+      show_robot_detail(bot)
+    end
+
+    def show_robot_detail(bot)
+      puts "  #{bot.name}"
+
+      model_name = bot.model || 'unknown'
+      provider = bot.respond_to?(:provider) ? bot.provider : nil
+      provider ||= chat_provider(bot)
+      model_line = provider ? "#{model_name} (#{provider})" : model_name
+      puts "    Model:    #{model_line}"
+      puts "    Wage:     #{wage_for(model_name)}"
+
+      local_count = Array(bot.local_tools).size
+      mcp_count = Array(bot.respond_to?(:mcp_tools) ? bot.mcp_tools : bot.instance_variable_get(:@mcp_tools)).size
+      total = local_count + mcp_count
+      tool_parts = []
+      tool_parts << "#{local_count} local" if local_count > 0
+      tool_parts << "#{mcp_count} mcp" if mcp_count > 0
+      puts "    Tools:    #{total} (#{tool_parts.join(', ')})" if total > 0
+      puts "    Tools:    none" if total == 0
+
+      role = role_for(bot)
+      puts "    Role:     #{role}"
+    end
+
+    # Cost per 1K tokens (price_per_million * 1000 / 1_000_000)
+    def wage_for(model_name)
+      model_info = RubyLLM::Models.find(model_name)
+      input  = model_info&.input_price_per_million
+      output = model_info&.output_price_per_million
+      return 'N/A' unless input && output
+
+      in_per_k  = input  * 1000.0 / 1_000_000
+      out_per_k = output * 1000.0 / 1_000_000
+      "$#{'%.4f' % in_per_k} in / $#{'%.4f' % out_per_k} out per 1K tokens"
+    rescue StandardError
+      'N/A'
+    end
+
+    def chat_provider(bot)
+      return nil unless bot.instance_variable_defined?(:@chat)
+
+      chat = bot.instance_variable_get(:@chat)
+      if chat.respond_to?(:model)
+        m = chat.model
+        m.respond_to?(:provider) ? m.provider : nil
+      end
+    end
+
+    def role_for(bot)
+      spec = AIA.config.models.find { |s| s.name == bot.model }
+      if spec&.role?
+        spec.role
+      else
+        "(default)"
+      end
+    end
 
     # Retrieve MCP tools from robot or first robot in a Network
     def all_mcp_tools

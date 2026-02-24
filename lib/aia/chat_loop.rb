@@ -80,9 +80,15 @@ module AIA
 
         log_user_input(follow_up_prompt)
 
-        if @directive_processor.directive?(follow_up_prompt)
-          follow_up_prompt = process_directive(follow_up_prompt)
-          next if follow_up_prompt.nil?
+        if follow_up_prompt.strip.start_with?('/')
+          if @directive_processor.directive?(follow_up_prompt)
+            follow_up_prompt = process_directive(follow_up_prompt)
+            next if follow_up_prompt.nil?
+          else
+            name = follow_up_prompt.strip.split(' ').first
+            @ui_presenter.display_info("Unknown directive: #{name}  (use /help to see available directives)")
+            next
+          end
         end
 
         begin
@@ -110,6 +116,11 @@ module AIA
         if AIA.config.flags.expert_routing
           specialist = route_to_expert(decisions, processed_prompt)
           next if specialist
+        end
+
+        # @mention routing — send to a single robot in the network
+        if handle_mention(processed_prompt)
+          next
         end
 
         begin
@@ -250,6 +261,104 @@ module AIA
       false
     end
 
+    # Scan prompt for @mentions anywhere in the text.  When at least
+    # one mention resolves to a known robot, the entire prompt is sent
+    # only to the mentioned robots (not the whole network).
+    # Returns true if mentions were handled, false otherwise.
+    def handle_mention(prompt)
+      return false unless @robot.is_a?(RobotLab::Network)
+
+      # Extract all @word tokens from the prompt
+      mention_tokens = prompt.scan(/@(\w+)/i).flatten
+      return false if mention_tokens.empty?
+
+      # Match tokens to robots by creative name (case-insensitive)
+      all_robots = @robot.robots.values
+      matched = mention_tokens.filter_map do |token|
+        all_robots.find { |r| r.name.downcase == token.downcase }
+      end.uniq(&:name)
+
+      return false if matched.empty?
+
+      # Report any unrecognized mentions
+      known_names = all_robots.map { |r| r.name.downcase }
+      unknown = mention_tokens.reject { |t| known_names.include?(t.downcase) }
+      if unknown.any?
+        available = all_robots.map(&:name).join(', ')
+        unknown.each do |name|
+          @ui_presenter.display_info("Unknown robot: @#{name}  (available: #{available})")
+        end
+      end
+
+      run_mentioned_robots(matched, prompt)
+      true
+    end
+
+    # Send the prompt to each mentioned robot and display results.
+    def run_mentioned_robots(robots, prompt)
+      parts = []
+
+      robots.each do |bot|
+        begin
+          spinner = TTY::Spinner.new("[:spinner] #{bot.name} processing...", format: :bouncing_ball)
+          spinner.auto_spin
+          streamed = []
+          header_printed = false
+
+          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+          result = bot.run(prompt, mcp: :inherit, tools: :inherit) do |chunk|
+            text = chunk.respond_to?(:content) ? chunk.content.to_s : chunk.to_s
+            next if text.empty?
+
+            unless header_printed
+              spinner.stop
+              print "\nAI (#{bot.name}):\n   "
+              header_printed = true
+            end
+
+            streamed << text
+            $stdout.print(text)
+          end
+
+          elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+          spinner.stop unless header_printed
+          streamed_content = streamed.empty? ? nil : streamed.join
+        rescue StandardError => e
+          @ui_presenter.display_info("Error from #{bot.name}: #{e.class}: #{e.message}")
+          next
+        end
+
+        content = streamed_content || extract_content(result)
+
+        @tracker.record_turn(
+          model: bot.model || 'unknown',
+          input: prompt,
+          result: result
+        )
+
+        if streamed_content
+          puts
+          @ui_presenter.display_info("(#{format_duration(elapsed)})")
+        else
+          model_label = bot.model || 'unknown'
+          header = "**#{bot.name}** [#{model_label}] (#{format_duration(elapsed)}):"
+          parts << "#{header}\n#{content}"
+        end
+
+        output_to_file(content)
+        display_metrics(result)
+        speak(content)
+      end
+
+      # Display non-streamed results together
+      unless parts.empty?
+        @ui_presenter.display_ai_response(parts.join("\n\n"))
+      end
+
+      @ui_presenter.display_separator
+    end
+
     def route_to_expert(decisions, prompt)
       router = ExpertRouter.new(decisions)
       specialist = router.route(AIA.config)
@@ -375,6 +484,7 @@ module AIA
 
     # Extract content from a Network's SimpleFlow::Result.
     # Each robot's result is stored in context under its task name.
+    # Includes per-robot timing when available.
     def extract_network_content(flow_result)
       parts = []
       flow_result.context.each do |task_name, robot_result|
@@ -387,9 +497,32 @@ module AIA
                   else
                     robot_result.to_s
                   end
-        parts << "**#{task_name}:**\n#{content}" if content && !content.empty?
+        next unless content && !content.empty?
+
+        duration = robot_result.respond_to?(:duration) ? robot_result.duration : nil
+        robot_name = robot_result.respond_to?(:robot_name) ? robot_result.robot_name : nil
+        label = robot_name && robot_name != task_name.to_s ? "#{robot_name} [#{task_name}]" : task_name.to_s
+        header = if duration
+                   "**#{label}** (#{format_duration(duration)}):"
+                 else
+                   "**#{label}:**"
+                 end
+        parts << "#{header}\n#{content}"
       end
       parts.join("\n\n")
+    end
+
+    # Format a duration in seconds to a human-readable string
+    def format_duration(seconds)
+      return "0.0s" unless seconds
+
+      if seconds < 60
+        "%.1fs" % seconds
+      else
+        minutes = (seconds / 60).to_i
+        secs = seconds % 60
+        "#{minutes}m %04.1fs" % secs
+      end
     end
 
     # Display token metrics if enabled
