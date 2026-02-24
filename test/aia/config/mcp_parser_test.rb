@@ -149,6 +149,55 @@ class McpParserTest < Minitest::Test
     end
   end
 
+  def test_parse_preserves_topics_field
+    json = {
+      "mcpServers" => {
+        "filesystem" => {
+          "command" => "npx",
+          "topics" => ["files", "code", "directory"]
+        }
+      }
+    }
+
+    with_temp_json(json) do |path|
+      servers = AIA::McpParser.parse_files([path])
+      assert_equal 1, servers.size
+      assert_equal ["files", "code", "directory"], servers.first[:topics]
+    end
+  end
+
+  def test_parse_preserves_independent_field
+    json = {
+      "mcpServers" => {
+        "search" => {
+          "command" => "search_mcp",
+          "independent" => true
+        }
+      }
+    }
+
+    with_temp_json(json) do |path|
+      servers = AIA::McpParser.parse_files([path])
+      assert_equal true, servers.first[:independent]
+    end
+  end
+
+  def test_parse_preserves_group_field
+    json = {
+      "mcpServers" => {
+        "db_reader" => {
+          "command" => "db_mcp",
+          "group" => "database"
+        }
+      }
+    }
+
+    with_temp_json(json) do |path|
+      servers = AIA::McpParser.parse_files([path])
+      assert_equal "database", servers.first[:group]
+    end
+  end
+
   def test_parse_mixed_nonexistent_and_valid
     json = { "mcpServers" => { "valid" => { "command" => "test" } } }
 

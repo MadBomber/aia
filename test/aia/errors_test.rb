@@ -18,6 +18,7 @@ class ErrorsTest < Minitest::Test
     AIA::MCPError,
     AIA::AdapterError,
     AIA::DirectiveError,
+    AIA::GateError,
   ].freeze
 
   AIA_ERROR_CLASSES.each do |error_class|

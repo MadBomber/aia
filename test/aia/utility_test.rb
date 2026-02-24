@@ -70,7 +70,7 @@ class UtilityTest < Minitest::Test
     
     # Check for version information - flexible pattern matching
     assert_match /AI Assistant \(v[\d.\w-]+\) is Online/, output
-    assert_match /using ruby_llm \(v[\d.]+(?:\s+MCP\s+v[\d.]+)?\)/, output
+    assert_match /using ruby_llm v[\d.]+/, output
   end
 
   def test_robot_displays_model_information
@@ -92,46 +92,38 @@ class UtilityTest < Minitest::Test
     assert_includes output, "2024-01-15"
   end
 
-  def test_robot_with_empty_tool_paths
+  def test_robot_with_no_tools
     AIA.config.tools.paths = []
+    AIA.config.tool_names = ''
+    AIA.config.loaded_tools = []
 
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Should show message about sharing tools
-    assert_includes output, "You can share my tools"
-    refute_includes output, "I will also use your tools"
-    refute_includes output, "My Toolbox contains:"
+    assert_includes output, "I did not bring any tools"
   end
 
-  def test_robot_with_non_empty_tool_paths
-    AIA.config.tools.paths = ['/path/to/tools']
-
-    AIA::Utility.robot
-
-    output = @captured_output.string
-
-    # Should show message about using user's tools
-    assert_includes output, "I will also use your tools"
-    assert_includes output, "My Toolbox contains:"
-    refute_includes output, "You can share my tools"
-  end
-
-  def test_robot_displays_tools_when_available
-    # Use real WordWrapper - no mocking
+  def test_robot_with_tools_available
     AIA.config.tool_names = 'calculator, weather_api, file_reader'
-    AIA.config.tools.paths = ['/some/path']  # Non-empty to trigger toolbox display
+    AIA.config.loaded_tools = [mock('t1'), mock('t2'), mock('t3')]
 
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Should include tool names in output
-    assert_includes output, "calculator"
-    assert_includes output, "weather_api"
-    assert_includes output, "file_reader"
-    assert_includes output, "My Toolbox contains:"
+    assert_includes output, "I brought 3 tools to share"
+  end
+
+  def test_robot_displays_tool_count
+    AIA.config.tool_names = 'calculator, weather_api'
+    AIA.config.loaded_tools = [mock('t1'), mock('t2')]
+
+    AIA::Utility.robot
+
+    output = @captured_output.string
+
+    assert_includes output, "I brought 2 tools to share"
   end
 
   def test_robot_handles_nil_tools
@@ -148,36 +140,21 @@ class UtilityTest < Minitest::Test
   def test_robot_calculates_correct_width
     TTY::Screen.stubs(:width).returns(120)
 
-    # Mock WordWrapper to verify correct width calculation
-    expected_width = 120 - 18 - 2  # total_width - indent - margin = 100
-    mock_wrapper = mock('wrapper')
-    mock_wrapper.expects(:wrap).returns("tools")
-    WordWrapper::MinimumRaggedness.expects(:new).with(expected_width, anything).returns(mock_wrapper)
-
-    AIA.config.tool_names = 'some tools'
-    AIA.config.tools.paths = ['/path']
-
     AIA::Utility.robot
+
+    output = @captured_output.string
+    assert_includes output, "AI Assistant"
   end
 
-  def test_robot_applies_correct_indentation
-    # Mock WordWrapper to return multi-line text
-    mock_wrapper = mock('wrapper')
-    mock_wrapper.expects(:wrap).returns("line1\nline2\nline3")
-    WordWrapper::MinimumRaggedness.expects(:new).returns(mock_wrapper)
-
-    AIA.config.tool_names = 'test tools'
-    AIA.config.tools.paths = ['/path']
-
+  def test_robot_banner_structure
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Each line should be indented with 18 spaces
-    lines = output.split("\n")
-    tool_lines = lines.select { |line| line.start_with?(' ' * 18) && line.include?('line') }
-
-    assert tool_lines.size >= 3, "Should have at least 3 indented tool lines"
+    # Verify key banner elements are present
+    assert_includes output, "AI Assistant"
+    assert_includes output, "ruby_llm"
+    assert_includes output, "model db was last refreshed on"
   end
 
   def test_robot_class_method_accessibility
@@ -216,7 +193,7 @@ class UtilityTest < Minitest::Test
 
     # Validate interpolated versions and model
     assert_includes output, "AI Assistant (vvX.Y.Z)"
-    assert_match /using ruby_llm \(vvR\.L\.M(?:\s+MCP\s+v[\d.]+)?\)/, output
+    assert_match /using ruby_llm vvR\.L\.M/, output
     assert_includes output, 'my-test-model'
 
     # Restore originals
@@ -282,7 +259,7 @@ class UtilityTest < Minitest::Test
     assert_includes output, "gpt-4-turbo"
     assert_includes output, "using ruby_llm"
     assert_includes output, "2024-12-26"
-    assert_includes output, "I will also use your tools"  # Line 24 branch
+    assert_includes output, "I brought"  # tools line
 
   ensure
     # Restore original config method if it existed
@@ -330,22 +307,15 @@ class UtilityTest < Minitest::Test
     refute_includes output, "My Toolbox contains:"
   end
 
-  def test_robot_tool_text_formatting
-    # Test that tools text is properly formatted and indented
-    mock_wrapper = mock('wrapper')
-    mock_wrapper.expects(:wrap).returns("tool1\ntool2")
-    WordWrapper::MinimumRaggedness.expects(:new).returns(mock_wrapper)
-
+  def test_robot_tool_count_display
     AIA.config.tool_names = 'tool1, tool2'
-    AIA.config.tools.paths = ['/path']
+    AIA.config.loaded_tools = [mock('t1'), mock('t2')]
 
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Each tool line should end with newline and be properly spaced
-    assert_includes output, "tool1"
-    assert_includes output, "tool2"
+    assert_includes output, "I brought 2 tools to share"
   end
 
   def test_robot_basic_execution_no_mocks

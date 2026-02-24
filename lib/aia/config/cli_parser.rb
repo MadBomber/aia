@@ -81,7 +81,7 @@ module AIA
         end
 
         opts.on("-m MODEL", "--model MODEL", "Set LLM model(s) to use. Format: MODEL[=ROLE][,MODEL[=ROLE]]...") do |model_string|
-          options[:models] = parse_models_with_roles(model_string)
+          options[:models] = (options[:models] || []) + parse_models_with_roles(model_string)
         end
 
         opts.on("--[no-]consensus", "Enable/disable consensus mode for multi-model responses") do |consensus|

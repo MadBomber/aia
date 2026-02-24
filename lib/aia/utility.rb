@@ -1,12 +1,49 @@
 # lib/aia/utility.rb
 
 require 'word_wrapper'      # Pure ruby word wrapping
+require 'simple_flow'
+require 'trak_flow'
+begin
+  require 'ruby_llm/mcp'
+rescue LoadError, StandardError
+  # ruby_llm-mcp may not be installed
+end
 
 module AIA
   class Utility
     class << self
       def tools?
-        AIA.config&.tool_names && !AIA.config.tool_names.empty?
+        return true if AIA.config&.tool_names && !AIA.config.tool_names.empty?
+        total_tool_count > 0
+      end
+
+      # Total count of all available tools (local + MCP)
+      def total_tool_count
+        local = Array(AIA.config&.loaded_tools).size
+        mcp   = mcp_tool_count
+        local + mcp
+      end
+
+      # Count MCP tools from the robot or first robot in a Network
+      def mcp_tool_count
+        robot = AIA.client
+        return 0 unless robot
+
+        # Single robot with mcp_tools
+        if robot.respond_to?(:mcp_tools)
+          return Array(robot.mcp_tools).size
+        end
+
+        # Network: check instance variable on first robot
+        if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
+          first_robot = robot.robots.values.first
+          if first_robot
+            tools = first_robot.instance_variable_get(:@mcp_tools)
+            return Array(tools).size
+          end
+        end
+
+        0
       end
 
       def user_tools?
@@ -18,15 +55,21 @@ module AIA
         !names.empty?
       end
 
-      # Returns MCP server names the robot is configured to use.
-      # After first run, returns actually connected server names.
+      # Returns MCP server names that are actually connected.
+      # Returns [] when connection was attempted but none succeeded.
+      # Falls back to configured names only before connection is attempted.
       def mcp_server_names
-        # After first run, robot has actual connection info
+        # If early connection was attempted, return its result (even if empty)
+        connected = AIA.config&.connected_mcp_servers
+        return connected unless connected.nil?
+
+        # Check the robot's actual client connections
         robot = AIA.client
         if robot&.respond_to?(:mcp_clients) && !robot.mcp_clients.empty?
           return robot.mcp_clients.keys
         end
 
+        # Pre-connection fallback: return configured names
         effective_mcp_server_names
       end
 
@@ -106,7 +149,14 @@ module AIA
         spaces  = " "*indent
         width   = TTY::Screen.width - indent - 2
 
-        mcp_version = defined?(RubyLLM::MCP::VERSION) ? " MCP v" + RubyLLM::MCP::VERSION : ''
+        mcp_version = defined?(RubyLLM::MCP::VERSION) ? ", ruby_llm-mcp v#{RubyLLM::MCP::VERSION}" : ''
+
+        # Build orchestration gems version line
+        orchestration_parts = []
+        orchestration_parts << "robot_lab v#{RobotLab::VERSION}" if defined?(RobotLab::VERSION)
+        orchestration_parts << "simple_flow v#{SimpleFlow::VERSION}" if defined?(SimpleFlow::VERSION)
+        orchestration_parts << "trak_flow v#{TrakFlow::VERSION}" if defined?(TrakFlow::VERSION)
+        orchestration_line = orchestration_parts.join(', ')
 
         # Extract model names from config (handles ModelSpec objects or Hashes)
         model_display = if AIA.config&.models && !AIA.config.models.empty?
@@ -124,37 +174,38 @@ module AIA
           'unknown-model'
         end
 
-        # Build MCP line showing configured servers
+        # Build MCP line showing connection status
         mcp_line = if mcp_servers?
-          "MCP: #{mcp_server_names.join(', ')}"
+          defined_count   = effective_mcp_server_names.size
+          connected       = mcp_server_names
+          failed          = failed_mcp_servers
+          connected_count = connected.size
+          failed_count    = failed.size
+          "MCP Servers defined: #{defined_count}  Connected: #{connected_count}  Failed: #{failed_count}"
         else
-          "MCP: (none configured)"
+          "MCP Servers: (none configured)"
         end
+
+        model_db_refresh = "model db "
+        model_db_refresh += if models_last_refresh
+                              "was last refreshed on #{models_last_refresh.gsub(' ',' at ')}"
+                            else
+                              "has not been refreshed"
+                            end
+
 
         puts <<-ROBOT
 
        ,      ,
-       (\\____/) AI Assistant (v#{AIA::VERSION}) is Online
+       (\\____/) AI Assistant (v#{AIA::VERSION}) is Online with kbs (v#{KBS::VERSION})
         (_oo_)   #{model_display}#{supports_tools? ? ' (supports tools)' : ''}
-         (O)       using ruby_llm (v#{RubyLLM::VERSION}#{mcp_version})
-       __||__    \\) model db was last refreshed on
-     [/______\\]  /    #{models_last_refresh || 'unknown'}
-    / \\__AI__/ \\/      #{user_tools? ? 'I will also use your tools' : (tools? ? 'You can share my tools' : 'I did not bring any tools')}
+         (O)       using ruby_llm v#{RubyLLM::VERSION}#{mcp_version}
+       __||__    \\)   #{orchestration_line}
+     [/______\\]  /   #{model_db_refresh}
+    / \\__AI__/ \\/      #{tools? ? "I brought #{total_tool_count} tools to share" : 'I did not bring any tools'}
    /    /__\\              #{mcp_line}
-  (\\   /____\\   #{user_tools? && tools? ? 'My Toolbox contains:' : ''}
+  (\\   /____\\
         ROBOT
-        if user_tools? && tools?
-          tool_names = AIA.config.tool_names
-          if tool_names && !tool_names.to_s.empty?
-            puts WordWrapper::MinimumRaggedness.new(
-                width,
-                tool_names.to_s # String of tool names, comma separated
-              ).wrap
-              .split("\n")
-              .map{|s| spaces+s+"\n"}
-              .join
-          end
-        end
       end
     end
   end

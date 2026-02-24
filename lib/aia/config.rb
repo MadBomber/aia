@@ -111,6 +111,7 @@ module AIA
       embedding: config_section_coercion(:embedding),
       tools: config_section_coercion(:tools),
       flags: config_section_coercion(:flags),
+      logger: config_section_coercion(:logger),
       registry: config_section_coercion(:registry),
       paths: config_section_coercion(:paths),
       rules: config_section_coercion(:rules),
@@ -219,6 +220,8 @@ module AIA
           section, nested_key = CLI_TO_NESTED_MAP[key_sym]
           section_obj = send(section)
           section_obj.send("#{nested_key}=", value) if section_obj.respond_to?("#{nested_key}=")
+        elsif key_sym == :models
+          self.models = TO_MODEL_SPECS.call(Array(value))
         elsif respond_to?("#{key}=")
           send("#{key}=", value)
         elsif key.to_s.include?('__')
@@ -242,6 +245,7 @@ module AIA
         embedding: embedding.to_h,
         tools: tools.to_h,
         flags: flags.to_h,
+        logger: logger.to_h,
         registry: registry.to_h,
         paths: paths.to_h,
         rules: rules.to_h,

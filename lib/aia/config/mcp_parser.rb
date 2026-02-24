@@ -108,6 +108,19 @@ module AIA
             server[:headers] = config['headers']
           end
 
+          # Preserve routing metadata for KBS
+          if config['topics']
+            server[:topics] = Array(config['topics'])
+          end
+
+          if config['independent'] != nil
+            server[:independent] = config['independent']
+          end
+
+          if config['group']
+            server[:group] = config['group']
+          end
+
           server
         end
       end

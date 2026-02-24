@@ -12,13 +12,7 @@ module AIA
       width = TTY::Screen.width - indent - 2
       filter = args.first&.downcase
 
-      loaded_tools = Array(AIA.config.loaded_tools)
-
-      # Include MCP tools from the robot (populated after first run)
-      robot = AIA.client
-      if robot&.respond_to?(:mcp_tools)
-        loaded_tools = loaded_tools + Array(robot.mcp_tools)
-      end
+      loaded_tools = Array(AIA.config.loaded_tools) + all_mcp_tools
 
       if loaded_tools.empty?
         puts "No tools are available"
@@ -53,6 +47,57 @@ module AIA
       ''
     end
 
+    desc "Show MCP server connection status and available tools"
+    def mcp(args = [], context_manager = nil)
+      connected = AIA.config&.connected_mcp_servers || []
+      failed    = AIA.config&.failed_mcp_servers || []
+      defined_count = AIA::Utility.effective_mcp_server_names.size
+
+      puts
+      puts "MCP Server Status"
+      puts "================="
+      puts "Defined: #{defined_count}  Connected: #{connected.size}  Failed: #{failed.size}"
+      puts
+
+      if connected.any?
+        mcp_tools = all_mcp_tools
+
+        # Group tools by their MCP server name
+        tools_by_server = {}
+        connected.each { |name| tools_by_server[name] = [] }
+
+        mcp_tools.each do |tool|
+          server_name = tool.respond_to?(:mcp) ? tool.mcp : nil
+          if server_name && tools_by_server.key?(server_name)
+            tools_by_server[server_name] << tool
+          end
+        end
+
+        puts "Connected Servers:"
+        connected.each do |name|
+          tools = tools_by_server[name] || []
+          puts "  #{name} (#{tools.size} tools)"
+          tools.each do |tool|
+            tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
+            puts "    - #{tool_name}"
+          end
+        end
+        puts
+      end
+
+      if failed.any?
+        puts "Failed Servers:"
+        failed.each do |f|
+          name  = f[:name] || f['name']
+          error = f[:error] || f['error']
+          puts "  #{name}: #{error}"
+        end
+        puts
+      end
+
+      ''
+    end
+
     desc "Add instruction for concise responses"
     def terse(args, context_manager = nil)
       "" # DEPRECATED: terse mode has been removed
@@ -67,6 +112,28 @@ module AIA
     desc "Show this help message"
     def help(args = nil, context_manager = nil)
       AIA::Directive.help
+    end
+
+    private
+
+    # Retrieve MCP tools from robot or first robot in a Network
+    def all_mcp_tools
+      robot = AIA.client
+      return [] unless robot
+
+      if robot.respond_to?(:mcp_tools)
+        return Array(robot.mcp_tools)
+      end
+
+      if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
+        first_robot = robot.robots.values.first
+        if first_robot
+          tools = first_robot.instance_variable_get(:@mcp_tools)
+          return Array(tools)
+        end
+      end
+
+      []
     end
   end
 end

@@ -186,7 +186,8 @@ class ConfigTest < Minitest::Test
 
     config = AIA::Config.new(overrides: { extra_config_file: config_file })
     assert_equal 1, config.models.size
-    assert_equal 'ollama/qwen3', config.models.first.name
+    assert_equal 'qwen3', config.models.first.name
+    assert_equal 'ollama', config.models.first.provider
   ensure
     ENV['AIA_MODEL'] = original_model if original_model
   end

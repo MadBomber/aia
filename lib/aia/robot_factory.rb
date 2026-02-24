@@ -24,14 +24,75 @@ module AIA
         else
           build_single_robot(config)
         end
+      rescue RubyLLM::ModelNotFoundError => e
+        model_names = config.models.map(&:name).join(', ')
+        $stderr.puts "ERROR: #{e.message}"
+        $stderr.puts "Requested model(s): #{model_names}"
+        $stderr.puts "Run 'aia --available-models' to see available models."
+        $stdout.puts "ERROR: #{e.message}"
+        exit 1
       end
 
-      # Rebuild robot(s) after config changes (e.g., /model, /config directives)
+      # Rebuild robot(s) after config changes (e.g., /model, /config directives).
+      # Supports conversation history transfer modes.
       #
       # @param config [AIA::Config] the AIA configuration
+      # @param history_mode [Symbol] :clean, :replay, or :summarize
       # @return [RobotLab::Robot, RobotLab::Network]
-      def rebuild(config = AIA.config)
-        build(config)
+      def rebuild(config = AIA.config, history_mode: :clean)
+        old_robot = AIA.client
+        new_robot = build(config)
+
+        case history_mode
+        when :replay
+          replay_history(old_robot, new_robot)
+        when :summarize
+          summarize_history(old_robot, new_robot)
+        end
+
+        new_robot
+      end
+
+      # Build a concurrent MCP network where independent server groups
+      # run in parallel with a synthesizer to merge results.
+      #
+      # @param config [AIA::Config] the AIA configuration
+      # @param server_groups [Array<Array<Hash>>] groups of MCP server configs
+      # @return [RobotLab::Network]
+      def build_concurrent_mcp_network(config, server_groups)
+        run_config = build_run_config(config)
+        tools = filtered_tools(config)
+        model_spec = config.models.first
+        system_prompt = resolve_system_prompt(config, model_spec)
+
+        RobotLab.create_network(name: "aia-concurrent-mcp") do
+          server_groups.each_with_index do |group, i|
+            build_opts = {
+              name:          "mcp-worker-#{i}",
+              model:         model_spec.name,
+              system_prompt: system_prompt,
+              local_tools:   tools,
+              mcp_servers:   group.map { |s| RobotFactory.send(:normalize_mcp_config, s) },
+              config:        run_config
+            }
+            build_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+            robot = RobotLab.build(**build_opts)
+            task :"mcp_worker_#{i}", robot, depends_on: :none
+          end
+
+          synth_opts = {
+            name:          "mcp-synthesizer",
+            model:         model_spec.name,
+            system_prompt: "You are a synthesizer. Merge the following results from " \
+                           "multiple specialized queries into a coherent response. " \
+                           "Preserve all relevant information. Resolve contradictions.",
+            config:        run_config
+          }
+          synth_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+          synthesizer = RobotLab.build(**synth_opts)
+          task :synthesize, synthesizer,
+               depends_on: server_groups.each_index.map { |i| :"mcp_worker_#{i}" }
+        end
       end
 
       # Build a single robot for one model
@@ -40,8 +101,7 @@ module AIA
       # @return [RobotLab::Robot]
       def build_single_robot(config)
         model_spec = config.models.first
-
-        RobotLab.build(
+        build_opts = {
           name:          "aia-#{model_spec.internal_id}",
           system_prompt: resolve_system_prompt(config, model_spec),
           model:         model_spec.name,
@@ -49,7 +109,10 @@ module AIA
           mcp_servers:   mcp_server_configs(config),
           on_content:    build_streaming_callback(config),
           config:        build_run_config(config)
-        )
+        }
+        build_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+
+        RobotLab.build(**build_opts)
       end
 
       private
@@ -60,21 +123,62 @@ module AIA
         AIA::LoggerManager.configure_llm_logger
         AIA::LoggerManager.configure_mcp_logger
 
+        # Route RobotLab's internal logging through AIA's MCP logger
+        # so entries go to the configured log files instead of STDOUT.
+        # Must use direct assignment — block form doesn't set runtime attrs.
+        RobotLab.config.logger = AIA::LoggerManager.mcp_logger
+
         RobotLab.config do |c|
           c.ruby_llm do |r|
             r.request_timeout = 120
           end
         end
+
+        # Configure local provider API endpoints from environment variables
+        configure_local_providers(config)
+      end
+
+      # Set API base URLs for local providers (Ollama, LM Studio) so
+      # RubyLLM can reach them. Reads from standard env vars.
+      def configure_local_providers(config)
+        providers_used = config.models.map(&:provider).compact.uniq
+        return if providers_used.empty?
+
+        RubyLLM.configure do |c|
+          if providers_used.include?('ollama')
+            c.ollama_api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
+          end
+
+          if providers_used.include?('lms')
+            # LM Studio exposes an OpenAI-compatible API.
+            # Set openai_api_base to LM Studio's endpoint.
+            c.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
+          end
+        end
+      end
+
+      # Map AIA provider aliases to RubyLLM provider slugs for chat creation.
+      # 'lms' maps to 'openai' since LM Studio is OpenAI-compatible.
+      def resolve_provider(model_spec)
+        case model_spec.provider
+        when 'lms' then 'openai'
+        else model_spec.provider
+        end
       end
 
       # Load tools from require_libs and tool paths
       def load_tools(config)
-        # Load required libraries
+        # Load required libraries (may be outside the bundle)
         Array(config.require_libs).each do |lib|
           begin
             require lib
-          rescue LoadError => e
-            warn "Warning: Failed to require '#{lib}': #{e.message}"
+          rescue LoadError
+            # Gem not in bundle — find and load it from installed gems directly
+            if activate_unbundled_gem(lib)
+              require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
+            else
+              warn "Warning: Failed to require '#{lib}': gem not found"
+            end
           end
         end
 
@@ -98,6 +202,27 @@ module AIA
         tools = discover_tools
         config.loaded_tools = tools
         config.tool_names = tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
+      end
+
+      # Activate a gem that isn't in the bundle by scanning installed gem
+      # spec directories and prepending its lib paths to $LOAD_PATH.
+      def activate_unbundled_gem(name)
+        Gem.path.each do |gem_path|
+          spec_dir = File.join(gem_path, 'specifications')
+          next unless Dir.exist?(spec_dir)
+
+          specs = Dir.glob(File.join(spec_dir, "#{name}-*.gemspec")).filter_map do |f|
+            Gem::Specification.load(f)
+          end.select { |s| s.name == name }
+
+          next if specs.empty?
+
+          spec = specs.max_by(&:version)
+          $LOAD_PATH.unshift(*spec.full_require_paths)
+          return true
+        end
+
+        false
       end
 
       # Eagerly load tool classes from gems that use zeitwerk lazy loading.
@@ -262,6 +387,37 @@ module AIA
         RobotLab::RunConfig.new(**params)
       end
 
+      # Replay conversation history from an old robot to a new one.
+      def replay_history(old_robot, new_robot)
+        return unless old_robot.respond_to?(:messages)
+
+        old_robot.messages.each do |msg|
+          next unless msg.respond_to?(:role) && msg.role == :user
+          new_robot.run(msg.content, mcp: :none, tools: :none)
+        end
+      rescue StandardError => e
+        warn "Warning: History replay failed: #{e.message}"
+      end
+
+      # Summarize conversation history and inject into new robot.
+      def summarize_history(old_robot, new_robot)
+        return unless old_robot.respond_to?(:messages) && old_robot.messages.any?
+
+        summary_lines = old_robot.messages.map do |msg|
+          "#{msg.role}: #{msg.content}" if msg.respond_to?(:role)
+        end.compact
+
+        return if summary_lines.empty?
+
+        summary_prompt = "Summarize this conversation concisely for context transfer:\n#{summary_lines.join("\n")}"
+        summary = old_robot.run(summary_prompt, mcp: :none, tools: :none)
+        content = summary.respond_to?(:reply) ? summary.reply : summary.to_s
+
+        new_robot.run("Context from previous conversation: #{content}", mcp: :none, tools: :none)
+      rescue StandardError => e
+        warn "Warning: History summarization failed: #{e.message}"
+      end
+
       # Stored on_content callback is not used. ChatLoop passes a per-call
       # streaming block to robot.run() that stops the spinner on first chunk
       # and prints content directly. This avoids spinner/stream conflicts.
@@ -290,14 +446,16 @@ module AIA
           prev = nil
           prompts.each_with_index do |prompt_id, i|
             task_name = :"step_#{i}"
-            robot = RobotLab.build(
+            build_opts = {
               name:          "aia-pipeline-#{i}",
               system_prompt: nil,
               model:         model_spec.name,
               local_tools:   tools,
               mcp_servers:   mcp,
               config:        run_config
-            )
+            }
+            build_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+            robot = RobotLab.build(**build_opts)
             task task_name, robot, depends_on: prev ? [prev] : :none
             prev = task_name
           end
@@ -309,17 +467,21 @@ module AIA
         run_config = build_run_config(config)
         tools = filtered_tools(config)
         mcp = mcp_server_configs(config)
+        model_specs = config.models
+        aia_config = config
 
         RobotLab.create_network(name: "aia-parallel") do
-          config.models.each do |spec|
-            robot = RobotLab.build(
+          model_specs.each do |spec|
+            build_opts = {
               name:          "aia-#{spec.internal_id}",
-              system_prompt: RobotFactory.send(:resolve_system_prompt, config, spec),
+              system_prompt: RobotFactory.send(:resolve_system_prompt, aia_config, spec),
               model:         spec.name,
               local_tools:   tools,
               mcp_servers:   mcp,
               config:        run_config
-            )
+            }
+            build_opts[:provider] = RobotFactory.send(:resolve_provider, spec) if spec.provider
+            robot = RobotLab.build(**build_opts)
             task spec.internal_id.to_sym, robot, depends_on: :none
           end
         end
@@ -330,31 +492,37 @@ module AIA
         run_config = build_run_config(config)
         tools = filtered_tools(config)
         mcp = mcp_server_configs(config)
-        primary = config.models.first
+        model_specs = config.models
+        primary = model_specs.first
+        aia_config = config
 
         RobotLab.create_network(name: "aia-consensus") do
           # All models run in parallel
-          config.models.each do |spec|
-            robot = RobotLab.build(
+          model_specs.each do |spec|
+            build_opts = {
               name:          "aia-#{spec.internal_id}",
-              system_prompt: RobotFactory.send(:resolve_system_prompt, config, spec),
+              system_prompt: RobotFactory.send(:resolve_system_prompt, aia_config, spec),
               model:         spec.name,
               local_tools:   tools,
               mcp_servers:   mcp,
               config:        run_config
-            )
+            }
+            build_opts[:provider] = RobotFactory.send(:resolve_provider, spec) if spec.provider
+            robot = RobotLab.build(**build_opts)
             task spec.internal_id.to_sym, robot, depends_on: :none
           end
 
           # Synthesizer collects all responses
-          synthesizer = RobotLab.build(
+          synth_opts = {
             name:          "aia-synthesizer",
             system_prompt: "You are a synthesizer. Review the responses from multiple AI models and create a unified, coherent response that captures the best insights from each.",
             model:         primary.name,
             config:        run_config
-          )
+          }
+          synth_opts[:provider] = RobotFactory.send(:resolve_provider, primary) if primary.provider
+          synthesizer = RobotLab.build(**synth_opts)
           task :consensus, synthesizer,
-               depends_on: config.models.map { |s| s.internal_id.to_sym }
+               depends_on: model_specs.map { |s| s.internal_id.to_sym }
         end
       end
     end

@@ -133,6 +133,8 @@ defaults:
     erb: true
     clear: false
     consensus: false
+    track_pipeline: false
+    expert_routing: false
 
   # ---------------------------------------------------------------------------
   # Logger Configuration
@@ -191,13 +193,39 @@ defaults:
     config_file: ~/.config/aia/aia.yml
 
   # ---------------------------------------------------------------------------
-  # Rules Configuration (NEW in v2)
-  # Access: AIA.config.rules.dir, AIA.config.rules.enabled
+  # Model Aliases (user-defined aliases override defaults)
+  # Access: AIA.config.model_aliases
+  # ---------------------------------------------------------------------------
+  model_aliases: {}
+
+  # ---------------------------------------------------------------------------
+  # Model Switch History Mode
+  # Controls conversation history transfer when switching models mid-chat.
+  # Values: clean (fresh start), replay (replay messages), summarize (summary)
+  # Access: AIA.config.model_switch_history
+  # ---------------------------------------------------------------------------
+  model_switch_history: clean
+
+  # ---------------------------------------------------------------------------
+  # Concurrency Configuration
+  # Controls automatic MCP server parallelization.
+  # Access: AIA.config.concurrency.auto, etc.
+  # ---------------------------------------------------------------------------
+  concurrency:
+    auto: false
+    independent_servers: []
+    threshold: 2
+
+  # ---------------------------------------------------------------------------
+  # Rules Configuration (Enhanced Multi-KB in v2)
+  # Access: AIA.config.rules.dir, AIA.config.rules.enabled, etc.
   # Env: AIA_RULES__DIR, AIA_RULES__ENABLED
   # ---------------------------------------------------------------------------
   rules:
     dir: ~/.config/aia/rules
     enabled: true
+    store: memory
+    db_path: ~/.config/aia/rules.db
 
   # ---------------------------------------------------------------------------
   # Context Files (set at runtime)

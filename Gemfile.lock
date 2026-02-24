@@ -12,9 +12,36 @@ PATH
       reline
       robot_lab (~> 0.0)
       shellwords
+      simple_flow
+      trak_flow
+      tty-progressbar
       tty-screen
       tty-spinner
       word_wrapper
+
+PATH
+  remote: /Users/dewayne/sandbox/git_repos/madbomber/kbs/main
+  specs:
+    kbs (0.1.0)
+      sqlite3 (>= 1.6)
+
+PATH
+  remote: /Users/dewayne/sandbox/git_repos/madbomber/robot_lab
+  specs:
+    robot_lab (0.0.9)
+      async (~> 2.0)
+      async-http (~> 0.60)
+      async-websocket (~> 0.30)
+      fastembed
+      myway_config (~> 0.1)
+      prompt_manager (~> 1.0)
+      ruby_llm (~> 1.12)
+      ruby_llm-mcp
+      ruby_llm-schema
+      ruby_llm-semantic_cache
+      simple_flow (~> 0.3.0)
+      typed_bus
+      zeitwerk (~> 2.6)
 
 GEM
   remote: https://rubygems.org/
@@ -159,6 +186,13 @@ GEM
       net-http (~> 0.5)
     faraday-retry (2.4.0)
       faraday (~> 2.0)
+    fast-mcp (1.6.0)
+      addressable (~> 2.8)
+      base64
+      dry-schema (~> 1.14)
+      json (~> 2.0)
+      mime-types (~> 3.4)
+      rack (>= 2.0, < 4.0)
     fastembed (1.1.0)
       onnxruntime (~> 0.9)
       tokenizers (~> 0.5)
@@ -190,8 +224,6 @@ GEM
       hana (~> 1.3)
       regexp_parser (~> 2.0)
       simpleidn (~> 0.2)
-    kbs (0.1.0)
-      sqlite3 (~> 1.6)
     logger (1.7.0)
     lumberjack (2.0.4)
       logger
@@ -201,7 +233,10 @@ GEM
     marcel (1.1.0)
     method_source (1.1.0)
     metrics (0.15.0)
-    mini_portile2 (2.8.9)
+    mime-types (3.7.0)
+      logger
+      mime-types-data (~> 3.2025, >= 3.2025.0507)
+    mime-types-data (3.2026.0203)
     minitest (6.0.2)
       drb (~> 2.0)
       prism (~> 1.5)
@@ -218,6 +253,10 @@ GEM
       anyway_config (>= 2.0)
     net-http (0.9.1)
       uri (>= 0.11.1)
+    nio4r (2.7.5)
+    oj (3.16.15)
+      bigdecimal (>= 3.0)
+      ostruct (>= 0.2)
     onnxruntime (0.11.0-arm64-darwin)
       ffi
     optparse (0.8.1)
@@ -225,6 +264,8 @@ GEM
     parser (3.3.10.2)
       ast (~> 2.4.1)
       racc
+    pastel (0.8.0)
+      tty-color (~> 0.5)
     prism (1.9.0)
     prompt_manager (1.0.2)
       ostruct
@@ -247,8 +288,12 @@ GEM
       method_source (~> 1.0)
       reline (>= 0.6.0)
     public_suffix (7.0.2)
+    puma (6.6.1)
+      nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.5)
+    rackup (2.3.1)
+      rack (>= 3)
     rake (13.3.1)
     readline (0.0.4)
       reline
@@ -257,20 +302,6 @@ GEM
     reline (0.6.3)
       io-console (~> 0.5)
     rexml (3.4.4)
-    robot_lab (0.0.8)
-      async (~> 2.0)
-      async-http (~> 0.60)
-      async-websocket (~> 0.30)
-      fastembed
-      myway_config (~> 0.1)
-      prompt_manager (~> 1.0)
-      ruby_llm (~> 1.12)
-      ruby_llm-mcp
-      ruby_llm-schema
-      ruby_llm-semantic_cache
-      simple_flow (~> 0.3.0)
-      typed_bus
-      zeitwerk (~> 2.6)
     ruby-next-core (1.2.0)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
@@ -298,6 +329,8 @@ GEM
       xdg (~> 10.0)
       zeitwerk (~> 2.7)
     securerandom (0.4.1)
+    sequel (5.101.0)
+      bigdecimal
     shellwords (0.2.2)
     simple_flow (0.3.0)
     simplecov (0.22.0)
@@ -323,8 +356,12 @@ GEM
       refinements (~> 14.0)
       versionaire (~> 15.0)
       zeitwerk (~> 2.7)
-    sqlite3 (1.7.3)
-      mini_portile2 (~> 2.8.0)
+    sqlite3 (2.9.0-arm64-darwin)
+    strings (0.2.1)
+      strings-ansi (~> 0.2)
+      unicode-display_width (>= 1.5, < 3.0)
+      unicode_utils (~> 1.4)
+    strings-ansi (0.2.0)
     sync (0.5.0)
     term-ansicolor (1.11.3)
       tins (~> 1)
@@ -353,17 +390,39 @@ GEM
       refinements (~> 14.0)
       zeitwerk (~> 2.7)
     traces (0.18.2)
+    trak_flow (0.1.3)
+      anyway_config (~> 2.0)
+      debug_me
+      fast-mcp
+      oj (~> 3.16)
+      pastel (~> 0.8)
+      puma (~> 6.0)
+      rackup (~> 2.0)
+      sequel (~> 5.0)
+      sqlite3 (~> 2.0)
+      thor (~> 1.3)
+      tty-spinner (~> 0.9)
+      tty-table (~> 0.12)
+    tty-color (0.6.0)
     tty-cursor (0.7.1)
+    tty-progressbar (0.18.3)
+      strings-ansi (~> 0.2)
+      tty-cursor (~> 0.7)
+      tty-screen (~> 0.8)
+      unicode-display_width (>= 1.6, < 3.0)
     tty-screen (0.8.2)
     tty-spinner (0.9.3)
       tty-cursor (~> 0.7)
+    tty-table (0.12.0)
+      pastel (~> 0.8)
+      strings (~> 0.2.0)
+      tty-screen (~> 0.8)
     typed_bus (0.0.1)
       async (~> 2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    unicode-display_width (3.2.0)
-      unicode-emoji (~> 4.1)
-    unicode-emoji (4.2.0)
+    unicode-display_width (2.6.0)
+    unicode_utils (1.4.0)
     uri (1.1.1)
     versionaire (15.1.0)
       refinements (~> 14.0)
@@ -385,10 +444,12 @@ DEPENDENCIES
   aigcm
   debug_me
   deep-cover
+  kbs!
   minitest
   minitest-reporters
   mocha
   rake
+  robot_lab!
   simplecov
   simplecov_lcov_formatter
   tocer
@@ -441,6 +502,7 @@ CHECKSUMS
   faraday-multipart (1.2.0) sha256=7d89a949693714176f612323ca13746a2ded204031a6ba528adee788694ef757
   faraday-net_http (3.4.2) sha256=f147758260d3526939bf57ecf911682f94926a3666502e24c69992765875906c
   faraday-retry (2.4.0) sha256=7b79c48fb7e56526faf247b12d94a680071ff40c9fda7cf1ec1549439ad11ebe
+  fast-mcp (1.6.0) sha256=d68abb45d2daab9e7ae2934417460e4bf9ac87493c585dc5bb626f1afb7d12c4
   fastembed (1.1.0) sha256=0b59cd93cc6879bed599585404d3230103002b9fb966f1dfe0cc94c334ad168c
   ffi (1.17.3-arm64-darwin) sha256=0c690555d4cee17a7f07c04d59df39b2fba74ec440b19da1f685c6579bb0717f
   fiber-annotation (0.2.0) sha256=7abfadf1d119f508867d4103bf231c0354d019cc39a5738945dec2edadaf6c03
@@ -460,14 +522,15 @@ CHECKSUMS
   json (2.18.1) sha256=fe112755501b8d0466b5ada6cf50c8c3f41e897fa128ac5d263ec09eedc9f986
   json-schema (5.1.0) sha256=c12729e346dce58ecc9be07301f4f247aeba1e3daae208e867278f3d27c64eb7
   json_schemer (2.5.0) sha256=2f01fb4cce721a4e08dd068fc2030cffd0702a7f333f1ea2be6e8991f00ae396
-  kbs (0.1.0) sha256=a9d78f4c2712f9149be0fc4e9cf3602637d17c940bddecf75140f49c28d9fb1b
+  kbs (0.1.0)
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   lumberjack (2.0.4) sha256=9a87a3a16800a66e0447c768ba4f76c05848b5cc32a4a11959c6fa419a42ff45
   marameters (5.1.0) sha256=6705114dae6cbbe72c586a7522eab9ec5131f565b52434381b787d52180f95e0
   marcel (1.1.0) sha256=fdcfcfa33cc52e93c4308d40e4090a5d4ea279e160a7f6af988260fa970e0bee
   method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5
   metrics (0.15.0) sha256=61ded5bac95118e995b1bc9ed4a5f19bc9814928a312a85b200abbdac9039072
-  mini_portile2 (2.8.9) sha256=0cd7c7f824e010c072e33f68bc02d85a00aeb6fce05bb4819c03dfd3c140c289
+  mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
+  mime-types-data (3.2026.0203) sha256=54353d693af028847391c28361c07d4b8b689cad78c3e1cc272fb1205c6d2a2f
   minitest (6.0.2) sha256=db6e57956f6ecc6134683b4c87467d6dd792323c7f0eea7b93f66bd284adbc3d
   minitest-reporters (1.7.1) sha256=5060413a0c95b8c32fe73e0606f3631c173a884d7900e50013e15094eb50562c
   mize (0.6.1) sha256=4031558979ff5426fda24c75a149b4e4c0faf4cacf2fae8938f83866ab94b780
@@ -475,10 +538,13 @@ CHECKSUMS
   multipart-post (2.4.1) sha256=9872d03a8e552020ca096adadbf5e3cb1cd1cdd6acd3c161136b8a5737cdb4a8
   myway_config (0.1.2) sha256=c91741ded05babc443fcf5d012741ded8a1a1998c40a689cb32af27940b66be3
   net-http (0.9.1) sha256=25ba0b67c63e89df626ed8fac771d0ad24ad151a858af2cc8e6a716ca4336996
+  nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
+  oj (3.16.15) sha256=4d3324cac3e8fef54c0fa250b2af26a16dadd9f9788a1d6b1b2098b793a1b2cd
   onnxruntime (0.11.0-arm64-darwin) sha256=8c52766a9c9e8c6e19f788d58322923ecd456094bd56e117759757925c464ae5
   optparse (0.8.1) sha256=42bea10d53907ccff4f080a69991441d611fbf8733b60ed1ce9ee365ce03bd1a
   ostruct (0.6.3) sha256=95a2ed4a4bd1d190784e666b47b2d3f078e4a9efda2fccf18f84ddc6538ed912
   parser (3.3.10.2) sha256=6f60c84aa4bdcedb6d1a2434b738fe8a8136807b6adc8f7f53b97da9bc4e9357
+  pastel (0.8.0) sha256=481da9fb7d2f6e6b1a08faf11fa10363172dc40fd47848f096ae21209f805a75
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
   prompt_manager (1.0.2) sha256=ec19631fc90d092df1d7d08aa3d523636f55a3725b90635afc1fae7d60609e31
   protocol-hpack (1.5.1) sha256=6feca238b8078da1cd295677d6f306c6001af92d75fe0643d33e6956cbc3ad91
@@ -490,15 +556,17 @@ CHECKSUMS
   protocol-websocket (0.20.2) sha256=c41d93c35fba5dae85375c597f76975f3dbd75d8c5b2f21b33dab4dc22a5a511
   pry (0.16.0) sha256=d76c69065698ed1f85e717bd33d7942c38a50868f6b0673c636192b3d1b6054e
   public_suffix (7.0.2) sha256=9114090c8e4e7135c1fd0e7acfea33afaab38101884320c65aaa0ffb8e26a857
+  puma (6.6.1) sha256=b9b56e4a4ea75d1bfa6d9e1972ee2c9f43d0883f011826d914e8e37b3694ea1e
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rack (3.2.5) sha256=4cbd0974c0b79f7a139b4812004a62e4c60b145cba76422e288ee670601ed6d3
+  rackup (2.3.1) sha256=6c79c26753778e90983761d677a48937ee3192b3ffef6bc963c0950f94688868
   rake (13.3.1) sha256=8c9e89d09f66a26a01264e7e3480ec0607f0c497a861ef16063604b1b08eb19c
   readline (0.0.4) sha256=6138eef17be2b98298b672c3ea63bf9cb5158d401324f26e1e84f235879c1d6a
   refinements (14.2.0) sha256=0d69befeb1bf118087584e7a111e763528e46961b22da0e404d71e4c8df5ca0f
   regexp_parser (2.11.3) sha256=ca13f381a173b7a93450e53459075c9b76a10433caadcb2f1180f2c741fc55a4
   reline (0.6.3) sha256=1198b04973565b36ec0f11542ab3f5cfeeec34823f4e54cebde90968092b1835
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
-  robot_lab (0.0.8) sha256=2851852ff32672fd7a2b2e387953500dd9fbc648c6f5b8e85dbe74c4a75939a6
+  robot_lab (0.0.9)
   ruby-next-core (1.2.0) sha256=f6a7d00bb5186cecbb02f7f1845a0f3a2c9788d35b6ccff5c9be3f0d46799b86
   ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
   ruby2_keywords (0.0.5) sha256=ffd13740c573b7301cf7a2e61fc857b2a8e3d3aff32545d6f8300d8bae10e3ef
@@ -508,6 +576,7 @@ CHECKSUMS
   ruby_llm-semantic_cache (0.1.0) sha256=ad285968cfaed88cd8f5b9fc50ae64af815f3d4d6d862aa96d01c64a5f669815
   runcom (13.1.0) sha256=58a4dd848408fa0fb342f4489c13074a8013ff0af74d0d04c16383a3d3f05ce5
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1
+  sequel (5.101.0) sha256=d2ae3fd997a7c4572e8357918e777869faf90dc19310fcd6332747122aed2b29
   shellwords (0.2.2) sha256=b8695a791de2f71472de5abdc3f4332f6535a4177f55d8f99e7e44266cd32f94
   simple_flow (0.3.0) sha256=f365506159d25625836db44d19484f7a337fdcd75aa06eae6d4d24c333ad618c
   simplecov (0.22.0) sha256=fe2622c7834ff23b98066bb0a854284b2729a569ac659f82621fc22ef36213a5
@@ -517,7 +586,9 @@ CHECKSUMS
   simpleidn (0.2.3) sha256=08ce96f03fa1605286be22651ba0fc9c0b2d6272c9b27a260bc88be05b0d2c29
   sod (2.1.0) sha256=768eac6dbd6675f33b54dfd9e9884bc51012497515af3ef5a1941232e06400c7
   spek (5.1.0) sha256=7f4ad0f6016ab0c60d50133bce14a4f59de3ea6b8b2b49e68e59e6130409237a
-  sqlite3 (1.7.3) sha256=fa77f63c709548f46d4e9b6bb45cda52aa3881aa12cc85991132758e8968701c
+  sqlite3 (2.9.0-arm64-darwin) sha256=a917bd9b84285766ff3300b7d79cd583f5a067594c8c1263e6441618c04a6ed3
+  strings (0.2.1) sha256=933293b3c95cf85b81eb44b3cf673e3087661ba739bbadfeadf442083158d6fb
+  strings-ansi (0.2.0) sha256=90262d760ea4a94cc2ae8d58205277a343409c288cbe7c29416b1826bd511c88
   sync (0.5.0) sha256=668356cc07c59ac7ed9ecf34fec3929831f179c07adb1f3e1c3b7a1609a638fd
   term-ansicolor (1.11.3) sha256=8c01ec3abd095eb94dca8aed5a127d36e594239eb525eb306259c9e930534603
   terminal-table (4.0.0) sha256=f504793203f8251b2ea7c7068333053f0beeea26093ec9962e62ea79f94301d2
@@ -527,13 +598,17 @@ CHECKSUMS
   tokenizers (0.6.3-arm64-darwin) sha256=29a6a5582dce106d846a906ee9e4254c12db45a3855c3ff6881d4be8be03e6b6
   tone (3.1.0) sha256=2e2e77f4f43e77d05ae9160c5b16306502b3efc3da1e418c342051f3f4cb2995
   traces (0.18.2) sha256=80f1649cb4daace1d7174b81f3b3b7427af0b93047759ba349960cb8f315e214
+  trak_flow (0.1.3) sha256=7c544a23e5faeee25008c5626b6a28c5d085ee9450b83748646043be29ae0a9d
+  tty-color (0.6.0) sha256=6f9c37ca3a4e2367fb2e6d09722762647d6f455c111f05b59f35730eeb24332a
   tty-cursor (0.7.1) sha256=79534185e6a777888d88628b14b6a1fdf5154a603f285f80b1753e1908e0bf48
+  tty-progressbar (0.18.3) sha256=6cbb4260e55e74a9180d502143eb6a467d2c8e51bf5f3c9509fb5cacc3d4a5f6
   tty-screen (0.8.2) sha256=c090652115beae764336c28802d633f204fb84da93c6a968aa5d8e319e819b50
   tty-spinner (0.9.3) sha256=0e036f047b4ffb61f2aa45f5a770ec00b4d04130531558a94bfc5b192b570542
+  tty-table (0.12.0) sha256=fdc27a4750835c1a16efe19a0b857e3ced3652cc7aceafe6dca94908965b9939
   typed_bus (0.0.1) sha256=bf20463b4e0099349fd8931d7cf70f3c5fad7c6b657c566b40898637cde2038e
   tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
-  unicode-display_width (3.2.0) sha256=0cdd96b5681a5949cdbc2c55e7b420facae74c4aaf9a9815eee1087cb1853c42
-  unicode-emoji (4.2.0) sha256=519e69150f75652e40bf736106cfbc8f0f73aa3fb6a65afe62fefa7f80b0f80f
+  unicode-display_width (2.6.0) sha256=12279874bba6d5e4d2728cef814b19197dbb10d7a7837a869bab65da943b7f5a
+  unicode_utils (1.4.0) sha256=b922d0cf2313b6b7136ada6645ce7154ffc86418ca07d53b058efe9eb72f2a40
   uri (1.1.1) sha256=379fa58d27ffb1387eaada68c749d1426738bd0f654d812fcc07e7568f5c57c6
   versionaire (15.1.0) sha256=10584edf130282016869dddb6167c221b979f1f7827d3764b14b08473d80e478
   webmock (3.26.1) sha256=4f696fb57c90a827c20aadb2d4f9058bbff10f7f043bd0d4c3f58791143b1cd7

@@ -1,6 +1,7 @@
 # lib/aia/ui_presenter.rb
 
 require 'tty-screen'
+require 'tty-spinner'
 require 'reline'
 
 module AIA

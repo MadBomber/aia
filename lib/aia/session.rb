@@ -4,8 +4,9 @@
 #
 # Simplified orchestrator for AIA v2.
 # Builds robot via RobotFactory, processes pipeline, enters chat.
+# Integrates TrakFlow for pipeline tracking and session continuity.
 
-require "tty-spinner"
+require "tty-progressbar"
 require "tty-screen"
 require "reline"
 require "pm"
@@ -41,9 +42,16 @@ module AIA
       @robot = RobotFactory.build(AIA.config)
       AIA.client = @robot
 
+      # Eagerly connect MCP servers so the banner shows actual connection status
+      connect_mcp_servers
+
+      # Store session tracker globally for KBS access
+      AIA.instance_variable_set(:@session_tracker, @session_tracker)
+
       # Handle special chat-only cases first
       if should_start_chat_immediately?
         AIA::Utility.robot
+        check_trakflow_resume
         @chat_loop.start
         return
       end
@@ -53,7 +61,7 @@ module AIA
 
       # Start chat mode after all prompts are processed
       if AIA.chat?
-        @chat_loop = ChatLoop.new(@robot, @ui_presenter, @directive_processor, @rule_router)
+        @chat_loop = build_chat_loop
         AIA::Utility.robot
         @ui_presenter.display_separator
         @chat_loop.start(skip_context_files: true)
@@ -67,6 +75,10 @@ module AIA
       @directive_processor = DirectiveProcessor.new
       @input_collector     = InputCollector.new
       @rule_router         = RuleRouter.new
+      @session_tracker     = SessionTracker.new
+      @alias_registry      = ModelAliasRegistry.new(
+        AIA.config.respond_to?(:model_aliases) ? (AIA.config.model_aliases || {}) : {}
+      )
       @chat_loop           = nil  # created after robot is built
     end
 
@@ -77,22 +89,223 @@ module AIA
       end
     end
 
+    def build_chat_loop
+      ChatLoop.new(
+        @robot, @ui_presenter, @directive_processor, @rule_router,
+        session_tracker: @session_tracker,
+        alias_registry: @alias_registry
+      )
+    end
+
+    # Maximum seconds to wait for a single MCP server to connect and
+    # return its tool list.  Keeps startup snappy even when a server hangs.
+    MCP_CONNECT_TIMEOUT = 30
+
+    # Connect ALL configured MCP servers eagerly at startup.
+    # This MUST complete and be fully logged BEFORE the banner is displayed.
+    # Only successfully connected server names appear in the banner.
+    #
+    # Handles each server independently so one failure doesn't block others.
+    # Works with any version of robot_lab by using its public MCP::Client API
+    # and injecting the results into the robot's instance variables.
+    def connect_mcp_servers
+      # Get MCP server configs: from the robot if it's a single Robot,
+      # or from AIA config if it's a Network (Networks don't have mcp_config)
+      servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
+                  @robot.mcp_config
+                else
+                  RobotFactory.send(:mcp_server_configs, AIA.config)
+                end
+      return unless servers.is_a?(Array) && servers.any?
+
+      logger = AIA::LoggerManager.mcp_logger
+      server_names = servers.map { |s| s.is_a?(Hash) ? s[:name] : s.to_s }.compact
+      logger.info("MCP initialization: connecting #{servers.size} server(s): #{server_names.join(', ')}")
+
+      connected_clients = {}
+      connected_tools   = []
+      failed_servers    = []
+
+      bar = TTY::ProgressBar.new(
+        "Connecting MCP servers [:bar] :current/:total",
+        total: servers.size,
+        width: 20,
+        output: $stderr
+      )
+
+      servers.each_with_index do |server_config, idx|
+        name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
+
+        timeout = mcp_server_timeout(server_config)
+
+        begin
+          logger.info("MCP: connecting to '#{name}'...")
+          Timeout.timeout(timeout) do
+            client = RobotLab::MCP::Client.new(server_config)
+            client.connect
+
+            if client.connected?
+              connected_clients[name] = client
+              tools = client.list_tools
+              tools.each do |tool_def|
+                tool_name = tool_def[:name]
+                mcp_client = client
+                tool = RobotLab::Tool.create(
+                  name:        tool_name,
+                  description: tool_def[:description],
+                  parameters:  tool_def[:inputSchema],
+                  mcp:         name
+                ) { |args| mcp_client.call_tool(tool_name, args) }
+                connected_tools << tool
+              end
+              logger.info("MCP: '#{name}' connected (#{tools.size} tools)")
+            else
+              failed_servers << { name: name, error: "connection failed" }
+              logger.warn("MCP: '#{name}' failed to connect")
+            end
+          end
+        rescue Timeout::Error
+          failed_servers << { name: name, error: "timed out after #{timeout}s" }
+          logger.warn("MCP: '#{name}' timed out after #{timeout}s")
+        rescue StandardError => e
+          failed_servers << { name: name, error: e.message }
+          logger.warn("MCP: '#{name}' error: #{e.message}")
+        ensure
+          bar.advance
+        end
+      end
+
+      bar.finish
+
+      # Inject results so robots use these clients for tool calls.
+      # For a Network, inject into each constituent robot.
+      targets = if @robot.respond_to?(:robots) && @robot.robots.is_a?(Hash)
+                  @robot.robots.values
+                else
+                  [@robot]
+                end
+
+      targets.each do |target|
+        target.instance_variable_set(:@mcp_clients, connected_clients)
+        target.instance_variable_set(:@mcp_tools, connected_tools)
+        target.instance_variable_set(:@mcp_initialized, true)
+      end
+
+      # Record results for the banner
+      AIA.config.connected_mcp_servers = connected_clients.keys
+      AIA.config.failed_mcp_servers    = failed_servers
+
+      logger.info("MCP initialization complete: #{connected_clients.size} connected, #{failed_servers.size} failed")
+    end
+
+    # Extract timeout in seconds from server config.
+    # Config values >= 1000 are treated as milliseconds.
+    def mcp_server_timeout(server_config)
+      raw = server_config.is_a?(Hash) ? server_config[:timeout] : nil
+      return MCP_CONNECT_TIMEOUT if raw.nil?
+
+      seconds = raw.to_f
+      seconds = seconds / 1000.0 if seconds >= 1000
+      [seconds, MCP_CONNECT_TIMEOUT].min
+    end
+
+    # Check for resumable work in TrakFlow at session start
+    def check_trakflow_resume
+      bridge = TrakFlowBridge.new(@robot)
+      return unless bridge.available?
+
+      ready = bridge.check_ready_tasks
+      return if ready.nil? || ready.to_s.strip.empty?
+
+      @ui_presenter.display_info("Open tasks from previous sessions found:")
+      @ui_presenter.display_info(ready.to_s)
+    rescue StandardError
+      # TrakFlow resume is best-effort
+    end
+
     # Process all prompts in the pipeline via robot.run()
     def process_pipeline
+      bridge = TrakFlowBridge.new(@robot)
+      tracking = bridge.available? && AIA.config.flags.track_pipeline
+
+      bridge.create_plan_from_pipeline(AIA.config.pipeline) if tracking
+
       AIA.config.pipeline.each do |prompt_id|
         next if prompt_id.nil? || prompt_id.empty?
+
+        bridge.update_step_status(prompt_id, :started) if tracking
 
         prompt_text = build_prompt_text(prompt_id)
         next if prompt_text.nil? || prompt_text.strip.empty?
 
-        result = @ui_presenter.with_spinner("Processing") { @robot.run(prompt_text, mcp: :inherit, tools: :inherit) }
+        # Check for concurrent MCP mode
+        result = execute_prompt(prompt_text)
         content = extract_content(result)
+
+        bridge.update_step_status(prompt_id, :completed) if tracking
+
+        @session_tracker.record_turn(
+          model: AIA.config.models.first.name,
+          input: prompt_text,
+          result: result
+        )
 
         @ui_presenter.display_ai_response(content)
         output_to_file(content)
         display_metrics(result)
         @ui_presenter.display_separator
+      rescue StandardError => e
+        bridge.update_step_status(prompt_id, :failed, reason: e.message) if tracking
+        raise
       end
+    end
+
+    # Execute a prompt, optionally using concurrent MCP
+    def execute_prompt(prompt_text)
+      concurrent_network = maybe_use_concurrent_mcp(prompt_text)
+
+      if concurrent_network
+        @ui_presenter.with_spinner("Processing (concurrent)") do
+          concurrent_network.run(prompt_text)
+        end
+      else
+        @ui_presenter.with_spinner("Processing") do
+          if @robot.is_a?(RobotLab::Network)
+            @robot.run(message: prompt_text)
+          else
+            @robot.run(prompt_text, mcp: :inherit, tools: :inherit)
+          end
+        end
+      end
+    end
+
+    # Check if concurrent MCP mode should be used
+    def maybe_use_concurrent_mcp(prompt_text)
+      return nil unless (AIA.config.mcp_servers || []).size > 1
+
+      # Check auto-concurrency config
+      concurrency = AIA.config.respond_to?(:concurrency) ? AIA.config.concurrency : nil
+      return nil unless concurrency&.auto || AIA.config.instance_variable_get(:@force_concurrent_mcp)
+
+      # Clear force flag
+      if AIA.config.instance_variable_get(:@force_concurrent_mcp)
+        AIA.config.remove_instance_variable(:@force_concurrent_mcp)
+      end
+
+      discovery = MCPDiscovery.new(@rule_router)
+      relevant_servers = discovery.discover(AIA.config, prompt_text)
+      return nil if relevant_servers.size <= 1
+
+      grouper = MCPGrouper.new
+      groups = grouper.group(relevant_servers)
+
+      threshold = concurrency&.respond_to?(:threshold) ? (concurrency.threshold || 2) : 2
+      return nil if groups.size < threshold
+
+      RobotFactory.build_concurrent_mcp_network(AIA.config, groups)
+    rescue StandardError => e
+      warn "Warning: Concurrent MCP setup failed: #{e.message}"
+      nil
     end
 
     # Build prompt text from a prompt_id
@@ -187,7 +400,7 @@ module AIA
       return false unless AIA.chat?
 
       # Create chat loop now that robot is available
-      @chat_loop = ChatLoop.new(@robot, @ui_presenter, @directive_processor, @rule_router)
+      @chat_loop = build_chat_loop
 
       AIA.config.pipeline.empty? || AIA.config.pipeline.all? { |id| id.nil? || id.empty? }
     end

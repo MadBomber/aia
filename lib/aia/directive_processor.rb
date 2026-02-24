@@ -10,6 +10,7 @@ require_relative 'directives/execution_directives'
 require_relative 'directives/utility_directives'
 require_relative 'directives/web_and_file_directives'
 require_relative 'directives/model_directives'
+require_relative 'directives/trakflow_directives'
 
 module AIA
   class DirectiveProcessor

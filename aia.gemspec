@@ -43,11 +43,14 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
   spec.add_dependency 'lumberjack'                 # Structured logging with 3 loggers (aia, llm, mcp)
   spec.add_dependency 'activesupport'              # Required by robot_lab (missing from its gemspec)
+  spec.add_dependency 'simple_flow'
+  spec.add_dependency 'trak_flow'
 
   # CLI & UI
   spec.add_dependency 'reline'                     # Interactive chat input with history
   spec.add_dependency 'tty-screen'                 # Terminal width detection
   spec.add_dependency 'tty-spinner'                # Loading animation during AI processing
+  spec.add_dependency 'tty-progressbar'            # Progress bar for MCP server connections
   spec.add_dependency 'word_wrapper'               # Terminal text wrapping for tool listings
   spec.add_dependency 'amazing_print'              # Config dump formatting (--dump, /config)
   spec.add_dependency 'clipboard'                  # System clipboard access (/paste directive)
