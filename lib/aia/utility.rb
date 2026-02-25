@@ -3,6 +3,7 @@
 require 'word_wrapper'      # Pure ruby word wrapping
 require 'simple_flow'
 require 'trak_flow'
+require 'tty-table'
 begin
   require 'ruby_llm/mcp'
 rescue LoadError, StandardError
@@ -151,73 +152,127 @@ module AIA
         "Today's crew: #{mentions}"
       end
 
-      # Displays the AIA robot ASCII art
-      # Yes, its slightly frivolous but it does contain some
-      # useful configuration information.
+      # Displays the AIA robot ASCII art alongside status info.
+      # Uses nested TTY::Tables: an inner table handles right-aligned
+      # labels with word-wrapped values, placed inside an outer table
+      # that keeps the ASCII art and info panel side by side.
       def robot
-        indent  = 18
-        spaces  = " "*indent
-        width   = TTY::Screen.width - indent - 2
+        art = [
+          '       ,      ,',
+          '       (\\____/)',
+          '        (_oo_)',
+          '         (O)',
+          '       __|||__    \\)',
+          '     [/ Tobor \\]  /',
+          '    / \\_______/ \\/',
+          '   /    /___\\',
+          '  (\\   /_____\\',
+          '     :::     :::',
+          '     :::     :::',
+        ].join("\n")
 
-        mcp_version = defined?(RubyLLM::MCP::VERSION) ? ", ruby_llm-mcp v#{RubyLLM::MCP::VERSION}" : ''
+        art_width   = art.lines.map(&:length).max
+        info_width  = [TTY::Screen.width - art_width - 4, 30].max
+        label_width = 7  # "Models:" is the widest label
+        value_width = [info_width - label_width - 1, 20].max
 
-        # Build orchestration gems version line
-        orchestration_parts = []
-        orchestration_parts << "robot_lab v#{RobotLab::VERSION}" if defined?(RobotLab::VERSION)
-        orchestration_parts << "simple_flow v#{SimpleFlow::VERSION}" if defined?(SimpleFlow::VERSION)
-        orchestration_parts << "trak_flow v#{TrakFlow::VERSION}" if defined?(TrakFlow::VERSION)
-        orchestration_line = orchestration_parts.join(', ')
+        header = "AIA v#{AIA::VERSION} is Online w/ kbs v#{KBS::VERSION}"
 
-        # Extract model names from config (handles ModelSpec objects or Hashes)
-        model_display = if AIA.config&.models && !AIA.config.models.empty?
-          models = AIA.config.models
-          models.map do |spec|
-            if spec.is_a?(AIA::ModelSpec)
-              spec.name
-            elsif spec.is_a?(Hash)
-              spec[:name] || spec['name'] || spec.to_s
-            else
-              spec.to_s
+        inner = TTY::Table.new(banner_detail_rows)
+        details = inner.render(:basic, multiline: true,
+                               column_widths: [label_width, value_width],
+                               alignments: [:right, :left])
+
+        info = "#{header}\n\n#{details}"
+
+        outer = TTY::Table.new([[art, info]])
+        rendered = outer.render(:basic, multiline: true,
+                                column_widths: [art_width, info_width],
+                                padding: [0, 1, 0, 0])
+
+        puts "\n#{rendered}"
+      end
+
+      private
+
+      # Builds labeled detail rows for the banner's inner table.
+      def banner_detail_rows
+        [
+          ['Models:', banner_models],
+          ['DB:',     banner_db],
+          ['Libs:',   banner_libs],
+          ['Tools:',  banner_tools],
+          ['MCP:',    banner_mcp],
+          ['Crew:',   banner_crew],
+        ]
+      end
+
+      def banner_models
+        if AIA.config&.models && !AIA.config.models.empty?
+          AIA.config.models.map { |spec|
+            case spec
+            when AIA::ModelSpec then spec.name
+            when Hash then spec[:name] || spec['name'] || spec.to_s
+            else spec.to_s
             end
-          end.join(', ')
+          }.join(', ')
         else
           'unknown-model'
         end
+      end
 
-        # Build MCP line showing connection status
-        mcp_line = if mcp_servers?
-          defined_count   = effective_mcp_server_names.size
-          connected       = mcp_server_names
-          failed          = failed_mcp_servers
-          connected_count = connected.size
-          failed_count    = failed.size
-          "MCP Servers defined: #{defined_count}  Connected: #{connected_count}  Failed: #{failed_count}"
+      def banner_libs
+        parts = ["ruby_llm v#{RubyLLM::VERSION}"]
+        parts << "ruby_llm-mcp v#{RubyLLM::MCP::VERSION}" if defined?(RubyLLM::MCP::VERSION)
+        parts << "robot_lab v#{RobotLab::VERSION}" if defined?(RobotLab::VERSION)
+        parts << "simple_flow v#{SimpleFlow::VERSION}" if defined?(SimpleFlow::VERSION)
+        parts << "trak_flow v#{TrakFlow::VERSION}" if defined?(TrakFlow::VERSION)
+        parts << "typed_bus v#{TypedBus::VERSION}" if defined?(TypedBus::VERSION)
+        parts.join(', ')
+      end
+
+      def banner_tools
+        count = total_tool_count
+        if tools?
+          "#{count} #{count == 1 ? 'tool' : 'tools'} loaded"
         else
-          "MCP Servers: (none configured)"
+          'none loaded'
         end
+      end
 
-        model_db_refresh = "model db "
-        model_db_refresh += if models_last_refresh
-                              "was last refreshed on #{models_last_refresh.gsub(' ',' at ')}"
-                            else
-                              "has not been refreshed"
-                            end
+      def banner_mcp
+        if mcp_servers?
+          connected = mcp_server_names
+          failed    = failed_mcp_servers.map { |f| f.is_a?(Hash) ? f[:name] || f['name'] : f.to_s }
+          parts = []
+          parts << connected.join(', ') unless connected.empty?
+          parts << "FAILED: #{failed.join(', ')}" unless failed.empty?
+          parts.empty? ? '(none connected)' : parts.join(' | ')
+        else
+          '(none configured)'
+        end
+      end
 
-        # Build crew line from robot names
-        crew_line = build_crew_line
+      def banner_db
+        if models_last_refresh
+          "refreshed #{models_last_refresh.gsub(' ', ' at ')}"
+        else
+          'not yet refreshed'
+        end
+      end
 
-        puts <<-ROBOT
+      def banner_crew
+        client = AIA.client
+        return '' unless client
 
-       ,      ,
-       (\\____/) AI Assistant (v#{AIA::VERSION}) is Online with kbs (v#{KBS::VERSION})
-        (_oo_)   #{model_display}#{supports_tools? ? ' (supports tools)' : ''}
-         (O)       using ruby_llm v#{RubyLLM::VERSION}#{mcp_version}
-       __||__    \\)   #{orchestration_line}
-     [/______\\]  /   #{model_db_refresh}
-    / \\__AI__/ \\/      #{tools? ? "I brought #{total_tool_count} tools to share" : 'I did not bring any tools'}
-   /    /__\\              #{mcp_line}
-  (\\   /____\\           #{crew_line}
-        ROBOT
+        names = if client.is_a?(RobotLab::Network)
+                  client.robots.values.map(&:name)
+                else
+                  [client.name]
+                end
+
+        return '' if names.empty?
+        names.map { |n| "@#{n.downcase}" }.join(', ')
       end
     end
   end

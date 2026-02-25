@@ -16,7 +16,7 @@ module AIA
       # @param config [AIA::Config] the AIA configuration
       # @return [RobotLab::Robot, RobotLab::Network] the built robot or network
       def build(config = AIA.config)
-        @namer = RobotNamer.new
+        @namer = RobotNamer.new(first_name: 'Tobor')
         configure_robot_lab(config)
         if @tool_cache
           config.loaded_tools = @tool_cache

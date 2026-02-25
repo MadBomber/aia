@@ -75,11 +75,16 @@ module AIA
       Comet   Aura    Blaze   Dusk    Flux    Helix   Onyx
     ].freeze
 
-    def initialize
+    def initialize(first_name: nil)
+      @first_name = first_name
       @used_names = {}
     end
 
     def name_for(model_name)
+      if @used_names.empty? && @first_name
+        return unique_name(@first_name)
+      end
+
       model_name = model_name.to_s
       base = find_base_name(model_name)
       unique_name(base)
