@@ -132,7 +132,7 @@ module AIA
 
         # Standard execution with streaming
         begin
-          result, streamed_content, _elapsed = @streaming_runner.run(@robot, processed_prompt)
+          result, streamed_content, elapsed = @streaming_runner.run(@robot, processed_prompt)
         rescue StandardError => e
           @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
           next
@@ -144,10 +144,17 @@ module AIA
           model: AIA.config.models.first.name,
           input: processed_prompt,
           result: result,
-          decisions: decisions
+          decisions: decisions,
+          elapsed: elapsed
         )
 
         @rule_router.evaluate_response(AIA.config, { accepted: true, model: AIA.config.models.first.name })
+
+        # Increment shared memory turn counter for multi-model networks
+        if @robot.respond_to?(:memory) && @robot.memory.respond_to?(:data)
+          count = @robot.memory.data.turn_count || 0
+          @robot.memory.data.turn_count = count + 1
+        end
 
         if streamed_content
           puts
@@ -155,7 +162,7 @@ module AIA
           @ui_presenter.display_ai_response(content)
         end
         output_to_file(content)
-        display_metrics(result)
+        display_metrics(result, elapsed: elapsed)
         speak(content)
         @ui_presenter.display_separator
       end
@@ -174,14 +181,14 @@ module AIA
 
       @ui_presenter.display_info("Routing to specialist: #{specialist.respond_to?(:name) ? specialist.name : 'expert'}")
 
-      result, streamed_content, _elapsed = @streaming_runner.run(
+      result, streamed_content, elapsed = @streaming_runner.run(
         specialist, prompt,
         header: "\nAI (Expert):\n   ",
         spinner_message: "Expert processing..."
       )
 
       content = streamed_content || extract_content(result)
-      @tracker.record_turn(model: AIA.config.models.first.name, input: prompt, result: result)
+      @tracker.record_turn(model: AIA.config.models.first.name, input: prompt, result: result, elapsed: elapsed)
 
       if streamed_content
         puts
@@ -189,7 +196,7 @@ module AIA
         @ui_presenter.display_ai_response(content)
       end
       output_to_file(content)
-      display_metrics(result)
+      display_metrics(result, elapsed: elapsed)
       speak(content)
       @ui_presenter.display_separator
       true
@@ -212,21 +219,91 @@ module AIA
       "I executed this directive: #{follow_up_prompt}\nHere's the output: #{directive_output}\nLet's continue our conversation."
     end
 
-    # Display token metrics if enabled
-    def display_metrics(result)
+    # Display token metrics if enabled.
+    # Handles both single-robot results and multi-model network results.
+    #
+    # Token data lives on the raw RubyLLM::Message stored in
+    # RobotResult#raw (RobotLab::Message objects do not carry usage info).
+    def display_metrics(result, elapsed: nil)
       return unless AIA.config.flags.tokens
 
-      if result.respond_to?(:output) && result.output.any?
-        last_msg = result.output.last
-        if last_msg.respond_to?(:input_tokens)
-          metrics = {
-            model_id: result.respond_to?(:robot_name) ? result.robot_name : "unknown",
-            input_tokens: last_msg.input_tokens,
-            output_tokens: last_msg.output_tokens
-          }
-          @ui_presenter.display_token_metrics(metrics)
-        end
+      if defined?(SimpleFlow::Result) && result.is_a?(SimpleFlow::Result)
+        display_network_metrics(result)
+        return
       end
+
+      raw = result.respond_to?(:raw) ? result.raw : nil
+      return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+
+      model_id = extract_model_id(raw) || AIA.config.models.first.name
+      metrics = {
+        model_id:      model_id,
+        input_tokens:  raw.input_tokens,
+        output_tokens: raw.output_tokens,
+        elapsed:       elapsed
+      }
+      @ui_presenter.display_token_metrics(metrics)
+    end
+
+    # Extract per-robot metrics from a network SimpleFlow::Result
+    # and display the multi-model cost table.
+    #
+    # Each robot_result.raw holds the original RubyLLM::Message with
+    # input_tokens, output_tokens, and model_id.
+    # Each robot_result.duration holds the elapsed seconds.
+    # Similarity scores compare each model's response text against the
+    # first model using TF-IDF cosine similarity.
+    def display_network_metrics(flow_result)
+      metrics_list = []
+      response_texts = []
+
+      flow_result.context.each do |task_name, robot_result|
+        next if task_name == :run_params
+        next unless robot_result.respond_to?(:raw)
+
+        raw = robot_result.raw
+        next unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+
+        model_id = extract_model_id(raw)
+        display_name = robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
+        elapsed = robot_result.respond_to?(:duration) ? robot_result.duration : nil
+
+        # Collect response text for similarity scoring
+        text = if robot_result.respond_to?(:reply)
+                 robot_result.reply.to_s
+               elsif robot_result.respond_to?(:content)
+                 robot_result.content.to_s
+               else
+                 ""
+               end
+        response_texts << text
+
+        metrics_list << {
+          model_id:      model_id || display_name,
+          display_name:  display_name,
+          input_tokens:  raw.input_tokens || 0,
+          output_tokens: raw.output_tokens || 0,
+          elapsed:       elapsed
+        }
+      end
+
+      return if metrics_list.empty?
+
+      # Compute TF-IDF similarity against the first model's response
+      if metrics_list.size > 1
+        scores = SimilarityScorer.score(response_texts)
+        metrics_list.each_with_index { |m, i| m[:similarity] = scores[i] }
+      end
+
+      @ui_presenter.display_multi_model_metrics(metrics_list)
+    end
+
+    # Pull the actual model identifier from a RubyLLM response message
+    # so cost calculation can look up pricing.
+    def extract_model_id(message)
+      return message.model_id if message.respond_to?(:model_id) && message.model_id
+      return message.model    if message.respond_to?(:model)    && message.model
+      nil
     end
 
     def output_to_file(content)

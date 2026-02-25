@@ -45,5 +45,26 @@ module AIA
       AIA.turn_state.force_decompose = true
       "Decomposition mode enabled for next prompt."
     end
+
+    desc "Multi-round debate between robots in the network"
+    def debate(args, context_manager = nil)
+      AIA.turn_state.force_debate = true
+      "Debate mode enabled for next prompt."
+    end
+
+    desc "Delegate subtasks to specific robots via TrakFlow plan"
+    def delegate(args, context_manager = nil)
+      AIA.turn_state.force_delegate = true
+      "Delegation mode enabled for next prompt."
+    end
+    alias_method :del, :delegate
+
+    desc "Spawn a specialist robot for the next prompt"
+    def spawn(args, context_manager = nil)
+      AIA.turn_state.force_spawn = true
+      AIA.turn_state.spawn_type = args.first
+      type_msg = args.first ? " (#{args.first})" : " (auto-detect)"
+      "Spawn mode enabled#{type_msg} for next prompt."
+    end
   end
 end

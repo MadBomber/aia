@@ -138,6 +138,54 @@ class RobotFactoryTest < Minitest::Test
     assert_kind_of Array, cache
   end
 
+  def test_discover_tools_skips_unavailable_tools
+    # Create a tool class that reports itself as unavailable
+    unavailable_tool_class = Class.new(RubyLLM::Tool) do
+      def self.name = 'unavailable_tool'
+      description "A tool that is not available"
+      def available?
+        false
+      end
+    end
+
+    # Create a tool class that reports itself as available
+    available_tool_class = Class.new(RubyLLM::Tool) do
+      def self.name = 'available_tool'
+      description "A tool that is available"
+      def available?
+        true
+      end
+    end
+
+    # discover_tools returns Class objects via ObjectSpace
+    tools = AIA::RobotFactory.send(:discover_tools)
+
+    refute_includes tools, unavailable_tool_class,
+                    "Unavailable tool should be filtered out"
+    assert_includes tools, available_tool_class,
+                    "Available tool should be included"
+  ensure
+    unavailable_tool_class = nil
+    available_tool_class = nil
+    GC.start
+  end
+
+  def test_discover_tools_includes_tools_without_available_method
+    # Tools that don't implement available? should be included (backward compat)
+    basic_tool_class = Class.new(RubyLLM::Tool) do
+      def self.name = 'basic_tool'
+      description "A basic tool without available? method"
+    end
+
+    tools = AIA::RobotFactory.send(:discover_tools)
+
+    assert_includes tools, basic_tool_class,
+                    "Tools without available? should be included"
+  ensure
+    basic_tool_class = nil
+    GC.start
+  end
+
   def test_build_skips_load_tools_when_cache_exists
     tool = mock('cached_tool')
     tool.stubs(:name).returns('CachedTool')

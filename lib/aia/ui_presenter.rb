@@ -2,6 +2,7 @@
 
 require 'tty-screen'
 require 'tty-spinner'
+require 'tty-table'
 require 'reline'
 
 module AIA
@@ -123,185 +124,143 @@ module AIA
 
     def display_token_metrics(metrics)
       return unless metrics
-      
-      output_lines = []
-      output_lines << "═" * 55
-      output_lines << "Model: #{metrics[:model_id]}"
-      
+
+      model_id      = metrics[:model_id] || 'unknown'
+      input_tokens  = metrics[:input_tokens] || 0
+      output_tokens = metrics[:output_tokens] || 0
+      total_tokens  = input_tokens + output_tokens
+      time_str      = format_elapsed(metrics[:elapsed])
+
       if AIA.config.flags.cost
-        output_lines.concat(format_metrics_with_cost(metrics))
-      else
-        output_lines.concat(format_metrics_basic(metrics))
-      end
-      
-      output_lines << "═" * 55
-      
-      # Output to STDOUT
-      output_lines.each { |line| puts line }
-      
-      # Also write to file if configured
-      out_file = AIA.config.output.file
-      if out_file && !out_file.nil?
-        File.open(out_file, 'a') do |file|
-          output_lines.each { |line| file.puts line }
+        cost_data = calculate_cost(metrics)
+        if cost_data[:available]
+          header = ["Model", "Input", "Output", "Total", "Cost", "x1000", "Time"]
+          row    = [
+            model_id,
+            input_tokens, output_tokens, total_tokens,
+            "$#{'%.5f' % cost_data[:total_cost]}",
+            "$#{'%.2f' % (cost_data[:total_cost] * 1000)}",
+            time_str
+          ]
+          alignments = [:left, :right, :right, :right, :right, :right, :right]
+        else
+          header = ["Model", "Input", "Output", "Total", "Cost", "Time"]
+          row    = [model_id, input_tokens, output_tokens, total_tokens, "N/A", time_str]
+          alignments = [:left, :right, :right, :right, :right, :right]
         end
+      else
+        header = ["Model", "Input", "Output", "Total", "Time"]
+        row    = [model_id, input_tokens, output_tokens, total_tokens, time_str]
+        alignments = [:left, :right, :right, :right, :right]
       end
+
+      table = TTY::Table.new(header, [row])
+      rendered = table.render(:unicode, resize: true, alignments: alignments, padding: [0, 1])
+
+      puts rendered
+      write_to_output_file(rendered)
     end
 
     def display_multi_model_metrics(metrics_list)
       return unless metrics_list && !metrics_list.empty?
-      
-      output_lines = []
-      
-      # Determine table width based on whether costs are shown
-      if AIA.config.flags.cost
-        table_width = 80
-      else
-        table_width = 60
-      end
-      
-      output_lines << "═" * table_width
-      output_lines << "Multi-Model Token Usage"
-      output_lines << "─" * table_width
-      
-      # Build header row
-      if AIA.config.flags.cost
-        output_lines << sprintf("%-20s %10s %10s %10s %12s %10s", 
-                                "Model", "Input", "Output", "Total", "Cost", "x1000")
-        output_lines << "─" * table_width
-      else
-        output_lines << sprintf("%-20s %10s %10s %10s", 
-                                "Model", "Input", "Output", "Total")
-        output_lines << "─" * table_width
-      end
-      
-      # Process each model
-      total_input = 0
-      total_output = 0
-      total_cost = 0.0
-      
-      metrics_list.each do |metrics|
-        # Use display_name if available (includes role), otherwise fall back to model_id
-        model_name = metrics[:display_name] || metrics[:model_id]
-        # Truncate model name if too long
-        model_name = model_name[0..17] + ".." if model_name.to_s.length > 19
 
-        input_tokens = metrics[:input_tokens] || 0
+      show_cost       = AIA.config.flags.cost
+      show_similarity = metrics_list.any? { |m| m.key?(:similarity) }
+      total_input     = 0
+      total_output    = 0
+      total_cost      = 0.0
+      max_elapsed     = 0.0
+
+      header = ["Model", "Input", "Output", "Total"]
+      header += ["Cost", "x1000"] if show_cost
+      header << "Time"
+      header << "Sim" if show_similarity
+
+      rows = metrics_list.map do |metrics|
+        model_name    = (metrics[:model_id] || metrics[:display_name]).to_s
+        input_tokens  = metrics[:input_tokens] || 0
         output_tokens = metrics[:output_tokens] || 0
-        total_tokens = input_tokens + output_tokens
-        
-        if AIA.config.flags.cost
+        total_tokens  = input_tokens + output_tokens
+        elapsed       = metrics[:elapsed]
+        time_str      = format_elapsed(elapsed)
+
+        total_input  += input_tokens
+        total_output += output_tokens
+        max_elapsed   = [max_elapsed, elapsed || 0].max
+
+        row = [model_name, input_tokens, output_tokens, total_tokens]
+
+        if show_cost
           cost_data = calculate_cost(metrics)
           if cost_data[:available]
-            cost_str = "$#{'%.5f' % cost_data[:total_cost]}"
-            x1000_str = "$#{'%.2f' % (cost_data[:total_cost] * 1000)}"
+            row << "$#{'%.5f' % cost_data[:total_cost]}"
+            row << "$#{'%.2f' % (cost_data[:total_cost] * 1000)}"
             total_cost += cost_data[:total_cost]
           else
-            cost_str = "N/A"
-            x1000_str = "N/A"
+            row += ["N/A", "N/A"]
           end
-          
-          output_lines << sprintf("%-20s %10d %10d %10d %12s %10s",
-                                  model_name, input_tokens, output_tokens, total_tokens, cost_str, x1000_str)
-        else
-          output_lines << sprintf("%-20s %10d %10d %10d",
-                                  model_name, input_tokens, output_tokens, total_tokens)
         end
-        
-        total_input += input_tokens
-        total_output += output_tokens
+
+        row << time_str
+        row << format_similarity(metrics[:similarity]) if show_similarity
+        row
       end
-      
-      # Display totals row
-      output_lines << "─" * table_width
-      total_tokens = total_input + total_output
-      
-      if AIA.config.flags.cost && total_cost > 0
-        cost_str = "$#{'%.5f' % total_cost}"
-        x1000_str = "$#{'%.2f' % (total_cost * 1000)}"
-        output_lines << sprintf("%-20s %10d %10d %10d %12s %10s",
-                               "TOTAL", total_input, total_output, total_tokens, cost_str, x1000_str)
-      else
-        output_lines << sprintf("%-20s %10d %10d %10d",
-                               "TOTAL", total_input, total_output, total_tokens)
+
+      # Totals row
+      all_tokens = total_input + total_output
+      total_time = format_elapsed(max_elapsed)
+      rows << :separator
+
+      totals = ["TOTAL", total_input, total_output, all_tokens]
+      if show_cost && total_cost > 0
+        totals << "$#{'%.5f' % total_cost}"
+        totals << "$#{'%.2f' % (total_cost * 1000)}"
+      elsif show_cost
+        totals += ["", ""]
       end
-      
-      output_lines << "═" * table_width
-      
-      # Output to STDOUT
-      output_lines.each { |line| puts line }
-      
-      # Also write to file if configured
-      out_file = AIA.config.output.file
-      if out_file && !out_file.nil?
-        File.open(out_file, 'a') do |file|
-          output_lines.each { |line| file.puts line }
-        end
-      end
+      totals << total_time
+      totals << "" if show_similarity
+      rows << totals
+
+      alignments = [:left, :right, :right, :right]
+      alignments += [:right, :right] if show_cost
+      alignments << :right
+      alignments << :right if show_similarity
+
+      table = TTY::Table.new(header, rows)
+      rendered = table.render(:unicode, resize: true, alignments: alignments, padding: [0, 1])
+
+      puts "\nMulti-Model Token Usage"
+      puts rendered
+      write_to_output_file("Multi-Model Token Usage\n#{rendered}")
     end
 
     private
-    
-    def display_metrics_basic(metrics)
-      puts "Input tokens:  #{metrics[:input_tokens] || 'N/A'}"
-      puts "Output tokens: #{metrics[:output_tokens] || 'N/A'}"
-      
-      if metrics[:input_tokens] && metrics[:output_tokens]
-        total = metrics[:input_tokens] + metrics[:output_tokens]
-        puts "Total tokens:  #{total}"
-      end
+
+    def format_similarity(score)
+      return "ref" if score.nil?
+      "%.1f%%" % (score * 100)
     end
-    
-    def format_metrics_basic(metrics)
-      lines = []
-      lines << "Input tokens:  #{metrics[:input_tokens] || 'N/A'}"
-      lines << "Output tokens: #{metrics[:output_tokens] || 'N/A'}"
-      
-      if metrics[:input_tokens] && metrics[:output_tokens]
-        total = metrics[:input_tokens] + metrics[:output_tokens]
-        lines << "Total tokens:  #{total}"
-      end
-      
-      lines
-    end
-    
-    def display_metrics_with_cost(metrics)
-      cost_data = calculate_cost(metrics)
-      
-      if cost_data[:available]
-        puts "Input tokens:  #{metrics[:input_tokens]} ($#{'%.5f' % cost_data[:input_cost]})"
-        puts "Output tokens: #{metrics[:output_tokens]} ($#{'%.5f' % cost_data[:output_cost]})"
-        puts "Total cost:    $#{'%.5f' % cost_data[:total_cost]}"
-        puts "Cost x1000:    $#{'%.2f' % (cost_data[:total_cost] * 1000)}"
+
+    def format_elapsed(seconds)
+      return "" unless seconds
+
+      if seconds < 60
+        "%.1fs" % seconds
       else
-        puts "Input tokens:  #{metrics[:input_tokens] || 'N/A'}"
-        puts "Output tokens: #{metrics[:output_tokens] || 'N/A'}"
-        total = (metrics[:input_tokens] || 0) + (metrics[:output_tokens] || 0)
-        puts "Total tokens:  #{total}"
-        puts "Cost:          N/A (pricing not available)"
+        minutes = (seconds / 60).to_i
+        secs = seconds % 60
+        "#{minutes}m %04.1fs" % secs
       end
     end
-    
-    def format_metrics_with_cost(metrics)
-      lines = []
-      cost_data = calculate_cost(metrics)
-      
-      if cost_data[:available]
-        lines << "Input tokens:  #{metrics[:input_tokens]} ($#{'%.5f' % cost_data[:input_cost]})"
-        lines << "Output tokens: #{metrics[:output_tokens]} ($#{'%.5f' % cost_data[:output_cost]})"
-        lines << "Total cost:    $#{'%.5f' % cost_data[:total_cost]}"
-        lines << "Cost x1000:    $#{'%.2f' % (cost_data[:total_cost] * 1000)}"
-      else
-        lines << "Input tokens:  #{metrics[:input_tokens] || 'N/A'}"
-        lines << "Output tokens: #{metrics[:output_tokens] || 'N/A'}"
-        total = (metrics[:input_tokens] || 0) + (metrics[:output_tokens] || 0)
-        lines << "Total tokens:  #{total}"
-        lines << "Cost:          N/A (pricing not available)"
-      end
-      
-      lines
+
+    def write_to_output_file(text)
+      out_file = AIA.config.output.file
+      return unless out_file
+
+      File.open(out_file, 'a') { |f| f.puts text }
     end
-    
+
     def calculate_cost(metrics)
       return { available: false } unless metrics[:model_id] && metrics[:input_tokens] && metrics[:output_tokens]
       

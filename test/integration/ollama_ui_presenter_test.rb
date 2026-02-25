@@ -104,7 +104,7 @@ class OllamaUIPresenterTest < Minitest::Test
   def test_display_token_metrics_basic
     AIA.config.flags.cost = false
     metrics = { model_id: 'gpt-oss:latest', input_tokens: 50, output_tokens: 100 }
-    assert_output(/Input tokens:.*50/) do
+    assert_output(/gpt-oss:latest.*50/) do
       @ui.display_token_metrics(metrics)
     end
   end

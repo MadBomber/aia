@@ -61,6 +61,28 @@ module AIA
       parts.join("\n\n")
     end
 
+    # Store structured robot results into a network's shared memory.
+    # Each robot's output is written as a hash under result_<task_name>.
+    #
+    # @param flow_result [SimpleFlow::Result]
+    # @param network [RobotLab::Network]
+    def store_results_in_memory(flow_result, network)
+      return unless network.respond_to?(:memory)
+
+      memory = network.memory
+      flow_result.context.each do |task_name, robot_result|
+        next if task_name == :run_params
+        next unless robot_result.respond_to?(:reply)
+
+        memory.current_writer = task_name.to_s
+        memory.set(:"result_#{task_name}", {
+          content:  robot_result.reply,
+          model:    robot_result.respond_to?(:robot_name) ? robot_result.robot_name : nil,
+          duration: robot_result.respond_to?(:duration) ? robot_result.duration : nil
+        })
+      end
+    end
+
     # Format a duration in seconds to a human-readable string.
     #
     # @param seconds [Float, nil]

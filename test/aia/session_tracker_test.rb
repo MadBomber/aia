@@ -75,8 +75,46 @@ class SessionTrackerTest < Minitest::Test
 
     assert_equal "gpt-4o-mini", turn[:model]
     assert_equal 11, turn[:input_length]
+    assert_equal 50, turn[:input_tokens]
+    assert_equal 25, turn[:output_tokens]
     assert_equal 75, turn[:tokens]
     assert_instance_of Time, turn[:timestamp]
+  end
+
+  def test_record_turn_stores_elapsed_time
+    result = build_mock_result(input_tokens: 10, output_tokens: 5)
+
+    @tracker.record_turn(model: "gpt-4o-mini", input: "test", result: result, elapsed: 3.7)
+
+    turn = @tracker.turns.first
+    assert_equal 3.7, turn[:elapsed]
+  end
+
+  def test_record_turn_defaults_elapsed_to_zero
+    result = build_mock_result(input_tokens: 10, output_tokens: 5)
+
+    @tracker.record_turn(model: "gpt-4o-mini", input: "test", result: result)
+
+    turn = @tracker.turns.first
+    assert_equal 0, turn[:elapsed]
+  end
+
+  def test_record_turn_extracts_from_raw_attribute
+    raw = mock('raw_message')
+    raw.stubs(:input_tokens).returns(100)
+    raw.stubs(:output_tokens).returns(50)
+
+    result = mock('result')
+    result.stubs(:raw).returns(raw)
+    result.stubs(:output).returns([])
+    result.stubs(:robot_name).returns('gpt-4o-mini')
+
+    @tracker.record_turn(model: "gpt-4o-mini", input: "test", result: result)
+
+    turn = @tracker.turns.first
+    assert_equal 100, turn[:input_tokens]
+    assert_equal 50, turn[:output_tokens]
+    assert_equal 150, turn[:tokens]
   end
 
   def test_record_turn_records_decisions_when_provided
@@ -325,6 +363,108 @@ class SessionTrackerTest < Minitest::Test
     assert_equal 150, @tracker.total_tokens
     assert_equal 1, @tracker.turns.length
     assert_equal "gpt-4o", @tracker.turns.first[:model]
+  end
+
+  # =========================================================================
+  # record_turn — network (SimpleFlow::Result) expansion
+  # =========================================================================
+
+  def test_record_turn_expands_network_result_into_per_robot_entries
+    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4')
+    raw_b = OpenStruct.new(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini')
+
+    robot_a = OpenStruct.new(raw: raw_a, robot_name: 'Lyric', duration: 4.2, reply: 'Response A')
+    robot_b = OpenStruct.new(raw: raw_b, robot_name: 'Spark', duration: 2.1, reply: 'Response B')
+
+    flow_result = SimpleFlow::Result.new(
+      :ok, context: { lyric: robot_a, spark: robot_b }
+    )
+
+    @tracker.record_turn(model: 'ignored', input: 'hello', result: flow_result, elapsed: 4.2)
+
+    assert_equal 1, @tracker.turn_count
+    assert_equal 2, @tracker.turns.size
+
+    assert_equal 'claude-sonnet-4', @tracker.turns[0][:model]
+    assert_equal 100, @tracker.turns[0][:input_tokens]
+    assert_equal 50, @tracker.turns[0][:output_tokens]
+    assert_in_delta 4.2, @tracker.turns[0][:elapsed], 0.01
+
+    assert_equal 'gpt-4o-mini', @tracker.turns[1][:model]
+    assert_equal 200, @tracker.turns[1][:input_tokens]
+    assert_equal 80, @tracker.turns[1][:output_tokens]
+    assert_in_delta 2.1, @tracker.turns[1][:elapsed], 0.01
+
+    assert_equal 430, @tracker.total_tokens
+  end
+
+  def test_record_turn_network_skips_run_params
+    raw = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
+    robot = OpenStruct.new(raw: raw, robot_name: 'Spark', duration: 1.0)
+
+    flow_result = SimpleFlow::Result.new(
+      :ok, context: { run_params: { message: 'test' }, spark: robot }
+    )
+
+    @tracker.record_turn(model: 'ignored', input: 'hello', result: flow_result)
+
+    assert_equal 1, @tracker.turns.size
+    assert_equal 'gpt-4o-mini', @tracker.turns[0][:model]
+  end
+
+  def test_record_turn_network_falls_back_to_robot_name_when_no_model_id
+    raw = OpenStruct.new(input_tokens: 100, output_tokens: 50)
+    robot = OpenStruct.new(raw: raw, robot_name: 'Slate', duration: 5.0, reply: 'text')
+
+    flow_result = SimpleFlow::Result.new(
+      :ok, context: { slate: robot }
+    )
+
+    @tracker.record_turn(model: 'ignored', input: 'hello', result: flow_result)
+
+    assert_equal 'Slate', @tracker.turns[0][:model]
+  end
+
+  # =========================================================================
+  # record_turn — network similarity scoring
+  # =========================================================================
+
+  def test_record_turn_network_stores_similarity_scores
+    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4')
+    raw_b = OpenStruct.new(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini')
+
+    robot_a = OpenStruct.new(
+      raw: raw_a, robot_name: 'Lyric', duration: 4.2,
+      reply: 'Ruby is a dynamic programming language focused on simplicity.'
+    )
+    robot_b = OpenStruct.new(
+      raw: raw_b, robot_name: 'Spark', duration: 2.1,
+      reply: 'Ruby is a dynamic programming language that focuses on simplicity.'
+    )
+
+    flow_result = SimpleFlow::Result.new(
+      :ok, context: { lyric: robot_a, spark: robot_b }
+    )
+
+    @tracker.record_turn(model: 'ignored', input: 'hello', result: flow_result)
+
+    assert_nil @tracker.turns[0][:similarity], "First model should have nil similarity (reference)"
+    assert_kind_of Float, @tracker.turns[1][:similarity]
+    assert @tracker.turns[1][:similarity] > 0.0, "Similar responses should have positive similarity"
+    assert @tracker.turns[1][:similarity] <= 1.0, "Similarity should be <= 1.0"
+  end
+
+  def test_record_turn_network_single_robot_has_no_similarity
+    raw = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
+    robot = OpenStruct.new(raw: raw, robot_name: 'Spark', duration: 1.0, reply: 'text')
+
+    flow_result = SimpleFlow::Result.new(
+      :ok, context: { spark: robot }
+    )
+
+    @tracker.record_turn(model: 'ignored', input: 'hello', result: flow_result)
+
+    assert_nil @tracker.turns[0][:similarity]
   end
 
   private

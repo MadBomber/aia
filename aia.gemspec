@@ -49,8 +49,9 @@ Gem::Specification.new do |spec|
   # CLI & UI
   spec.add_dependency 'reline'                     # Interactive chat input with history
   spec.add_dependency 'tty-screen'                 # Terminal width detection
-  spec.add_dependency 'tty-spinner'                # Loading animation during AI processing
-  spec.add_dependency 'tty-progressbar'            # Progress bar for MCP server connections
+  spec.add_dependency 'tty-spinner'                # Loading animation and concurrent MCP connection spinners
+  spec.add_dependency 'tty-table',    '~> 0.12'   # Adaptive terminal-width table rendering for metrics
+  spec.add_dependency 'classifier',  '~> 2.3'     # TF-IDF similarity, Bayes classification, LSI semantic search
   spec.add_dependency 'word_wrapper'               # Terminal text wrapping for tool listings
   spec.add_dependency 'amazing_print'              # Config dump formatting (--dump, /config)
   spec.add_dependency 'clipboard'                  # System clipboard access (/paste directive)

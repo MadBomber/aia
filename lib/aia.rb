@@ -43,11 +43,17 @@ require_relative 'aia/expert_router'
 require_relative 'aia/verification_network'
 require_relative 'aia/prompt_decomposer'
 require_relative 'aia/session_tracker'
+require_relative 'aia/similarity_scorer'
 require_relative 'aia/streaming_runner'
 require_relative 'aia/mention_router'
 require_relative 'aia/special_mode_handler'
 require_relative 'aia/mcp_connection_manager'
 require_relative 'aia/trakflow_bridge'
+require_relative 'aia/task_coordinator'
+require_relative 'aia/tools/task_board_tool'
+require_relative 'aia/debate_handler'
+require_relative 'aia/delegate_handler'
+require_relative 'aia/spawn_handler'
 require_relative 'aia/chat_loop'
 require_relative 'aia/session'
 
@@ -64,7 +70,7 @@ module AIA
   @turn_state = TurnState.new
 
   class << self
-    attr_accessor :config, :client, :session_tracker, :turn_state
+    attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator
 
     def good_file?(filename)
       File.exist?(filename) &&

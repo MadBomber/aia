@@ -73,7 +73,8 @@ module AIA
         @tracker.record_turn(
           model: bot.model || 'unknown',
           input: prompt,
-          result: result
+          result: result,
+          elapsed: elapsed
         )
 
         if streamed_content
@@ -86,7 +87,7 @@ module AIA
         end
 
         output_to_file(content)
-        display_metrics(result)
+        display_metrics(result, elapsed: elapsed)
         speak(content)
       end
 
@@ -104,20 +105,27 @@ module AIA
       File.open(out_file, 'a') { |f| f.puts "\nAI: #{content}" }
     end
 
-    def display_metrics(result)
+    def display_metrics(result, elapsed: nil)
       return unless AIA.config.flags.tokens
 
-      if result.respond_to?(:output) && result.output.any?
-        last_msg = result.output.last
-        if last_msg.respond_to?(:input_tokens)
-          metrics = {
-            model_id: result.respond_to?(:robot_name) ? result.robot_name : "unknown",
-            input_tokens: last_msg.input_tokens,
-            output_tokens: last_msg.output_tokens
-          }
-          @ui_presenter.display_token_metrics(metrics)
-        end
-      end
+      raw = result.respond_to?(:raw) ? result.raw : nil
+      return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+
+      model_id = extract_model_id(raw)
+      model_id ||= result.respond_to?(:robot_name) ? result.robot_name : "unknown"
+      metrics = {
+        model_id:      model_id,
+        input_tokens:  raw.input_tokens,
+        output_tokens: raw.output_tokens,
+        elapsed:       elapsed
+      }
+      @ui_presenter.display_token_metrics(metrics)
+    end
+
+    def extract_model_id(message)
+      return message.model_id if message.respond_to?(:model_id) && message.model_id
+      return message.model    if message.respond_to?(:model)    && message.model
+      nil
     end
 
     def speak(content)

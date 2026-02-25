@@ -3,9 +3,11 @@
 # lib/aia/mcp_connection_manager.rb
 #
 # Single owner for MCP connection state. Handles connecting to configured
-# MCP servers, tracking successes/failures, and injecting results into robots.
+# MCP servers concurrently, tracking successes/failures, and injecting
+# results into robots.
 
 require 'timeout'
+require 'tty-spinner'
 
 module AIA
   class MCPConnectionManager
@@ -19,10 +21,11 @@ module AIA
       @connected_tools   = []
       @failed_servers    = []
       @connected         = false
+      @mutex             = Mutex.new
     end
 
-    # Connect all configured MCP servers eagerly.
-    # Each server is handled independently so one failure doesn't block others.
+    # Connect all configured MCP servers concurrently.
+    # Each server gets its own spinner line and thread.
     #
     # @param servers [Array<Hash>] MCP server configurations
     # @return [self]
@@ -37,55 +40,24 @@ module AIA
       server_names = servers.map { |s| s.is_a?(Hash) ? s[:name] : s.to_s }.compact
       logger.info("MCP initialization: connecting #{servers.size} server(s): #{server_names.join(', ')}")
 
-      bar = TTY::ProgressBar.new(
-        "Connecting MCP servers [:bar] :current/:total",
-        total: servers.size,
-        width: 20,
+      multi = TTY::Spinner::Multi.new(
+        "[:spinner] Connecting MCP servers",
+        format: :dots,
         output: $stderr
       )
 
-      servers.each do |server_config|
+      threads = servers.map do |server_config|
         name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
-        timeout = server_timeout(server_config)
 
-        begin
-          logger.info("MCP: connecting to '#{name}'...")
-          Timeout.timeout(timeout) do
-            client = RobotLab::MCP::Client.new(server_config)
-            client.connect
+        spinner = multi.register("[:spinner] #{name}")
 
-            if client.connected?
-              @connected_clients[name] = client
-              tools = client.list_tools
-              tools.each do |tool_def|
-                tool_name = tool_def[:name]
-                mcp_client = client
-                tool = RobotLab::Tool.create(
-                  name:        tool_name,
-                  description: tool_def[:description],
-                  parameters:  tool_def[:inputSchema],
-                  mcp:         name
-                ) { |args| mcp_client.call_tool(tool_name, args) }
-                @connected_tools << tool
-              end
-              logger.info("MCP: '#{name}' connected (#{tools.size} tools)")
-            else
-              @failed_servers << { name: name, error: "connection failed" }
-              logger.warn("MCP: '#{name}' failed to connect")
-            end
-          end
-        rescue Timeout::Error
-          @failed_servers << { name: name, error: "timed out after #{timeout}s" }
-          logger.warn("MCP: '#{name}' timed out after #{timeout}s")
-        rescue StandardError => e
-          @failed_servers << { name: name, error: e.message }
-          logger.warn("MCP: '#{name}' error: #{e.message}")
-        ensure
-          bar.advance
+        Thread.new(server_config, name, spinner) do |cfg, srv_name, sp|
+          connect_one(cfg, srv_name, sp, logger)
         end
       end
 
-      bar.finish
+      threads.each(&:join)
+
       @connected = true
       logger.info("MCP initialization complete: #{@connected_clients.size} connected, #{@failed_servers.size} failed")
       self
@@ -146,6 +118,58 @@ module AIA
     end
 
     private
+
+    # Connect a single MCP server, updating the spinner on completion.
+    def connect_one(server_config, name, spinner, logger)
+      timeout = server_timeout(server_config)
+      spinner.auto_spin
+
+      logger.info("MCP: connecting to '#{name}'...")
+      Timeout.timeout(timeout) do
+        client = RobotLab::MCP::Client.new(server_config)
+        client.connect
+
+        if client.connected?
+          tools = client.list_tools
+          built_tools = tools.map do |tool_def|
+            tool_name  = tool_def[:name]
+            mcp_client = client
+            RobotLab::Tool.create(
+              name:        tool_name,
+              description: tool_def[:description],
+              parameters:  tool_def[:inputSchema],
+              mcp:         name
+            ) { |args| mcp_client.call_tool(tool_name, args) }
+          end
+
+          @mutex.synchronize do
+            @connected_clients[name] = client
+            @connected_tools.concat(built_tools)
+          end
+
+          logger.info("MCP: '#{name}' connected (#{tools.size} tools)")
+          spinner.success("(#{tools.size} tools)")
+        else
+          @mutex.synchronize do
+            @failed_servers << { name: name, error: "connection failed" }
+          end
+          logger.warn("MCP: '#{name}' failed to connect")
+          spinner.error("(connection failed)")
+        end
+      end
+    rescue Timeout::Error
+      @mutex.synchronize do
+        @failed_servers << { name: name, error: "timed out after #{timeout}s" }
+      end
+      logger.warn("MCP: '#{name}' timed out after #{timeout}s")
+      spinner.error("(timed out)")
+    rescue StandardError => e
+      @mutex.synchronize do
+        @failed_servers << { name: name, error: e.message }
+      end
+      logger.warn("MCP: '#{name}' error: #{e.message}")
+      spinner.error("(#{e.message})")
+    end
 
     # Extract timeout in seconds from server config.
     # Config values >= 1000 are treated as milliseconds.

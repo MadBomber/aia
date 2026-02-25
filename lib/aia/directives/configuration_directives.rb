@@ -111,5 +111,78 @@ module AIA
       config(args.prepend('top_p'), context_manager)
     end
     alias_method :topp, :top_p
+
+    desc "Dump session cost/token metrics as CSV"
+    def cost(args = [], context_manager = nil)
+      tracker = AIA.session_tracker
+      unless tracker
+        puts "No session tracker available."
+        return ''
+      end
+
+      turns = tracker.turns.reject { |t| t[:type] == :model_switch }
+      if turns.empty?
+        puts "No turns recorded yet."
+        return ''
+      end
+
+      has_similarity = turns.any? { |t| t.key?(:similarity) }
+
+      header = %w[model input_tokens output_tokens total_tokens cost elapsed]
+      header << 'similarity' if has_similarity
+      lines  = [header.join(',')]
+
+      turns.each do |turn|
+        input_t  = turn[:input_tokens] || 0
+        output_t = turn[:output_tokens] || 0
+        total_t  = input_t + output_t
+        cost_val = turn[:cost] || 0.0
+        elapsed  = turn[:elapsed] || 0
+
+        row = [
+          turn[:model],
+          input_t,
+          output_t,
+          total_t,
+          "$#{'%.5f' % cost_val}",
+          "%.1fs" % elapsed
+        ]
+
+        if has_similarity
+          sim = turn[:similarity]
+          row << (sim.nil? ? 'ref' : "%.1f%%" % (sim * 100))
+        end
+
+        lines << row.join(',')
+      end
+
+      # Totals
+      total_input   = turns.sum { |t| t[:input_tokens] || 0 }
+      total_output  = turns.sum { |t| t[:output_tokens] || 0 }
+      total_tokens  = total_input + total_output
+      total_cost    = turns.sum { |t| t[:cost] || 0.0 }
+      max_elapsed   = turns.map { |t| t[:elapsed] || 0 }.max
+
+      totals = [
+        'TOTAL',
+        total_input,
+        total_output,
+        total_tokens,
+        "$#{'%.5f' % total_cost}",
+        "%.1fs" % max_elapsed
+      ]
+      totals << '' if has_similarity
+      lines << totals.join(',')
+
+      csv = lines.join("\n")
+      puts
+      puts csv
+      puts
+
+      out_file = AIA.config.output&.file
+      File.open(out_file, 'a') { |f| f.puts csv } if out_file
+
+      ''
+    end
   end
 end

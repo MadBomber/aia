@@ -6,7 +6,6 @@
 # Builds robot via RobotFactory, processes pipeline, enters chat.
 # Integrates TrakFlow for pipeline tracking and session continuity.
 
-require "tty-progressbar"
 require "tty-screen"
 require "reline"
 require "pm"
@@ -46,6 +45,12 @@ module AIA
 
       # Eagerly connect MCP servers so the banner shows actual connection status
       connect_mcp_servers
+
+      # Initialize task coordination if TrakFlow is available
+      initialize_task_coordinator
+
+      # Attach shared bus to multi-model networks
+      attach_bus_if_network
 
       # Store session tracker globally for KBS access
       AIA.session_tracker = @session_tracker
@@ -115,18 +120,65 @@ module AIA
       @mcp_manager.update_config
     end
 
-    # Check for resumable work in TrakFlow at session start
+    # Initialize TaskCoordinator if TrakFlow is available.
+    def initialize_task_coordinator
+      return unless TrakFlow.initialized?
+
+      AIA.task_coordinator = TaskCoordinator.new
+    rescue StandardError
+      # TrakFlow coordination is best-effort
+    end
+
+    # Attach a shared TypedBus to multi-model networks.
+    def attach_bus_if_network
+      return unless @robot.is_a?(RobotLab::Network)
+
+      RobotFactory.attach_bus(@robot)
+    rescue StandardError
+      # Bus attachment is best-effort
+    end
+
+    # Check for resumable work in TrakFlow at session start.
+    # Injects pending tasks into shared memory so robots are aware.
     def check_trakflow_resume
-      bridge = TrakFlowBridge.new
-      return unless bridge.available?
+      return unless AIA.task_coordinator&.available?
 
-      ready = bridge.check_ready_tasks
-      return if ready.nil? || ready.to_s.strip.empty?
+      ready = AIA.task_coordinator.ready_tasks
+      return if ready.empty?
 
-      @ui_presenter.display_info("Open tasks from previous sessions found:")
-      @ui_presenter.display_info(ready.to_s)
+      task_context = ready.map { |t|
+        assignee = t.assignee ? " (assigned to #{t.assignee})" : ""
+        "  - [#{t.id}] #{t.title}#{assignee}"
+      }.join("\n")
+
+      @ui_presenter.display_info(
+        "#{ready.size} task(s) from previous sessions:\n#{task_context}"
+      )
+
+      # Inject into shared memory so robots are aware
+      if @robot.respond_to?(:memory)
+        @robot.memory.set(:pending_tasks, ready.map { |t|
+          { id: t.id, title: t.title, assignee: t.assignee, status: t.status }
+        })
+      end
+
+      # Auto-claim tasks assigned to specific robots
+      auto_claim_assigned_tasks
     rescue StandardError
       # TrakFlow resume is best-effort
+    end
+
+    # Auto-claim tasks assigned to robots in the current network.
+    def auto_claim_assigned_tasks
+      return unless AIA.task_coordinator&.available?
+      return unless @robot.is_a?(RobotLab::Network)
+
+      @robot.robots.each_value do |robot|
+        tasks = AIA.task_coordinator.ready_tasks(robot_name: robot.name)
+        tasks.each { |task| AIA.task_coordinator.claim_task(task.id, robot.name) }
+      end
+    rescue StandardError
+      # Auto-claim is best-effort
     end
 
     # Process all prompts in the pipeline via robot.run()

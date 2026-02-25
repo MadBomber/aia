@@ -9,7 +9,8 @@
 
 module AIA
   class TurnState
-    attr_accessor :force_verify, :force_decompose, :force_concurrent_mcp
+    attr_accessor :force_verify, :force_decompose, :force_concurrent_mcp,
+                  :force_debate, :force_delegate, :force_spawn, :spawn_type
 
     def initialize
       clear!
@@ -19,6 +20,10 @@ module AIA
       @force_verify = false
       @force_decompose = false
       @force_concurrent_mcp = false
+      @force_debate = false
+      @force_delegate = false
+      @force_spawn = false
+      @spawn_type = nil
     end
   end
 end

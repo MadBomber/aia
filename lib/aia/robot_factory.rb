@@ -78,7 +78,7 @@ module AIA
         system_prompt = resolve_system_prompt(config, model_spec)
         namer = @namer
 
-        RobotLab.create_network(name: "aia-concurrent-mcp") do
+        network = RobotLab.create_network(name: "aia-concurrent-mcp") do
           server_groups.each_with_index do |group, i|
             build_opts = {
               name:          "#{namer.name_for(model_spec.name)}-w#{i}",
@@ -106,6 +106,10 @@ module AIA
           task :synthesize, synthesizer,
                depends_on: server_groups.each_index.map { |i| :"mcp_worker_#{i}" }
         end
+
+        initialize_network_memory(network, config)
+        setup_memory_subscriptions(network, config)
+        network
       end
 
       # Build a single robot for one model
@@ -241,12 +245,92 @@ module AIA
         result
       end
 
+      # Initialize shared memory for a network with session context.
+      # Populates data keys that robots can read during execution.
+      #
+      # @param network [RobotLab::Network]
+      # @param config [AIA::Config]
+      # @return [RobotLab::Network]
+      def initialize_network_memory(network, config)
+        return network unless network.respond_to?(:memory)
+
+        memory = network.memory
+        memory.data.session_id  = SecureRandom.hex(8)
+        memory.data.model_count = config.models.size
+        memory.data.model_names = config.models.map(&:name)
+        memory.data.mode        = config.flags.consensus ? :consensus : :parallel
+        memory.data.turn_count  = 0
+
+        network
+      end
+
+      # Set up memory subscriptions for debug logging and completion tracking.
+      #
+      # @param network [RobotLab::Network]
+      # @param config [AIA::Config]
+      def setup_memory_subscriptions(network, config)
+        return unless network.respond_to?(:memory)
+
+        memory = network.memory
+
+        if config.flags.debug
+          memory.subscribe_pattern("result_*") do |change|
+            AIA::LoggerManager.aia_logger.debug(
+              "Memory: #{change.key} by #{change.writer} at #{change.timestamp}"
+            )
+          end
+        end
+
+        memory.set(:completed_count, 0)
+        memory.subscribe_pattern("result_*") do |change|
+          next unless change.created?
+          count = memory.get(:completed_count) || 0
+          memory.set(:completed_count, count + 1)
+        end
+      end
+
+      # Attach a shared TypedBus message bus to all robots in a network.
+      #
+      # @param network [RobotLab::Network]
+      # @return [TypedBus::MessageBus, nil]
+      def attach_bus(network)
+        return nil unless network.respond_to?(:robots)
+
+        bus = TypedBus::MessageBus.new
+        network.robots.each_value { |robot| robot.with_bus(bus) }
+        bus
+      end
+
       # Map AIA provider aliases to RubyLLM provider slugs.
       def resolve_provider(model_spec)
         case model_spec.provider
         when 'lms' then 'openai'
         else model_spec.provider
         end
+      end
+
+      # Build a system prompt fragment that tells a robot its name, its
+      # model, and the other robots in the network.
+      #
+      # @param robot_name [String] this robot's creative name
+      # @param spec [ModelSpec] this robot's model spec
+      # @param roster [Array<Hash>] all robots: [{ name:, spec: }, ...]
+      # @return [String]
+      def build_identity_prompt(robot_name, spec, roster)
+        provider_label = spec.provider ? " (#{spec.provider})" : ""
+        lines = ["You are #{robot_name}, powered by #{spec.name}#{provider_label}."]
+
+        if roster.size > 1
+          lines << "You are part of a team of AI robots:"
+          roster.each do |entry|
+            p = entry[:spec].provider ? " (#{entry[:spec].provider})" : ""
+            marker = entry[:name] == robot_name ? " ← you" : ""
+            lines << "  - #{entry[:name]}: #{entry[:spec].name}#{p}#{marker}"
+          end
+          lines << "Users can address a specific robot with @name mentions."
+        end
+
+        lines.join("\n")
       end
 
       private
@@ -363,41 +447,23 @@ module AIA
         warn "Warning: Failed to eager-load gem tools: #{e.message}"
       end
 
-      # Discover RubyLLM::Tool subclasses from ObjectSpace
+      # Discover RubyLLM::Tool subclasses from ObjectSpace.
+      # Skips tools that report themselves as unavailable via #available?.
       def discover_tools
         ObjectSpace.each_object(Class).select do |klass|
           next false unless defined?(RubyLLM::Tool) && klass < RubyLLM::Tool
           begin
-            klass.new
+            instance = klass.new
+            if instance.respond_to?(:available?) && !instance.available?
+              tool_name = instance.respond_to?(:name) ? instance.name : klass.name
+              warn "Info: Tool '#{tool_name}' is not available, skipping"
+              next false
+            end
             true
           rescue ArgumentError, LoadError, StandardError
             false
           end
         end
-      end
-
-      # Build an identity preamble so each robot knows its own name,
-      # model, and the other robots in the network.
-      #
-      # @param robot_name [String] this robot's creative name
-      # @param spec [ModelSpec] this robot's model spec
-      # @param roster [Array<Hash>] all robots: [{ name:, spec: }, ...]
-      # @return [String]
-      def build_identity_prompt(robot_name, spec, roster)
-        provider_label = spec.provider ? " (#{spec.provider})" : ""
-        lines = ["You are #{robot_name}, powered by #{spec.name}#{provider_label}."]
-
-        if roster.size > 1
-          lines << "You are part of a team of AI robots:"
-          roster.each do |entry|
-            p = entry[:spec].provider ? " (#{entry[:spec].provider})" : ""
-            marker = entry[:name] == robot_name ? " ← you" : ""
-            lines << "  - #{entry[:name]}: #{entry[:spec].name}#{p}#{marker}"
-          end
-          lines << "Users can address a specific robot with @name mentions."
-        end
-
-        lines.join("\n")
       end
 
       # Load role file content
@@ -466,13 +532,17 @@ module AIA
         nil
       end
 
-      # Decide between consensus and parallel multi-model
+      # Decide between consensus and parallel multi-model.
+      # Initializes shared memory and subscriptions on the resulting network.
       def build_multi_model(config)
-        if config.flags.consensus
-          build_consensus_network(config)
-        else
-          build_parallel_network(config)
-        end
+        network = if config.flags.consensus
+                    build_consensus_network(config)
+                  else
+                    build_parallel_network(config)
+                  end
+        initialize_network_memory(network, config)
+        setup_memory_subscriptions(network, config)
+        network
       end
 
       # Build a network where each prompt in the pipeline is a sequential step
