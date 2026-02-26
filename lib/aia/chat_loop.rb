@@ -86,8 +86,7 @@ module AIA
       loop do
         follow_up_prompt = @ui_presenter.ask_question
 
-        break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == "exit"
-        next  if follow_up_prompt.strip.empty?
+        break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == "exit" || follow_up_prompt.strip.empty?
 
         log_user_input(follow_up_prompt)
 

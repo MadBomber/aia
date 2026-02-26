@@ -10,7 +10,7 @@ module AIA
   class UIPresenter
     USER_PROMPT = "Follow up (cntl-D or 'exit' to end) #=> "
     HISTORY_FILE = File.join(Dir.home, '.config', 'aia', 'chat_history')
-    MAX_HISTORY = 20
+    MAX_HISTORY = 50
 
 
     def initialize
