@@ -70,30 +70,27 @@ module AIA
       log_mcp_server_mapping(server_tools)
     end
 
-    # Return detailed rule info for all KBs.
+    # Return decompiled rule source for all KBs.
     #
-    # @return [Hash{Symbol => Array<Hash>}] kb_name → [{name:, conditions:}]
-    def rules_detail
-      detail = {}
-      @knowledge_bases.each do |kb_name, kb|
-        detail[kb_name] = kb.rules.map do |name, rule|
-          conditions = rule.conditions.map do |c|
-            pattern_str = c.pattern.map do |k, v|
-              val = case v
-                    when Proc   then resolve_satisfies(name, k, v)
-                    when Regexp then "matches(#{v.inspect})"
-                    else v.inspect
-                    end
-              "#{k}: #{val}"
-            end.join(", ")
+    # @param filter [String, nil] optional substring filter on rule name or source
+    # @return [Hash{Symbol => Array<Hash>}] kb_name → [{name:, source:}]
+    def rules_source(filter = nil)
+      result = {}
 
-            prefix = c.negated ? "NOT " : ""
-            "#{prefix}on :#{c.type}#{pattern_str.empty? ? '' : ", #{pattern_str}"}"
-          end
-          { name: name, conditions: conditions }
+      @knowledge_bases.each do |kb_name, kb|
+        entries = kb.rules.keys.filter_map do |name|
+          source = kb.rule_source(name) || "(no source available)"
+          searchable = "#{kb_name} #{name} #{source}".downcase
+
+          next if filter && !searchable.include?(filter)
+
+          { name: name, source: source }
         end
+
+        result[kb_name] = entries unless entries.empty?
       end
-      detail
+
+      result
     end
 
     # Evaluate pre-send rules against the current configuration.
@@ -909,30 +906,6 @@ module AIA
       end
     rescue StandardError
       ""
-    end
-
-    # =========================================================================
-    # Rule Display Helpers
-    # =========================================================================
-
-    # Resolve a satisfies Proc to a human-readable string.
-    # For dynamic tool rules (activate_*_tools) we show the captured tool names.
-    # For everything else we fall back to "satisfies { ... }".
-    def resolve_satisfies(rule_name, attr_key, _proc)
-      rule_str = rule_name.to_s
-      return "satisfies { ... }" unless attr_key == :name
-
-      if rule_str =~ /\Aactivate_mcp_(.+)_tools\z/
-        server = $1
-        names = @server_tool_names[server] if defined?(@server_tool_names)
-        return "one_of(#{names.map(&:inspect).join(', ')})" if names && !names.empty?
-      elsif rule_str =~ /\Aactivate_(.+)_tools\z/
-        domain = $1
-        names = @domain_tool_names[domain]
-        return "one_of(#{names.map(&:inspect).join(', ')})" if names && !names.empty?
-      end
-
-      "satisfies { ... }"
     end
 
     # =========================================================================

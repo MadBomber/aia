@@ -134,7 +134,7 @@ module AIA
       AIA::Directive.help
     end
 
-    desc "Show KBS rules across all knowledge bases (optional: substring filter on rule name, KB name, or conditions)"
+    desc "Show decompiled KBS rule source across all knowledge bases (optional: substring filter)"
     def rules(args = [], context_manager = nil)
       router = AIA.rule_router
 
@@ -143,43 +143,29 @@ module AIA
         return ''
       end
 
-      detail = router.rules_detail
       filter = args.first&.downcase
+      detail = router.rules_source(filter)
 
       puts
       header = filter ? "KBS Rules (filtered by '#{args.first}')" : "KBS Rules"
       puts header
       puts "=" * header.length
 
-      matched = false
+      if detail.empty?
+        puts filter ? "No rules match the filter: #{args.first}" : "No rules loaded"
+      else
+        detail.each do |kb_name, entries|
+          puts "\n#{kb_name} (#{entries.size} rules)"
+          puts "-" * (kb_name.to_s.length + entries.size.to_s.length + 10)
 
-      detail.each do |kb_name, rules_list|
-        kb_str = kb_name.to_s
-
-        matching_rules = if filter
-                           rules_list.select do |rule_info|
-                             searchable = "#{kb_str} #{rule_info[:name]} #{rule_info[:conditions].join(' ')}"
-                             searchable.downcase.include?(filter)
-                           end
-                         else
-                           rules_list
-                         end
-
-        next if matching_rules.empty?
-
-        matched = true
-        puts "\n#{kb_name} (#{matching_rules.size} rules)"
-        puts "-" * (kb_str.length + matching_rules.size.to_s.length + 10)
-
-        matching_rules.each do |rule_info|
-          puts "  #{rule_info[:name]}"
-          rule_info[:conditions].each { |c| puts "    #{c}" }
+          entries.each do |entry|
+            puts
+            entry[:source].each_line { |line| puts "  #{line}" }
+          end
         end
       end
 
-      puts "No rules match the filter: #{args.first}" if filter && !matched
       puts
-
       ''
     end
 
