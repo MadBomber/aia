@@ -5,7 +5,7 @@ require 'word_wrapper'
 
 module AIA
   class UtilityDirectives < Directive
-    desc "List available tools (optional filter by name substring)"
+    desc "List available tools (optional filter by name or description substring)"
     def tools(args = [], context_manager = nil)
       indent = 4
       spaces = " " * indent
@@ -22,7 +22,8 @@ module AIA
         if filter
           tools_to_display = tools_to_display.select do |tool|
             name = tool.respond_to?(:name) ? tool.name : tool.class.name
-            name.downcase.include?(filter)
+            desc = tool.respond_to?(:description) ? tool.description.to_s : ""
+            "#{name} #{desc}".downcase.include?(filter)
           end
         end
 
@@ -131,6 +132,55 @@ module AIA
     desc "Show this help message"
     def help(args = nil, context_manager = nil)
       AIA::Directive.help
+    end
+
+    desc "Show KBS rules across all knowledge bases (optional: substring filter on rule name, KB name, or conditions)"
+    def rules(args = [], context_manager = nil)
+      router = AIA.rule_router
+
+      unless router
+        puts "No rule router available"
+        return ''
+      end
+
+      detail = router.rules_detail
+      filter = args.first&.downcase
+
+      puts
+      header = filter ? "KBS Rules (filtered by '#{args.first}')" : "KBS Rules"
+      puts header
+      puts "=" * header.length
+
+      matched = false
+
+      detail.each do |kb_name, rules_list|
+        kb_str = kb_name.to_s
+
+        matching_rules = if filter
+                           rules_list.select do |rule_info|
+                             searchable = "#{kb_str} #{rule_info[:name]} #{rule_info[:conditions].join(' ')}"
+                             searchable.downcase.include?(filter)
+                           end
+                         else
+                           rules_list
+                         end
+
+        next if matching_rules.empty?
+
+        matched = true
+        puts "\n#{kb_name} (#{matching_rules.size} rules)"
+        puts "-" * (kb_str.length + matching_rules.size.to_s.length + 10)
+
+        matching_rules.each do |rule_info|
+          puts "  #{rule_info[:name]}"
+          rule_info[:conditions].each { |c| puts "    #{c}" }
+        end
+      end
+
+      puts "No rules match the filter: #{args.first}" if filter && !matched
+      puts
+
+      ''
     end
 
     private

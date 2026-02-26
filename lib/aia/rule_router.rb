@@ -18,11 +18,82 @@ module AIA
 
     attr_reader :decisions
 
+    # Keyword patterns used to classify tools into domains.
+    # Applied against "#{tool_name} #{tool_description}".
+    # Keys must match domains produced by the classify KB.
+    TOOL_DOMAIN_PATTERNS = {
+      "code"     => /\b(code|execute|eval|script|shell|command|programming|ruby|python|javascript|compile|lint)\b/i,
+      "data"     => /(sql|database|\bquery\b|\btable\b|\bschema\b|\brecord\b|\bcsv\b|\bjson\b|data[\s_-]?(base|set|store|source)|\bredis\b|\bmongo)/i,
+      "file"     => /\b(file|directory|disk|folder|path)\b/i,
+      "web"      => /\b(browser|web\s*page|url|http|visit|scrape|screenshot|html)\b/i,
+      "image"    => /\b(image|picture|photo|diagram|visual|svg|png|graphic|draw)\b/i,
+      "planning" => /\b(task|project|plan|schedule|workflow|roadmap|milestone|kanban|todo)\b/i,
+      "audio"    => /\b(audio|sound|music|voice|speech|transcri)\b/i,
+      "system"   => /\b(brew|homebrew|package|install|system|os|process|service|daemon|apt|yum|dnf|pip|npm|gem)\b/i,
+    }.freeze
+
+    # Domains that don't have a classify KB rule get input-text-based
+    # classification rules built dynamically alongside the route rules.
+    # These are the domains already covered by build_classification_kb.
+    BUILTIN_CLASSIFY_DOMAINS = %w[code data image planning audio].freeze
+
     def initialize
       @decisions = Decisions.new
+      AIA.decisions = @decisions
       @knowledge_bases = {}
+      @tools_registered = false
+      @domain_tool_names = {}  # populated by register_tools for /rules display
       build_all_kbs
       load_user_rules
+    end
+
+    # Register loaded tools and dynamically build routing rules.
+    # Called by Session after RobotFactory.build discovers tools.
+    #
+    # @param tools [Array] loaded tool classes (RubyLLM::Tool subclasses)
+    def register_tools(tools)
+      return if tools.nil? || tools.empty? || @tools_registered
+
+      domain_tools = map_tools_to_domains(tools)
+      server_tools = map_tools_to_mcp_servers(tools)
+
+      build_dynamic_classify_rules(domain_tools)
+      build_dynamic_tool_rules(domain_tools)
+      build_mcp_server_classify_rules(server_tools)
+      build_mcp_server_route_rules(server_tools)
+
+      @tools_registered = true
+      @domain_tool_names = domain_tools.transform_values { |v| v.dup.freeze }.freeze
+      @server_tool_names = server_tools.transform_values { |v| v.dup.freeze }.freeze
+
+      log_tool_domain_mapping(domain_tools)
+      log_mcp_server_mapping(server_tools)
+    end
+
+    # Return detailed rule info for all KBs.
+    #
+    # @return [Hash{Symbol => Array<Hash>}] kb_name → [{name:, conditions:}]
+    def rules_detail
+      detail = {}
+      @knowledge_bases.each do |kb_name, kb|
+        detail[kb_name] = kb.rules.map do |name, rule|
+          conditions = rule.conditions.map do |c|
+            pattern_str = c.pattern.map do |k, v|
+              val = case v
+                    when Proc   then resolve_satisfies(name, k, v)
+                    when Regexp then "matches(#{v.inspect})"
+                    else v.inspect
+                    end
+              "#{k}: #{val}"
+            end.join(", ")
+
+            prefix = c.negated ? "NOT " : ""
+            "#{prefix}on :#{c.type}#{pattern_str.empty? ? '' : ", #{pattern_str}"}"
+          end
+          { name: name, conditions: conditions }
+        end
+      end
+      detail
     end
 
     # Evaluate pre-send rules against the current configuration.
@@ -40,13 +111,14 @@ module AIA
         kb = @knowledge_bases[kb_name]
         next unless kb
 
-        kb.reset
+        reset_kb(kb)
         assert_facts_for(kb, kb_name, config, input)
         assert_decision_facts(kb, kb_name)
         kb.run
       end
 
       apply_decisions(config)
+      log_turn_decisions(input) if input
       @decisions
     rescue StandardError => e
       warn "Warning: Rule evaluation failed: #{e.message}"
@@ -112,7 +184,7 @@ module AIA
 
         rule "data_request" do
           on :turn_input do
-            text matches(/\b(query|sql|database|table|schema|record|select|insert|migration)\b/i)
+            text matches(/(sql|database|\bquery\b|\btable\b|\bschema\b|\brecord\b|\bselect\b|\binsert\b|\bmigration\b|\bredis\b|\bmongo)/i)
           end
           perform do |facts|
             decisions.add(:classification, domain: "data", source: "data_request")
@@ -270,7 +342,9 @@ module AIA
     end
 
     # KB 3: MCP/Tool Routing
-    # Decides which MCP servers to activate based on classification.
+    # MCP routing rules are built-in (MCP servers declare topics).
+    # Tool routing rules are built dynamically by register_tools()
+    # after RobotFactory discovers the actual loaded tools.
     def build_routing_kb
       decisions = @decisions
 
@@ -376,6 +450,196 @@ module AIA
     end
 
     # =========================================================================
+    # Dynamic Tool Rule Generation
+    # =========================================================================
+
+    # Classify each tool into domains by matching name + description
+    # against TOOL_DOMAIN_PATTERNS.
+    #
+    # @param tools [Array] loaded tool classes
+    # @return [Hash{String => Array<String>}] domain → tool names
+    def map_tools_to_domains(tools)
+      domain_tools = Hash.new { |h, k| h[k] = [] }
+
+      tools.each do |tool_class|
+        name = tool_name(tool_class)
+        desc = tool_description(tool_class)
+        text = "#{name} #{desc}"
+
+        TOOL_DOMAIN_PATTERNS.each do |domain, pattern|
+          domain_tools[domain] << name if text.match?(pattern)
+        end
+      end
+
+      # "file" domain tools are also useful for "code" tasks
+      if domain_tools.key?("file")
+        domain_tools["code"] = (domain_tools["code"] + domain_tools["file"]).uniq
+      end
+
+      domain_tools
+    end
+
+    # For domains that don't have built-in classify rules (e.g. "web", "file"),
+    # add classification rules so user input can trigger those domains.
+    def build_dynamic_classify_rules(domain_tools)
+      kb = @knowledge_bases[:classify]
+      return unless kb
+
+      decisions = @decisions
+
+      domain_tools.each_key do |domain|
+        next if BUILTIN_CLASSIFY_DOMAINS.include?(domain)
+
+        pattern = TOOL_DOMAIN_PATTERNS[domain]
+        next unless pattern
+
+        kb.rule "#{domain}_request" do
+          on :turn_input do
+            text matches(pattern)
+          end
+          perform do |_facts|
+            decisions.add(:classification, domain: domain, source: "#{domain}_request")
+          end
+        end
+      end
+    end
+
+    # Build route KB rules that activate tools when their domain matches
+    # the classified input domain.
+    def build_dynamic_tool_rules(domain_tools)
+      kb = @knowledge_bases[:route]
+      return unless kb
+
+      decisions = @decisions
+
+      domain_tools.each do |domain, tool_names|
+        next if tool_names.empty?
+
+        names = tool_names.dup.freeze
+
+        kb.rule "activate_#{domain}_tools" do
+          on :classification_decision, domain: domain
+          on :tool, name: satisfies { |n| names.include?(n.to_s) }
+          perform do |facts|
+            decisions.add(:tool_activate,
+              tool: facts[1][:name],
+              reason: "#{domain} domain")
+          end
+        end
+      end
+    end
+
+    # Group MCP tools by their server name.
+    #
+    # @param tools [Array] all loaded tools
+    # @return [Hash{String => Array<String>}] server_name → tool names
+    def map_tools_to_mcp_servers(tools)
+      server_tools = Hash.new { |h, k| h[k] = [] }
+
+      tools.each do |tool|
+        server = tool.respond_to?(:mcp) ? tool.mcp : nil
+        next unless server
+
+        name = tool_name(tool)
+        server_tools[server.to_s] << name
+      end
+
+      server_tools
+    end
+
+    # Build classify rules that detect MCP server names in the user input.
+    # E.g. if user says "brew info", classify as domain "mcp:brew".
+    def build_mcp_server_classify_rules(server_tools)
+      kb = @knowledge_bases[:classify]
+      return unless kb
+
+      decisions = @decisions
+
+      server_tools.each_key do |server_name|
+        # Build a pattern that matches the server name as a word in the input
+        escaped = Regexp.escape(server_name)
+        pattern = /\b#{escaped}\b/i
+
+        kb.rule "mcp_server_#{server_name}_request" do
+          on :turn_input do
+            text matches(pattern)
+          end
+          perform do |_facts|
+            decisions.add(:classification, domain: "mcp:#{server_name}", source: "mcp_server_match")
+          end
+        end
+      end
+    end
+
+    # Build route rules that activate all tools for a matched MCP server.
+    def build_mcp_server_route_rules(server_tools)
+      kb = @knowledge_bases[:route]
+      return unless kb
+
+      decisions = @decisions
+
+      server_tools.each do |server_name, tool_names|
+        next if tool_names.empty?
+
+        names = tool_names.dup.freeze
+
+        kb.rule "activate_mcp_#{server_name}_tools" do
+          on :classification_decision, domain: "mcp:#{server_name}"
+          on :tool, name: satisfies { |n| names.include?(n.to_s) }
+          perform do |facts|
+            decisions.add(:tool_activate,
+              tool: facts[1][:name],
+              reason: "mcp:#{server_name} server")
+          end
+        end
+      end
+    end
+
+    def log_tool_domain_mapping(domain_tools)
+      return if domain_tools.empty?
+
+      $stderr.puts "\n[KBS] Tool domain mapping:"
+      domain_tools.each do |domain, tool_names|
+        next if tool_names.empty?
+        $stderr.puts "  #{domain}: #{tool_names.join(', ')}"
+      end
+      $stderr.puts
+    end
+
+    def log_mcp_server_mapping(server_tools)
+      return if server_tools.empty?
+
+      $stderr.puts "[KBS] MCP server tool groups:"
+      server_tools.each do |server, tool_names|
+        $stderr.puts "  #{server}: #{tool_names.size} tools"
+      end
+      $stderr.puts
+    end
+
+    # Log per-turn KBS decisions to stderr so they're visible.
+    def log_turn_decisions(input)
+      classifications = @decisions.classifications
+      tool_acts       = @decisions.activated_tools
+      mcp_acts        = @decisions.activated_mcp_servers
+      gates           = @decisions.gate_actions
+
+      parts = []
+      if classifications.any?
+        domains = classifications.map { |c| c[:domain] }.compact.uniq
+        parts << "domains=#{domains.join(',')}" if domains.any?
+      end
+      parts << "tools=#{tool_acts.join(',')}" if tool_acts.any?
+      parts << "mcp=#{mcp_acts.join(',')}" if mcp_acts.any?
+      gates.each { |g| parts << "gate:#{g[:action]}" }
+
+      if parts.any?
+        $stderr.puts "[KBS] #{parts.join(' | ')}"
+      else
+        $stderr.puts "[KBS] No rules matched for this turn"
+      end
+    end
+
+    # =========================================================================
     # User Rule Loading
     # =========================================================================
 
@@ -412,6 +676,14 @@ module AIA
     end
 
     # =========================================================================
+    # KB Reset
+    # =========================================================================
+
+    def reset_kb(kb)
+      kb.reset
+    end
+
+    # =========================================================================
     # Fact Assertion
     # =========================================================================
 
@@ -424,6 +696,8 @@ module AIA
         assert_model_facts(kb, config)
       when :route
         assert_mcp_facts(kb, config)
+        assert_tool_facts(kb, config)
+        assert_turn_facts(kb, input) if input
       when :gate
         assert_context_stats(kb, config)
         assert_turn_facts(kb, input) if input
@@ -505,6 +779,41 @@ module AIA
       end
     end
 
+    def assert_tool_facts(kb, config)
+      tools = all_registered_tools(config)
+      tools.each do |tool_class|
+        name = tool_name(tool_class)
+        desc = tool_description(tool_class)
+        kb.assert(:tool,
+          name:        name,
+          description: desc,
+          active:      true
+        )
+      end
+    end
+
+    # Collect local + MCP tools so route rules can match against all of them.
+    def all_registered_tools(config)
+      local = Array(config.loaded_tools)
+      mcp   = collect_robot_mcp_tools
+      local + mcp
+    end
+
+    # Retrieve MCP tools from the active robot (or first robot in a Network).
+    def collect_robot_mcp_tools
+      robot = AIA.client
+      return [] unless robot
+
+      return Array(robot.mcp_tools) if robot.respond_to?(:mcp_tools)
+
+      if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
+        first = robot.robots.values.first
+        return Array(first.mcp_tools) if first
+      end
+
+      []
+    end
+
     def assert_turn_facts(kb, input)
       kb.assert(:turn_input,
         text: input,
@@ -581,30 +890,61 @@ module AIA
     end
 
     # =========================================================================
+    # Tool Info Helpers
+    # =========================================================================
+
+    def tool_name(tool_class)
+      if tool_class.respond_to?(:name)
+        tool_class.name.to_s
+      else
+        tool_class.to_s
+      end
+    end
+
+    def tool_description(tool_class)
+      if tool_class.respond_to?(:description)
+        tool_class.description.to_s
+      else
+        ""
+      end
+    rescue StandardError
+      ""
+    end
+
+    # =========================================================================
+    # Rule Display Helpers
+    # =========================================================================
+
+    # Resolve a satisfies Proc to a human-readable string.
+    # For dynamic tool rules (activate_*_tools) we show the captured tool names.
+    # For everything else we fall back to "satisfies { ... }".
+    def resolve_satisfies(rule_name, attr_key, _proc)
+      rule_str = rule_name.to_s
+      return "satisfies { ... }" unless attr_key == :name
+
+      if rule_str =~ /\Aactivate_mcp_(.+)_tools\z/
+        server = $1
+        names = @server_tool_names[server] if defined?(@server_tool_names)
+        return "one_of(#{names.map(&:inspect).join(', ')})" if names && !names.empty?
+      elsif rule_str =~ /\Aactivate_(.+)_tools\z/
+        domain = $1
+        names = @domain_tool_names[domain]
+        return "one_of(#{names.map(&:inspect).join(', ')})" if names && !names.empty?
+      end
+
+      "satisfies { ... }"
+    end
+
+    # =========================================================================
     # Decision Application
     # =========================================================================
 
     def apply_decisions(config)
-      # Apply gate actions
+      # Block gates are enforced here as a safety backstop.
+      # Warn gates, model/MCP decisions, and learning signals
+      # are handled by DecisionApplier in ChatLoop and Session.
       @decisions.gate_actions.each do |gate|
-        case gate[:action]
-        when "warn"
-          warn "[AIA] #{gate[:message]}" if config.flags&.verbose
-        when "block"
-          raise AIA::GateError, gate[:message]
-        end
-      end
-
-      # Log model suggestions at verbose level
-      if config.flags&.verbose && @decisions.model_decisions.any?
-        best = @decisions.model_decisions.first
-        warn "[AIA] KBS suggests model: #{best[:model]} (#{best[:reason]})"
-      end
-
-      # Log MCP activations at verbose level
-      if config.flags&.verbose && @decisions.mcp_activations.any?
-        servers = @decisions.mcp_activations.map { |a| a[:server] }.join(', ')
-        warn "[AIA] KBS activating MCP servers: #{servers}"
+        raise AIA::GateError, gate[:message] if gate[:action] == "block"
       end
     end
   end

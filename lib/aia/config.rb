@@ -49,7 +49,7 @@ module AIA
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
     attr_config :service, :llm, :prompts, :output, :audio, :image, :embedding,
-                :tools, :flags, :registry, :paths, :logger, :rules
+                :tools, :flags, :registry, :paths, :logger, :rules, :concurrency
 
     # Array/collection attributes
     attr_config :models, :pipeline, :require_libs, :mcp_servers, :mcp_use, :mcp_skip, :context_files
@@ -115,6 +115,7 @@ module AIA
       registry: config_section_coercion(:registry),
       paths: config_section_coercion(:paths),
       rules: config_section_coercion(:rules),
+      concurrency: config_section_coercion(:concurrency),
 
       # Arrays
       models: TO_MODEL_SPECS,
@@ -160,6 +161,9 @@ module AIA
       debug: [:flags, :debug],
       verbose: [:flags, :verbose],
       consensus: [:flags, :consensus],
+      track_pipeline: [:flags, :track_pipeline],
+      expert_routing: [:flags, :expert_routing],
+      concurrent_auto: [:concurrency, :auto],
       # llm section
       temperature: [:llm, :temperature],
       max_tokens: [:llm, :max_tokens],
@@ -249,6 +253,7 @@ module AIA
         registry: registry.to_h,
         paths: paths.to_h,
         rules: rules.to_h,
+        concurrency: concurrency.to_h,
         pipeline: pipeline,
         require_libs: require_libs,
         mcp_servers: mcp_servers,
@@ -292,7 +297,7 @@ module AIA
         when :mcp_servers
           self.mcp_servers = Array(value)
         when :service, :llm, :prompts, :output, :audio, :image, :embedding,
-             :tools, :flags, :registry, :paths, :logger, :rules
+             :tools, :flags, :registry, :paths, :logger, :rules, :concurrency
           section = send(key)
           if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
             merge_into_section(section, value)

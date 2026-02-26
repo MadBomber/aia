@@ -28,6 +28,10 @@ class DecisionsTest < Minitest::Test
     assert_equal [], @decisions.mcp_activations
   end
 
+  def test_initialization_creates_empty_tool_activations
+    assert_equal [], @decisions.tool_activations
+  end
+
   def test_initialization_creates_empty_gate_actions
     assert_equal [], @decisions.gate_actions
   end
@@ -60,6 +64,13 @@ class DecisionsTest < Minitest::Test
 
     assert_equal 1, @decisions.mcp_activations.size
     assert_equal "github", @decisions.mcp_activations.first[:server]
+  end
+
+  def test_add_tool_activate_appends_to_tool_activations
+    @decisions.add(:tool_activate, tool: "word_count", reason: "text domain")
+
+    assert_equal 1, @decisions.tool_activations.size
+    assert_equal "word_count", @decisions.tool_activations.first[:tool]
   end
 
   def test_add_gate_appends_to_gate_actions
@@ -113,6 +124,7 @@ class DecisionsTest < Minitest::Test
     refute @decisions.has_any?(:classification)
     refute @decisions.has_any?(:model_decision)
     refute @decisions.has_any?(:mcp_activate)
+    refute @decisions.has_any?(:tool_activate)
     refute @decisions.has_any?(:gate)
     refute @decisions.has_any?(:learning)
   end
@@ -130,6 +142,11 @@ class DecisionsTest < Minitest::Test
   def test_has_any_returns_true_after_add_mcp_activate
     @decisions.add(:mcp_activate, server: "github")
     assert @decisions.has_any?(:mcp_activate)
+  end
+
+  def test_has_any_returns_true_after_add_tool_activate
+    @decisions.add(:tool_activate, tool: "word_count")
+    assert @decisions.has_any?(:tool_activate)
   end
 
   def test_has_any_returns_true_after_add_gate
@@ -155,6 +172,7 @@ class DecisionsTest < Minitest::Test
     @decisions.add(:classification, domain: "code")
     @decisions.add(:model_decision, model: "gpt-4o")
     @decisions.add(:mcp_activate, server: "github")
+    @decisions.add(:tool_activate, tool: "word_count")
     @decisions.add(:gate, action: "allow")
     @decisions.add(:learning, insight: "something")
 
@@ -163,6 +181,7 @@ class DecisionsTest < Minitest::Test
     assert_empty @decisions.classifications
     assert_empty @decisions.model_decisions
     assert_empty @decisions.mcp_activations
+    assert_empty @decisions.tool_activations
     assert_empty @decisions.gate_actions
     assert_empty @decisions.learnings
   end
@@ -191,10 +210,11 @@ class DecisionsTest < Minitest::Test
     hash = @decisions.to_h
 
     assert_instance_of Hash, hash
-    assert_equal 5, hash.keys.size
+    assert_equal 6, hash.keys.size
     assert hash.key?(:classifications)
     assert hash.key?(:model_decisions)
     assert hash.key?(:mcp_activations)
+    assert hash.key?(:tool_activations)
     assert hash.key?(:gate_actions)
     assert hash.key?(:learnings)
   end
@@ -205,6 +225,7 @@ class DecisionsTest < Minitest::Test
     assert_equal [], hash[:classifications]
     assert_equal [], hash[:model_decisions]
     assert_equal [], hash[:mcp_activations]
+    assert_equal [], hash[:tool_activations]
     assert_equal [], hash[:gate_actions]
     assert_equal [], hash[:learnings]
   end
@@ -220,6 +241,87 @@ class DecisionsTest < Minitest::Test
     assert_equal 1, hash[:model_decisions].size
     assert_equal "gpt-4o", hash[:model_decisions].first[:model]
   end
+
+  # =========================================================================
+  # recommended_model
+  # =========================================================================
+
+  def test_recommended_model_returns_first_model_name
+    @decisions.add(:model_decision, model: "claude-sonnet-4-20250514", reason: "best")
+    @decisions.add(:model_decision, model: "gpt-4o", reason: "fallback")
+
+    assert_equal "claude-sonnet-4-20250514", @decisions.recommended_model
+  end
+
+  def test_recommended_model_returns_nil_when_empty
+    assert_nil @decisions.recommended_model
+  end
+
+  # =========================================================================
+  # activated_mcp_servers
+  # =========================================================================
+
+  def test_activated_mcp_servers_returns_names
+    @decisions.add(:mcp_activate, server: "github", reason: "code domain")
+    @decisions.add(:mcp_activate, server: "filesystem", reason: "code domain")
+
+    assert_equal %w[github filesystem], @decisions.activated_mcp_servers
+  end
+
+  def test_activated_mcp_servers_returns_empty_when_none
+    assert_equal [], @decisions.activated_mcp_servers
+  end
+
+  # =========================================================================
+  # activated_tools
+  # =========================================================================
+
+  def test_activated_tools_returns_names
+    @decisions.add(:tool_activate, tool: "word_count", reason: "text domain")
+    @decisions.add(:tool_activate, tool: "search_files", reason: "code domain")
+
+    assert_equal %w[word_count search_files], @decisions.activated_tools
+  end
+
+  def test_activated_tools_returns_empty_when_none
+    assert_equal [], @decisions.activated_tools
+  end
+
+  # =========================================================================
+  # gate_warnings / gate_blocks
+  # =========================================================================
+
+  def test_gate_warnings_excludes_blocks
+    @decisions.add(:gate, action: "warn", message: "warning 1")
+    @decisions.add(:gate, action: "block", message: "blocked")
+    @decisions.add(:gate, action: "warn", message: "warning 2")
+
+    warnings = @decisions.gate_warnings
+    assert_equal 2, warnings.size
+    assert warnings.all? { |w| w[:action] == "warn" }
+  end
+
+  def test_gate_blocks_excludes_warnings
+    @decisions.add(:gate, action: "warn", message: "warning")
+    @decisions.add(:gate, action: "block", message: "blocked 1")
+    @decisions.add(:gate, action: "block", message: "blocked 2")
+
+    blocks = @decisions.gate_blocks
+    assert_equal 2, blocks.size
+    assert blocks.all? { |b| b[:action] == "block" }
+  end
+
+  def test_gate_warnings_returns_empty_when_none
+    assert_equal [], @decisions.gate_warnings
+  end
+
+  def test_gate_blocks_returns_empty_when_none
+    assert_equal [], @decisions.gate_blocks
+  end
+
+  # =========================================================================
+  # to_h (continued)
+  # =========================================================================
 
   def test_to_h_returns_duplicated_arrays
     @decisions.add(:classification, domain: "code")

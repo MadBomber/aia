@@ -10,7 +10,8 @@
 module AIA
   class TurnState
     attr_accessor :force_verify, :force_decompose, :force_concurrent_mcp,
-                  :force_debate, :force_delegate, :force_spawn, :spawn_type
+                  :force_debate, :force_delegate, :force_spawn, :spawn_type,
+                  :active_mcp_servers, :active_tools
 
     def initialize
       clear!
@@ -24,6 +25,8 @@ module AIA
       @force_delegate = false
       @force_spawn = false
       @spawn_type = nil
+      @active_mcp_servers = nil
+      @active_tools = nil
     end
   end
 end

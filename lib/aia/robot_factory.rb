@@ -154,7 +154,7 @@ module AIA
         system_prompt
       end
 
-      # Filter tools based on allowed/rejected lists
+      # Filter tools based on allowed/rejected lists and KBS decisions.
       def filtered_tools(config)
         tools = config.loaded_tools || []
         allowed = config.tools&.allowed
@@ -173,6 +173,16 @@ module AIA
           tools = tools.reject do |t|
             name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
             rejected_list.any? { |r| name.include?(r) }
+          end
+        end
+
+        # KBS-driven tool filtering (per-turn or startup).
+        # Only applies when user has not explicitly used --allowed-tools or --rejected-tools.
+        kbs_active = AIA.turn_state&.active_tools
+        if kbs_active && !kbs_active.empty? && (allowed.nil? || allowed.empty?) && (rejected.nil? || rejected.empty?)
+          tools = tools.select do |t|
+            name = (t.respond_to?(:name) ? t.name : t.class.name)
+            kbs_active.include?(name)
           end
         end
 
@@ -219,6 +229,13 @@ module AIA
                           .select { |s| use_list.include?(Utility.server_name(s)) }
         elsif !skip_list.empty?
           servers = servers.reject { |s| skip_list.include?(Utility.server_name(s)) }
+        end
+
+        # KBS-driven MCP filtering (per-turn or startup).
+        # Only applies when user has not explicitly used --mcp-use or --mcp-skip.
+        kbs_active = AIA.turn_state&.active_mcp_servers
+        if kbs_active && !kbs_active.empty? && use_list.empty? && skip_list.empty?
+          servers = servers.select { |s| kbs_active.include?(Utility.server_name(s)) }
         end
 
         servers.map { |s| normalize_mcp_config(s) }

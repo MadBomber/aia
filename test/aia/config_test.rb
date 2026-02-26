@@ -283,6 +283,49 @@ class ConfigTest < Minitest::Test
     $stderr = original_stderr
   end
 
+  def test_expert_routing_override_sets_flag
+    config = AIA::Config.new(overrides: { expert_routing: true })
+    assert_equal true, config.flags.expert_routing
+  end
+
+  def test_track_pipeline_override_sets_flag
+    config = AIA::Config.new(overrides: { track_pipeline: true })
+    assert_equal true, config.flags.track_pipeline
+  end
+
+  def test_concurrent_auto_override_sets_concurrency
+    config = AIA::Config.new(overrides: { concurrent_auto: true })
+    assert_equal true, config.concurrency.auto
+  end
+
+  def test_expert_routing_defaults_to_false
+    config = AIA::Config.new
+    assert_equal false, config.flags.expert_routing
+  end
+
+  def test_track_pipeline_defaults_to_false
+    config = AIA::Config.new
+    assert_equal false, config.flags.track_pipeline
+  end
+
+  def test_concurrent_auto_defaults_to_false
+    config = AIA::Config.new
+    assert_equal false, config.concurrency.auto
+  end
+
+  def test_concurrency_section_exists
+    config = AIA::Config.new
+    assert_respond_to config, :concurrency
+    assert_instance_of AIA::ConfigSection, config.concurrency
+  end
+
+  def test_concurrency_in_to_h
+    config = AIA::Config.new
+    hash = config.to_h
+    assert hash.key?(:concurrency)
+    assert_equal false, hash[:concurrency][:auto]
+  end
+
   private
 
   def create_temp_config(yaml_content)

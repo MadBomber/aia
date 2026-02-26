@@ -1,6 +1,48 @@
 # Directives Reference
 
-Directives are special commands embedded in prompts that provide dynamic functionality. All directives begin with `/` and are processed before the prompt is sent to the AI model.
+Directives are slash commands available during interactive chat sessions. All directives begin with `/` and are processed before the prompt is sent to the AI model.
+
+Use `/help` at any time to see all available directives.
+
+## Quick Reference
+
+| Directive | Aliases | Description |
+|-----------|---------|-------------|
+| `/config` | `/cfg` | View or set configuration values |
+| `/model` | | View or change the AI model |
+| `/temperature` | `/temp` | Set temperature parameter |
+| `/top_p` | `/topp` | Set top_p parameter |
+| `/cost` | | Dump session cost/token metrics as CSV |
+| `/include` | `/import` | Include content from files (built-in) |
+| `/webpage` | `/website`, `/web` | Fetch and include web content |
+| `/skill` | | Include a Claude Code skill |
+| `/skills` | | List available Claude Code skills |
+| `/paste` | `/clipboard` | Paste from system clipboard |
+| `/ruby` | `/rb` | Execute Ruby code |
+| `/say` | | Text-to-speech |
+| `/concurrent` | `/conc` | Concurrent MCP server access |
+| `/verify` | | Verification network (two answers + reconciliation) |
+| `/decompose` | | Decompose prompt into parallel sub-tasks |
+| `/debate` | | Multi-round debate between robots |
+| `/delegate` | `/del` | Delegate subtasks via TrakFlow plan |
+| `/spawn` | | Spawn a specialist robot |
+| `/tools` | | List available tools |
+| `/mcp` | | MCP server connection status |
+| `/robots` | | Show active robot configuration |
+| `/robot` | | ASCII robot art |
+| `/help` | | Show directive help |
+| `/checkpoint` | `/ckp`, `/cp` | Create a conversation checkpoint |
+| `/restore` | | Restore to a checkpoint |
+| `/clear` | | Clear conversation context |
+| `/review` | `/context` | Review conversation with checkpoint markers |
+| `/checkpoints_list` | `/checkpoints` | List all checkpoints |
+| `/tasks` | `/tf` | Show TrakFlow ready tasks |
+| `/plan` | | Create a TrakFlow plan |
+| `/task` | | Create a TrakFlow task |
+| `/available_models` | `/am`, `/models`, `/llms` | List available AI models |
+| `/compare` | `/cmp` | Compare responses from multiple models |
+| `/next` | | Set next prompt in workflow |
+| `/pipeline` | `/workflow` | Define prompt workflow sequence |
 
 ## Directive Syntax
 
@@ -10,10 +52,10 @@ Directives are special commands embedded in prompts that provide dynamic functio
 
 Examples:
 ```markdown
-/config model gpt-4
-/include my_file.md
-
-<%= "Hello World" %>
+/config temperature 0.8
+/model gpt-4o, claude-sonnet-4
+/debate
+Should we use a monolith or microservices?
 ```
 
 ## Configuration Directives
@@ -94,6 +136,25 @@ Set nucleus sampling parameter (alternative to temperature).
 ```
 
 **Aliases**: `/topp`
+
+### `/cost`
+Dump session cost and token metrics as CSV.
+
+**Syntax**: `/cost`
+
+**Example Output**:
+```
+model,input_tokens,output_tokens,total_tokens,cost,elapsed,similarity
+gpt-4o,1234,567,1801,$0.01234,2.3s,ref
+claude-sonnet-4-20250514,1234,890,2124,$0.00987,3.1s,87.2%
+TOTAL,2468,1457,3925,$0.02221,3.1s,
+```
+
+**Features**:
+- Shows per-turn breakdown: model, token counts, cost, elapsed time
+- Includes similarity scores when multi-model mode is active
+- Appends CSV to output file when `--output` is configured
+- Totals row at the bottom summarizes the session
 
 ## File and Web Directives
 
@@ -204,6 +265,25 @@ Total: 5 skills
 
 ## Execution Directives
 
+### `/ruby`
+Execute arbitrary Ruby code and insert the result.
+
+**Syntax**: `/ruby expression`
+
+**Examples**:
+```markdown
+/ruby Time.now.strftime('%Y-%m-%d')
+/ruby Dir.glob('*.rb').size
+/ruby ENV['USER']
+```
+
+**Features**:
+- Evaluates the Ruby expression and inserts the string result into the prompt
+- Has full access to the Ruby environment and loaded gems
+- Returns error details if execution fails
+
+**Aliases**: `/rb`
+
 ### `/say`
 Speak text using system text-to-speech (macOS/Linux).
 
@@ -218,6 +298,120 @@ Speak text using system text-to-speech (macOS/Linux).
 **Platform Support**:
 - macOS: Uses built-in `say` command
 - Linux: Requires `espeak` or similar TTS software
+
+### `/concurrent`
+Execute the next prompt with concurrent MCP server access. AIA groups independent MCP servers and queries them in parallel, then synthesizes the results.
+
+**Syntax**: `/concurrent`
+
+**Examples**:
+```markdown
+/concurrent
+What files changed this week and are there any open issues related to them?
+```
+
+**Features**:
+- Enables concurrent MCP mode for the next prompt only
+- Independent MCP servers are queried in parallel
+- A "Weaver" synthesizer robot merges the results
+- Requires at least 2 MCP servers to be connected
+
+**Aliases**: `/conc`
+
+### `/verify`
+Run the next prompt through a verification network. Two independent robots answer the same question, then a reconciler compares and merges the responses.
+
+**Syntax**: `/verify`
+
+**Examples**:
+```markdown
+/verify
+Is this SQL query safe from injection attacks?
+```
+
+**Features**:
+- Two robots independently answer the prompt
+- A third robot reconciles any differences
+- Increases confidence in factual or analytical answers
+- Requires a multi-model or network configuration
+
+### `/decompose`
+Decompose the next prompt into parallel sub-tasks. The prompt is broken into independent pieces, each solved separately, then the results are combined.
+
+**Syntax**: `/decompose`
+
+**Examples**:
+```markdown
+/decompose
+Analyze this codebase: review the test coverage, check for security issues, and assess performance.
+```
+
+**Features**:
+- Automatically identifies independent sub-tasks in the prompt
+- Sub-tasks are executed in parallel when possible
+- Results are synthesized into a single response
+- Best for prompts with multiple distinct aspects
+
+### `/debate`
+Enable multi-round debate between robots in the network. Robots argue different perspectives and converge toward a consensus answer.
+
+**Syntax**: `/debate`
+
+**Examples**:
+```markdown
+/debate
+Should we use microservices or a monolith for this project?
+```
+
+**Features**:
+- Runs up to 5 rounds of debate between network robots
+- Each robot sees all previous arguments before responding
+- Debate ends early when robots signal convergence (CONVERGED keyword)
+- Results include all debate rounds formatted as markdown
+- Writes debate history to network memory for context
+- Requires a multi-model network (2+ models)
+
+### `/delegate`
+Delegate subtasks to specific robots via a structured TrakFlow plan. The lead robot decomposes the prompt into a JSON task plan, and robots execute steps sequentially.
+
+**Syntax**: `/delegate`
+
+**Examples**:
+```markdown
+/delegate
+Build a REST API with authentication, rate limiting, and documentation.
+```
+
+**Features**:
+- Lead robot creates a structured task decomposition (JSON)
+- TaskCoordinator creates a TrakFlow plan from the decomposition
+- Each subtask is assigned to and executed by a specific robot
+- Prior step results flow as context into subsequent steps
+- Creates a full execution trace with per-step results
+- Requires a multi-model network
+
+**Aliases**: `/del`
+
+### `/spawn`
+Spawn a specialist robot for the next prompt. Creates (or reuses) a dynamically configured robot tuned for a specific domain.
+
+**Syntax**: `/spawn [specialist_type]`
+
+**Examples**:
+```markdown
+/spawn security
+Audit this authentication module for vulnerabilities.
+
+/spawn
+Write a comprehensive test suite for the User model.
+```
+
+**Features**:
+- With a type argument: spawns a specialist of the named type (e.g., `security`, `testing`, `performance`)
+- Without a type: auto-detects the best specialist type from the prompt content
+- Specialist robots are cached and reused within the session
+- Creates a TrakFlow task when task coordination is active
+- Specialist inherits the current model but gets a domain-specific system prompt
 
 ## Utility Directives
 
@@ -300,18 +494,88 @@ Define or modify a prompt workflow sequence.
 
 **Aliases**: `/workflow`
 
-### `/terse`
-Add instruction for brief responses.
+### `/mcp`
+Show MCP server connection status and available tools per server.
 
-**Syntax**: `/terse`
+**Syntax**: `/mcp`
 
-**Example**:
-```markdown
-/terse
-Explain machine learning algorithms.
+**Example Output**:
+```
+MCP Server Status
+=================
+Defined: 5  Connected: 3  Failed: 2
+
+Connected Servers:
+  github (12 tools)
+    - github_create_issue
+    - github_list_repos
+    ...
+  filesystem (4 tools)
+    - read_file
+    - write_file
+    ...
+
+Failed Servers:
+  slack: Connection refused
+  jira: Authentication failed
 ```
 
-Adds: "Keep your response short and to the point." to the prompt.
+**Features**:
+- Shows count of defined, connected, and failed MCP servers
+- Lists each connected server with its tool count and tool names
+- Shows error details for failed server connections
+- Respects `--mcp-use` and `--mcp-skip` filtering
+
+### `/robots`
+Show active robot configuration — the current robot or network topology.
+
+**Syntax**: `/robots`
+
+**Example Output** (single robot):
+```
+Active Robot
+============
+Mode: Single
+
+  Tobor
+    Model:    gpt-4o (openai)
+    Wage:     $0.0050 in / $0.0150 out per 1K tokens
+    Tools:    8 (3 local, 5 mcp)
+    Role:     (default)
+```
+
+**Example Output** (multi-model network):
+```
+Active Robots
+=============
+Mode: Consensus Network (3 robots)
+
+  Tobor
+    Model:    gpt-4o (openai)
+    Wage:     $0.0050 in / $0.0150 out per 1K tokens
+    Tools:    5 (2 local, 3 mcp)
+    Role:     architect
+
+  Spark
+    Model:    claude-sonnet-4-20250514 (anthropic)
+    Wage:     $0.0030 in / $0.0150 out per 1K tokens
+    Tools:    5 (2 local, 3 mcp)
+    Role:     security
+
+  Weaver
+    Model:    gpt-4o (openai)
+    Wage:     $0.0050 in / $0.0150 out per 1K tokens
+    Tools:    0
+    Role:     (default)
+```
+
+**Features**:
+- Shows mode: Single, Parallel, Consensus, or Pipeline
+- Displays robot name, model, provider, cost, tools, and role
+- For networks, shows all robots including the Weaver synthesizer
+
+### `/terse`
+*Deprecated.* Previously added an instruction for concise responses. Now a no-op.
 
 ### `/robot`
 Generate ASCII art robot.
@@ -344,7 +608,7 @@ Create a named checkpoint of the current conversation context.
 - `/checkpoint` - Create an auto-named checkpoint
 - `/checkpoint name` - Create a checkpoint with specific name
 
-**Aliases**: `/cp`
+**Aliases**: `/ckp`, `/cp`
 
 ### `/restore`
 Restore conversation context to a previously saved checkpoint.
@@ -409,6 +673,72 @@ Checkpoints: ruby_basics, oop_concepts
 - Lists all available checkpoints
 - Truncates long messages for readability (200 characters)
 - Shows total message count and checkpoint summary
+
+### `/checkpoints_list`
+List all saved checkpoints with their positions and timestamps.
+
+**Syntax**: `/checkpoints_list`
+
+**Example Output**:
+```
+=== Available Checkpoints ===
+  1: position 4, created 14:32:07
+    → "Tell me about Ruby programming"
+  before_refactor: position 8, created 14:45:22
+    → "Now refactor the User model"
+=== End of Checkpoints ===
+```
+
+**Features**:
+- Shows checkpoint name, conversation position, and creation time
+- Includes a preview of the last user message at the checkpoint
+- Displays "No checkpoints available." when none exist
+
+**Aliases**: `/checkpoints`
+
+## TrakFlow Directives
+
+TrakFlow is AIA's built-in task tracking system for managing multi-step work.
+
+### `/tasks`
+Show TrakFlow ready tasks and project summary.
+
+**Syntax**: `/tasks [summary]`
+
+**Examples**:
+```markdown
+/tasks              # Show ready tasks
+/tasks summary      # Show project summary
+```
+
+**Features**:
+- Without arguments: lists tasks that are ready to be worked on
+- With `summary`: shows the overall project status
+- Returns an initialization message if TrakFlow is not set up
+
+**Aliases**: `/tf`
+
+### `/plan`
+Create a TrakFlow plan from a description. The description is decomposed into actionable tasks.
+
+**Syntax**: `/plan description`
+
+**Examples**:
+```markdown
+/plan Build user authentication with login, signup, and password reset
+/plan Refactor the payment module into separate service objects
+```
+
+### `/task`
+Create a single TrakFlow task.
+
+**Syntax**: `/task title`
+
+**Examples**:
+```markdown
+/task Add input validation to the registration form
+/task Write integration tests for the API endpoints
+```
 
 ## Model and Information Directives
 

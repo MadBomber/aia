@@ -4,10 +4,13 @@ require 'tty-screen'
 require 'tty-spinner'
 require 'tty-table'
 require 'reline'
+require 'fileutils'
 
 module AIA
   class UIPresenter
     USER_PROMPT = "Follow up (cntl-D or 'exit' to end) #=> "
+    HISTORY_FILE = File.join(Dir.home, '.config', 'aia', 'chat_history')
+    MAX_HISTORY = 20
 
 
     def initialize
@@ -89,7 +92,7 @@ module AIA
       begin
         input = Reline.readline('', true)
         return nil if input.nil? # Handle Ctrl+D
-        Reline::HISTORY << input unless input.strip.empty?
+        save_chat_history unless input.strip.empty?
         input
       rescue Interrupt
         puts "\nChat session interrupted."
@@ -97,16 +100,25 @@ module AIA
       end
     end
 
+    # Load persistent chat history into Reline
+    def load_chat_history
+      Reline::HISTORY.clear
+      return unless File.exist?(HISTORY_FILE)
+
+      lines = File.readlines(HISTORY_FILE, chomp: true).last(MAX_HISTORY)
+      lines.each { |line| Reline::HISTORY << line }
+    end
+
     def display_info(message)
-      puts "\n#{message}"
+      $stderr.puts "\n#{message}"
     end
 
     def display_error(message)
-      warn "ERROR: #{message}"
+      $stderr.puts "\n❌ ERROR: #{message}\n"
     end
 
     def display_warning(message)
-      warn "WARNING: #{message}"
+      $stderr.puts "\n⚠  WARNING: #{message}\n"
     end
 
     def with_spinner(message = "Processing", operation_type = nil)
@@ -236,6 +248,14 @@ module AIA
     end
 
     private
+
+    def save_chat_history
+      dir = File.dirname(HISTORY_FILE)
+      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+
+      entries = Reline::HISTORY.to_a.last(MAX_HISTORY)
+      File.write(HISTORY_FILE, entries.join("\n") + "\n")
+    end
 
     def format_similarity(score)
       return "ref" if score.nil?

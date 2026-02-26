@@ -23,6 +23,7 @@ module AIA
       @tracker             = session_tracker || SessionTracker.new
       @alias_registry      = alias_registry || ModelAliasRegistry.new
       @model_switch_handler = ModelSwitchHandler.new(@alias_registry, @ui_presenter)
+      @decision_applier    = DecisionApplier.new(@ui_presenter)
 
       @streaming_runner = StreamingRunner.new
       @mention_router = MentionRouter.new(
@@ -43,6 +44,9 @@ module AIA
       setup_session
       process_initial_context(skip_context_files)
       run_loop
+    rescue StandardError => e
+      warn "ChatLoop error: #{e.class}: #{e.message}"
+      warn e.backtrace.first(5).join("\n")
     ensure
       @ui_presenter.display_chat_end
     end
@@ -53,7 +57,7 @@ module AIA
       puts "\nEntering interactive chat mode..."
       @ui_presenter.display_chat_header
       Signal.trap("INT") { exit }
-      Reline::HISTORY.clear
+      @ui_presenter.load_chat_history
     end
 
     def process_initial_context(skip_context_files)
@@ -82,7 +86,8 @@ module AIA
       loop do
         follow_up_prompt = @ui_presenter.ask_question
 
-        break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == "exit" || follow_up_prompt.strip.empty?
+        break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == "exit"
+        next  if follow_up_prompt.strip.empty?
 
         log_user_input(follow_up_prompt)
 
@@ -107,34 +112,48 @@ module AIA
         # Rules may modify config before each turn
         decisions = @rule_router.evaluate_turn(AIA.config, processed_prompt)
 
-        # Check for model switch intent
+        # Check for model switch intent (explicit user request takes priority)
         if @model_switch_handler.handle(decisions, AIA.config)
           update_robot
           next
         end
 
+        # Apply KBS decisions: model override, MCP filtering, gate warnings, learning
+        applied = @decision_applier.apply(decisions, AIA.config)
+        if applied.blocked
+          @ui_presenter.display_info("Turn blocked by quality gate. Please revise your prompt.")
+          next
+        end
+
+        # Use KBS temp robot if model was overridden, otherwise primary robot
+        active_robot = applied.temp_robot || @robot
+
         # Check for special execution modes (/verify, /decompose, /concurrent)
         if @special_mode_handler.handle(processed_prompt)
+          clear_turn_mcp_filter
           next
         end
 
         # Expert routing (per-turn specialist)
         if AIA.config.flags.expert_routing
           if route_to_expert(decisions, processed_prompt)
+            clear_turn_mcp_filter
             next
           end
         end
 
         # @mention routing — send to specific robot(s) in the network
-        if @mention_router.handle(@robot, processed_prompt)
+        if @mention_router.handle(active_robot, processed_prompt)
+          clear_turn_mcp_filter
           next
         end
 
         # Standard execution with streaming
         begin
-          result, streamed_content, elapsed = @streaming_runner.run(@robot, processed_prompt)
+          result, streamed_content, elapsed = @streaming_runner.run(active_robot, processed_prompt)
         rescue StandardError => e
           @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
+          clear_turn_mcp_filter
           next
         end
 
@@ -152,8 +171,9 @@ module AIA
 
         # Increment shared memory turn counter for multi-model networks
         if @robot.respond_to?(:memory) && @robot.memory.respond_to?(:data)
-          count = @robot.memory.data.turn_count || 0
-          @robot.memory.data.turn_count = count + 1
+          data = @robot.memory.data
+          count = data.respond_to?(:turn_count) ? (data.turn_count || 0) : 0
+          data.turn_count = count + 1
         end
 
         if streamed_content
@@ -165,7 +185,16 @@ module AIA
         display_metrics(result, elapsed: elapsed)
         speak(content)
         @ui_presenter.display_separator
+
+        # Clear per-turn MCP filter for next turn
+        clear_turn_mcp_filter
       end
+    end
+
+    # Clear per-turn MCP server and tool filters so next turn sees all
+    def clear_turn_mcp_filter
+      AIA.turn_state.active_mcp_servers = nil
+      AIA.turn_state.active_tools = nil
     end
 
     # Update robot reference after a model switch and propagate to sub-components

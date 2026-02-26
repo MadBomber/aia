@@ -68,6 +68,18 @@ module AIA
           options[:fuzzy] = true
         end
 
+        opts.on("--expert-routing", "Route each prompt to a specialist robot based on domain classification") do
+          options[:expert_routing] = true
+        end
+
+        opts.on("--track-pipeline", "Track pipeline execution in TrakFlow") do
+          options[:track_pipeline] = true
+        end
+
+        opts.on("--concurrent-auto", "Automatically parallelize independent MCP servers") do
+          options[:concurrent_auto] = true
+        end
+
         opts.on("--terse", "[DEPRECATED] No longer supported") do
           warn "Warning: --terse is deprecated and has no effect."
         end

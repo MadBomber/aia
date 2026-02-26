@@ -128,6 +128,10 @@ class MCPStartupTest < Minitest::Test
 
   # =========================================================================
   # Requirement: banner shows only connected server names
+  # v2 banner format:
+  #   MCP: serverA | FAILED: serverB, serverC
+  #   MCP: FAILED: serverA, serverB, serverC
+  #   MCP: serverA, serverB, serverC
   # =========================================================================
 
   def test_banner_shows_mcp_counts_with_mixed_results
@@ -147,9 +151,11 @@ class MCPStartupTest < Minitest::Test
     AIA::Utility.robot
     output = @captured_output.string
 
-    assert_includes output, 'MCP Servers defined: 3'
-    assert_includes output, 'Connected: 1'
-    assert_includes output, 'Failed: 2'
+    # v2 banner shows connected names and FAILED names inline
+    assert_includes output, 'serverA'
+    assert_includes output, 'FAILED:'
+    assert_includes output, 'serverB'
+    assert_includes output, 'serverC'
   end
 
   def test_banner_shows_all_failed_counts
@@ -170,9 +176,11 @@ class MCPStartupTest < Minitest::Test
     AIA::Utility.robot
     output = @captured_output.string
 
-    assert_includes output, 'MCP Servers defined: 3'
-    assert_includes output, 'Connected: 0'
-    assert_includes output, 'Failed: 3'
+    # v2 banner: "MCP: FAILED: serverA, serverB, serverC"
+    assert_includes output, 'FAILED:'
+    assert_includes output, 'serverA'
+    assert_includes output, 'serverB'
+    assert_includes output, 'serverC'
   end
 
   def test_banner_shows_all_connected_counts
@@ -189,9 +197,11 @@ class MCPStartupTest < Minitest::Test
     AIA::Utility.robot
     output = @captured_output.string
 
-    assert_includes output, 'MCP Servers defined: 3'
-    assert_includes output, 'Connected: 3'
-    assert_includes output, 'Failed: 0'
+    # v2 banner: "MCP: serverA, serverB, serverC"
+    assert_includes output, 'serverA'
+    assert_includes output, 'serverB'
+    assert_includes output, 'serverC'
+    refute_includes output, 'FAILED'
   end
 
   # =========================================================================

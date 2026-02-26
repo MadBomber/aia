@@ -39,12 +39,19 @@ module AIA
       # Apply rules before building robot
       @rule_router.evaluate(AIA.config)
 
-      # Build robot or network
+      # Apply startup decisions (model selection, MCP filtering, gate warnings)
+      applier = DecisionApplier.new(@ui_presenter)
+      applier.apply(@rule_router.decisions, AIA.config, startup: true)
+
+      # Build robot or network (uses KBS-adjusted config)
       @robot = RobotFactory.build(AIA.config)
       AIA.client = @robot
 
       # Eagerly connect MCP servers so the banner shows actual connection status
       connect_mcp_servers
+
+      # Now that both local tools AND MCP tools are loaded, build dynamic routing rules
+      @rule_router.register_tools(all_available_tools)
 
       # Initialize task coordination if TrakFlow is available
       initialize_task_coordinator
@@ -58,7 +65,6 @@ module AIA
       # Handle special chat-only cases first
       if should_start_chat_immediately?
         AIA::Utility.robot
-        check_trakflow_resume
         @chat_loop.start
         return
       end
@@ -82,6 +88,7 @@ module AIA
       @directive_processor = DirectiveProcessor.new
       @input_collector     = InputCollector.new
       @rule_router         = RuleRouter.new
+      AIA.rule_router      = @rule_router
       @session_tracker     = SessionTracker.new
       @alias_registry      = ModelAliasRegistry.new(
         AIA.config.respond_to?(:model_aliases) ? (AIA.config.model_aliases || {}) : {}
@@ -120,13 +127,26 @@ module AIA
       @mcp_manager.update_config
     end
 
-    # Initialize TaskCoordinator if TrakFlow is available.
+    # Initialize TaskCoordinator, auto-creating the TrakFlow project if needed.
     def initialize_task_coordinator
-      return unless TrakFlow.initialized?
+      ensure_trakflow_initialized unless TrakFlow.initialized?
 
       AIA.task_coordinator = TaskCoordinator.new
+      AIA.task_coordinator.clear!
     rescue StandardError
       # TrakFlow coordination is best-effort
+    end
+
+    # Bootstrap a TrakFlow project so the task board is always available.
+    # Uses the default database path (~/.config/trak_flow/tf.db).
+    def ensure_trakflow_initialized
+      trakflow_dir = TrakFlow.trak_flow_dir
+      FileUtils.mkdir_p(trakflow_dir)
+
+      db = TrakFlow::Storage::Database.new
+      db.connect
+
+      TrakFlow.reset_root!
     end
 
     # Attach a shared TypedBus to multi-model networks.
@@ -138,47 +158,23 @@ module AIA
       # Bus attachment is best-effort
     end
 
-    # Check for resumable work in TrakFlow at session start.
-    # Injects pending tasks into shared memory so robots are aware.
-    def check_trakflow_resume
-      return unless AIA.task_coordinator&.available?
-
-      ready = AIA.task_coordinator.ready_tasks
-      return if ready.empty?
-
-      task_context = ready.map { |t|
-        assignee = t.assignee ? " (assigned to #{t.assignee})" : ""
-        "  - [#{t.id}] #{t.title}#{assignee}"
-      }.join("\n")
-
-      @ui_presenter.display_info(
-        "#{ready.size} task(s) from previous sessions:\n#{task_context}"
-      )
-
-      # Inject into shared memory so robots are aware
-      if @robot.respond_to?(:memory)
-        @robot.memory.set(:pending_tasks, ready.map { |t|
-          { id: t.id, title: t.title, assignee: t.assignee, status: t.status }
-        })
-      end
-
-      # Auto-claim tasks assigned to specific robots
-      auto_claim_assigned_tasks
-    rescue StandardError
-      # TrakFlow resume is best-effort
+    # Collect all tools available to the robot: local + MCP.
+    def all_available_tools
+      local = Array(AIA.config.loaded_tools)
+      mcp   = collect_mcp_tools
+      local + mcp
     end
 
-    # Auto-claim tasks assigned to robots in the current network.
-    def auto_claim_assigned_tasks
-      return unless AIA.task_coordinator&.available?
-      return unless @robot.is_a?(RobotLab::Network)
+    # Retrieve MCP tools from the robot (or first robot in a Network).
+    def collect_mcp_tools
+      return Array(@robot.mcp_tools) if @robot.respond_to?(:mcp_tools)
 
-      @robot.robots.each_value do |robot|
-        tasks = AIA.task_coordinator.ready_tasks(robot_name: robot.name)
-        tasks.each { |task| AIA.task_coordinator.claim_task(task.id, robot.name) }
+      if @robot.respond_to?(:robots) && @robot.robots.is_a?(Hash)
+        first = @robot.robots.values.first
+        return Array(first.mcp_tools) if first
       end
-    rescue StandardError
-      # Auto-claim is best-effort
+
+      []
     end
 
     # Process all prompts in the pipeline via robot.run()

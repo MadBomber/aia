@@ -30,6 +30,12 @@ module AIA
     param :result, type: :string,
           desc: "Result summary (for complete) or reason (for block)"
 
+    # Never auto-discovered onto primary robots. Only Foreman
+    # (built by DelegateToForemanTool) receives this tool explicitly.
+    def available?
+      false
+    end
+
     def execute(action:, **params)
       coordinator = AIA.task_coordinator
       return "Task board unavailable (TrakFlow not initialized)" unless coordinator&.available?

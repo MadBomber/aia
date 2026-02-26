@@ -8,24 +8,28 @@ class UIPresenterTest < Minitest::Test
   def setup
     @presenter = AIA::UIPresenter.new
     @original_stdout = $stdout
+    @original_stderr = $stderr
     @captured_output = StringIO.new
+    @captured_errors = StringIO.new
     $stdout = @captured_output
-    
+    $stderr = @captured_errors
+
     # Mock AIA.config with nested structure
     AIA.stubs(:config).returns(OpenStruct.new(
       output: OpenStruct.new(file: nil),
       flags: OpenStruct.new(verbose: false)
     ))
-    
+
     # Mock AIA.verbose? method
     AIA.stubs(:verbose?).returns(false)
-    
+
     # Mock TTY::Screen.width
     TTY::Screen.stubs(:width).returns(80)
   end
 
   def teardown
     $stdout = @original_stdout
+    $stderr = @original_stderr
     # Call super to ensure global Mocha cleanup runs
     super
   end
@@ -62,8 +66,8 @@ class UIPresenterTest < Minitest::Test
 
   def test_display_info
     @presenter.display_info("Test message")
-    
-    output = @captured_output.string
+
+    output = @captured_errors.string
     assert_includes output, "Test message"
   end
 

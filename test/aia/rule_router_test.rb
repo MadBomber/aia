@@ -281,6 +281,151 @@ class RuleRouterTest < Minitest::Test
   end
 
   # =========================================================================
+  # evaluate — tool fact assertion
+  # =========================================================================
+
+  # =========================================================================
+  # register_tools — dynamic rule generation
+  # =========================================================================
+
+  def test_register_tools_builds_rules_for_data_domain
+    @config.rules.enabled = true
+    @config.context_files = []
+
+    db_tool = Class.new
+    db_tool.define_singleton_method(:name) { "my_database" }
+    db_tool.define_singleton_method(:description) { "Executes SQL queries on the database" }
+
+    other_tool = Class.new
+    other_tool.define_singleton_method(:name) { "clipboard" }
+    other_tool.define_singleton_method(:description) { "Copy and paste text" }
+
+    @config.loaded_tools = [db_tool, other_tool]
+
+    router = AIA::RuleRouter.new
+    router.register_tools([db_tool, other_tool])
+
+    decisions = router.evaluate_turn(@config, "query the database to list all tables")
+
+    activated = decisions.activated_tools
+    assert_includes activated, "my_database", "Database tool should be activated for data domain"
+    refute_includes activated, "clipboard", "Clipboard should not be activated for data domain"
+  end
+
+  def test_register_tools_builds_rules_for_code_domain
+    @config.rules.enabled = true
+    @config.context_files = []
+
+    eval_tool = Class.new
+    eval_tool.define_singleton_method(:name) { "eval_tool" }
+    eval_tool.define_singleton_method(:description) { "Execute code in Ruby, Python, Shell" }
+
+    disk_tool = Class.new
+    disk_tool.define_singleton_method(:name) { "disk_tool" }
+    disk_tool.define_singleton_method(:description) { "Read and write files on disk" }
+
+    db_tool = Class.new
+    db_tool.define_singleton_method(:name) { "database_tool" }
+    db_tool.define_singleton_method(:description) { "Executes SQL commands on a database" }
+
+    @config.loaded_tools = [eval_tool, disk_tool, db_tool]
+
+    router = AIA::RuleRouter.new
+    router.register_tools([eval_tool, disk_tool, db_tool])
+
+    decisions = router.evaluate_turn(@config, "debug this method and fix the bug")
+
+    activated = decisions.activated_tools
+    assert_includes activated, "eval_tool", "Eval tool should be activated for code domain"
+    assert_includes activated, "disk_tool", "Disk/file tool should be activated for code domain"
+    refute_includes activated, "database_tool", "Database tool should not be activated for code domain"
+  end
+
+  def test_register_tools_no_activation_for_unrelated_input
+    @config.rules.enabled = true
+    @config.context_files = []
+
+    db_tool = Class.new
+    db_tool.define_singleton_method(:name) { "database_tool" }
+    db_tool.define_singleton_method(:description) { "Executes SQL commands" }
+
+    @config.loaded_tools = [db_tool]
+
+    router = AIA::RuleRouter.new
+    router.register_tools([db_tool])
+
+    decisions = router.evaluate_turn(@config, "hello")
+
+    assert_empty decisions.tool_activations,
+      "No tools should activate for unrelated input"
+  end
+
+  def test_register_tools_creates_classify_rules_for_new_domains
+    @config.rules.enabled = true
+    @config.context_files = []
+
+    browser = Class.new
+    browser.define_singleton_method(:name) { "browser_tool" }
+    browser.define_singleton_method(:description) { "Automates a web browser for visiting URLs" }
+
+    @config.loaded_tools = [browser]
+
+    router = AIA::RuleRouter.new
+    router.register_tools([browser])
+
+    # "web" is not a built-in classify domain — register_tools should create one
+    decisions = router.evaluate_turn(@config, "visit the website and scrape the data")
+
+    activated = decisions.activated_tools
+    assert_includes activated, "browser_tool",
+      "Browser tool should activate for web-domain input via dynamic classify rule"
+  end
+
+  def test_register_tools_is_idempotent
+    @config.rules.enabled = true
+    @config.context_files = []
+
+    tool = Class.new
+    tool.define_singleton_method(:name) { "database_tool" }
+    tool.define_singleton_method(:description) { "SQL database queries" }
+
+    @config.loaded_tools = [tool]
+
+    router = AIA::RuleRouter.new
+    router.register_tools([tool])
+    router.register_tools([tool])  # second call should be no-op
+
+    decisions = router.evaluate_turn(@config, "query the database")
+    assert_instance_of AIA::Decisions, decisions
+  end
+
+  def test_register_tools_with_no_tools_does_not_raise
+    router = AIA::RuleRouter.new
+    router.register_tools([])
+    router.register_tools(nil)
+  end
+
+  def test_register_tools_file_tools_available_for_code_domain
+    @config.rules.enabled = true
+    @config.context_files = []
+
+    file_tool = Class.new
+    file_tool.define_singleton_method(:name) { "disk_file_read" }
+    file_tool.define_singleton_method(:description) { "Reads the contents of a file" }
+
+    @config.loaded_tools = [file_tool]
+
+    router = AIA::RuleRouter.new
+    router.register_tools([file_tool])
+
+    decisions = router.evaluate_turn(@config, "refactor this method")
+
+    activated = decisions.activated_tools
+    assert_includes activated, "disk_file_read",
+      "File tool should activate for code domain (file tools are useful for code tasks)"
+  end
+
+  # =========================================================================
   # evaluate — quality gates
   # =========================================================================
 
@@ -403,7 +548,7 @@ class RuleRouterTest < Minitest::Test
     @config.context_files = []
     router = AIA::RuleRouter.new
 
-    # Force an error by stubbing a KB to raise
+    # Force an error by stubbing a KB's reset to raise
     broken_kb = mock('broken_kb')
     broken_kb.stubs(:reset).raises(StandardError, "test failure")
     router.instance_variable_get(:@knowledge_bases)[:classify] = broken_kb

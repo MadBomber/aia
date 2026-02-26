@@ -521,6 +521,27 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     parser.parse!(['--history-file', '/tmp/history.yml'])
     assert_equal '/tmp/history.yml', options[:history_file]
   end
+
+  def test_parses_expert_routing
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--expert-routing'])
+    assert_equal true, options[:expert_routing]
+  end
+
+  def test_parses_track_pipeline
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--track-pipeline'])
+    assert_equal true, options[:track_pipeline]
+  end
+
+  def test_parses_concurrent_auto
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--concurrent-auto'])
+    assert_equal true, options[:concurrent_auto]
+  end
 end
 
 

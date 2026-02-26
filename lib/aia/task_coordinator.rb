@@ -18,6 +18,12 @@ module AIA
       @bridge.available?
     end
 
+    # Clear all tasks from the board for a fresh session.
+    def clear!
+      return unless available?
+      @db.clear!
+    end
+
     # A robot creates a task for another robot (or any robot) to handle.
     #
     # @param title [String] task description
