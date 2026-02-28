@@ -9,6 +9,7 @@
 
 require 'kbs/dsl'
 require_relative 'decisions'
+require_relative 'fact_asserter'
 require_relative 'rules_dsl'
 
 module AIA
@@ -39,6 +40,7 @@ module AIA
 
     def initialize
       @decisions = Decisions.new
+      @fact_asserter = FactAsserter.new
       AIA.decisions = @decisions
       @knowledge_bases = {}
       @tools_registered = false
@@ -109,8 +111,8 @@ module AIA
         next unless kb
 
         reset_kb(kb)
-        assert_facts_for(kb, kb_name, config, input)
-        assert_decision_facts(kb, kb_name)
+        @fact_asserter.assert_facts_for(kb, kb_name, config, input)
+        @fact_asserter.assert_decision_facts(kb, kb_name, @decisions)
         kb.run
       end
 
@@ -143,7 +145,7 @@ module AIA
       return unless kb
 
       kb.reset
-      assert_response_facts(kb, outcome)
+      @fact_asserter.assert_response_facts(kb, outcome)
       kb.run
     rescue StandardError => e
       warn "Warning: Post-response learning failed: #{e.message}"
@@ -459,8 +461,8 @@ module AIA
       domain_tools = Hash.new { |h, k| h[k] = [] }
 
       tools.each do |tool_class|
-        name = tool_name(tool_class)
-        desc = tool_description(tool_class)
+        name = @fact_asserter.tool_name(tool_class)
+        desc = @fact_asserter.tool_description(tool_class)
         text = "#{name} #{desc}"
 
         TOOL_DOMAIN_PATTERNS.each do |domain, pattern|
@@ -537,7 +539,7 @@ module AIA
         server = tool.respond_to?(:mcp) ? tool.mcp : nil
         next unless server
 
-        name = tool_name(tool)
+        name = @fact_asserter.tool_name(tool)
         server_tools[server.to_s] << name
       end
 
@@ -678,234 +680,6 @@ module AIA
 
     def reset_kb(kb)
       kb.reset
-    end
-
-    # =========================================================================
-    # Fact Assertion
-    # =========================================================================
-
-    def assert_facts_for(kb, kb_name, config, input)
-      case kb_name
-      when :classify
-        assert_context_facts(kb, config)
-        assert_turn_facts(kb, input) if input
-      when :model_select
-        assert_model_facts(kb, config)
-      when :route
-        assert_mcp_facts(kb, config)
-        assert_tool_facts(kb, config)
-        assert_turn_facts(kb, input) if input
-      when :gate
-        assert_context_stats(kb, config)
-        assert_turn_facts(kb, input) if input
-        assert_session_facts(kb)
-      end
-    end
-
-    # Assert upstream decisions as facts for downstream KBs
-    def assert_decision_facts(kb, kb_name)
-      case kb_name
-      when :model_select
-        @decisions.classifications.each do |c|
-          kb.assert(:classification_decision, **c)
-        end
-      when :route
-        @decisions.classifications.each do |c|
-          kb.assert(:classification_decision, **c)
-        end
-        @decisions.model_decisions.each do |m|
-          kb.assert(:model_decision_upstream, **m)
-        end
-      when :gate
-        @decisions.model_decisions.each do |m|
-          kb.assert(:model_decision, **m)
-        end
-      end
-    end
-
-    def assert_context_facts(kb, config)
-      Array(config.context_files).each do |file|
-        ext = File.extname(file).downcase
-        kb.assert(:context_file,
-          path: file,
-          extension: ext,
-          exists: File.exist?(file)
-        )
-      end
-    end
-
-    def assert_context_stats(kb, config)
-      total_size = Array(config.context_files).sum do |f|
-        File.exist?(f) ? File.size(f) : 0
-      end
-      kb.assert(:context_stats,
-        total_size: total_size,
-        large: total_size > 100_000
-      )
-    end
-
-    def assert_model_facts(kb, config)
-      config.models.each do |spec|
-        model_info = find_model_info(spec.name)
-
-        if model_info
-          kb.assert(:model,
-            name:            spec.name,
-            role:            spec.role,
-            provider:        model_info_provider(model_info),
-            context_window:  model_info_context_window(model_info),
-            supports_vision: model_info_vision(model_info),
-            supports_audio:  model_info_audio(model_info),
-            cost_tier:       classify_cost(model_info)
-          )
-        else
-          kb.assert(:model, name: spec.name, role: spec.role)
-        end
-      end
-    end
-
-    def assert_mcp_facts(kb, config)
-      return if config.flags&.no_mcp
-
-      Array(config.mcp_servers).each do |server|
-        kb.assert(:mcp_server,
-          name:   server[:name] || server["name"],
-          topics: server[:topics] || server["topics"] || [],
-          active: true
-        )
-      end
-    end
-
-    def assert_tool_facts(kb, config)
-      tools = all_registered_tools(config)
-      tools.each do |tool_class|
-        name = tool_name(tool_class)
-        desc = tool_description(tool_class)
-        kb.assert(:tool,
-          name:        name,
-          description: desc,
-          active:      true
-        )
-      end
-    end
-
-    # Collect local + MCP tools so route rules can match against all of them.
-    def all_registered_tools(config)
-      local = Array(config.loaded_tools)
-      mcp   = collect_robot_mcp_tools
-      local + mcp
-    end
-
-    # Retrieve MCP tools from the active robot (or first robot in a Network).
-    def collect_robot_mcp_tools
-      robot = AIA.client
-      return [] unless robot
-
-      return Array(robot.mcp_tools) if robot.respond_to?(:mcp_tools)
-
-      if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
-        first = robot.robots.values.first
-        return Array(first.mcp_tools) if first
-      end
-
-      []
-    end
-
-    def assert_turn_facts(kb, input)
-      kb.assert(:turn_input,
-        text: input,
-        length: input.length
-      )
-    end
-
-    def assert_session_facts(kb)
-      tracker = AIA.session_tracker
-      return unless tracker
-
-      kb.assert(:session_stats, **tracker.to_facts)
-    end
-
-    def assert_response_facts(kb, outcome)
-      kb.assert(:response_outcome, **outcome) if outcome.is_a?(Hash) && outcome.any?
-
-      tracker = AIA.session_tracker
-      kb.assert(:session_stats, **tracker.to_facts) if tracker
-    end
-
-    # =========================================================================
-    # Model Info Helpers
-    # =========================================================================
-
-    def find_model_info(model_name)
-      return nil unless defined?(RubyLLM) && RubyLLM.respond_to?(:models)
-      RubyLLM.models.find(model_name)
-    rescue StandardError
-      nil
-    end
-
-    def model_info_provider(info)
-      info.respond_to?(:provider) ? info.provider : nil
-    end
-
-    def model_info_context_window(info)
-      info.respond_to?(:context_window) ? info.context_window : nil
-    end
-
-    def model_info_vision(info)
-      if info.respond_to?(:supports?)
-        info.supports?(:vision)
-      else
-        false
-      end
-    rescue StandardError
-      false
-    end
-
-    def model_info_audio(info)
-      if info.respond_to?(:supports?)
-        info.supports?(:audio)
-      else
-        false
-      end
-    rescue StandardError
-      false
-    end
-
-    def classify_cost(model_info)
-      input_cost = if model_info.respond_to?(:input_price_per_million)
-                     model_info.input_price_per_million || 0
-                   else
-                     0
-                   end
-
-      case input_cost
-      when 0..1     then "low"
-      when 1..10    then "medium"
-      when 10..50   then "high"
-      else               "premium"
-      end
-    end
-
-    # =========================================================================
-    # Tool Info Helpers
-    # =========================================================================
-
-    def tool_name(tool_class)
-      if tool_class.respond_to?(:name)
-        tool_class.name.to_s
-      else
-        tool_class.to_s
-      end
-    end
-
-    def tool_description(tool_class)
-      if tool_class.respond_to?(:description)
-        tool_class.description.to_s
-      else
-        ""
-      end
-    rescue StandardError
-      ""
     end
 
     # =========================================================================

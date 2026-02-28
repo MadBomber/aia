@@ -23,7 +23,7 @@ PATH
 PATH
   remote: /Users/dewayne/sandbox/git_repos/madbomber/kbs/develop
   specs:
-    kbs (0.2.0)
+    kbs (0.2.1)
       sqlite3 (>= 1.6)
 
 PATH
@@ -528,7 +528,7 @@ CHECKSUMS
   json (2.18.1) sha256=fe112755501b8d0466b5ada6cf50c8c3f41e897fa128ac5d263ec09eedc9f986
   json-schema (5.1.0) sha256=c12729e346dce58ecc9be07301f4f247aeba1e3daae208e867278f3d27c64eb7
   json_schemer (2.5.0) sha256=2f01fb4cce721a4e08dd068fc2030cffd0702a7f333f1ea2be6e8991f00ae396
-  kbs (0.2.0)
+  kbs (0.2.1)
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   lumberjack (2.0.4) sha256=9a87a3a16800a66e0447c768ba4f76c05848b5cc32a4a11959c6fa419a42ff45
   marameters (5.1.0) sha256=6705114dae6cbbe72c586a7522eab9ec5131f565b52434381b787d52180f95e0
