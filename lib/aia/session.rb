@@ -167,14 +167,7 @@ module AIA
 
     # Retrieve MCP tools from the robot (or first robot in a Network).
     def collect_mcp_tools
-      return Array(@robot.mcp_tools) if @robot.respond_to?(:mcp_tools)
-
-      if @robot.respond_to?(:robots) && @robot.robots.is_a?(Hash)
-        first = @robot.robots.values.first
-        return Array(first.mcp_tools) if first
-      end
-
-      []
+      Utility.collect_mcp_tools(@robot)
     end
 
     # Process all prompts in the pipeline via robot.run()
@@ -323,16 +316,6 @@ module AIA
           }
           @ui_presenter.display_token_metrics(metrics)
         end
-      end
-    end
-
-    # Write content to output file
-    def output_to_file(content)
-      out_file = AIA.config.output.file
-      return unless out_file
-
-      File.open(out_file, 'a') do |file|
-        file.puts "\nAI: #{content}"
       end
     end
 

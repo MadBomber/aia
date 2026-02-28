@@ -83,6 +83,58 @@ module AIA
       end
     end
 
+    # Present an AI result: extract content, record the turn, display,
+    # write to output file, show metrics, speak, and print separator.
+    # Callers pass only the keyword args they need; everything optional
+    # defaults to nil / false so this works for both full ChatLoop turns
+    # and simpler SpecialModeHandler dispatches.
+    #
+    # @param result the response object
+    # @param streamed_content [String, nil] pre-streamed content (skips display_ai_response)
+    # @param prompt [String, nil] user prompt for tracker
+    # @param elapsed [Float, nil] elapsed seconds
+    # @param ui_presenter [UIPresenter] for display calls
+    # @param tracker [SessionTracker, nil] to record the turn
+    # @param decisions [Decisions, nil] KBS decisions for tracker
+    # @return [String] the extracted content
+    def present_result(result, streamed_content: nil, prompt: nil, elapsed: nil,
+                       ui_presenter:, tracker: nil, decisions: nil)
+      content = streamed_content || extract_content(result)
+
+      if tracker && prompt
+        tracker.record_turn(
+          model: AIA.config.models.first.name,
+          input: prompt,
+          result: result,
+          decisions: decisions,
+          elapsed: elapsed
+        )
+      end
+
+      if streamed_content
+        puts
+      else
+        ui_presenter.display_ai_response(content)
+      end
+
+      output_to_file(content)
+      display_metrics(result, elapsed: elapsed) if respond_to?(:display_metrics, true)
+      speak(content) if respond_to?(:speak, true)
+      ui_presenter.display_separator
+
+      content
+    end
+
+    # Write AI response content to the configured output file.
+    #
+    # @param content [String] the AI response text
+    def output_to_file(content)
+      out_file = AIA.config.output.file
+      return unless out_file
+
+      File.open(out_file, 'a') { |f| f.puts "\nAI: #{content}" }
+    end
+
     # Format a duration in seconds to a human-readable string.
     #
     # @param seconds [Float, nil]

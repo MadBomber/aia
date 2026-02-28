@@ -25,19 +25,25 @@ module AIA
         local + mcp
       end
 
-      # Count MCP tools from the robot or first robot in a Network
-      def mcp_tool_count
-        robot = AIA.client
-        return 0 unless robot
-
-        return Array(robot.mcp_tools).size if robot.respond_to?(:mcp_tools)
+      # Collect MCP tools from a robot or first robot in a Network.
+      #
+      # @param robot [RobotLab::Robot, RobotLab::Network, nil] defaults to AIA.client
+      # @return [Array] the MCP tools
+      def collect_mcp_tools(robot = AIA.client)
+        return [] unless robot
+        return Array(robot.mcp_tools) if robot.respond_to?(:mcp_tools)
 
         if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
-          first_robot = robot.robots.values.first
-          return Array(first_robot.mcp_tools).size if first_robot
+          first = robot.robots.values.first
+          return Array(first.mcp_tools) if first
         end
 
-        0
+        []
+      end
+
+      # Count MCP tools from the robot or first robot in a Network
+      def mcp_tool_count
+        collect_mcp_tools.size
       end
 
       def user_tools?

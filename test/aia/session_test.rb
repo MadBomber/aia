@@ -299,6 +299,126 @@ class ChatLoopTest < Minitest::Test
     assert_nil result
   end
 
+  # --- process_initial_context ---
+
+  def test_process_initial_context_skips_when_flag_set
+    AIA.stubs(:config).returns(OpenStruct.new(
+      context_files: ['some_file.txt'],
+      output: OpenStruct.new(file: nil)
+    ))
+
+    # Should not call streaming_runner at all
+    @chat_loop.send(:process_initial_context, true)
+  end
+
+  def test_process_initial_context_skips_when_no_context_files
+    AIA.stubs(:config).returns(OpenStruct.new(
+      context_files: [],
+      output: OpenStruct.new(file: nil)
+    ))
+
+    @chat_loop.send(:process_initial_context, false)
+  end
+
+  def test_process_initial_context_skips_when_context_files_nil
+    AIA.stubs(:config).returns(OpenStruct.new(
+      context_files: nil,
+      output: OpenStruct.new(file: nil)
+    ))
+
+    @chat_loop.send(:process_initial_context, false)
+  end
+
+  # --- run_loop exits ---
+
+  def test_run_loop_exits_on_nil_input
+    @ui_presenter.stubs(:ask_question).returns(nil)
+
+    @chat_loop.send(:run_loop)
+  end
+
+  def test_run_loop_exits_on_exit_command
+    @ui_presenter.stubs(:ask_question).returns("exit")
+
+    @chat_loop.send(:run_loop)
+  end
+
+  def test_run_loop_exits_on_empty_input
+    @ui_presenter.stubs(:ask_question).returns("")
+
+    @chat_loop.send(:run_loop)
+  end
+
+  # --- run_loop directives ---
+
+  def test_run_loop_dispatches_directives
+    config = OpenStruct.new(
+      output: OpenStruct.new(file: nil),
+      flags: OpenStruct.new(tokens: false)
+    )
+    AIA.stubs(:config).returns(config)
+
+    @ui_presenter.stubs(:ask_question).returns("/help", nil)
+    @directive_processor.stubs(:directive?).with("/help").returns(true)
+    @directive_processor.stubs(:process).returns(nil)
+
+    @chat_loop.send(:run_loop)
+  end
+
+  def test_run_loop_shows_unknown_directive
+    config = OpenStruct.new(
+      output: OpenStruct.new(file: nil),
+      flags: OpenStruct.new(tokens: false)
+    )
+    AIA.stubs(:config).returns(config)
+
+    @ui_presenter.stubs(:ask_question).returns("/unknowndir", nil)
+    @directive_processor.stubs(:directive?).with("/unknowndir").returns(false)
+    @ui_presenter.expects(:display_info).with { |msg| msg.include?("Unknown directive") }
+
+    @chat_loop.send(:run_loop)
+  end
+
+  # --- display_metrics ---
+
+  def test_display_metrics_noop_when_tokens_disabled
+    config = OpenStruct.new(
+      flags: OpenStruct.new(tokens: false)
+    )
+    AIA.stubs(:config).returns(config)
+
+    mock_result = mock('result')
+    # Should not call display_token_metrics
+    @chat_loop.send(:display_metrics, mock_result)
+  end
+
+  def test_display_metrics_with_single_result
+    config = OpenStruct.new(
+      flags: OpenStruct.new(tokens: true),
+      models: [OpenStruct.new(name: 'gpt-4o')]
+    )
+    AIA.stubs(:config).returns(config)
+
+    raw = mock('raw')
+    raw.stubs(:respond_to?).with(:input_tokens).returns(true)
+    raw.stubs(:input_tokens).returns(100)
+    raw.stubs(:output_tokens).returns(50)
+    raw.stubs(:respond_to?).with(:model_id).returns(true)
+    raw.stubs(:model_id).returns('gpt-4o')
+    raw.stubs(:respond_to?).with(:model).returns(false)
+
+    result = mock('result')
+    result.stubs(:respond_to?).with(:raw).returns(true)
+    result.stubs(:raw).returns(raw)
+    result.stubs(:is_a?).returns(false)
+
+    @ui_presenter.expects(:display_token_metrics).with(
+      has_entries(model_id: 'gpt-4o', input_tokens: 100, output_tokens: 50)
+    )
+
+    @chat_loop.send(:display_metrics, result, elapsed: 1.5)
+  end
+
   private
 
   def capture_io

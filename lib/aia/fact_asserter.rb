@@ -241,17 +241,7 @@ module AIA
 
     # Retrieve MCP tools from the active robot (or first robot in a Network).
     def collect_robot_mcp_tools
-      robot = AIA.client
-      return [] unless robot
-
-      return Array(robot.mcp_tools) if robot.respond_to?(:mcp_tools)
-
-      if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
-        first = robot.robots.values.first
-        return Array(first.mcp_tools) if first
-      end
-
-      []
+      Utility.collect_mcp_tools
     end
   end
 end

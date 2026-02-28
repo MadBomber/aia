@@ -24,9 +24,8 @@ class RobotFactoryNetworkTest < Minitest::Test
     AIA::RobotFactory.stubs(:configure_robot_lab)
 
     # Initialize the namer (normally done in build)
-    AIA::RobotFactory.instance_variable_set(
-      :@namer, AIA::RobotNamer.new(first_name: 'Tobor')
-    )
+    @namer = AIA::RobotNamer.new(first_name: 'Tobor')
+    AIA::RobotFactory.instance_variable_set(:@namer, @namer)
   end
 
   def teardown
@@ -39,25 +38,25 @@ class RobotFactoryNetworkTest < Minitest::Test
   # =========================================================================
 
   def test_parallel_network_returns_a_network
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     assert_instance_of RobotLab::Network, network
   end
 
   def test_parallel_network_named_aia_parallel
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     assert_equal "aia-parallel", network.name
   end
 
   def test_parallel_network_has_one_robot_per_model
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     assert_equal 2, network.robots.size
   end
 
   def test_parallel_network_robots_use_correct_models
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     models = network.robots.values.map(&:model)
     assert_includes models, 'gpt-4o'
@@ -65,7 +64,7 @@ class RobotFactoryNetworkTest < Minitest::Test
   end
 
   def test_parallel_network_robots_have_identity_prompts
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     network.robots.each_value do |robot|
       prompt = robot.system_prompt
@@ -77,7 +76,7 @@ class RobotFactoryNetworkTest < Minitest::Test
   end
 
   def test_parallel_network_robots_see_full_roster
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     network.robots.each_value do |robot|
       prompt = robot.system_prompt
@@ -87,7 +86,7 @@ class RobotFactoryNetworkTest < Minitest::Test
   end
 
   def test_parallel_network_has_no_synthesizer
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     weaver = network.robots.values.find { |r| r.name == "Weaver" }
     assert_nil weaver, "Parallel network should not have a synthesizer"
@@ -98,33 +97,33 @@ class RobotFactoryNetworkTest < Minitest::Test
   # =========================================================================
 
   def test_consensus_network_returns_a_network
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
 
     assert_instance_of RobotLab::Network, network
   end
 
   def test_consensus_network_named_aia_consensus
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
 
     assert_equal "aia-consensus", network.name
   end
 
   def test_consensus_network_has_models_plus_synthesizer
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
 
     # 2 models + 1 synthesizer = 3
     assert_equal 3, network.robots.size
   end
 
   def test_consensus_network_has_weaver_synthesizer
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
 
     weaver = network.robots.values.find { |r| r.name == "Weaver" }
     refute_nil weaver, "Consensus network must have a Weaver synthesizer"
   end
 
   def test_consensus_synthesizer_has_merge_prompt
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
 
     weaver = network.robots.values.find { |r| r.name == "Weaver" }
     assert_match(/synthesizer/i, weaver.system_prompt)
@@ -132,14 +131,14 @@ class RobotFactoryNetworkTest < Minitest::Test
   end
 
   def test_consensus_synthesizer_uses_primary_model
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
 
     weaver = network.robots.values.find { |r| r.name == "Weaver" }
     assert_equal @config.models.first.name, weaver.model
   end
 
   def test_consensus_network_robots_have_identity_prompts
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
 
     non_weaver = network.robots.values.reject { |r| r.name == "Weaver" }
     non_weaver.each do |robot|
@@ -154,28 +153,28 @@ class RobotFactoryNetworkTest < Minitest::Test
 
   def test_pipeline_network_returns_a_network
     config = create_pipeline_config
-    network = AIA::RobotFactory.send(:build_pipeline_network, config)
+    network = AIA::NetworkBuilder.build_pipeline_network(config, @namer)
 
     assert_instance_of RobotLab::Network, network
   end
 
   def test_pipeline_network_named_aia_pipeline
     config = create_pipeline_config
-    network = AIA::RobotFactory.send(:build_pipeline_network, config)
+    network = AIA::NetworkBuilder.build_pipeline_network(config, @namer)
 
     assert_equal "aia-pipeline", network.name
   end
 
   def test_pipeline_network_has_one_robot_per_step
     config = create_pipeline_config
-    network = AIA::RobotFactory.send(:build_pipeline_network, config)
+    network = AIA::NetworkBuilder.build_pipeline_network(config, @namer)
 
     assert_equal 3, network.robots.size
   end
 
   def test_pipeline_network_all_robots_use_same_model
     config = create_pipeline_config
-    network = AIA::RobotFactory.send(:build_pipeline_network, config)
+    network = AIA::NetworkBuilder.build_pipeline_network(config, @namer)
 
     models = network.robots.values.map(&:model).uniq
     assert_equal 1, models.size, "All pipeline robots should use the same model"
@@ -184,7 +183,7 @@ class RobotFactoryNetworkTest < Minitest::Test
 
   def test_pipeline_with_single_step
     config = create_pipeline_config(prompts: ['analyze'])
-    network = AIA::RobotFactory.send(:build_pipeline_network, config)
+    network = AIA::NetworkBuilder.build_pipeline_network(config, @namer)
 
     assert_equal 1, network.robots.size
   end
@@ -314,7 +313,7 @@ class RobotFactoryNetworkTest < Minitest::Test
   # =========================================================================
 
   def test_network_memory_initialized_with_session_context
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
     AIA::RobotFactory.send(:initialize_network_memory, network, @config)
 
     memory = network.memory
@@ -326,7 +325,7 @@ class RobotFactoryNetworkTest < Minitest::Test
 
   def test_network_memory_mode_parallel_when_no_consensus
     @config.flags.consensus = false
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
     AIA::RobotFactory.send(:initialize_network_memory, network, @config)
 
     assert_equal :parallel, network.memory.data.mode
@@ -334,7 +333,7 @@ class RobotFactoryNetworkTest < Minitest::Test
 
   def test_network_memory_mode_consensus_when_consensus_enabled
     @config.flags.consensus = true
-    network = AIA::RobotFactory.send(:build_consensus_network, @config)
+    network = AIA::NetworkBuilder.build_consensus_network(@config, @namer)
     AIA::RobotFactory.send(:initialize_network_memory, network, @config)
 
     assert_equal :consensus, network.memory.data.mode
@@ -345,7 +344,7 @@ class RobotFactoryNetworkTest < Minitest::Test
   # =========================================================================
 
   def test_memory_subscriptions_set_completed_count
-    network = AIA::RobotFactory.send(:build_parallel_network, @config)
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
     AIA::RobotFactory.send(:initialize_network_memory, network, @config)
     AIA::RobotFactory.send(:setup_memory_subscriptions, network, @config)
 

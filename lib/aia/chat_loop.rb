@@ -70,16 +70,10 @@ module AIA
       return if context.empty?
 
       result, streamed_content, _elapsed = @streaming_runner.run(@robot, context)
-      content = streamed_content || extract_content(result)
-
-      if streamed_content
-        puts
-      else
-        @ui_presenter.display_ai_response(content)
-      end
-      output_to_file(content)
-      speak(content)
-      @ui_presenter.display_separator
+      present_result(result,
+        streamed_content: streamed_content,
+        ui_presenter: @ui_presenter
+      )
     end
 
     def run_loop
@@ -156,16 +150,6 @@ module AIA
           next
         end
 
-        content = streamed_content || extract_content(result)
-
-        @tracker.record_turn(
-          model: AIA.config.models.first.name,
-          input: processed_prompt,
-          result: result,
-          decisions: decisions,
-          elapsed: elapsed
-        )
-
         @rule_router.evaluate_response(AIA.config, { accepted: true, model: AIA.config.models.first.name })
 
         # Increment shared memory turn counter for multi-model networks
@@ -175,15 +159,14 @@ module AIA
           data.turn_count = count + 1
         end
 
-        if streamed_content
-          puts
-        else
-          @ui_presenter.display_ai_response(content)
-        end
-        output_to_file(content)
-        display_metrics(result, elapsed: elapsed)
-        speak(content)
-        @ui_presenter.display_separator
+        present_result(result,
+          streamed_content: streamed_content,
+          prompt: processed_prompt,
+          elapsed: elapsed,
+          ui_presenter: @ui_presenter,
+          tracker: @tracker,
+          decisions: decisions
+        )
 
         # Clear per-turn MCP filter for next turn
         clear_turn_mcp_filter
@@ -215,18 +198,13 @@ module AIA
         spinner_message: "Expert processing..."
       )
 
-      content = streamed_content || extract_content(result)
-      @tracker.record_turn(model: AIA.config.models.first.name, input: prompt, result: result, elapsed: elapsed)
-
-      if streamed_content
-        puts
-      else
-        @ui_presenter.display_ai_response(content)
-      end
-      output_to_file(content)
-      display_metrics(result, elapsed: elapsed)
-      speak(content)
-      @ui_presenter.display_separator
+      present_result(result,
+        streamed_content: streamed_content,
+        prompt: prompt,
+        elapsed: elapsed,
+        ui_presenter: @ui_presenter,
+        tracker: @tracker
+      )
       true
     rescue StandardError => e
       @ui_presenter.display_info("Expert routing failed: #{e.message}")
@@ -332,13 +310,6 @@ module AIA
       return message.model_id if message.respond_to?(:model_id) && message.model_id
       return message.model    if message.respond_to?(:model)    && message.model
       nil
-    end
-
-    def output_to_file(content)
-      out_file = AIA.config.output.file
-      return unless out_file
-
-      File.open(out_file, 'a') { |f| f.puts "\nAI: #{content}" }
     end
 
     def log_user_input(input)

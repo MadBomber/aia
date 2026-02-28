@@ -9,6 +9,8 @@
 require_relative 'robot_namer'
 require_relative 'tool_loader'
 require_relative 'system_prompt_assembler'
+require_relative 'network_builder'
+require_relative 'history_transfer'
 
 module AIA
   class RobotFactory
@@ -28,7 +30,7 @@ module AIA
         end
 
         if config.pipeline.length > 1
-          build_pipeline_network(config)
+          NetworkBuilder.build_pipeline_network(config, @namer)
         elsif config.models.length > 1
           build_multi_model(config)
         else
@@ -53,9 +55,9 @@ module AIA
 
         case history_mode
         when :replay
-          replay_history(old_robot, new_robot)
+          HistoryTransfer.replay_history(old_robot, new_robot)
         when :summarize
-          summarize_history(old_robot, new_robot)
+          HistoryTransfer.summarize_history(old_robot, new_robot)
         end
 
         new_robot
@@ -86,44 +88,8 @@ module AIA
       # @param server_groups [Array<Array<Hash>>] groups of MCP server configs
       # @return [RobotLab::Network]
       def build_concurrent_mcp_network(config, server_groups)
-        run_config = build_run_config(config)
-        tools = ToolLoader.filtered_tools(config)
-        model_spec = config.models.first
-        system_prompt = SystemPromptAssembler.resolve_system_prompt(config, model_spec)
-        namer = @namer
-
-        network = RobotLab.create_network(name: "aia-concurrent-mcp") do
-          server_groups.each_with_index do |group, i|
-            build_opts = {
-              name:          "#{namer.name_for(model_spec.name)}-w#{i}",
-              model:         model_spec.name,
-              system_prompt: system_prompt,
-              local_tools:   tools,
-              mcp_servers:   group.map { |s| RobotFactory.normalize_mcp_config( s) },
-              config:        run_config
-            }
-            build_opts[:provider] = RobotFactory.resolve_provider( model_spec) if model_spec.provider
-            robot = RobotLab.build(**build_opts)
-            task :"mcp_worker_#{i}", robot, depends_on: :none
-          end
-
-          synth_opts = {
-            name:          "Weaver",
-            model:         model_spec.name,
-            system_prompt: "You are a synthesizer. Merge the following results from " \
-                           "multiple specialized queries into a coherent response. " \
-                           "Preserve all relevant information. Resolve contradictions.",
-            config:        run_config
-          }
-          synth_opts[:provider] = RobotFactory.resolve_provider( model_spec) if model_spec.provider
-          synthesizer = RobotLab.build(**synth_opts)
-          task :synthesize, synthesizer,
-               depends_on: server_groups.each_index.map { |i| :"mcp_worker_#{i}" }
-        end
-
-        initialize_network_memory(network, config)
-        setup_memory_subscriptions(network, config)
-        network
+        @namer ||= RobotNamer.new(first_name: 'Tobor')
+        NetworkBuilder.build_concurrent_mcp_network(config, @namer, server_groups)
       end
 
       # Build a single robot for one model
@@ -321,49 +287,6 @@ module AIA
         end
       end
 
-      # Replay conversation history from an old robot to a new one.
-      #
-      # Performance: O(N) API calls where N = number of user messages.
-      # Each user message triggers a full LLM round-trip on the new model.
-      # For a 10-turn conversation with a local model (~1s/turn), expect ~10s.
-      # For a cloud model (~2-5s/turn), expect 20-50s. MCP/tools are disabled
-      # during replay to avoid side effects.
-      def replay_history(old_robot, new_robot)
-        return unless old_robot.respond_to?(:messages)
-
-        old_robot.messages.each do |msg|
-          next unless msg.respond_to?(:role) && msg.role == :user
-          new_robot.run(msg.content, mcp: :none, tools: :none)
-        end
-      rescue StandardError => e
-        warn "Warning: History replay failed: #{e.message}"
-      end
-
-      # Summarize conversation history and inject into new robot.
-      #
-      # Performance: Exactly 2 API calls regardless of conversation length.
-      # 1) Summarize on old model (input tokens proportional to conversation)
-      # 2) Inject summary into new model (small fixed-size prompt)
-      # Faster than :replay for conversations with >2 turns, but loses
-      # per-turn context fidelity. Total latency ~4-10s for cloud models.
-      def summarize_history(old_robot, new_robot)
-        return unless old_robot.respond_to?(:messages) && old_robot.messages.any?
-
-        summary_lines = old_robot.messages.map do |msg|
-          "#{msg.role}: #{msg.content}" if msg.respond_to?(:role)
-        end.compact
-
-        return if summary_lines.empty?
-
-        summary_prompt = "Summarize this conversation concisely for context transfer:\n#{summary_lines.join("\n")}"
-        summary = old_robot.run(summary_prompt, mcp: :none, tools: :none)
-        content = summary.respond_to?(:reply) ? summary.reply : summary.to_s
-
-        new_robot.run("Context from previous conversation: #{content}", mcp: :none, tools: :none)
-      rescue StandardError => e
-        warn "Warning: History summarization failed: #{e.message}"
-      end
-
       # Stored on_content callback is not used. ChatLoop passes a per-call
       # streaming block to robot.run() that stops the spinner on first chunk
       # and prints content directly. This avoids spinner/stream conflicts.
@@ -375,120 +298,13 @@ module AIA
       # Initializes shared memory and subscriptions on the resulting network.
       def build_multi_model(config)
         network = if config.flags.consensus
-                    build_consensus_network(config)
+                    NetworkBuilder.build_consensus_network(config, @namer)
                   else
-                    build_parallel_network(config)
+                    NetworkBuilder.build_parallel_network(config, @namer)
                   end
         initialize_network_memory(network, config)
         setup_memory_subscriptions(network, config)
         network
-      end
-
-      # Build a network where each prompt in the pipeline is a sequential step
-      def build_pipeline_network(config)
-        prompts = config.pipeline
-        run_config = build_run_config(config)
-        tools = ToolLoader.filtered_tools(config)
-        mcp = mcp_server_configs(config)
-        model_spec = config.models.first
-        namer = @namer
-
-        RobotLab.create_network(name: "aia-pipeline") do
-          prev = nil
-          prompts.each_with_index do |prompt_id, i|
-            task_name = :"step_#{i}"
-            build_opts = {
-              name:          "#{namer.name_for(model_spec.name)}-s#{i}",
-              system_prompt: nil,
-              model:         model_spec.name,
-              local_tools:   tools,
-              mcp_servers:   mcp,
-              config:        run_config
-            }
-            build_opts[:provider] = RobotFactory.resolve_provider( model_spec) if model_spec.provider
-            robot = RobotLab.build(**build_opts)
-            task task_name, robot, depends_on: prev ? [prev] : :none
-            prev = task_name
-          end
-        end
-      end
-
-      # Build a network where multiple models run in parallel
-      def build_parallel_network(config)
-        run_config = build_run_config(config)
-        tools = ToolLoader.filtered_tools(config)
-        mcp = mcp_server_configs(config)
-        aia_config = config
-
-        # Pre-generate names so each robot can see the full roster
-        roster = config.models.map { |spec| { name: @namer.name_for(spec.name), spec: spec } }
-
-        RobotLab.create_network(name: "aia-parallel") do
-          roster.each do |entry|
-            spec = entry[:spec]
-            identity = SystemPromptAssembler.build_identity_prompt( entry[:name], spec, roster)
-            base_prompt = SystemPromptAssembler.resolve_system_prompt( aia_config, spec)
-            system_prompt = [identity, base_prompt].compact.join("\n\n")
-
-            build_opts = {
-              name:          entry[:name],
-              system_prompt: system_prompt,
-              model:         spec.name,
-              local_tools:   tools,
-              mcp_servers:   mcp,
-              config:        run_config
-            }
-            build_opts[:provider] = RobotFactory.resolve_provider( spec) if spec.provider
-            robot = RobotLab.build(**build_opts)
-            task spec.internal_id.to_sym, robot, depends_on: :none
-          end
-        end
-      end
-
-      # Build a consensus network: all models run in parallel, then a synthesizer merges
-      def build_consensus_network(config)
-        run_config = build_run_config(config)
-        tools = ToolLoader.filtered_tools(config)
-        mcp = mcp_server_configs(config)
-        primary = config.models.first
-        aia_config = config
-
-        # Pre-generate names so each robot can see the full roster
-        roster = config.models.map { |spec| { name: @namer.name_for(spec.name), spec: spec } }
-
-        RobotLab.create_network(name: "aia-consensus") do
-          # All models run in parallel
-          roster.each do |entry|
-            spec = entry[:spec]
-            identity = SystemPromptAssembler.build_identity_prompt( entry[:name], spec, roster)
-            base_prompt = SystemPromptAssembler.resolve_system_prompt( aia_config, spec)
-            system_prompt = [identity, base_prompt].compact.join("\n\n")
-
-            build_opts = {
-              name:          entry[:name],
-              system_prompt: system_prompt,
-              model:         spec.name,
-              local_tools:   tools,
-              mcp_servers:   mcp,
-              config:        run_config
-            }
-            build_opts[:provider] = RobotFactory.resolve_provider( spec) if spec.provider
-            robot = RobotLab.build(**build_opts)
-            task spec.internal_id.to_sym, robot, depends_on: :none
-          end
-
-          # Synthesizer collects all responses
-          synth_opts = {
-            name:          "Weaver",
-            system_prompt: "You are a synthesizer. Review the responses from multiple AI models and create a unified, coherent response that captures the best insights from each.",
-            model:         primary.name,
-            config:        run_config
-          }
-          synth_opts[:provider] = RobotFactory.resolve_provider( primary) if primary.provider
-          synthesizer = RobotLab.build(**synth_opts)
-          task :consensus, synthesizer,
-               depends_on: config.models.map { |s| s.internal_id.to_sym }
-        end
       end
     end
   end

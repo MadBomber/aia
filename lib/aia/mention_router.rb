@@ -98,13 +98,6 @@ module AIA
       @ui_presenter.display_separator
     end
 
-    def output_to_file(content)
-      out_file = AIA.config.output.file
-      return unless out_file
-
-      File.open(out_file, 'a') { |f| f.puts "\nAI: #{content}" }
-    end
-
     def display_metrics(result, elapsed: nil)
       return unless AIA.config.flags.tokens
 

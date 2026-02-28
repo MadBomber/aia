@@ -89,10 +89,7 @@ module AIA
       result = @ui_presenter.with_spinner("Verifying") { network.run(prompt) }
       content = extract_content(result)
 
-      @tracker.record_turn(model: AIA.config.models.first.name, input: prompt, result: result)
-      @ui_presenter.display_ai_response(content)
-      output_to_file(content)
-      @ui_presenter.display_separator
+      present_result(result, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true
     rescue StandardError => e
       @ui_presenter.display_info("Verification failed: #{e.message}. Falling back to normal mode.")
@@ -127,10 +124,7 @@ module AIA
       final = decomposer.synthesize(prompt, results)
       content = extract_content(final)
 
-      @tracker.record_turn(model: AIA.config.models.first.name, input: prompt, result: final)
-      @ui_presenter.display_ai_response(content)
-      output_to_file(content)
-      @ui_presenter.display_separator
+      present_result(final, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true
     rescue StandardError => e
       @ui_presenter.display_info("Decomposition failed: #{e.message}. Falling back to normal mode.")
@@ -154,10 +148,7 @@ module AIA
       result = @ui_presenter.with_spinner("Processing (concurrent)") { network.run(prompt) }
       content = extract_content(result)
 
-      @tracker.record_turn(model: AIA.config.models.first.name, input: prompt, result: result)
-      @ui_presenter.display_ai_response(content)
-      output_to_file(content)
-      @ui_presenter.display_separator
+      present_result(result, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true
     rescue StandardError => e
       @ui_presenter.display_info("Concurrent MCP failed: #{e.message}. Falling back to normal mode.")
@@ -168,9 +159,7 @@ module AIA
       content = @debate_handler.handle(prompt)
       return false unless content
 
-      @ui_presenter.display_ai_response(content)
-      output_to_file(content)
-      @ui_presenter.display_separator
+      display_and_save(content)
       true
     rescue StandardError => e
       @ui_presenter.display_info("Debate failed: #{e.message}. Falling back to normal mode.")
@@ -181,9 +170,7 @@ module AIA
       content = @delegate_handler.handle(prompt)
       return false unless content
 
-      @ui_presenter.display_ai_response(content)
-      output_to_file(content)
-      @ui_presenter.display_separator
+      display_and_save(content)
       true
     rescue StandardError => e
       @ui_presenter.display_info("Delegation failed: #{e.message}. Falling back to normal mode.")
@@ -194,20 +181,20 @@ module AIA
       content = @spawn_handler.handle(prompt, specialist_type: specialist_type)
       return false unless content
 
-      @ui_presenter.display_ai_response(content)
-      output_to_file(content)
-      @ui_presenter.display_separator
+      display_and_save(content)
       true
     rescue StandardError => e
       @ui_presenter.display_info("Spawn failed: #{e.message}. Falling back to normal mode.")
       false
     end
 
-    def output_to_file(content)
-      out_file = AIA.config.output.file
-      return unless out_file
-
-      File.open(out_file, 'a') { |f| f.puts "\nAI: #{content}" }
+    # Display content, write to output file, and print separator.
+    # Used by handlers that receive pre-extracted content from sub-handlers.
+    def display_and_save(content)
+      @ui_presenter.display_ai_response(content)
+      output_to_file(content)
+      @ui_presenter.display_separator
     end
+
   end
 end
