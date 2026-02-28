@@ -141,6 +141,9 @@ module AIA
           next
         end
 
+        # Debug: show actual tools available to the LLM vs KBS-filtered list
+        log_robot_tools(active_robot)
+
         # Standard execution with streaming
         begin
           result, streamed_content, elapsed = @streaming_runner.run(active_robot, processed_prompt)
@@ -310,6 +313,17 @@ module AIA
       return message.model_id if message.respond_to?(:model_id) && message.model_id
       return message.model    if message.respond_to?(:model)    && message.model
       nil
+    end
+
+    # Show the actual tools available to the robot vs what KBS activated.
+    def log_robot_tools(robot)
+      local = Array(robot.local_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
+      mcp   = Array(robot.mcp_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
+      kbs   = AIA.turn_state&.active_tools
+
+      $stderr.puts "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"
+      $stderr.puts "[DEBUG] Robot mcp_tools (#{mcp.size}): #{mcp.join(', ')}"
+      $stderr.puts "[DEBUG] KBS active_tools: #{kbs ? kbs.join(', ') : '(none — all tools available)'}"
     end
 
     def log_user_input(input)
