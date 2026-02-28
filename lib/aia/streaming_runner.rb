@@ -22,8 +22,9 @@ module AIA
     # @param prompt [String] the prompt to send
     # @param header [String] text printed before the first streamed chunk
     # @param spinner_message [String] spinner label
+    # @param tools [Array<String>, nil] tool names to allow for this turn (nil = all)
     # @return [Array(Object, String, Float)] [result, streamed_content_or_nil, elapsed_seconds]
-    def run(robot, prompt, header: "\nAI:\n   ", spinner_message: "Processing...")
+    def run(robot, prompt, header: "\nAI:\n   ", spinner_message: "Processing...", tools: nil)
       @spinner.reset
       @spinner.update(title: spinner_message)
       @spinner.auto_spin
@@ -45,10 +46,15 @@ module AIA
         $stdout.print(text)
       end
 
+      # When KBS provides a filtered tool list, pass those names to
+      # robot.run so robot_lab's ToolConfig.filter_tools applies them.
+      # Otherwise inherit the full build-time tool set.
+      tools_param = tools && !tools.empty? ? tools : :inherit
+
       result = if robot.is_a?(RobotLab::Network)
                  robot.run(message: prompt)
                else
-                 robot.run(prompt, mcp: :inherit, tools: :inherit, &streaming_block)
+                 robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
                end
 
       @spinner.stop unless header_printed

@@ -144,9 +144,13 @@ module AIA
         # Debug: show actual tools available to the LLM vs KBS-filtered list
         log_robot_tools(active_robot)
 
-        # Standard execution with streaming
+        # Standard execution with streaming — pass KBS-filtered tool names
+        # so robot_lab applies them via ToolConfig.filter_tools
+        kbs_tools = AIA.turn_state&.active_tools
         begin
-          result, streamed_content, elapsed = @streaming_runner.run(active_robot, processed_prompt)
+          result, streamed_content, elapsed = @streaming_runner.run(
+            active_robot, processed_prompt, tools: kbs_tools
+          )
         rescue StandardError => e
           @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
           clear_turn_mcp_filter

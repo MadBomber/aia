@@ -7,11 +7,11 @@ PATH
       classifier (~> 2.3)
       clipboard
       faraday
-      kbs (~> 0.2)
+      kbs (~> 0.2, >= 0.2.1)
       lumberjack
       myway_config
       reline
-      robot_lab (~> 0.0)
+      robot_lab (~> 0.0, >= 0.0.9)
       shellwords
       simple_flow
       trak_flow
@@ -60,7 +60,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    addressable (2.8.8)
+    addressable (2.8.9)
       public_suffix (>= 2.0.2, < 8.0)
     aigcm (0.3.2)
       ruby_llm
@@ -365,7 +365,7 @@ GEM
       refinements (~> 14.0)
       versionaire (~> 15.0)
       zeitwerk (~> 2.7)
-    sqlite3 (2.9.0-arm64-darwin)
+    sqlite3 (2.9.1-arm64-darwin)
     strings (0.2.1)
       strings-ansi (~> 0.2)
       unicode-display_width (>= 1.5, < 3.0)
@@ -461,7 +461,7 @@ DEPENDENCIES
 
 CHECKSUMS
   activesupport (8.1.2) sha256=88842578ccd0d40f658289b0e8c842acfe9af751afee2e0744a7873f50b6fdae
-  addressable (2.8.8) sha256=7c13b8f9536cf6364c03b9d417c19986019e28f7c00ac8132da4eb0fe393b057
+  addressable (2.8.9) sha256=cc154fcbe689711808a43601dee7b980238ce54368d23e127421753e46895485
   aia (2.0.0)
   aigcm (0.3.2) sha256=eda5055a4bc1dd021f860b08134bf122f9df2e283da5be6719d1dde98a23428a
   amazing_print (2.0.0) sha256=2e36aba46ac78d37ed27ca0e2056afe3583183bb5c64f157c246b267355e5d6a
@@ -594,7 +594,7 @@ CHECKSUMS
   simpleidn (0.2.3) sha256=08ce96f03fa1605286be22651ba0fc9c0b2d6272c9b27a260bc88be05b0d2c29
   sod (2.1.0) sha256=768eac6dbd6675f33b54dfd9e9884bc51012497515af3ef5a1941232e06400c7
   spek (5.1.0) sha256=7f4ad0f6016ab0c60d50133bce14a4f59de3ea6b8b2b49e68e59e6130409237a
-  sqlite3 (2.9.0-arm64-darwin) sha256=a917bd9b84285766ff3300b7d79cd583f5a067594c8c1263e6441618c04a6ed3
+  sqlite3 (2.9.1-arm64-darwin) sha256=e0cc5521aa03361e2da56635f3745242510b0b98c4608a3824b7e31ab2e7ffb9
   strings (0.2.1) sha256=933293b3c95cf85b81eb44b3cf673e3087661ba739bbadfeadf442083158d6fb
   strings-ansi (0.2.0) sha256=90262d760ea4a94cc2ae8d58205277a343409c288cbe7c29416b1826bd511c88
   sync (0.5.0) sha256=668356cc07c59ac7ed9ecf34fec3929831f179c07adb1f3e1c3b7a1609a638fd
