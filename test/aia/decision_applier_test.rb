@@ -113,8 +113,8 @@ class DecisionApplierTest < Minitest::Test
     AIA.stubs(:client).returns(primary)
 
     # Stub RobotFactory methods used by build_temp_robot
-    AIA::RobotFactory.stubs(:resolve_system_prompt).returns("You are helpful.")
-    AIA::RobotFactory.stubs(:filtered_tools).returns([])
+    AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns("You are helpful.")
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
     AIA::RobotFactory.stubs(:build_run_config).returns(nil)
 
     fake_robot = mock('temp_robot')
@@ -291,8 +291,8 @@ class DecisionApplierTest < Minitest::Test
     primary.stubs(:mcp_tools).returns([mcp_tool])
     AIA.stubs(:client).returns(primary)
 
-    AIA::RobotFactory.stubs(:resolve_system_prompt).returns("prompt")
-    AIA::RobotFactory.stubs(:filtered_tools).returns([])
+    AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns("prompt")
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
     AIA::RobotFactory.stubs(:build_run_config).returns(nil)
 
     fake_robot = mock('temp_robot')
@@ -317,8 +317,8 @@ class DecisionApplierTest < Minitest::Test
     primary.stubs(:respond_to?).with(:mcp_tools).returns(false)
     AIA.stubs(:client).returns(primary)
 
-    AIA::RobotFactory.stubs(:resolve_system_prompt).returns("prompt")
-    AIA::RobotFactory.stubs(:filtered_tools).returns([])
+    AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns("prompt")
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
     AIA::RobotFactory.stubs(:build_run_config).returns(nil)
     RobotLab.stubs(:build).raises(StandardError, "model not found")
 

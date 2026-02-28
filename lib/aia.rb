@@ -27,6 +27,8 @@ end
 require_relative 'aia/config/cli_parser'
 require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
+require_relative 'aia/tool_loader'
+require_relative 'aia/system_prompt_assembler'
 require_relative 'aia/robot_factory'
 require_relative 'aia/directive_processor'
 require_relative 'aia/history_manager'

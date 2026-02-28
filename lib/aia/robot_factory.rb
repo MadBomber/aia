@@ -7,6 +7,8 @@
 # Replaces the entire lib/aia/adapter/ directory from v1.
 
 require_relative 'robot_namer'
+require_relative 'tool_loader'
+require_relative 'system_prompt_assembler'
 
 module AIA
   class RobotFactory
@@ -18,11 +20,11 @@ module AIA
       def build(config = AIA.config)
         @namer = RobotNamer.new(first_name: 'Tobor')
         configure_robot_lab(config)
-        if @tool_cache
-          config.loaded_tools = @tool_cache
-          config.tool_names = @tool_cache.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
+        if ToolLoader.cached_tools
+          config.loaded_tools = ToolLoader.cached_tools
+          config.tool_names = ToolLoader.cached_tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
         else
-          load_tools(config)
+          ToolLoader.load_tools(config)
         end
 
         if config.pipeline.length > 1
@@ -59,10 +61,22 @@ module AIA
         new_robot
       end
 
-      # Clear the cached tool discovery results.
-      # Call when tool paths change via /config directive.
+      # --- Forwarding wrappers for backward compatibility ---
+
       def clear_tool_cache!
-        @tool_cache = nil
+        ToolLoader.clear_cache!
+      end
+
+      def filtered_tools(config)
+        ToolLoader.filtered_tools(config)
+      end
+
+      def resolve_system_prompt(config, model_spec = nil)
+        SystemPromptAssembler.resolve_system_prompt(config, model_spec)
+      end
+
+      def build_identity_prompt(robot_name, spec, roster)
+        SystemPromptAssembler.build_identity_prompt(robot_name, spec, roster)
       end
 
       # Build a concurrent MCP network where independent server groups
@@ -73,9 +87,9 @@ module AIA
       # @return [RobotLab::Network]
       def build_concurrent_mcp_network(config, server_groups)
         run_config = build_run_config(config)
-        tools = filtered_tools(config)
+        tools = ToolLoader.filtered_tools(config)
         model_spec = config.models.first
-        system_prompt = resolve_system_prompt(config, model_spec)
+        system_prompt = SystemPromptAssembler.resolve_system_prompt(config, model_spec)
         namer = @namer
 
         network = RobotLab.create_network(name: "aia-concurrent-mcp") do
@@ -119,15 +133,15 @@ module AIA
       def build_single_robot(config)
         model_spec = config.models.first
         robot_name = @namer.name_for(model_spec.name)
-        identity = build_identity_prompt(robot_name, model_spec, [{ name: robot_name, spec: model_spec }])
-        base_prompt = resolve_system_prompt(config, model_spec)
+        identity = SystemPromptAssembler.build_identity_prompt(robot_name, model_spec, [{ name: robot_name, spec: model_spec }])
+        base_prompt = SystemPromptAssembler.resolve_system_prompt(config, model_spec)
         system_prompt = [identity, base_prompt].compact.join("\n\n")
 
         build_opts = {
           name:          robot_name,
           system_prompt: system_prompt,
           model:         model_spec.name,
-          local_tools:   filtered_tools(config),
+          local_tools:   ToolLoader.filtered_tools(config),
           mcp_servers:   mcp_server_configs(config),
           on_content:    build_streaming_callback(config),
           config:        build_run_config(config)
@@ -135,67 +149,6 @@ module AIA
         build_opts[:provider] = resolve_provider(model_spec) if model_spec.provider
 
         RobotLab.build(**build_opts)
-      end
-
-      # --- Public helpers used by ExpertRouter, VerificationNetwork, etc. ---
-
-      # Resolve system prompt from config (including role)
-      def resolve_system_prompt(config, model_spec = nil)
-        system_prompt = config.prompts.system_prompt
-
-        role_id = model_spec&.role || config.prompts.role
-        if role_id && !role_id.empty?
-          role_content = load_role_content(config, role_id)
-          if role_content
-            system_prompt = [system_prompt, role_content].compact.join("\n\n")
-          end
-        end
-
-        system_prompt
-      end
-
-      # Filter tools based on allowed/rejected lists and KBS decisions.
-      def filtered_tools(config)
-        tools = config.loaded_tools || []
-        allowed = config.tools&.allowed
-        rejected = config.tools&.rejected
-
-        if allowed && !allowed.empty?
-          allowed_list = Array(allowed).map(&:strip).map(&:downcase)
-          tools = tools.select do |t|
-            name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
-            allowed_list.any? { |a| name.include?(a) }
-          end
-        end
-
-        if rejected && !rejected.empty?
-          rejected_list = Array(rejected).map(&:strip).map(&:downcase)
-          tools = tools.reject do |t|
-            name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
-            rejected_list.any? { |r| name.include?(r) }
-          end
-        end
-
-        # KBS-driven tool filtering (per-turn or startup).
-        # Only applies when user has not explicitly used --allowed-tools or --rejected-tools.
-        kbs_active = AIA.turn_state&.active_tools
-        if kbs_active && !kbs_active.empty? && (allowed.nil? || allowed.empty?) && (rejected.nil? || rejected.empty?)
-          tools = tools.select do |t|
-            name = (t.respond_to?(:name) ? t.name : t.class.name)
-            kbs_active.include?(name)
-          end
-        end
-
-        seen = {}
-        tools.select do |t|
-          name = t.respond_to?(:name) ? t.name : t.class.name
-          if seen[name]
-            false
-          else
-            seen[name] = true
-            true
-          end
-        end
       end
 
       # Build RunConfig from AIA configuration.
@@ -326,30 +279,6 @@ module AIA
         end
       end
 
-      # Build a system prompt fragment that tells a robot its name, its
-      # model, and the other robots in the network.
-      #
-      # @param robot_name [String] this robot's creative name
-      # @param spec [ModelSpec] this robot's model spec
-      # @param roster [Array<Hash>] all robots: [{ name:, spec: }, ...]
-      # @return [String]
-      def build_identity_prompt(robot_name, spec, roster)
-        provider_label = spec.provider ? " (#{spec.provider})" : ""
-        lines = ["You are #{robot_name}, powered by #{spec.name}#{provider_label}."]
-
-        if roster.size > 1
-          lines << "You are part of a team of AI robots:"
-          roster.each do |entry|
-            p = entry[:spec].provider ? " (#{entry[:spec].provider})" : ""
-            marker = entry[:name] == robot_name ? " ← you" : ""
-            lines << "  - #{entry[:name]}: #{entry[:spec].name}#{p}#{marker}"
-          end
-          lines << "Users can address a specific robot with @name mentions."
-        end
-
-        lines.join("\n")
-      end
-
       private
 
       # Configure RobotLab providers from AIA config
@@ -390,113 +319,6 @@ module AIA
             c.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
           end
         end
-      end
-
-      # Load tools from require_libs and tool paths, then cache the result.
-      # Subsequent calls to build() skip this entirely if @tool_cache exists.
-      def load_tools(config)
-        # Load required libraries (may be outside the bundle)
-        Array(config.require_libs).each do |lib|
-          begin
-            require lib
-          rescue LoadError
-            # Gem not in bundle — find and load it from installed gems directly
-            if activate_unbundled_gem(lib)
-              require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
-            else
-              warn "Warning: Failed to require '#{lib}': gem not found"
-            end
-          end
-        end
-
-        # Load tool files from paths
-        Array(config.tools&.paths).each do |path|
-          expanded = File.expand_path(path)
-          if File.exist?(expanded)
-            require expanded
-          else
-            warn "Warning: Tool file not found: #{path}"
-          end
-        rescue LoadError, StandardError => e
-          warn "Warning: Failed to load tool '#{path}': #{e.message}"
-        end
-
-        # Eagerly load tools from gems that use zeitwerk lazy loading
-        # (e.g., shared_tools provides .load_all_tools for this purpose)
-        eager_load_gem_tools
-
-        # Discover loaded tools via ObjectSpace and cache the result
-        tools = discover_tools
-        @tool_cache = tools
-        config.loaded_tools = tools
-        config.tool_names = tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
-      end
-
-      # Activate a gem that isn't in the bundle by scanning installed gem
-      # spec directories and prepending its lib paths to $LOAD_PATH.
-      def activate_unbundled_gem(name)
-        Gem.path.each do |gem_path|
-          spec_dir = File.join(gem_path, 'specifications')
-          next unless Dir.exist?(spec_dir)
-
-          specs = Dir.glob(File.join(spec_dir, "#{name}-*.gemspec")).filter_map do |f|
-            Gem::Specification.load(f)
-          end.select { |s| s.name == name }
-
-          next if specs.empty?
-
-          spec = specs.max_by(&:version)
-          $LOAD_PATH.unshift(*spec.full_require_paths)
-          return true
-        end
-
-        false
-      end
-
-      # Eagerly load tool classes from gems that use zeitwerk lazy loading.
-      # Without this, ObjectSpace won't see tool classes that haven't been
-      # referenced yet. Checks for known conventions like .load_all_tools.
-      def eager_load_gem_tools
-        if defined?(SharedTools) && SharedTools.respond_to?(:load_all_tools)
-          SharedTools.load_all_tools
-        end
-      rescue StandardError => e
-        warn "Warning: Failed to eager-load gem tools: #{e.message}"
-      end
-
-      # Discover RubyLLM::Tool subclasses from ObjectSpace.
-      # Skips tools that report themselves as unavailable via #available?.
-      def discover_tools
-        ObjectSpace.each_object(Class).select do |klass|
-          next false unless defined?(RubyLLM::Tool) && klass < RubyLLM::Tool
-          begin
-            instance = klass.new
-            if instance.respond_to?(:available?) && !instance.available?
-              tool_name = instance.respond_to?(:name) ? instance.name : klass.name
-              warn "Info: Tool '#{tool_name}' is not available, skipping"
-              next false
-            end
-            true
-          rescue ArgumentError, LoadError, StandardError
-            false
-          end
-        end
-      end
-
-      # Load role file content
-      def load_role_content(config, role_id)
-        roles_prefix = config.prompts.roles_prefix
-        unless role_id.start_with?(roles_prefix)
-          role_id = "#{roles_prefix}/#{role_id}"
-        end
-
-        role_file = File.join(config.prompts.dir, "#{role_id}#{config.prompts.extname}")
-        return nil unless File.exist?(role_file)
-
-        File.read(role_file)
-      rescue => e
-        warn "Warning: Could not load role '#{role_id}': #{e.message}"
-        nil
       end
 
       # Replay conversation history from an old robot to a new one.
@@ -566,7 +388,7 @@ module AIA
       def build_pipeline_network(config)
         prompts = config.pipeline
         run_config = build_run_config(config)
-        tools = filtered_tools(config)
+        tools = ToolLoader.filtered_tools(config)
         mcp = mcp_server_configs(config)
         model_spec = config.models.first
         namer = @namer
@@ -594,7 +416,7 @@ module AIA
       # Build a network where multiple models run in parallel
       def build_parallel_network(config)
         run_config = build_run_config(config)
-        tools = filtered_tools(config)
+        tools = ToolLoader.filtered_tools(config)
         mcp = mcp_server_configs(config)
         aia_config = config
 
@@ -604,8 +426,8 @@ module AIA
         RobotLab.create_network(name: "aia-parallel") do
           roster.each do |entry|
             spec = entry[:spec]
-            identity = RobotFactory.build_identity_prompt( entry[:name], spec, roster)
-            base_prompt = RobotFactory.resolve_system_prompt( aia_config, spec)
+            identity = SystemPromptAssembler.build_identity_prompt( entry[:name], spec, roster)
+            base_prompt = SystemPromptAssembler.resolve_system_prompt( aia_config, spec)
             system_prompt = [identity, base_prompt].compact.join("\n\n")
 
             build_opts = {
@@ -626,7 +448,7 @@ module AIA
       # Build a consensus network: all models run in parallel, then a synthesizer merges
       def build_consensus_network(config)
         run_config = build_run_config(config)
-        tools = filtered_tools(config)
+        tools = ToolLoader.filtered_tools(config)
         mcp = mcp_server_configs(config)
         primary = config.models.first
         aia_config = config
@@ -638,8 +460,8 @@ module AIA
           # All models run in parallel
           roster.each do |entry|
             spec = entry[:spec]
-            identity = RobotFactory.build_identity_prompt( entry[:name], spec, roster)
-            base_prompt = RobotFactory.resolve_system_prompt( aia_config, spec)
+            identity = SystemPromptAssembler.build_identity_prompt( entry[:name], spec, roster)
+            base_prompt = SystemPromptAssembler.resolve_system_prompt( aia_config, spec)
             system_prompt = [identity, base_prompt].compact.join("\n\n")
 
             build_opts = {

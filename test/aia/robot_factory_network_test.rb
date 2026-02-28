@@ -18,7 +18,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     AIA.stubs(:config).returns(@config)
 
     # Pre-populate tool cache to skip ObjectSpace scanning
-    AIA::RobotFactory.instance_variable_set(:@tool_cache, [])
+    AIA::ToolLoader.instance_variable_set(:@tool_cache, [])
 
     # Stub configure_robot_lab to skip logger/provider setup
     AIA::RobotFactory.stubs(:configure_robot_lab)
@@ -30,7 +30,7 @@ class RobotFactoryNetworkTest < Minitest::Test
   end
 
   def teardown
-    AIA::RobotFactory.clear_tool_cache!
+    AIA::ToolLoader.clear_cache!
     super
   end
 
@@ -360,7 +360,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     spec = OpenStruct.new(name: 'gpt-4o', provider: nil)
     roster = [{ name: 'Tobor', spec: spec }]
 
-    prompt = AIA::RobotFactory.build_identity_prompt('Tobor', spec, roster)
+    prompt = AIA::SystemPromptAssembler.build_identity_prompt('Tobor', spec, roster)
 
     assert_match(/You are Tobor, powered by gpt-4o/, prompt)
     refute_match(/team/, prompt, "Single robot should not mention a team")
@@ -374,7 +374,7 @@ class RobotFactoryNetworkTest < Minitest::Test
       { name: 'Spark', spec: spec2 }
     ]
 
-    prompt = AIA::RobotFactory.build_identity_prompt('Tobor', spec1, roster)
+    prompt = AIA::SystemPromptAssembler.build_identity_prompt('Tobor', spec1, roster)
 
     assert_match(/You are part of a team/, prompt)
     assert_match(/Tobor.*← you/, prompt)
@@ -386,7 +386,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     spec = OpenStruct.new(name: 'llama3', provider: 'ollama')
     roster = [{ name: 'Tobor', spec: spec }]
 
-    prompt = AIA::RobotFactory.build_identity_prompt('Tobor', spec, roster)
+    prompt = AIA::SystemPromptAssembler.build_identity_prompt('Tobor', spec, roster)
 
     assert_match(/\(ollama\)/, prompt)
   end

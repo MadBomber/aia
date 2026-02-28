@@ -43,9 +43,9 @@ module AIA
 
       RobotLab.build(
         name:          "aia-expert-#{classification[:domain]}",
-        system_prompt: RobotFactory.resolve_system_prompt(config),
+        system_prompt: SystemPromptAssembler.resolve_system_prompt(config),
         model:         model_name,
-        local_tools:   RobotFactory.filtered_tools(config),
+        local_tools:   ToolLoader.filtered_tools(config),
         mcp_servers:   mcp_configs.map { |s| RobotFactory.normalize_mcp_config(s) },
         config:        RobotFactory.build_run_config(config)
       )

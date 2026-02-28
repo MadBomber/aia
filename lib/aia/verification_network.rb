@@ -14,7 +14,7 @@ module AIA
     def self.build(config)
       model = config.models.first
       run_config = RobotFactory.build_run_config(config)
-      tools = RobotFactory.filtered_tools(config)
+      tools = ToolLoader.filtered_tools(config)
       mcp = RobotFactory.mcp_server_configs(config)
 
       RobotLab.create_network(name: "aia-verification") do

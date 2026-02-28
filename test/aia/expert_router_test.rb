@@ -39,8 +39,8 @@ class ExpertRouterTest < Minitest::Test
     mock_robot = mock('specialist_robot')
 
     RobotLab.stubs(:build).returns(mock_robot)
-    AIA::RobotFactory.stubs(:resolve_system_prompt).returns("You are helpful")
-    AIA::RobotFactory.stubs(:filtered_tools).returns([])
+    AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns("You are helpful")
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
     AIA::RobotFactory.stubs(:normalize_mcp_config).returns({})
     AIA::RobotFactory.stubs(:build_run_config).returns(
       RobotLab::RunConfig.new(temperature: 0.7, max_tokens: 2048, top_p: 1.0)
@@ -59,8 +59,8 @@ class ExpertRouterTest < Minitest::Test
     mock_robot = mock('specialist_robot')
 
     RobotLab.stubs(:build).returns(mock_robot)
-    AIA::RobotFactory.stubs(:resolve_system_prompt).returns("You are helpful")
-    AIA::RobotFactory.stubs(:filtered_tools).returns([])
+    AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns("You are helpful")
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
     AIA::RobotFactory.stubs(:normalize_mcp_config).returns({})
     AIA::RobotFactory.stubs(:build_run_config).returns(
       RobotLab::RunConfig.new(temperature: 0.7, max_tokens: 2048, top_p: 1.0)
@@ -76,7 +76,7 @@ class ExpertRouterTest < Minitest::Test
     @decisions.add(:classification, domain: "code", source: "code_request")
     @decisions.add(:model_decision, model: "gpt-4o", reason: "test")
 
-    AIA::RobotFactory.stubs(:resolve_system_prompt).raises(StandardError, "build failure")
+    AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).raises(StandardError, "build failure")
 
     router = AIA::ExpertRouter.new(@decisions)
     result = router.route(@config)

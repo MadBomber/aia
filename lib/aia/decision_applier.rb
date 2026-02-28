@@ -171,9 +171,9 @@ module AIA
 
       robot = RobotLab.build(
         name:         "aia-kbs",
-        system_prompt: RobotFactory.resolve_system_prompt(config),
+        system_prompt: SystemPromptAssembler.resolve_system_prompt(config),
         model:         model_name,
-        local_tools:   RobotFactory.filtered_tools(config),
+        local_tools:   ToolLoader.filtered_tools(config),
         config:        RobotFactory.build_run_config(config)
       )
 
