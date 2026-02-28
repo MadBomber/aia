@@ -152,9 +152,11 @@ module AIA
       tools.each do |tool_class|
         name = tool_name(tool_class)
         desc = tool_description(tool_class)
+        server = tool_class.respond_to?(:mcp) ? tool_class.mcp&.to_s : nil
         kb.assert(:tool,
           name:        name,
           description: desc,
+          server:      server,
           active:      true
         )
       end

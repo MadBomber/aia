@@ -43,7 +43,9 @@ module AIA
       )
 
       @tools_registered = true
-      @domain_tool_names = result[:domain_tools].transform_values { |v| v.dup.freeze }.freeze
+      @domain_tool_names = result[:domain_tools].transform_values { |entries|
+        entries.map { |e| e[:name] }.freeze
+      }.freeze
       @server_tool_names = result[:server_tools].transform_values { |v| v.dup.freeze }.freeze
 
       log_tool_domain_mapping(result[:domain_tools])
@@ -135,9 +137,12 @@ module AIA
       return if domain_tools.empty?
 
       $stderr.puts "\n[KBS] Tool domain mapping:"
-      domain_tools.each do |domain, tool_names|
-        next if tool_names.empty?
-        $stderr.puts "  #{domain}: #{tool_names.join(', ')}"
+      domain_tools.each do |domain, tool_entries|
+        next if tool_entries.empty?
+
+        by_server = tool_entries.group_by { |e| e[:server] || 'local' }
+        parts = by_server.map { |srv, entries| "#{srv}(#{entries.map { |e| e[:name] }.join(', ')})" }
+        $stderr.puts "  #{domain}: #{parts.join(', ')}"
       end
       $stderr.puts
     end
@@ -164,7 +169,11 @@ module AIA
         domains = classifications.map { |c| c[:domain] }.compact.uniq
         parts << "domains=#{domains.join(',')}" if domains.any?
       end
-      parts << "tools=#{tool_acts.join(',')}" if tool_acts.any?
+      if tool_acts.any?
+        by_server = @decisions.tool_activations.group_by { |a| a[:server] || 'local' }
+        tool_parts = by_server.map { |srv, acts| "#{srv}:#{acts.map { |a| a[:tool] }.join(',')}" }
+        parts << "tools=#{tool_parts.join(' + ')}"
+      end
       parts << "mcp=#{mcp_acts.join(',')}" if mcp_acts.any?
       gates.each { |g| parts << "gate:#{g[:action]}" }
 

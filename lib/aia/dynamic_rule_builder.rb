@@ -42,6 +42,7 @@ module AIA
 
       build_dynamic_classify_rules(knowledge_bases[:classify], decisions, domain_tools)
       build_dynamic_tool_rules(knowledge_bases[:route], decisions, domain_tools)
+      build_server_scoped_domain_rules(knowledge_bases[:route], decisions, domain_tools, server_tools)
       build_mcp_server_classify_rules(knowledge_bases[:classify], decisions, server_tools)
       build_mcp_server_route_rules(knowledge_bases[:route], decisions, server_tools)
 
@@ -60,10 +61,11 @@ module AIA
       tools.each do |tool_class|
         name = fact_asserter.tool_name(tool_class)
         desc = fact_asserter.tool_description(tool_class)
+        server = tool_class.respond_to?(:mcp) ? tool_class.mcp&.to_s : nil
         text = "#{name} #{desc}"
 
         TOOL_DOMAIN_PATTERNS.each do |domain, pattern|
-          domain_tools[domain] << name if text.match?(pattern)
+          domain_tools[domain] << { name: name, server: server } if text.match?(pattern)
         end
       end
 
@@ -110,18 +112,58 @@ module AIA
     def build_dynamic_tool_rules(kb, decisions, domain_tools)
       return unless kb
 
-      domain_tools.each do |domain, tool_names|
-        next if tool_names.empty?
+      domain_tools.each do |domain, tool_entries|
+        next if tool_entries.empty?
 
-        names = tool_names.dup.freeze
+        # Group by server to build per-server rules
+        by_server = tool_entries.group_by { |e| e[:server] }
 
-        kb.rule "activate_#{domain}_tools" do
-          on :classification_decision, domain: domain
-          on :tool, name: satisfies { |n| names.include?(n.to_s) }
-          perform do |facts|
-            decisions.add(:tool_activate,
-              tool: facts[1][:name],
-              reason: "#{domain} domain")
+        by_server.each do |server, entries|
+          names = entries.map { |e| e[:name] }.freeze
+          suffix = server ? "_#{server}" : "_local"
+
+          kb.rule "activate_#{domain}#{suffix}_tools" do
+            on :classification_decision, domain: domain
+            on :tool, name: satisfies { |n| names.include?(n.to_s) }
+            perform do |facts|
+              decisions.add(:tool_activate,
+                tool:   facts[1][:name],
+                server: server,
+                reason: "#{domain} domain (#{server || 'local'})")
+            end
+          end
+        end
+      end
+    end
+
+    # Build higher-specificity rules that fire when BOTH a generic domain
+    # AND a specific MCP server are classified. Activates only the
+    # intersection: tools from that server in that domain.
+    #
+    # @param kb [KBS::KnowledgeBase] the route KB
+    # @param decisions [AIA::Decisions]
+    # @param domain_tools [Hash{String => Array<Hash>}] domain => [{name:, server:}]
+    # @param server_tools [Hash{String => Array<String>}] server_name => tool names
+    def build_server_scoped_domain_rules(kb, decisions, domain_tools, server_tools)
+      return unless kb
+
+      server_tools.each_key do |server_name|
+        domain_tools.each do |domain, tool_entries|
+          server_domain_tools = tool_entries.select { |e| e[:server] == server_name }
+          next if server_domain_tools.empty?
+
+          names = server_domain_tools.map { |e| e[:name] }.freeze
+
+          kb.rule "activate_#{domain}_#{server_name}_scoped" do
+            on :classification_decision, domain: domain
+            on :classification_decision, domain: "mcp:#{server_name}"
+            on :tool, name: satisfies { |n| names.include?(n.to_s) }
+            perform do |facts|
+              decisions.add(:tool_activate,
+                tool:   facts[2][:name],
+                server: server_name,
+                reason: "#{domain} domain + #{server_name} server")
+            end
           end
         end
       end

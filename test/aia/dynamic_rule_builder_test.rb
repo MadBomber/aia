@@ -34,7 +34,8 @@ class DynamicRuleBuilderTest < Minitest::Test
 
     result = AIA::DynamicRuleBuilder.map_tools_to_domains([db_tool], @fact_asserter)
 
-    assert_includes result["data"], "my_database"
+    names = result["data"].map { |e| e[:name] }
+    assert_includes names, "my_database"
   end
 
   def test_map_tools_to_domains_classifies_code_tool
@@ -42,7 +43,8 @@ class DynamicRuleBuilderTest < Minitest::Test
 
     result = AIA::DynamicRuleBuilder.map_tools_to_domains([code_tool], @fact_asserter)
 
-    assert_includes result["code"], "eval_tool"
+    names = result["code"].map { |e| e[:name] }
+    assert_includes names, "eval_tool"
   end
 
   def test_map_tools_to_domains_file_tools_also_in_code_domain
@@ -50,8 +52,10 @@ class DynamicRuleBuilderTest < Minitest::Test
 
     result = AIA::DynamicRuleBuilder.map_tools_to_domains([file_tool], @fact_asserter)
 
-    assert_includes result["file"], "disk_reader"
-    assert_includes result["code"], "disk_reader",
+    file_names = result["file"].map { |e| e[:name] }
+    code_names = result["code"].map { |e| e[:name] }
+    assert_includes file_names, "disk_reader"
+    assert_includes code_names, "disk_reader",
       "File tools should also be available for code domain"
   end
 
@@ -61,6 +65,25 @@ class DynamicRuleBuilderTest < Minitest::Test
     result = AIA::DynamicRuleBuilder.map_tools_to_domains([generic_tool], @fact_asserter)
 
     assert_empty result, "Tool with no domain match should not appear in any domain"
+  end
+
+  def test_map_tools_to_domains_includes_server_field
+    tool = make_tool("get_file_contents", "Get file contents from repo")
+    tool.define_singleton_method(:mcp) { "github" }
+
+    result = AIA::DynamicRuleBuilder.map_tools_to_domains([tool], @fact_asserter)
+
+    entry = result["file"].find { |e| e[:name] == "get_file_contents" }
+    assert_equal "github", entry[:server]
+  end
+
+  def test_map_tools_to_domains_nil_server_for_local_tools
+    tool = make_tool("disk_reader", "Read files on disk")
+
+    result = AIA::DynamicRuleBuilder.map_tools_to_domains([tool], @fact_asserter)
+
+    entry = result["file"].find { |e| e[:name] == "disk_reader" }
+    assert_nil entry[:server]
   end
 
   # =========================================================================
@@ -100,7 +123,44 @@ class DynamicRuleBuilderTest < Minitest::Test
     assert_instance_of Hash, result
     assert result.key?(:domain_tools), "Result must include :domain_tools"
     assert result.key?(:server_tools), "Result must include :server_tools"
-    assert_includes result[:domain_tools]["data"], "database_tool"
+
+    names = result[:domain_tools]["data"].map { |e| e[:name] }
+    assert_includes names, "database_tool"
+  end
+
+  # =========================================================================
+  # build_server_scoped_domain_rules
+  # =========================================================================
+
+  def test_server_scoped_rules_are_registered
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+
+    github_file_tool = make_tool("get_file_contents", "Get file contents from repo")
+    github_file_tool.define_singleton_method(:mcp) { "github" }
+
+    local_file_tool = make_tool("disk_reader", "Read files on disk")
+
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [github_file_tool, local_file_tool])
+
+    route_kb = kbs[:route]
+    rule_names = route_kb.rules.keys
+
+    assert rule_names.any? { |n| n.include?("file_github_scoped") },
+      "Expected a scoped rule for file+github, got: #{rule_names}"
+  end
+
+  def test_server_scoped_rules_not_created_for_non_mcp_tools
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+
+    local_tool = make_tool("disk_reader", "Read files on disk")
+
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [local_tool])
+
+    route_kb = kbs[:route]
+    rule_names = route_kb.rules.keys
+
+    refute rule_names.any? { |n| n.include?("_scoped") },
+      "No scoped rules should exist for local-only tools"
   end
 
   private

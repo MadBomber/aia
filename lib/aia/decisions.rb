@@ -50,6 +50,11 @@ module AIA
       @tool_activations.map { |a| a[:tool] }.uniq
     end
 
+    # Returns tool activations grouped by MCP server name
+    def activated_tools_by_server
+      @tool_activations.group_by { |a| a[:server] }
+    end
+
     # Returns gate warnings only (excludes blocks)
     def gate_warnings
       @gate_actions.select { |g| g[:action] == "warn" }
