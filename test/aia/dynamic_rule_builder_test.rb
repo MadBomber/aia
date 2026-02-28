@@ -149,6 +149,28 @@ class DynamicRuleBuilderTest < Minitest::Test
       "Expected a scoped rule for file+github, got: #{rule_names}"
   end
 
+  def test_domain_rules_only_activate_local_tools
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+
+    github_file_tool = make_tool("get_file_contents", "Get file contents from repo")
+    github_file_tool.define_singleton_method(:mcp) { "github" }
+
+    local_file_tool = make_tool("disk_reader", "Read files on disk")
+
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [github_file_tool, local_file_tool])
+
+    route_kb = kbs[:route]
+    rule_names = route_kb.rules.keys
+
+    # Domain rules should only create local activation rules
+    assert rule_names.any? { |n| n == "activate_file_local_tools" },
+      "Expected activate_file_local_tools rule, got: #{rule_names}"
+
+    # No domain-only rule for MCP tools
+    refute rule_names.any? { |n| n == "activate_file_github_tools" },
+      "Should NOT have activate_file_github_tools — MCP tools need server mention"
+  end
+
   def test_server_scoped_rules_not_created_for_non_mcp_tools
     kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
 

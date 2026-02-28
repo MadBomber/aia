@@ -136,7 +136,7 @@ module AIA
     def log_tool_domain_mapping(domain_tools)
       return if domain_tools.empty?
 
-      $stderr.puts "\n[KBS] Tool domain mapping:"
+      $stderr.puts "\n[KBS] Tool domain mapping (local tools activate on domain; MCP tools require server mention):"
       domain_tools.each do |domain, tool_entries|
         next if tool_entries.empty?
 
@@ -171,7 +171,7 @@ module AIA
       end
       if tool_acts.any?
         by_server = @decisions.tool_activations.group_by { |a| a[:server] || 'local' }
-        tool_parts = by_server.map { |srv, acts| "#{srv}:#{acts.map { |a| a[:tool] }.join(',')}" }
+        tool_parts = by_server.map { |srv, acts| "#{srv}:#{acts.map { |a| a[:tool] }.uniq.join(',')}" }
         parts << "tools=#{tool_parts.join(' + ')}"
       end
       parts << "mcp=#{mcp_acts.join(',')}" if mcp_acts.any?

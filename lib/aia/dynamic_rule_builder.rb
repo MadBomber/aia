@@ -103,34 +103,31 @@ module AIA
       end
     end
 
-    # Build route KB rules that activate tools when their domain matches
-    # the classified input domain.
+    # Build route KB rules that activate LOCAL tools when their domain
+    # matches the classified input domain. MCP tools are NOT activated
+    # by domain alone — they require their server name to be classified
+    # (via build_mcp_server_route_rules or build_server_scoped_domain_rules).
     #
     # @param kb [KBS::KnowledgeBase] the route KB
     # @param decisions [AIA::Decisions]
-    # @param domain_tools [Hash{String => Array<String>}]
+    # @param domain_tools [Hash{String => Array<Hash>}] domain => [{name:, server:}]
     def build_dynamic_tool_rules(kb, decisions, domain_tools)
       return unless kb
 
       domain_tools.each do |domain, tool_entries|
-        next if tool_entries.empty?
+        local_entries = tool_entries.select { |e| e[:server].nil? }
+        next if local_entries.empty?
 
-        # Group by server to build per-server rules
-        by_server = tool_entries.group_by { |e| e[:server] }
+        names = local_entries.map { |e| e[:name] }.freeze
 
-        by_server.each do |server, entries|
-          names = entries.map { |e| e[:name] }.freeze
-          suffix = server ? "_#{server}" : "_local"
-
-          kb.rule "activate_#{domain}#{suffix}_tools" do
-            on :classification_decision, domain: domain
-            on :tool, name: satisfies { |n| names.include?(n.to_s) }
-            perform do |facts|
-              decisions.add(:tool_activate,
-                tool:   facts[1][:name],
-                server: server,
-                reason: "#{domain} domain (#{server || 'local'})")
-            end
+        kb.rule "activate_#{domain}_local_tools" do
+          on :classification_decision, domain: domain
+          on :tool, name: satisfies { |n| names.include?(n.to_s) }
+          perform do |facts|
+            decisions.add(:tool_activate,
+              tool:   facts[1][:name],
+              server: nil,
+              reason: "#{domain} domain (local)")
           end
         end
       end
