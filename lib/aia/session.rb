@@ -50,21 +50,60 @@ module AIA
       # Eagerly connect MCP servers so the banner shows actual connection status
       connect_mcp_servers
 
-      # Now that both local tools AND MCP tools are loaded, build dynamic routing rules
-      kbs_reg_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      @rule_router.register_tools(all_available_tools)
-      kbs_reg_elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - kbs_reg_start
+      # Build tool filters based on active flags
+      @filters = {}
+      tools = all_available_tools
 
-      @kbs_prep_ms = (@kbs_init_elapsed + kbs_reg_elapsed) * 1000
+      if AIA.config.flags.tool_filter_a
+        kbs_filter = ToolFilter::KBS.new(rule_router: @rule_router, tools: tools)
+        kbs_filter.prep
+        @filters[:kbs] = kbs_filter
+      else
+        # Still need register_tools for evaluate_turn even when KBS filter is off
+        @rule_router.register_tools(tools)
+      end
 
-      # Build TF-IDF tool index if Option B is enabled
-      @tfidf_filter = nil
-      @tfidf_prep_ms = 0.0
       if AIA.config.flags.tool_filter_b
-        tfidf_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         fact_asserter = FactAsserter.new
-        @tfidf_filter = TfidfToolFilter.new(all_available_tools, fact_asserter)
-        @tfidf_prep_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - tfidf_start) * 1000
+        tfidf_filter = ToolFilter::TFIDF.new(tools: tools, fact_asserter: fact_asserter)
+        tfidf_filter.prep
+        @filters[:tfidf] = tfidf_filter
+      end
+
+      if AIA.config.flags.tool_filter_c
+        fact_asserter ||= FactAsserter.new
+        zvec_filter = ToolFilter::Zvec.new(
+          tools: tools, fact_asserter: fact_asserter,
+          db_dir:  AIA.config.paths.aia_dir,
+          load_db: AIA.config.flags.tool_filter_load,
+          save_db: AIA.config.flags.tool_filter_save
+        )
+        zvec_filter.prep
+        @filters[:zvec] = zvec_filter
+      end
+
+      if AIA.config.flags.tool_filter_d
+        fact_asserter ||= FactAsserter.new
+        sqvec_filter = ToolFilter::SqliteVec.new(
+          tools: tools, fact_asserter: fact_asserter,
+          db_dir:  AIA.config.paths.aia_dir,
+          load_db: AIA.config.flags.tool_filter_load,
+          save_db: AIA.config.flags.tool_filter_save
+        )
+        sqvec_filter.prep
+        @filters[:sqlite_vec] = sqvec_filter
+      end
+
+      if AIA.config.flags.tool_filter_e
+        fact_asserter ||= FactAsserter.new
+        lsi_filter = ToolFilter::LSI.new(
+          tools: tools, fact_asserter: fact_asserter,
+          db_dir:  AIA.config.paths.aia_dir,
+          load_db: AIA.config.flags.tool_filter_load,
+          save_db: AIA.config.flags.tool_filter_save
+        )
+        lsi_filter.prep
+        @filters[:lsi] = lsi_filter
       end
 
       # Initialize task coordination if TrakFlow is available
@@ -102,9 +141,7 @@ module AIA
       @directive_processor = DirectiveProcessor.new
       @input_collector     = InputCollector.new
 
-      kbs_init_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @rule_router         = RuleRouter.new
-      @kbs_init_elapsed    = Process.clock_gettime(Process::CLOCK_MONOTONIC) - kbs_init_start
 
       AIA.rule_router      = @rule_router
       @session_tracker     = SessionTracker.new
@@ -126,9 +163,7 @@ module AIA
         @robot, @ui_presenter, @directive_processor, @rule_router,
         session_tracker: @session_tracker,
         alias_registry: @alias_registry,
-        tfidf_filter: @tfidf_filter,
-        kbs_prep_ms: @kbs_prep_ms,
-        tfidf_prep_ms: @tfidf_prep_ms
+        filters: @filters
       )
     end
 

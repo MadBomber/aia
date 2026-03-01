@@ -165,6 +165,11 @@ module AIA
       expert_routing: [:flags, :expert_routing],
       tool_filter_a: [:flags, :tool_filter_a],
       tool_filter_b: [:flags, :tool_filter_b],
+      tool_filter_c: [:flags, :tool_filter_c],
+      tool_filter_d: [:flags, :tool_filter_d],
+      tool_filter_e: [:flags, :tool_filter_e],
+      tool_filter_load: [:flags, :tool_filter_load],
+      tool_filter_save: [:flags, :tool_filter_save],
       concurrent_auto: [:concurrency, :auto],
       # llm section
       temperature: [:llm, :temperature],

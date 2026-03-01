@@ -15,8 +15,7 @@ module AIA
     include ContentExtractor
 
     def initialize(robot, ui_presenter, directive_processor, rule_router,
-                   session_tracker: nil, alias_registry: nil, tfidf_filter: nil,
-                   kbs_prep_ms: 0.0, tfidf_prep_ms: 0.0)
+                   session_tracker: nil, alias_registry: nil, filters: {})
       @robot               = robot
       @ui_presenter        = ui_presenter
       @directive_processor = directive_processor
@@ -25,6 +24,7 @@ module AIA
       @alias_registry      = alias_registry || ModelAliasRegistry.new
       @model_switch_handler = ModelSwitchHandler.new(@alias_registry, @ui_presenter)
       @decision_applier    = DecisionApplier.new(@ui_presenter)
+      @filters             = filters
 
       @streaming_runner = StreamingRunner.new
       @mention_router = MentionRouter.new(
@@ -39,10 +39,8 @@ module AIA
         rule_router: @rule_router
       )
       @tool_filter_strategy = ToolFilterStrategy.new(
-        tfidf_filter: tfidf_filter,
-        ui_presenter: @ui_presenter,
-        kbs_prep_ms: kbs_prep_ms,
-        tfidf_prep_ms: tfidf_prep_ms
+        filters: filters,
+        ui_presenter: @ui_presenter
       )
     end
 
@@ -122,6 +120,7 @@ module AIA
         # Apply KBS decisions: model override, MCP filtering, gate warnings, learning
         applied = @decision_applier.apply(decisions, AIA.config)
         kbs_turn_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - kbs_turn_start) * 1000
+        @filters[:kbs]&.record_turn_ms(kbs_turn_ms)
         if applied.blocked
           @ui_presenter.display_info("Turn blocked by quality gate. Please revise your prompt.")
           next
@@ -154,7 +153,7 @@ module AIA
         log_robot_tools(active_robot)
 
         # Resolve tool list via strategy (A=KBS, B=TF-IDF, or comparison)
-        resolved_tools = @tool_filter_strategy.resolve(processed_prompt, kbs_turn_ms: kbs_turn_ms)
+        resolved_tools = @tool_filter_strategy.resolve(processed_prompt)
         begin
           result, streamed_content, elapsed = @streaming_runner.run(
             active_robot, processed_prompt, tools: resolved_tools

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
-# test/aia/tfidf_tool_filter_test.rb
+# test/aia/tool_filter/tfidf_test.rb
 
-require_relative '../test_helper'
-require_relative '../../lib/aia'
+require_relative '../../test_helper'
+require_relative '../../../lib/aia'
 
-class TfidfToolFilterTest < Minitest::Test
+class ToolFilterTFIDFTest < Minitest::Test
   # =========================================================================
   # Test helpers — mock tool objects
   # =========================================================================
@@ -25,11 +25,16 @@ class TfidfToolFilterTest < Minitest::Test
 
   def build_filter(tools = build_tools, threshold: 0.05, max_tools: 30)
     fact_asserter = AIA::FactAsserter.new
-    AIA::TfidfToolFilter.new(tools, fact_asserter, threshold: threshold, max_tools: max_tools)
+    filter = AIA::ToolFilter::TFIDF.new(
+      tools: tools, fact_asserter: fact_asserter,
+      threshold: threshold, max_tools: max_tools
+    )
+    filter.prep
+    filter
   end
 
   # =========================================================================
-  # Construction
+  # Construction & prep
   # =========================================================================
 
   def test_builds_index_from_tools
@@ -40,6 +45,26 @@ class TfidfToolFilterTest < Minitest::Test
   def test_empty_tools_builds_empty_index
     filter = build_filter([])
     assert_equal 0, filter.tool_count
+  end
+
+  def test_label
+    filter = build_filter
+    assert_equal "TF-IDF", filter.label
+  end
+
+  def test_prep_captures_timing
+    filter = build_filter
+    assert filter.prep_ms > 0.0
+  end
+
+  def test_available_after_prep
+    filter = build_filter
+    assert filter.available?
+  end
+
+  def test_not_available_with_empty_tools
+    filter = build_filter([])
+    refute filter.available?
   end
 
   # =========================================================================
@@ -70,28 +95,30 @@ class TfidfToolFilterTest < Minitest::Test
     filter = build_filter(threshold: 0.99)
     results = filter.filter("something vaguely related")
     # With a very high threshold, few or no tools should match
-    assert results.size <= 2, "Very high threshold should filter aggressively (got #{results.size})"
+    assert results.nil? || results.size <= 2,
+      "Very high threshold should filter aggressively (got #{results&.size})"
   end
 
   def test_max_tools_cap
     filter = build_filter(threshold: 0.0, max_tools: 3)
     results = filter.filter("tools for everything")
-    assert results.size <= 3, "Should cap at max_tools (got #{results.size})"
+    assert results.nil? || results.size <= 3,
+      "Should cap at max_tools (got #{results&.size})"
   end
 
   # =========================================================================
   # Edge cases
   # =========================================================================
 
-  def test_nil_prompt_returns_empty
+  def test_nil_prompt_returns_nil
     filter = build_filter
-    assert_equal [], filter.filter(nil)
+    assert_nil filter.filter(nil)
   end
 
-  def test_empty_prompt_returns_empty
+  def test_empty_prompt_returns_nil
     filter = build_filter
-    assert_equal [], filter.filter("")
-    assert_equal [], filter.filter("   ")
+    assert_nil filter.filter("")
+    assert_nil filter.filter("   ")
   end
 
   def test_tools_with_missing_descriptions
@@ -102,8 +129,9 @@ class TfidfToolFilterTest < Minitest::Test
     filter = build_filter(tools)
     assert_equal 2, filter.tool_count
 
-    results = filter.filter("search for patterns")
-    assert_kind_of Array, results
+    result = filter.filter("search for patterns")
+    # May be nil or an array
+    assert(result.nil? || result.is_a?(Array))
   end
 
   def test_filter_with_scores_returns_hashes

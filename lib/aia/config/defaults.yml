@@ -137,6 +137,11 @@ defaults:
     expert_routing: false
     tool_filter_a: true
     tool_filter_b: false
+    tool_filter_c: false
+    tool_filter_d: false
+    tool_filter_e: false
+    tool_filter_load: false
+    tool_filter_save: false
 
   # ---------------------------------------------------------------------------
   # Logger Configuration

@@ -7,6 +7,7 @@ PATH
       classifier (~> 2.3)
       clipboard
       faraday
+      informers
       kbs (~> 0.2, >= 0.2.1)
       lumberjack
       myway_config
@@ -14,11 +15,13 @@ PATH
       robot_lab (~> 0.0, >= 0.0.9)
       shellwords
       simple_flow
+      sqlite-vec
       trak_flow
       tty-screen
       tty-spinner
       tty-table (~> 0.12)
       word_wrapper
+      zvec
 
 PATH
   remote: /Users/dewayne/sandbox/git_repos/madbomber/kbs/develop
@@ -217,6 +220,9 @@ GEM
       http-2 (>= 1.0.0)
     i18n (1.14.8)
       concurrent-ruby (~> 1.0)
+    informers (1.2.1)
+      onnxruntime (>= 0.9)
+      tokenizers (>= 0.5.3)
     infusible (5.1.0)
       marameters (~> 5.0)
     io-console (0.8.2)
@@ -311,6 +317,7 @@ GEM
     reline (0.6.3)
       io-console (~> 0.5)
     rexml (3.4.4)
+    rice (4.11.2)
     ruby-next-core (1.2.0)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
@@ -365,6 +372,7 @@ GEM
       refinements (~> 14.0)
       versionaire (~> 15.0)
       zeitwerk (~> 2.7)
+    sqlite-vec (0.1.6-arm64-darwin)
     sqlite3 (2.9.1-arm64-darwin)
     strings (0.2.1)
       strings-ansi (~> 0.2)
@@ -439,6 +447,8 @@ GEM
     word_wrapper (0.5.0)
     xdg (10.1.0)
     zeitwerk (2.7.5)
+    zvec (0.0.3)
+      rice (~> 4.11)
 
 PLATFORMS
   arm64-darwin-25
@@ -520,6 +530,7 @@ CHECKSUMS
   http-2 (1.1.2) sha256=8c1cb40203fc60b521c491509fee96c7b08092975eb30036465992433715ed40
   httpx (1.7.2) sha256=10cdcd5b03794de743bec87e8cdba2ca93e2124084b6cdb1ad01b00c192a51f7
   i18n (1.14.8) sha256=285778639134865c5e0f6269e0b818256017e8cde89993fdfcbfb64d088824a5
+  informers (1.2.1) sha256=f686f745f640333b9cbfbb380fcdd62d48cff78b8fd9f33ec2dfed1b5d1ecf6e
   infusible (5.1.0) sha256=1ff82227b67749fc0fb277ad06035c31746825d40817c75a256a972b618250f5
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   io-endpoint (0.17.2) sha256=3feaf766c116b35839c11fac68b6aaadc47887bb488902a57bf8e1d288fb3338
@@ -574,6 +585,7 @@ CHECKSUMS
   regexp_parser (2.11.3) sha256=ca13f381a173b7a93450e53459075c9b76a10433caadcb2f1180f2c741fc55a4
   reline (0.6.3) sha256=1198b04973565b36ec0f11542ab3f5cfeeec34823f4e54cebde90968092b1835
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
+  rice (4.11.2) sha256=0a66ff296a2d3d71f47991a3278e20aa03e0cafaa2fa22ec980f999d112920f5
   robot_lab (0.0.9)
   ruby-next-core (1.2.0) sha256=f6a7d00bb5186cecbb02f7f1845a0f3a2c9788d35b6ccff5c9be3f0d46799b86
   ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
@@ -594,6 +606,7 @@ CHECKSUMS
   simpleidn (0.2.3) sha256=08ce96f03fa1605286be22651ba0fc9c0b2d6272c9b27a260bc88be05b0d2c29
   sod (2.1.0) sha256=768eac6dbd6675f33b54dfd9e9884bc51012497515af3ef5a1941232e06400c7
   spek (5.1.0) sha256=7f4ad0f6016ab0c60d50133bce14a4f59de3ea6b8b2b49e68e59e6130409237a
+  sqlite-vec (0.1.6-arm64-darwin) sha256=5ae47f06d9fe181db5f2fa9e46fbfab0df5e48ad0c4ec204df7a018f175cacb0
   sqlite3 (2.9.1-arm64-darwin) sha256=e0cc5521aa03361e2da56635f3745242510b0b98c4608a3824b7e31ab2e7ffb9
   strings (0.2.1) sha256=933293b3c95cf85b81eb44b3cf673e3087661ba739bbadfeadf442083158d6fb
   strings-ansi (0.2.0) sha256=90262d760ea4a94cc2ae8d58205277a343409c288cbe7c29416b1826bd511c88
@@ -623,6 +636,7 @@ CHECKSUMS
   word_wrapper (0.5.0) sha256=ca636087a979c541508737e2b1742c5763d0fd48168370d76e6fdc4be6f65d3a
   xdg (10.1.0) sha256=a7128ccbed0d80af663587ad1f6e04caee21d5dd5aa6c62e748e3e26d1e24d9c
   zeitwerk (2.7.5) sha256=d8da92128c09ea6ec62c949011b00ed4a20242b255293dd66bf41545398f73dd
+  zvec (0.0.3) sha256=8ba207c8b9e31691a6f1589ff79456f3f9bf48af8852a0c23fe94c0a5f5d0ef4
 
 BUNDLED WITH
   4.0.6
