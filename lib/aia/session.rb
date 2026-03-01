@@ -51,7 +51,21 @@ module AIA
       connect_mcp_servers
 
       # Now that both local tools AND MCP tools are loaded, build dynamic routing rules
+      kbs_reg_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @rule_router.register_tools(all_available_tools)
+      kbs_reg_elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - kbs_reg_start
+
+      @kbs_prep_ms = (@kbs_init_elapsed + kbs_reg_elapsed) * 1000
+
+      # Build TF-IDF tool index if Option B is enabled
+      @tfidf_filter = nil
+      @tfidf_prep_ms = 0.0
+      if AIA.config.flags.tool_filter_b
+        tfidf_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        fact_asserter = FactAsserter.new
+        @tfidf_filter = TfidfToolFilter.new(all_available_tools, fact_asserter)
+        @tfidf_prep_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - tfidf_start) * 1000
+      end
 
       # Initialize task coordination if TrakFlow is available
       initialize_task_coordinator
@@ -87,7 +101,11 @@ module AIA
       @ui_presenter        = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
       @input_collector     = InputCollector.new
+
+      kbs_init_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @rule_router         = RuleRouter.new
+      @kbs_init_elapsed    = Process.clock_gettime(Process::CLOCK_MONOTONIC) - kbs_init_start
+
       AIA.rule_router      = @rule_router
       @session_tracker     = SessionTracker.new
       @alias_registry      = ModelAliasRegistry.new(
@@ -107,7 +125,10 @@ module AIA
       ChatLoop.new(
         @robot, @ui_presenter, @directive_processor, @rule_router,
         session_tracker: @session_tracker,
-        alias_registry: @alias_registry
+        alias_registry: @alias_registry,
+        tfidf_filter: @tfidf_filter,
+        kbs_prep_ms: @kbs_prep_ms,
+        tfidf_prep_ms: @tfidf_prep_ms
       )
     end
 

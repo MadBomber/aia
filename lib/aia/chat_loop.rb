@@ -15,7 +15,8 @@ module AIA
     include ContentExtractor
 
     def initialize(robot, ui_presenter, directive_processor, rule_router,
-                   session_tracker: nil, alias_registry: nil)
+                   session_tracker: nil, alias_registry: nil, tfidf_filter: nil,
+                   kbs_prep_ms: 0.0, tfidf_prep_ms: 0.0)
       @robot               = robot
       @ui_presenter        = ui_presenter
       @directive_processor = directive_processor
@@ -36,6 +37,12 @@ module AIA
         ui_presenter: @ui_presenter,
         tracker: @tracker,
         rule_router: @rule_router
+      )
+      @tool_filter_strategy = ToolFilterStrategy.new(
+        tfidf_filter: tfidf_filter,
+        ui_presenter: @ui_presenter,
+        kbs_prep_ms: kbs_prep_ms,
+        tfidf_prep_ms: tfidf_prep_ms
       )
     end
 
@@ -103,6 +110,7 @@ module AIA
         end
 
         # Rules may modify config before each turn
+        kbs_turn_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         decisions = @rule_router.evaluate_turn(AIA.config, processed_prompt)
 
         # Check for model switch intent (explicit user request takes priority)
@@ -113,6 +121,7 @@ module AIA
 
         # Apply KBS decisions: model override, MCP filtering, gate warnings, learning
         applied = @decision_applier.apply(decisions, AIA.config)
+        kbs_turn_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - kbs_turn_start) * 1000
         if applied.blocked
           @ui_presenter.display_info("Turn blocked by quality gate. Please revise your prompt.")
           next
@@ -144,12 +153,11 @@ module AIA
         # Debug: show actual tools available to the LLM vs KBS-filtered list
         log_robot_tools(active_robot)
 
-        # Standard execution with streaming — pass KBS-filtered tool names
-        # so robot_lab applies them via ToolConfig.filter_tools
-        kbs_tools = AIA.turn_state&.active_tools
+        # Resolve tool list via strategy (A=KBS, B=TF-IDF, or comparison)
+        resolved_tools = @tool_filter_strategy.resolve(processed_prompt, kbs_turn_ms: kbs_turn_ms)
         begin
           result, streamed_content, elapsed = @streaming_runner.run(
-            active_robot, processed_prompt, tools: kbs_tools
+            active_robot, processed_prompt, tools: resolved_tools
           )
         rescue StandardError => e
           @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
@@ -320,11 +328,15 @@ module AIA
     end
 
     # Show the actual tools available to the robot vs what KBS activated.
+    # Only prints when --debug is enabled.
     def log_robot_tools(robot)
+      return unless AIA.debug?
+
       local = Array(robot.local_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
       mcp   = Array(robot.mcp_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
       kbs   = AIA.turn_state&.active_tools
 
+      $stderr.puts "[DEBUG] Tool filter strategy: #{@tool_filter_strategy.active_strategy_label}"
       $stderr.puts "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"
       $stderr.puts "[DEBUG] Robot mcp_tools (#{mcp.size}): #{mcp.join(', ')}"
       $stderr.puts "[DEBUG] KBS active_tools: #{kbs ? kbs.join(', ') : '(none — all tools available)'}"

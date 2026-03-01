@@ -80,6 +80,15 @@ module AIA
           options[:concurrent_auto] = true
         end
 
+        opts.on("-A", "--tool-filter-kbs", "Use KBS rule-based tool filtering (default)") do
+          options[:tool_filter_a] = true
+        end
+
+        opts.on("-B", "--tool-filter-tfidf", "Use TF-IDF similarity-based tool filtering") do
+          options[:tool_filter_b] = true
+          options[:tool_filter_a] = false unless options.key?(:tool_filter_a)
+        end
+
         opts.on("--terse", "[DEPRECATED] No longer supported") do
           warn "Warning: --terse is deprecated and has no effect."
         end

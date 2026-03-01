@@ -135,6 +135,8 @@ defaults:
     consensus: false
     track_pipeline: false
     expert_routing: false
+    tool_filter_a: true
+    tool_filter_b: false
 
   # ---------------------------------------------------------------------------
   # Logger Configuration

@@ -163,6 +163,8 @@ module AIA
       consensus: [:flags, :consensus],
       track_pipeline: [:flags, :track_pipeline],
       expert_routing: [:flags, :expert_routing],
+      tool_filter_a: [:flags, :tool_filter_a],
+      tool_filter_b: [:flags, :tool_filter_b],
       concurrent_auto: [:concurrency, :auto],
       # llm section
       temperature: [:llm, :temperature],
