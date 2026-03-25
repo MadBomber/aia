@@ -7,6 +7,12 @@
 
 ---
 
+> ### 🚀 New: AI Assistant Scheduler (AIAS)
+> **Schedule and automate your AIA prompts!** AIAS is a new Ruby gem that lets you run AIA prompts on a cron-like schedule — perfect for recurring AI tasks, automated reports, and timed workflows.
+> **[View AIAS on GitHub →](https://github.com/madbomber/aias)**
+
+---
+
 <details>
 <summary><strong>Upgrading from v0.x?</strong> Click to see migration notes.</summary>
 
