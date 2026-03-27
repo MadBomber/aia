@@ -68,7 +68,7 @@ class UtilityTest < Minitest::Test
     output = @captured_output.string
 
     # v2 banner format: "AIA v2.0.0 is Online w/ kbs vX.Y.Z"
-    assert_match(/AIA v[\d.]+ is Online/, output)
+    assert_match(/AIA v[\d.a-z]+ is Online/, output)
     assert_includes output, "ruby_llm"
   end
 
@@ -338,7 +338,7 @@ class UtilityTest < Minitest::Test
 
     output = @captured_output.string
     # v2 format: "AIA vX.Y.Z is Online"
-    assert_match(/AIA v[\d.]+ is Online/, output)
+    assert_match(/AIA v[\d.a-z]+ is Online/, output)
 
   ensure
     if original_config_method

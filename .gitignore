@@ -1,6 +1,7 @@
 .aider*
 .aigcm_msg
 *.gem
+Gemfile.lock
 *.rbc
 /.config
 /coverage/

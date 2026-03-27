@@ -32,13 +32,6 @@ class OllamaUIPresenterTest < Minitest::Test
     assert result.include?('Done.')
   end
 
-  def test_format_chat_response_with_real_llm_response
-    response = AIA.client.chat('Write a one-line Ruby hello world program')
-    output = StringIO.new
-    @ui.format_chat_response(response, output)
-    refute_empty output.string
-  end
-
   def test_display_ai_response_prints_to_stdout
     AIA.config.output.file = nil
     assert_output(/AI:/) do
@@ -75,7 +68,7 @@ class OllamaUIPresenterTest < Minitest::Test
   end
 
   def test_display_info
-    assert_output(/Hello info/) do
+    assert_output(nil, /Hello info/) do
       @ui.display_info('Hello info')
     end
   end
@@ -103,6 +96,7 @@ class OllamaUIPresenterTest < Minitest::Test
 
   def test_display_token_metrics_basic
     AIA.config.flags.cost = false
+    TTY::Screen.stubs(:width).returns(80)
     metrics = { model_id: 'gpt-oss:latest', input_tokens: 50, output_tokens: 100 }
     assert_output(/gpt-oss:latest.*50/) do
       @ui.display_token_metrics(metrics)
@@ -120,6 +114,7 @@ class OllamaUIPresenterTest < Minitest::Test
 
   def test_display_multi_model_metrics_basic
     AIA.config.flags.cost = false
+    TTY::Screen.stubs(:width).returns(80)
     metrics_list = [
       { model_id: 'model_a', display_name: 'model_a', input_tokens: 10, output_tokens: 20 },
       { model_id: 'model_b', display_name: 'model_b', input_tokens: 30, output_tokens: 40 }

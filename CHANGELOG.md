@@ -1,4 +1,47 @@
 # Changelog
+## [2.0.0.alpha] - 2026-03-26
+
+### Breaking Changes
+- **New execution engine**: AIA is now powered by `robot_lab` and `kbs`. The `RubyLLMAdapter` and the entire `lib/aia/adapter/` layer have been removed.
+- **`AIA.client` is now a `RobotLab::Robot` or `RobotLab::Network`**, built by `AIA::RobotFactory`. Code that references `AIA::RubyLLMAdapter` directly must be updated.
+- **Removed gems**: `ostruct` and `securerandom` are no longer dependencies.
+
+### New Features
+- **`RobotFactory`**: Single entry point for building the AI backend. Supports single robot, parallel multi-model, consensus network, and pipeline network modes.
+- **`RuleRouter` with multi-KB architecture**: RETE-based rule engine (via `kbs` gem) with five specialized knowledge bases — input classification, model selection, MCP/tool routing, quality gates, and post-response learning.
+- **`NetworkBuilder`**: Extracted network construction for pipeline, parallel, and consensus topologies.
+- **Dynamic model switching**: Mid-session model changes via `ModelSwitchHandler`, `ModelAliasRegistry` (fuzzy name matching), and `HistoryTransfer` (conversation continuity across switches).
+- **`@mention` routing**: `MentionRouter` routes prompts to named robots via `@model-name` syntax in chat.
+- **MCP concurrency**: `McpConnectionManager` maintains persistent stdio connections; `McpDiscovery` and `McpGrouper` classify and route servers by capability.
+- **TrakFlow integration**: `TrakFlowBridge` creates plans from prompt pipelines and tracks task state. New `/trak` directives. TrakFlow MCP server config included.
+- **Advanced RobotLab patterns**:
+  - `VerificationNetwork` — two robots answer independently, a reconciler produces a verified result
+  - `DebateHandler` — multi-round debate between robots with convergence detection (max 5 rounds)
+  - `PromptDecomposer` — breaks complex prompts into parallel subtasks
+  - `ExpertRouter` — KBS-driven routing to domain-specialist robots with tailored model and MCP selection
+  - `SpawnHandler` / `DelegateHandler` — dynamic robot spawning and subtask delegation
+- **Built-in tools**: `DelegateToForemanTool` and `TaskBoardTool` as `RubyLLM::Tool` subclasses.
+- **`DynamicRuleBuilder`**: Generates KBS route rules at runtime from discovered local tools and MCP servers, matching domains to activate the appropriate tools per turn.
+- **Semantic tool filtering**: Multiple backends in `lib/aia/tool_filter/` — KBS, LSI, TF-IDF, sqlite-vec, and zvec.
+- **`SessionTracker` and `TurnState`**: Per-session and per-turn state containers for metrics and cost tracking.
+- **`SystemPromptAssembler`**: Extracted system prompt resolution including role loading.
+- **`RobotNamer`**: Deterministic unique robot name generation.
+
+### Improvements
+- `RobotFactory` decomposed into focused collaborators (`NetworkBuilder`, `ToolLoader`, `ToolFilter`, `SystemPromptAssembler`, `RobotNamer`)
+- `RuleRouter` refactored from single-KB to multi-KB registry with typed `Decisions` struct
+- `FactAsserter` and `DecisionApplier` extracted for testability; `FactAsserter` now supports asserting additional fact types
+- `StreamingRunner` extracted from `ChatLoop`
+- New `rules_dsl.rb` provides a user-facing DSL for writing custom routing rules
+- `ChatLoop` refactored AI response handling for cleaner robot tool execution and logging
+- `ChatLoop` improved empty user input handling — empty input exits cleanly (break) rather than looping
+- `Decisions` gains `group_by_mcp_server` — groups tool activations by their originating MCP server
+
+### Dependencies
+- Added: `robot_lab ~> 0.0, >= 0.0.9`, `kbs ~> 0.2, >= 0.2.1`, `trak_flow`, `classifier`, `zvec`, `sqlite-vec`, `informers`
+- Removed: `ruby_llm` adapter layer (still used transitively via `robot_lab`)
+- `Gemfile.lock` added to `.gitignore`
+
 ## [1.0.0] - 2026-02-22
 
 ### Security Fixes

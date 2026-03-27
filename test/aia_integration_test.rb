@@ -130,7 +130,7 @@ class AIAIntegrationTest < Minitest::Test
     end
 
     # Check for key components without exact version (v2 banner format)
-    assert_match(/AIA v[\d.]+ is Online/, output.first) # Should show robot ASCII art
+    assert_match(/AIA v[\d.a-z]+ is Online/, output.first) # Should show robot ASCII art
   end
 
   def test_batch_mode_with_context_files_workflow

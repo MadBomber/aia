@@ -39,7 +39,7 @@ module OllamaTestHelper
     AIA.config.flags.tokens = false
     AIA.config.flags.consensus = false
 
-    AIA.client = AIA::RubyLLMAdapter.new
+    AIA.client = AIA::RobotFactory.build
   end
 
   # Configure AIA with two instances of the same Ollama model
@@ -60,6 +60,6 @@ module OllamaTestHelper
     AIA.config.flags.tokens = false
     AIA.config.flags.consensus = false
 
-    AIA.client = AIA::RubyLLMAdapter.new
+    AIA.client = AIA::RobotFactory.build
   end
 end
