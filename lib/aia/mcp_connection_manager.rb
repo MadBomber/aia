@@ -17,11 +17,12 @@ module AIA
     attr_reader :connected_clients, :connected_tools, :failed_servers
 
     def initialize
-      @connected_clients = {}
-      @connected_tools   = []
-      @failed_servers    = []
-      @connected         = false
-      @mutex             = Mutex.new
+      @connected_clients    = {}
+      @connected_tools      = []
+      @failed_servers       = []
+      @server_tool_counts   = {}
+      @connected            = false
+      @mutex                = Mutex.new
     end
 
     # Connect all configured MCP servers concurrently.
@@ -85,8 +86,9 @@ module AIA
     #
     # @return [self]
     def update_config
-      AIA.config.connected_mcp_servers = @connected_clients.keys
-      AIA.config.failed_mcp_servers    = @failed_servers
+      AIA.config.connected_mcp_servers  = @connected_clients.keys
+      AIA.config.mcp_server_tool_counts = @server_tool_counts
+      AIA.config.failed_mcp_servers     = @failed_servers
       self
     end
 
@@ -143,7 +145,8 @@ module AIA
           end
 
           @mutex.synchronize do
-            @connected_clients[name] = client
+            @connected_clients[name]  = client
+            @server_tool_counts[name] = tools.size
             @connected_tools.concat(built_tools)
           end
 

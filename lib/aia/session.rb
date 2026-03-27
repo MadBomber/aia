@@ -221,9 +221,9 @@ module AIA
       local + mcp
     end
 
-    # Retrieve MCP tools from the robot (or first robot in a Network).
+    # Retrieve MCP tools from all connected MCP clients.
     def collect_mcp_tools
-      Utility.collect_mcp_tools(@robot)
+      defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients.values.flat_map(&:tools) : []
     end
 
     # Process all prompts in the pipeline via robot.run()

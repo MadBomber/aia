@@ -51,11 +51,16 @@ module AIA
       # Otherwise inherit the full build-time tool set.
       tools_param = tools && !tools.empty? ? tools : :inherit
 
-      result = if robot.is_a?(RobotLab::Network)
-                 robot.run(message: prompt)
-               else
-                 robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
-               end
+      begin
+        result = if robot.is_a?(RobotLab::Network)
+                   robot.run(message: prompt)
+                 else
+                   robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
+                 end
+      rescue Exception
+        @spinner.stop unless header_printed
+        raise
+      end
 
       @spinner.stop unless header_printed
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time

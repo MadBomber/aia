@@ -6,6 +6,8 @@
 require 'robot_lab'
 require 'pm'
 
+require_relative 'aia/patches/ruby_llm_tool_error'
+
 require 'debug_me'
 include DebugMe
 $DEBUG_ME = false

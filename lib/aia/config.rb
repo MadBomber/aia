@@ -60,8 +60,9 @@ module AIA
                   :executable_prompt_content,
                   :tool_names, :loaded_tools,
                   :log_level_override, :log_file_override,
-                  :connected_mcp_servers, # Array of successfully connected MCP server names
-                  :failed_mcp_servers     # Array of {name:, error:} hashes for failed MCP servers
+                  :connected_mcp_servers,  # Array of successfully connected MCP server names
+                  :mcp_server_tool_counts, # Hash of name => tool_count for connected MCP servers
+                  :failed_mcp_servers      # Array of {name:, error:} hashes for failed MCP servers
 
     # ==========================================================================
     # Type Coercion

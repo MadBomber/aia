@@ -21,29 +21,8 @@ module AIA
       # Total count of all available tools (local + MCP)
       def total_tool_count
         local = Array(AIA.config&.loaded_tools).size
-        mcp   = mcp_tool_count
+        mcp   = defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients.sum { |_, c| c.tools.count } : 0
         local + mcp
-      end
-
-      # Collect MCP tools from a robot or first robot in a Network.
-      #
-      # @param robot [RobotLab::Robot, RobotLab::Network, nil] defaults to AIA.client
-      # @return [Array] the MCP tools
-      def collect_mcp_tools(robot = AIA.client)
-        return [] unless robot
-        return Array(robot.mcp_tools) if robot.respond_to?(:mcp_tools)
-
-        if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
-          first = robot.robots.values.first
-          return Array(first.mcp_tools) if first
-        end
-
-        []
-      end
-
-      # Count MCP tools from the robot or first robot in a Network
-      def mcp_tool_count
-        collect_mcp_tools.size
       end
 
       def user_tools?
@@ -59,14 +38,12 @@ module AIA
       # Returns [] when connection was attempted but none succeeded.
       # Falls back to configured names only before connection is attempted.
       def mcp_server_names
-        # If early connection was attempted, return its result (even if empty)
         connected = AIA.config&.connected_mcp_servers
         return connected unless connected.nil?
 
-        # Check the robot's actual client connections
-        robot = AIA.client
-        if robot&.respond_to?(:mcp_clients) && !robot.mcp_clients.empty?
-          return robot.mcp_clients.keys
+        # Live view from RubyLLM::MCP.clients when available
+        if defined?(RubyLLM::MCP) && RubyLLM::MCP.clients.any?
+          return RubyLLM::MCP.clients.keys
         end
 
         # Pre-connection fallback: return configured names
@@ -247,15 +224,36 @@ module AIA
       end
 
       def banner_mcp
-        if mcp_servers?
-          connected = mcp_server_names
-          failed    = failed_mcp_servers.map { |f| f.is_a?(Hash) ? f[:name] || f['name'] : f.to_s }
-          parts = []
-          parts << connected.join(', ') unless connected.empty?
-          parts << "FAILED: #{failed.join(', ')}" unless failed.empty?
-          parts.empty? ? '(none connected)' : parts.join(' | ')
-        else
-          '(none configured)'
+        connected = mcp_client_labels
+        failed    = failed_mcp_servers.map { |f| f.is_a?(Hash) ? f[:name] || f['name'] : f.to_s }
+
+        return '(none configured)' if connected.empty? && failed.empty?
+
+        parts = []
+        parts << connected.join(', ') unless connected.empty?
+        parts << "FAILED: #{failed.join(', ')}" unless failed.empty?
+        parts.join(' | ')
+      end
+
+      # Returns connected MCP client names as "name(tool_count)" strings.
+      # Merges config-tracked names (AIA.config.connected_mcp_servers) with
+      # RubyLLM::MCP.clients (shared_tools). Tool counts come from:
+      #   1. RubyLLM::MCP.clients (shared_tools clients, live)
+      #   2. AIA.config.mcp_server_tool_counts (config clients, captured at connect time)
+      def mcp_client_labels
+        names        = mcp_server_names.to_a
+        ruby_llm     = defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients : {}
+        config_counts = AIA.config&.mcp_server_tool_counts || {}
+
+        all_names = names | ruby_llm.keys
+
+        all_names.map do |name|
+          count = if (c = ruby_llm[name])
+                    c.tools.count
+                  elsif config_counts.key?(name)
+                    config_counts[name]
+                  end
+          count ? "#{name}(#{count})" : name
         end
       end
 
