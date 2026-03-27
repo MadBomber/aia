@@ -1,3 +1,46 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Security Best Practices](#security-best-practices)
+  - [API Key Security](#api-key-security)
+    - [Storage and Management](#storage-and-management)
+    - [Key Permissions and Scope](#key-permissions-and-scope)
+    - [Key Validation and Testing](#key-validation-and-testing)
+  - [Code Execution Directives](#code-execution-directives)
+    - [/ruby Directive](#ruby-directive)
+    - [/shell Directive](#shell-directive)
+    - [ERB Processing](#erb-processing)
+  - [Prompt Security](#prompt-security)
+    - [Input Sanitization](#input-sanitization)
+    - [Prompt Injection Prevention](#prompt-injection-prevention)
+    - [Content Filtering](#content-filtering)
+  - [File System Security](#file-system-security)
+    - [Safe File Operations](#safe-file-operations)
+    - [Directory Traversal Prevention](#directory-traversal-prevention)
+  - [Network Security](#network-security)
+    - [HTTP Request Validation](#http-request-validation)
+    - [Request Rate Limiting](#request-rate-limiting)
+  - [Shell Command Security](#shell-command-security)
+    - [Command Sanitization](#command-sanitization)
+    - [Environment Variable Sanitization](#environment-variable-sanitization)
+  - [Tool and MCP Security](#tool-and-mcp-security)
+    - [Tool Access Control](#tool-access-control)
+    - [MCP Server Configuration Security](#mcp-server-configuration-security)
+    - [Environment-Specific Tips](#environment-specific-tips)
+  - [Monitoring and Auditing](#monitoring-and-auditing)
+    - [Security Logging](#security-logging)
+    - [Usage Monitoring](#usage-monitoring)
+  - [Incident Response](#incident-response)
+    - [Security Incident Detection](#security-incident-detection)
+    - [Automated Response](#automated-response)
+  - [Security Checklist](#security-checklist)
+    - [Pre-deployment Security Review](#pre-deployment-security-review)
+    - [Regular Security Maintenance](#regular-security-maintenance)
+  - [Related Documentation](#related-documentation)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Security Best Practices
 
 Security considerations and best practices for using AIA safely in various environments.

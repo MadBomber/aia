@@ -1,3 +1,43 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [MCP Integration](#mcp-integration)
+  - [Understanding MCP](#understanding-mcp)
+    - [What is MCP?](#what-is-mcp)
+    - [MCP vs RubyLLM Tools](#mcp-vs-rubyllm-tools)
+  - [Enabling MCP Support](#enabling-mcp-support)
+    - [Configuration](#configuration)
+    - [Command Line Usage](#command-line-usage)
+  - [Available MCP Clients](#available-mcp-clients)
+    - [GitHub Integration](#github-integration)
+    - [File System Access](#file-system-access)
+    - [Database Integration](#database-integration)
+  - [Using MCP Clients in Prompts](#using-mcp-clients-in-prompts)
+    - [GitHub Analysis](#github-analysis)
+    - [File System Operations](#file-system-operations)
+    - [Database Schema Analysis](#database-schema-analysis)
+  - [Advanced MCP Integration](#advanced-mcp-integration)
+    - [Multi-Client Workflows](#multi-client-workflows)
+    - [Conditional MCP Usage](#conditional-mcp-usage)
+  - [Custom MCP Client Development](#custom-mcp-client-development)
+    - [Basic MCP Server Structure](#basic-mcp-server-structure)
+    - [Node.js MCP Server](#nodejs-mcp-server)
+  - [MCP Security and Best Practices](#mcp-security-and-best-practices)
+    - [Access Control](#access-control)
+    - [Server Configuration Security](#server-configuration-security)
+    - [Parallel Connections](#parallel-connections)
+  - [Troubleshooting MCP](#troubleshooting-mcp)
+    - [Common Issues](#common-issues)
+      - [Client Connection Failures](#client-connection-failures)
+      - [Protocol Errors](#protocol-errors)
+  - [MCP Examples Repository](#mcp-examples-repository)
+    - [GitHub Repository Analysis](#github-repository-analysis)
+    - [File System Audit](#file-system-audit)
+  - [Related Documentation](#related-documentation)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # MCP Integration
 
 AIA supports Model Context Protocol (MCP) clients, enabling AI models to interact with external services, databases, and applications through standardized interfaces.

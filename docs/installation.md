@@ -1,3 +1,46 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+    - [Required](#required)
+    - [Recommended](#recommended)
+  - [Installation Methods](#installation-methods)
+    - [Method 1: Install from RubyGems (Recommended)](#method-1-install-from-rubygems-recommended)
+    - [Method 2: Install from Source](#method-2-install-from-source)
+    - [Method 3: Using Bundler](#method-3-using-bundler)
+  - [Verify Installation](#verify-installation)
+  - [Initial Setup](#initial-setup)
+    - [1. Create Prompts Directory](#1-create-prompts-directory)
+    - [2. Create Configuration Directory](#2-create-configuration-directory)
+    - [3. Basic Configuration File (Optional)](#3-basic-configuration-file-optional)
+    - [4. Set Up API Keys](#4-set-up-api-keys)
+      - [OpenAI](#openai)
+      - [Anthropic Claude](#anthropic-claude)
+      - [Google Gemini](#google-gemini)
+      - [Ollama (Local models)](#ollama-local-models)
+  - [Optional Dependencies](#optional-dependencies)
+    - [Install fzf for Fuzzy Search](#install-fzf-for-fuzzy-search)
+      - [macOS (using Homebrew)](#macos-using-homebrew)
+      - [Ubuntu/Debian](#ubuntudebian)
+      - [Other systems](#other-systems)
+  - [Testing Your Installation](#testing-your-installation)
+    - [1. Check Available Models](#1-check-available-models)
+    - [2. Test Basic Functionality](#2-test-basic-functionality)
+    - [3. Test Chat Mode](#3-test-chat-mode)
+  - [Troubleshooting](#troubleshooting)
+    - [Common Issues](#common-issues)
+      - ["Command not found: aia"](#command-not-found-aia)
+      - ["No models available"](#no-models-available)
+      - ["fzf not found" warning](#fzf-not-found-warning)
+      - [Permission errors](#permission-errors)
+    - [Getting Help](#getting-help)
+  - [Next Steps](#next-steps)
+  - [Updating AIA](#updating-aia)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Installation
 
 This guide will help you install AIA and get it running on your system.

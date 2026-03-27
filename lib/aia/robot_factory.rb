@@ -6,6 +6,7 @@
 # Builds RobotLab::Robot or RobotLab::Network instances from AIA configuration.
 # Replaces the entire lib/aia/adapter/ directory from v1.
 
+require 'pm'
 require_relative 'robot_namer'
 require_relative 'tool_loader'
 require_relative 'system_prompt_assembler'
@@ -263,6 +264,10 @@ module AIA
             r.request_timeout = 120
           end
         end
+
+        # RobotLab's after_load sets PM.config.prompts_dir to its own default ('prompts').
+        # Restore AIA's configured prompts dir so PM.parse finds the correct files.
+        PM.configure { |c| c.prompts_dir = AIA.config.prompts.dir }
 
         # Configure local provider API endpoints from environment variables
         configure_local_providers(config)

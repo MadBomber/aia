@@ -1,3 +1,53 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Stage 1: Data Preparation](#stage-1-data-preparation)
+- [Data Analysis Pipeline - Stage 1: Preparation](#data-analysis-pipeline---stage-1-preparation)
+  - [Input Data Overview](#input-data-overview)
+  - [Data Quality Assessment](#data-quality-assessment)
+- [Determine analysis approach](#determine-analysis-approach)
+- [Layer 1: Project Context](#layer-1-project-context)
+- [Layer 2: Domain Context](#layer-2-domain-context)
+- [Code Review with Clipboard Content](#code-review-with-clipboard-content)
+  - [Code to Review](#code-to-review)
+  - [Review Guidelines](#review-guidelines)
+- [Multi-format document generator](#multi-format-document-generator)
+- [<%= document_type.capitalize %> Document](#-document_typecapitalize--document)
+  - [Source Material](#source-material)
+  - [Additional Context](#additional-context)
+  - [Clipboard Content (if applicable)](#clipboard-content-if-applicable)
+- [Multi-model analysis system](#multi-model-analysis-system)
+  - [Phase 1: Creative Ideation (High Temperature)](#phase-1-creative-ideation-high-temperature)
+  - [Phase 3: Synthesis and Recommendation](#phase-3-synthesis-and-recommendation)
+  - [Advanced Tool Integration](#advanced-tool-integration)
+    - [Custom Tool Workflows](#custom-tool-workflows)
+- [Analyze content to determine best tools](#analyze-content-to-determine-best-tools)
+- [Multi-Format Report Generator](#multi-format-report-generator)
+  - [1. Executive Summary (Business Format)](#1-executive-summary-business-format)
+  - [2. Technical Detail (Developer Format)](#2-technical-detail-developer-format)
+  - [3. Academic Format (Research Paper Style)](#3-academic-format-research-paper-style)
+  - [4. Action Items (Project Management Format)](#4-action-items-project-management-format)
+- [Structured data extraction](#structured-data-extraction)
+- [Post-process extracted JSON](#post-process-extracted-json)
+- [Robust prompt with fallbacks](#robust-prompt-with-fallbacks)
+- [Output validation system](#output-validation-system)
+- [This will be used to validate the AI response](#this-will-be-used-to-validate-the-ai-response)
+- [Smart caching system](#smart-caching-system)
+- [Intelligent batch processing](#intelligent-batch-processing)
+- [Switch to faster model for large batches](#switch-to-faster-model-for-large-batches)
+- [enterprise_code_review.md](#enterprise_code_reviewmd)
+- [Enterprise Code Review System](#enterprise-code-review-system)
+- [Multi-phase review process](#multi-phase-review-process)
+    - [Intelligent Research Assistant](#intelligent-research-assistant)
+- [Adaptive Research Analysis](#adaptive-research-analysis)
+  - [Query: <%= research_query %>](#query--research_query-)
+- [Dynamic source inclusion based on domain](#dynamic-source-inclusion-based-on-domain)
+  - [Advanced Execution Modes](#advanced-execution-modes)
+  - [Related Documentation](#related-documentation)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Advanced Prompting Techniques
 
 Master sophisticated prompting strategies to get the most out of AIA's capabilities with complex workflows, dynamic content generation, and expert-level AI interactions.

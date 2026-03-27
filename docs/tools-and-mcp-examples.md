@@ -1,3 +1,26 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Tools and MCP Examples](#tools-and-mcp-examples)
+  - [Real-World Tool Examples](#real-world-tool-examples)
+    - [File Processing Tools](#file-processing-tools)
+      - [Advanced Log Analyzer](#advanced-log-analyzer)
+      - [Configuration File Manager](#configuration-file-manager)
+    - [Development Tools](#development-tools)
+      - [Code Quality Analyzer](#code-quality-analyzer)
+  - [MCP Integration Examples](#mcp-integration-examples)
+    - [GitHub Repository Analyzer MCP](#github-repository-analyzer-mcp)
+    - [Database Schema Analyzer MCP](#database-schema-analyzer-mcp)
+  - [Integration Workflows](#integration-workflows)
+    - [Full-Stack Application Analysis](#full-stack-application-analysis)
+    - [DevOps Pipeline Assessment](#devops-pipeline-assessment)
+  - [Advanced Integration Patterns](#advanced-integration-patterns)
+    - [Multi-Environment Consistency Checker](#multi-environment-consistency-checker)
+  - [Related Documentation](#related-documentation)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Tools and MCP Examples
 
 This comprehensive collection showcases real-world examples of RubyLLM tools and MCP client integrations, demonstrating practical applications and advanced techniques.

@@ -1,3 +1,27 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [AIA - AI Assistant](#aia---ai-assistant)
+  - [Key Features](#key-features)
+    - [🚀 Dynamic Prompt Management](#-dynamic-prompt-management)
+    - [🔧 Powerful Integration](#-powerful-integration)
+    - [💬 Interactive Chat Sessions](#-interactive-chat-sessions)
+    - [🎯 Advanced Features](#-advanced-features)
+  - [Quick Start](#quick-start)
+  - [Core Architecture](#core-architecture)
+    - [Component Overview](#component-overview)
+    - [Core Components](#core-components)
+    - [External Dependencies](#external-dependencies)
+  - [Documentation Structure](#documentation-structure)
+    - [Getting Started](#getting-started)
+    - [Guides](#guides)
+    - [Reference](#reference)
+  - [Community & Support](#community--support)
+  - [License](#license)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # AIA - AI Assistant
 
 <table border="0">

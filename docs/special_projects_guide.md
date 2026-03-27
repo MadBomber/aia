@@ -1,3 +1,55 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Special Projects Guide](#special-projects-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Multi-KB Rule Engine](#multi-kb-rule-engine)
+    - [KB Pipeline](#kb-pipeline)
+    - [How It Works](#how-it-works)
+    - [Default Classification Rules](#default-classification-rules)
+    - [Default Quality Gate Rules](#default-quality-gate-rules)
+  - [Dynamic Model Switching](#dynamic-model-switching)
+    - [@mention Routing](#mention-routing)
+    - [Supported Phrases](#supported-phrases)
+    - [How It Works](#how-it-works-1)
+    - [Model Aliases](#model-aliases)
+    - [Custom Aliases](#custom-aliases)
+    - [Conversation History on Switch](#conversation-history-on-switch)
+  - [MCP Server Concurrency](#mcp-server-concurrency)
+    - [Configuration](#configuration)
+    - [Three Ways to Trigger](#three-ways-to-trigger)
+    - [Server Grouping](#server-grouping)
+  - [TrakFlow Integration](#trakflow-integration)
+    - [Setup](#setup)
+    - [Chat Directives](#chat-directives)
+    - [Pipeline Tracking](#pipeline-tracking)
+    - [Session Continuity](#session-continuity)
+  - [Expert Routing](#expert-routing)
+    - [Enable](#enable)
+    - [How It Works](#how-it-works-2)
+    - [Example Flow](#example-flow)
+  - [Verification Networks](#verification-networks)
+    - [Usage](#usage)
+    - [How It Works](#how-it-works-3)
+  - [Prompt Decomposition](#prompt-decomposition)
+    - [Usage](#usage-1)
+    - [How It Works](#how-it-works-4)
+  - [Session Tracking and Learning](#session-tracking-and-learning)
+    - [What's Tracked](#whats-tracked)
+    - [Learning Rules](#learning-rules)
+  - [Configuration Reference](#configuration-reference)
+    - [New Config Sections](#new-config-sections)
+    - [MCP Server Metadata Fields](#mcp-server-metadata-fields)
+  - [Writing Custom Rules](#writing-custom-rules)
+    - [File Naming](#file-naming)
+    - [KB Targeting](#kb-targeting)
+    - [Available KBs](#available-kbs)
+    - [Fact Types](#fact-types)
+    - [Decision Types](#decision-types)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Special Projects Guide
 
 This guide documents the advanced features implemented from the Special Projects roadmap. Each feature builds on AIA v2's architecture of RobotFactory, RuleRouter, ChatLoop, and the directive system.

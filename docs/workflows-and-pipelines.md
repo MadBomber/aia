@@ -1,3 +1,57 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Workflows and Pipelines](#workflows-and-pipelines)
+  - [Understanding Workflows](#understanding-workflows)
+    - [Basic Concepts](#basic-concepts)
+  - [Simple Workflows](#simple-workflows)
+    - [Sequential Processing](#sequential-processing)
+    - [Basic Pipeline](#basic-pipeline)
+  - [Pipeline Definition](#pipeline-definition)
+    - [Command Line Pipelines](#command-line-pipelines)
+    - [Directive-Based Pipelines](#directive-based-pipelines)
+    - [Dynamic Pipeline Generation](#dynamic-pipeline-generation)
+  - [Advanced Workflow Patterns](#advanced-workflow-patterns)
+    - [Conditional Workflows](#conditional-workflows)
+    - [Parallel Processing Workflows](#parallel-processing-workflows)
+    - [Error Recovery Workflows](#error-recovery-workflows)
+  - [State Management in Workflows](#state-management-in-workflows)
+    - [Context Persistence](#context-persistence)
+    - [Data Passing Between Stages](#data-passing-between-stages)
+  - [Current Stage: <%= current_stage.capitalize %>](#current-stage--current_stagecapitalize-)
+  - [Analysis Task](#analysis-task)
+- [Prepare data for next stage (this would be set by the AI response processing)](#prepare-data-for-next-stage-this-would-be-set-by-the-ai-response-processing)
+- [This would typically be saved after AI processing](#this-would-typically-be-saved-after-ai-processing)
+- [master_controller.md](#master_controllermd)
+- [Master Workflow Controller](#master-workflow-controller)
+- [workflow_monitor.md](#workflow_monitormd)
+- [Setup workflow logging](#setup-workflow-logging)
+- [Log workflow start](#log-workflow-start)
+- [model_optimized_workflow.md](#model_optimized_workflowmd)
+- [cached_workflow.md](#cached_workflowmd)
+- [Create cache key from inputs and configuration](#create-cache-key-from-inputs-and-configuration)
+- [software_dev_pipeline.md](#software_dev_pipelinemd)
+- [Software Development Pipeline](#software-development-pipeline)
+  - [Pipeline Stages:](#pipeline-stages)
+- [content_creation_pipeline.md](#content_creation_pipelinemd)
+- [Content Creation Pipeline](#content-creation-pipeline)
+  - [Research Phase](#research-phase)
+- [data_science_workflow.md](#data_science_workflowmd)
+    - [Checkpoints in Interactive Workflows](#checkpoints-in-interactive-workflows)
+  - [Workflow Best Practices](#workflow-best-practices)
+    - [Design Principles](#design-principles)
+    - [Performance Considerations](#performance-considerations)
+    - [Maintenance and Debugging](#maintenance-and-debugging)
+  - [Troubleshooting Workflows](#troubleshooting-workflows)
+    - [Common Issues](#common-issues)
+      - [Workflow Interruption](#workflow-interruption)
+      - [Context Size Issues](#context-size-issues)
+      - [Model Rate Limiting](#model-rate-limiting)
+  - [Related Documentation](#related-documentation)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Workflows and Pipelines
 
 AIA's workflow system allows you to chain prompts together, creating sophisticated multi-stage processes for complex tasks. This enables automated processing pipelines that can handle everything from simple two-step workflows to complex enterprise-level automation.

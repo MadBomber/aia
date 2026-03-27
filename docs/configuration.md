@@ -1,3 +1,43 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Configuration](#configuration)
+  - [Configuration Precedence](#configuration-precedence)
+  - [Configuration Files](#configuration-files)
+    - [Primary Configuration File](#primary-configuration-file)
+  - [Environment Variables](#environment-variables)
+  - [Command Line Arguments](#command-line-arguments)
+  - [Embedded Directives](#embedded-directives)
+  - [Logger Configuration](#logger-configuration)
+    - [Configuration File Settings](#configuration-file-settings)
+    - [CLI Log Level Override](#cli-log-level-override)
+    - [Environment Variables](#environment-variables-1)
+    - [Log Levels](#log-levels)
+    - [Example: File-Based Logging](#example-file-based-logging)
+  - [Advanced Configuration](#advanced-configuration)
+    - [Multi-Model Configuration](#multi-model-configuration)
+    - [Tool Configuration](#tool-configuration)
+    - [MCP Server Configuration](#mcp-server-configuration)
+    - [Prompt Directory Structure](#prompt-directory-structure)
+  - [Configuration Examples](#configuration-examples)
+    - [Development Setup](#development-setup)
+    - [Production Setup](#production-setup)
+    - [Creative Writing Setup](#creative-writing-setup)
+  - [Validation and Troubleshooting](#validation-and-troubleshooting)
+    - [Check Configuration](#check-configuration)
+    - [Validate Settings](#validate-settings)
+    - [Common Issues](#common-issues)
+      - [Model Not Found](#model-not-found)
+      - [Permission Errors](#permission-errors)
+      - [Tool Loading Errors](#tool-loading-errors)
+  - [Configuration Migration](#configuration-migration)
+    - [Updating from Older Versions](#updating-from-older-versions)
+  - [Best Practices](#best-practices)
+  - [Security Considerations](#security-considerations)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Configuration
 
 AIA provides a flexible configuration system with multiple layers of precedence, allowing you to customize behavior at different levels.

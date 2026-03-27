@@ -1,3 +1,56 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+- [Contributing to AIA](#contributing-to-aia)
+  - [Ways to Contribute](#ways-to-contribute)
+    - [1. Report Issues](#1-report-issues)
+    - [2. Submit Code Changes](#2-submit-code-changes)
+    - [3. Improve Documentation](#3-improve-documentation)
+    - [4. Contribute Examples](#4-contribute-examples)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Setting Up Development Environment](#setting-up-development-environment)
+  - [Development Guidelines](#development-guidelines)
+    - [Code Standards](#code-standards)
+      - [Ruby Style Guide](#ruby-style-guide)
+      - [Testing Requirements](#testing-requirements)
+      - [Documentation Standards](#documentation-standards)
+    - [Commit Message Format](#commit-message-format)
+  - [Contributing Examples](#contributing-examples)
+    - [Prompt Examples](#prompt-examples)
+      - [File Structure](#file-structure)
+      - [Prompt Template Format](#prompt-template-format)
+    - [Tool Examples](#tool-examples)
+      - [File Structure](#file-structure-1)
+      - [Tool Template](#tool-template)
+    - [MCP Client Examples](#mcp-client-examples)
+      - [File Structure](#file-structure-2)
+  - [Pull Request Process](#pull-request-process)
+    - [Before Submitting](#before-submitting)
+    - [Submitting the Pull Request](#submitting-the-pull-request)
+    - [Review Process](#review-process)
+  - [Community Guidelines](#community-guidelines)
+    - [Communication](#communication)
+    - [Issue Reporting](#issue-reporting)
+    - [Feature Requests](#feature-requests)
+  - [Security](#security)
+    - [Reporting Security Issues](#reporting-security-issues)
+    - [Security Best Practices](#security-best-practices)
+  - [Recognition](#recognition)
+    - [Contributors](#contributors)
+    - [Types of Recognition](#types-of-recognition)
+  - [Getting Help](#getting-help)
+    - [Development Questions](#development-questions)
+    - [Code Review](#code-review)
+    - [Community Support](#community-support)
+  - [Release Process](#release-process)
+    - [Version Management](#version-management)
+    - [Release Schedule](#release-schedule)
+  - [Thank You!](#thank-you)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 # Contributing to AIA
 
 We welcome contributions to AIA! This guide will help you get started with contributing to the project.
