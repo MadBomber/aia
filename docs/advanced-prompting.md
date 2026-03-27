@@ -21,7 +21,7 @@ if File.exist?(config_file)
 
 ```markdown
 <%
-model = AIA.config.model
+model = AIA.config.models.first&.name
 case model
 when /gpt-4/
 %>
@@ -343,7 +343,7 @@ Tailor prompts for specific model strengths:
 
 ```markdown
 <%
-model = AIA.config.model
+model = AIA.config.models.first&.name
 case model
 when /gpt-4/
   # GPT-4 excels at complex reasoning and code
@@ -563,7 +563,7 @@ Implement smart caching for expensive operations:
 <%=
 require 'digest'
 
-cache_key = Digest::MD5.hexdigest('<%= input_data %>' + AIA.config.model)
+cache_key = Digest::MD5.hexdigest('<%= input_data %>' + AIA.config.models.first&.name)
 cache_file = "/tmp/aia_cache_#{cache_key}.json"
 cache_duration = 3600  # 1 hour
 
@@ -736,6 +736,19 @@ if research_depth == 'comprehensive'
 end
 %>
 ```
+
+## Advanced Execution Modes
+
+In interactive chat sessions, the following directives invoke specialized multi-robot execution modes:
+
+- `/verify` — Generates two independent answers to the same question, then has a third robot reconcile them into a final response.
+- `/decompose` — Breaks a complex prompt into parallel sub-tasks, executes them concurrently, and merges the results.
+- `/debate` — Initiates a multi-round debate between robots with convergence detection; rounds end when agreement is reached or the round limit is hit.
+- `/spawn` — Dynamically spawns a specialist robot to handle a specific subtask without disrupting the current session.
+- `/delegate` — Delegates a subtask to a specialist via TrakFlow for asynchronous handling.
+- `/concurrent` — Enables concurrent MCP server access for the immediately following prompt turn.
+
+These modes are available at the chat prompt and require no additional configuration beyond having the relevant robots or MCP servers set up.
 
 ## Related Documentation
 

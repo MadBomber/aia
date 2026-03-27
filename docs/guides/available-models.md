@@ -1,6 +1,6 @@
 # Available Models
 
-AIA supports a wide range of AI models through the RubyLLM gem. This comprehensive list shows all supported models, their capabilities, and best use cases.
+AIA supports a wide range of AI models via robot_lab orchestration and ruby_llm LLM abstraction. This comprehensive list shows all supported models, their capabilities, and best use cases.
 
 ## Viewing Available Models
 

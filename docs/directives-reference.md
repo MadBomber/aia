@@ -13,7 +13,7 @@ Use `/help` at any time to see all available directives.
 | `/temperature` | `/temp` | Set temperature parameter |
 | `/top_p` | `/topp` | Set top_p parameter |
 | `/cost` | | Dump session cost/token metrics as CSV |
-| `/include` | `/import` | Include content from files (built-in) |
+| `//include` | `//import` | Include file content at prompt load time (prompt_manager, not chat-time) |
 | `/webpage` | `/website`, `/web` | Fetch and include web content |
 | `/skill` | | Include a Claude Code skill |
 | `/skills` | | List available Claude Code skills |
@@ -27,6 +27,7 @@ Use `/help` at any time to see all available directives.
 | `/delegate` | `/del` | Delegate subtasks via TrakFlow plan |
 | `/spawn` | | Spawn a specialist robot |
 | `/tools` | | List available tools |
+| `/rules` | | Show decompiled KBS routing rules (optional filter) |
 | `/mcp` | | MCP server connection status |
 | `/robots` | | Show active robot configuration |
 | `/robot` | | ASCII robot art |
@@ -39,10 +40,10 @@ Use `/help` at any time to see all available directives.
 | `/tasks` | `/tf` | Show TrakFlow ready tasks |
 | `/plan` | | Create a TrakFlow plan |
 | `/task` | | Create a TrakFlow task |
-| `/available_models` | `/am`, `/models`, `/llms` | List available AI models |
+| `/available_models` | `/am`, `/available`, `/all_models`, `/models`, `/llms` | List available AI models |
 | `/compare` | `/cmp` | Compare responses from multiple models |
-| `/next` | | Set next prompt in workflow |
-| `/pipeline` | `/workflow` | Define prompt workflow sequence |
+| `next` | | YAML front matter key: set next prompt in workflow (prompt_manager) |
+| `pipeline` | `workflow` | YAML front matter key: define prompt workflow sequence (prompt_manager) |
 
 ## Directive Syntax
 
@@ -159,25 +160,29 @@ TOTAL,2468,1457,3925,$0.02221,3.1s,
 ## File and Web Directives
 
 ### `/include`
-Include content from files or websites.
+Include content from files into a prompt file.
 
-**Syntax**: `/include path_or_url`
+> **Note**: `/include` (also written as `//include` in prompt files) is handled by the
+> `prompt_manager` gem **during prompt loading**, before AIA processes the prompt.
+> It is NOT a chat-time directive — you cannot type `/include` at the chat prompt and
+> have it evaluated interactively. The inclusion happens when the prompt file is read
+> from disk, so the included content is already present by the time AIA sees the prompt.
 
-**Examples**:
+**Syntax** (inside a `.md` prompt file): `//include path_or_url`
+
+**Examples** (in prompt files):
 ```markdown
-/include README.md
-/include /path/to/config.yml
-/include ~/Documents/notes.md
-/include https://example.com/page
+//include README.md
+//include /path/to/config.yml
+//include ~/Documents/notes.md
 ```
 
 **Features**:
 - Supports tilde (`~`) and environment variable expansion
 - Prevents circular inclusions
-- Can include web pages (requires PUREMD_API_KEY)
 - Handles both absolute and relative file paths
 
-**Aliases**: `/import`
+**Aliases**: `//import`
 
 ### `/paste`
 Insert content from the system clipboard.
@@ -461,38 +466,130 @@ FileReader
 - When no tools match the filter, displays "No tools match the filter: [filter]"
 - Filtering is case-insensitive (e.g., "File", "FILE", and "file" all match)
 
-### `/next`
-Set the next prompt to execute in a workflow.
+### `/rules`
+Show decompiled KBS routing rules across all knowledge bases, with optional substring filtering.
 
-**Syntax**: `/next prompt_id`
+**Syntax**: `/rules [filter]`
+
+**Parameters**:
+- `filter` (optional) - Case-insensitive substring to narrow which rules are displayed
 
 **Examples**:
 ```markdown
-/next analyze_results
-/next generate_report
+/rules              # Show all KBS routing rules
+/rules tool         # Show only rules containing "tool"
+/rules mcp          # Show rules related to MCP routing
+/rules domain       # Show domain-matching rules
 ```
 
-**Usage**:
-- `/next` - Display current next prompt
-- `/next prompt_id` - Set next prompt in workflow
+**Example Output** (unfiltered):
+```
+KBS Rules
+=========
+
+route_kb (3 rules)
+------------------
+
+  rule :route_to_file_tool do
+    condition { input.include?("file") }
+    action    { activate :FileReaderTool }
+  end
+
+  rule :route_to_web_tool do
+    condition { input.include?("http") || input.include?("url") }
+    action    { activate :WebScraperTool }
+  end
+```
+
+**Example Output** (filtered with `/rules tool`):
+```
+KBS Rules (filtered by 'tool')
+===============================
+
+route_kb (2 rules)
+------------------
+
+  rule :route_to_file_tool do
+    condition { input.include?("file") }
+    action    { activate :FileReaderTool }
+  end
+```
+
+**Notes**:
+- Rules are grouped by knowledge base name with a count
+- Each rule's full decompiled source is shown with two-space indentation
+- When no rules match the filter, displays "No rules match the filter: [filter]"
+- When no rule router is available, displays "No rule router available"
+- Filtering is case-insensitive
+
+### `/next`
+Declare the next prompt to execute after this one in a workflow.
+
+> **Note**: `next` is a **YAML front matter key** written at the top of a `.md` prompt
+> file, not a chat-time slash command. It is processed by the prompt loader when the
+> file is read, not interactively during a chat session.
+
+**Syntax** (YAML front matter in a prompt file):
+```yaml
+---
+next: analyze_results
+---
+Your prompt body here.
+```
+
+**Examples** (prompt files with `next` front matter):
+```yaml
+---
+next: generate_report
+---
+Summarize the extracted data.
+```
+
+```yaml
+---
+next: finalize
+---
+Analyze the results and identify key findings.
+```
+
+**Usage**: When AIA finishes running a prompt that has a `next` key in its front
+matter, it automatically loads and executes the named prompt next.
 
 ### `/pipeline`
-Define or modify a prompt workflow sequence.
+Declare an ordered sequence of prompts to run as a workflow.
 
-**Syntax**: `/pipeline prompt1,prompt2,prompt3`
+> **Note**: `pipeline` is a **YAML front matter key** written at the top of a `.md`
+> prompt file, not a chat-time slash command. It is processed by the prompt loader
+> when the file is read, not interactively during a chat session. The alias
+> `workflow` is also accepted as a front matter key.
 
-**Examples**:
-```markdown
-/pipeline extract_data,analyze,report
-/pipeline code_review,optimize,test
+**Syntax** (YAML front matter in a prompt file):
+```yaml
+---
+pipeline: prompt1, prompt2, prompt3
+---
+Your prompt body here.
 ```
 
-**Usage**:
-- `/pipeline` - Display current pipeline
-- `/pipeline prompts` - Set pipeline sequence
-- Can use comma-separated or space-separated prompt IDs
+**Examples** (prompt files with `pipeline` front matter):
+```yaml
+---
+pipeline: extract_data, analyze, report
+---
+Begin the automated data processing workflow.
+```
 
-**Aliases**: `/workflow`
+```yaml
+---
+workflow: code_review, optimize, test
+---
+Start the code quality pipeline.
+```
+
+**Usage**: When AIA loads a prompt that has a `pipeline` (or `workflow`) key in its
+front matter, it queues all listed prompts in order and runs them sequentially.
+
+**Aliases**: `workflow` (as a front matter key)
 
 ### `/mcp`
 Show MCP server connection status and available tools per server.

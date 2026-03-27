@@ -42,6 +42,8 @@ Once in chat mode, you can use these commands:
 - **`/temperature 0.8`**: Adjust creativity level
 - **`/tools`**: List available tools
 - **`/context`**: Show current context
+- **`/rules`**: Show the decompiled KBS routing rules. Accepts an optional filter: `/rules tool`
+- **`/robots`**: List active robots and their `@mention` handles
 
 ### Special Features
 
@@ -77,6 +79,9 @@ which files are over 1 week old?
 ## Advanced Chat Features
 
 ### Multi-Model Conversations
+
+#### @mention Routing
+In a multi-model network, direct your message to a specific robot by prefixing its name with `@` (e.g., `@tobor What do you think?`). Use `/robots` to see active robot names and their `@mention` handles.
 
 #### Consensus Mode
 ```bash

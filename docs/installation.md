@@ -5,7 +5,7 @@ This guide will help you install AIA and get it running on your system.
 ## Prerequisites
 
 ### Required
-- **Ruby**: Version 3.2 or higher
+- **Ruby**: Version >= 4.0.0
 - **RubyGems**: Usually comes with Ruby
 
 ### Recommended
@@ -84,7 +84,6 @@ Create a basic configuration file at `~/.config/aia/aia.yml`:
 # Uses nested structure - see docs/configuration.md for full reference
 
 llm:
-  adapter: ruby_llm
   temperature: 0.7
 
 models:
@@ -141,21 +140,6 @@ apt-get install fzf
 
 #### Other systems
 See the [fzf installation guide](https://github.com/junegunn/fzf#installation).
-
-### Install Additional Ruby Gems
-
-Some features may require additional gems:
-
-```bash
-# For advanced audio processing
-gem install ruby-audio
-
-# For advanced image processing  
-gem install mini_magick
-
-# For enhanced terminal features
-gem install tty-prompt
-```
 
 ## Testing Your Installation
 

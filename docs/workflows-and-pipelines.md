@@ -8,9 +8,21 @@ AIA's workflow system allows you to chain prompts together, creating sophisticat
 
 **Workflow**: A sequence of prompts executed in order, where each prompt can pass context to the next.
 
-**Pipeline**: A predefined sequence of prompt IDs that are executed automatically.
+**Next Prompt**: The immediate next prompt to execute after the current one completes. Specified as a `next` key in the YAML front matter of a `.md` prompt file:
 
-**Next Prompt**: The immediate next prompt to execute after the current one completes.
+```yaml
+---
+next: summary
+---
+```
+
+**Pipeline**: A predefined sequence of prompt IDs specified as a `pipeline` key in YAML front matter, or via `--pipeline` on the command line. These keys are placed at the top of the `.md` prompt file and are processed during prompt loading, not as chat-time directives:
+
+```yaml
+---
+pipeline: analyze_data,generate_insights,write_report
+---
+```
 
 **Context Passing**: Information and results flow from one prompt to the next in the sequence.
 
@@ -19,7 +31,9 @@ AIA's workflow system allows you to chain prompts together, creating sophisticat
 ### Sequential Processing
 ```markdown
 # first_prompt.md
-/next second_prompt
+---
+next: second_prompt
+---
 /config model gpt-4
 
 Analyze the following data and prepare it for detailed analysis:
@@ -62,9 +76,14 @@ aia --model gpt-4 --pipeline "review,optimize,test" code.py
 ```
 
 ### Directive-Based Pipelines
+
+The `pipeline` key is placed in YAML front matter at the top of the prompt file and is processed during prompt loading:
+
 ```markdown
 # pipeline_starter.md
-/pipeline analyze_data,generate_insights,create_visualization,write_report
+---
+pipeline: analyze_data,generate_insights,create_visualization,write_report
+---
 /config model claude-3-sonnet
 
 # Data Analysis Pipeline
@@ -216,7 +235,7 @@ state['current_stage'] = stage_name
 state['data'][stage_name] = {
   'started_at' => Time.now.iso8601,
   'input_file' => '<%= input_file %>',
-  'model' => AIA.config.model
+  'model' => AIA.config.models.first&.name
 }
 
 # Save state
@@ -325,7 +344,7 @@ workflow_id = ENV['WORKFLOW_ID'] || SecureRandom.uuid
 # Log workflow start
 logger.info("Workflow #{workflow_id} started")
 logger.info("Stage: <%= stage_name %>")
-logger.info("Model: #{AIA.config.model}")
+logger.info("Model: #{AIA.config.models.first&.name}")
 logger.info("Input: <%= input_description %>")
 
 start_time = Time.now
@@ -373,7 +392,7 @@ require 'digest'
 cache_inputs = {
   'stage' => '<%= stage_name %>',
   'input_file' => '<%= input_file %>',
-  'model' => AIA.config.model,
+  'model' => AIA.config.models.first&.name,
   'temperature' => AIA.config.temperature
 }
 
@@ -480,6 +499,10 @@ Pipeline optimized for <%= complexity %> analysis with <%= selected_pipeline.len
 /config model claude-3-sonnet
 /config temperature 0.3
 ```
+
+### Checkpoints in Interactive Workflows
+
+In interactive chat-based workflows, use `/checkpoint` to save the current conversation state at a meaningful point, and `/restore` to return to that saved state if a later branch produces unsatisfactory results. This is especially useful when running multi-stage workflows that involve experimental or speculative steps.
 
 ## Workflow Best Practices
 

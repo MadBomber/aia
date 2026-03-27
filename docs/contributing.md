@@ -29,7 +29,7 @@ We welcome contributions to AIA! This guide will help you get started with contr
 ## Getting Started
 
 ### Prerequisites
-- Ruby 3.2+ installed
+- Ruby >= 4.0.0 installed
 - Git for version control
 - Familiarity with AI/LLM concepts
 - Understanding of command-line tools
@@ -192,7 +192,7 @@ docs/examples/mcp/
 1. **Test Your Changes**
    ```bash
    rake test
-   rake integration_test
+   rake integration
    ```
 
 2. **Check Code Quality**
@@ -200,6 +200,7 @@ docs/examples/mcp/
    rubocop
    reek
    ```
+   Note: `rubocop` and `reek` are not bundled dev dependencies. Install them manually if you wish to run these checks.
 
 3. **Update Documentation**
    - Add/update relevant documentation

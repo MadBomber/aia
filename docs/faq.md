@@ -202,7 +202,7 @@ See the [Directives Reference](directives-reference.md) for all available direct
 
 ### Q: Which AI model should I use?
 **A:** It depends on your needs:
-- **GPT-3.5 Turbo**: Fast, cost-effective for simple tasks
+- **GPT-4o Mini**: Fast, cost-effective for simple tasks
 - **GPT-4**: Best quality for complex reasoning
 - **Claude-3 Sonnet**: Great for long documents and analysis
 - **Claude-3 Haiku**: Fast and economical
@@ -216,7 +216,7 @@ aia --model "gpt-4,claude-3-sonnet" my_prompt
 ### Q: How do I reduce token usage and costs?
 **A:**
 - Use shorter prompts when possible
-- Choose appropriate models (GPT-3.5 for simple tasks)
+- Choose appropriate models (`gpt-4o-mini` for simple tasks)
 - Use temperature settings wisely
 - Clear chat context regularly with `/clear`
 
@@ -277,6 +277,12 @@ aia --chat --output conversation.md
 aia --chat --tools ./tools/
 ```
 
+### Q: How do I send a message to just one robot in a multi-model session?
+**A:** Use @mention syntax: prefix the robot's name with `@` (e.g., `@tobor explain this`). Use `/robots` to see the active robots and their names. Only the mentioned robot responds; others stay silent.
+
+### Q: Can I save my place in a conversation and return to it later?
+**A:** Yes, use `/checkpoint name` to create a named checkpoint and `/restore name` to return to it. Use `/checkpoints` to list all checkpoints. `/clear` removes all history and checkpoints.
+
 ### Q: How do I clear chat history?
 **A:** Use the `/clear` command or `/clear` directive:
 ```
@@ -305,7 +311,7 @@ You: /clear
 
 ### Q: Prompts are slow or timing out
 **A:**
-1. Try a faster model like `gpt-3.5-turbo`
+1. Try a faster model like `gpt-4o-mini`
 2. Reduce prompt length or complexity
 3. Check your internet connection
 4. Use `--debug` to see what's happening

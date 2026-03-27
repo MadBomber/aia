@@ -267,7 +267,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '4.0.0'
       - run: gem install aia
       - name: Run Analysis
         run: cat ./prompts/pr_analyzer.md | aia --no-output --no-mcp

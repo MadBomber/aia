@@ -52,6 +52,21 @@ Please answer this question clearly and concisely:
 Provide examples where helpful.
 ```
 
+### Available Directives
+
+Key directives available in prompt files:
+
+- `/config key value` — Set a configuration value for this prompt run
+- `/include path` — Insert the contents of a file at this point
+- `/shell command` — Execute a shell command and insert its output (prompt_manager feature, processed at load time)
+- `/ruby code` — Execute a Ruby one-liner and insert its output
+- `/next prompt_id` — Set the next prompt to run in sequence
+- `/pipeline id1,id2,...` — Define a multi-step prompt pipeline
+- `/paste` — Insert the current system clipboard contents at this point in the conversation
+- `/skill name` — Include a Claude Code skill file by name prefix match
+
+See the [Directives Reference](directives-reference.md) for the full list.
+
 ### Prompts with Directives
 ```markdown
 # ~/.prompts/code_analysis.md
@@ -291,6 +306,10 @@ Current Task:
 
 Please provide guidance consistent with the project architecture and your role as <%= role %>.
 ```
+
+## Chat Session Checkpoints
+
+In interactive chat sessions, use `/checkpoint [name]` to save the current conversation state, `/restore [name]` to return to it, and `/checkpoints` to list all saved checkpoints. `/clear` resets the conversation entirely.
 
 ## Prompt Workflows and Pipelines
 

@@ -72,6 +72,8 @@ The `/shell` directive executes system commands with your user permissions:
 /shell cat /path/to/file
 ```
 
+**Note**: `/shell` is a `prompt_manager` feature processed during prompt file loading, not a chat-time directive. In prompt files it executes shell commands via `//shell`. In interactive chat, use `/ruby` with backtick syntax for shell execution.
+
 **Mitigations**:
 - Same precautions as `/ruby` — only use with trusted prompts
 - Consider the implications of any shell command before running it
@@ -84,6 +86,8 @@ Prompts with `.md` extension are processed through ERB, which also executes Ruby
 The current user is: <%= `whoami`.strip %>
 Today's date is: <%= Date.today %>
 ```
+
+**Note**: ERB templates are always evaluated for `.md` prompt files and cannot be disabled per-prompt. The ERB evaluation context has full access to `ENV`, Ruby's standard library, and backtick shell execution — review prompts from untrusted sources carefully.
 
 **Mitigations**:
 - Review prompt files before running them, especially from untrusted sources

@@ -41,7 +41,9 @@ aia -f
 **Note**: If `fzf` is not installed, AIA will exit with an error.
 
 ### `--terse`
-Adds a special instruction to the prompt asking the AI to keep responses short and to the point.
+**Deprecated.** Accepted for backward compatibility but has no effect.
+
+Formerly added a special instruction to the prompt asking the AI to keep responses short and to the point.
 
 ```bash
 aia --terse my_prompt
@@ -163,15 +165,6 @@ aia --ms playwright --ms filesystem --chat
 **Precedence**: `--no-mcp` overrides `--mcp-skip`. If `--mcp-use` is also specified, `--mcp-skip` is ignored.
 
 ## Adapter Options
-
-### `--adapter ADAPTER`
-Interface that adapts AIA to the LLM. Currently supported: `ruby_llm`
-
-```bash
-aia --adapter ruby_llm
-```
-
-**Valid adapters**: `ruby_llm`
 
 ### `--available-models [QUERY]`
 List (then exit) available models that match the optional query. Query is a comma-separated list of AND components.
@@ -407,7 +400,7 @@ aia --system-prompt code_expert --chat my_code.py
 ```
 
 ### `--regex PATTERN`
-Regex pattern to extract parameters from prompt text.
+**Deprecated.** No longer used; prompt parameters use ERB syntax.
 
 ```bash
 aia --regex '\{\{(\w+)\}\}' my_template_prompt
@@ -669,38 +662,28 @@ Explicitly disable debug output. Sets `$DEBUG_ME = false`.
 aia --no-debug my_prompt
 ```
 
-### `--info`
-Set all loggers to INFO level. Shows informational messages and above.
+### `--log-level LEVEL`
+Set all loggers to the specified level. Only `--debug` / `--no-debug` exist as standalone flags; all other levels are set via this option.
+
+Valid values for LEVEL: `debug`, `info`, `warn`, `error`, `fatal`
 
 ```bash
-aia --info my_prompt
-aia --info --chat
+aia --log-level info my_prompt
+aia --log-level warn --chat
+aia --log-level error my_prompt
+aia --log-level fatal my_prompt
 ```
 
-### `--warn`
-Set all loggers to WARN level (this is the default). Shows warnings, errors, and fatal messages.
+### `--log-to FILE`
+Redirect all logger output to FILE instead of STDOUT.
 
 ```bash
-aia --warn my_prompt
-```
-
-### `--error`
-Set all loggers to ERROR level. Shows only errors and fatal messages.
-
-```bash
-aia --error my_prompt
-aia --error --chat
-```
-
-### `--fatal`
-Set all loggers to FATAL level (least verbose). Shows only critical/fatal messages.
-
-```bash
-aia --fatal my_prompt
+aia --log-to /var/log/aia.log my_prompt
+aia --log-to ~/aia_debug.log --debug --chat
 ```
 
 **Log Level Hierarchy** (from most to least verbose):
-1. `debug` - All messages including detailed debugging information
+1. `debug` - All messages including detailed debugging information (use `--debug` / `--no-debug`)
 2. `info` - Informational messages and above
 3. `warn` - Warnings, errors, and fatal messages (default)
 4. `error` - Only errors and fatal messages

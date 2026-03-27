@@ -311,7 +311,7 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.1
+          ruby-version: 4.0.0
       - name: Install AIA
         run: gem install aia
       - name: Run Analysis

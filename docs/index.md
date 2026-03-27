@@ -211,7 +211,9 @@ graph TD
 - **AIA::PromptHandler** - Main prompt processing orchestrator
 - **AIA::ChatProcessorService** - Interactive chat session management
 - **AIA::DirectiveProcessor** - Processes embedded directives (`/command params`)
-- **AIA::RubyLLMAdapter** - Interfaces with the ruby_llm gem for AI model communication (manages conversation history via RubyLLM's Chat.@messages)
+- **AIA::RubyLLMAdapter** - Replaced in v2 by `RobotFactory` which builds `RobotLab::Robot` or `RobotLab::Network` instances powered by the `robot_lab` and `kbs` gems.
+- **AIA::RobotFactory** - Builds `RobotLab::Robot` or `RobotLab::Network` instances; the primary AI execution backend in v2
+- **AIA::RuleRouter** - RETE-based rule engine (via the `kbs` gem) that routes chat turns and applies KBS decisions per turn
 - **AIA::ShellCommandExecutor** - Executes shell commands safely within prompts
 - **AIA::HistoryManager** - Manages prompt parameter history and user input
 - **AIA::UIPresenter** - Terminal output formatting and presentation
@@ -222,7 +224,9 @@ graph TD
 ### External Dependencies
 
 - **prompt_manager gem** - Core prompt management functionality
-- **ruby_llm gem** - AI model interface layer
+- **robot_lab gem** - Robot/network execution engine (replaces direct ruby_llm usage in v2)
+- **kbs gem** - RETE-based knowledge-based system for rule routing and decision application
+- **ruby_llm gem** - AI model interface layer (used internally by robot_lab)
 - **fzf** - Command-line fuzzy finder (external CLI tool)
 
 ## Documentation Structure

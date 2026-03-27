@@ -7,28 +7,15 @@
 
 ---
 
-<details>
-<summary><strong>Upgrading from v0.x?</strong> Click to see migration notes.</summary>
-
-- **Prompt files** now use `.md` extension. Run `bin/migrate_prompts ~/.prompts` to convert existing prompts.
-- **Environment variables** use double underscore (`__`) for nested config sections (e.g., `AIA_LLM__TEMPERATURE`, `AIA_FLAGS__DEBUG`).
-- **Configuration files** use a nested YAML structure with sections like `llm:`, `prompts:`, `output:`, `flags:`, etc. See [defaults.yml](lib/aia/config/defaults.yml) for the complete schema.
-- **File locations** follow the XDG Base Directory Specification. Config file is now at `~/.config/aia/aia.yml`.
-
-See the [Configuration Guide](https://madbomber.github.io/aia/configuration/) for details.
-
-</details>
-
----
-
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
 
 AIA leverages the following Ruby gems:
 
-- **[pm](https://github.com/madbomber/prompt_manager)** to manage prompts,
-- **[ruby_llm](https://rubyllm.com)** to access LLM providers,
-- **[ruby_llm-mcp](https://www.rubyllm-mcp.com)** for Model Context Protocol (MCP) support,
-- and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use MCP clients and functions for use with LLMs that support tools.
+- **[prompt_manager](https://github.com/madbomber/prompt_manager)** (via `pm`) to manage prompts,
+- **[robot_lab](https://github.com/madbomber/robot_lab)** as the AI execution engine — builds single robots or multi-model networks,
+- **[kbs](https://github.com/madbomber/kbs)** for the RETE-based rule engine that drives input classification, model selection, and tool routing,
+- **[trak_flow](https://github.com/madbomber/trak_flow)** for task tracking and robot-to-robot delegation workflows,
+- and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use tool functions for use with LLMs that support tools.
 
 For more information on AIA visit these locations:
 
@@ -69,15 +56,19 @@ For more information on AIA visit these locations:
 
 ```plain
 
-       ,      ,
-       (\____/) AI Assistant (v1.0.0) is Online
-        (_oo_)   gpt-4o-mini
-         (O)       using ruby_llm
-       __||__    \) model db was last refreshed on
-     [/______\]  /    2025-06-18
-    / \__AI__/ \/      You can share my tools
-   /    /__\
-  (\   /____\
+       ,      ,        AIA v2.0.0.alpha is Online w/ kbs v0.2.1
+       (\____/)
+        (_oo_)         Models: gpt-4o-mini
+         (O)               DB: refreshed 2026-03-19 at 10:56
+       __|||__    \)     Libs: ruby_llm v1.14.0, ruby_llm-mcp v1.0.0, robot_lab v0.0.9,
+     [/ Tobor \]  /            simple_flow v0.3.0, trak_flow v0.1.3, typed_bus v0.0.1
+    / \_______/ \/      Tools: 0 tools loaded
+   /    /___\             MCP: (none configured)
+  (\   /_____\           Crew: @tobor
+     :::     :::
+     :::     :::
+
+Entering interactive chat mode...
 
 ```
 
@@ -149,6 +140,8 @@ Implement a schema registry with event-driven synchronization...
       - [Consensus Mode](#consensus-mode)
       - [Individual Responses Mode](#individual-responses-mode)
       - [Model Information](#model-information)
+      - [@mention Routing](#mention-routing)
+      - [Dynamic Model Switching](#dynamic-model-switching)
     - [Shell Integration](#shell-integration)
     - [Embedded Ruby (ERB)](#embedded-ruby-erb)
     - [Prompt Sequences](#prompt-sequences)
@@ -157,6 +150,8 @@ Implement a schema registry with event-driven synchronization...
       - [Example Workflow](#example-workflow)
     - [Roles and System Prompts](#roles-and-system-prompts)
     - [RubyLLM::Tool Support](#rubyllmtool-support)
+    - [TrakFlow Task Integration](#trakflow-task-integration)
+    - [KBS Rule Engine](#kbs-rule-engine)
     - [MCP Server Configuration](#mcp-server-configuration)
   - [Examples & Tips](#examples--tips)
     - [Practical Examples](#practical-examples)
@@ -196,7 +191,7 @@ Implement a schema registry with event-driven synchronization...
 
 ### Requirements
 
-- **Ruby**: >= 3.2.0
+- **Ruby**: >= 4.0.0
 - **External Tools**:
   - [fzf](https://github.com/junegunn/fzf) - Command-line fuzzy finder
 
@@ -459,27 +454,45 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 
 Directives are special commands in prompt files that begin with `/` and provide dynamic functionality:
 
-| Directive | Description | Example |
-|-----------|-------------|---------|
-| `/config` | Set configuration values | `/config model = gpt-4` |
-| `/context` | Show context for this conversation with checkpoint markers | `/context` |
-| `/checkpoint` | Create a named checkpoint of current context | `/checkpoint save_point` |
-| `/restore` | Restore context to a previous checkpoint | `/restore save_point` |
-| `/include` | Insert file contents | `/include path/to/file.txt` |
-| `/paste` | Insert clipboard contents | `/paste` |
-| `/skill` | Include a Claude Code skill | `/skill code-quality` |
-| `/skills` | List available Claude Code skills | `/skills` |
-| `/shell` | Execute shell commands | `/shell ls -la` |
-| `/robot` | Show the pet robot ASCII art w/versions | `/robot` |
-| `/ruby` | Execute Ruby code | `/ruby puts "Hello World"` |
-| `/next` | Set next prompt in sequence | `/next summary` |
-| `/pipeline` | Set prompt workflow | `/pipeline analyze,summarize,report` |
-| `/clear` | Clear conversation history | `/clear` |
-| `/help` | Show available directives | `/help` |
-| `/model` | Show current model configuration | `/model` |
-| `/available_models` | List available models | `/available_models` |
-| `/tools` | Show available tools (optional filter by name) | `/tools` or `/tools file` |
-| `/review` | Review current context with checkpoint markers | `/review` |
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/config` | `/cfg` | View or set configuration values | `/config model = gpt-4` |
+| `/model` | | View or change the active AI model | `/model gpt-4o` |
+| `/temperature` | `/temp` | Set LLM temperature | `/temperature 0.3` |
+| `/top_p` | `/topp` | Set LLM top_p | `/top_p 0.9` |
+| `/cost` | | Dump per-turn cost/token metrics as CSV | `/cost` |
+| `/available_models` | `/models`, `/llms`, `/am` | List available models | `/available_models` |
+| `/compare` | `/cmp` | Compare responses from multiple models | `/compare` |
+| `/ruby` | `/rb` | Execute Ruby code | `/ruby puts "Hello World"` |
+| `/say` | | Speak a string via text-to-speech | `/say Hello there` |
+| `/concurrent` | `/conc` | Enable concurrent MCP for the next prompt | `/concurrent` |
+| `/verify` | | Verification mode: two independent answers + reconciliation | `/verify` |
+| `/decompose` | | Decompose prompt into parallel sub-tasks | `/decompose` |
+| `/debate` | | Multi-round debate between robots with convergence detection | `/debate` |
+| `/spawn` | | Spawn a specialist robot for a subtask | `/spawn` |
+| `/delegate` | `/del` | Delegate a subtask via TrakFlow | `/delegate` |
+| `/checkpoint` | `/ckp`, `/cp` | Create a named context checkpoint | `/checkpoint save_point` |
+| `/restore` | | Restore context to a previous checkpoint | `/restore save_point` |
+| `/review` | `/context` | Display current context with checkpoint markers | `/review` |
+| `/checkpoints` | | List all available checkpoints | `/checkpoints` |
+| `/clear` | | Clear conversation history and checkpoints | `/clear` |
+| `/include` | | Insert file contents | `/include path/to/file.txt` |
+| `/paste` | | Insert clipboard contents | `/paste` |
+| `/shell` | | Execute a shell command | `/shell ls -la` |
+| `/next` | | Set next prompt in sequence | `/next summary` |
+| `/pipeline` | | Set prompt workflow sequence | `/pipeline analyze,summarize,report` |
+| `/webpage` | `/web`, `/website` | Fetch and insert a webpage's text content | `/webpage https://example.com` |
+| `/skill` | | Include a Claude Code skill | `/skill code-quality` |
+| `/skills` | | List available Claude Code skills | `/skills` |
+| `/tools` | | Show available tools (optional name filter) | `/tools` or `/tools github` |
+| `/mcp` | | Show MCP server connection status | `/mcp` |
+| `/robots` | | Show active robot and network configuration | `/robots` |
+| `/rules` | | Show decompiled KBS routing rules (optional filter) | `/rules` or `/rules tool` |
+| `/robot` | | Display ASCII robot art with version info | `/robot` |
+| `/help` | | Show available directives | `/help` |
+| `/tasks` | `/tf` | Show TrakFlow ready tasks | `/tasks` |
+| `/plan` | | Create a TrakFlow plan from a description | `/plan` |
+| `/task` | | Create a TrakFlow task | `/task` |
 
 Directives can also be used in the interactive chat sessions.
 
@@ -693,6 +706,33 @@ Model Details:
 - **Error Handling**: Invalid models are reported but don't prevent valid models from working
 - **Batch Mode Support**: Multi-model responses are properly formatted in output files
 
+#### @mention Routing
+
+In a multi-model network, direct a prompt to a specific robot by prefixing its name with `@`:
+
+```bash
+aia --chat -m gpt-4o,claude-3-5-sonnet
+
+# Address a specific robot in the network
+> @claude-3-5-sonnet What do you think about this approach?
+
+# All other robots are silent; only the mentioned robot responds
+```
+
+Robot names are derived from the model name. Use `/robots` to see the active crew and their `@mention` handles.
+
+#### Dynamic Model Switching
+
+Switch models mid-session naturally — AIA detects the intent and rebuilds the robot with conversation history preserved:
+
+```bash
+> Switch to claude-3-5-sonnet
+# AIA detects the model-change intent, rebuilds the robot,
+# and transfers the full conversation history automatically.
+```
+
+Use `/model` to see or set the current model explicitly.
+
 #### Token Usage and Cost Tracking
 
 Monitor token consumption and estimate costs across all models with `--tokens` and `--cost`:
@@ -784,16 +824,14 @@ export LMS_API_BASE=http://localhost:1234/v1
 
 #### Listing Local Models
 
-The `/models` directive automatically detects local providers and queries their endpoints:
+The `/available_models` directive (alias: `/models`) lists all models known to the system:
 
 ```bash
 # In a prompt file or chat session
-/models
+/available_models
 
-# Output will show:
-# - Ollama models from http://localhost:11434/api/tags
-# - LM Studio models from http://localhost:1234/v1/models
-# - Cloud models from RubyLLM database
+# Or use the short alias
+/models
 ```
 
 **Benefits of Local Models:**
@@ -1080,7 +1118,38 @@ aia --tools examples/tools/mcp/github_mcp_server.rb --chat
 aia --tools examples/tools/mcp/imcp.rb --chat
 ```
 
-These MCP clients require the `ruby_llm-mcp` gem and provide access to external services and data sources through the Model Context Protocol.
+These MCP clients provide access to external services and data sources through the Model Context Protocol.
+
+### TrakFlow Task Integration
+
+AIA integrates with [TrakFlow](https://github.com/madbomber/trak_flow) for structured task tracking and robot-to-robot delegation.
+
+```bash
+# Create a plan from a description
+> /plan Build a REST API with authentication
+
+# View ready tasks
+> /tasks
+
+# Create an individual task
+> /task Implement the login endpoint
+```
+
+Use `/delegate` to hand off a subtask to a specialist robot — AIA spawns the robot, routes the work, and reports results back into the conversation.
+
+### KBS Rule Engine
+
+AIA's routing decisions are powered by a RETE-based rule engine (`kbs`). Rules classify each user input and decide which model, tools, and MCP servers to activate for the turn. Rules are built from:
+
+- **Static knowledge bases** defined in `lib/aia/rule_router.rb` (input classification, model selection, quality gates)
+- **Dynamic rules** generated at startup by `DynamicRuleBuilder` from discovered tools and MCP server domains
+
+Inspect the active rules at any time:
+
+```bash
+> /rules              # show all rules
+> /rules tool         # filter rules containing "tool"
+```
 
 ### MCP Server Configuration
 
@@ -1194,15 +1263,19 @@ mcp_servers:
 When MCP servers are configured, AIA displays them in the startup robot:
 
 ```
-       ,      ,
-       (\____/) AI Assistant (v1.0.0) is Online
-        (_oo_)   gpt-4o-mini (supports tools)
-         (O)       using ruby_llm
-       __||__    \) model db was last refreshed on
-     [/______\]  /    2025-06-18
-    / \__AI__/ \/      You can share my tools
-   /    /__\              MCP: github, htm
-  (\   /____\
+       ,      ,        AIA v2.0.0.alpha is Online w/ kbs v0.2.1
+       (\____/)
+        (_oo_)         Models: gpt-4o-mini
+         (O)               DB: refreshed 2026-03-19 at 10:56
+       __|||__    \)     Libs: ruby_llm v1.14.0, ruby_llm-mcp v1.0.0, robot_lab v0.0.9,
+     [/ Tobor \]  /            simple_flow v0.3.0, trak_flow v0.1.3, typed_bus v0.0.1
+    / \_______/ \/      Tools: 24 tools loaded
+   /    /___\             MCP: github, htm
+  (\   /_____\           Crew: @tobor
+     :::     :::
+     :::     :::
+
+Entering interactive chat mode...
 ```
 
 Use the `/tools` directive in chat mode to see all available tools including those from MCP servers:
@@ -1575,8 +1648,12 @@ just flay
 
 ### Architecture Notes
 
-**ShellCommandExecutor Refactor:**
-The `ShellCommandExecutor` is now a class (previously a module) with instance variables for cleaner encapsulation. Class-level methods remain for backward compatibility.
+AIA v2 is powered by the `robot_lab` and `kbs` gems. The v1 `RubyLLMAdapter` and `lib/aia/adapter/` layer have been removed.
+
+- **`RobotFactory`** builds `RobotLab::Robot` or `RobotLab::Network` instances. Supports single-robot, parallel multi-model, consensus, and pipeline network modes.
+- **`RuleRouter`** runs a RETE-based rule engine (via `kbs`) with multiple knowledge bases — input classification, model selection, MCP/tool routing, quality gates, and post-response learning.
+- **`DynamicRuleBuilder`** generates KBS routing rules at runtime from discovered local tools and configured MCP servers, matching domains to activate the right tools per turn.
+- `robot_lab` uses `ruby_llm` internally for LLM provider access, so the full model ecosystem remains available.
 
 **Prompt Variable Fallback:**
 Variables are always parsed from prompt text when no `.json` history file exists, ensuring parameter prompting works correctly.

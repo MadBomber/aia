@@ -27,10 +27,9 @@ service:
   name: aia
 
 # LLM Configuration
-# Access: AIA.config.llm.adapter, AIA.config.llm.temperature, etc.
-# Env: AIA_LLM__ADAPTER, AIA_LLM__TEMPERATURE, etc.
+# Access: AIA.config.llm.temperature, etc.
+# Env: AIA_LLM__TEMPERATURE, etc.
 llm:
-  adapter: ruby_llm           # AI adapter to use (currently only ruby_llm)
   temperature: 0.7            # Creativity/randomness (0.0-2.0)
   max_tokens: 2048            # Maximum response length
   top_p: 1.0                  # Nucleus sampling
@@ -109,7 +108,6 @@ flags:
   tokens: false               # Show token usage
   no_mcp: false               # Disable MCP server processing
   speak: false                # Convert text to speech
-  terse: false                # Request shorter AI responses
   shell: true                 # Enable shell integration
   erb: true                   # Enable ERB processing
   clear: false                # Clear conversation history
@@ -165,6 +163,51 @@ paths:
 # Context Files (set at runtime)
 # Access: AIA.config.context_files (array of file paths)
 context_files: []
+
+# Concurrency Configuration
+# Access: AIA.config.concurrency.auto, .independent_servers, .threshold
+# Controls automatic MCP server parallelization.
+concurrency:
+  auto: false                 # Enable automatic MCP concurrency
+  independent_servers: []     # Servers safe to run in parallel
+  threshold: 2                # Minimum servers needed to trigger concurrency
+
+# Rules Configuration (RETE-based KBS rule engine via kbs gem)
+# Access: AIA.config.rules.dir, .enabled, .store, .db_path
+# Env: AIA_RULES__DIR, AIA_RULES__ENABLED, etc.
+rules:
+  dir: ~/.config/aia/rules    # Directory for custom rule files
+  enabled: true               # Enable/disable the rule engine
+  store: memory               # Rule store backend (memory or sqlite)
+  db_path: ~/.config/aia/rules.db  # Path to SQLite rules database
+
+# Model Aliases (short name → full model ID)
+# Access: AIA.config.model_aliases
+# Example: { "gpt4": "gpt-4o", "sonnet": "claude-sonnet-4-20250514" }
+model_aliases: {}
+
+# MCP Server Filtering
+# Access: AIA.config.mcp_use, AIA.config.mcp_skip
+mcp_use: ~                    # Array of MCP server names to activate (nil = all)
+mcp_skip: ~                   # Array of MCP server names to skip
+
+# Tool Filter Flags
+# Access: AIA.config.flags.track_pipeline, AIA.config.flags.expert_routing
+# Env: AIA_FLAGS__TRACK_PIPELINE, AIA_FLAGS__EXPERT_ROUTING, etc.
+# (These belong under flags: but are shown here for reference)
+#
+# flags:
+#   track_pipeline: false     # Track which pipeline prompts are executed
+#   expert_routing: false     # Route chat turns to specialist robots
+#
+# Tool Filter Strategy Flags (A=KBS, B=TF-IDF, C=Zvec, D=SqliteVec, E=LSI)
+#   tool_filter_a: true       # KBS rule-based filter (default ON)
+#   tool_filter_b: false      # TF-IDF cosine similarity filter
+#   tool_filter_c: false      # Zvec HNSW vector DB filter
+#   tool_filter_d: false      # SqliteVec filter
+#   tool_filter_e: false      # LSI (latent semantic indexing) filter
+#   tool_filter_load: false   # Load saved filter model from disk
+#   tool_filter_save: false   # Save filter model to disk after build
 ```
 
 ## Environment Variables
@@ -174,7 +217,6 @@ Use double underscore (`__`) for nested configuration sections:
 
 ```bash
 # LLM settings (nested under llm:)
-export AIA_LLM__ADAPTER="ruby_llm"
 export AIA_LLM__TEMPERATURE="0.8"
 export AIA_LLM__MAX_TOKENS="2048"
 export AIA_LLM__TOP_P="1.0"
@@ -229,7 +271,6 @@ export AIA_FLAGS__FUZZY="false"
 export AIA_FLAGS__TOKENS="true"
 export AIA_FLAGS__NO_MCP="false"
 export AIA_FLAGS__SPEAK="false"
-export AIA_FLAGS__TERSE="false"
 export AIA_FLAGS__SHELL="true"
 export AIA_FLAGS__ERB="true"
 export AIA_FLAGS__CLEAR="false"
@@ -465,7 +506,6 @@ prompts:
 ```yaml
 # ~/.config/aia/aia.yml - Development setup
 llm:
-  adapter: ruby_llm
   temperature: 0.3
 
 models:
@@ -491,7 +531,6 @@ flags:
 ```yaml
 # ~/.config/aia/aia.yml - Production setup
 llm:
-  adapter: ruby_llm
   temperature: 0.7
 
 models:
@@ -520,7 +559,6 @@ flags:
 ```yaml
 # ~/.config/aia/aia.yml - Creative writing
 llm:
-  adapter: ruby_llm
   temperature: 1.1
   max_tokens: 4000
 

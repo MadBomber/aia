@@ -54,8 +54,8 @@ decisions = rule_router.evaluate_turn(config, user_input)
 
 | Rule | Triggers On | Domain |
 |------|------------|--------|
-| `code_request` | refactor, debug, implement, function, class, test, bug, fix | code |
-| `data_request` | query, sql, database, table, schema, migration | data |
+| `code_request` | refactor, debug, implement, function, class, method, test, bug, fix, compile, lint | code |
+| `data_request` | query, sql, database, table, schema, record, select, insert, migration, redis, mongo | data |
 | `image_request` | draw, image, picture, diagram | image |
 | `planning_request` | plan, task, project, roadmap, workflow | planning |
 | `image_context_detection` | .png, .jpg, .gif, .webp, .svg context files | image |
@@ -77,6 +77,13 @@ decisions = rule_router.evaluate_turn(config, user_input)
 ## Dynamic Model Switching
 
 Switch models mid-chat using natural language instead of the formal `/model` directive.
+
+### @mention Routing
+In a multi-model network, route a message to a specific robot by prefixing its registered name with `@`:
+```
+@tobor Explain your reasoning step by step.
+```
+Use `/robots` to see the active crew and their `@mention` handles. The mention router scans the input for `@name` tokens, matches them against robot names, and routes the prompt only to the mentioned robots.
 
 ### Supported Phrases
 
@@ -105,9 +112,11 @@ Short names, provider names, and capability descriptors all resolve to model IDs
 | cheap, gpt4mini | gpt-4o-mini |
 | best | claude-opus-4-20250514 |
 | gemini, flash | gemini-2.0-flash |
+| llama | llama-3.1-70b |
 | anthropic | claude-sonnet-4-20250514 |
 | openai | gpt-4o |
 | google | gemini-2.0-flash |
+| meta | llama-3.1-70b |
 | coding | claude-sonnet-4-20250514 |
 | vision | gpt-4o |
 
