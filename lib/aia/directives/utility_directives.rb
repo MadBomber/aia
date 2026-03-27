@@ -253,19 +253,28 @@ module AIA
       end
     end
 
-    # Retrieve MCP tools from robot or first robot in a Network
+    # Retrieve MCP tools from robot or first robot in a Network.
+    # Falls back to RubyLLM::MCP.clients for tools registered by shared_tools
+    # or other gems that use RubyLLM::MCP.add_client directly.
     def all_mcp_tools
       robot = AIA.client
-      return [] unless robot
+      if robot
+        if robot.respond_to?(:mcp_tools) && robot.mcp_tools&.any?
+          return Array(robot.mcp_tools)
+        end
 
-      return Array(robot.mcp_tools) if robot.respond_to?(:mcp_tools)
-
-      if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
-        first_robot = robot.robots.values.first
-        return Array(first_robot.mcp_tools) if first_robot
+        if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
+          first_robot = robot.robots.values.first
+          if first_robot&.respond_to?(:mcp_tools) && first_robot.mcp_tools&.any?
+            return Array(first_robot.mcp_tools)
+          end
+        end
       end
 
-      []
+      # Fall back to RubyLLM::MCP clients (shared_tools and other gems
+      # that register MCP servers via RubyLLM::MCP.add_client)
+      return [] unless defined?(RubyLLM::MCP)
+      RubyLLM::MCP.clients.values.flat_map(&:tools)
     end
   end
 end

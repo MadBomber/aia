@@ -97,6 +97,48 @@ module AIA
       @connected
     end
 
+    # Whether any tools were collected (from config servers or Ruby require).
+    def any_tools?
+      @connected_tools.any?
+    end
+
+    # Absorb MCP clients registered in RubyLLM::MCP (e.g., via --require loading
+    # shared_tools/mcp/* files) that are not already tracked by this manager.
+    # Starts any unstarted clients, extracts their tools, and merges them into
+    # the connected state so inject_into will include them in the robot.
+    #
+    # @return [self]
+    def absorb_ruby_llm_mcp_clients
+      return self unless defined?(RubyLLM::MCP)
+
+      logger = AIA::LoggerManager.mcp_logger
+
+      RubyLLM::MCP.clients.each do |name, client|
+        next if @connected_clients.key?(name)
+
+        begin
+          client.start unless client.alive?
+
+          if client.alive?
+            tools = client.tools rescue []
+            @mutex.synchronize do
+              @connected_clients[name]  = client
+              @server_tool_counts[name] = tools.size
+              @connected_tools.concat(tools)
+            end
+            logger.info("MCP: absorbed RubyLLM::MCP client '#{name}' (#{tools.size} tools)")
+          else
+            logger.warn("MCP: RubyLLM::MCP client '#{name}' not alive, skipping")
+          end
+        rescue StandardError => e
+          logger.warn("MCP: error absorbing RubyLLM::MCP client '#{name}': #{e.message}")
+        end
+      end
+
+      @connected = true unless RubyLLM::MCP.clients.empty?
+      self
+    end
+
     # Find an MCP client by server name.
     #
     # @param name [String] server name

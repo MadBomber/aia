@@ -21,6 +21,7 @@ module AIA
       # Total count of all available tools (local + MCP)
       def total_tool_count
         local = Array(AIA.config&.loaded_tools).size
+        return local if AIA.config&.flags&.no_mcp
         mcp   = defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients.sum { |_, c| c.tools.count } : 0
         local + mcp
       end
@@ -241,6 +242,8 @@ module AIA
       #   1. RubyLLM::MCP.clients (shared_tools clients, live)
       #   2. AIA.config.mcp_server_tool_counts (config clients, captured at connect time)
       def mcp_client_labels
+        return [] if AIA.config&.flags&.no_mcp
+
         names        = mcp_server_names.to_a
         ruby_llm     = defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients : {}
         config_counts = AIA.config&.mcp_server_tool_counts || {}

@@ -167,18 +167,23 @@ module AIA
       )
     end
 
-    # Connect ALL configured MCP servers eagerly at startup.
+    # Connect ALL configured MCP servers eagerly at startup, then absorb any
+    # MCP clients registered via --require (e.g., shared_tools/mcp/* files).
     # Delegates to MCPConnectionManager which owns all MCP connection state.
     def connect_mcp_servers
+      return if AIA.config.flags.no_mcp
+
       servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
                   @robot.mcp_config
                 else
                   RobotFactory.mcp_server_configs(AIA.config)
                 end
-      return unless servers.is_a?(Array) && servers.any?
 
       @mcp_manager = MCPConnectionManager.new
-      @mcp_manager.connect_all(servers)
+      @mcp_manager.connect_all(servers) if servers.is_a?(Array) && servers.any?
+      @mcp_manager.absorb_ruby_llm_mcp_clients
+      return unless @mcp_manager.any_tools?
+
       @mcp_manager.inject_into(@robot)
       @mcp_manager.update_config
     end
