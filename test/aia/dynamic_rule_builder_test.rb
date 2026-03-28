@@ -280,7 +280,7 @@ class DynamicRuleBuilderTest < Minitest::Test
   # build_keyword_route_rules — persistence
   # =========================================================================
 
-  def test_save_writes_marshal_file
+  def test_save_writes_ruby_file
     Dir.mktmpdir do |dir|
       kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
       tool = make_tool("computer_tool",
@@ -291,12 +291,13 @@ class DynamicRuleBuilderTest < Minitest::Test
         db_dir: dir, save_db: true
       )
 
-      path = File.join(dir, AIA::DynamicRuleBuilder::PERSIST_FILENAME)
+      path = File.join(dir, 'rules', AIA::DynamicRuleBuilder::PERSIST_FILENAME)
       assert File.exist?(path), "Expected #{path} to exist after --save"
+      assert path.end_with?(".rb"), "Expected a .rb file, got: #{path}"
     end
   end
 
-  def test_save_file_contains_valid_keyword_data
+  def test_save_file_contains_valid_ruby_source
     Dir.mktmpdir do |dir|
       kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
       tool = make_tool("computer_tool",
@@ -307,12 +308,16 @@ class DynamicRuleBuilderTest < Minitest::Test
         db_dir: dir, save_db: true
       )
 
-      path = File.join(dir, AIA::DynamicRuleBuilder::PERSIST_FILENAME)
-      data = Marshal.load(File.binread(path))
-      assert_instance_of Hash, data
-      assert data.key?("computer_tool"),
-        "Expected 'computer_tool' in persisted data, got: #{data.keys}"
-      data.each_value { |v| assert_instance_of Set, v }
+      path = File.join(dir, 'rules', AIA::DynamicRuleBuilder::PERSIST_FILENAME)
+      source = File.read(path)
+      assert source.include?("computer_tool"),
+        "Expected 'computer_tool' rule in generated source"
+      assert source.include?("keyword_route_computer_tool"),
+        "Expected rule name in generated source"
+      assert source.include?("Set.new("),
+        "Expected Set literal in generated source"
+      assert source.include?("satisfies"),
+        "Expected satisfies condition in generated source"
     end
   end
 
@@ -395,7 +400,7 @@ class DynamicRuleBuilderTest < Minitest::Test
         # save_db defaults to false
       )
 
-      path = File.join(dir, AIA::DynamicRuleBuilder::PERSIST_FILENAME)
+      path = File.join(dir, 'rules', AIA::DynamicRuleBuilder::PERSIST_FILENAME)
       refute File.exist?(path), "No file should be written when save_db is false"
     end
   end

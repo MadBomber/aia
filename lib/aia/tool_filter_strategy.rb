@@ -169,7 +169,8 @@ module AIA
     def prompt_multi_choice(active)
       options = active.map { |key, _| "[#{meta_for(key)[:letter]}]#{meta_for(key)[:label]}" }
       options << "[M]erge"
-      default_letter = meta_for(active.keys.first)[:letter]
+      default_key    = active.key?(:tfidf) ? :tfidf : active.keys.first
+      default_letter = meta_for(default_key)[:letter]
 
       $stderr.print "  Choose: #{options.join(' / ')} (default: #{default_letter}): "
       input = $stdin.gets
