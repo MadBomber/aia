@@ -37,6 +37,10 @@ Gem::Specification.new do |spec|
   spec.executables    = %w[aia]
   spec.require_paths  = %w[lib]
 
+  # Pin bigdecimal to 4.x — Ruby 4 ships it as a default gem, but some transitive
+  # deps declare >= 3.0 which can cause RubyGems to activate 3.x first.
+  spec.add_dependency 'bigdecimal',   '>= 4.0'
+
   # Core dependencies
   spec.add_dependency 'robot_lab',    '~> 0.0.9'              # Execution engine: robots, networks, tools, MCP, memory
   spec.add_dependency 'kbs',          '~> 0.2.1'              # RETE rule engine for intelligent routing
