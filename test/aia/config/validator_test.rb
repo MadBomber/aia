@@ -103,6 +103,17 @@ class ValidatorContextFilesTest < Minitest::Test
     assert_includes error.message, 'do not exist'
   end
 
+  def test_flag_typo_detection
+    config = OpenStruct.new(context_files: [])
+    AIA.stubs(:good_file?).with('_B').returns(false)
+
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['_B'])
+    end
+    assert_includes error.message, 'Did you mean'
+    assert_includes error.message, '-B'
+  end
+
   def test_does_nothing_with_empty_args
     config = OpenStruct.new(context_files: [])
     AIA::ConfigValidator.send(:validate_and_set_context_files, config, [])

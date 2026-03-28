@@ -73,6 +73,15 @@ module AIA
 
         bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
         if bad_files.any?
+          # Detect likely flag typos: "_B" instead of "-B", "_CD" instead of "-CD", etc.
+          flag_typos = bad_files.select { |f| f.match?(/\A_[A-Za-z]/) }
+          if flag_typos.any?
+            suggestions = flag_typos.map { |f| "-#{f[1..]}" }.join(', ')
+            raise AIA::ConfigurationError,
+                  "Unknown argument(s): #{flag_typos.join(', ')}\n" \
+                  "Did you mean: #{suggestions}?\n" \
+                  "Flags require a dash prefix (e.g., -B not _B)."
+          end
           raise AIA::ConfigurationError, "The following files do not exist: #{bad_files.join(', ')}"
         end
 
