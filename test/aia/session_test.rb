@@ -79,6 +79,17 @@ class SessionTest < Minitest::Test
     super
   end
 
+  def build_pipeline_orchestrator
+    AIA::PipelineOrchestrator.new(
+      robot:           mock('robot'),
+      prompt_handler:  mock('prompt_handler'),
+      input_collector: mock('input_collector'),
+      ui_presenter:    mock('ui'),
+      session_tracker: mock('tracker'),
+      rule_router:     mock('rule_router')
+    )
+  end
+
   def test_initialization
     refute_nil @session
     assert_instance_of AIA::Session, @session
@@ -166,23 +177,26 @@ class SessionTest < Minitest::Test
   end
 
   def test_add_context_files_returns_original_when_no_files
+    orchestrator = build_pipeline_orchestrator
+
     AIA.config.context_files = nil
-    result = @session.send(:add_context_files, 'original text')
+    result = orchestrator.send(:add_context_files, 'original text', AIA.config)
     assert_equal 'original text', result
 
     AIA.config.context_files = []
-    result = @session.send(:add_context_files, 'original text')
+    result = orchestrator.send(:add_context_files, 'original text', AIA.config)
     assert_equal 'original text', result
   end
 
   def test_add_context_files_appends_file_content
+    orchestrator = build_pipeline_orchestrator
     temp_file = Tempfile.new('test_context')
     temp_file.write('File content here')
     temp_file.close
 
     AIA.config.context_files = [temp_file.path]
 
-    result = @session.send(:add_context_files, 'original text')
+    result = orchestrator.send(:add_context_files, 'original text', AIA.config)
     assert_includes result, 'original text'
     assert_includes result, 'File content here'
 

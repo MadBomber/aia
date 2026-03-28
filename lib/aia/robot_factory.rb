@@ -93,29 +93,13 @@ module AIA
         NetworkBuilder.build_concurrent_mcp_network(config, @namer, server_groups)
       end
 
-      # Build a single robot for one model
+      # Build a single robot for one model.
+      # Delegates to RobotBuilder for single-robot construction.
       #
       # @param config [AIA::Config] the AIA configuration
       # @return [RobotLab::Robot]
       def build_single_robot(config)
-        model_spec = config.models.first
-        robot_name = @namer.name_for(model_spec.name)
-        identity = SystemPromptAssembler.build_identity_prompt(robot_name, model_spec, [{ name: robot_name, spec: model_spec }])
-        base_prompt = SystemPromptAssembler.resolve_system_prompt(config, model_spec)
-        system_prompt = [identity, base_prompt].compact.join("\n\n")
-
-        build_opts = {
-          name:          robot_name,
-          system_prompt: system_prompt,
-          model:         model_spec.name,
-          local_tools:   ToolLoader.filtered_tools(config),
-          mcp_servers:   mcp_server_configs(config),
-          on_content:    build_streaming_callback(config),
-          config:        build_run_config(config)
-        }
-        build_opts[:provider] = resolve_provider(model_spec) if model_spec.provider
-
-        RobotLab.build(**build_opts)
+        RobotBuilder.build(config, namer: @namer)
       end
 
       # Build RunConfig from AIA configuration.
@@ -135,95 +119,35 @@ module AIA
         RobotLab::RunConfig.new(**params)
       end
 
-      # Build MCP server configs for robot_lab from AIA config.
+      # Filter and normalize MCP server configs for robot_lab.
+      # Delegates to MCPConfigNormalizer.
       def mcp_server_configs(config)
-        return [] if config.flags.no_mcp
-        servers = config.mcp_servers || []
-        return [] if servers.empty?
-
-        use_list  = Array(config.mcp_use)
-        skip_list = Array(config.mcp_skip)
-
-        if !use_list.empty?
-          servers = servers.select { |s| Utility.server_name(s) }
-                          .select { |s| use_list.include?(Utility.server_name(s)) }
-        elsif !skip_list.empty?
-          servers = servers.reject { |s| skip_list.include?(Utility.server_name(s)) }
-        end
-
-        # KBS-driven MCP filtering (per-turn or startup).
-        # Only applies when user has not explicitly used --mcp-use or --mcp-skip.
-        kbs_active = AIA.turn_state&.active_mcp_servers
-        if kbs_active && !kbs_active.empty? && use_list.empty? && skip_list.empty?
-          servers = servers.select { |s| kbs_active.include?(Utility.server_name(s)) }
-        end
-
-        servers.map { |s| normalize_mcp_config(s) }
+        MCPConfigNormalizer.filter_servers(config)
       end
 
-      # Normalize MCP server config to robot_lab's nested transport format.
-      # McpParser now outputs this format natively; this method provides
-      # backward compatibility for any configs that still use flat format.
+      # Normalize a single MCP server config to robot_lab's nested transport format.
+      # Delegates to MCPConfigNormalizer.
       def normalize_mcp_config(server)
-        server = server.is_a?(Hash) ? server.transform_keys(&:to_sym) : server.to_h.transform_keys(&:to_sym)
-
-        # Already in robot_lab format — pass through
-        return server if server[:transport]
-
-        # Legacy flat format: wrap command/args/env into transport
-        name = server[:name]
-        transport = { type: server[:type] || 'stdio' }
-        transport[:command] = server[:command] if server[:command]
-        transport[:args]    = Array(server[:args]) if server[:args]
-        transport[:env]     = server[:env] if server[:env]
-
-        result = { name: name, transport: transport }
-        result[:timeout] = server[:timeout] if server[:timeout]
-        result
+        MCPConfigNormalizer.normalize(server)
       end
 
       # Initialize shared memory for a network with session context.
-      # Populates data keys that robots can read during execution.
+      # Delegates to NetworkMemoryManager.
       #
       # @param network [RobotLab::Network]
       # @param config [AIA::Config]
       # @return [RobotLab::Network]
       def initialize_network_memory(network, config)
-        return network unless network.respond_to?(:memory)
-
-        memory = network.memory
-        memory.data.session_id  = SecureRandom.hex(8)
-        memory.data.model_count = config.models.size
-        memory.data.model_names = config.models.map(&:name)
-        memory.data.mode        = config.flags.consensus ? :consensus : :parallel
-        memory.data.turn_count  = 0
-
-        network
+        NetworkMemoryManager.initialize_memory(network, config)
       end
 
       # Set up memory subscriptions for debug logging and completion tracking.
+      # Delegates to NetworkMemoryManager.
       #
       # @param network [RobotLab::Network]
       # @param config [AIA::Config]
       def setup_memory_subscriptions(network, config)
-        return unless network.respond_to?(:memory)
-
-        memory = network.memory
-
-        if config.flags.debug
-          memory.subscribe_pattern("result_*") do |change|
-            AIA::LoggerManager.aia_logger.debug(
-              "Memory: #{change.key} by #{change.writer} at #{change.timestamp}"
-            )
-          end
-        end
-
-        memory.set(:completed_count, 0)
-        memory.subscribe_pattern("result_*") do |change|
-          next unless change.created?
-          count = memory.get(:completed_count) || 0
-          memory.set(:completed_count, count + 1)
-        end
+        NetworkMemoryManager.setup_subscriptions(network, config)
       end
 
       # Attach a shared TypedBus message bus to all robots in a network.

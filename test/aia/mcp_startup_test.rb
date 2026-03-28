@@ -73,6 +73,11 @@ class MCPStartupTest < Minitest::Test
     super
   end
 
+  # Helper: create a StartupCoordinator with a given robot for connect_mcp_servers testing
+  def build_coordinator(robot)
+    AIA::StartupCoordinator.new(robot: robot, rule_router: mock('rule_router'), ui_presenter: mock('ui_presenter'))
+  end
+
   # Helper: create a mock robot with mcp_config that returns server configs
   def build_mock_robot(server_configs:)
     mock_robot = mock('robot')
@@ -115,11 +120,7 @@ class MCPStartupTest < Minitest::Test
     server_obj.stubs(:name).returns('serverA')
     client_a.stubs(:server).returns(server_obj)
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     assert_equal ['serverA'], @config.connected_mcp_servers
     assert_equal 1, @config.failed_mcp_servers.size
@@ -219,11 +220,7 @@ class MCPStartupTest < Minitest::Test
     client.stubs(:server).returns(server_obj)
     RobotLab::MCP::Client.stubs(:new).returns(client)
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     entries = AIA::LoggerManager.test_entries(:mcp)
     messages = entries.map(&:message)
@@ -244,11 +241,7 @@ class MCPStartupTest < Minitest::Test
     RobotLab::MCP::Client.stubs(:new).returns(client)
     RobotLab::Tool.stubs(:create).returns(mock('tool'))
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     entries = AIA::LoggerManager.test_entries(:mcp)
     messages = entries.map(&:message)
@@ -265,11 +258,7 @@ class MCPStartupTest < Minitest::Test
     client = build_mock_client(connected: false)
     RobotLab::MCP::Client.stubs(:new).returns(client)
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     entries = AIA::LoggerManager.test_entries(:mcp)
     messages = entries.map(&:message)
@@ -289,11 +278,7 @@ class MCPStartupTest < Minitest::Test
     client.stubs(:server).returns(server_obj)
     RobotLab::MCP::Client.stubs(:new).returns(client)
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     entries = AIA::LoggerManager.test_entries(:mcp)
     messages = entries.map(&:message)
@@ -309,11 +294,7 @@ class MCPStartupTest < Minitest::Test
 
     RobotLab::MCP::Client.stubs(:new).raises(StandardError.new("connection timeout"))
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     entries = AIA::LoggerManager.test_entries(:mcp)
     messages = entries.map(&:message)
@@ -333,11 +314,7 @@ class MCPStartupTest < Minitest::Test
 
     RobotLab::MCP::Client.stubs(:new).raises(StandardError.new("total failure"))
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     refute_nil @config.connected_mcp_servers
     assert_equal [], @config.connected_mcp_servers
@@ -376,11 +353,7 @@ class MCPStartupTest < Minitest::Test
     @config.mcp_servers = []
     @config.flags.no_mcp = false
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     assert_nil @config.connected_mcp_servers
   end
@@ -390,11 +363,7 @@ class MCPStartupTest < Minitest::Test
     mock_robot.stubs(:respond_to?).with(:mcp_config).returns(true)
     mock_robot.stubs(:mcp_config).returns([])
 
-    prompt_handler = mock('prompt_handler')
-    session = AIA::Session.new(prompt_handler)
-    session.instance_variable_set(:@robot, mock_robot)
-
-    session.send(:connect_mcp_servers)
+    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
 
     assert_nil @config.connected_mcp_servers
   end

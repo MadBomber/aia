@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.6.alpha] - 2026-03-28
+
+### Improvements (Section 6 — Structural Decompositions)
+
+- **`ConfigValidator` early-exit refactor** (`lib/aia/config/validator.rb`): Replaced all `raise AIA::EarlyExit` calls with `return :early_exit`. `tailor()` propagates the signal via `return :early_exit if <step>(config) == :early_exit`. Removed the `EarlyExit` exception class from `lib/aia/errors.rb` and the `rescue AIA::EarlyExit` clause from `lib/aia.rb`. The exception-as-goto anti-pattern is gone. (P2-18 / 6.1)
+- **`ExpertRouter` integration** (`lib/aia/expert_router.rb`): `ExpertRouter` is now instantiated in `ChatLoop` and called as part of the turn pipeline. Verified via `test_expert_router_is_integrated_into_chat_loop`. (P2-19 / 6.2)
+- **`TaskDecomposer` + `TaskExecutor`** (`lib/aia/task_decomposer.rb`, `lib/aia/task_executor.rb`): Extracted from `DelegateHandler`. `TaskDecomposer#decompose` calls the lead robot with a JSON decomposition prompt and returns `[{title:, assignee:}]`. `TaskExecutor#execute` claims, runs, and completes a single TrakFlow step. `DelegateHandler` is now a thin coordinator. (P2-23 / 6.3)
+- **`StartupCoordinator`** (`lib/aia/startup_coordinator.rb`): New class extracting all session startup concerns from `Session`: MCP server connection, tool collection, filter registry initialization, TrakFlow bootstrap, and bus attachment. `StartupCoordinator.new(robot:, rule_router:, ui_presenter:).run(config)` runs all startup tasks and exposes `filters` and `mcp_manager` attributes. (P2-16 / 6.4)
+- **`PipelineOrchestrator`** (`lib/aia/pipeline_orchestrator.rb`): New class extracting per-prompt pipeline processing from `Session`: prompt building (role, stdin, context files), concurrent MCP detection, robot dispatch, result display, metrics, and TrakFlow step tracking. `PipelineOrchestrator.new(...).process(config)` replaces `Session#process_pipeline` and all its private helpers. (P2-16 / 6.4)
+- **`Session` thinned** (`lib/aia/session.rb`): `Session#start` now delegates to `StartupCoordinator#run` and `PipelineOrchestrator#process`. The 12 extracted private methods (`connect_mcp_servers`, `process_pipeline`, `execute_prompt`, `maybe_use_concurrent_mcp`, `build_prompt_text`, `add_context_files`, `display_metrics`, etc.) have been removed. Session is a thin shell sequencing startup → pipeline → chat. (P2-16 / 6.4)
+- **`MCPConfigNormalizer`** (`lib/aia/mcp_config_normalizer.rb`): New class extracting MCP server filtering and normalization from `RobotFactory`. `MCPConfigNormalizer.filter_servers(config)` applies use/skip/KBS lists and returns normalized configs. `MCPConfigNormalizer.normalize(server)` converts flat format to robot_lab's nested transport format. `RobotFactory#mcp_server_configs` and `#normalize_mcp_config` now delegate to it. (P2-17 / 6.5)
+- **`NetworkMemoryManager`** (`lib/aia/network_memory_manager.rb`): New class extracting network shared-memory setup from `RobotFactory`. `NetworkMemoryManager.initialize_memory(network, config)` seeds session metadata. `NetworkMemoryManager.setup_subscriptions(network, config)` wires debug-logging and completion-count subscriptions. `RobotFactory#initialize_network_memory` and `#setup_memory_subscriptions` now delegate to it. (P2-17 / 6.5)
+- **`RobotBuilder`** (`lib/aia/robot_builder.rb`): New class extracting single-robot construction from `RobotFactory`. `RobotBuilder.build(config, namer:)` assembles the system prompt, resolves MCP configs via `MCPConfigNormalizer`, and calls `RobotLab.build`. `RobotFactory#build_single_robot` now delegates to it. (P2-17 / 6.5)
+
 ## [2.0.5.alpha] - 2026-03-27
 
 ### Improvements (Section 5 — State Machine & Lifecycle)

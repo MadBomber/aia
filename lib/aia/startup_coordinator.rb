@@ -1,0 +1,100 @@
+# frozen_string_literal: true
+
+# lib/aia/startup_coordinator.rb
+#
+# Handles all session startup tasks: MCP connection, tool loading,
+# filter initialization, task coordination, and bus attachment.
+# Extracted from Session to give Session a single responsibility.
+
+require "fileutils"
+
+module AIA
+  class StartupCoordinator
+    attr_reader :filters, :mcp_manager
+
+    def initialize(robot:, rule_router:, ui_presenter:)
+      @robot       = robot
+      @rule_router = rule_router
+      @ui          = ui_presenter
+      @filters     = {}
+      @mcp_manager = nil
+    end
+
+    # Run all startup coordination tasks.
+    #
+    # @param config [AIA::Config]
+    def run(config)
+      connect_mcp_servers(config)
+      tools    = all_available_tools(config)
+      @filters = ToolFilterRegistry.build_from_config(config, tools, rule_router: @rule_router)
+      initialize_task_coordinator
+      attach_bus_if_network
+    end
+
+    private
+
+    # Connect ALL configured MCP servers eagerly at startup, then absorb any
+    # MCP clients registered via --require (e.g., shared_tools/mcp/* files).
+    # Delegates to MCPConnectionManager which owns all MCP connection state.
+    def connect_mcp_servers(config)
+      return if config.flags.no_mcp
+
+      servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
+                  @robot.mcp_config
+                else
+                  RobotFactory.mcp_server_configs(config)
+                end
+
+      @mcp_manager = MCPConnectionManager.new
+      @mcp_manager.connect_all(servers) if servers.is_a?(Array) && servers.any?
+      @mcp_manager.absorb_ruby_llm_mcp_clients
+      return unless @mcp_manager.connected?
+
+      @mcp_manager.update_config
+      @mcp_manager.inject_into(@robot) if @mcp_manager.any_tools?
+    end
+
+    # Initialize TaskCoordinator, auto-creating the TrakFlow project if needed.
+    def initialize_task_coordinator
+      ensure_trakflow_initialized unless TrakFlow.initialized?
+
+      AIA.task_coordinator = TaskCoordinator.new
+      AIA.task_coordinator.clear!
+    rescue StandardError
+      # TrakFlow coordination is best-effort
+    end
+
+    # Bootstrap a TrakFlow project so the task board is always available.
+    # Uses the default database path (~/.config/trak_flow/tf.db).
+    def ensure_trakflow_initialized
+      trakflow_dir = TrakFlow.trak_flow_dir
+      FileUtils.mkdir_p(trakflow_dir)
+
+      db = TrakFlow::Storage::Database.new
+      db.connect
+
+      TrakFlow.reset_root!
+    end
+
+    # Attach a shared TypedBus to multi-model networks.
+    def attach_bus_if_network
+      return unless @robot.is_a?(RobotLab::Network)
+
+      RobotFactory.attach_bus(@robot)
+    rescue StandardError
+      # Bus attachment is best-effort
+    end
+
+    # Collect all tools available to the robot: local + MCP.
+    def all_available_tools(config)
+      local = Array(config.loaded_tools)
+      mcp   = collect_mcp_tools
+      local + mcp
+    end
+
+    # Retrieve MCP tools from all connected MCP clients.
+    def collect_mcp_tools
+      defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients.values.flat_map(&:tools) : []
+    end
+  end
+end

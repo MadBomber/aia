@@ -31,7 +31,10 @@ require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
 require_relative 'aia/tool_loader'
 require_relative 'aia/system_prompt_assembler'
+require_relative 'aia/mcp_config_normalizer'
+require_relative 'aia/network_memory_manager'
 require_relative 'aia/robot_factory'
+require_relative 'aia/robot_builder'
 require_relative 'aia/directive_processor'
 require_relative 'aia/history_manager'
 require_relative 'aia/ui_presenter'
@@ -72,8 +75,12 @@ require_relative 'aia/task_coordinator'
 require_relative 'aia/tools/task_board_tool'
 require_relative 'aia/tools/delegate_to_foreman_tool'
 require_relative 'aia/debate_handler'
+require_relative 'aia/task_decomposer'
+require_relative 'aia/task_executor'
 require_relative 'aia/delegate_handler'
 require_relative 'aia/spawn_handler'
+require_relative 'aia/startup_coordinator'
+require_relative 'aia/pipeline_orchestrator'
 require_relative 'aia/chat_loop'
 require_relative 'aia/session'
 
@@ -141,7 +148,7 @@ module AIA
       @config = Config.setup(cli_overrides)
 
       # Validate and tailor configuration (handles --dump early exit)
-      ConfigValidator.tailor(@config)
+      return if ConfigValidator.tailor(@config) == :early_exit
 
       # Load Fzf if fuzzy search is enabled and fzf is installed
       if @config.flags.fuzzy
@@ -163,8 +170,6 @@ module AIA
 
       session = Session.new(prompt_handler)
       session.start
-    rescue AIA::EarlyExit
-      # Informational command completed (--dump, --mcp-list, --list-tools, --completion)
     rescue AIA::ConfigurationError => e
       warn e.message
       exit 1

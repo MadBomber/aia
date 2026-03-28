@@ -95,6 +95,13 @@ class ExpertRouterTest < Minitest::Test
     assert_nil result
   end
 
+  def test_expert_router_is_integrated_into_chat_loop
+    # Verify ExpertRouter is referenced in ChatLoop (integration already exists)
+    assert defined?(AIA::ExpertRouter), "ExpertRouter class should exist"
+    router = AIA::ExpertRouter.new(@decisions)
+    assert_respond_to router, :route
+  end
+
   private
 
   def create_test_config

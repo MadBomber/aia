@@ -312,14 +312,14 @@ Repeated `model_exists?` calls with no caching.
 
 ---
 
-## Section 6 — Structural Decompositions (P2)
+## Section 6 — Structural Decompositions (P2) ✓ COMPLETED
 
-**Release tag:** `v2.0.6.alpha`
+**Release tag:** `v2.0.6.alpha` — tagged 2026-03-28
 **Depends on:** Sections 4 (ToolFilterRegistry), 3 (HandlerProtocol)
 
 These are large refactors. Each produces a working, tested replacement before the original is removed.
 
-### 6.1 — Split ConfigValidator into Composable Step Objects
+### 6.1 — Split ConfigValidator into Composable Step Objects ✓
 **Source:** P2-18 | **File:** `config/validator.rb` | **Size:** M
 
 `tailor()` runs 14 sequential steps; some perform I/O, some cause early exit. `EarlyExit` exception used as `goto`.
@@ -330,7 +330,7 @@ These are large refactors. Each produces a working, tested replacement before th
 
 ---
 
-### 6.2 — Integrate or Remove ExpertRouter
+### 6.2 — Integrate or Remove ExpertRouter ✓
 **Source:** P2-19 | **File:** `expert_router.rb` | **Size:** M
 
 `ExpertRouter` compiles but is never instantiated or called. Also duplicates `DecisionApplier#build_temp_robot` logic.
@@ -341,7 +341,7 @@ These are large refactors. Each produces a working, tested replacement before th
 
 ---
 
-### 6.3 — Decouple DelegateHandler
+### 6.3 — Decouple DelegateHandler ✓
 **Source:** P2-23 | **File:** `delegate_handler.rb` | **Size:** M
 
 `DelegateHandler` mixes task decomposition, task execution, and TrakFlow coordination into one class.
@@ -352,7 +352,7 @@ These are large refactors. Each produces a working, tested replacement before th
 
 ---
 
-### 6.4 — Split Session into PipelineOrchestrator + StartupCoordinator
+### 6.4 — Split Session into PipelineOrchestrator + StartupCoordinator ✓
 **Source:** P2-16 | **File:** `session.rb:26-392` | **Size:** L
 
 `Session` has 10+ responsibilities including startup, MCP connection, tool loading, filter initialization, KBS evaluation, and turn orchestration.
@@ -366,7 +366,7 @@ These are large refactors. Each produces a working, tested replacement before th
 
 ---
 
-### 6.5 — Split RobotFactory into Focused Builders
+### 6.5 — Split RobotFactory into Focused Builders ✓
 **Source:** P2-17 | **File:** `robot_factory.rb` | **Size:** L
 
 `RobotFactory` has 13 responsibilities: building robots, networks, concurrent networks, normalizing MCP config, managing network memory, setting up message bus, loading tools, assembling system prompts, configuring RobotLab globally, configuring local providers, resolving provider slugs, transferring history, generating run config.

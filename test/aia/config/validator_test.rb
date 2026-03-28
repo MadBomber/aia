@@ -4,14 +4,14 @@ require_relative '../../test_helper'
 require 'ostruct'
 require 'tmpdir'
 
-# Helper to capture stdout when the block raises an exception (e.g. EarlyExit)
+# Helper to capture stdout when the block raises an exception (e.g. ConfigurationError)
 module ValidatorTestHelpers
   def capture_stdout_through_exception
     old_stdout = $stdout
     $stdout = StringIO.new
     begin
       yield
-    rescue AIA::EarlyExit, AIA::ConfigurationError
+    rescue AIA::ConfigurationError
       # expected
     end
     $stdout.string
@@ -24,7 +24,7 @@ module ValidatorTestHelpers
     $stderr = StringIO.new
     begin
       yield
-    rescue AIA::EarlyExit, AIA::ConfigurationError
+    rescue AIA::ConfigurationError
       # expected
     end
     $stderr.string
@@ -406,11 +406,9 @@ class ValidatorDumpConfigTest < Minitest::Test
         setting: 'value'
       )
 
-      assert_raises(AIA::EarlyExit) do
-        capture_io do
-          AIA::ConfigValidator.send(:handle_dump_config, config)
-        end
-      end
+      result = nil
+      capture_io { result = AIA::ConfigValidator.send(:handle_dump_config, config) }
+      assert_equal :early_exit, result
       assert File.exist?(dump_path)
     end
   end

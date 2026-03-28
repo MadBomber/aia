@@ -27,10 +27,10 @@ module AIA
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
         handle_stdin_as_prompt(config)
-        handle_dump_config(config)
-        handle_mcp_list(config)
-        handle_list_tools(config)
-        handle_completion_script(config)
+        return :early_exit if handle_dump_config(config) == :early_exit
+        return :early_exit if handle_mcp_list(config) == :early_exit
+        return :early_exit if handle_list_tools(config) == :early_exit
+        return :early_exit if handle_completion_script(config) == :early_exit
         validate_required_prompt_id(config)
         process_role_configuration(config)
         handle_fuzzy_search_prompt_id(config)
@@ -173,7 +173,7 @@ module AIA
         return unless config.dump_file
 
         dump_config(config, config.dump_file)
-        raise AIA::EarlyExit
+        return :early_exit
       end
 
       def handle_mcp_list(config)
@@ -199,7 +199,7 @@ module AIA
           end
         end
 
-        raise AIA::EarlyExit
+        return :early_exit
       end
 
       def handle_list_tools(config)
@@ -214,7 +214,7 @@ module AIA
 
         if local_tools.empty? && mcp_tool_groups.empty?
           $stderr.puts "No tools available."
-          raise AIA::EarlyExit
+          return :early_exit
         end
 
         if $stdout.tty?
@@ -223,7 +223,7 @@ module AIA
           list_tools_markdown(local_tools, mcp_tool_groups)
         end
 
-        raise AIA::EarlyExit
+        return :early_exit
       end
 
       def list_tools_terminal(local_tools, mcp_tool_groups)
@@ -429,7 +429,7 @@ module AIA
         return unless config.completion
 
         generate_completion_script(config.completion)
-        raise AIA::EarlyExit
+        return :early_exit
       end
 
       def generate_completion_script(shell)
