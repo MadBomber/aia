@@ -35,11 +35,15 @@ module AIA
     # Called by Session after RobotFactory.build discovers tools.
     #
     # @param tools [Array] loaded tool classes (RubyLLM::Tool subclasses)
-    def register_tools(tools)
+    # @param db_dir [String, nil] directory for keyword rules persist file
+    # @param load_db [Boolean] load persisted keyword data if available
+    # @param save_db [Boolean] persist keyword data to disk after computing
+    def register_tools(tools, db_dir: nil, load_db: false, save_db: false)
       return if tools.nil? || tools.empty? || @tools_registered
 
       result = DynamicRuleBuilder.register(
-        @knowledge_bases, @decisions, @fact_asserter, tools
+        @knowledge_bases, @decisions, @fact_asserter, tools,
+        db_dir: db_dir, load_db: load_db, save_db: save_db
       )
 
       @tools_registered = true

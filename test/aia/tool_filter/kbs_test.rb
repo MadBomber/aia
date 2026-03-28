@@ -18,7 +18,7 @@ class ToolFilterKBSTest < Minitest::Test
 
   def make_rule_router(tools_count: 5)
     router = Object.new
-    router.define_singleton_method(:register_tools) { |tools| }
+    router.define_singleton_method(:register_tools) { |tools, **_kwargs| }
     router
   end
 
@@ -56,12 +56,26 @@ class ToolFilterKBSTest < Minitest::Test
   # prep
   # =========================================================================
 
-  def test_prep_registers_tools
+  def test_prep_registers_tools_with_default_kwargs
     router = mock('rule_router')
-    tools = make_tools(3)
-    router.expects(:register_tools).with(tools).once
+    tools  = make_tools(3)
+    router.expects(:register_tools).with(tools, db_dir: nil, load_db: false, save_db: false).once
 
     filter = AIA::ToolFilter::KBS.new(rule_router: router, tools: tools)
+    filter.prep
+  end
+
+  def test_prep_passes_save_load_flags_to_register_tools
+    router = mock('rule_router')
+    tools  = make_tools(2)
+    router.expects(:register_tools)
+          .with(tools, db_dir: '/tmp/aia', load_db: true, save_db: true)
+          .once
+
+    filter = AIA::ToolFilter::KBS.new(
+      rule_router: router, tools: tools,
+      db_dir: '/tmp/aia', load_db: true, save_db: true
+    )
     filter.prep
   end
 

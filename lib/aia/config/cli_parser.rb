@@ -104,11 +104,11 @@ module AIA
           options[:tool_filter_a] = false unless options.key?(:tool_filter_a)
         end
 
-        opts.on("--load", "Load persisted tool filter databases (-C/-D/-E) from ~/.config/aia/") do
+        opts.on("--load", "Load persisted tool filter databases and KBS keyword rules (-A/-C/-D/-E) from ~/.config/aia/") do
           options[:tool_filter_load] = true
         end
 
-        opts.on("--save", "Save tool filter databases (-C/-D/-E) to ~/.config/aia/") do
+        opts.on("--save", "Save tool filter databases and KBS keyword rules (-A/-C/-D/-E) to ~/.config/aia/") do
           options[:tool_filter_save] = true
         end
 

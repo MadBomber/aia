@@ -26,7 +26,8 @@ class ToolFilterRegistryTest < Minitest::Test
   end
 
   def test_returns_empty_hash_when_no_flags_set
-    @rule_router.expects(:register_tools).with(@tools)
+    @rule_router.expects(:register_tools)
+                .with(@tools, db_dir: '/tmp/test_aia', load_db: false, save_db: false)
 
     result = AIA::ToolFilterRegistry.build_from_config(@base_config, @tools, rule_router: @rule_router)
 
@@ -34,7 +35,9 @@ class ToolFilterRegistryTest < Minitest::Test
   end
 
   def test_registers_tools_with_rule_router_when_kbs_filter_off
-    @rule_router.expects(:register_tools).with(@tools).once
+    @rule_router.expects(:register_tools)
+                .with(@tools, db_dir: '/tmp/test_aia', load_db: false, save_db: false)
+                .once
 
     AIA::ToolFilterRegistry.build_from_config(@base_config, @tools, rule_router: @rule_router)
   end
@@ -44,7 +47,10 @@ class ToolFilterRegistryTest < Minitest::Test
 
     kbs_filter = mock('kbs_filter')
     kbs_filter.expects(:prep).once
-    AIA::ToolFilter::KBS.expects(:new).with(rule_router: @rule_router, tools: @tools).returns(kbs_filter)
+    AIA::ToolFilter::KBS.expects(:new).with(
+      rule_router: @rule_router, tools: @tools,
+      db_dir: '/tmp/test_aia', load_db: false, save_db: false
+    ).returns(kbs_filter)
 
     result = AIA::ToolFilterRegistry.build_from_config(@base_config, @tools, rule_router: @rule_router)
 

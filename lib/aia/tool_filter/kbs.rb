@@ -13,10 +13,16 @@ module AIA
 
       # @param rule_router [RuleRouter] the KBS rule router instance
       # @param tools [Array] tool classes/objects with .name and .description
-      def initialize(rule_router:, tools:)
+      # @param db_dir [String, nil] directory for keyword rules persist file
+      # @param load_db [Boolean] load persisted keyword data if available
+      # @param save_db [Boolean] persist keyword data to disk after computing
+      def initialize(rule_router:, tools:, db_dir: nil, load_db: false, save_db: false)
         super(label: "KBS")
         @rule_router  = rule_router
         @tools        = tools
+        @db_dir       = db_dir
+        @load_db      = load_db
+        @save_db      = save_db
         @last_turn_ms = 0.0
       end
 
@@ -29,7 +35,7 @@ module AIA
       protected
 
       def do_prep
-        @rule_router.register_tools(@tools)
+        @rule_router.register_tools(@tools, db_dir: @db_dir, load_db: @load_db, save_db: @save_db)
         @tool_count = @tools.size
       end
 
