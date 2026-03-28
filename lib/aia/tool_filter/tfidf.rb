@@ -26,27 +26,29 @@ module AIA
         @max_tools     = max_tools
         @tools         = tools
         @tool_entries  = []
+        @tfidf         = nil
+        @tool_vectors  = []
       end
 
       protected
 
       def do_prep
         build_index(@tools)
+        return if @tool_entries.empty?
+
+        tool_texts = @tool_entries.map { |e| e[:description] }
+        @tfidf = Classifier::TFIDF.new
+        @tfidf.fit(tool_texts)
+        @tool_vectors = tool_texts.map { |t| @tfidf.transform(t) }
       end
 
       def do_filter_with_scores(prompt)
-        return [] if @tool_entries.empty? || prompt.nil? || prompt.strip.empty?
+        return [] if @tool_entries.empty? || @tfidf.nil? || prompt.nil? || prompt.strip.empty?
 
-        texts = @tool_entries.map { |e| e[:description] } + [prompt]
-
-        tfidf = Classifier::TFIDF.new
-        tfidf.fit(texts)
-        vectors = texts.map { |t| tfidf.transform(t) }
-
-        prompt_vector = vectors.last
+        query_vector = @tfidf.transform(prompt)
 
         scored = @tool_entries.each_with_index.map do |entry, i|
-          score = cosine_similarity(prompt_vector, vectors[i])
+          score = cosine_similarity(query_vector, @tool_vectors[i])
           { name: entry[:name], score: score }
         end
 

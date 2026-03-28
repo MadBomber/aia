@@ -157,12 +157,33 @@ class ToolFilterTFIDFTest < Minitest::Test
   end
 
   def test_error_in_filter_returns_empty_array_without_raising
-    # Previously the rescue block called `logger.warn` which would raise
-    # NoMethodError. This test verifies the error path returns [] gracefully
-    # using Kernel#warn instead.
+    # The vectorizer is fitted in do_prep (cached). Per-turn, only transform is
+    # called. Stub transform to raise and verify the rescue path returns [].
     filter = build_filter
-    Classifier::TFIDF.any_instance.stubs(:fit).raises(StandardError, "classifier error")
+    filter.instance_variable_get(:@tfidf).stubs(:transform).raises(StandardError, "transform error")
     result = filter.filter_with_scores("some prompt")
     assert_equal [], result
+  end
+
+  def test_tfidf_vectorizer_is_cached_after_prep
+    filter = build_filter
+    tfidf = filter.instance_variable_get(:@tfidf)
+    refute_nil tfidf, "TFIDF vectorizer should be cached after prep"
+    assert_kind_of Classifier::TFIDF, tfidf
+  end
+
+  def test_tool_vectors_are_cached_after_prep
+    filter = build_filter
+    vectors = filter.instance_variable_get(:@tool_vectors)
+    refute_empty vectors, "Tool vectors should be cached after prep"
+    assert_equal 7, vectors.size
+  end
+
+  def test_vectorizer_not_recreated_per_turn
+    filter = build_filter
+    tfidf_before = filter.instance_variable_get(:@tfidf)
+    filter.filter_with_scores("search for a file")
+    tfidf_after = filter.instance_variable_get(:@tfidf)
+    assert_same tfidf_before, tfidf_after, "TFIDF instance should be reused across turns"
   end
 end

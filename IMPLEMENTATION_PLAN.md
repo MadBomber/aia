@@ -185,12 +185,12 @@ Cost calculation lives in the display layer (depends on Section 2.5 `CostCalcula
 
 ---
 
-## Section 4 — Tool Infrastructure (P1 + P3)
+## Section 4 — Tool Infrastructure (P1 + P3) ✓ COMPLETED
 
-**Release tag:** `v2.0.4.alpha`
+**Release tag:** `v2.0.4.alpha` — tagged 2026-03-27
 **Depends on:** Section 1 (thread safety groundwork)
 
-### 4.1 — Convert ToolLoader to Instantiable Class
+### 4.1 — Convert ToolLoader to Instantiable Class ✓
 **Source:** P1-12 | **File:** `lib/aia/tool_loader.rb` | **Size:** M
 
 `module_function` with `@tool_cache` ivar is not thread-safe and leaks between tests. The module acts as a singleton with shared state.
@@ -201,7 +201,7 @@ Cost calculation lives in the display layer (depends on Section 2.5 `CostCalcula
 
 ---
 
-### 4.2 — Extract ToolFilterRegistry
+### 4.2 — Extract ToolFilterRegistry ✓
 **Source:** P1-7 | **File:** `session.rb:26-392` | **Size:** M
 
 Five identical `if/elsif` branches for tool filter initialization in `Session`.
@@ -219,7 +219,7 @@ elsif ...
 
 ---
 
-### 4.3 — Fix SQLiteVec Rowid Mapping
+### 4.3 — Fix SQLiteVec Rowid Mapping ✓
 **Source:** P3-31 | **File:** `tool_filter/sqlite_vec.rb` | **Size:** S
 
 Use explicit `tool_id` column instead of implicit rowid for SQLite-vec row mapping.
@@ -230,7 +230,7 @@ Use explicit `tool_id` column instead of implicit rowid for SQLite-vec row mappi
 
 ---
 
-### 4.4 — Extract Embedding Model Loader Mixin
+### 4.4 — Extract Embedding Model Loader Mixin ✓
 **Source:** P3-25 | **Files:** `tool_filter/zvec.rb:172-174`, `tool_filter/sqlite_vec.rb:160-162` | **Size:** S
 
 Identical embedding model loading code in two files.
@@ -241,7 +241,7 @@ Identical embedding model loading code in two files.
 
 ---
 
-### 4.5 — Cache TFIDF Vectorizer in do_prep
+### 4.5 — Cache TFIDF Vectorizer in do_prep ✓
 **Source:** P3-24 | **File:** `tool_filter/tfidf.rb:37-56` | **Size:** S
 
 `Classifier::TFIDF.new`, `fit`, and `transform` are called on every user turn.

@@ -279,4 +279,9 @@ class ToolFilterZvecTest < Minitest::Test
       assert Dir.exist?(persist_dir), "Persistent directory should survive cleanup"
     end
   end
+
+  def test_uses_embedding_model_loader_mixin
+    assert AIA::ToolFilter::Zvec.include?(AIA::ToolFilter::EmbeddingModelLoader),
+      "Zvec should include EmbeddingModelLoader"
+  end
 end

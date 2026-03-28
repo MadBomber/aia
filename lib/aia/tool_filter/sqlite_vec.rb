@@ -16,10 +16,12 @@
 require 'sqlite3'
 require 'sqlite_vec'
 require 'informers'
+require_relative 'embedding_model_loader'
 
 module AIA
   class ToolFilter
     class SqliteVec < ToolFilter
+      include EmbeddingModelLoader
       EMBEDDING_DIM   = 384
       MODEL_NAME      = "sentence-transformers/all-MiniLM-L6-v2"
       DEFAULT_TOP_K   = 30
@@ -46,6 +48,7 @@ module AIA
         @similarity_threshold = similarity_threshold
         @tools                = tools
         @tool_entries         = []
+        @tool_index           = {}
         @db                   = nil
         @model                = nil
       end
@@ -89,7 +92,7 @@ module AIA
         SQL
 
         scored = rows.map do |rowid, distance|
-          entry = @tool_entries[rowid.to_i - 1]
+          entry = @tool_index[rowid.to_i]
           next unless entry
 
           similarity = (1.0 - (distance / 2.0)).clamp(0.0, 1.0)
@@ -124,15 +127,18 @@ module AIA
         ::SqliteVec.load(@db)
         @db.enable_load_extension(false)
 
-        # Restore tool_entries from the tool_meta table
+        # Restore tool_entries and tool_index from the tool_meta table
         rows = @db.execute("SELECT rowid, name, description FROM tool_meta ORDER BY rowid")
-        @tool_entries = rows.map { |_rowid, name, desc| { name: name, description: desc } }
-        @tool_count   = @tool_entries.size
+        @tool_index   = {}
+        @tool_entries = rows.map do |rowid, name, desc|
+          entry = { name: name, description: desc }
+          @tool_index[rowid.to_i] = entry
+          entry
+        end
+        @tool_count = @tool_entries.size
         return false if @tool_entries.empty?
 
-        $stderr.puts "[SqVec] Loading embedding model (#{MODEL_NAME})..."
-        @model = Informers.pipeline("embedding", MODEL_NAME)
-        $stderr.puts "[SqVec] Embedding model loaded."
+        load_embedding_model(@label, MODEL_NAME)
 
         true
       rescue StandardError => e
@@ -157,9 +163,7 @@ module AIA
         @tool_count = @tool_entries.size
         return if @tool_entries.empty?
 
-        $stderr.puts "[SqVec] Loading embedding model (#{MODEL_NAME})..."
-        @model = Informers.pipeline("embedding", MODEL_NAME)
-        $stderr.puts "[SqVec] Embedding model loaded."
+        load_embedding_model(@label, MODEL_NAME)
 
         $stderr.puts "[SqVec] Generating embeddings for #{@tool_entries.size} tools..."
         embeddings = @tool_entries.map { |entry| @model.(entry[:description]) }
@@ -197,10 +201,12 @@ module AIA
           )
         SQL
 
+        @tool_index = {}
         @db.transaction do
           @tool_entries.each_with_index do |entry, i|
             blob = embeddings[i].pack("f*")
             rid  = i + 1
+            @tool_index[rid] = entry
             @db.execute(
               "INSERT INTO vec_tools(rowid, embedding) VALUES (?, ?)",
               [rid, blob]

@@ -17,10 +17,12 @@ require 'informers'
 require 'tmpdir'
 require 'fileutils'
 require 'json'
+require_relative 'embedding_model_loader'
 
 module AIA
   class ToolFilter
     class Zvec < ToolFilter
+      include EmbeddingModelLoader
       EMBEDDING_DIM   = 384
       MODEL_NAME      = "sentence-transformers/all-MiniLM-L6-v2"
       DEFAULT_TOP_K   = 30
@@ -123,9 +125,7 @@ module AIA
         @tool_count   = @tool_entries.size
         return false if @tool_entries.empty?
 
-        $stderr.puts "[Zvec] Loading embedding model (#{MODEL_NAME})..."
-        @model = Informers.pipeline("embedding", MODEL_NAME)
-        $stderr.puts "[Zvec] Embedding model loaded."
+        load_embedding_model(@label, MODEL_NAME)
 
         @collection = ::Zvec::Collection.open(collection_path)
         true
@@ -169,9 +169,7 @@ module AIA
         @tool_count = @tool_entries.size
         return if @tool_entries.empty?
 
-        $stderr.puts "[Zvec] Loading embedding model (#{MODEL_NAME})..."
-        @model = Informers.pipeline("embedding", MODEL_NAME)
-        $stderr.puts "[Zvec] Embedding model loaded."
+        load_embedding_model(@label, MODEL_NAME)
 
         $stderr.puts "[Zvec] Generating embeddings for #{@tool_entries.size} tools..."
         embeddings = @tool_entries.map { |entry| @model.(entry[:description]) }

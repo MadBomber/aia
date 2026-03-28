@@ -70,7 +70,7 @@ class RobotFactoryTest < Minitest::Test
   def test_build_skips_load_tools_when_cache_exists
     tool = mock('cached_tool')
     tool.stubs(:name).returns('CachedTool')
-    AIA::ToolLoader.instance_variable_set(:@tool_cache, [tool])
+    AIA::ToolLoader.instance.instance_variable_set(:@tool_cache, [tool])
 
     # build() should assign cached tools to config without calling load_tools
     AIA::RobotFactory.stubs(:configure_robot_lab)
@@ -90,7 +90,7 @@ class RobotFactoryTest < Minitest::Test
 
   # Forwarding wrappers
   def test_clear_tool_cache_delegates_to_tool_loader
-    AIA::ToolLoader.instance_variable_set(:@tool_cache, [:fake])
+    AIA::ToolLoader.instance.instance_variable_set(:@tool_cache, [:fake])
     AIA::RobotFactory.clear_tool_cache!
     assert_nil AIA::ToolLoader.cached_tools
   end

@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.4.alpha] - 2026-03-27
+
+### Improvements (Section 4 — Tool Infrastructure)
+
+- **`ToolLoader` converted to class** (`lib/aia/tool_loader.rb`): `module_function` with a module-level `@tool_cache` was replaced by a class with per-instance `@tool_cache`. Class-level convenience methods delegate to a resettable default instance via `ToolLoader.instance`. `ToolLoader.reset_instance!` (and `AIA.reset!`) discard the singleton for clean test isolation. Two `ToolLoader.new` instances now have independent caches. (P1-12)
+- **`ToolFilterRegistry`** (`lib/aia/tool_filter_registry.rb`): New class with `build_from_config(config, tools, rule_router:)`. Extracts the five identical `if/prep/assign` blocks from `Session#start` into a single, independently testable method. Session now calls one line. (P1-7)
+- **`EmbeddingModelLoader` mixin** (`lib/aia/tool_filter/embedding_model_loader.rb`): New module with `load_embedding_model(label, model_name)`. Included by both `ToolFilter::Zvec` and `ToolFilter::SqliteVec`, removing two identical 3-line embedding-load sequences. (P3-25)
+- **`ToolFilter::SqliteVec` rowid mapping** (`lib/aia/tool_filter/sqlite_vec.rb`): Replaced fragile `@tool_entries[rowid - 1]` positional lookup with `@tool_index` hash (`rowid → entry`). Both `create_database` and `load_persisted` populate the index; `do_filter_with_scores` uses `@tool_index[rowid]`. Lookup is now stable across deletions and reinsertions. (P3-31)
+- **`ToolFilter::TFIDF` vectorizer caching** (`lib/aia/tool_filter/tfidf.rb`): `Classifier::TFIDF.new`, `fit`, and full-corpus `transform` were called on every user turn. Now the vectorizer is fitted and all tool vectors are computed once in `do_prep` and cached as `@tfidf` / `@tool_vectors`. Per-turn cost is reduced to a single `@tfidf.transform(prompt)` call. (P3-24)
+
 ## [2.0.3.alpha] - 2026-03-27
 
 ### Improvements (Section 3 — Handler Cleanup)

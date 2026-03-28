@@ -20,6 +20,7 @@ require_relative "utility"
 require_relative "input_collector"
 require_relative "robot_factory"
 require_relative "rule_router"
+require_relative "tool_filter_registry"
 require_relative "chat_loop"
 
 module AIA
@@ -51,60 +52,8 @@ module AIA
       connect_mcp_servers
 
       # Build tool filters based on active flags
-      @filters = {}
       tools = all_available_tools
-
-      if AIA.config.flags.tool_filter_a
-        kbs_filter = ToolFilter::KBS.new(rule_router: @rule_router, tools: tools)
-        kbs_filter.prep
-        @filters[:kbs] = kbs_filter
-      else
-        # Still need register_tools for evaluate_turn even when KBS filter is off
-        @rule_router.register_tools(tools)
-      end
-
-      if AIA.config.flags.tool_filter_b
-        fact_asserter = FactAsserter.new
-        tfidf_filter = ToolFilter::TFIDF.new(tools: tools, fact_asserter: fact_asserter)
-        tfidf_filter.prep
-        @filters[:tfidf] = tfidf_filter
-      end
-
-      if AIA.config.flags.tool_filter_c
-        fact_asserter ||= FactAsserter.new
-        zvec_filter = ToolFilter::Zvec.new(
-          tools: tools, fact_asserter: fact_asserter,
-          db_dir:  AIA.config.paths.aia_dir,
-          load_db: AIA.config.flags.tool_filter_load,
-          save_db: AIA.config.flags.tool_filter_save
-        )
-        zvec_filter.prep
-        @filters[:zvec] = zvec_filter
-      end
-
-      if AIA.config.flags.tool_filter_d
-        fact_asserter ||= FactAsserter.new
-        sqvec_filter = ToolFilter::SqliteVec.new(
-          tools: tools, fact_asserter: fact_asserter,
-          db_dir:  AIA.config.paths.aia_dir,
-          load_db: AIA.config.flags.tool_filter_load,
-          save_db: AIA.config.flags.tool_filter_save
-        )
-        sqvec_filter.prep
-        @filters[:sqlite_vec] = sqvec_filter
-      end
-
-      if AIA.config.flags.tool_filter_e
-        fact_asserter ||= FactAsserter.new
-        lsi_filter = ToolFilter::LSI.new(
-          tools: tools, fact_asserter: fact_asserter,
-          db_dir:  AIA.config.paths.aia_dir,
-          load_db: AIA.config.flags.tool_filter_load,
-          save_db: AIA.config.flags.tool_filter_save
-        )
-        lsi_filter.prep
-        @filters[:lsi] = lsi_filter
-      end
+      @filters = ToolFilterRegistry.build_from_config(AIA.config, tools, rule_router: @rule_router)
 
       # Initialize task coordination if TrakFlow is available
       initialize_task_coordinator

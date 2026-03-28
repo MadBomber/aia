@@ -13,6 +13,7 @@ class ToolLoaderTest < Minitest::Test
 
   def teardown
     AIA::ToolLoader.clear_cache!
+    AIA::ToolLoader.reset_instance!
     super
   end
 
@@ -114,6 +115,37 @@ class ToolLoaderTest < Minitest::Test
     unavailable_tool_class = nil
     available_tool_class = nil
     GC.start
+  end
+
+  def test_two_instances_have_independent_caches
+    loader_a = AIA::ToolLoader.new
+    loader_b = AIA::ToolLoader.new
+
+    loader_a.load_tools(@config)
+    assert_kind_of Array, loader_a.cached_tools
+    assert_nil loader_b.cached_tools, "loader_b cache should remain nil when loader_a loads tools"
+  end
+
+  def test_clear_cache_only_affects_instance
+    loader_a = AIA::ToolLoader.new
+    loader_b = AIA::ToolLoader.new
+
+    loader_a.load_tools(@config)
+    loader_b.load_tools(@config)
+
+    loader_a.clear_cache!
+
+    assert_nil loader_a.cached_tools, "loader_a cache should be nil after clear"
+    assert_kind_of Array, loader_b.cached_tools, "loader_b cache should be unaffected"
+  end
+
+  def test_reset_instance_creates_fresh_default_instance
+    AIA::ToolLoader.load_tools(@config)
+    refute_nil AIA::ToolLoader.cached_tools
+
+    AIA::ToolLoader.reset_instance!
+
+    assert_nil AIA::ToolLoader.cached_tools, "New default instance should have nil cache"
   end
 
   def test_discover_tools_includes_tools_without_available_method

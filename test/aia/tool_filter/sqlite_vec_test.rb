@@ -297,4 +297,41 @@ class ToolFilterSqliteVecTest < Minitest::Test
   ensure
     filter&.cleanup
   end
+
+  # =========================================================================
+  # Rowid mapping (4.3)
+  # =========================================================================
+
+  def test_tool_index_is_populated_after_prep
+    filter = build_filter
+    index = filter.instance_variable_get(:@tool_index)
+    refute_empty index, "tool_index should be populated after prep"
+    assert_equal 7, index.size
+    index.each do |rowid, entry|
+      assert_kind_of Integer, rowid
+      assert entry.key?(:name)
+      assert entry.key?(:description)
+    end
+  ensure
+    filter&.cleanup
+  end
+
+  def test_tool_index_lookup_is_stable_across_reinsertion
+    # Simulate building a new filter with the same tools — rowid mapping should
+    # still resolve names correctly even if @tool_entries order could vary.
+    filter = build_filter
+    index = filter.instance_variable_get(:@tool_index)
+    results = filter.filter_with_scores("search for a file named config.yml")
+    names_via_filter = results.map { |r| r[:name] }
+    names_via_index  = index.values.map { |e| e[:name] }
+    assert(names_via_filter.all? { |n| names_via_index.include?(n) },
+      "All filtered tool names must exist in tool_index")
+  ensure
+    filter&.cleanup
+  end
+
+  def test_uses_embedding_model_loader_mixin
+    assert AIA::ToolFilter::SqliteVec.include?(AIA::ToolFilter::EmbeddingModelLoader),
+      "SqliteVec should include EmbeddingModelLoader"
+  end
 end

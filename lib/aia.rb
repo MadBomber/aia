@@ -60,6 +60,8 @@ require_relative 'aia/tool_filter/tfidf'
 require_relative 'aia/tool_filter/zvec'
 require_relative 'aia/tool_filter/sqlite_vec'
 require_relative 'aia/tool_filter/lsi'
+require_relative 'aia/tool_filter/embedding_model_loader'
+require_relative 'aia/tool_filter_registry'
 require_relative 'aia/tool_filter_strategy'
 require_relative 'aia/streaming_runner'
 require_relative 'aia/mention_router'
@@ -93,6 +95,7 @@ module AIA
     def reset!
       @config = @client = @session_tracker = @turn_state =
         @task_coordinator = @decisions = @rule_router = nil
+      ToolLoader.reset_instance!
     end
 
     def good_file?(filename)

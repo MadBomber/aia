@@ -4,10 +4,41 @@
 #
 # Tool loading, caching, filtering, and discovery.
 # Extracted from RobotFactory to isolate the tool concern.
+#
+# ToolLoader is a class with instance-level cache state so that two instances
+# have independent caches. Class-level convenience methods delegate to a
+# resettable default instance (reset via ToolLoader.reset_instance! or AIA.reset!).
 
 module AIA
-  module ToolLoader
-    module_function
+  class ToolLoader
+    class << self
+      # Returns the shared default instance, creating it on first call.
+      def instance
+        @instance ||= new
+      end
+
+      # Discard the default instance. The next call to .instance creates a fresh one.
+      # Called from AIA.reset! for test isolation.
+      def reset_instance!
+        @instance = nil
+      end
+
+      # Class-level convenience wrappers — delegate to the default instance.
+      def cached_tools            = instance.cached_tools
+      def clear_cache!            = instance.clear_cache!
+      def load_tools(config)      = instance.load_tools(config)
+      def filtered_tools(config)  = instance.filtered_tools(config)
+      def discover_tools          = instance.discover_tools
+      def eager_load_gem_tools    = instance.eager_load_gem_tools
+
+      def activate_unbundled_gem(name)
+        instance.activate_unbundled_gem(name)
+      end
+    end
+
+    def initialize
+      @tool_cache = nil
+    end
 
     # Clear the cached tool discovery results.
     # Call when tool paths change via /config directive.
