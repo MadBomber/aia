@@ -272,19 +272,4 @@ class ValidatorHelpersTest < Minitest::Test
   # configure_prompt_manager (deprecation warning)
   # =========================================================================
 
-  def test_configure_prompt_manager_warns_on_parameter_regex
-    config = OpenStruct.new(prompts: OpenStruct.new(parameter_regex: '\\[\\[.*?\\]\\]'))
-    _output = capture_io do
-      AIA::ConfigValidator.send(:configure_prompt_manager, config)
-    end
-    # Should warn about deprecation (captured in stderr)
-  end
-
-  def test_configure_prompt_manager_no_warn_without_regex
-    config = OpenStruct.new(prompts: OpenStruct.new(parameter_regex: nil))
-    _, err = capture_io do
-      AIA::ConfigValidator.send(:configure_prompt_manager, config)
-    end
-    refute_includes err, "deprecated"
-  end
 end

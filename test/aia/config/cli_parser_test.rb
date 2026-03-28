@@ -188,7 +188,6 @@ class CLIToNestedMapCompletenessTest < Minitest::Test
     log_file_override
     executable_prompt_content
     stdin_content
-    parameter_regex
   ].freeze
 
   def test_all_cli_parser_keys_are_accounted_for

@@ -483,24 +483,6 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     assert_equal false, options[:markdown]
   end
 
-  def test_parses_terse_no_error
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-
-    # --terse is deprecated but should not raise
-    parser.parse!(['--terse'])
-    # No option is set since it's a no-op deprecated flag
-  end
-
-  def test_parses_regex_stores_value
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-
-    # --regex is deprecated but should still store the value
-    parser.parse!(['--regex', '\\w+'])
-    assert_equal '\\w+', options[:parameter_regex]
-  end
-
   def test_parses_speech_model
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)

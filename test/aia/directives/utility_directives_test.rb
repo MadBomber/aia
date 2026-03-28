@@ -80,13 +80,6 @@ class UtilityDirectivesTest < Minitest::Test
     assert_includes output, "No tools match the filter"
   end
 
-  # --- /terse ---
-
-  def test_terse_returns_empty_string
-    result = @instance.terse([])
-    assert_equal "", result
-  end
-
   # --- /robot ---
 
   def test_robot_calls_utility_robot

@@ -112,9 +112,6 @@ module AIA
           options[:tool_filter_save] = true
         end
 
-        opts.on("--terse", "[DEPRECATED] No longer supported") do
-          warn "Warning: --terse is deprecated and has no effect."
-        end
       end
 
       def setup_model_options(opts, options)
@@ -206,10 +203,6 @@ module AIA
           options[:system_prompt] = prompt_id
         end
 
-        opts.on('--regex PATTERN', '[DEPRECATED] Parameter regex (PM v1.0.0 uses ERB parameters)') do |pattern|
-          warn "Warning: --regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
-          options[:parameter_regex] = pattern
-        end
       end
 
       def setup_ai_parameters(opts, options)

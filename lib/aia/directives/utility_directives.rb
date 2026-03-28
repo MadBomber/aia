@@ -118,11 +118,6 @@ module AIA
       ''
     end
 
-    desc "Add instruction for concise responses"
-    def terse(args, context_manager = nil)
-      "" # DEPRECATED: terse mode has been removed
-    end
-
     desc "Display ASCII robot art"
     def robot(args, context_manager = nil)
       AIA::Utility.robot

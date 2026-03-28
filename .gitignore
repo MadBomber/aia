@@ -25,3 +25,15 @@ Gemfile.lock
 # Temporary files
 temp.md
 /.ruby-lsp/
+
+# Intentionally untracked files
+CLAUDE.md
+_notes.txt
+
+# Intentionally untracked directories
+/.architecture/
+/.bridgetown-cache/
+/.claude/
+/.serena/
+/notes/
+/site/

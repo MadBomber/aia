@@ -36,7 +36,6 @@ module AIA
         handle_fuzzy_search_prompt_id(config)
         normalize_boolean_flags(config)
         validate_final_prompt_requirements(config)
-        configure_prompt_manager(config)
         prepare_pipeline(config)
         validate_pipeline_prompts(config)
 
@@ -449,10 +448,6 @@ module AIA
           raise AIA::ConfigurationError,
                 "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
         end
-      end
-
-      def configure_prompt_manager(config)
-        # PM v1.0.0 uses ERB parameters (<%= param %>) instead of regex-based extraction.
       end
 
       def prepare_pipeline(config)
