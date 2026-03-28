@@ -149,9 +149,9 @@ module AIA
       nil
     end
 
-    private
-
     attr_reader :db
+
+    private
 
     # Connect to the TrakFlow database if a project is initialized.
     def connect_database

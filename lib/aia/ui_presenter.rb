@@ -283,30 +283,12 @@ module AIA
 
     def calculate_cost(metrics)
       return { available: false } unless metrics[:model_id] && metrics[:input_tokens] && metrics[:output_tokens]
-      
-      # Look up model info from RubyLLM
-      begin
-        model_info = RubyLLM::Models.find(metrics[:model_id])
-        return { available: false } unless model_info
-        
-        input_price = model_info.input_price_per_million
-        output_price = model_info.output_price_per_million
-        
-        return { available: false } unless input_price && output_price
-        
-        input_cost = metrics[:input_tokens] * input_price / 1_000_000.0
-        output_cost = metrics[:output_tokens] * output_price / 1_000_000.0
-        total_cost = input_cost + output_cost
-        
-        {
-          available: true,
-          input_cost: input_cost,
-          output_cost: output_cost,
-          total_cost: total_cost
-        }
-      rescue StandardError => e
-        { available: false, error: e.message }
-      end
+
+      CostCalculator.calculate(
+        model_id:      metrics[:model_id],
+        input_tokens:  metrics[:input_tokens],
+        output_tokens: metrics[:output_tokens]
+      )
     end
   end
 end

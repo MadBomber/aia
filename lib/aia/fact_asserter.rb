@@ -116,7 +116,7 @@ module AIA
     end
 
     def assert_model_facts(kb, config)
-      config.models.each do |spec|
+      Array(config.models).each do |spec|
         model_info = find_model_info(spec.name)
 
         if model_info

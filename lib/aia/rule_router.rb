@@ -88,7 +88,10 @@ module AIA
 
       KB_ORDER.each do |kb_name|
         kb = @knowledge_bases[kb_name]
-        next unless kb
+        unless kb
+          warn "[RuleRouter] Warning: knowledge base '#{kb_name}' not found in pipeline — skipping"
+          next
+        end
 
         reset_kb(kb)
         @fact_asserter.assert_facts_for(kb, kb_name, config, input)

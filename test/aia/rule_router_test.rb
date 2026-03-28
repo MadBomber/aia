@@ -79,6 +79,16 @@ class RuleRouterTest < Minitest::Test
     assert_instance_of AIA::Decisions, decisions
   end
 
+  def test_evaluate_skips_missing_kb_without_raising
+    @config.rules.enabled = true
+    router = AIA::RuleRouter.new
+    # Force a gap by removing one KB from the internal map
+    router.instance_variable_get(:@knowledge_bases).delete(:classify)
+
+    decisions = router.evaluate(@config)
+    assert_instance_of AIA::Decisions, decisions
+  end
+
   # =========================================================================
   # evaluate_turn — input classification
   # =========================================================================

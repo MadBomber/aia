@@ -106,7 +106,11 @@ module AIA
       return if recommended == current_name
 
       temp = build_temp_robot(recommended, config)
-      return unless temp
+      if temp.nil?
+        warn "[KBS] Failed to build temp robot for #{recommended} — using original robot"
+        context.model_overridden = false
+        return
+      end
 
       context.temp_robot = temp
       context.model_overridden = true

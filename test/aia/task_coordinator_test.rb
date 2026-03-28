@@ -12,7 +12,6 @@ class TaskCoordinatorTest < Minitest::Test
     @mock_bridge.stubs(:available?).returns(true)
     @mock_bridge.stubs(:db).returns(@mock_db)
 
-    # Stub private method access
     AIA::TrakFlowBridge.stubs(:new).returns(@mock_bridge)
 
     @coordinator = AIA::TaskCoordinator.new(bridge: @mock_bridge)

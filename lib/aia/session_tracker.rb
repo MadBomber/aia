@@ -165,17 +165,8 @@ module AIA
     end
 
     def compute_cost_for_model(model_id, input_tokens, output_tokens)
-      return 0.0 unless model_id && defined?(RubyLLM::Models)
-
-      model_info = RubyLLM::Models.find(model_id)
-      return 0.0 unless model_info
-
-      input_price = model_info.respond_to?(:input_price_per_million) ? (model_info.input_price_per_million || 0) : 0
-      output_price = model_info.respond_to?(:output_price_per_million) ? (model_info.output_price_per_million || 0) : 0
-
-      (input_tokens * input_price / 1_000_000.0) + (output_tokens * output_price / 1_000_000.0)
-    rescue StandardError
-      0.0
+      result = CostCalculator.calculate(model_id: model_id, input_tokens: input_tokens, output_tokens: output_tokens)
+      result[:available] ? result[:total_cost] : 0.0
     end
 
     def extract_metrics(result)
@@ -208,18 +199,7 @@ module AIA
                  elsif result.respond_to?(:model_id)
                    result.model_id
                  end
-
-      return 0.0 unless model_id && defined?(RubyLLM::Models)
-
-      model_info = RubyLLM::Models.find(model_id)
-      return 0.0 unless model_info
-
-      input_price = model_info.respond_to?(:input_price_per_million) ? (model_info.input_price_per_million || 0) : 0
-      output_price = model_info.respond_to?(:output_price_per_million) ? (model_info.output_price_per_million || 0) : 0
-
-      (input_tokens * input_price / 1_000_000.0) + (output_tokens * output_price / 1_000_000.0)
-    rescue StandardError
-      0.0
+      compute_cost_for_model(model_id, input_tokens, output_tokens)
     end
   end
 end

@@ -11,7 +11,7 @@ module AIA
   class TaskCoordinator
     def initialize(bridge: TrakFlowBridge.new)
       @bridge = bridge
-      @db     = bridge.send(:db)
+      @db     = bridge.db
     end
 
     def available?

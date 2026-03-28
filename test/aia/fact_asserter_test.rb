@@ -41,6 +41,13 @@ class FactAsserterTest < Minitest::Test
     assert @kb.asserted?(:model), "Expected :model fact"
   end
 
+  def test_assert_model_facts_does_not_raise_when_models_is_nil
+    @config.models = nil
+
+    @asserter.assert_facts_for(@kb, :model_select, @config, nil)
+    # No assertion needed — test passes if no exception raised
+  end
+
   def test_assert_facts_for_route_asserts_mcp_tool_and_turn
     @config.loaded_tools = []
     AIA.stubs(:client).returns(nil)
