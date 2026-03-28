@@ -38,8 +38,8 @@ Gem::Specification.new do |spec|
   spec.require_paths  = %w[lib]
 
   # Core dependencies
-  spec.add_dependency 'robot_lab',    '~> 0.0', '>= 0.0.9'   # Execution engine: robots, networks, tools, MCP, memory
-  spec.add_dependency 'kbs',          '~> 0.2', '>= 0.2.1'   # RETE rule engine for intelligent routing
+  spec.add_dependency 'robot_lab',    '~> 0.0.9'              # Execution engine: robots, networks, tools, MCP, memory
+  spec.add_dependency 'kbs',          '~> 0.2.1'              # RETE rule engine for intelligent routing
   spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
   spec.add_dependency 'lumberjack'                 # Structured logging with 3 loggers (aia, llm, mcp)
   spec.add_dependency 'activesupport'              # Required by robot_lab (missing from its gemspec)

@@ -140,7 +140,7 @@ module AIA
 
       Array(config.mcp_servers).each do |server|
         kb.assert(:mcp_server,
-          name:   server[:name] || server["name"],
+          name:   Utility.server_name(server),
           topics: server[:topics] || server["topics"] || [],
           active: true
         )

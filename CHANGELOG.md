@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.8.alpha] - 2026-03-28
+
+### Improvements (Section 8 — Backlog Cleanup)
+
+- **Consolidate `server_name` inline patterns** (`fact_asserter.rb`, `config/validator.rb`, `mcp_discovery.rb`): Replaced 5 occurrences of `server[:name] || server['name']` with `Utility.server_name(server)` (or `AIA::Utility.server_name(server)`). `Utility.server_name` already handled Hash symbol/string keys, object `.name` methods, and `to_s` fallback — the inline pattern was a redundant re-implementation. (P3-28 / 8.1)
+- **`MCPUtility` and `ToolUtility` extracted from `Utility`** (`lib/aia/mcp_utility.rb`, `lib/aia/tool_utility.rb`, `lib/aia/utility.rb`): `Utility` was a grab-bag class mixing MCP server query methods, tool query methods, and display/banner concerns. Extracted `MCPUtility` (6 public methods: `mcp_servers?`, `mcp_server_names`, `connected_mcp_servers?`, `failed_mcp_servers`, `effective_mcp_server_names`, `server_name`; 2 private: `mcp_client_labels`, `banner_mcp`) and `ToolUtility` (4 public methods: `tools?`, `total_tool_count`, `user_tools?`, `supports_tools?`; 1 private: `banner_tools`). Both modules are included into `Utility` via `class << self include`. `utility.rb` now holds only display, banner, and model-refresh concerns. (P3-30 / 8.2)
+- **Pin `robot_lab` and `kbs` version constraints** (`aia.gemspec`): Simplified redundant double-constraint notation (`'~> 0.0', '>= 0.0.9'`) to single pessimistic constraints: `robot_lab '~> 0.0.9'` and `kbs '~> 0.2.1'`. Semantically equivalent but cleaner. (P3-32 / 8.3)
+- **Rename `HistoryManager` → `VariableInputCollector`** (`lib/aia/variable_input_collector.rb`, `lib/aia/history_manager.rb`, `lib/aia/input_collector.rb`): `HistoryManager` was misnamed — it only prompts for prompt variable values. New canonical name is `VariableInputCollector`. `history_manager.rb` is now a one-line shim requiring the new file. `HistoryManager = VariableInputCollector` alias preserved for backward compatibility. `lib/aia.rb` updated to require `variable_input_collector`. New test file `test/aia/variable_input_collector_test.rb` mirrors the original tests plus an alias assertion. (P3-33 / 8.4)
+
 ## [2.0.7.alpha] - 2026-03-28
 
 ### Improvements (Section 7 — MCPDiscovery Decision)

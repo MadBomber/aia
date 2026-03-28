@@ -405,46 +405,46 @@ These are large refactors. Each produces a working, tested replacement before th
 
 ---
 
-## Section 8 — Backlog Cleanup (P3)
+## Section 8 — Backlog Cleanup (P3) ✓ COMPLETED
 
-**Release tag:** `v2.0.8.alpha`
+**Release tag:** `v2.0.8.alpha` — tagged 2026-03-28
 **Depends on:** Sections 4–7
 
 These are housekeeping items. None are blocking; all improve long-term maintainability.
 
-### 8.1 — Extract MCPServerConfig Value Object
+### 8.1 — Consolidate server_name Inline Patterns ✓
 **Source:** P3-28 | **Files:** 5+ call sites | **Size:** S
 
 `server[:name] || server['name']` appears inline in 5+ places. `Utility.server_name()` exists but is inconsistently used.
 
-**Fix:** Create `MCPServerConfig` value object that normalizes symbol/string keys on construction. Replace all inline `server[:name] || server['name']` usages.
+**Fix:** Replace all inline `server[:name] || server['name']` usages with `Utility.server_name(server)` (or `AIA::Utility.server_name(server)` where the module isn't in scope). Updated `fact_asserter.rb`, `config/validator.rb` (×2), and `mcp_discovery.rb` (×2).
 
 ---
 
-### 8.2 — Split Utility into Domain-Specific Managers
+### 8.2 — Split Utility into Domain-Specific Modules ✓
 **Source:** P3-30 | **File:** `utility.rb` | **Size:** M
 
-`Utility` is a grab-bag module. Methods cover MCP server config, content extraction, model resolution, and more.
+`Utility` was a grab-bag class with MCP, tool, and display methods mixed together.
 
-**Fix:** Identify logical groupings and extract into focused modules (e.g., `MCPUtility`, `ContentUtility`). Alias old names during transition to avoid breaking changes.
+**Fix:** Extracted `MCPUtility` module (`lib/aia/mcp_utility.rb`) for MCP server query methods, and `ToolUtility` module (`lib/aia/tool_utility.rb`) for tool query methods. Both are included into `Utility` via `class << self include`. `utility.rb` retains only display/banner and model-refresh methods.
 
 ---
 
-### 8.3 — Pin robot_lab and kbs Version Constraints
+### 8.3 — Pin robot_lab and kbs Version Constraints ✓
 **Source:** P3-32 | **File:** `aia.gemspec` | **Size:** S
 
-`robot_lab` and `kbs` use open-ended version constraints. Once both reach `0.1.0`, pin with `~> 0.1` to avoid surprise breaking changes.
+`robot_lab` and `kbs` used redundant double-constraint notation (`'~> 0.0', '>= 0.0.9'`).
 
-**Fix:** Update gemspec constraints after confirming compatibility with the new versions.
+**Fix:** Simplified to single pessimistic constraints: `robot_lab '~> 0.0.9'` and `kbs '~> 0.2.1'`.
 
 ---
 
-### 8.4 — Rename HistoryManager → VariableInputCollector
+### 8.4 — Rename HistoryManager → VariableInputCollector ✓
 **Source:** P3-33 | **File:** `history_manager.rb` | **Size:** S
 
-`HistoryManager` is named for a feature it doesn't implement. It only does input prompting for prompt variables.
+`HistoryManager` was named for a feature it doesn't implement. It only does input prompting for prompt variables.
 
-**Fix:** Rename file and class. Update all references. Add a deprecation alias `HistoryManager = VariableInputCollector` for one release cycle.
+**Fix:** Created `lib/aia/variable_input_collector.rb` with `VariableInputCollector` class and `HistoryManager = VariableInputCollector` alias. `history_manager.rb` is now a shim that requires the new file. Updated `input_collector.rb` and `lib/aia.rb` to use `VariableInputCollector`. New test file `test/aia/variable_input_collector_test.rb` covers all cases including the alias.
 
 ---
 

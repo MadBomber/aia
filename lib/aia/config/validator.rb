@@ -188,7 +188,7 @@ module AIA
           label = mcp_filter_active?(config) ? "Active" : "Configured"
           puts "#{label} MCP servers:\n\n"
           servers.each do |server|
-            name      = server[:name] || server['name'] || '(unnamed)'
+            name      = AIA::Utility.server_name(server) || '(unnamed)'
             transport = server[:transport] || server['transport'] || {}
             command   = transport[:command] || transport['command'] || server[:command] || server['command'] || '(no command)'
             args      = transport[:args] || transport['args'] || server[:args] || server['args'] || []
@@ -368,7 +368,7 @@ module AIA
         default_timeout = 8_000
 
         servers.each do |server|
-          name      = server[:name] || server['name']
+          name      = AIA::Utility.server_name(server)
           transport = server[:transport] || server['transport'] || {}
           command   = transport[:command] || transport['command'] || server[:command] || server['command']
           args      = transport[:args] || transport['args'] || server[:args] || server['args'] || []

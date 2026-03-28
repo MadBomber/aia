@@ -47,12 +47,12 @@ module AIA
       skip_list = Array(config.mcp_skip)
       return servers if skip_list.empty?
 
-      servers.reject { |s| skip_list.include?(s[:name] || s["name"]) }
+      servers.reject { |s| skip_list.include?(AIA::Utility.server_name(s)) }
     end
 
     # Select servers whose name is in +names+.
     def select_by_names(all_servers, names)
-      all_servers.select { |s| names.include?(s[:name] || s["name"]) }
+      all_servers.select { |s| names.include?(AIA::Utility.server_name(s)) }
     end
   end
 end
