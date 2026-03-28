@@ -254,7 +254,7 @@ class InputCollectorTest < Minitest::Test
       default_value: nil
     ).returns('30')
 
-    AIA::HistoryManager.expects(:new).returns(mock_hm)
+    AIA::VariableInputCollector.expects(:new).returns(mock_hm)
 
     result = @collector.collect({ 'name' => 'Alice', 'age' => nil })
     assert_equal({ 'name' => 'Bob', 'age' => '30' }, result)
