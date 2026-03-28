@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 # lib/aia/dynamic_rule_builder.rb
+
+require_relative 'keyword_extractor'
 #
 # Dynamically generates KBS rules that map loaded tools to domains
 # and MCP servers. Called after RobotFactory discovers tools.
@@ -45,6 +47,7 @@ module AIA
       build_server_scoped_domain_rules(knowledge_bases[:route], decisions, domain_tools, server_tools)
       build_mcp_server_classify_rules(knowledge_bases[:classify], decisions, server_tools)
       build_mcp_server_route_rules(knowledge_bases[:route], decisions, server_tools)
+      build_keyword_route_rules(knowledge_bases[:route], decisions, tools, fact_asserter)
 
       { domain_tools: domain_tools, server_tools: server_tools }
     end
@@ -230,6 +233,51 @@ module AIA
             decisions.add(:tool_activate,
               tool: facts[1][:name],
               reason: "mcp:#{server_name} server")
+          end
+        end
+      end
+    end
+
+    # Generate one KBS rule per tool in the :route KB.
+    # The rule fires when the prompt's keyword Set overlaps with
+    # the tool's TF-IDF-distinctive keyword Set.
+    #
+    # @param kb [KBS::KnowledgeBase] the route KB
+    # @param decisions [AIA::Decisions]
+    # @param tools [Array] loaded tool objects
+    # @param fact_asserter [AIA::FactAsserter]
+    def build_keyword_route_rules(kb, decisions, tools, fact_asserter)
+      return unless kb
+      return if tools.empty?
+
+      corpus = tools.each_with_object({}) do |tool, h|
+        name = fact_asserter.tool_name(tool)
+        desc = fact_asserter.tool_description(tool)
+        h[name] = "#{name.tr('_', ' ')} #{desc}"
+      end
+
+      keywords_by_tool = KeywordExtractor.distinctive_keywords(corpus)
+
+      tools.each do |tool|
+        name   = fact_asserter.tool_name(tool)
+        server = tool.respond_to?(:mcp) ? tool.mcp&.to_s : nil
+        kws    = keywords_by_tool[name]
+        next if kws.nil? || kws.empty?
+
+        # Capture in locals — KBS blocks are closures evaluated later
+        captured_name   = name
+        captured_server = server
+        captured_kws    = kws
+        rule_key        = "keyword_route_#{name.gsub(/\W/, '_')}"
+
+        kb.rule rule_key do
+          on :turn_input, keywords: satisfies { |pk| (pk & captured_kws).size >= 1 }
+          perform do |facts|
+            matched = (facts[0][:keywords] & captured_kws).to_a
+            decisions.add(:tool_activate,
+              tool:   captured_name,
+              server: captured_server,
+              reason: "keyword overlap(#{matched.size}): #{matched.first(3).join(', ')}")
           end
         end
       end

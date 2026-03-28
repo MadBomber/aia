@@ -185,6 +185,97 @@ class DynamicRuleBuilderTest < Minitest::Test
       "No scoped rules should exist for local-only tools"
   end
 
+  # =========================================================================
+  # build_keyword_route_rules
+  # =========================================================================
+
+  def test_keyword_route_rules_are_registered_in_route_kb
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+    tool = make_tool("computer_tool",
+      "Control the computer desktop screen application keyboard mouse process")
+
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [tool])
+
+    route_kb = kbs[:route]
+    assert route_kb.rules.any? { |name, _| name.include?("keyword_route") },
+      "Expected at least one keyword_route rule in route KB, got: #{route_kb.rules.keys}"
+  end
+
+  def test_keyword_route_rule_fires_on_keyword_overlap
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+    tool = make_tool("computer_tool",
+      "Control the computer desktop screen application keyboard mouse process")
+
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [tool])
+
+    route_kb = kbs[:route]
+    route_kb.assert(:turn_input,
+      text:     "tell me about my computer",
+      length:   25,
+      keywords: Set.new(%w[tell computer])
+    )
+    route_kb.run
+
+    activated = @decisions.activated_tools
+    assert_includes activated, "computer_tool",
+      "Expected computer_tool activated, got: #{activated}"
+  end
+
+  def test_keyword_route_rule_does_not_fire_without_overlap
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+    tool = make_tool("computer_tool",
+      "Control the computer desktop screen application keyboard mouse process")
+
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [tool])
+
+    route_kb = kbs[:route]
+    route_kb.assert(:turn_input,
+      text:     "what is the weather in Paris",
+      length:   28,
+      keywords: Set.new(%w[weather paris])
+    )
+    route_kb.run
+
+    activated = @decisions.activated_tools
+    refute_includes activated, "computer_tool",
+      "computer_tool should not fire for unrelated prompt"
+  end
+
+  def test_keyword_route_rule_includes_server_for_mcp_tools
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+    tool = make_tool("get_file_contents",
+      "Get the contents of a file from a GitHub repository")
+    tool.define_singleton_method(:mcp) { "github" }
+
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [tool])
+
+    route_kb = kbs[:route]
+    route_kb.assert(:turn_input,
+      text:     "get file from github repository",
+      length:   31,
+      keywords: Set.new(%w[file github repository])
+    )
+    route_kb.run
+
+    decision = @decisions.tool_activations.find { |d| d[:tool] == "get_file_contents" }
+    refute_nil decision, "Expected get_file_contents to be activated"
+    assert_equal "github", decision[:server]
+  end
+
+  def test_keyword_route_skips_tools_with_empty_keywords
+    kbs = AIA::KBDefinitions.build_all_kbs(@decisions)
+    # Tool with only stopwords — no distinctive keywords after filtering
+    tool = make_tool("a_b", "is are was the")
+
+    # Should not raise
+    AIA::DynamicRuleBuilder.register(kbs, @decisions, @fact_asserter, [tool])
+
+    route_kb = kbs[:route]
+    keyword_rules = route_kb.rules.keys.select { |n| n.start_with?("keyword_route") }
+    refute keyword_rules.any? { |n| n.include?("a_b") },
+      "Tool with no meaningful keywords should not get a keyword rule"
+  end
+
   private
 
   def make_tool(name, description)
