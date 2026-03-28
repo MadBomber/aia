@@ -448,6 +448,32 @@ These are housekeeping items. None are blocking; all improve long-term maintaina
 
 ---
 
+---
+
+## Section 9 — Design Correctness ✓ COMPLETED
+
+**Release tag:** `v2.0.9.alpha` — tagged 2026-03-28
+**Depends on:** Sections 6–8
+
+Post-review corrections identified after all planned sections were complete.
+
+### 9.1 — Eliminate `MCPConfigNormalizer.filter_servers` ✓
+Removed `filter_servers` entirely. It duplicated use/skip/KBS filtering that `MCPDiscovery` already owns, and read from a different activation source (`TurnState` vs. `Decisions`), risking split-brain. `RobotBuilder` and `RobotFactory.mcp_server_configs` now normalize all configured servers without filtering — MCPDiscovery is the single authority.
+
+### 9.2 — `Utility` class → module ✓
+`class Utility` with only `class << self` methods is a Ruby anti-pattern. Changed to `module Utility` — identical for callers, idiomatically correct.
+
+### 9.3 — Banner methods returned to `Utility` ✓
+`banner_mcp`, `mcp_client_labels`, and `banner_tools` were display concerns mixed into data-query modules (`MCPUtility`, `ToolUtility`). Moved back into `Utility`. The domain modules are now pure query interfaces.
+
+### 9.4 — `MCPDiscovery` takes `decisions` directly ✓
+`MCPDiscovery` only used `rule_router.decisions` — passing the whole router was over-coupling. Constructor changed to `MCPDiscovery.new(decisions)`; all three callers updated. Dependency is now explicit and narrow.
+
+### 9.5 — Delete `history_manager.rb` shim ✓
+The backward-compat shim was removed. `session.rb` requires `variable_input_collector` directly. The `HistoryManager = VariableInputCollector` Ruby constant alias remains.
+
+---
+
 ## Summary Table
 
 | Section | Focus | Items | Size | Release |
@@ -460,7 +486,8 @@ These are housekeeping items. None are blocking; all improve long-term maintaina
 | 6 | Structural Decompositions | 5 | S×1, M×2, L×2 | v2.0.6.alpha |
 | 7 | MCPDiscovery Decision | 1 | M×1 | v2.0.7.alpha |
 | 8 | Backlog Cleanup | 4 | S×3, M×1 | v2.0.8.alpha |
-| **Total** | | **34** | | |
+| 9 | Design Correctness | 5 | S×4, M×1 | v2.0.9.alpha |
+| **Total** | | **39** | | |
 
 ### Key Dependencies
 

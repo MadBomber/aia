@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.9.alpha] - 2026-03-28
+
+### Improvements (Section 9 — Design Correctness)
+
+- **`MCPConfigNormalizer.filter_servers` eliminated** (`lib/aia/mcp_config_normalizer.rb`, `lib/aia/robot_builder.rb`, `lib/aia/robot_factory.rb`): `filter_servers` duplicated use/skip filtering logic that `MCPDiscovery` already owns, and used a different activation source (`TurnState.active_mcp_servers` vs. `Decisions.mcp_activations`), creating a split-brain risk. Removed `filter_servers` entirely. `RobotBuilder` now passes all configured servers normalized (`Array(config.mcp_servers).map { |s| MCPConfigNormalizer.normalize(s) }`). `RobotFactory.mcp_server_configs` (used by network builders) follows the same pattern. MCPDiscovery is now the single authoritative filter.
+- **`Utility` converted from class to module** (`lib/aia/utility.rb`): `class Utility` with only `class << self` methods is a Ruby anti-pattern. Changed to `module Utility` — semantically identical for callers (`AIA::Utility.mcp_servers?` etc.) but idiomatically correct. Nothing can be accidentally instantiated.
+- **Banner methods returned to `Utility`** (`lib/aia/utility.rb`, `lib/aia/mcp_utility.rb`, `lib/aia/tool_utility.rb`): `banner_mcp`, `mcp_client_labels`, and `banner_tools` were mixed into `MCPUtility`/`ToolUtility` — display concerns in data-query modules. Moved all banner private methods back into `Utility`. `MCPUtility` and `ToolUtility` are now pure query interfaces with no formatting logic.
+- **`MCPDiscovery` takes `decisions` directly** (`lib/aia/mcp_discovery.rb`, `startup_coordinator.rb`, `pipeline_orchestrator.rb`, `special_mode_handler.rb`): `MCPDiscovery` only ever used `rule_router.decisions` — passing the whole `rule_router` was over-coupling. Constructor changed to `MCPDiscovery.new(decisions)`; all three callers updated to pass `@rule_router.decisions`. Dependency is now explicit and narrow.
+- **`history_manager.rb` shim deleted** (`lib/aia/session.rb`): The backward-compat shim (`require_relative 'variable_input_collector'`) had served its purpose. `session.rb` updated to require `variable_input_collector` directly. The Ruby-level `HistoryManager = VariableInputCollector` alias in `variable_input_collector.rb` remains for callers that reference the old constant name.
+
 ## [2.0.8.alpha] - 2026-03-28
 
 ### Improvements (Section 8 — Backlog Cleanup)

@@ -9,7 +9,7 @@ class MCPDiscoveryTest < Minitest::Test
     @decisions = AIA::Decisions.new
     @rule_router = mock('rule_router')
     @rule_router.stubs(:decisions).returns(@decisions)
-    @discovery = AIA::MCPDiscovery.new(@rule_router)
+    @discovery = AIA::MCPDiscovery.new(@decisions)
   end
 
   def teardown

@@ -119,10 +119,11 @@ module AIA
         RobotLab::RunConfig.new(**params)
       end
 
-      # Filter and normalize MCP server configs for robot_lab.
-      # Delegates to MCPConfigNormalizer.
+      # Normalize all configured MCP server configs for robot_lab.
+      # Filtering/selection is MCPDiscovery's responsibility — this just normalizes shape.
       def mcp_server_configs(config)
-        MCPConfigNormalizer.filter_servers(config)
+        return [] if config.flags.no_mcp
+        Array(config.mcp_servers).map { |s| MCPConfigNormalizer.normalize(s) }
       end
 
       # Normalize a single MCP server config to robot_lab's nested transport format.

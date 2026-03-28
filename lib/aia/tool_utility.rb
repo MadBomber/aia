@@ -2,8 +2,8 @@
 
 # lib/aia/tool_utility.rb
 #
-# Tool-related query methods mixed into AIA::Utility via `class << self include`.
-# Handles tool counting, user tool detection, and banner formatting.
+# Pure tool state-query methods mixed into AIA::Utility via `class << self include`.
+# No display or formatting concerns — those live in Utility directly.
 
 module AIA
   module ToolUtility
@@ -25,13 +25,6 @@ module AIA
 
     def supports_tools?
       AIA.client&.model&.supports_functions? || false
-    end
-
-    private
-
-    def banner_tools
-      count = total_tool_count
-      count > 0 ? "#{count} #{count == 1 ? 'tool' : 'tools'} loaded" : 'none loaded'
     end
   end
 end

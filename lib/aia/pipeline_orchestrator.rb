@@ -94,7 +94,7 @@ module AIA
         AIA.turn_state.force_concurrent_mcp = false
       end
 
-      discovery         = MCPDiscovery.new(@rule_router)
+      discovery         = MCPDiscovery.new(@rule_router.decisions)
       relevant_servers  = discovery.discover(config, prompt_text)
       return nil if relevant_servers.size <= 1
 

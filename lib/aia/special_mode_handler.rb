@@ -134,7 +134,7 @@ module AIA
     def handle_concurrent_mcp(prompt)
       return false unless (AIA.config.mcp_servers || []).size > 1
 
-      discovery = MCPDiscovery.new(@rule_router)
+      discovery = MCPDiscovery.new(@rule_router.decisions)
       relevant = discovery.discover(AIA.config, prompt)
       return false if relevant.size <= 1
 

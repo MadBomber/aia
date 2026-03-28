@@ -6,11 +6,6 @@ require_relative '../../lib/aia'
 require_relative '../../lib/aia/mcp_config_normalizer'
 
 class MCPConfigNormalizerTest < Minitest::Test
-  def setup
-    @turn_state = AIA::TurnState.new
-    AIA.stubs(:turn_state).returns(@turn_state)
-  end
-
   def test_normalize_pass_through_when_transport_present
     server = { name: 'test', transport: { type: 'stdio', command: 'cmd' } }
     result = AIA::MCPConfigNormalizer.normalize(server)
@@ -32,38 +27,4 @@ class MCPConfigNormalizerTest < Minitest::Test
     assert_equal 'cmd', result[:transport][:command]
   end
 
-  def test_filter_servers_returns_empty_when_no_mcp
-    config = OpenStruct.new(
-      flags: OpenStruct.new(no_mcp: true),
-      mcp_servers: [{ name: 'server1' }],
-      mcp_use: [], mcp_skip: []
-    )
-    assert_empty AIA::MCPConfigNormalizer.filter_servers(config)
-  end
-
-  def test_filter_servers_applies_use_filter
-    config = OpenStruct.new(
-      flags: OpenStruct.new(no_mcp: false),
-      mcp_servers: [{ name: 'a' }, { name: 'b' }],
-      mcp_use: ['a'], mcp_skip: []
-    )
-    AIA::Utility.stubs(:server_name).with({ name: 'a' }).returns('a')
-    AIA::Utility.stubs(:server_name).with({ name: 'b' }).returns('b')
-    result = AIA::MCPConfigNormalizer.filter_servers(config)
-    assert_equal 1, result.size
-    assert_equal 'a', result.first[:name]
-  end
-
-  def test_filter_servers_applies_skip_filter
-    config = OpenStruct.new(
-      flags: OpenStruct.new(no_mcp: false),
-      mcp_servers: [{ name: 'a' }, { name: 'b' }],
-      mcp_use: [], mcp_skip: ['b']
-    )
-    AIA::Utility.stubs(:server_name).with({ name: 'a' }).returns('a')
-    AIA::Utility.stubs(:server_name).with({ name: 'b' }).returns('b')
-    result = AIA::MCPConfigNormalizer.filter_servers(config)
-    assert_equal 1, result.size
-    assert_equal 'a', result.first[:name]
-  end
 end

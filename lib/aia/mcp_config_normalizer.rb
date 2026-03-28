@@ -2,42 +2,13 @@
 
 # lib/aia/mcp_config_normalizer.rb
 #
-# Normalizes MCP server configurations from AIA format to robot_lab format,
-# and filters servers based on use/skip lists and KBS activation decisions.
-# Extracted from RobotFactory to give it a single focused responsibility.
+# Normalizes a single MCP server config from AIA flat format to the nested
+# transport format expected by robot_lab. Server selection/filtering is
+# the responsibility of MCPDiscovery — this class only transforms shape.
 
 module AIA
   class MCPConfigNormalizer
     class << self
-      # Filter and normalize MCP server configs from AIA config.
-      # Returns normalized configs ready for robot_lab.
-      #
-      # @param config [AIA::Config]
-      # @return [Array<Hash>]
-      def filter_servers(config)
-        return [] if config.flags.no_mcp
-
-        servers = config.mcp_servers || []
-        return [] if servers.empty?
-
-        use_list  = Array(config.mcp_use)
-        skip_list = Array(config.mcp_skip)
-
-        if !use_list.empty?
-          servers = servers.select { |s| Utility.server_name(s) }
-                           .select { |s| use_list.include?(Utility.server_name(s)) }
-        elsif !skip_list.empty?
-          servers = servers.reject { |s| skip_list.include?(Utility.server_name(s)) }
-        end
-
-        kbs_active = AIA.turn_state&.active_mcp_servers
-        if kbs_active && !kbs_active.empty? && use_list.empty? && skip_list.empty?
-          servers = servers.select { |s| kbs_active.include?(Utility.server_name(s)) }
-        end
-
-        servers.map { |s| normalize(s) }
-      end
-
       # Normalize a single MCP server config to robot_lab's nested transport format.
       #
       # @param server [Hash]

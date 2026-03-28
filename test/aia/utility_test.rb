@@ -161,10 +161,8 @@ class UtilityTest < Minitest::Test
     assert_includes output, "refreshed"
   end
 
-  def test_robot_class_method_accessibility
+  def test_robot_module_method_accessibility
     assert_respond_to AIA::Utility, :robot
-
-    refute_respond_to AIA::Utility.new, :robot
   end
 
   def test_robot_with_edge_case_screen_widths

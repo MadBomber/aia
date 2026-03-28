@@ -45,7 +45,7 @@ module AIA
       servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
                   @robot.mcp_config
                 else
-                  MCPDiscovery.new(@rule_router).discover(config)
+                  MCPDiscovery.new(@rule_router.decisions).discover(config)
                     .map { |s| MCPConfigNormalizer.normalize(s) }
                 end
 

@@ -28,26 +28,6 @@ class RobotFactoryTest < Minitest::Test
     assert_equal 2, result.length
   end
 
-  def test_mcp_server_configs_applies_use_filter
-    @config.flags.no_mcp = false
-    @config.mcp_servers = [{ name: 'server1' }, { name: 'server2' }]
-    @config.mcp_use = ['server1']
-
-    result = AIA::RobotFactory.send(:mcp_server_configs, @config)
-    assert_equal 1, result.length
-    assert_equal 'server1', result.first[:name]
-  end
-
-  def test_mcp_server_configs_applies_skip_filter
-    @config.flags.no_mcp = false
-    @config.mcp_servers = [{ name: 'server1' }, { name: 'server2' }]
-    @config.mcp_skip = ['server2']
-
-    result = AIA::RobotFactory.send(:mcp_server_configs, @config)
-    assert_equal 1, result.length
-    assert_equal 'server1', result.first[:name]
-  end
-
   def test_build_run_config_creates_config
     result = AIA::RobotFactory.send(:build_run_config, @config)
     assert_instance_of RobotLab::RunConfig, result

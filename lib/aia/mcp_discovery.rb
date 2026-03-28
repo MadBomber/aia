@@ -7,8 +7,8 @@
 
 module AIA
   class MCPDiscovery
-    def initialize(rule_router)
-      @rule_router = rule_router
+    def initialize(decisions)
+      @decisions = decisions
     end
 
     # Discover relevant MCP servers for the current prompt.
@@ -33,7 +33,7 @@ module AIA
       return select_by_names(config.mcp_servers || [], Array(config.mcp_use)) if Array(config.mcp_use).any?
 
       # KBS rule-based activation (populated by routing KB rules)
-      activated = @rule_router.decisions.mcp_activations.map { |a| a[:server] }
+      activated = @decisions.mcp_activations.map { |a| a[:server] }
       if activated.any?
         select_by_names(config.mcp_servers || [], activated)
       else

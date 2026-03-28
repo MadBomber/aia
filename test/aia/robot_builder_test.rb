@@ -38,7 +38,7 @@ class RobotBuilderTest < Minitest::Test
     AIA::SystemPromptAssembler.stubs(:build_identity_prompt).returns("identity")
     AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns("base")
     AIA::ToolLoader.stubs(:filtered_tools).returns([])
-    AIA::MCPConfigNormalizer.stubs(:filter_servers).returns([])
+    AIA::MCPConfigNormalizer.stubs(:normalize).returns({})
 
     result = AIA::RobotBuilder.build(@config, namer: @namer)
     assert_equal mock_robot, result
@@ -50,7 +50,7 @@ class RobotBuilderTest < Minitest::Test
     AIA::SystemPromptAssembler.stubs(:build_identity_prompt).returns("id")
     AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns(nil)
     AIA::ToolLoader.stubs(:filtered_tools).returns([])
-    AIA::MCPConfigNormalizer.stubs(:filter_servers).returns([])
+    AIA::MCPConfigNormalizer.stubs(:normalize).returns({})
 
     AIA::RobotBuilder.build(@config, namer: @namer)
     assert_equal "Tobor", captured_name

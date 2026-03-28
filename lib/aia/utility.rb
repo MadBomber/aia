@@ -14,7 +14,7 @@ require_relative 'mcp_utility'
 require_relative 'tool_utility'
 
 module AIA
-  class Utility
+  module Utility
     class << self
       include MCPUtility
       include ToolUtility
@@ -108,6 +108,43 @@ module AIA
         parts << "trak_flow v#{TrakFlow::VERSION}"         if defined?(TrakFlow::VERSION)
         parts << "typed_bus v#{TypedBus::VERSION}"         if defined?(TypedBus::VERSION)
         parts.join(', ')
+      end
+
+      def banner_tools
+        count = total_tool_count
+        count > 0 ? "#{count} #{count == 1 ? 'tool' : 'tools'} loaded" : 'none loaded'
+      end
+
+      def banner_mcp
+        connected = mcp_client_labels
+        failed    = failed_mcp_servers.map { |f| server_name(f) }
+        return '(none configured)' if connected.empty? && failed.empty?
+        parts = []
+        parts << connected.join(', ')           unless connected.empty?
+        parts << "FAILED: #{failed.join(', ')}" unless failed.empty?
+        parts.join(' | ')
+      end
+
+      # Post-connection: connected_mcp_servers is the authoritative name list;
+      # mcp_server_tool_counts provides per-server tool counts.
+      # Pre-connection fallback: read live from RubyLLM::MCP.clients (--require clients).
+      def mcp_client_labels
+        return [] if AIA.config&.flags&.no_mcp
+
+        connected = AIA.config&.connected_mcp_servers
+        unless connected.nil?
+          counts = AIA.config&.mcp_server_tool_counts || {}
+          return connected.map { |name|
+            count = counts[name]
+            count ? "#{name}(#{count})" : name
+          }
+        end
+
+        return [] unless defined?(RubyLLM::MCP)
+        RubyLLM::MCP.clients.filter_map do |name, client|
+          count = client.tools.count rescue nil
+          "#{name}(#{count})" if count
+        end
       end
 
       def banner_db
