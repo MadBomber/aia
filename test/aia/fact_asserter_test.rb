@@ -269,6 +269,21 @@ class FactAsserterTest < Minitest::Test
     assert_equal 11, fact[:length]
   end
 
+  def test_turn_input_fact_includes_keywords_set
+    @config.loaded_tools = []
+    AIA.stubs(:client).returns(nil)
+
+    @asserter.assert_facts_for(@kb, :route, @config, "tell me about the computer system")
+
+    facts = @kb.facts_for(:turn_input)
+    assert_equal 1, facts.size
+    turn = facts.first
+    assert turn.key?(:keywords), "Expected :keywords key in turn_input fact"
+    assert_instance_of Set, turn[:keywords], "Expected keywords to be a Set"
+    assert_includes turn[:keywords], "computer"
+    assert_includes turn[:keywords], "system"
+  end
+
   # =========================================================================
   # assert_session_facts
   # =========================================================================

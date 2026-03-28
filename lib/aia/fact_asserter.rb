@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'keyword_extractor'
+
 # lib/aia/fact_asserter.rb
 #
 # Translates AIA state (config, input, session tracker, decisions)
@@ -164,8 +166,9 @@ module AIA
 
     def assert_turn_facts(kb, input)
       kb.assert(:turn_input,
-        text: input,
-        length: input.length
+        text:     input,
+        length:   input.length,
+        keywords: AIA::KeywordExtractor.tokenize(input)
       )
     end
 
