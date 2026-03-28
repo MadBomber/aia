@@ -155,4 +155,14 @@ class ToolFilterTFIDFTest < Minitest::Test
     scores = results.map { |r| r[:score] }
     assert_equal scores, scores.sort.reverse, "Scores should be in descending order"
   end
+
+  def test_error_in_filter_returns_empty_array_without_raising
+    # Previously the rescue block called `logger.warn` which would raise
+    # NoMethodError. This test verifies the error path returns [] gracefully
+    # using Kernel#warn instead.
+    filter = build_filter
+    Classifier::TFIDF.any_instance.stubs(:fit).raises(StandardError, "classifier error")
+    result = filter.filter_with_scores("some prompt")
+    assert_equal [], result
+  end
 end

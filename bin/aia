@@ -1,6 +1,12 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Ruby 4.x ships bigdecimal 4.x as a default gem. Some transitive deps (e.g. oj)
+# declare `bigdecimal >= 3.0`, which can cause RubyGems to try activating the
+# installed 3.x gem after 4.x is already active. Pin to >= 4.0 first so the
+# activation order is settled before any other gem touches bigdecimal.
+gem 'bigdecimal', '>= 4.0'
+
 require_relative '../lib/aia'
 
 # Handle Ctrl-C gracefully

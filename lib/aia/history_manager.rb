@@ -28,21 +28,18 @@ module AIA
 
         if input.nil? # Ctrl+D
           return default_value if default_value
-          puts "\nParameter '#{variable_name}' is required."
-          exit(1)
+          raise AIA::Error, "Parameter '#{variable_name}' is required."
         end
 
         value = input.strip
         if value.empty?
           return default_value if default_value
-          puts "Parameter '#{variable_name}' is required."
-          exit(1)
+          raise AIA::Error, "Parameter '#{variable_name}' is required."
         end
 
         value
       rescue Interrupt
-        puts "\nVariable input interrupted."
-        exit(1)
+        raise AIA::Error, "Variable input interrupted."
       ensure
         Reline.line_editor.prompt_proc = original_prompt_proc
       end

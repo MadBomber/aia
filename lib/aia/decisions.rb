@@ -22,7 +22,9 @@ module AIA
     def add(type, **attrs)
       case type
       when :classification  then @classifications   << attrs
-      when :model_decision  then @model_decisions   << attrs
+      when :model_decision
+        raise ArgumentError, "model_decision requires a non-nil :model (got #{attrs.inspect})" if attrs[:model].nil?
+        @model_decisions << attrs
       when :mcp_activate    then @mcp_activations   << attrs
       when :tool_activate   then @tool_activations  << attrs
       when :gate            then @gate_actions       << attrs

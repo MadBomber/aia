@@ -69,6 +69,8 @@ module AIA
     # @param robot [RobotLab::Robot, RobotLab::Network] the robot or network
     # @return [self]
     def inject_into(robot)
+      clients, tools = @mutex.synchronize { [@connected_clients.dup, @connected_tools.dup] }
+
       targets = if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
                   robot.robots.values
                 else
@@ -76,7 +78,7 @@ module AIA
                 end
 
       targets.each do |target|
-        target.inject_mcp!(clients: @connected_clients, tools: @connected_tools)
+        target.inject_mcp!(clients: clients, tools: tools)
       end
 
       self
@@ -86,9 +88,12 @@ module AIA
     #
     # @return [self]
     def update_config
-      AIA.config.connected_mcp_servers  = @connected_clients.keys
-      AIA.config.mcp_server_tool_counts = @server_tool_counts
-      AIA.config.failed_mcp_servers     = @failed_servers
+      connected_keys, tool_counts, failed = @mutex.synchronize do
+        [@connected_clients.keys.dup, @server_tool_counts.dup, @failed_servers.dup]
+      end
+      AIA.config.connected_mcp_servers  = connected_keys
+      AIA.config.mcp_server_tool_counts = tool_counts
+      AIA.config.failed_mcp_servers     = failed
       self
     end
 
@@ -99,7 +104,7 @@ module AIA
 
     # Whether any tools were collected (from config servers or Ruby require).
     def any_tools?
-      @connected_tools.any?
+      @mutex.synchronize { @connected_tools.any? }
     end
 
     # Absorb MCP clients registered in RubyLLM::MCP (e.g., via --require loading
@@ -151,14 +156,14 @@ module AIA
     #
     # @return [Array<String>]
     def connected_server_names
-      @connected_clients.keys
+      @mutex.synchronize { @connected_clients.keys.dup }
     end
 
     # Failed server names.
     #
     # @return [Array<String>]
     def failed_server_names
-      @failed_servers.map { |f| f[:name] }
+      @mutex.synchronize { @failed_servers.map { |f| f[:name] } }
     end
 
     private

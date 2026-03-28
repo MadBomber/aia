@@ -87,6 +87,11 @@ module AIA
   class << self
     attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator, :decisions, :rule_router
 
+    def reset!
+      @config = @client = @session_tracker = @turn_state =
+        @task_coordinator = @decisions = @rule_router = nil
+    end
+
     def good_file?(filename)
       File.exist?(filename) &&
         File.readable?(filename) &&
@@ -155,6 +160,9 @@ module AIA
     rescue AIA::EarlyExit
       # Informational command completed (--dump, --mcp-list, --list-tools, --completion)
     rescue AIA::ConfigurationError => e
+      warn e.message
+      exit 1
+    rescue AIA::Error => e
       warn e.message
       exit 1
     end

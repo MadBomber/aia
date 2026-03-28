@@ -182,10 +182,10 @@ module AIA
       @mcp_manager = MCPConnectionManager.new
       @mcp_manager.connect_all(servers) if servers.is_a?(Array) && servers.any?
       @mcp_manager.absorb_ruby_llm_mcp_clients
-      return unless @mcp_manager.any_tools?
+      return unless @mcp_manager.connected?
 
-      @mcp_manager.inject_into(@robot)
       @mcp_manager.update_config
+      @mcp_manager.inject_into(@robot) if @mcp_manager.any_tools?
     end
 
     # Initialize TaskCoordinator, auto-creating the TrakFlow project if needed.

@@ -116,6 +116,31 @@ class DecisionsTest < Minitest::Test
     assert_equal({}, @decisions.classifications.first)
   end
 
+  def test_add_model_decision_raises_when_model_is_nil
+    err = assert_raises(ArgumentError) do
+      @decisions.add(:model_decision, model: nil)
+    end
+    assert_match(/model/, err.message)
+  end
+
+  def test_add_model_decision_raises_when_model_is_nil_with_reason
+    assert_raises(ArgumentError) do
+      @decisions.add(:model_decision, model: nil, reason: "some reason")
+    end
+  end
+
+  def test_add_model_decision_does_not_raise_when_model_is_present
+    @decisions.add(:model_decision, model: "claude-sonnet-4-20250514", reason: "best fit")
+    assert_equal 1, @decisions.model_decisions.size
+  end
+
+  def test_add_model_decision_with_nil_does_not_add_to_collection
+    assert_raises(ArgumentError) do
+      @decisions.add(:model_decision, model: nil)
+    end
+    assert_equal [], @decisions.model_decisions
+  end
+
   # =========================================================================
   # has_any?
   # =========================================================================

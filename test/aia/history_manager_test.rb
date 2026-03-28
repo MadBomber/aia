@@ -36,35 +36,31 @@ class HistoryManagerTest < Minitest::Test
     assert_equal 'fallback', result
   end
 
-  def test_request_variable_value_exits_on_ctrl_d_when_required
+  def test_request_variable_value_raises_on_ctrl_d_when_required
     Reline.stubs(:readline).returns(nil)
     Reline.stubs(:line_editor).returns(OpenStruct.new(prompt_proc: nil, :prompt_proc= => nil))
 
-    @history_manager.stubs(:exit).with(1).raises(SystemExit.new(1))
-
-    assert_raises(SystemExit) do
+    err = assert_raises(AIA::Error) do
       @history_manager.request_variable_value(variable_name: 'name', default_value: nil)
     end
+    assert_match(/name/, err.message)
   end
 
-  def test_request_variable_value_exits_on_empty_when_required
+  def test_request_variable_value_raises_on_empty_when_required
     Reline.stubs(:readline).returns("")
     Reline.stubs(:line_editor).returns(OpenStruct.new(prompt_proc: nil, :prompt_proc= => nil))
 
-    @history_manager.stubs(:exit).with(1).raises(SystemExit.new(1))
-
-    assert_raises(SystemExit) do
+    err = assert_raises(AIA::Error) do
       @history_manager.request_variable_value(variable_name: 'name', default_value: nil)
     end
+    assert_match(/name/, err.message)
   end
 
-  def test_request_variable_value_handles_interrupt
+  def test_request_variable_value_raises_on_interrupt
     Reline.stubs(:readline).raises(Interrupt)
     Reline.stubs(:line_editor).returns(OpenStruct.new(prompt_proc: nil, :prompt_proc= => nil))
 
-    @history_manager.stubs(:exit).with(1).raises(SystemExit.new(1))
-
-    assert_raises(SystemExit) do
+    assert_raises(AIA::Error) do
       @history_manager.request_variable_value(variable_name: 'name', default_value: 'default')
     end
   end

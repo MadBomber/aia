@@ -241,9 +241,22 @@ module AIA
       local + mcp
     end
 
-    # Retrieve MCP tools from all connected MCP clients.
+    # Retrieve MCP tools from the robot (injected via MCPConnectionManager),
+    # falling back to RubyLLM::MCP.clients for --require registered clients.
     def collect_robot_mcp_tools
-      defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients.values.flat_map(&:tools) : []
+      robot = AIA.client
+      if robot
+        if robot.respond_to?(:mcp_tools) && robot.mcp_tools&.any?
+          return Array(robot.mcp_tools)
+        end
+        if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
+          first = robot.robots.values.first
+          tools = Array(first&.mcp_tools)
+          return tools if tools.any?
+        end
+      end
+      return [] unless defined?(RubyLLM::MCP)
+      RubyLLM::MCP.clients.values.flat_map(&:tools)
     end
   end
 end

@@ -23,12 +23,11 @@ module AIA
     # Load tools from require_libs and tool paths, then cache the result.
     # Subsequent calls to RobotFactory.build skip this entirely if cache exists.
     def load_tools(config)
-      # Load required libraries (may be outside the bundle)
       Array(config.require_libs).each do |lib|
         begin
           require lib
         rescue LoadError
-          # Gem not in bundle — find and load it from installed gems directly
+          # Not yet active — activate it (and its deps) via RubyGems, then retry
           if activate_unbundled_gem(lib)
             require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
           else
@@ -123,33 +122,24 @@ module AIA
       end
     end
 
-    # Activate a gem that isn't in the bundle by scanning installed gem
-    # spec directories and prepending its lib paths to $LOAD_PATH.
+    # Activate a gem that isn't yet active by asking RubyGems to activate it.
+    # This adds its lib paths to $LOAD_PATH AND activates its dependencies,
+    # unlike a manual $LOAD_PATH manipulation which would leave deps unresolved.
     def activate_unbundled_gem(name)
-      Gem.path.each do |gem_path|
-        spec_dir = File.join(gem_path, 'specifications')
-        next unless Dir.exist?(spec_dir)
-
-        specs = Dir.glob(File.join(spec_dir, "#{name}-*.gemspec")).filter_map do |f|
-          Gem::Specification.load(f)
-        end.select { |s| s.name == name }
-
-        next if specs.empty?
-
-        spec = specs.max_by(&:version)
-        $LOAD_PATH.unshift(*spec.full_require_paths)
-        return true
-      end
-
+      gem name
+      true
+    rescue Gem::MissingSpecError, Gem::LoadError
       false
     end
 
-    # Eagerly load tool classes from gems that use zeitwerk lazy loading.
-    # Without this, ObjectSpace won't see tool classes that haven't been
-    # referenced yet. Checks for known conventions like .load_all_tools.
+    # Eagerly load tool classes from any required gem that uses lazy loading
+    # (e.g. Zeitwerk). Calls .load_all_tools on every module that responds to it,
+    # so any gem following that convention works — not just SharedTools.
     def eager_load_gem_tools
-      if defined?(SharedTools) && SharedTools.respond_to?(:load_all_tools)
-        SharedTools.load_all_tools
+      ObjectSpace.each_object(Module) do |mod|
+        mod.load_all_tools if mod.respond_to?(:load_all_tools)
+      rescue StandardError
+        next
       end
     rescue StandardError => e
       warn "Warning: Failed to eager-load gem tools: #{e.message}"
