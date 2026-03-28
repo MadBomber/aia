@@ -31,7 +31,7 @@ class DebateHandlerTest < Minitest::Test
       robot: robot, ui_presenter: @ui, tracker: @tracker
     )
 
-    assert_nil handler.handle("test prompt")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "test prompt"))
   end
 
   def test_returns_nil_for_network_with_one_robot
@@ -46,7 +46,7 @@ class DebateHandlerTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker
     )
 
-    assert_nil handler.handle("test")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "test"))
   end
 
   def test_debate_runs_multiple_rounds
@@ -63,7 +63,7 @@ class DebateHandlerTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker
     )
 
-    result = handler.handle("Discuss AI safety")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Discuss AI safety"))
 
     assert_includes result, "Alice"
     assert_includes result, "Bob"
@@ -97,7 +97,7 @@ class DebateHandlerTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker
     )
 
-    result = handler.handle("Topic")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
 
     # Should converge after round 1 since Bob says CONVERGED
     assert_includes result, "Round 1"
@@ -126,7 +126,7 @@ class DebateHandlerTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker
     )
 
-    handler.handle("Topic")
+    handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
   end
 
   def test_force_debate_flag

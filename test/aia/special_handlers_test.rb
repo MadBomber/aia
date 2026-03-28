@@ -34,7 +34,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     robot = mock_robot('Solo')
 
     handler = AIA::DebateHandler.new(robot: robot, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("debate topic")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "debate topic"))
 
     assert_nil result
   end
@@ -43,7 +43,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     network = mock_network([mock_robot('Solo')])
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("debate topic")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "debate topic"))
 
     assert_nil result
   end
@@ -66,7 +66,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     )
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("Should we use microservices?")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Should we use microservices?"))
 
     refute_nil result
     assert_match(/Round 1/, result)
@@ -87,7 +87,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
 
     @ui.expects(:display_info).with { |msg| msg.include?("Converged") }.at_least_once
 
-    handler.handle("topic")
+    handler.handle(AIA::HandlerContext.new(prompt: "topic"))
   end
 
   def test_debate_runs_max_rounds_without_convergence
@@ -100,7 +100,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     bob.stubs(:run).returns(mock_result("Bob disagrees"))
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("contentious topic")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "contentious topic"))
 
     # Should have MAX_ROUNDS (5) rounds
     assert_match(/Round 5/, result)
@@ -119,7 +119,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     )
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("topic")
+    handler.handle(AIA::HandlerContext.new(prompt: "topic"))
   end
 
   def test_debate_writes_to_shared_memory
@@ -143,7 +143,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     memory.expects(:set).with(:debate_r0_Bob, "response").once
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("topic")
+    handler.handle(AIA::HandlerContext.new(prompt: "topic"))
   end
 
   def test_debate_format_includes_all_rounds
@@ -161,7 +161,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     )
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("topic")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "topic"))
 
     assert_match(/### Round 1/, result)
     assert_match(/### Round 2/, result)
@@ -186,7 +186,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     bob.stubs(:run).returns(mock_result("Bob says hi"))
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("original topic")
+    handler.handle(AIA::HandlerContext.new(prompt: "original topic"))
 
     # Round 2 prompt should contain previous round results
     refute_empty round2_prompts
@@ -204,7 +204,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     new_network.robots.values.each { |r| r.stubs(:run).returns(mock_result("CONVERGED")) }
 
     handler.robot = new_network
-    result = handler.handle("topic")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "topic"))
 
     refute_nil result
   end
@@ -270,7 +270,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
       robot: robot, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
 
-    assert_nil handler.handle("task")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "task"))
   end
 
   def test_returns_nil_when_coordinator_unavailable
@@ -283,7 +283,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
 
-    assert_nil handler.handle("task")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "task"))
   end
 
   def test_returns_nil_when_coordinator_is_nil
@@ -293,7 +293,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: nil
     )
 
-    assert_nil handler.handle("task")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "task"))
   end
 
   # --- Plan parsing ---
@@ -311,7 +311,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
 
-    assert_nil handler.handle("build something")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "build something"))
   end
 
   # --- Successful delegation ---
@@ -335,7 +335,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
 
-    result = handler.handle("Build a REST API")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Build a REST API"))
 
     refute_nil result
     assert_match(/Step 1/, result)
@@ -362,7 +362,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
 
-    result = handler.handle("task")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "task"))
 
     refute_nil result
     assert_match(/Lead/, result)
@@ -386,7 +386,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
     handler = AIA::DelegateHandler.new(
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
-    handler.handle("build it")
+    handler.handle(AIA::HandlerContext.new(prompt: "build it"))
   end
 
   def test_claims_and_completes_tasks_via_coordinator
@@ -413,7 +413,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
     handler = AIA::DelegateHandler.new(
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
-    handler.handle("task")
+    handler.handle(AIA::HandlerContext.new(prompt: "task"))
   end
 
   def test_writes_results_to_shared_memory
@@ -440,7 +440,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
     handler = AIA::DelegateHandler.new(
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
-    handler.handle("task")
+    handler.handle(AIA::HandlerContext.new(prompt: "task"))
   end
 
   def test_step_context_includes_prior_results
@@ -466,7 +466,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
     handler = AIA::DelegateHandler.new(
       robot: network, ui_presenter: @ui, tracker: @tracker, task_coordinator: coordinator
     )
-    handler.handle("original request")
+    handler.handle(AIA::HandlerContext.new(prompt: "original request"))
 
     refute_nil step2_prompt
     assert_match(/Prior work/, step2_prompt)
@@ -486,7 +486,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
 
     # Should use new network (returns nil because only 1 robot but coordinator check runs)
     handler.instance_variable_get(:@task_coordinator).stubs(:available?).returns(false)
-    result = handler.handle("task")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "task"))
     assert_nil result
   end
 
@@ -569,7 +569,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("Security analysis complete"))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("Check for SQL injection", specialist_type: "security_expert")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Check for SQL injection", specialist_type: "security_expert"))
 
     assert_equal "Security analysis complete", result
   end
@@ -588,7 +588,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("Analysis"))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("Analyze trends", specialist_type: "data_scientist")
+    handler.handle(AIA::HandlerContext.new(prompt: "Analyze trends", specialist_type: "data_scientist"))
   end
 
   # --- With auto-detection ---
@@ -606,7 +606,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("Audit complete"))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("Check for vulnerabilities")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Check for vulnerabilities"))
 
     assert_equal "Audit complete", result
   end
@@ -624,7 +624,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("Done"))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("Analyze this data")
+    handler.handle(AIA::HandlerContext.new(prompt: "Analyze this data"))
   end
 
   # --- Specialist caching ---
@@ -637,8 +637,8 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("Review 1"), mock_result("Review 2"))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("Review PR 1", specialist_type: "code_reviewer")
-    handler.handle("Review PR 2", specialist_type: "code_reviewer")
+    handler.handle(AIA::HandlerContext.new(prompt: "Review PR 1", specialist_type: "code_reviewer"))
+    handler.handle(AIA::HandlerContext.new(prompt: "Review PR 2", specialist_type: "code_reviewer"))
   end
 
   def test_different_types_spawn_different_specialists
@@ -654,8 +654,8 @@ class SpawnHandlerIntegrationTest < Minitest::Test
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
 
-    r1 = handler.handle("Check security", specialist_type: "security")
-    r2 = handler.handle("Check speed", specialist_type: "performance")
+    r1 = handler.handle(AIA::HandlerContext.new(prompt: "Check security", specialist_type: "security"))
+    r2 = handler.handle(AIA::HandlerContext.new(prompt: "Check speed", specialist_type: "performance"))
 
     assert_equal "Secure", r1
     assert_equal "Fast", r2
@@ -673,7 +673,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("Done"))
 
     handler = AIA::SpawnHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("task", specialist_type: "specialist")
+    handler.handle(AIA::HandlerContext.new(prompt: "task", specialist_type: "specialist"))
   end
 
   # --- Tracker integration ---
@@ -690,7 +690,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     )
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("question", specialist_type: "expert")
+    handler.handle(AIA::HandlerContext.new(prompt: "question", specialist_type: "expert"))
   end
 
   # --- TrakFlow integration ---
@@ -710,7 +710,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("done"))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    handler.handle("task", specialist_type: "expert")
+    handler.handle(AIA::HandlerContext.new(prompt: "task", specialist_type: "expert"))
   end
 
   def test_skips_trakflow_when_coordinator_nil
@@ -723,7 +723,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
 
     # Should not raise
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
-    result = handler.handle("task", specialist_type: "expert")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "task", specialist_type: "expert"))
 
     assert_equal "done", result
   end
@@ -741,7 +741,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     specialist.stubs(:run).returns(mock_result("from new"))
 
     handler.robot = new_robot
-    result = handler.handle("task", specialist_type: "spec")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "task", specialist_type: "spec"))
 
     assert_equal "from new", result
   end

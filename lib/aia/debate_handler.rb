@@ -10,6 +10,7 @@
 module AIA
   class DebateHandler
     include ContentExtractor
+    include HandlerProtocol
 
     MAX_ROUNDS = 5
 
@@ -23,9 +24,10 @@ module AIA
 
     # Run a debate between robots in the network.
     #
-    # @param prompt [String] the debate topic
+    # @param context [HandlerContext] — reads context.prompt
     # @return [String, nil] formatted debate results, or nil if not applicable
-    def handle(prompt)
+    def handle(context)
+      prompt = context.prompt
       return nil unless @robot.is_a?(RobotLab::Network)
 
       robots = @robot.robots.values
@@ -49,7 +51,7 @@ module AIA
 
           context = build_round_context(prompt, rounds)
           result = robot.run(context, mcp: :inherit, tools: :inherit)
-          content = extract_reply(result)
+          content = extract_content(result)
 
           round_results << { robot: robot.name, content: content }
 
@@ -102,14 +104,6 @@ module AIA
 
       @robot.memory.current_writer = robot_name
       @robot.memory.set(:"debate_r#{round}_#{robot_name}", content)
-    end
-
-    def extract_reply(result)
-      if result.respond_to?(:reply)
-        result.reply
-      else
-        result.to_s
-      end
     end
 
     def format_rounds(rounds)

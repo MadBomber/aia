@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.3.alpha] - 2026-03-27
+
+### Improvements (Section 3 — Handler Cleanup)
+
+- **`ContentExtractor#extract_content`**: Replaced three identical `extract_reply` private methods in `SpawnHandler`, `DebateHandler`, and `DelegateHandler` with a single call to the shared `ContentExtractor#extract_content`. (P1-9)
+- **`HandlerProtocol` module** (`lib/aia/handler_protocol.rb`): New module defining the `handle(context)` interface. All five turn-level handlers now `include HandlerProtocol` and raise `NotImplementedError` from the base if `handle` is not overridden.
+- **`HandlerContext` struct** (`lib/aia/handler_context.rb`): New value object carrying `robot`, `prompt`, `decisions`, `config`, and `specialist_type` — replaces five incompatible handler signatures with a single unified protocol. All five handlers (`SpawnHandler`, `DebateHandler`, `DelegateHandler`, `MentionRouter`, `ModelSwitchHandler`) migrated to `handle(context)`. All call sites in `SpecialModeHandler` and `ChatLoop` updated. (P1-8)
+- **`Fzf`**: Removed dead code — `tempfile_path` method, `unlink_tempfile` method, and the `ensure` block that called `unlink_tempfile`. `fzf` now passes list items via `stdin_data:` only; no tempfile is created. (P3-29)
+- **Section 3.4** was completed as part of Section 2.5 (`UIPresenter#calculate_cost` already delegates to `CostCalculator`).
+
 ## [2.0.2.alpha] - 2026-03-27
 
 ### Improvements (Section 2 — Correctness Completions)

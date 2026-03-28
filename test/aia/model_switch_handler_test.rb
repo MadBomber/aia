@@ -21,7 +21,7 @@ class ModelSwitchHandlerTest < Minitest::Test
     # Only add a non-intent classification
     @decisions.add(:classification, domain: "code", source: "code_request")
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal false, result
   end
@@ -33,7 +33,7 @@ class ModelSwitchHandlerTest < Minitest::Test
       raw_text: "do something weird"
     )
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal false, result
   end
@@ -59,7 +59,7 @@ class ModelSwitchHandlerTest < Minitest::Test
     AIA::RobotFactory.stubs(:rebuild).returns(mock('new_robot'))
     AIA.stubs(:client=)
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal true, result
     assert display_messages.any? { |m| m =~ /Interpreted as.*claude-sonnet-4-20250514/ },
@@ -83,7 +83,7 @@ class ModelSwitchHandlerTest < Minitest::Test
     @ui_presenter.stubs(:display_info)
     @ui_presenter.expects(:ask_question).returns('n')
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal false, result
   end
@@ -102,7 +102,7 @@ class ModelSwitchHandlerTest < Minitest::Test
       RubyLLM.stubs(:respond_to?).with(:models).returns(false)
     end
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal false, result
   end
@@ -114,7 +114,7 @@ class ModelSwitchHandlerTest < Minitest::Test
       raw_text: nil  # Will cause extract_model_names to return []
     )
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal false, result
   end
@@ -139,7 +139,7 @@ class ModelSwitchHandlerTest < Minitest::Test
     AIA::RobotFactory.stubs(:rebuild).returns(mock('new_robot'))
     AIA.stubs(:client=)
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal true, result
   end
@@ -160,7 +160,7 @@ class ModelSwitchHandlerTest < Minitest::Test
     AIA::RobotFactory.stubs(:rebuild).returns(mock('new_robot'))
     AIA.stubs(:client=)
 
-    result = @handler.handle(@decisions, @config)
+    result = @handler.handle(AIA::HandlerContext.new(decisions: @decisions, config: @config))
 
     assert_equal true, result
   end

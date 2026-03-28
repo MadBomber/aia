@@ -3,7 +3,6 @@
 
 require 'shellwords'
 require 'open3'
-require 'tempfile'
 
 class AIA::Fzf
   DEFAULT_PARAMETERS = %w[
@@ -50,27 +49,10 @@ class AIA::Fzf
 
   def run
     input = list.join("\n")
-    selected, status = Open3.capture2('fzf', *@fzf_args, stdin_data: input)
-
+    selected, _status = Open3.capture2('fzf', *@fzf_args, stdin_data: input)
     selected.strip.empty? ? nil : selected.strip
-  ensure
-    unlink_tempfile
   end
 
-  ##############################################
-  private
-
-  def tempfile_path
-    @tempfile ||= Tempfile.new('fzf-input').tap do |file|
-      list.each { |item| file.puts item }
-      file.close
-    end
-    @tempfile.path
-  end
-
-  def unlink_tempfile
-    @tempfile&.unlink
-  end
 end
 
 

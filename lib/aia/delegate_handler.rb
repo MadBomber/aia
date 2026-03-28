@@ -11,6 +11,7 @@ require "json"
 module AIA
   class DelegateHandler
     include ContentExtractor
+    include HandlerProtocol
 
     def initialize(robot:, ui_presenter:, tracker:, task_coordinator:)
       @robot            = robot
@@ -23,9 +24,10 @@ module AIA
 
     # Decompose a prompt into subtasks, assign to robots, and execute.
     #
-    # @param prompt [String]
+    # @param context [HandlerContext] — reads context.prompt
     # @return [String, nil] combined results, or nil if not applicable
-    def handle(prompt)
+    def handle(context)
+      prompt = context.prompt
       return nil unless @robot.is_a?(RobotLab::Network)
       return nil unless @task_coordinator&.available?
 
@@ -47,7 +49,7 @@ module AIA
         [{"title": "subtask description", "assignee": "robot_name"}]
       PROMPT
 
-      reply = extract_reply(plan_result)
+      reply = extract_content(plan_result)
       steps = parse_plan(reply, robot_names)
 
       if steps.empty?
@@ -93,7 +95,7 @@ module AIA
 
         context = build_step_context(prompt, step_def[:title], results)
         step_result = assignee.run(context, mcp: :inherit, tools: :inherit)
-        content = extract_reply(step_result)
+        content = extract_content(step_result)
 
         @task_coordinator.complete_task(
           task.id, result: content[0, 200], robot_name: assignee.name
@@ -140,10 +142,6 @@ module AIA
       end
     rescue JSON::ParserError
       []
-    end
-
-    def extract_reply(result)
-      result.respond_to?(:reply) ? result.reply : result.to_s
     end
 
     def format_results(results)

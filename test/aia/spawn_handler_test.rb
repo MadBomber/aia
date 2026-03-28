@@ -45,7 +45,7 @@ class SpawnHandlerTest < Minitest::Test
       robot: primary, ui_presenter: @ui, tracker: @tracker
     )
 
-    result = handler.handle("Is this secure?", specialist_type: "security_expert")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Is this secure?", specialist_type: "security_expert"))
 
     assert_equal "Expert answer here", result
   end
@@ -74,7 +74,7 @@ class SpawnHandlerTest < Minitest::Test
       robot: primary, ui_presenter: @ui, tracker: @tracker
     )
 
-    result = handler.handle("How do I optimize this query?")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "How do I optimize this query?"))
 
     assert_equal "Database insight", result
   end
@@ -95,8 +95,8 @@ class SpawnHandlerTest < Minitest::Test
       robot: primary, ui_presenter: @ui, tracker: @tracker
     )
 
-    handler.handle("Q1", specialist_type: "expert")
-    handler.handle("Q2", specialist_type: "expert")
+    handler.handle(AIA::HandlerContext.new(prompt: "Q1", specialist_type: "expert"))
+    handler.handle(AIA::HandlerContext.new(prompt: "Q2", specialist_type: "expert"))
   end
 
   def test_spawn_uses_first_robot_from_network
@@ -119,7 +119,7 @@ class SpawnHandlerTest < Minitest::Test
       robot: network, ui_presenter: @ui, tracker: @tracker
     )
 
-    result = handler.handle("Question", specialist_type: "test_expert")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Question", specialist_type: "test_expert"))
     assert_equal "Answer", result
   end
 
@@ -148,7 +148,7 @@ class SpawnHandlerTest < Minitest::Test
       robot: primary, ui_presenter: @ui, tracker: @tracker
     )
 
-    handler.handle("Question", specialist_type: "test_expert")
+    handler.handle(AIA::HandlerContext.new(prompt: "Question", specialist_type: "test_expert"))
   end
 
   def test_force_spawn_flag_and_type

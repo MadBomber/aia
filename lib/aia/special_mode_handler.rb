@@ -156,7 +156,7 @@ module AIA
     end
 
     def handle_debate(prompt)
-      content = @debate_handler.handle(prompt)
+      content = @debate_handler.handle(HandlerContext.new(prompt: prompt))
       return false unless content
 
       display_and_save(content)
@@ -167,7 +167,7 @@ module AIA
     end
 
     def handle_delegation(prompt)
-      content = @delegate_handler.handle(prompt)
+      content = @delegate_handler.handle(HandlerContext.new(prompt: prompt))
       return false unless content
 
       display_and_save(content)
@@ -178,7 +178,7 @@ module AIA
     end
 
     def handle_spawn(prompt, specialist_type: nil)
-      content = @spawn_handler.handle(prompt, specialist_type: specialist_type)
+      content = @spawn_handler.handle(HandlerContext.new(prompt: prompt, specialist_type: specialist_type))
       return false unless content
 
       display_and_save(content)

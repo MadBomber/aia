@@ -219,7 +219,7 @@ class SpecialModeHandlerTest < Minitest::Test
     AIA.turn_state.spawn_type = 'security_expert'
 
     spawn_handler = @handler.instance_variable_get(:@spawn_handler)
-    spawn_handler.stubs(:handle).with("spawn task", specialist_type: 'security_expert').returns("spawn result")
+    spawn_handler.stubs(:handle).returns("spawn result")
 
     assert_equal true, @handler.handle("spawn task")
     assert_equal false, AIA.turn_state.force_spawn

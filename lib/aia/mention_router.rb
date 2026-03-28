@@ -9,6 +9,7 @@
 module AIA
   class MentionRouter
     include ContentExtractor
+    include HandlerProtocol
 
     def initialize(ui_presenter:, tracker:, streaming_runner:)
       @ui_presenter = ui_presenter
@@ -19,10 +20,11 @@ module AIA
     # Scan prompt for @mentions and route to matching robots.
     # Returns true if mentions were handled, false otherwise.
     #
-    # @param robot [RobotLab::Network] the network
-    # @param prompt [String] the user prompt
+    # @param context [HandlerContext] — reads context.robot and context.prompt
     # @return [Boolean]
-    def handle(robot, prompt)
+    def handle(context)
+      robot  = context.robot
+      prompt = context.prompt
       return false unless robot.is_a?(RobotLab::Network)
 
       mention_tokens = prompt.scan(/@(\w+)/i).flatten

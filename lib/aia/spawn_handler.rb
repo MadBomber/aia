@@ -10,6 +10,7 @@
 module AIA
   class SpawnHandler
     include ContentExtractor
+    include HandlerProtocol
 
     def initialize(robot:, ui_presenter:, tracker:)
       @robot        = robot
@@ -22,10 +23,11 @@ module AIA
 
     # Spawn a specialist robot to handle a prompt.
     #
-    # @param prompt [String]
-    # @param specialist_type [String, nil] explicit type or nil for auto-detect
+    # @param context [HandlerContext] — reads context.prompt and context.specialist_type
     # @return [String, nil] specialist's response
-    def handle(prompt, specialist_type: nil)
+    def handle(context)
+      prompt          = context.prompt
+      specialist_type = context.specialist_type
       primary = @robot.is_a?(RobotLab::Network) ? @robot.robots.values.first : @robot
       primary.with_bus unless primary.respond_to?(:bus) && primary.bus
 
@@ -44,7 +46,7 @@ module AIA
       @ui_presenter.display_info("Specialist '#{role}' responding...")
 
       result  = specialist.run(prompt, mcp: :inherit, tools: :inherit)
-      content = extract_reply(result)
+      content = extract_content(result)
 
       # Track in TrakFlow if available
       if AIA.task_coordinator&.available?
@@ -79,7 +81,7 @@ module AIA
         Question: #{prompt}
       PROMPT
 
-      reply = extract_reply(result)
+      reply = extract_content(result)
       lines = reply.strip.split("\n", 2)
       role        = lines[0]&.strip&.downcase&.gsub(/\s+/, "_") || "specialist"
       instruction = lines[1]&.strip || "You are a #{role}."
@@ -87,8 +89,5 @@ module AIA
       [role, instruction]
     end
 
-    def extract_reply(result)
-      result.respond_to?(:reply) ? result.reply : result.to_s
-    end
   end
 end

@@ -97,23 +97,13 @@ class FzfTest < Minitest::Test
     assert(prompt_args.any? { |a| a.include?('What') })
   end
 
-  def test_tempfile_path_creates_tempfile_with_list_content
-    # Access the private method
-    tempfile_path = @fzf.send(:tempfile_path)
+  def test_run_passes_correct_stdin_data
+    mock_status = mock('status')
+    mock_status.stubs(:success?).returns(true)
+    expected_input = @list.join("\n")
+    Open3.expects(:capture2).with { |*_args, **kwargs| kwargs[:stdin_data] == expected_input }.returns(["item1\n", mock_status])
 
-    assert File.exist?(tempfile_path)
-
-    content = File.read(tempfile_path)
-    @list.each do |item|
-      assert_includes content, item
-    end
-  end
-
-  def test_tempfile_path_returns_same_path_on_multiple_calls
-    path1 = @fzf.send(:tempfile_path)
-    path2 = @fzf.send(:tempfile_path)
-
-    assert_equal path1, path2
+    @fzf.run
   end
 
   def test_run_with_successful_selection
@@ -160,69 +150,27 @@ class FzfTest < Minitest::Test
     assert_equal 'item1', result
   end
 
-  def test_run_cleans_up_tempfile
-    # Mock the tempfile to verify cleanup
-    mock_tempfile = mock('tempfile')
-    mock_tempfile.expects(:unlink)
-    @fzf.instance_variable_set(:@tempfile, mock_tempfile)
-
+  def test_run_uses_stdin_data_not_tempfile
     mock_status = mock('status')
     mock_status.stubs(:success?).returns(true)
-    Open3.stubs(:capture2).returns(["item1\n", mock_status])
+    Open3.expects(:capture2).with { |*args, **kwargs| kwargs.key?(:stdin_data) }.returns(["item1\n", mock_status])
 
     @fzf.run
   end
 
-  def test_run_cleans_up_tempfile_even_on_exception
-    # Mock an exception during command execution
-    Open3.stubs(:capture2).raises(StandardError.new('Command failed'))
-
-    # Mock the tempfile to verify cleanup still happens
-    mock_tempfile = mock('tempfile')
-    mock_tempfile.expects(:unlink)
-    @fzf.instance_variable_set(:@tempfile, mock_tempfile)
-
-    assert_raises(StandardError) do
-      @fzf.run
-    end
+  def test_tempfile_path_method_removed
+    refute AIA::Fzf.method_defined?(:tempfile_path),
+      "Fzf#tempfile_path dead code should have been removed"
   end
 
-  def test_unlink_tempfile_handles_nil_tempfile
-    @fzf.instance_variable_set(:@tempfile, nil)
+  def test_run_passes_list_items_as_stdin
+    fzf = AIA::Fzf.new(list: ['alpha', 'beta'], directory: '/test')
+    mock_status = mock('status')
+    mock_status.stubs(:success?).returns(true)
 
-    # Should not raise an error
-    @fzf.send(:unlink_tempfile)
-    # If we get here without an exception, the test passes
-    assert true
-  end
+    Open3.expects(:capture2).with { |*_args, **kwargs| kwargs[:stdin_data] == "alpha\nbeta" }.returns(["alpha\n", mock_status])
 
-  def test_unlink_tempfile_calls_unlink_on_tempfile
-    mock_tempfile = mock('tempfile')
-    mock_tempfile.expects(:unlink)
-    @fzf.instance_variable_set(:@tempfile, mock_tempfile)
-
-    @fzf.send(:unlink_tempfile)
-  end
-
-  def test_integration_with_empty_list
-    fzf = AIA::Fzf.new(list: [], directory: '/test')
-
-    # Should handle empty list gracefully
-    tempfile_path = fzf.send(:tempfile_path)
-    content = File.read(tempfile_path)
-
-    assert_equal '', content.strip
-  end
-
-  def test_integration_with_special_characters_in_list
-    special_list = ['item with spaces', 'item-with-dashes', 'item_with_underscores']
-    fzf = AIA::Fzf.new(list: special_list, directory: '/test')
-
-    tempfile_path = fzf.send(:tempfile_path)
-    content = File.read(tempfile_path)
-
-    special_list.each do |item|
-      assert_includes content, item
-    end
+    result = fzf.run
+    assert_equal 'alpha', result
   end
 end

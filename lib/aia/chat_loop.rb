@@ -112,7 +112,7 @@ module AIA
         decisions = @rule_router.evaluate_turn(AIA.config, processed_prompt)
 
         # Check for model switch intent (explicit user request takes priority)
-        if @model_switch_handler.handle(decisions, AIA.config)
+        if @model_switch_handler.handle(HandlerContext.new(decisions: decisions, config: AIA.config))
           update_robot
           next
         end
@@ -144,7 +144,7 @@ module AIA
         end
 
         # @mention routing — send to specific robot(s) in the network
-        if @mention_router.handle(active_robot, processed_prompt)
+        if @mention_router.handle(HandlerContext.new(robot: active_robot, prompt: processed_prompt))
           clear_turn_mcp_filter
           next
         end

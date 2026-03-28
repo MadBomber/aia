@@ -32,7 +32,7 @@ class DelegateHandlerTest < Minitest::Test
       tracker: @tracker, task_coordinator: nil
     )
 
-    assert_nil handler.handle("test")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "test"))
   end
 
   def test_returns_nil_when_coordinator_unavailable
@@ -46,7 +46,7 @@ class DelegateHandlerTest < Minitest::Test
       tracker: @tracker, task_coordinator: coordinator
     )
 
-    assert_nil handler.handle("test")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "test"))
   end
 
   def test_returns_nil_when_plan_cannot_be_parsed
@@ -71,7 +71,7 @@ class DelegateHandlerTest < Minitest::Test
       tracker: @tracker, task_coordinator: coordinator
     )
 
-    assert_nil handler.handle("test")
+    assert_nil handler.handle(AIA::HandlerContext.new(prompt: "test"))
   end
 
   def test_delegates_and_executes_steps
@@ -111,7 +111,7 @@ class DelegateHandlerTest < Minitest::Test
       tracker: @tracker, task_coordinator: coordinator
     )
 
-    result = handler.handle("Research and summarize AI safety")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Research and summarize AI safety"))
 
     assert_includes result, "Step 1"
     assert_includes result, "Step 2"
@@ -148,7 +148,7 @@ class DelegateHandlerTest < Minitest::Test
       tracker: @tracker, task_coordinator: coordinator
     )
 
-    result = handler.handle("Do something")
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Do something"))
     # Should fall back to Alice (first robot)
     assert_includes result, "Alice"
   end

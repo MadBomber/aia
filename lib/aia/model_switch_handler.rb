@@ -8,6 +8,8 @@
 
 module AIA
   class ModelSwitchHandler
+    include HandlerProtocol
+
     def initialize(alias_registry, ui_presenter)
       @aliases = alias_registry
       @ui = ui_presenter
@@ -15,10 +17,11 @@ module AIA
 
     # Check decisions for model-change intents and handle them.
     #
-    # @param decisions [AIA::Decisions] the accumulated decisions
-    # @param config the AIA configuration
+    # @param context [HandlerContext] — reads context.decisions and context.config
     # @return [Boolean] true if the intent was handled (caller should not send to LLM)
-    def handle(decisions, config)
+    def handle(context)
+      decisions = context.decisions
+      config    = context.config
       intent = decisions.classifications.find { |c| c[:type] == :intent }
       return false unless intent
 

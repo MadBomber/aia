@@ -136,12 +136,12 @@ Cost calculation (fetch price from RubyLLM, multiply tokens, divide by 1,000,000
 
 ---
 
-## Section 3 — Handler Cleanup (P1 + P3)
+## Section 3 — Handler Cleanup (P1 + P3) ✓ COMPLETED
 
-**Release tag:** `v2.0.3.alpha`
+**Release tag:** `v2.0.3.alpha` — tagged 2026-03-27
 **Depends on:** Section 2 (uses `CostCalculator` from 2.5)
 
-### 3.1 — Consolidate extract_reply into ContentExtractor
+### 3.1 — Consolidate extract_reply into ContentExtractor ✓
 **Source:** P1-9 | **Files:** `spawn_handler.rb`, `debate_handler.rb`, `delegate_handler.rb` | **Size:** S
 
 Three identical `extract_reply` implementations. All three include `ContentExtractor` but don't use it.
@@ -152,7 +152,7 @@ Three identical `extract_reply` implementations. All three include `ContentExtra
 
 ---
 
-### 3.2 — Define HandlerProtocol: Unify 5 Handler Signatures
+### 3.2 — Define HandlerProtocol: Unify 5 Handler Signatures ✓
 **Source:** P1-8 | **Files:** `spawn_handler.rb`, `debate_handler.rb`, `delegate_handler.rb`, `mention_router.rb`, `model_switch_handler.rb` | **Size:** M
 
 Five handlers, five incompatible signatures — no generic dispatch is possible.
@@ -163,7 +163,7 @@ Five handlers, five incompatible signatures — no generic dispatch is possible.
 
 ---
 
-### 3.3 — Remove FZF Dead Code (tempfile_path)
+### 3.3 — Remove FZF Dead Code (tempfile_path) ✓
 **Source:** P3-29 | **File:** `fzf.rb:63-73` | **Size:** S
 
 `Fzf#tempfile_path` creates a tempfile that is never used.
@@ -174,7 +174,7 @@ Five handlers, five incompatible signatures — no generic dispatch is possible.
 
 ---
 
-### 3.4 — Move Cost Calculation out of UIPresenter
+### 3.4 — Move Cost Calculation out of UIPresenter ✓
 **Source:** P3-34 | **File:** `ui_presenter.rb:284-310` | **Size:** S
 
 Cost calculation lives in the display layer (depends on Section 2.5 `CostCalculator`).
