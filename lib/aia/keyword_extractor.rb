@@ -39,5 +39,37 @@ module AIA
             .reject { |w| STOPWORDS.include?(w) }
       )
     end
+
+    # Compute per-entry distinctive keywords using TF-IDF.
+    # Words that appear in many entries get low IDF (they're common noise).
+    # Words that appear rarely but frequently within one entry rank highest.
+    #
+    # @param corpus [Hash{String => String}] name => description text
+    # @param max [Integer] max keywords to return per entry
+    # @return [Hash{String => Set<String>}] name => distinctive keyword Set
+    def distinctive_keywords(corpus, max: 8)
+      # Tokenize each entry
+      tokenized = corpus.transform_values { |text| tokenize(text).to_a }
+
+      total = corpus.size.to_f
+
+      # Document frequency: how many entries contain each word
+      doc_freq = Hash.new(0)
+      tokenized.each_value { |tokens| tokens.uniq.each { |w| doc_freq[w] += 1 } }
+
+      tokenized.transform_values do |tokens|
+        tf = tokens.tally
+        size = [tokens.size, 1].max.to_f
+
+        scored = tf.map do |word, count|
+          idf   = Math.log((total + 1.0) / (doc_freq[word] + 1.0))
+          score = (count / size) * idf
+          [word, score]
+        end
+
+        top = scored.sort_by { |_, s| -s }.first(max).map(&:first)
+        Set.new(top)
+      end
+    end
   end
 end
