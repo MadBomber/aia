@@ -35,14 +35,18 @@ module AIA
 
     # Connect ALL configured MCP servers eagerly at startup, then absorb any
     # MCP clients registered via --require (e.g., shared_tools/mcp/* files).
-    # Delegates to MCPConnectionManager which owns all MCP connection state.
+    # Uses MCPDiscovery to determine which servers to connect (respects
+    # --mcp-use, --mcp-skip, and KBS mcp_activate decisions), then normalizes
+    # each server config via MCPConfigNormalizer before handing off to
+    # MCPConnectionManager.
     def connect_mcp_servers(config)
       return if config.flags.no_mcp
 
       servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
                   @robot.mcp_config
                 else
-                  RobotFactory.mcp_server_configs(config)
+                  MCPDiscovery.new(@rule_router).discover(config)
+                    .map { |s| MCPConfigNormalizer.normalize(s) }
                 end
 
       @mcp_manager = MCPConnectionManager.new

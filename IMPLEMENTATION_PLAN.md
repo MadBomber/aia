@@ -383,15 +383,17 @@ These are large refactors. Each produces a working, tested replacement before th
 
 ---
 
-## Section 7 — MCPDiscovery Decision (P2)
+## Section 7 — MCPDiscovery Decision (P2) ✓ COMPLETED
 
-**Release tag:** `v2.0.7.alpha`
+**Release tag:** `v2.0.7.alpha` — tagged 2026-03-28
 **Depends on:** Section 6 (Session refactor from 6.4)
 
-### 7.1 — Wire MCPDiscovery or Remove It
+### 7.1 — Wire MCPDiscovery or Remove It ✓
 **Source:** P2-20 | **Files:** `mcp_discovery.rb`, `mcp_grouper.rb` | **Size:** M
 
 `MCPDiscovery` and `MCPGrouper` are fully implemented but never invoked. The KBS rule-based server selection path (`mcp_activations`) is never triggered because no caller populates it.
+
+**Decision: Option A — Wire.**
 
 **Fix (Option A — Wire):** After KBS evaluation in `StartupCoordinator` (Section 6.4), call `MCPDiscovery.servers_for(decisions)` and pass results to `MCPConnectionManager`. Ensure `MCPDiscovery` sees both RubyLLM::MCP and RobotLab::MCP servers.
 

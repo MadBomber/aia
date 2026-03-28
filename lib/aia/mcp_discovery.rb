@@ -12,38 +12,47 @@ module AIA
     end
 
     # Discover relevant MCP servers for the current prompt.
+    # Priority: explicit --mcp-use list > KBS activations > all configured servers.
+    # --mcp-skip is always applied last.
     #
     # @param config the AIA configuration
-    # @param input [String, nil] the user's input text
-    # @return [Array<Hash>] relevant MCP server configs
+    # @param input [String, nil] the user's input text (unused; reserved for future embedding)
+    # @return [Array<Hash>] relevant MCP server configs (raw, not yet normalized)
     def discover(config, input = nil)
       return [] if config.flags&.no_mcp
-      return explicit_servers(config) if config.mcp_use
 
-      # Rule-based discovery via KBS
-      decisions = @rule_router.decisions
-      activated = decisions.mcp_activations.map { |a| a[:server] }
-
-      if activated.any?
-        filter_servers(config.mcp_servers, activated)
-      else
-        # Fall back to all configured servers (current behavior)
-        config.mcp_servers || []
-      end
+      servers = select_servers(config)
+      apply_skip_filter(servers, config)
     end
 
     private
 
-    def explicit_servers(config)
-      use_list = Array(config.mcp_use)
-      filter_servers(config.mcp_servers || [], use_list)
+    # Choose the server subset before skip filtering.
+    def select_servers(config)
+      # --mcp-use takes explicit precedence (only when list is non-empty)
+      return select_by_names(config.mcp_servers || [], Array(config.mcp_use)) if Array(config.mcp_use).any?
+
+      # KBS rule-based activation (populated by routing KB rules)
+      activated = @rule_router.decisions.mcp_activations.map { |a| a[:server] }
+      if activated.any?
+        select_by_names(config.mcp_servers || [], activated)
+      else
+        # Default: all configured servers
+        config.mcp_servers || []
+      end
     end
 
-    def filter_servers(all_servers, names)
-      all_servers.select do |s|
-        name = s[:name] || s["name"]
-        names.include?(name)
-      end
+    # Remove servers whose names appear in the --mcp-skip list.
+    def apply_skip_filter(servers, config)
+      skip_list = Array(config.mcp_skip)
+      return servers if skip_list.empty?
+
+      servers.reject { |s| skip_list.include?(s[:name] || s["name"]) }
+    end
+
+    # Select servers whose name is in +names+.
+    def select_by_names(all_servers, names)
+      all_servers.select { |s| names.include?(s[:name] || s["name"]) }
     end
   end
 end

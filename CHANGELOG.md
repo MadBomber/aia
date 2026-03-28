@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.7.alpha] - 2026-03-28
+
+### Improvements (Section 7 — MCPDiscovery Decision)
+
+- **`MCPDiscovery` wired into `StartupCoordinator`** (`lib/aia/startup_coordinator.rb`): The startup MCP connection path now routes through `MCPDiscovery#discover` instead of the indirect `MCPConfigNormalizer.filter_servers → TurnState` bridge. `MCPDiscovery` is the canonical authority for which servers are activated at startup — reading `--mcp-use`, `--mcp-skip`, and KBS `mcp_activate` decisions directly. Each discovered server is then normalized by `MCPConfigNormalizer.normalize` before being passed to `MCPConnectionManager`. (P2-20 / 7.1)
+- **`MCPDiscovery` bug fix** (`lib/aia/mcp_discovery.rb`): `config.mcp_use` truthiness check changed from `if config.mcp_use` to `if Array(config.mcp_use).any?`. In Ruby, `[]` is truthy, so an empty `mcp_use` list previously triggered explicit-server filtering and returned zero servers. An empty list now correctly falls through to KBS-activation or all-servers fallback. (7.1)
+- **`MCPDiscovery` now respects `--mcp-skip`** (`lib/aia/mcp_discovery.rb`): Added `apply_skip_filter` that removes servers whose names appear in `config.mcp_skip` after the primary selection (explicit, KBS-activated, or all). Skip is applied regardless of which selection path was taken. (7.1)
+- **Refactored `MCPDiscovery` internals** (`lib/aia/mcp_discovery.rb`): Extracted `select_servers` (selection strategy dispatcher), `apply_skip_filter` (post-selection skip), and `select_by_names` (name-list filter) private helpers. The public `discover` interface is unchanged. (7.1)
+
 ## [2.0.6.alpha] - 2026-03-28
 
 ### Improvements (Section 6 — Structural Decompositions)
