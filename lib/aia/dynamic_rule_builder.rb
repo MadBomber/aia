@@ -2,6 +2,7 @@
 
 # lib/aia/dynamic_rule_builder.rb
 
+require 'fileutils'
 require_relative 'keyword_extractor'
 #
 # Dynamically generates KBS rules that map loaded tools to domains
@@ -29,6 +30,9 @@ module AIA
     # These are the domains already covered by build_classification_kb.
     BUILTIN_CLASSIFY_DOMAINS = %w[code data image planning audio].freeze
 
+    # Marshal filename for persisted keyword data (--save / --load).
+    PERSIST_FILENAME = "kbs_keyword_rules.marshal"
+
     module_function
 
     # Orchestrate the full dynamic rule registration flow.
@@ -37,8 +41,12 @@ module AIA
     # @param decisions [AIA::Decisions]
     # @param fact_asserter [AIA::FactAsserter]
     # @param tools [Array] loaded tool classes
+    # @param db_dir [String, nil] directory for persist file (e.g. ~/.config/aia)
+    # @param load_db [Boolean] load persisted keyword data if available
+    # @param save_db [Boolean] persist keyword data after computing
     # @return [Hash] { domain_tools: Hash, server_tools: Hash }
-    def register(knowledge_bases, decisions, fact_asserter, tools)
+    def register(knowledge_bases, decisions, fact_asserter, tools,
+                 db_dir: nil, load_db: false, save_db: false)
       domain_tools = map_tools_to_domains(tools, fact_asserter)
       server_tools = map_tools_to_mcp_servers(tools, fact_asserter)
 
@@ -47,7 +55,8 @@ module AIA
       build_server_scoped_domain_rules(knowledge_bases[:route], decisions, domain_tools, server_tools)
       build_mcp_server_classify_rules(knowledge_bases[:classify], decisions, server_tools)
       build_mcp_server_route_rules(knowledge_bases[:route], decisions, server_tools)
-      build_keyword_route_rules(knowledge_bases[:route], decisions, tools, fact_asserter)
+      build_keyword_route_rules(knowledge_bases[:route], decisions, tools, fact_asserter,
+        db_dir: db_dir, load_db: load_db, save_db: save_db)
 
       { domain_tools: domain_tools, server_tools: server_tools }
     end
@@ -242,22 +251,45 @@ module AIA
     # The rule fires when the prompt's keyword Set overlaps with
     # the tool's TF-IDF-distinctive keyword Set.
     #
+    # When load_db is true and a persisted file exists, loads
+    # keyword data from disk instead of recomputing TF-IDF.
+    # When save_db is true, writes keyword data to disk after computing.
+    #
     # @param kb [KBS::KnowledgeBase] the route KB
     # @param decisions [AIA::Decisions]
     # @param tools [Array] loaded tool objects
     # @param fact_asserter [AIA::FactAsserter]
-    def build_keyword_route_rules(kb, decisions, tools, fact_asserter)
+    # @param db_dir [String, nil] directory for persist file
+    # @param load_db [Boolean] load persisted data if available
+    # @param save_db [Boolean] write keyword data to disk after computing
+    def build_keyword_route_rules(kb, decisions, tools, fact_asserter,
+                                   db_dir: nil, load_db: false, save_db: false)
       return unless kb
       return if tools.empty?
 
+      keywords_by_tool = if load_db
+        load_keyword_data(db_dir) || compute_keyword_data(tools, fact_asserter)
+      else
+        compute_keyword_data(tools, fact_asserter)
+      end
+
+      save_keyword_data(db_dir, keywords_by_tool) if save_db
+
+      build_rules_from_keyword_data(kb, decisions, tools, fact_asserter, keywords_by_tool)
+    end
+
+    # Compute keyword data fresh using TF-IDF.
+    def compute_keyword_data(tools, fact_asserter)
       corpus = tools.each_with_object({}) do |tool, h|
         name = fact_asserter.tool_name(tool)
         desc = fact_asserter.tool_description(tool)
         h[name] = "#{name.tr('_', ' ')} #{desc}"
       end
+      KeywordExtractor.distinctive_keywords(corpus)
+    end
 
-      keywords_by_tool = KeywordExtractor.distinctive_keywords(corpus)
-
+    # Instantiate KBS rules from a pre-built keywords_by_tool hash.
+    def build_rules_from_keyword_data(kb, decisions, tools, fact_asserter, keywords_by_tool)
       tools.each do |tool|
         name   = fact_asserter.tool_name(tool)
         server = tool.respond_to?(:mcp) ? tool.mcp&.to_s : nil
@@ -281,6 +313,34 @@ module AIA
           end
         end
       end
+    end
+
+    # Load persisted keyword data from disk.
+    # Returns Hash{String => Set<String>} on success, nil on failure or missing file.
+    def load_keyword_data(db_dir)
+      return nil unless db_dir
+
+      path = File.join(db_dir, PERSIST_FILENAME)
+      return nil unless File.exist?(path)
+
+      data = Marshal.load(File.binread(path))
+      $stderr.puts "[KBS] Loaded persisted keyword rules from #{path}."
+      data
+    rescue StandardError => e
+      $stderr.puts "[KBS] Failed to load persisted keyword rules: #{e.message}"
+      nil
+    end
+
+    # Save keyword data to disk.
+    def save_keyword_data(db_dir, keywords_by_tool)
+      return unless db_dir && !keywords_by_tool.empty?
+
+      FileUtils.mkdir_p(db_dir)
+      path = File.join(db_dir, PERSIST_FILENAME)
+      File.binwrite(path, Marshal.dump(keywords_by_tool))
+      $stderr.puts "[KBS] Saved keyword rules to #{path}."
+    rescue StandardError => e
+      $stderr.puts "[KBS] Failed to save keyword rules: #{e.message}"
     end
   end
 end

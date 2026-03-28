@@ -276,6 +276,130 @@ class DynamicRuleBuilderTest < Minitest::Test
       "Tool with no meaningful keywords should not get a keyword rule"
   end
 
+  # =========================================================================
+  # build_keyword_route_rules — persistence
+  # =========================================================================
+
+  def test_save_writes_marshal_file
+    Dir.mktmpdir do |dir|
+      kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
+      tool = make_tool("computer_tool",
+        "Control the computer desktop screen application keyboard mouse process")
+
+      AIA::DynamicRuleBuilder.register(
+        kbs, @decisions, @fact_asserter, [tool],
+        db_dir: dir, save_db: true
+      )
+
+      path = File.join(dir, AIA::DynamicRuleBuilder::PERSIST_FILENAME)
+      assert File.exist?(path), "Expected #{path} to exist after --save"
+    end
+  end
+
+  def test_save_file_contains_valid_keyword_data
+    Dir.mktmpdir do |dir|
+      kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
+      tool = make_tool("computer_tool",
+        "Control the computer desktop screen application keyboard mouse process")
+
+      AIA::DynamicRuleBuilder.register(
+        kbs, @decisions, @fact_asserter, [tool],
+        db_dir: dir, save_db: true
+      )
+
+      path = File.join(dir, AIA::DynamicRuleBuilder::PERSIST_FILENAME)
+      data = Marshal.load(File.binread(path))
+      assert_instance_of Hash, data
+      assert data.key?("computer_tool"),
+        "Expected 'computer_tool' in persisted data, got: #{data.keys}"
+      data.each_value { |v| assert_instance_of Set, v }
+    end
+  end
+
+  def test_load_skips_recomputation
+    Dir.mktmpdir do |dir|
+      kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
+      tool = make_tool("computer_tool",
+        "Control the computer desktop screen application keyboard mouse process")
+
+      # First run: save
+      AIA::DynamicRuleBuilder.register(
+        kbs, @decisions, @fact_asserter, [tool],
+        db_dir: dir, save_db: true
+      )
+
+      # Second run: load — distinctive_keywords should NOT be called
+      kbs2 = AIA::KBDefinitions.build_all_kbs(@decisions)
+      AIA::KeywordExtractor.expects(:distinctive_keywords).never
+
+      AIA::DynamicRuleBuilder.register(
+        kbs2, @decisions, @fact_asserter, [tool],
+        db_dir: dir, load_db: true
+      )
+    end
+  end
+
+  def test_load_still_builds_keyword_rules
+    Dir.mktmpdir do |dir|
+      kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
+      tool = make_tool("computer_tool",
+        "Control the computer desktop screen application keyboard mouse process")
+
+      # Save first
+      AIA::DynamicRuleBuilder.register(
+        kbs, @decisions, @fact_asserter, [tool],
+        db_dir: dir, save_db: true
+      )
+
+      # Load second
+      kbs2      = AIA::KBDefinitions.build_all_kbs(@decisions)
+      decisions = AIA::Decisions.new
+
+      AIA::DynamicRuleBuilder.register(
+        kbs2, decisions, @fact_asserter, [tool],
+        db_dir: dir, load_db: true
+      )
+
+      route_kb = kbs2[:route]
+      assert route_kb.rules.any? { |name, _| name.include?("keyword_route") },
+        "Expected keyword_route rules to be present after --load"
+    end
+  end
+
+  def test_load_falls_back_to_compute_when_file_missing
+    Dir.mktmpdir do |dir|
+      kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
+      tool = make_tool("computer_tool",
+        "Control the computer desktop screen application keyboard mouse process")
+
+      # No file written — load should fall back to compute without raising
+      AIA::DynamicRuleBuilder.register(
+        kbs, @decisions, @fact_asserter, [tool],
+        db_dir: dir, load_db: true
+      )
+
+      route_kb = kbs[:route]
+      assert route_kb.rules.any? { |name, _| name.include?("keyword_route") },
+        "Expected keyword_route rules even when no persist file found"
+    end
+  end
+
+  def test_no_save_when_save_db_false
+    Dir.mktmpdir do |dir|
+      kbs  = AIA::KBDefinitions.build_all_kbs(@decisions)
+      tool = make_tool("computer_tool",
+        "Control the computer desktop screen application keyboard mouse process")
+
+      AIA::DynamicRuleBuilder.register(
+        kbs, @decisions, @fact_asserter, [tool]
+        # save_db defaults to false
+      )
+
+      path = File.join(dir, AIA::DynamicRuleBuilder::PERSIST_FILENAME)
+      refute File.exist?(path), "No file should be written when save_db is false"
+    end
+  end
+
   private
 
   def make_tool(name, description)
