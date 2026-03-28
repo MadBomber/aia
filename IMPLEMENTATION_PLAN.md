@@ -7,13 +7,13 @@ Each section is independently testable and releasable. No section depends on unr
 
 ---
 
-## Section 1 — Safety Net (P0 Critical Fixes)
+## Section 1 — Safety Net (P0 Critical Fixes) ✓ COMPLETED
 
-**Release tag:** `v2.0.1.alpha`
+**Release tag:** `v2.0.1.alpha` — tagged 2026-03-27
 
 These are all small, self-contained fixes with no interdependencies. Each can be implemented and tested in isolation. Together they eliminate the critical production risks identified in the architecture review.
 
-### 1.1 — MCPConnectionManager: Mutex on All Reads
+### 1.1 — MCPConnectionManager: Mutex on All Reads ✓
 **Source:** C1 / P0-1 | **File:** `mcp_connection_manager.rb:72-83` | **Size:** S
 
 `inject_into()` reads `@connected_clients` and `@connected_tools` without acquiring `@mutex`. Threads writing in `connect_one()` race with the main thread reading in `inject_into()`.
@@ -24,7 +24,7 @@ These are all small, self-contained fixes with no interdependencies. Each can be
 
 ---
 
-### 1.2 — AIA.reset! for Test Isolation
+### 1.2 — AIA.reset! for Test Isolation ✓
 **Source:** C2 / P0-2 | **File:** `aia.rb:77-88` | **Size:** S
 
 Six mutable class-level singletons (`config`, `client`, `session_tracker`, `turn_state`, `task_coordinator`, `decisions`, `rule_router`) with no reset mechanism. Tests must manually nil each one; forgetting one causes cross-test state leakage.
@@ -43,7 +43,7 @@ Call `AIA.reset!` in every test `teardown`.
 
 ---
 
-### 1.3 — Decisions Schema: Reject nil Model
+### 1.3 — Decisions Schema: Reject nil Model ✓
 **Source:** C3 / P0-3 | **File:** `decisions.rb:22-30` | **Size:** S
 
 `decisions.add(:model_decision, model: nil)` is accepted silently. Downstream callers pass `nil` to `RobotLab.build(model: nil)` — crash with no indication of source.
@@ -54,7 +54,7 @@ Call `AIA.reset!` in every test `teardown`.
 
 ---
 
-### 1.4 — HistoryManager: Raise Instead of exit(1)
+### 1.4 — HistoryManager: Raise Instead of exit(1) ✓
 **Source:** C7 / P0-5 | **File:** `history_manager.rb:32,39,45` | **Size:** S
 
 Any error during variable collection terminates the process via `exit(1)`. No way to handle gracefully in tests or non-CLI contexts.
@@ -65,7 +65,7 @@ Any error during variable collection terminates the process via `exit(1)`. No wa
 
 ---
 
-### 1.5 — TFIDF Filter: Fix Undefined `logger`
+### 1.5 — TFIDF Filter: Fix Undefined `logger` ✓
 **Source:** C8 / P0-6 | **File:** `tool_filter/tfidf.rb:58` | **Size:** S
 
 `logger.warn(...)` will raise `NoMethodError` on the error path. Currently masked because the error path is never hit in tests.
@@ -76,12 +76,12 @@ Any error during variable collection terminates the process via `exit(1)`. No wa
 
 ---
 
-## Section 2 — Correctness Completions (P0 + P1 Small Fixes)
+## Section 2 — Correctness Completions (P0 + P1 Small Fixes) ✓ COMPLETED
 
-**Release tag:** `v2.0.2.alpha`
+**Release tag:** `v2.0.2.alpha` — tagged 2026-03-27
 **Depends on:** Section 1 (requires `AIA.reset!` for test isolation)
 
-### 2.1 — DecisionApplier: Surface Failed Temp Robot Build
+### 2.1 — DecisionApplier: Surface Failed Temp Robot Build ✓
 **Source:** C4 / P0-4 | **File:** `decision_applier.rb:100-116` | **Size:** S
 
 If `build_temp_robot` returns nil, the turn proceeds silently with the original robot. `context.model_overridden` is never set.
@@ -92,7 +92,7 @@ If `build_temp_robot` returns nil, the turn proceeds silently with the original 
 
 ---
 
-### 2.2 — FactAsserter: Add Null Guards
+### 2.2 — FactAsserter: Add Null Guards ✓
 **Source:** P1-10 | **File:** `fact_asserter.rb:17-32` | **Size:** S
 
 `assert_model_facts` calls `config.models.each` without nil check. `assert_session_facts` accesses `AIA.session_tracker` with no null guard.
@@ -103,7 +103,7 @@ If `build_temp_robot` returns nil, the turn proceeds silently with the original 
 
 ---
 
-### 2.3 — RuleRouter: Validate Pipeline Completeness
+### 2.3 — RuleRouter: Validate Pipeline Completeness ✓
 **Source:** C5 / P1-11 | **File:** `rule_router.rb:84-105` | **Size:** S
 
 Missing KBs are skipped with `next unless kb` — no warning. If `:classify` is absent, downstream KBs receive zero facts and all rules silently fail.
@@ -114,7 +114,7 @@ Missing KBs are skipped with `next unless kb` — no warning. If `:classify` is 
 
 ---
 
-### 2.4 — TaskCoordinator: Remove bridge.send(:db)
+### 2.4 — TaskCoordinator: Remove bridge.send(:db) ✓
 **Source:** P1-14 | **File:** `task_coordinator.rb:14` | **Size:** S
 
 `@db = bridge.send(:db)` bypasses private access. If `TrakFlowBridge` renames `db`, `TaskCoordinator` silently fails with `NoMethodError`.
@@ -125,7 +125,7 @@ Missing KBs are skipped with `next unless kb` — no warning. If `:classify` is 
 
 ---
 
-### 2.5 — Extract CostCalculator Service
+### 2.5 — Extract CostCalculator Service ✓
 **Source:** P1-15 | **Files:** `session_tracker.rb`, `ui_presenter.rb`, `prompt_handler.rb` | **Size:** S
 
 Cost calculation (fetch price from RubyLLM, multiply tokens, divide by 1,000,000) is duplicated in three places.

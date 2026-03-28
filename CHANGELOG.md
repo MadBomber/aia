@@ -1,4 +1,28 @@
 # Changelog
+
+## [2.0.2.alpha] - 2026-03-27
+
+### Improvements (Section 2 — Correctness Completions)
+
+- **`DecisionApplier`**: When `build_temp_robot` returns nil, now emits a `warn` and explicitly sets `context.model_overridden = false` before returning. Previously the turn fell through silently with no indication the model switch failed. (C4)
+- **`FactAsserter`**: Changed `config.models.each` → `Array(config.models).each` to prevent `NoMethodError` when `config.models` is nil during early KBS evaluation. (P1-10)
+- **`RuleRouter`**: Changed silent `next unless kb` to emit a structured warning (`[RuleRouter] Warning: knowledge base '#{name}' not found in pipeline — skipping`) when a KB from `KB_ORDER` is absent. Missing KBs no longer cause silent rule failures. (C5)
+- **`TrakFlowBridge`**: `attr_reader :db` moved from `private` to public. The database accessor is now part of the public API.
+- **`TaskCoordinator`**: Replaced `bridge.send(:db)` with `bridge.db`, removing the private-access workaround.
+- **New `AIA::CostCalculator` module** (`lib/aia/cost_calculator.rb`): Extracts the duplicated cost calculation logic that previously lived in `SessionTracker` and `UIPresenter`. Single entry point: `AIA::CostCalculator.calculate(model_id:, input_tokens:, output_tokens:)` → `{ available:, total_cost:, input_cost:, output_cost: }`. (P1-15)
+- **`SessionTracker`**: `compute_cost_for_model` and `compute_cost` now delegate to `CostCalculator`.
+- **`UIPresenter`**: `calculate_cost` now delegates to `CostCalculator`.
+
+## [2.0.1.alpha] - 2026-03-27
+
+### Improvements (Section 1 — Safety Net)
+
+- **`MCPConnectionManager`**: All reads of `@connected_clients`, `@connected_tools`, and `@connected_servers` are now wrapped in `@mutex.synchronize`. Eliminates data races between `connect_one` threads and callers of `inject_into`, `update_config`, `any_tools?`, `connected_server_names`, and `failed_server_names`. (C1)
+- **`AIA.reset!`**: New class method that nils all seven mutable singletons (`@config`, `@client`, `@session_tracker`, `@turn_state`, `@task_coordinator`, `@decisions`, `@rule_router`) for clean test isolation. (C2)
+- **`Decisions#add(:model_decision)`**: Now raises `ArgumentError` when `:model` is nil, preventing silent propagation of invalid model decisions downstream. (C3)
+- **`HistoryManager`**: All three `exit(1)` calls replaced with `raise AIA::Error`. Callers can now rescue or propagate the error; `AIA.run` catches it and exits with a message. (C7)
+- **`ToolFilter::TFIDF`**: Replaced undefined `logger.warn` in the rescue path with `Kernel#warn`, eliminating a `NoMethodError` that would mask the original classifier error. (P1-16)
+
 ## [2.0.0.alpha] - 2026-03-26
 
 ### Breaking Changes
