@@ -12,6 +12,8 @@ module AIA
     include ContentExtractor
     include HandlerProtocol
 
+    MAX_CACHE_SIZE = 5
+
     def initialize(robot:, ui_presenter:, tracker:)
       @robot        = robot
       @ui_presenter = ui_presenter
@@ -20,6 +22,11 @@ module AIA
     end
 
     attr_writer :robot
+
+    # Release all cached specialist robots.
+    def cleanup!
+      @spawned.clear
+    end
 
     # Spawn a specialist robot to handle a prompt.
     #
@@ -37,11 +44,11 @@ module AIA
                             detect_specialist(primary, prompt)
                           end
 
-      # Spawn or reuse specialist
-      specialist = @spawned[role] ||= primary.spawn(
-        name:          role,
-        system_prompt: instruction
-      )
+      # Spawn or reuse specialist (evict oldest when cache is full)
+      specialist = @spawned[role] ||= begin
+        evict_oldest! if @spawned.size >= MAX_CACHE_SIZE
+        primary.spawn(name: role, system_prompt: instruction)
+      end
 
       @ui_presenter.display_info("Specialist '#{role}' responding...")
 
@@ -68,6 +75,10 @@ module AIA
     end
 
     private
+
+    def evict_oldest!
+      @spawned.delete(@spawned.keys.first)
+    end
 
     def detect_specialist(primary, prompt)
       @ui_presenter.display_info("Determining specialist type...")

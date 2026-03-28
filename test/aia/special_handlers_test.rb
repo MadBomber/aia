@@ -95,9 +95,11 @@ class DebateHandlerIntegrationTest < Minitest::Test
     bob   = mock_robot('Bob')
     network = mock_network([alice, bob])
 
-    # Never converge
     alice.stubs(:run).returns(mock_result("Alice disagrees"))
     bob.stubs(:run).returns(mock_result("Bob disagrees"))
+
+    # Force SimilarityScorer to always return low similarity so debate never converges
+    AIA::SimilarityScorer.stubs(:score).returns([nil, 0.1])
 
     handler = AIA::DebateHandler.new(robot: network, ui_presenter: @ui, tracker: @tracker)
     result = handler.handle(AIA::HandlerContext.new(prompt: "contentious topic"))

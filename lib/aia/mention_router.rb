@@ -37,8 +37,10 @@ module AIA
 
       return false if matched.empty?
 
+      clean_prompt = prompt.gsub(/@\w+\s*/i, '').strip
+
       report_unknown_mentions(mention_tokens, all_robots)
-      run_mentioned_robots(matched, prompt)
+      run_mentioned_robots(matched, clean_prompt)
       true
     end
 

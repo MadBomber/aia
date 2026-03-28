@@ -12,7 +12,9 @@ module AIA
     include ContentExtractor
     include HandlerProtocol
 
-    MAX_ROUNDS = 5
+    MAX_ROUNDS          = 5
+    MIN_ROUNDS          = 2
+    SIMILARITY_THRESHOLD = 0.85
 
     def initialize(robot:, ui_presenter:, tracker:)
       @robot        = robot
@@ -59,9 +61,10 @@ module AIA
           write_to_memory(round, robot.name, content)
         end
 
+        previous = rounds.last
         rounds << round_results
 
-        if converged?(round_results)
+        if converged?(round, round_results, previous)
           @ui_presenter.display_info("  Converged in round #{round + 1}.")
           break
         end
@@ -95,8 +98,15 @@ module AIA
       CONTEXT
     end
 
-    def converged?(round_results)
-      round_results.any? { |r| r[:content].to_s.include?("CONVERGED") }
+    def converged?(round_index, current_results, previous_results)
+      return false if round_index < MIN_ROUNDS - 1
+      return false if previous_results.nil?
+
+      current_text  = current_results.map  { |r| r[:content].to_s }.join(" ")
+      previous_text = previous_results.map { |r| r[:content].to_s }.join(" ")
+
+      scores = SimilarityScorer.score([previous_text, current_text])
+      (scores[1] || 0.0) >= SIMILARITY_THRESHOLD
     end
 
     def write_to_memory(round, robot_name, content)

@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.5.alpha] - 2026-03-27
+
+### Improvements (Section 5 — State Machine & Lifecycle)
+
+- **`TurnState#request(mode)` mutual exclusion** (`lib/aia/turn_state.rb`): Added `EXCLUSIVE_MODES` constant and `request(mode, type: nil)` method. Calling `request` clears all other exclusive `force_*` flags before setting the new one, enforcing that only one special mode is active at a time. Added `active_mode` helper returning the currently active mode symbol. Direct `attr_accessor` assignment still works for backward compatibility and test assertions. (P1-13)
+- **`SpawnHandler` lifecycle** (`lib/aia/spawn_handler.rb`): Added `MAX_CACHE_SIZE = 5` constant. When a new specialist is spawned and the cache is full, the oldest entry is evicted (insertion-order LRU via Ruby Hash). Added `cleanup!` method that clears all cached specialists — called on session end to release resources. (P2-22)
+- **`DebateHandler` convergence** (`lib/aia/debate_handler.rb`): Replaced the fragile `"CONVERGED"` string check with semantic similarity scoring using `SimilarityScorer`. Added `MIN_ROUNDS = 2` and `SIMILARITY_THRESHOLD = 0.85`. Convergence is only evaluated after `MIN_ROUNDS` rounds; it triggers when the combined response text from consecutive rounds scores ≥ threshold. One robot mentioning "CONVERGED" incidentally no longer ends the debate prematurely. (P2-21)
+- **`MentionRouter` mention stripping** (`lib/aia/mention_router.rb`): After matching `@mention` tokens to robots, all mention tokens are stripped from the prompt (`gsub(/@\w+\s*/i, '').strip`) before routing to the target robot. The robot now receives only the query, not the routing prefix. (P3-26)
+- **`ModelSwitchHandler#model_exists?` caching** (`lib/aia/model_switch_handler.rb`): Added `@model_exists_cache` instance hash. Each model name is looked up via `RubyLLM.models.find(name)` at most once per handler instance; subsequent calls for the same name return the cached boolean without hitting the provider. (P3-27)
+
 ## [2.0.4.alpha] - 2026-03-27
 
 ### Improvements (Section 4 — Tool Infrastructure)

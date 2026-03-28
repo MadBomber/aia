@@ -252,12 +252,12 @@ Identical embedding model loading code in two files.
 
 ---
 
-## Section 5 — State Machine & Lifecycle (P1 + P2 + P3)
+## Section 5 — State Machine & Lifecycle (P1 + P2 + P3) ✓ COMPLETED
 
-**Release tag:** `v2.0.5.alpha`
+**Release tag:** `v2.0.5.alpha` — tagged 2026-03-27
 **Depends on:** Section 3 (HandlerProtocol from 3.2)
 
-### 5.1 — TurnState: Define Valid State Combinations
+### 5.1 — TurnState: Define Valid State Combinations ✓
 **Source:** P1-13 | **File:** `turn_state.rb` | **Size:** M
 
 Eight `force_*` flags with no state machine. Multiple flags can be true simultaneously. Flag clearing is distributed across `ChatLoop`, `SpecialModeHandler`, and individual directives.
@@ -268,7 +268,7 @@ Eight `force_*` flags with no state machine. Multiple flags can be true simultan
 
 ---
 
-### 5.2 — Manage Spawned Robot Lifecycle
+### 5.2 — Manage Spawned Robot Lifecycle ✓
 **Source:** P2-22 | **File:** `spawn_handler.rb:18,39` | **Size:** M
 
 `@spawned = {}` caches specialist robots indefinitely. No cleanup on session end. No resource limits. Reuses cached specialist with accumulated history.
@@ -279,7 +279,7 @@ Eight `force_*` flags with no state machine. Multiple flags can be true simultan
 
 ---
 
-### 5.3 — Improve Debate Convergence
+### 5.3 — Improve Debate Convergence ✓
 **Source:** P2-21 | **File:** `debate_handler.rb:96-98` | **Size:** M
 
 Convergence check is a string match for `"CONVERGED"` — one robot mentioning the word ends the debate prematurely.
@@ -290,7 +290,7 @@ Convergence check is a string match for `"CONVERGED"` — one robot mentioning t
 
 ---
 
-### 5.4 — MentionRouter: Strip Mentions from Prompt Before Sending
+### 5.4 — MentionRouter: Strip Mentions from Prompt Before Sending ✓
 **Source:** P3-26 | **File:** `mention_router.rb` | **Size:** S
 
 Mentions (`@robot_name`) are parsed but not stripped from the prompt sent to the target robot.
@@ -301,7 +301,7 @@ Mentions (`@robot_name`) are parsed but not stripped from the prompt sent to the
 
 ---
 
-### 5.5 — Cache model_exists? Lookups in ModelSwitchHandler
+### 5.5 — Cache model_exists? Lookups in ModelSwitchHandler ✓
 **Source:** P3-27 | **File:** `model_switch_handler.rb` | **Size:** S
 
 Repeated `model_exists?` calls with no caching.

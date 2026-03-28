@@ -165,6 +165,30 @@ class ModelSwitchHandlerTest < Minitest::Test
     assert_equal true, result
   end
 
+  # ---------------------------------------------------------------------------
+  # 5.5 — model_exists? cache
+  # ---------------------------------------------------------------------------
+
+  def test_model_exists_caches_result_and_calls_provider_once
+    # RubyLLM not defined in test env — ensure the false branch is cached
+    result1 = @handler.send(:model_exists?, "gpt-99-turbo")
+    result2 = @handler.send(:model_exists?, "gpt-99-turbo")
+
+    assert_equal result1, result2
+
+    cache = @handler.instance_variable_get(:@model_exists_cache)
+    assert cache.key?("gpt-99-turbo"), "Result should be cached after first call"
+  end
+
+  def test_model_exists_independent_entries_per_model
+    @handler.send(:model_exists?, "model-a")
+    @handler.send(:model_exists?, "model-b")
+
+    cache = @handler.instance_variable_get(:@model_exists_cache)
+    assert cache.key?("model-a")
+    assert cache.key?("model-b")
+  end
+
   private
 
   def create_test_config

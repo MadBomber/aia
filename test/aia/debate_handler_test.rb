@@ -70,22 +70,18 @@ class DebateHandlerTest < Minitest::Test
     assert_includes result, "Round 1"
   end
 
-  def test_debate_converges_when_converged_keyword_found
-    call_count = 0
-
+  def test_debate_requires_min_rounds_before_convergence
+    # CONVERGED keyword alone no longer ends the debate in round 1.
+    # MIN_ROUNDS = 2 means the debate must run at least 2 rounds.
     robot_a = mock('robot_a')
     robot_a.stubs(:name).returns("Alice")
     robot_a.stubs(:with_bus)
-    robot_a.expects(:run).at_least_once.returns(
-      OpenStruct.new(reply: "My position is X.")
-    )
+    robot_a.stubs(:run).returns(OpenStruct.new(reply: "My position is X."))
 
     robot_b = mock('robot_b')
     robot_b.stubs(:name).returns("Bob")
     robot_b.stubs(:with_bus)
-    robot_b.expects(:run).at_least_once.returns(
-      OpenStruct.new(reply: "CONVERGED: I agree completely.")
-    )
+    robot_b.stubs(:run).returns(OpenStruct.new(reply: "CONVERGED: I agree completely, totally different take."))
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
@@ -99,9 +95,33 @@ class DebateHandlerTest < Minitest::Test
 
     result = handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
 
-    # Should converge after round 1 since Bob says CONVERGED
+    # Must run at least 2 rounds regardless of CONVERGED keyword in round 1
     assert_includes result, "Round 1"
-    refute_includes result, "Round 2"
+    assert_includes result, "Round 2"
+  end
+
+  def test_debate_converges_on_high_similarity_after_min_rounds
+    # Identical responses in both rounds → similarity = 1.0 → converge after round 2
+    same_reply = "The answer is clearly forty-two and we all agree."
+
+    robot_a = build_mock_robot("Alice", same_reply)
+    robot_b = build_mock_robot("Bob", same_reply)
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Meaning of life?"))
+
+    assert_includes result, "Round 1"
+    assert_includes result, "Round 2"
+    refute_includes result, "Round 3"
   end
 
   def test_debate_writes_to_memory_when_available

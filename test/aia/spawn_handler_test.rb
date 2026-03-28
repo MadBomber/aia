@@ -151,6 +151,64 @@ class SpawnHandlerTest < Minitest::Test
     handler.handle(AIA::HandlerContext.new(prompt: "Question", specialist_type: "test_expert"))
   end
 
+  # ---------------------------------------------------------------------------
+  # 5.2 — Lifecycle: max cache size + cleanup!
+  # ---------------------------------------------------------------------------
+
+  def test_cleanup_clears_all_cached_specialists
+    specialist = mock('specialist')
+    specialist.stubs(:run).returns(OpenStruct.new(reply: "Answer"))
+
+    primary = mock('primary')
+    primary.stubs(:name).returns("Alice")
+    primary.stubs(:respond_to?).with(:bus).returns(true)
+    primary.stubs(:bus).returns(mock('bus'))
+    primary.stubs(:with_bus)
+    primary.stubs(:spawn).returns(specialist)
+
+    handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
+    handler.handle(AIA::HandlerContext.new(prompt: "Q", specialist_type: "expert_a"))
+    handler.handle(AIA::HandlerContext.new(prompt: "Q", specialist_type: "expert_b"))
+
+    handler.cleanup!
+    assert_equal 0, handler.instance_variable_get(:@spawned).size
+  end
+
+  def test_cache_evicts_oldest_when_max_size_exceeded
+    specialists = AIA::SpawnHandler::MAX_CACHE_SIZE.times.map do |i|
+      s = mock("specialist_#{i}")
+      s.stubs(:run).returns(OpenStruct.new(reply: "Answer #{i}"))
+      s
+    end
+
+    primary = mock('primary')
+    primary.stubs(:name).returns("Alice")
+    primary.stubs(:respond_to?).with(:bus).returns(true)
+    primary.stubs(:bus).returns(mock('bus'))
+    primary.stubs(:with_bus)
+
+    call_count = 0
+    primary.stubs(:spawn).with { true }.returns(*(specialists + [specialists[0]]))
+
+    handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
+
+    # Fill the cache to MAX_CACHE_SIZE
+    AIA::SpawnHandler::MAX_CACHE_SIZE.times do |i|
+      handler.handle(AIA::HandlerContext.new(prompt: "Q#{i}", specialist_type: "role_#{i}"))
+    end
+
+    cache = handler.instance_variable_get(:@spawned)
+    assert_equal AIA::SpawnHandler::MAX_CACHE_SIZE, cache.size
+
+    # Spawning one more should evict the oldest ("role_0")
+    handler.handle(AIA::HandlerContext.new(prompt: "New Q", specialist_type: "role_new"))
+
+    cache = handler.instance_variable_get(:@spawned)
+    assert_equal AIA::SpawnHandler::MAX_CACHE_SIZE, cache.size
+    refute cache.key?("role_0"), "Oldest entry should have been evicted"
+    assert cache.key?("role_new"), "New entry should be present"
+  end
+
   def test_force_spawn_flag_and_type
     @turn_state.force_spawn = true
     @turn_state.spawn_type = "data_scientist"

@@ -13,6 +13,7 @@ module AIA
     def initialize(alias_registry, ui_presenter)
       @aliases = alias_registry
       @ui = ui_presenter
+      @model_exists_cache = {}
     end
 
     # Check decisions for model-change intents and handle them.
@@ -93,10 +94,13 @@ module AIA
     end
 
     def model_exists?(name)
-      return false unless defined?(RubyLLM) && RubyLLM.respond_to?(:models)
-      !!RubyLLM.models.find(name)
-    rescue StandardError
-      false
+      return @model_exists_cache[name] if @model_exists_cache.key?(name)
+      @model_exists_cache[name] = begin
+        return false unless defined?(RubyLLM) && RubyLLM.respond_to?(:models)
+        !!RubyLLM.models.find(name)
+      rescue StandardError
+        false
+      end
     end
 
     def apply_model_change(config, model_names)
