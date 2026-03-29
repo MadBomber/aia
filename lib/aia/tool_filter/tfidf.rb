@@ -2,12 +2,18 @@
 
 # lib/aia/tool_filter/tfidf.rb
 #
-# TF-IDF based tool filtering (Option B).
+# TF-IDF based tool filtering (Option A).
 # Built once at session start from all tool descriptions (local + MCP).
 # Per-turn: scores user prompt against each tool's description via cosine
 # similarity and returns tool names above threshold, capped at max_tools.
+#
+# Text is normalized before indexing and querying:
+#   - Lowercased and tokenized on word boundaries
+#   - Each token is Porter-stemmed (via fast-stemmer, a classifier dependency)
+#   - Parameter names are appended to each tool's description text
 
 require 'classifier'
+require 'fast-stemmer'
 
 module AIA
   class ToolFilter
@@ -45,7 +51,7 @@ module AIA
       def do_filter_with_scores(prompt)
         return [] if @tool_entries.empty? || @tfidf.nil? || prompt.nil? || prompt.strip.empty?
 
-        query_vector = @tfidf.transform(prompt)
+        query_vector = @tfidf.transform(normalize(prompt))
 
         scored = @tool_entries.each_with_index.map do |entry, i|
           score = cosine_similarity(query_vector, @tool_vectors[i])
@@ -65,15 +71,43 @@ module AIA
 
       def build_index(tools)
         Array(tools).each do |tool|
-          name = @fact_asserter.tool_name(tool)
-          desc = @fact_asserter.tool_description(tool)
+          name   = @fact_asserter.tool_name(tool)
+          desc   = @fact_asserter.tool_description(tool)
+          params = extract_param_names(tool)
           next if name.empty?
 
-          text = desc.empty? ? name : "#{name} #{desc}"
-          @tool_entries << { name: name, description: text }
+          raw_text = [name, desc, params].reject(&:empty?).join(" ")
+          @tool_entries << { name: name, description: normalize(raw_text) }
         end
 
         @tool_count = @tool_entries.size
+      end
+
+      # Collect parameter names from a tool object.
+      # RubyLLM::Tool exposes .parameters as {sym => Parameter}.
+      # Parameter names are discriminative (e.g. "sql_query", "xpath", "url").
+      def extract_param_names(tool)
+        return "" unless tool.respond_to?(:parameters)
+
+        params = tool.parameters
+        return "" unless params.respond_to?(:values)
+
+        names = params.values.map do |p|
+          p.respond_to?(:name) ? p.name.to_s : p.to_s
+        end
+        names.reject(&:empty?).join(" ")
+      rescue StandardError
+        ""
+      end
+
+      # Normalize text for TF-IDF: tokenize, stem each word, rejoin.
+      # Applied symmetrically to both tool text (at index time) and
+      # the user prompt (at query time) so the vocabulary matches.
+      def normalize(text)
+        text.downcase
+            .scan(/[a-z]+/)
+            .map(&:stem)
+            .join(" ")
       end
 
       # Cosine similarity between two TF-IDF hash vectors.
