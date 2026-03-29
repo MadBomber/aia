@@ -339,6 +339,8 @@ Total: 5 skills
 ### `/ruby`
 Execute arbitrary Ruby code and insert the result.
 
+> **Security note:** `/ruby` executes the provided expression via `eval()` with no sandboxing. It has full access to the Ruby environment, the filesystem, and all loaded gems — equivalent to running arbitrary Ruby code in your terminal. Only use `/ruby` in prompts you trust. Do not share prompts containing `/ruby` unless you have reviewed their content.
+
 **Syntax**: `/ruby expression`
 
 **Examples**:
