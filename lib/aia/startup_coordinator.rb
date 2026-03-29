@@ -12,9 +12,8 @@ module AIA
   class StartupCoordinator
     attr_reader :filters, :mcp_manager
 
-    def initialize(robot:, rule_router:, ui_presenter:)
+    def initialize(robot:, ui_presenter:)
       @robot       = robot
-      @rule_router = rule_router
       @ui          = ui_presenter
       @filters     = {}
       @mcp_manager = nil
@@ -26,7 +25,7 @@ module AIA
     def run(config)
       connect_mcp_servers(config)
       tools    = all_available_tools(config)
-      @filters = ToolFilterRegistry.build_from_config(config, tools, rule_router: @rule_router)
+      @filters = ToolFilterRegistry.build_from_config(config, tools)
       initialize_task_coordinator
       attach_bus_if_network
     end
@@ -45,7 +44,7 @@ module AIA
       servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
                   @robot.mcp_config
                 else
-                  MCPDiscovery.new(@rule_router.decisions).discover(config)
+                  MCPDiscovery.new.discover(config)
                     .map { |s| MCPConfigNormalizer.normalize(s) }
                 end
 

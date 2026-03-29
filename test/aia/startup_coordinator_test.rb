@@ -22,8 +22,6 @@ class StartupCoordinatorTest < Minitest::Test
     AIA.stubs(:task_coordinator=)
     AIA.stubs(:turn_state).returns(AIA::TurnState.new)
 
-    @rule_router = mock('rule_router')
-    @rule_router.stubs(:register_tools)
     @ui = mock('ui_presenter')
     @ui.stubs(:display_info)
   end
@@ -36,7 +34,7 @@ class StartupCoordinatorTest < Minitest::Test
     AIA::TaskCoordinator.stubs(:new).raises(StandardError, "no trakflow")
 
     coordinator = AIA::StartupCoordinator.new(
-      robot: robot, rule_router: @rule_router, ui_presenter: @ui
+      robot: robot, ui_presenter: @ui
     )
     coordinator.run(@config)
 
@@ -50,7 +48,7 @@ class StartupCoordinatorTest < Minitest::Test
     AIA::TaskCoordinator.stubs(:new).raises(StandardError)
 
     coordinator = AIA::StartupCoordinator.new(
-      robot: robot, rule_router: @rule_router, ui_presenter: @ui
+      robot: robot, ui_presenter: @ui
     )
     # Should not raise even with no_mcp = true
     coordinator.run(@config) # passes if no exception raised
@@ -64,7 +62,7 @@ class StartupCoordinatorTest < Minitest::Test
     AIA::RobotFactory.expects(:attach_bus).never
 
     coordinator = AIA::StartupCoordinator.new(
-      robot: robot, rule_router: @rule_router, ui_presenter: @ui
+      robot: robot, ui_presenter: @ui
     )
     coordinator.run(@config)
   end
