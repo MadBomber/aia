@@ -53,9 +53,13 @@ class PipelineOrchestratorTest < Minitest::Test
     @prompt_handler.stubs(:fetch_prompt).with(nil).returns(nil)
     @prompt_handler.stubs(:fetch_prompt).with('').returns(nil)
 
+    @robot.expects(:run).at_least_once.returns(OpenStruct.new(reply: "AI response"))
+
     orchestrator = build_orchestrator
-    # Should not raise
-    orchestrator.process(@config) # passes if no exception raised
+    orchestrator.process(@config)
+
+    assert_equal 1, @config.pipeline.count { |e| e == 'valid_prompt' },
+                 "pipeline should contain exactly one valid (non-nil, non-empty) entry"
   end
 
   def test_process_records_turn

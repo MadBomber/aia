@@ -86,7 +86,6 @@ module AIA
 
       network = VerificationNetwork.build(AIA.config)
       result = @ui_presenter.with_spinner("Verifying") { network.run(prompt) }
-      content = extract_content(result)
 
       present_result(result, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true
