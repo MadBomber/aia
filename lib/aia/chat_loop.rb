@@ -14,7 +14,7 @@ module AIA
   class ChatLoop
     include ContentExtractor
 
-    def initialize(robot, ui_presenter, directive_processor, rule_router,
+    def initialize(robot, ui_presenter, directive_processor, rule_router = nil,
                    session_tracker: nil, alias_registry: nil, filters: {})
       @robot               = robot
       @ui_presenter        = ui_presenter
@@ -23,7 +23,7 @@ module AIA
       @tracker             = session_tracker || SessionTracker.new
       @alias_registry      = alias_registry || ModelAliasRegistry.new
       @model_switch_handler = ModelSwitchHandler.new(@alias_registry, @ui_presenter)
-      @decision_applier    = DecisionApplier.new(@ui_presenter)
+      @decision_applier    = defined?(DecisionApplier) ? DecisionApplier.new(@ui_presenter) : nil
       @filters             = filters
 
       @streaming_runner = StreamingRunner.new

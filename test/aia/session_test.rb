@@ -85,8 +85,7 @@ class SessionTest < Minitest::Test
       prompt_handler:  mock('prompt_handler'),
       input_collector: mock('input_collector'),
       ui_presenter:    mock('ui'),
-      session_tracker: mock('tracker'),
-      rule_router:     mock('rule_router')
+      session_tracker: mock('tracker')
     )
   end
 
@@ -139,7 +138,6 @@ class SessionTest < Minitest::Test
     refute_nil @session.instance_variable_get(:@ui_presenter)
     refute_nil @session.instance_variable_get(:@directive_processor)
     refute_nil @session.instance_variable_get(:@input_collector)
-    refute_nil @session.instance_variable_get(:@rule_router)
   end
 
   def test_setup_output_file_truncates_existing_file
@@ -267,9 +265,8 @@ class ChatLoopTest < Minitest::Test
     @robot = mock('robot')
     @ui_presenter = mock('ui_presenter')
     @directive_processor = mock('directive_processor')
-    @rule_router = mock('rule_router')
 
-    @chat_loop = AIA::ChatLoop.new(@robot, @ui_presenter, @directive_processor, @rule_router)
+    @chat_loop = AIA::ChatLoop.new(@robot, @ui_presenter, @directive_processor)
   end
 
   def teardown

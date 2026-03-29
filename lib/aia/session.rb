@@ -19,7 +19,6 @@ require_relative "prompt_handler"
 require_relative "utility"
 require_relative "input_collector"
 require_relative "robot_factory"
-require_relative "rule_router"
 require_relative "tool_filter_registry"
 require_relative "chat_loop"
 
@@ -37,19 +36,12 @@ module AIA
     # Starts the session, processing all prompts in the pipeline and then
     # optionally starting an interactive chat session.
     def start
-      # Apply rules before building robot
-      @rule_router.evaluate(AIA.config)
-
-      # Apply startup decisions (model selection, MCP filtering, gate warnings)
-      applier = DecisionApplier.new(@ui_presenter)
-      applier.apply(@rule_router.decisions, AIA.config, startup: true)
-
-      # Build robot or network (uses KBS-adjusted config)
+      # Build robot or network
       @robot = RobotFactory.build(AIA.config)
       AIA.client = @robot
 
       # Run all startup coordination: MCP, tools, filters, task board, bus
-      coordinator = StartupCoordinator.new(robot: @robot, rule_router: @rule_router, ui_presenter: @ui_presenter)
+      coordinator = StartupCoordinator.new(robot: @robot, ui_presenter: @ui_presenter)
       coordinator.run(AIA.config)
       @filters     = coordinator.filters
       @mcp_manager = coordinator.mcp_manager
@@ -70,8 +62,7 @@ module AIA
         prompt_handler:  @prompt_handler,
         input_collector: @input_collector,
         ui_presenter:    @ui_presenter,
-        session_tracker: @session_tracker,
-        rule_router:     @rule_router
+        session_tracker: @session_tracker
       ).process(AIA.config)
 
       # Start chat mode after all prompts are processed
@@ -90,9 +81,6 @@ module AIA
       @directive_processor = DirectiveProcessor.new
       @input_collector     = InputCollector.new
 
-      @rule_router         = RuleRouter.new
-
-      AIA.rule_router      = @rule_router
       @session_tracker     = SessionTracker.new
       @alias_registry      = ModelAliasRegistry.new(
         AIA.config.respond_to?(:model_aliases) ? (AIA.config.model_aliases || {}) : {}
@@ -109,7 +97,7 @@ module AIA
 
     def build_chat_loop
       ChatLoop.new(
-        @robot, @ui_presenter, @directive_processor, @rule_router,
+        @robot, @ui_presenter, @directive_processor,
         session_tracker: @session_tracker,
         alias_registry: @alias_registry,
         filters: @filters

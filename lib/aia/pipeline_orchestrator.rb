@@ -12,7 +12,7 @@ module AIA
   class PipelineOrchestrator
     include ContentExtractor
 
-    def initialize(robot:, prompt_handler:, input_collector:, ui_presenter:, session_tracker:, rule_router:)
+    def initialize(robot:, prompt_handler:, input_collector:, ui_presenter:, session_tracker:, rule_router: nil)
       @robot           = robot
       @prompt_handler  = prompt_handler
       @input_collector = input_collector
