@@ -69,13 +69,15 @@ module AIA
       protected
 
       def do_prep
-        if @load_db && load_persisted
+        current_fp = fingerprint_from_tools(@tools)
+
+        if @load_db && load_persisted(expected_fingerprint: current_fp)
           $stderr.puts "[Zvec] Loaded persisted collection from #{persist_dir}."
           return
         end
 
         build_index(@tools)
-        save_persisted if @save_db
+        save_persisted(fingerprint: current_fp) if @save_db
       end
 
       def do_filter_with_scores(prompt)
@@ -116,13 +118,27 @@ module AIA
       end
 
       # Attempt to load a previously persisted collection.
-      # Returns true on success, false if no persisted data found.
-      def load_persisted
+      # Returns true on success, false if no persisted data found or fingerprint mismatch.
+      def load_persisted(expected_fingerprint: nil)
         return false unless @db_dir
         return false unless File.exist?(meta_path) && Dir.exist?(collection_path)
 
-        @tool_entries = JSON.parse(File.read(meta_path), symbolize_names: true)
-        @tool_count   = @tool_entries.size
+        raw = JSON.parse(File.read(meta_path), symbolize_names: true)
+
+        # Support both legacy format (plain array) and new format (hash with :entries and :fingerprint)
+        if raw.is_a?(Hash) && raw.key?(:entries)
+          saved_fp = raw[:fingerprint]
+          if expected_fingerprint && saved_fp && expected_fingerprint != saved_fp
+            $stderr.puts "[Zvec] Tool set changed since last save. Rebuilding index."
+            return false
+          end
+          @tool_entries = raw[:entries]
+        else
+          # Legacy format: raw array of tool entries, no fingerprint
+          @tool_entries = raw.is_a?(Array) ? raw : []
+        end
+
+        @tool_count = @tool_entries.size
         return false if @tool_entries.empty?
 
         load_embedding_model(@label, MODEL_NAME)
@@ -138,7 +154,7 @@ module AIA
       end
 
       # Save the current collection to persistent storage.
-      def save_persisted
+      def save_persisted(fingerprint: nil)
         return unless @db_dir && @collection
 
         FileUtils.mkdir_p(persist_dir)
@@ -150,7 +166,9 @@ module AIA
           FileUtils.cp_r(File.join(@tmpdir, "tools"), target)
         end
 
-        File.write(meta_path, JSON.pretty_generate(@tool_entries))
+        meta = { entries: @tool_entries }
+        meta[:fingerprint] = fingerprint if fingerprint
+        File.write(meta_path, JSON.pretty_generate(meta))
         $stderr.puts "[Zvec] Saved collection to #{persist_dir}."
       rescue StandardError => e
         $stderr.puts "[Zvec] Failed to save collection: #{e.message}"

@@ -208,7 +208,8 @@ class ToolFilterZvecTest < Minitest::Test
       meta_path = File.join(persist_dir, "tool_entries.json")
       assert File.exist?(meta_path), "tool_entries.json should exist after save"
 
-      entries = JSON.parse(File.read(meta_path))
+      meta = JSON.parse(File.read(meta_path))
+      entries = meta.key?("entries") ? meta["entries"] : meta
       assert_equal 7, entries.size
 
       col_path = File.join(persist_dir, "collection")

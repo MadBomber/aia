@@ -49,13 +49,15 @@ module AIA
       protected
 
       def do_prep
-        if @load_db && load_persisted
+        current_fp = fingerprint_from_tools(@tools)
+
+        if @load_db && load_persisted(expected_fingerprint: current_fp)
           $stderr.puts "[LSI] Loaded persisted index from #{persist_path}."
           return
         end
 
         build_index(@tools)
-        save_persisted if @save_db
+        save_persisted(fingerprint: current_fp) if @save_db
       end
 
       def do_filter_with_scores(prompt)
@@ -88,12 +90,19 @@ module AIA
 
       # Attempt to load a previously persisted LSI index.
       # Uses direct Marshal.load for minimal deserialization overhead.
-      # Returns true on success, false if no persisted data found.
-      def load_persisted
+      # Returns true on success, false if no persisted data found or fingerprint mismatch.
+      def load_persisted(expected_fingerprint: nil)
         return false unless @db_dir
         return false unless File.exist?(persist_path)
 
         data = Marshal.load(File.binread(persist_path))
+
+        saved_fp = data[:fingerprint]
+        if expected_fingerprint && saved_fp && expected_fingerprint != saved_fp
+          $stderr.puts "[LSI] Tool set changed since last save. Rebuilding index."
+          return false
+        end
+
         @lsi          = data[:lsi]
         @tool_entries = data[:tool_entries]
         @tool_count   = @tool_entries.size
@@ -112,11 +121,12 @@ module AIA
 
       # Save the current LSI index to persistent storage.
       # Bundles the LSI object and tool_entries into a single Marshal blob.
-      def save_persisted
+      def save_persisted(fingerprint: nil)
         return unless @db_dir && @lsi
 
         FileUtils.mkdir_p(@db_dir)
         data = { lsi: @lsi, tool_entries: @tool_entries }
+        data[:fingerprint] = fingerprint if fingerprint
         File.binwrite(persist_path, Marshal.dump(data))
         $stderr.puts "[LSI] Saved index to #{persist_path}."
       rescue StandardError => e

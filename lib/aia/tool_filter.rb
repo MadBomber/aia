@@ -60,5 +60,21 @@ module AIA
     def do_filter_with_scores(_prompt)
       raise NotImplementedError, "#{self.class}#do_filter_with_scores must be implemented"
     end
+
+    private
+
+    # Compute a SHA256 fingerprint of the tool set for staleness detection.
+    # Sorted alphabetically so insertion order doesn't affect the result.
+    #
+    # @param tools [Array] tool objects with .name
+    # @return [String] 64-char hex digest
+    def fingerprint_from_tools(tools)
+      require 'digest'
+      names = Array(tools).filter_map do |tool|
+        n = tool.respond_to?(:name) ? tool.name.to_s.strip : ""
+        n.empty? ? nil : n
+      end.sort
+      Digest::SHA256.hexdigest(names.join(","))
+    end
   end
 end

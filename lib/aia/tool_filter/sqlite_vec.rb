@@ -68,12 +68,14 @@ module AIA
       protected
 
       def do_prep
-        if @load_db && load_persisted
+        current_fp = fingerprint_from_tools(@tools)
+
+        if @load_db && load_persisted(expected_fingerprint: current_fp)
           $stderr.puts "[SqVec] Loaded persisted database from #{persist_path}."
           return
         end
 
-        build_index(@tools)
+        build_index(@tools, fingerprint: current_fp)
       end
 
       def do_filter_with_scores(prompt)
@@ -115,8 +117,8 @@ module AIA
       end
 
       # Attempt to load a previously persisted database.
-      # Returns true on success, false if no persisted data found.
-      def load_persisted
+      # Returns true on success, false if no persisted data found or fingerprint mismatch.
+      def load_persisted(expected_fingerprint: nil)
         return false unless @db_dir
 
         db_path = persist_path
@@ -126,6 +128,24 @@ module AIA
         @db.enable_load_extension(true)
         ::SqliteVec.load(@db)
         @db.enable_load_extension(false)
+
+        # Check fingerprint if aia_config table exists
+        if expected_fingerprint
+          config_table_exists = @db.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='aia_config'"
+          ).any?
+
+          if config_table_exists
+            rows = @db.execute("SELECT value FROM aia_config WHERE key='fingerprint'")
+            saved_fp = rows.first&.first
+            if saved_fp && expected_fingerprint != saved_fp
+              $stderr.puts "[SqVec] Tool set changed since last save. Rebuilding index."
+              @db.close
+              @db = nil
+              return false
+            end
+          end
+        end
 
         # Restore tool_entries and tool_index from the tool_meta table
         rows = @db.execute("SELECT rowid, name, description FROM tool_meta ORDER BY rowid")
@@ -150,7 +170,7 @@ module AIA
         false
       end
 
-      def build_index(tools)
+      def build_index(tools, fingerprint: nil)
         Array(tools).each do |tool|
           name = @fact_asserter.tool_name(tool)
           desc = @fact_asserter.tool_description(tool)
@@ -169,10 +189,10 @@ module AIA
         embeddings = @tool_entries.map { |entry| @model.(entry[:description]) }
         $stderr.puts "[SqVec] Embeddings generated (#{EMBEDDING_DIM} dimensions each)."
 
-        create_database(embeddings)
+        create_database(embeddings, fingerprint: fingerprint)
       end
 
-      def create_database(embeddings)
+      def create_database(embeddings, fingerprint: nil)
         # Use file path when saving, in-memory otherwise
         db_path = (@save_db && @db_dir) ? persist_path : ":memory:"
 
@@ -201,6 +221,14 @@ module AIA
           )
         SQL
 
+        # Store configuration metadata (e.g. fingerprint) for staleness detection
+        @db.execute(<<~SQL)
+          CREATE TABLE IF NOT EXISTS aia_config (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          )
+        SQL
+
         @tool_index = {}
         @db.transaction do
           @tool_entries.each_with_index do |entry, i|
@@ -214,6 +242,13 @@ module AIA
             @db.execute(
               "INSERT INTO tool_meta(rowid, name, description) VALUES (?, ?, ?)",
               [rid, entry[:name], entry[:description]]
+            )
+          end
+
+          if fingerprint
+            @db.execute(
+              "INSERT OR REPLACE INTO aia_config(key, value) VALUES ('fingerprint', ?)",
+              [fingerprint]
             )
           end
         end
