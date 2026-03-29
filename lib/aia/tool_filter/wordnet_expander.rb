@@ -29,11 +29,9 @@ module AIA
         # Returns true if the `wn` executable is on PATH.
         # Result is cached for the process lifetime.
         def available?
-          @available_mutex.synchronize { return @available unless @available.nil? }
-          result = system("which wn", out: File::NULL, err: File::NULL) ? true : false
           @available_mutex.synchronize do
-            @available = result if @available.nil?
-            @available
+            return @available unless @available.nil?
+            @available = system("which wn", out: File::NULL, err: File::NULL) ? true : false
           end
         end
 
