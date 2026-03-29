@@ -212,15 +212,6 @@ concurrency:
   independent_servers: []     # Servers safe to run in parallel
   threshold: 2                # Minimum servers needed to trigger concurrency
 
-# Rules Configuration (RETE-based KBS rule engine via kbs gem)
-# Access: AIA.config.rules.dir, .enabled, .store, .db_path
-# Env: AIA_RULES__DIR, AIA_RULES__ENABLED, etc.
-rules:
-  dir: ~/.config/aia/rules    # Directory for custom rule files
-  enabled: true               # Enable/disable the rule engine
-  store: memory               # Rule store backend (memory or sqlite)
-  db_path: ~/.config/aia/rules.db  # Path to SQLite rules database
-
 # Model Aliases (short name → full model ID)
 # Access: AIA.config.model_aliases
 # Example: { "gpt4": "gpt-4o", "sonnet": "claude-sonnet-4-20250514" }
@@ -240,12 +231,11 @@ mcp_skip: ~                   # Array of MCP server names to skip
 #   track_pipeline: false     # Track which pipeline prompts are executed
 #   expert_routing: false     # Route chat turns to specialist robots
 #
-# Tool Filter Strategy Flags (A=KBS, B=TF-IDF, C=Zvec, D=SqliteVec, E=LSI)
-#   tool_filter_a: true       # KBS rule-based filter (default ON)
-#   tool_filter_b: false      # TF-IDF cosine similarity filter
-#   tool_filter_c: false      # Zvec HNSW vector DB filter
-#   tool_filter_d: false      # SqliteVec filter
-#   tool_filter_e: false      # LSI (latent semantic indexing) filter
+# Tool Filter Strategy Flags (A=TF-IDF, B=Zvec, C=SqliteVec, D=LSI)
+#   tool_filter_a: false      # TF-IDF cosine similarity filter
+#   tool_filter_b: false      # Zvec HNSW vector DB filter
+#   tool_filter_c: false      # SqliteVec filter
+#   tool_filter_d: false      # LSI (latent semantic indexing) filter
 #   tool_filter_load: false   # Load saved filter model from disk
 #   tool_filter_save: false   # Save filter model to disk after build
 ```

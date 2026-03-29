@@ -13,7 +13,6 @@ AIA leverages the following Ruby gems:
 
 - **[prompt_manager](https://github.com/madbomber/prompt_manager)** (via `pm`) to manage prompts,
 - **[robot_lab](https://github.com/madbomber/robot_lab)** as the AI execution engine — builds single robots or multi-model networks,
-- **[kbs](https://github.com/madbomber/kbs)** for the RETE-based rule engine that drives input classification, model selection, and tool routing,
 - **[trak_flow](https://github.com/madbomber/trak_flow)** for task tracking and robot-to-robot delegation workflows,
 - and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use tool functions for use with LLMs that support tools.
 
@@ -56,7 +55,7 @@ For more information on AIA visit these locations:
 
 ```plain
 
-       ,      ,        AIA v2.0.0.alpha is Online w/ kbs v0.2.1
+       ,      ,        AIA v2.0.0.alpha is Online
        (\____/)
         (_oo_)         Models: gpt-4o-mini
          (O)               DB: refreshed 2026-03-19 at 10:56
@@ -157,7 +156,6 @@ Implement a schema registry with event-driven synchronization...
     - [Roles and System Prompts](#roles-and-system-prompts)
     - [RubyLLM::Tool Support](#rubyllmtool-support)
     - [TrakFlow Task Integration](#trakflow-task-integration)
-    - [KBS Rule Engine](#kbs-rule-engine)
     - [MCP Server Configuration](#mcp-server-configuration)
       - [Configuration Format](#configuration-format)
       - [Configuration Options](#configuration-options)
@@ -501,7 +499,6 @@ Directives are special commands in prompt files that begin with `/` and provide 
 | `/tools` | | Show available tools (optional name filter) | `/tools` or `/tools github` |
 | `/mcp` | | Show MCP server connection status | `/mcp` |
 | `/robots` | | Show active robot and network configuration | `/robots` |
-| `/rules` | | Show decompiled KBS routing rules (optional filter) | `/rules` or `/rules tool` |
 | `/robot` | | Display ASCII robot art with version info | `/robot` |
 | `/help` | | Show available directives | `/help` |
 | `/tasks` | `/tf` | Show TrakFlow ready tasks | `/tasks` |
@@ -1151,20 +1148,6 @@ AIA integrates with [TrakFlow](https://github.com/madbomber/trak_flow) for struc
 
 Use `/delegate` to hand off a subtask to a specialist robot — AIA spawns the robot, routes the work, and reports results back into the conversation.
 
-### KBS Rule Engine
-
-AIA's routing decisions are powered by a RETE-based rule engine (`kbs`). Rules classify each user input and decide which model, tools, and MCP servers to activate for the turn. Rules are built from:
-
-- **Static knowledge bases** defined in `lib/aia/rule_router.rb` (input classification, model selection, quality gates)
-- **Dynamic rules** generated at startup by `DynamicRuleBuilder` from discovered tools and MCP server domains
-
-Inspect the active rules at any time:
-
-```bash
-> /rules              # show all rules
-> /rules tool         # filter rules containing "tool"
-```
-
 ### MCP Server Configuration
 
 AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time. When multiple MCP servers are configured, AIA connects to them **in parallel** using fiber-based concurrency (via the `simple_flow` gem) for faster startup.
@@ -1277,7 +1260,7 @@ mcp_servers:
 When MCP servers are configured, AIA displays them in the startup robot:
 
 ```
-       ,      ,        AIA v2.0.0.alpha is Online w/ kbs v0.2.1
+       ,      ,        AIA v2.0.0.alpha is Online
        (\____/)
         (_oo_)         Models: gpt-4o-mini
          (O)               DB: refreshed 2026-03-19 at 10:56
@@ -1662,11 +1645,9 @@ just flay
 
 ### Architecture Notes
 
-AIA v2 is powered by the `robot_lab` and `kbs` gems. The v1 `RubyLLMAdapter` and `lib/aia/adapter/` layer have been removed.
+AIA v2 is powered by the `robot_lab` gem. The v1 `RubyLLMAdapter` and `lib/aia/adapter/` layer have been removed.
 
 - **`RobotFactory`** builds `RobotLab::Robot` or `RobotLab::Network` instances. Supports single-robot, parallel multi-model, consensus, and pipeline network modes.
-- **`RuleRouter`** runs a RETE-based rule engine (via `kbs`) with multiple knowledge bases — input classification, model selection, MCP/tool routing, quality gates, and post-response learning.
-- **`DynamicRuleBuilder`** generates KBS routing rules at runtime from discovered local tools and configured MCP servers, matching domains to activate the right tools per turn.
 - `robot_lab` uses `ruby_llm` internally for LLM provider access, so the full model ecosystem remains available.
 
 **Prompt Variable Fallback:**

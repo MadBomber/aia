@@ -4,11 +4,6 @@
 
 - [Special Projects Guide](#special-projects-guide)
   - [Table of Contents](#table-of-contents)
-  - [Multi-KB Rule Engine](#multi-kb-rule-engine)
-    - [KB Pipeline](#kb-pipeline)
-    - [How It Works](#how-it-works)
-    - [Default Classification Rules](#default-classification-rules)
-    - [Default Quality Gate Rules](#default-quality-gate-rules)
   - [Dynamic Model Switching](#dynamic-model-switching)
     - [@mention Routing](#mention-routing)
     - [Supported Phrases](#supported-phrases)
@@ -41,88 +36,23 @@
   - [Configuration Reference](#configuration-reference)
     - [New Config Sections](#new-config-sections)
     - [MCP Server Metadata Fields](#mcp-server-metadata-fields)
-  - [Writing Custom Rules](#writing-custom-rules)
-    - [File Naming](#file-naming)
-    - [KB Targeting](#kb-targeting)
-    - [Available KBs](#available-kbs)
-    - [Fact Types](#fact-types)
-    - [Decision Types](#decision-types)
 
 <!-- Tocer[finish]: Auto-generated, don't remove. -->
 
 # Special Projects Guide
 
-This guide documents the advanced features implemented from the Special Projects roadmap. Each feature builds on AIA v2's architecture of RobotFactory, RuleRouter, ChatLoop, and the directive system.
+This guide documents the advanced features implemented from the Special Projects roadmap. Each feature builds on AIA v2's architecture of RobotFactory, ChatLoop, and the directive system.
 
 ## Table of Contents
 
-1. [Multi-KB Rule Engine](#multi-kb-rule-engine)
-2. [Dynamic Model Switching](#dynamic-model-switching)
-3. [MCP Server Concurrency](#mcp-server-concurrency)
-4. [TrakFlow Integration](#trakflow-integration)
-5. [Expert Routing](#expert-routing)
-6. [Verification Networks](#verification-networks)
-7. [Prompt Decomposition](#prompt-decomposition)
-8. [Session Tracking and Learning](#session-tracking-and-learning)
-9. [Configuration Reference](#configuration-reference)
-10. [Writing Custom Rules](#writing-custom-rules)
-
----
-
-## Multi-KB Rule Engine
-
-AIA uses a Knowledge-Based System (KBS) with five separate knowledge bases, each handling one concern. Rules evaluate locally without any LLM call.
-
-### KB Pipeline
-
-```
-User Input
-    ↓
-KB 1: Classification    → What kind of request is this?
-KB 2: Model Selection   → Which model(s) should handle it?
-KB 3: MCP/Tool Routing  → Which servers and tools are needed?
-KB 4: Quality Gates     → Is this prompt ready to send?
-    ↓
-LLM executes
-    ↓
-KB 5: Post-Response     → What happened? What should we learn?
-```
-
-### How It Works
-
-The `RuleRouter` evaluates KBs in order. Each KB writes its decisions to a shared `Decisions` struct. Downstream KBs read upstream decisions as facts.
-
-```ruby
-# RuleRouter evaluates before each robot.run()
-decisions = rule_router.evaluate_turn(config, user_input)
-
-# decisions.classifications  → [{domain: "code", source: "code_request"}]
-# decisions.model_decisions  → [{model: "claude-...", reason: "code task"}]
-# decisions.mcp_activations  → [{server: "filesystem", reason: "code domain"}]
-# decisions.gate_actions     → [{action: "warn", message: "..."}]
-```
-
-### Default Classification Rules
-
-| Rule | Triggers On | Domain |
-|------|------------|--------|
-| `code_request` | refactor, debug, implement, function, class, method, test, bug, fix, compile, lint | code |
-| `data_request` | query, sql, database, table, schema, record, select, insert, migration, redis, mongo | data |
-| `image_request` | draw, image, picture, diagram | image |
-| `planning_request` | plan, task, project, roadmap, workflow | planning |
-| `image_context_detection` | .png, .jpg, .gif, .webp, .svg context files | image |
-| `audio_context_detection` | .mp3, .wav, .ogg, .m4a context files | audio |
-| `code_context_detection` | .rb, .py, .js, .ts, .go context files | code |
-| `short_factual_query` | Input < 100 chars | general (low complexity) |
-| `complex_query` | Input > 500 chars | high complexity |
-
-### Default Quality Gate Rules
-
-| Rule | Condition | Action |
-|------|-----------|--------|
-| `prompt_too_vague` | Input < 10 chars | warn |
-| `large_context_warning` | Context > 100KB | warn |
-| `cost_warning` | Session cost > $5 | warn |
+1. [Dynamic Model Switching](#dynamic-model-switching)
+2. [MCP Server Concurrency](#mcp-server-concurrency)
+3. [TrakFlow Integration](#trakflow-integration)
+4. [Expert Routing](#expert-routing)
+5. [Verification Networks](#verification-networks)
+6. [Prompt Decomposition](#prompt-decomposition)
+7. [Session Tracking and Learning](#session-tracking-and-learning)
+8. [Configuration Reference](#configuration-reference)
 
 ---
 
@@ -201,7 +131,7 @@ When a prompt needs multiple independent MCP servers, AIA can fan out to a robot
 
 ### Configuration
 
-Add `topics` to your MCP server configs for KBS-driven routing:
+Add `topics` to your MCP server configs for domain-driven routing:
 
 ```json
 {
@@ -323,9 +253,9 @@ flags:
 
 ### How It Works
 
-1. Classification KB categorizes the prompt (code, data, image, planning)
-2. Model Selection KB picks the best model for that domain
-3. MCP Routing KB activates relevant servers
+1. The prompt is categorized by domain (code, data, image, planning)
+2. The best model for that domain is selected
+3. Relevant MCP servers are activated
 4. `ExpertRouter` builds a specialist robot with those specifics
 5. The specialist handles the prompt instead of the default robot
 
@@ -406,7 +336,7 @@ Session-wide:
 
 ### Learning Rules
 
-The learning KB (KB 5) fires after each response:
+The post-response learning step fires after each response:
 
 | Rule | Signal | Meaning |
 |------|--------|---------|
@@ -438,13 +368,6 @@ concurrency:
   independent_servers: []
   threshold: 2
 
-# Rules engine
-rules:
-  dir: ~/.config/aia/rules
-  enabled: true
-  store: memory           # memory | sqlite | hybrid
-  db_path: ~/.config/aia/rules.db
-
 # New flags
 flags:
   track_pipeline: false   # Track pipelines in TrakFlow
@@ -461,80 +384,3 @@ flags:
 }
 ```
 
----
-
-## Writing Custom Rules
-
-Create rules in `~/.config/aia/rules/*.rb` targeting specific KBs.
-
-### File Naming
-
-Files load alphabetically. Use numeric prefixes for ordering:
-
-```
-~/.config/aia/rules/
-├── 01_my_classifications.rb
-├── 02_model_preferences.rb
-├── 03_routing_overrides.rb
-└── 04_custom_gates.rb
-```
-
-### KB Targeting
-
-```ruby
-# ~/.config/aia/rules/02_model_preferences.rb
-
-AIA.rules_for(:model_select) do
-  rule "always_use_claude_for_ruby" do
-    on :classification_decision, domain: "code"
-    on :context_file, extension: ".rb"
-    perform do |facts|
-      decisions.add(:model_decision, model: "claude-sonnet-4-20250514")
-    end
-  end
-end
-
-AIA.rules_for(:gate) do
-  rule "friday_cost_guard" do
-    on :session_stats, total_cost: greater_than(1.0)
-    perform do |facts|
-      decisions.add(:gate, action: "warn",
-        message: "Cost is over $1. Consider a cheaper model.")
-    end
-  end
-end
-```
-
-### Available KBs
-
-| KB Name | Purpose | Upstream Facts Available |
-|---------|---------|------------------------|
-| `:classify` | Categorize input | `:context_file`, `:turn_input` |
-| `:model_select` | Choose model(s) | `:classification_decision`, `:model` |
-| `:route` | Activate MCP servers | `:classification_decision`, `:model_decision_upstream`, `:mcp_server` |
-| `:gate` | Quality checks | `:context_stats`, `:turn_input`, `:session_stats`, `:model_decision` |
-| `:learn` | Post-response | `:response_outcome`, `:session_stats` |
-
-### Fact Types
-
-| Fact Type | Available In | Attributes |
-|-----------|-------------|------------|
-| `:context_file` | classify | path, extension, exists |
-| `:turn_input` | classify, gate | text, length |
-| `:context_stats` | gate | total_size, large |
-| `:model` | model_select | name, role, provider, context_window, supports_vision, supports_audio, cost_tier |
-| `:mcp_server` | route | name, topics, active |
-| `:classification_decision` | model_select, route | domain, complexity, type, action, source |
-| `:model_decision` | gate | model, reason |
-| `:session_stats` | gate, learn | turn_count, total_cost, total_tokens |
-| `:response_outcome` | learn | accepted, user_switched_model, model |
-
-### Decision Types
-
-```ruby
-decisions.add(:classification, domain: "code", source: "my_rule")
-decisions.add(:model_decision, model: "gpt-4o", reason: "vision needed")
-decisions.add(:mcp_activate, server: "filesystem", reason: "code domain")
-decisions.add(:gate, action: "warn", message: "Cost too high")
-decisions.add(:learning, signal: "model_success", model: "gpt-4o")
-```

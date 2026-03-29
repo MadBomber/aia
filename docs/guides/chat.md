@@ -42,7 +42,6 @@ Once in chat mode, you can use these commands:
 - **`/temperature 0.8`**: Adjust creativity level
 - **`/tools`**: List available tools
 - **`/context`**: Show current context
-- **`/rules`**: Show the decompiled KBS routing rules. Accepts an optional filter: `/rules tool`
 - **`/robots`**: List active robots and their `@mention` handles
 
 ### Special Features

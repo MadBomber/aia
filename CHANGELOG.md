@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased] - 2026-03-28
+
+### Removed
+- `kbs` gem dependency removed entirely
+- KBS Rule Engine (RuleRouter, KBDefinitions, FactAsserter, DynamicRuleBuilder, RulesDSL, DecisionApplier, ExpertRouter)
+- Tool filter strategy A (KBS rule-based filtering) — strategies renumbered: A=TF-IDF, B=Zvec, C=SqliteVec, D=LSI
+- `-A`/`--tool-filter-kbs` CLI flag
+- `/rules` chat directive
+- User-defined rule hooks (`~/.config/aia/rules/*.rb`)
+- Natural language model switching via KBS intent detection (use `/model` directive instead)
+- KBS-driven MCP discovery branch (MCPDiscovery simplified to explicit/all strategies)
+
 ## [2.0.9.alpha] - 2026-03-28
 
 ### Improvements (Section 9 — Design Correctness)

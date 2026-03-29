@@ -1,6 +1,12 @@
 # AIA User Rules
 
-User rules extend the built-in KBS rule engine with custom classification,
+> **NOTE (2026-03-28)**: The KBS rule engine has been removed from AIA (see ADR-010).
+> This directory is preserved for historical reference only. The `.rb` example files
+> here no longer work. User-defined rule hooks (`~/.config/aia/rules/*.rb`) are no
+> longer supported. Tool filtering is now handled exclusively by the TF-IDF/vector
+> strategies (A=TF-IDF, B=Zvec, C=SqliteVec, D=LSI).
+
+User rules extended the built-in KBS rule engine with custom classification,
 model selection, MCP routing, quality gate, and learning rules.
 
 ## Setup

@@ -28,7 +28,6 @@
     - [`/spawn`](#spawn)
   - [Utility Directives](#utility-directives)
     - [`/tools`](#tools)
-    - [`/rules`](#rules)
     - [`/next`](#next)
     - [`/pipeline`](#pipeline)
     - [`/mcp`](#mcp)
@@ -95,7 +94,6 @@ Use `/help` at any time to see all available directives.
 | `/delegate` | `/del` | Delegate subtasks via TrakFlow plan |
 | `/spawn` | | Spawn a specialist robot |
 | `/tools` | | List available tools |
-| `/rules` | | Show decompiled KBS routing rules (optional filter) |
 | `/mcp` | | MCP server connection status |
 | `/robots` | | Show active robot configuration |
 | `/robot` | | ASCII robot art |
@@ -533,62 +531,6 @@ FileReader
 **Notes**:
 - When no tools match the filter, displays "No tools match the filter: [filter]"
 - Filtering is case-insensitive (e.g., "File", "FILE", and "file" all match)
-
-### `/rules`
-Show decompiled KBS routing rules across all knowledge bases, with optional substring filtering.
-
-**Syntax**: `/rules [filter]`
-
-**Parameters**:
-- `filter` (optional) - Case-insensitive substring to narrow which rules are displayed
-
-**Examples**:
-```markdown
-/rules              # Show all KBS routing rules
-/rules tool         # Show only rules containing "tool"
-/rules mcp          # Show rules related to MCP routing
-/rules domain       # Show domain-matching rules
-```
-
-**Example Output** (unfiltered):
-```
-KBS Rules
-=========
-
-route_kb (3 rules)
-------------------
-
-  rule :route_to_file_tool do
-    condition { input.include?("file") }
-    action    { activate :FileReaderTool }
-  end
-
-  rule :route_to_web_tool do
-    condition { input.include?("http") || input.include?("url") }
-    action    { activate :WebScraperTool }
-  end
-```
-
-**Example Output** (filtered with `/rules tool`):
-```
-KBS Rules (filtered by 'tool')
-===============================
-
-route_kb (2 rules)
-------------------
-
-  rule :route_to_file_tool do
-    condition { input.include?("file") }
-    action    { activate :FileReaderTool }
-  end
-```
-
-**Notes**:
-- Rules are grouped by knowledge base name with a count
-- Each rule's full decompiled source is shown with two-space indentation
-- When no rules match the filter, displays "No rules match the filter: [filter]"
-- When no rule router is available, displays "No rule router available"
-- Filtering is case-insensitive
 
 ### `/next`
 Declare the next prompt to execute after this one in a workflow.
