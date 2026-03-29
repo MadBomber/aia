@@ -7,6 +7,8 @@
 # `do_filter_with_scores` (per-turn query). The base class provides
 # timing instrumentation and a uniform public API.
 
+require_relative 'tool_filter/wordnet_expander'
+
 module AIA
   class ToolFilter
     attr_reader :tool_count, :prep_ms, :label

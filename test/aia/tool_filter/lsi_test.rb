@@ -11,6 +11,17 @@ class ToolFilterLSITest < Minitest::Test
 
   MockTool = Struct.new(:name, :description)
 
+  # Disable WordNet expansion for LSI unit tests so the LSI semantic space
+  # matches what these tests were written against.  The wiring itself is
+  # validated in wordnet_expansion_wiring_test.rb.
+  def setup
+    AIA::ToolFilter::WordNetExpander.stubs(:available?).returns(false)
+  end
+
+  def teardown
+    AIA::ToolFilter::WordNetExpander.clear_cache!
+  end
+
   def build_tools
     [
       MockTool.new("file_search", "Search for files by name or pattern in the filesystem"),

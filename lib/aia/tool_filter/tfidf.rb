@@ -77,7 +77,8 @@ module AIA
           next if name.empty?
 
           raw_text = [name, desc, params].reject(&:empty?).join(" ")
-          @tool_entries << { name: name, description: normalize(raw_text) }
+          expanded = AIA::ToolFilter::WordNetExpander.expand(raw_text)
+          @tool_entries << { name: name, description: normalize(expanded) }
         end
 
         @tool_count = @tool_entries.size

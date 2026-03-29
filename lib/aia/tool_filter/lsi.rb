@@ -141,7 +141,8 @@ module AIA
           desc = @fact_asserter.tool_description(tool)
           next if name.empty?
 
-          text = desc.empty? ? name : "#{name} #{desc}"
+          raw  = desc.empty? ? name : "#{name} #{desc}"
+          text = AIA::ToolFilter::WordNetExpander.expand(raw)
           @tool_entries << { name: name, description: text }
           @text_to_name[text] = name
 
