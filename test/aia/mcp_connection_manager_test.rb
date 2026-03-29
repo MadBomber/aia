@@ -135,4 +135,54 @@ class MCPConnectionManagerTest < Minitest::Test
     result = @manager.absorb_ruby_llm_mcp_clients
     assert_same @manager, result
   end
+
+  # ===================================================================
+  # close_all
+  # ===================================================================
+
+  def test_close_all_calls_close_on_each_client
+    client_a = mock('client_a')
+    client_b = mock('client_b')
+    client_a.expects(:close).once
+    client_b.expects(:close).once
+
+    @manager.instance_variable_set(:@connected_clients, { "a" => client_a, "b" => client_b })
+    @manager.instance_variable_set(:@connected, true)
+
+    @manager.close_all
+  end
+
+  def test_close_all_sets_connected_to_false
+    @manager.instance_variable_set(:@connected, true)
+    @manager.instance_variable_set(:@connected_clients, {})
+
+    @manager.close_all
+
+    refute @manager.connected?
+  end
+
+  def test_close_all_clears_connected_clients
+    client = mock('client')
+    client.stubs(:close)
+    @manager.instance_variable_set(:@connected_clients, { "a" => client })
+
+    @manager.close_all
+
+    assert_empty @manager.connected_clients
+  end
+
+  def test_close_all_rescues_client_close_errors
+    bad_client = mock('bad_client')
+    bad_client.stubs(:close).raises(RuntimeError, "connection already closed")
+    @manager.instance_variable_set(:@connected_clients, { "bad" => bad_client })
+
+    # close_all must not propagate the RuntimeError
+    raised = false
+    begin
+      @manager.close_all
+    rescue RuntimeError
+      raised = true
+    end
+    refute raised, "close_all should not raise when a client#close raises"
+  end
 end

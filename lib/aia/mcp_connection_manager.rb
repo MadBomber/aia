@@ -166,6 +166,23 @@ module AIA
       @mutex.synchronize { @failed_servers.map { |f| f[:name] } }
     end
 
+    # Close all connected MCP clients and reset connection state.
+    # Errors from individual client closes are silently rescued —
+    # best-effort cleanup on process exit.
+    def close_all
+      clients = @mutex.synchronize { @connected_clients.dup }
+      clients.each_value do |client|
+        client.close
+      rescue StandardError
+        # best-effort — client may already be closed
+      end
+      @mutex.synchronize do
+        @connected_clients  = {}
+        @server_tool_counts = {}
+        @connected          = false
+      end
+    end
+
     private
 
     # Connect a single MCP server, updating the spinner on completion.
