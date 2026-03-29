@@ -9,7 +9,6 @@ module AIA
   HandlerContext = Struct.new(
     :robot,           # RobotLab::Robot or Network for the current turn
     :prompt,          # String — the user prompt
-    :decisions,       # AIA::Decisions — accumulated KBS decisions
     :config,          # AIA config object
     :specialist_type, # String or nil — explicit specialist role for SpawnHandler
     keyword_init: true

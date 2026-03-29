@@ -16,28 +16,12 @@ module AIA
       @model_exists_cache = {}
     end
 
-    # Check decisions for model-change intents and handle them.
+    # Natural language model switching via KBS intent detection has been removed.
+    # Use the /model directive for model changes.
     #
-    # @param context [HandlerContext] — reads context.decisions and context.config
-    # @return [Boolean] true if the intent was handled (caller should not send to LLM)
+    # @param context [HandlerContext]
+    # @return [Boolean] always false
     def handle(context)
-      decisions = context.decisions
-      config    = context.config
-      intent = decisions.classifications.find { |c| c[:type] == :intent }
-      return false unless intent
-
-      case intent[:action]
-      when "model_switch"
-        handle_switch(intent, config)
-      when "model_compare"
-        handle_compare(intent, config)
-      when "model_switch_capability"
-        handle_capability_switch(intent, config)
-      else
-        false
-      end
-    rescue StandardError => e
-      warn "Warning: Model switch handling failed: #{e.message}"
       false
     end
 

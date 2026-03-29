@@ -4,7 +4,7 @@
 #
 # Strategy resolver for A/B/C testing tool filtering approaches.
 # Accepts a Hash of ToolFilter subclass instances keyed by symbol
-# (e.g. {kbs: ..., tfidf: ..., zvec: ...}).
+# (e.g. {tfidf: ..., zvec: ..., sqlite_vec: ...}).
 #
 # Single filter  -> run that filter, display timing
 # Multiple filters -> comparison mode with side-by-side display
@@ -16,14 +16,13 @@ module AIA
   class ToolFilterStrategy
     # Maps filter keys to display info.
     FILTER_META = {
-      kbs:        { letter: "A", label: "KBS",    score_label: "score" },
-      tfidf:      { letter: "B", label: "TF-IDF", score_label: "score" },
-      zvec:       { letter: "C", label: "Zvec",   score_label: "similarity" },
-      sqlite_vec: { letter: "D", label: "SqVec",  score_label: "similarity" },
-      lsi:        { letter: "E", label: "LSI",    score_label: "similarity" },
+      tfidf:      { letter: "A", label: "TF-IDF", score_label: "score" },
+      zvec:       { letter: "B", label: "Zvec",   score_label: "similarity" },
+      sqlite_vec: { letter: "C", label: "SqVec",  score_label: "similarity" },
+      lsi:        { letter: "D", label: "LSI",    score_label: "similarity" },
     }.freeze
 
-    # @param filters [Hash{Symbol => ToolFilter}] e.g. {kbs: kbs_filter, tfidf: tfidf_filter}
+    # @param filters [Hash{Symbol => ToolFilter}] e.g. {tfidf: tfidf_filter, zvec: zvec_filter}
     # @param ui_presenter [UIPresenter, nil] for display (unused currently, reserved)
     def initialize(filters: {}, ui_presenter: nil)
       @filters      = filters
@@ -50,7 +49,7 @@ module AIA
     # @return [String] label for the active strategy (used in debug logging)
     def active_strategy_label
       labels = available_filters.map { |key, _| meta_for(key)[:label] }
-      labels = ["KBS"] if labels.empty?  # fallback
+      labels = ["none"] if labels.empty?  # fallback
       labels.size > 1 ? labels.join("+") + " comparison" : labels.first
     end
 
@@ -94,17 +93,11 @@ module AIA
     end
 
     # Run a filter and return {scored:, ms:}.
-    # For KBS, uses the pre-recorded last_turn_ms instead of timing filter_with_scores.
     def run_filter_timed(key, filter, prompt)
-      if key == :kbs
-        scored = filter.filter_with_scores(prompt)
-        { scored: scored, ms: filter.last_turn_ms }
-      else
-        start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        scored = filter.filter_with_scores(prompt)
-        ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000
-        { scored: scored, ms: ms }
-      end
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      scored = filter.filter_with_scores(prompt)
+      ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000
+      { scored: scored, ms: ms }
     end
 
     # Display single-filter results to $stderr.
