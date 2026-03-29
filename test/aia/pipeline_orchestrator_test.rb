@@ -36,7 +36,6 @@ class PipelineOrchestratorTest < Minitest::Test
 
     @prompt_handler  = mock('prompt_handler')
     @input_collector = mock('input_collector')
-    @rule_router     = mock('rule_router')
 
     @robot = mock('robot')
     @robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
@@ -88,8 +87,7 @@ class PipelineOrchestratorTest < Minitest::Test
       prompt_handler:  @prompt_handler,
       input_collector: @input_collector,
       ui_presenter:    @ui,
-      session_tracker: @tracker,
-      rule_router:     @rule_router
+      session_tracker: @tracker
     )
   end
 end

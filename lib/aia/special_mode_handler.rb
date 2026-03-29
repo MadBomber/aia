@@ -11,11 +11,10 @@ module AIA
   class SpecialModeHandler
     include ContentExtractor
 
-    def initialize(robot:, ui_presenter:, tracker:, rule_router:)
+    def initialize(robot:, ui_presenter:, tracker:)
       @robot = robot
       @ui_presenter = ui_presenter
       @tracker = tracker
-      @rule_router = rule_router
 
       @debate_handler = DebateHandler.new(
         robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker
@@ -134,8 +133,8 @@ module AIA
     def handle_concurrent_mcp(prompt)
       return false unless (AIA.config.mcp_servers || []).size > 1
 
-      discovery = MCPDiscovery.new(@rule_router.decisions)
-      relevant = discovery.discover(AIA.config, prompt)
+      discovery = MCPDiscovery.new
+      relevant = discovery.discover(AIA.config)
       return false if relevant.size <= 1
 
       grouper = MCPGrouper.new

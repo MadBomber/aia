@@ -12,13 +12,12 @@ module AIA
   class PipelineOrchestrator
     include ContentExtractor
 
-    def initialize(robot:, prompt_handler:, input_collector:, ui_presenter:, session_tracker:, rule_router: nil)
+    def initialize(robot:, prompt_handler:, input_collector:, ui_presenter:, session_tracker:)
       @robot           = robot
       @prompt_handler  = prompt_handler
       @input_collector = input_collector
       @ui              = ui_presenter
       @tracker         = session_tracker
-      @rule_router     = rule_router
     end
 
     # Process all prompts in the pipeline.
@@ -94,8 +93,8 @@ module AIA
         AIA.turn_state.force_concurrent_mcp = false
       end
 
-      discovery         = MCPDiscovery.new(@rule_router.decisions)
-      relevant_servers  = discovery.discover(config, prompt_text)
+      discovery         = MCPDiscovery.new
+      relevant_servers  = discovery.discover(config)
       return nil if relevant_servers.size <= 1
 
       grouper = MCPGrouper.new
