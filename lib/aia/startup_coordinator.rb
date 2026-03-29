@@ -41,11 +41,13 @@ module AIA
     def connect_mcp_servers(config)
       return if config.flags.no_mcp
 
+      discovered = MCPDiscovery.new.discover(config)
+      validate_mcp_use_names(config, discovered) if Array(config.mcp_use).any?
+
       servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
                   @robot.mcp_config
                 else
-                  MCPDiscovery.new.discover(config)
-                    .map { |s| MCPConfigNormalizer.normalize(s) }
+                  discovered.map { |s| MCPConfigNormalizer.normalize(s) }
                 end
 
       @mcp_manager = MCPConnectionManager.new
@@ -86,6 +88,20 @@ module AIA
       RobotFactory.attach_bus(@robot)
     rescue StandardError
       # Bus attachment is best-effort
+    end
+
+    # Warn when --mcp-use names don't match any configured server.
+    # Helps users catch typos before a silent empty-tools session.
+    def validate_mcp_use_names(config, discovered_servers)
+      requested  = Array(config.mcp_use)
+      available  = Array(config.mcp_servers).map { |s| AIA::Utility.server_name(s) }
+      found      = discovered_servers.map { |s| AIA::Utility.server_name(s) }
+      missing    = requested - found
+
+      return if missing.empty?
+
+      warn "WARNING: --mcp-use specified server(s) not found in config: #{missing.join(', ')}"
+      warn "         Available servers: #{available.join(', ')}" if available.any?
     end
 
     # Collect all tools available to the robot: local + MCP.
