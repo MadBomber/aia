@@ -47,8 +47,7 @@ module AIA
       process_initial_context(skip_context_files)
       run_loop
     rescue StandardError => e
-      warn "ChatLoop error: #{e.class}: #{e.message}"
-      warn e.backtrace.first(5).join("\n")
+      AIA.debug_warn("ChatLoop error: #{e.class}: #{e.message}", exc: e)
     ensure
       @ui_presenter.display_chat_end
     end

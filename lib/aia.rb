@@ -117,6 +117,17 @@ module AIA
       @config&.flags&.debug == true
     end
 
+    # Emit a warning always; if --debug is active and an exception is given,
+    # also print the first 5 backtrace frames so errors are diagnosable.
+    #
+    # @param msg [String]
+    # @param exc [Exception, nil]
+    def debug_warn(msg, exc: nil)
+      warn msg
+      return unless exc && exc.backtrace && config&.flags&.debug
+      warn exc.backtrace.first(5).join("\n")
+    end
+
     def verbose?
       @config&.flags&.verbose == true
     end
