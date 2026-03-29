@@ -61,7 +61,7 @@ class NetworkBuilderTest < Minitest::Test
     @namer = AIA::RobotNamer.new(first_name: 'Tobor')
 
     # Pre-populate tool cache so ToolLoader doesn't scan ObjectSpace
-    AIA::ToolLoader.instance_variable_set(:@tool_cache, [])
+    AIA::ToolLoader.instance.instance_variable_set(:@tool_cache, [])
 
     AIA.stubs(:config).returns(@config)
   end
