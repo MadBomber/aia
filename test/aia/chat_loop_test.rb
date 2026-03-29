@@ -114,9 +114,8 @@ class ChatLoopREPLTest < Minitest::Test
     @ui.stubs(:ask_question).returns("/shell ls", "")
     @directive_processor.stubs(:directive?).with("/shell ls").returns(true)
     @directive_processor.stubs(:process).with("/shell ls", nil).returns("file1.rb\nfile2.rb")
-    @streaming_runner.stubs(:run).returns([result, nil, 0.1])
     @chat_loop.stubs(:present_result)
-    @streaming_runner.expects(:run).once
+    @streaming_runner.expects(:run).once.returns([result, nil, 0.1])
     @chat_loop.start
   end
 
@@ -168,7 +167,7 @@ class ChatLoopREPLTest < Minitest::Test
     AIA.stubs(:client).returns(@robot)
     @ui.stubs(:ask_question).returns("use gpt-4o", "")
     @model_switch_handler.stubs(:handle).returns(true)
-    @special_mode_handler.stubs(:robot=)
+    @special_mode_handler.expects(:robot=).with(@robot).once
     @streaming_runner.expects(:run).never
     @chat_loop.start
   end
