@@ -2,6 +2,7 @@
 # test/aia/streaming_runner_test.rb
 
 require_relative '../test_helper'
+require_relative '../../lib/aia/streaming_runner'
 
 class StreamingRunnerTest < Minitest::Test
   def setup
@@ -75,6 +76,26 @@ class StreamingRunnerTest < Minitest::Test
     robot.stubs(:run).yields(chunk).returns(@result)
     _result, content, _elapsed = @runner.run(robot, "hi")
     assert_equal "hello ", content
+  end
+
+  def test_run_collects_chunk_using_to_s_when_no_content_method
+    robot = build_non_network_robot
+    chunk = mock('chunk')
+    chunk.stubs(:respond_to?).with(:content).returns(false)
+    chunk.stubs(:to_s).returns("raw text")
+    robot.stubs(:run).yields(chunk).returns(@result)
+    _result, content, _elapsed = @runner.run(robot, "hi")
+    assert_equal "raw text", content
+  end
+
+  def test_run_skips_empty_chunks
+    robot = build_non_network_robot
+    chunk = mock('chunk')
+    chunk.stubs(:respond_to?).with(:content).returns(true)
+    chunk.stubs(:content).returns("")  # empty — should be skipped
+    robot.stubs(:run).yields(chunk).returns(@result)
+    _result, content, _elapsed = @runner.run(robot, "hi")
+    assert_nil content  # empty chunk excluded, streamed stays empty → nil
   end
 
   def test_run_network_uses_message_form
