@@ -13,7 +13,6 @@ class ToolFilterRegistryTest < Minitest::Test
       tool_filter_b: false,
       tool_filter_c: false,
       tool_filter_d: false,
-      tool_filter_e: false,
       tool_filter_load: false,
       tool_filter_save: false
     )
@@ -31,7 +30,7 @@ class ToolFilterRegistryTest < Minitest::Test
   end
 
   def test_builds_tfidf_filter_when_flag_set
-    @base_flags.tool_filter_b = true
+    @base_flags.tool_filter_a = true
 
     tfidf_filter = mock('tfidf_filter')
     tfidf_filter.expects(:prep).once
@@ -43,8 +42,8 @@ class ToolFilterRegistryTest < Minitest::Test
   end
 
   def test_multiple_filters_can_be_active_simultaneously
-    @base_flags.tool_filter_b = true
-    @base_flags.tool_filter_e = true
+    @base_flags.tool_filter_a = true
+    @base_flags.tool_filter_d = true
 
     tfidf_filter = mock('tfidf_filter')
     tfidf_filter.stubs(:prep)
@@ -61,9 +60,9 @@ class ToolFilterRegistryTest < Minitest::Test
     refute result.key?(:kbs)
   end
 
-  def test_shared_fact_asserter_across_b_c_d_e
-    @base_flags.tool_filter_b = true
-    @base_flags.tool_filter_e = true
+  def test_shared_fact_asserter_across_a_b_c_d
+    @base_flags.tool_filter_a = true
+    @base_flags.tool_filter_d = true
 
     fact_asserter_instances = []
     AIA::FactAsserter.stubs(:new).with { fact_asserter_instances << 1; true }.returns(mock('fa'))

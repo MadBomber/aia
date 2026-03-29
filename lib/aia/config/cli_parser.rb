@@ -21,8 +21,8 @@ module AIA
           parser = create_option_parser(options)
           parser.parse!
         rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
-          warn "ERROR: #{e.message}"
-          warn "       use --help for usage report"
+          STDERR.puts "ERROR: #{e.message}"
+          STDERR.puts "       use --help for usage report"
           exit 1
         end
 
@@ -80,20 +80,20 @@ module AIA
           options[:concurrent_auto] = true
         end
 
-        opts.on("-B", "--tool-filter-tfidf", "Use TF-IDF similarity-based tool filtering") do
+        opts.on("-A", "--tool-filter-tfidf", "Use TF-IDF similarity-based tool filtering") do
+          options[:tool_filter_a] = true
+        end
+
+        opts.on("-B", "--tool-filter-zvec", "Use Zvec semantic vector search tool filtering") do
           options[:tool_filter_b] = true
         end
 
-        opts.on("-C", "--tool-filter-zvec", "Use Zvec semantic vector search tool filtering") do
+        opts.on("-C", "--tool-filter-sqlite-vec", "Use SQLite-vec semantic vector search tool filtering") do
           options[:tool_filter_c] = true
         end
 
-        opts.on("-D", "--tool-filter-sqlite-vec", "Use SQLite-vec semantic vector search tool filtering") do
+        opts.on("-D", "--tool-filter-lsi", "Use LSI/SVD semantic tool filtering (classifier gem)") do
           options[:tool_filter_d] = true
-        end
-
-        opts.on("-E", "--tool-filter-lsi", "Use LSI/SVD semantic tool filtering (classifier gem)") do
-          options[:tool_filter_e] = true
         end
 
         opts.on("--load", "Load persisted tool filter databases (-C/-D/-E) from ~/.config/aia/") do
