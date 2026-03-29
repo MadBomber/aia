@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary      = 'Multi-model AI CLI with dynamic prompts, consensus responses, shell & Ruby integration, and seamless chat workflows.'
   spec.description  = <<~DESC
-    AIA is a powerful CLI console application that brings multi-model AI capabilities to your command line, supporting 20+ providers including OpenAI, Anthropic, and Google. Built on robot_lab for robust robot orchestration and kbs for intelligent rule-based routing, AIA v2 provides a thin CLI shell over a rich execution engine. Run multiple AI models simultaneously for comparison, get consensus responses from collaborative AI teams, or compare individual outputs side-by-side. With dynamic prompt management, embedded directives, shell and Ruby integration, interactive chats, and comprehensive history tracking, AIA transforms how you interact with AI.
+    AIA is a powerful CLI console application that brings multi-model AI capabilities to your command line, supporting 20+ providers including OpenAI, Anthropic, and Google. Built on robot_lab for robust robot orchestration, AIA v2 provides a thin CLI shell over a rich execution engine. Run multiple AI models simultaneously for comparison, get consensus responses from collaborative AI teams, or compare individual outputs side-by-side. With dynamic prompt management, embedded directives, shell and Ruby integration, interactive chats, and comprehensive history tracking, AIA transforms how you interact with AI.
   DESC
 
   spec.homepage     = 'https://github.com/MadBomber/aia'
@@ -43,8 +43,7 @@ Gem::Specification.new do |spec|
 
   # Core dependencies
   spec.add_dependency 'robot_lab',    '~> 0.0.9'              # Execution engine: robots, networks, tools, MCP, memory
-  spec.add_dependency 'kbs',          '~> 0.2.1'              # RETE rule engine for intelligent routing
-  spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
+spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
   spec.add_dependency 'lumberjack'                 # Structured logging with 3 loggers (aia, llm, mcp)
   spec.add_dependency 'activesupport'              # Required by robot_lab (missing from its gemspec)
   spec.add_dependency 'simple_flow'
@@ -83,7 +82,7 @@ Gem::Specification.new do |spec|
     ╔══════════════════════════════════════════════════════════════╗
     ║               AIA — AI Assistant v2.0                        ║
     ║                                                              ║
-    ║  v2 is powered by robot_lab + kbs for robust orchestration   ║
+    ║  v2 is powered by robot_lab for robust orchestration          ║
     ║  Full CLI backward compatibility with v1                     ║
     ╚══════════════════════════════════════════════════════════════╝
 

@@ -54,7 +54,7 @@ module AIA
         label_width = 7  # "Models:" is the widest label
         value_width = [info_width - label_width - 1, 20].max
 
-        header = "AIA v#{AIA::VERSION} is Online w/ kbs v#{KBS::VERSION}"
+        header = "AIA v#{AIA::VERSION} is Online"
 
         inner = TTY::Table.new(banner_detail_rows)
         details = inner.render(:basic, multiline: true,

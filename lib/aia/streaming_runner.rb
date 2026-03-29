@@ -46,7 +46,7 @@ module AIA
         $stdout.print(text)
       end
 
-      # When KBS provides a filtered tool list, pass those names to
+      # When a filtered tool list is provided, pass those names to
       # robot.run so robot_lab's ToolConfig.filter_tools applies them.
       # Otherwise inherit the full build-time tool set.
       tools_param = tools && !tools.empty? ? tools : :inherit
