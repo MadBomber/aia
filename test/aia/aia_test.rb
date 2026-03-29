@@ -32,7 +32,7 @@ class AIATest < Minitest::Test
 
   def test_reset_nils_all_singletons
     ivars = %i[@config @client @session_tracker @turn_state
-               @task_coordinator @decisions @rule_router]
+               @task_coordinator]
 
     # Prime each ivar to a non-nil sentinel value
     ivars.each { |iv| AIA.instance_variable_set(iv, :sentinel) }

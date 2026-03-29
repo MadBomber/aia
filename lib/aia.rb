@@ -39,27 +39,18 @@ require_relative 'aia/directive_processor'
 require_relative 'aia/variable_input_collector'
 require_relative 'aia/ui_presenter'
 require_relative 'aia/input_collector'
-require_relative 'aia/decisions'
-require_relative 'aia/rules_dsl'
-require_relative 'aia/kb_definitions'
-require_relative 'aia/dynamic_rule_builder'
-require_relative 'aia/keyword_extractor'
-require_relative 'aia/rule_router'
 require_relative 'aia/handler_context'
 require_relative 'aia/handler_protocol'
 require_relative 'aia/model_alias_registry'
 require_relative 'aia/model_switch_handler'
 require_relative 'aia/mcp_discovery'
 require_relative 'aia/mcp_grouper'
-require_relative 'aia/expert_router'
-require_relative 'aia/decision_applier'
 require_relative 'aia/verification_network'
 require_relative 'aia/prompt_decomposer'
 require_relative 'aia/cost_calculator'
 require_relative 'aia/session_tracker'
 require_relative 'aia/similarity_scorer'
 require_relative 'aia/tool_filter'
-require_relative 'aia/tool_filter/kbs'
 require_relative 'aia/tool_filter/tfidf'
 require_relative 'aia/tool_filter/zvec'
 require_relative 'aia/tool_filter/sqlite_vec'
@@ -98,11 +89,11 @@ module AIA
   @turn_state = TurnState.new
 
   class << self
-    attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator, :decisions, :rule_router
+    attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator
 
     def reset!
       @config = @client = @session_tracker = @turn_state =
-        @task_coordinator = @decisions = @rule_router = nil
+        @task_coordinator = nil
       ToolLoader.reset_instance!
     end
 
