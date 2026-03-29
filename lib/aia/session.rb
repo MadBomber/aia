@@ -72,6 +72,18 @@ module AIA
         @ui_presenter.display_separator
         @chat_loop.start(skip_context_files: true)
       end
+
+      # Register cleanup hook — runs on normal exit and uncaught exceptions
+      this_session = self
+      at_exit { this_session.cleanup }
+    end
+
+    # Release all held resources: MCP connections and filter state.
+    # Called automatically via at_exit registered in #start.
+    # Safe to call multiple times.
+    def cleanup
+      @mcp_manager&.close_all
+      @filters&.each_value(&:cleanup)
     end
 
     private
@@ -86,6 +98,25 @@ module AIA
         AIA.config.respond_to?(:model_aliases) ? (AIA.config.model_aliases || {}) : {}
       )
       @chat_loop           = nil  # created after robot is built
+
+      rotate_history_log_if_needed
+    end
+
+    MAX_HISTORY_BYTES = 10 * 1024 * 1024  # 10 MB
+
+    # Rotate the prompt history log if it has grown too large.
+    # Renames <file> to <file>.1 so the next session starts fresh.
+    # Called once at session initialization.
+    def rotate_history_log_if_needed
+      history_file = AIA.config.output.history_file
+      return unless history_file && File.exist?(history_file)
+      return unless File.size(history_file) > MAX_HISTORY_BYTES
+
+      archive = "#{history_file}.1"
+      FileUtils.mv(history_file, archive)
+      warn "History log rotated: #{File.basename(history_file)} → #{File.basename(archive)}"
+    rescue StandardError => e
+      warn "Warning: Could not rotate history log: #{e.message}"
     end
 
     def setup_output_file
