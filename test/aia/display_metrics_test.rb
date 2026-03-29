@@ -232,11 +232,10 @@ class DisplayMetricsTest < Minitest::Test
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
 
     directive_processor = mock('directive_processor')
-    rule_router = mock('rule_router')
     tracker = mock('tracker')
 
     AIA::ChatLoop.new(
-      robot, @ui, directive_processor, rule_router,
+      robot, @ui, directive_processor,
       session_tracker: tracker
     )
   end

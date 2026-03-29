@@ -18,9 +18,6 @@ class SpecialModeHandlerTest < Minitest::Test
     @tracker = mock('tracker')
     @tracker.stubs(:record_turn)
 
-    @rule_router = mock('rule_router')
-    @rule_router.stubs(:decisions).returns(AIA::Decisions.new)
-
     @robot = mock('robot')
     @robot.stubs(:is_a?).returns(false)
 
@@ -36,8 +33,7 @@ class SpecialModeHandlerTest < Minitest::Test
     @handler = AIA::SpecialModeHandler.new(
       robot: @robot,
       ui_presenter: @ui,
-      tracker: @tracker,
-      rule_router: @rule_router
+      tracker: @tracker
     )
   end
 

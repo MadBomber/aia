@@ -13,7 +13,6 @@ class HandlerProtocolTest < Minitest::Test
     ctx = AIA::HandlerContext.new
     assert_nil ctx.robot
     assert_nil ctx.prompt
-    assert_nil ctx.decisions
     assert_nil ctx.config
     assert_nil ctx.specialist_type
   end

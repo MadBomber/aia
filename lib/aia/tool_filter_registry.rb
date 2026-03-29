@@ -21,14 +21,14 @@ module AIA
       save_db = config.flags.tool_filter_save
 
       if config.flags.tool_filter_b
-        fact_asserter ||= FactAsserter.new
+        fact_asserter ||= AIA::FactAsserter.new
         tfidf_filter = ToolFilter::TFIDF.new(tools: tools, fact_asserter: fact_asserter)
         tfidf_filter.prep
         filters[:tfidf] = tfidf_filter
       end
 
       if config.flags.tool_filter_c
-        fact_asserter ||= FactAsserter.new
+        fact_asserter ||= AIA::FactAsserter.new
         zvec_filter = ToolFilter::Zvec.new(
           tools: tools, fact_asserter: fact_asserter,
           db_dir: db_dir, load_db: load_db, save_db: save_db
@@ -38,7 +38,7 @@ module AIA
       end
 
       if config.flags.tool_filter_d
-        fact_asserter ||= FactAsserter.new
+        fact_asserter ||= AIA::FactAsserter.new
         sqvec_filter = ToolFilter::SqliteVec.new(
           tools: tools, fact_asserter: fact_asserter,
           db_dir: db_dir, load_db: load_db, save_db: save_db
@@ -48,7 +48,7 @@ module AIA
       end
 
       if config.flags.tool_filter_e
-        fact_asserter ||= FactAsserter.new
+        fact_asserter ||= AIA::FactAsserter.new
         lsi_filter = ToolFilter::LSI.new(
           tools: tools, fact_asserter: fact_asserter,
           db_dir: db_dir, load_db: load_db, save_db: save_db

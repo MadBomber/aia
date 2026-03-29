@@ -74,11 +74,8 @@ class MCPStartupTest < Minitest::Test
   end
 
   # Helper: create a StartupCoordinator with a given robot for connect_mcp_servers testing.
-  # Stubs rule_router.decisions so MCPDiscovery can read mcp_activations.
   def build_coordinator(robot)
-    rr = mock('rule_router')
-    rr.stubs(:decisions).returns(AIA::Decisions.new)
-    AIA::StartupCoordinator.new(robot: robot, rule_router: rr, ui_presenter: mock('ui_presenter'))
+    AIA::StartupCoordinator.new(robot: robot, ui_presenter: mock('ui_presenter'))
   end
 
   # Helper: create a mock robot with mcp_config that returns server configs
