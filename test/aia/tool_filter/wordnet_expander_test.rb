@@ -6,7 +6,11 @@ require_relative '../../../lib/aia/tool_filter/wordnet_expander'
 
 class WordNetExpanderTest < Minitest::Test
   def setup
-    AIA::ToolFilter::WordNetExpander.clear_cache!
+    AIA::ToolFilter::WordNetExpander.reset_for_testing!
+  end
+
+  def teardown
+    AIA::ToolFilter::WordNetExpander.reset_for_testing!
   end
 
   def test_available_returns_boolean
@@ -55,5 +59,42 @@ class WordNetExpanderTest < Minitest::Test
     assert_equal "search files", result
   ensure
     AIA::ToolFilter::WordNetExpander.unstub(:available?)
+  end
+
+  # ------------------------------------------------------------------
+  # CI-safe unit tests (stub query_wn to work without wn installed)
+  # ------------------------------------------------------------------
+
+  def test_synonyms_for_combines_noun_and_verb_results
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'n').returns(["search", "hunt"])
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'v').returns(["seek", "look"])
+    result = AIA::ToolFilter::WordNetExpander.synonyms_for("find")
+    assert_includes result, "search"
+    assert_includes result, "seek"
+    refute_includes result, "find", "should not include the queried word itself"
+  ensure
+    AIA::ToolFilter::WordNetExpander.unstub(:query_wn)
+  end
+
+  def test_synonyms_for_deduplicates_across_pos
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'n').returns(["search", "seek"])
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'v').returns(["seek", "hunt"])
+    result = AIA::ToolFilter::WordNetExpander.synonyms_for("find")
+    assert_equal result.uniq, result, "synonyms_for should not contain duplicates"
+  ensure
+    AIA::ToolFilter::WordNetExpander.unstub(:query_wn)
+  end
+
+  def test_expand_uses_synonyms_for_each_long_word
+    AIA::ToolFilter::WordNetExpander.stubs(:available?).returns(true)
+    AIA::ToolFilter::WordNetExpander.stubs(:synonyms_for).with("find").returns(["search"])
+    AIA::ToolFilter::WordNetExpander.stubs(:synonyms_for).with("file").returns(["document"])
+    result = AIA::ToolFilter::WordNetExpander.expand("find file")
+    assert result.include?("search"), "expected 'search' in: #{result.inspect}"
+    assert result.include?("document"), "expected 'document' in: #{result.inspect}"
+    assert result.start_with?("find file"), "original text should be at start"
+  ensure
+    AIA::ToolFilter::WordNetExpander.unstub(:available?)
+    AIA::ToolFilter::WordNetExpander.unstub(:synonyms_for)
   end
 end

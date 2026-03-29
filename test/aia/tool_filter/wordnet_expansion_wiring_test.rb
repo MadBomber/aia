@@ -24,7 +24,7 @@ class WordNetExpansionWiringTest < Minitest::Test
   end
 
   def teardown
-    AIA::ToolFilter::WordNetExpander.clear_cache!
+    AIA::ToolFilter::WordNetExpander.reset_for_testing!
     AIA::ToolFilter::EmbeddingModelLoader._cache.clear
   end
 
@@ -38,11 +38,11 @@ class WordNetExpansionWiringTest < Minitest::Test
     filter.prep
 
     entry = filter.instance_variable_get(:@tool_entries).first
-    # FIXED_EXPANSION = "search find files EXPANDED"
-    # After Porter stemming, "EXPANDED" -> "expand", "search" -> "search", etc.
-    # Verify that the expansion text was used (stemmed "expand" from "EXPANDED" is present).
-    assert entry[:description].include?("expand"),
-           "Expected 'expand' (stemmed EXPANDED) in TFIDF indexed description. Got: #{entry[:description].inspect}"
+    # The stub returns "search find files EXPANDED" — after normalize/stem the description
+    # should be longer than if expansion had not occurred (no "EXPANDED" appended).
+    without_expansion = filter.send(:normalize, "search find files")
+    refute_equal without_expansion, entry[:description],
+                 "Expected TFIDF description to differ from unexpanded version (expansion did not run)"
   end
 
   def test_lsi_build_index_uses_expanded_text

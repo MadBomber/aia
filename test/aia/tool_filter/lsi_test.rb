@@ -19,7 +19,7 @@ class ToolFilterLSITest < Minitest::Test
   end
 
   def teardown
-    AIA::ToolFilter::WordNetExpander.clear_cache!
+    AIA::ToolFilter::WordNetExpander.reset_for_testing!
   end
 
   def build_tools

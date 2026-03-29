@@ -80,6 +80,12 @@ module AIA
           @cache_mutex.synchronize { @cache.clear }
         end
 
+        # Reset all cached state. Used in test teardowns.
+        def reset_for_testing!
+          @available_mutex.synchronize { @available = nil }
+          @cache_mutex.synchronize { @cache.clear }
+        end
+
         private
 
         # Shell out to `wn word -syns{pos}` and parse the synset lines.
