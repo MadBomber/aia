@@ -57,11 +57,28 @@ module AIA
         end
       end
 
-      threads.each(&:join)
+      global_limit = global_connection_timeout
+      Timeout.timeout(global_limit) do
+        threads.each(&:join)
+      end
 
       @connected = true
       logger.info("MCP initialization complete: #{@connected_clients.size} connected, #{@failed_servers.size} failed")
       self
+    rescue Timeout::Error
+      logger = AIA::LoggerManager.mcp_logger
+      logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
+
+      connected_names = @mutex.synchronize { @connected_clients.keys.to_set }
+      failed_names    = @mutex.synchronize { @failed_servers.map { |f| f[:name] }.to_set }
+
+      servers.each do |server_config|
+        srv_name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
+        next if connected_names.include?(srv_name) || failed_names.include?(srv_name)
+        @mutex.synchronize do
+          @failed_servers << { name: srv_name, error: "global connection timeout (#{global_limit}s)" }
+        end
+      end
     end
 
     # Inject connected MCP clients and tools into robot(s).
@@ -184,6 +201,14 @@ module AIA
     end
 
     private
+
+    # Read global MCP connection timeout from config.
+    # Falls back to 120s if config is unavailable.
+    def global_connection_timeout
+      AIA.config&.concurrency&.mcp_timeout.to_i.then { |v| v > 0 ? v : 120 }
+    rescue StandardError
+      120
+    end
 
     # Connect a single MCP server, updating the spinner on completion.
     def connect_one(server_config, name, spinner, logger)

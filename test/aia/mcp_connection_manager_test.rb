@@ -226,4 +226,27 @@ class MCPConnectionManagerTest < Minitest::Test
 
     assert_equal 2, @manager.connected_tools.size
   end
+
+  # ===================================================================
+  # global_connection_timeout
+  # ===================================================================
+
+  def test_global_connection_timeout_returns_default_when_no_config
+    AIA.stubs(:config).returns(nil)
+    result = @manager.send(:global_connection_timeout)
+    assert_equal 120, result
+  end
+
+  def test_global_connection_timeout_reads_from_config
+    AIA.stubs(:config).returns(
+      OpenStruct.new(
+        concurrency: OpenStruct.new(mcp_timeout: 60),
+        connected_mcp_servers: nil,
+        mcp_server_tool_counts: nil,
+        failed_mcp_servers: nil
+      )
+    )
+    result = @manager.send(:global_connection_timeout)
+    assert_equal 60, result
+  end
 end

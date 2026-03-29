@@ -221,6 +221,7 @@ defaults:
     auto: false
     independent_servers: []
     threshold: 2
+    mcp_timeout: 120
 
   # ---------------------------------------------------------------------------
   # Rules Configuration (Enhanced Multi-KB in v2)
