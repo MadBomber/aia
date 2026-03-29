@@ -20,7 +20,8 @@ module AIA
         @_model_cache
       end
 
-      def self._mutex
+      # Internal: accessed by load_embedding_model for thread safety.
+      def self._mutex  # rubocop:disable Naming/MethodName
         @_mutex
       end
 
