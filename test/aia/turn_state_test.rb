@@ -159,11 +159,6 @@ class TurnStateTest < Minitest::Test
     assert_nil @ts.active_mcp_servers
   end
 
-  def test_clear_resets_active_tools
-    @ts.active_tools = [:tool_x]
-    @ts.clear!
-    assert_nil @ts.active_tools
-  end
 
   # ---------------------------------------------------------------------------
   # Error handling

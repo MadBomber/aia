@@ -14,16 +14,14 @@ module AIA
   class ChatLoop
     include ContentExtractor
 
-    def initialize(robot, ui_presenter, directive_processor, rule_router = nil,
+    def initialize(robot, ui_presenter, directive_processor,
                    session_tracker: nil, alias_registry: nil, filters: {})
       @robot               = robot
       @ui_presenter        = ui_presenter
       @directive_processor = directive_processor
-      @rule_router         = rule_router
       @tracker             = session_tracker || SessionTracker.new
       @alias_registry      = alias_registry || ModelAliasRegistry.new
       @model_switch_handler = ModelSwitchHandler.new(@alias_registry, @ui_presenter)
-      @decision_applier    = defined?(DecisionApplier) ? DecisionApplier.new(@ui_presenter) : nil
       @filters             = filters
 
       @streaming_runner = StreamingRunner.new
@@ -35,8 +33,7 @@ module AIA
       @special_mode_handler = SpecialModeHandler.new(
         robot: @robot,
         ui_presenter: @ui_presenter,
-        tracker: @tracker,
-        rule_router: @rule_router
+        tracker: @tracker
       )
       @tool_filter_strategy = ToolFilterStrategy.new(
         filters: filters,
@@ -107,40 +104,18 @@ module AIA
           next
         end
 
-        # Rules may modify config before each turn
-        kbs_turn_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        decisions = @rule_router.evaluate_turn(AIA.config, processed_prompt)
-
         # Check for model switch intent (explicit user request takes priority)
-        if @model_switch_handler.handle(HandlerContext.new(decisions: decisions, config: AIA.config))
+        if @model_switch_handler.handle(HandlerContext.new(config: AIA.config))
           update_robot
           next
         end
 
-        # Apply KBS decisions: model override, MCP filtering, gate warnings, learning
-        applied = @decision_applier.apply(decisions, AIA.config)
-        kbs_turn_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - kbs_turn_start) * 1000
-        @filters[:kbs]&.record_turn_ms(kbs_turn_ms)
-        if applied.blocked
-          @ui_presenter.display_info("Turn blocked by quality gate. Please revise your prompt.")
-          next
-        end
-
-        # Use KBS temp robot if model was overridden, otherwise primary robot
-        active_robot = applied.temp_robot || @robot
+        active_robot = @robot
 
         # Check for special execution modes (/verify, /decompose, /concurrent)
         if @special_mode_handler.handle(processed_prompt)
           clear_turn_mcp_filter
           next
-        end
-
-        # Expert routing (per-turn specialist)
-        if AIA.config.flags.expert_routing
-          if route_to_expert(decisions, processed_prompt)
-            clear_turn_mcp_filter
-            next
-          end
         end
 
         # @mention routing — send to specific robot(s) in the network
@@ -164,8 +139,6 @@ module AIA
           next
         end
 
-        @rule_router.evaluate_response(AIA.config, { accepted: true, model: AIA.config.models.first.name })
-
         # Increment shared memory turn counter for multi-model networks
         if @robot.respond_to?(:memory) && @robot.memory.respond_to?(:data)
           data = @robot.memory.data
@@ -178,8 +151,7 @@ module AIA
           prompt: processed_prompt,
           elapsed: elapsed,
           ui_presenter: @ui_presenter,
-          tracker: @tracker,
-          decisions: decisions
+          tracker: @tracker
         )
 
         # Clear per-turn MCP filter for next turn
@@ -187,42 +159,15 @@ module AIA
       end
     end
 
-    # Clear per-turn MCP server and tool filters so next turn sees all
+    # Clear per-turn MCP server filter so next turn sees all
     def clear_turn_mcp_filter
       AIA.turn_state.active_mcp_servers = nil
-      AIA.turn_state.active_tools = nil
     end
 
     # Update robot reference after a model switch and propagate to sub-components
     def update_robot
       @robot = AIA.client
       @special_mode_handler.robot = @robot
-    end
-
-    def route_to_expert(decisions, prompt)
-      router = ExpertRouter.new(decisions)
-      specialist = router.route(AIA.config)
-      return false unless specialist
-
-      @ui_presenter.display_info("Routing to specialist: #{specialist.respond_to?(:name) ? specialist.name : 'expert'}")
-
-      result, streamed_content, elapsed = @streaming_runner.run(
-        specialist, prompt,
-        header: "\nAI (Expert):\n   ",
-        spinner_message: "Expert processing..."
-      )
-
-      present_result(result,
-        streamed_content: streamed_content,
-        prompt: prompt,
-        elapsed: elapsed,
-        ui_presenter: @ui_presenter,
-        tracker: @tracker
-      )
-      true
-    rescue StandardError => e
-      @ui_presenter.display_info("Expert routing failed: #{e.message}")
-      false
     end
 
     def process_directive(follow_up_prompt)
@@ -326,19 +271,17 @@ module AIA
       nil
     end
 
-    # Show the actual tools available to the robot vs what KBS activated.
+    # Show the actual tools available to the robot.
     # Only prints when --debug is enabled.
     def log_robot_tools(robot)
       return unless AIA.debug?
 
       local = Array(robot.local_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
       mcp   = Array(robot.mcp_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
-      kbs   = AIA.turn_state&.active_tools
 
       $stderr.puts "[DEBUG] Tool filter strategy: #{@tool_filter_strategy.active_strategy_label}"
       $stderr.puts "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"
       $stderr.puts "[DEBUG] Robot mcp_tools (#{mcp.size}): #{mcp.join(', ')}"
-      $stderr.puts "[DEBUG] KBS active_tools: #{kbs ? kbs.join(', ') : '(none — all tools available)'}"
     end
 
     def log_user_input(input)

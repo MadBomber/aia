@@ -95,7 +95,7 @@ module AIA
     # @param elapsed [Float, nil] elapsed seconds
     # @param ui_presenter [UIPresenter] for display calls
     # @param tracker [SessionTracker, nil] to record the turn
-    # @param decisions [Decisions, nil] KBS decisions for tracker
+    # @param decisions [Hash, nil] routing decisions for tracker
     # @return [String] the extracted content
     def present_result(result, streamed_content: nil, prompt: nil, elapsed: nil,
                        ui_presenter:, tracker: nil, decisions: nil)

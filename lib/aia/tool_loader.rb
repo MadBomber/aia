@@ -112,15 +112,6 @@ module AIA
         end
       end
 
-      # KBS-driven tool filtering (per-turn or startup).
-      # Only applies when user has not explicitly used --allowed-tools or --rejected-tools.
-      kbs_active = AIA.turn_state&.active_tools
-      if kbs_active && !kbs_active.empty? && (allowed.nil? || allowed.empty?) && (rejected.nil? || rejected.empty?)
-        tools = tools.select do |t|
-          name = (t.respond_to?(:name) ? t.name : t.class.name)
-          kbs_active.include?(name)
-        end
-      end
 
       seen = {}
       tools.select do |t|

@@ -24,7 +24,7 @@ module AIA
     # @param model [String] model used (ignored for network results)
     # @param input [String] user input
     # @param result the LLM response
-    # @param decisions [AIA::Decisions, nil] routing decisions for this turn
+    # @param decisions [Hash, nil] routing decisions for this turn
     # @param elapsed [Float, nil] seconds the model took to respond
     def record_turn(model:, input:, result:, decisions: nil, elapsed: nil)
       if defined?(SimpleFlow::Result) && result.is_a?(SimpleFlow::Result)

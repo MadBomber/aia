@@ -20,7 +20,7 @@ module AIA
 
     attr_accessor :force_verify, :force_decompose, :force_concurrent_mcp,
                   :force_debate, :force_delegate, :force_spawn, :spawn_type,
-                  :active_mcp_servers, :active_tools
+                  :active_mcp_servers
 
     def initialize
       clear!
@@ -59,7 +59,6 @@ module AIA
       @force_spawn         = false
       @spawn_type          = nil
       @active_mcp_servers  = nil
-      @active_tools        = nil
     end
 
     # Returns which exclusive mode is currently active, or nil if none.
