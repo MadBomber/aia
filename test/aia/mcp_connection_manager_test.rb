@@ -185,4 +185,45 @@ class MCPConnectionManagerTest < Minitest::Test
     end
     refute raised, "close_all should not raise when a client#close raises"
   end
+
+  # ===================================================================
+  # Tool name collision detection
+  # ===================================================================
+
+  def test_duplicate_tool_names_are_not_added_twice
+    tool_a1 = mock('tool_a1')
+    tool_a1.stubs(:respond_to?).with(:name).returns(true)
+    tool_a1.stubs(:name).returns("search")
+
+    tool_a2 = mock('tool_a2')  # duplicate name from second server
+    tool_a2.stubs(:respond_to?).with(:name).returns(true)
+    tool_a2.stubs(:name).returns("search")
+
+    # Manually inject tools as if the first server was connected
+    @manager.instance_variable_set(:@connected_tools, [tool_a1])
+
+    # Now simulate adding a second tool with the same name
+    logger = mock('logger')
+    logger.stubs(:warn)
+    @manager.send(:add_tools_deduped, [tool_a2], "server_b", logger)
+
+    assert_equal 1, @manager.connected_tools.size
+    assert_same tool_a1, @manager.connected_tools.first
+  end
+
+  def test_unique_tool_names_are_all_added
+    tool_a = mock('tool_a')
+    tool_a.stubs(:respond_to?).with(:name).returns(true)
+    tool_a.stubs(:name).returns("search")
+
+    tool_b = mock('tool_b')
+    tool_b.stubs(:respond_to?).with(:name).returns(true)
+    tool_b.stubs(:name).returns("browse")
+
+    logger = mock('logger')
+    logger.stubs(:warn)
+    @manager.send(:add_tools_deduped, [tool_a, tool_b], "server_a", logger)
+
+    assert_equal 2, @manager.connected_tools.size
+  end
 end

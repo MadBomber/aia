@@ -211,7 +211,7 @@ module AIA
           @mutex.synchronize do
             @connected_clients[name]  = client
             @server_tool_counts[name] = tools.size
-            @connected_tools.concat(built_tools)
+            add_tools_deduped(built_tools, name, logger)
           end
 
           logger.info("MCP: '#{name}' connected (#{tools.size} tools)")
@@ -236,6 +236,29 @@ module AIA
       end
       logger.warn("MCP: '#{name}' error: #{e.message}")
       spinner.error("(#{e.message})")
+    end
+
+    # Add tools to @connected_tools, skipping any whose name is already present.
+    # Logs a warning for each duplicate so the user knows which server wins.
+    # MUST be called inside @mutex.synchronize.
+    #
+    # @param new_tools [Array] tools to add
+    # @param server_name [String] name of the server providing these tools (for warning)
+    # @param logger [Logger] MCP logger
+    def add_tools_deduped(new_tools, server_name, logger)
+      new_tools.each do |tool|
+        tool_name = tool.respond_to?(:name) ? tool.name : tool.to_s
+        existing = @connected_tools.find do |t|
+          (t.respond_to?(:name) ? t.name : t.to_s) == tool_name
+        end
+
+        if existing
+          logger.warn("MCP: Tool '#{tool_name}' already registered from another server. " \
+                      "Skipping duplicate from '#{server_name}'.")
+        else
+          @connected_tools << tool
+        end
+      end
     end
 
     # Extract timeout in seconds from server config.
