@@ -20,16 +20,21 @@ module AIA
     module WordNetExpander
       MIN_WORD_LENGTH = 4
 
-      @cache       = {}
-      @cache_mutex = Mutex.new
-      @available   = nil
+      @cache          = {}
+      @cache_mutex    = Mutex.new
+      @available      = nil
+      @available_mutex = Mutex.new
 
       class << self
         # Returns true if the `wn` executable is on PATH.
         # Result is cached for the process lifetime.
         def available?
-          return @available unless @available.nil?
-          @available = system("which wn", out: File::NULL, err: File::NULL) ? true : false
+          @available_mutex.synchronize { return @available unless @available.nil? }
+          result = system("which wn", out: File::NULL, err: File::NULL) ? true : false
+          @available_mutex.synchronize do
+            @available = result if @available.nil?
+            @available
+          end
         end
 
         # Expand text by appending synonyms for each content word.
@@ -55,16 +60,19 @@ module AIA
         # @param word [String] lowercase word to look up
         # @return [Array<String>] synonym strings, single-word only
         def synonyms_for(word)
-          @cache_mutex.synchronize do
-            return @cache[word] if @cache.key?(word)
-          end
+          # fast path: already cached
+          @cache_mutex.synchronize { return @cache[word] if @cache.key?(word) }
 
           syns = (query_wn(word, 'n') + query_wn(word, 'v'))
                    .uniq
                    .reject { |w| w == word }
 
-          @cache_mutex.synchronize { @cache[word] = syns }
-          syns
+          # write path: first writer wins; read-back in same lock so clear_cache!
+          # between write and read cannot cause nil to escape
+          @cache_mutex.synchronize do
+            @cache[word] = syns unless @cache.key?(word)
+            @cache[word]
+          end
         rescue StandardError
           []
         end
