@@ -66,5 +66,12 @@ module AIA
       type_msg = args.first ? " (#{args.first})" : " (auto-detect)"
       "Spawn mode enabled#{type_msg} for next prompt."
     end
+
+    desc "3-tier layered orchestration: orchestrator → lead agents → specialists"
+    def orchestrate(args, context_manager = nil)
+      AIA.turn_state.force_orchestrate = true
+      "Orchestration mode enabled. Your next prompt is the application requirements."
+    end
+    alias_method :orch, :orchestrate
   end
 end

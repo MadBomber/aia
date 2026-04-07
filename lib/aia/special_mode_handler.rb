@@ -3,9 +3,10 @@
 # lib/aia/special_mode_handler.rb
 #
 # Handles special execution modes triggered by directives:
-# /verify   — two independent answers + reconciliation
-# /decompose — break into parallel sub-tasks
-# /concurrent — concurrent MCP server access
+# /verify      — two independent answers + reconciliation
+# /decompose   — break into parallel sub-tasks
+# /concurrent  — concurrent MCP server access
+# /orchestrate — 3-tier layered orchestration (orchestrator → leads → specialists)
 
 module AIA
   class SpecialModeHandler
@@ -26,14 +27,18 @@ module AIA
       @spawn_handler = SpawnHandler.new(
         robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker
       )
+      @layered_orchestrator = LayeredOrchestrator.new(
+        robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker
+      )
     end
 
     # Update the robot reference (e.g., after a model switch).
     def robot=(new_robot)
       @robot = new_robot
-      @debate_handler.robot   = new_robot
-      @delegate_handler.robot = new_robot
-      @spawn_handler.robot    = new_robot
+      @debate_handler.robot       = new_robot
+      @delegate_handler.robot     = new_robot
+      @spawn_handler.robot        = new_robot
+      @layered_orchestrator.robot = new_robot
     end
 
     # Check TurnState flags and dispatch to the appropriate handler.
@@ -74,6 +79,11 @@ module AIA
         type = turn_state.spawn_type
         turn_state.spawn_type = nil
         return handle_spawn(prompt, specialist_type: type)
+      end
+
+      if turn_state.force_orchestrate
+        turn_state.force_orchestrate = false
+        return handle_orchestration(prompt)
       end
 
       false
@@ -183,6 +193,19 @@ module AIA
       true
     rescue StandardError => e
       @ui_presenter.display_info("Spawn failed: #{e.message}. Falling back to normal mode.")
+      false
+    end
+
+    def handle_orchestration(prompt)
+      @ui_presenter.display_info("Starting 3-tier layered orchestration...")
+
+      content = @layered_orchestrator.handle(HandlerContext.new(robot: @robot, prompt: prompt))
+      return false unless content
+
+      display_and_save(content)
+      true
+    rescue StandardError => e
+      @ui_presenter.display_info("Orchestration failed: #{e.class}: #{e.message}")
       false
     end
 

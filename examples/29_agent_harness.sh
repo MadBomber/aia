@@ -1,28 +1,34 @@
 #!/usr/bin/env bash
 # examples/29_agent_harness.sh
 #
-# Demonstrates AIA as a full agent harness with a three-tier model:
+# Demonstrates AIA as a full agent harness using 3-tier layered orchestration.
+#
+# A complete application requirements document is fed to the /orchestrate
+# directive. AIA runs a three-tier execution:
 #
 #   Tier 1 — Tobor (orchestrator)
-#     Primary robot given an orchestrator role via --role orchestrator.
-#     Receives tasks and decides how to coordinate the team.
+#     Reads the full requirements and decomposes them into independent
+#     architectural layers (e.g. Infrastructure, Data Models, Auth, Routes, Views).
 #
-#   Tier 2 — Lead agents (spawned on demand)
-#     Specialist robots created with /spawn <type> for domain expertise.
-#     Each lead agent has a focused system prompt and handles a workstream.
+#   Tier 2 — Lead agents (one per layer)
+#     Each lead agent receives its layer's requirements and further decomposes
+#     them into specific implementation tasks, assigning a specialist type to
+#     each task (e.g. sequel-migration-writer, sinatra-route-builder).
 #
-#   Tier 3 — Task runners (network robots)
-#     The models in the -m list execute parallel workstreams via /decompose.
-#     Tobor synthesizes their results.
+#   Tier 3 — Specialist robots (one per task)
+#     Each specialist receives a focused, concrete task and produces an actual
+#     implementation artifact: a code file, migration, route handler, or spec.
 #
-# Parts:
-#   1. Orchestrator role — Tobor describes its coordination strategy
-#   2. Spawn a lead agent — create a security-expert, route a task to it
-#   3. Parallel workstreams — /decompose a multi-dimension design review
-#   4. Free session — try your own orchestration scenario
+#   Synthesis
+#     Each lead agent synthesizes its layer's artifacts into a summary.
+#     Tobor then synthesizes all layer summaries into a final integration report.
+#
+# The application being built: TaskFlow — a multi-user project and task
+# management web app using Ruby, Sinatra, Sequel (SQLite), and ERB templates.
+# Full requirements: examples/requirements/sinatra_taskflow_app.md
 #
 # Prerequisites: Run 00_setup_aia.sh first
-# Requires: phi4-mini (auto-pulled if missing)
+# Requires: phi4-mini (auto-pulled if missing), expect (brew install expect)
 # Usage: cd examples && bash 29_agent_harness.sh
 
 set -euo pipefail
@@ -37,18 +43,25 @@ fi
 MODEL_A="ollama/qwen3"
 MODEL_B="ollama/phi4-mini"
 ORCH_CONFIG="aia_config_orchestrator.yml"
+REQUIREMENTS="requirements/sinatra_taskflow_app.md"
 
-echo "=== Demo 29: AIA Agent Harness ==="
+echo "=== Demo 29: AIA Agent Harness — 3-Tier Layered Orchestration ==="
 echo
-echo "AIA contains every component needed to operate as a full agent harness:"
-echo "  - Orchestrator role  (system prompt set in aia_config_orchestrator.yml)"
-echo "  - Lead agents        (/spawn <type> creates specialists on demand)"
-echo "  - Task runners       (/decompose distributes parallel workstreams)"
-echo "  - Synthesis          (orchestrator assembles results into a final answer)"
+echo "Application being built:"
+echo "  TaskFlow — a multi-user project and task management web app"
+echo "  Stack: Ruby + Sinatra + Sequel (SQLite) + ERB + Bootstrap 5"
 echo
-echo "This demo wires those components together so Tobor acts as a project"
-echo "director coordinating a team, not just a single-model responder."
+echo "Execution model:"
+echo "  Tier 1  Tobor (orchestrator) decomposes requirements into layers"
+echo "  Tier 2  One lead agent per layer decomposes into specialist tasks"
+echo "  Tier 3  One specialist per task produces the implementation artifact"
 echo
+
+if [[ ! -f "${REQUIREMENTS}" ]]; then
+    echo "ERROR: Requirements file not found: ${REQUIREMENTS}"
+    echo "       Expected at: examples/requirements/sinatra_taskflow_app.md"
+    exit 1
+fi
 
 # --- Check that the second model is available ---
 
@@ -58,56 +71,30 @@ if ! ollama list 2>/dev/null | grep -q "^phi4-mini"; then
     echo
 fi
 
-# --- Part 1: Orchestrator self-awareness ---
+# --- Orchestration run ---
 
-echo "--- Part 1: Orchestrator role ---"
+echo "--- Orchestrated build: /orchestrate ---"
 echo
-echo "Tobor starts with an orchestrator system prompt (set in aia_config_orchestrator.yml)."
-echo "It understands its mandate: assess incoming tasks, choose a coordination"
-echo "strategy (/spawn, /decompose, /delegate, or direct), and synthesize results."
+echo "The directive /orchestrate enables 3-tier mode for the next prompt."
+echo "The next message is the full application requirements document."
+echo "AIA will:"
+echo "  1. Decompose requirements into architectural layers"
+echo "  2. Spawn a lead agent for each layer"
+echo "  3. Have each lead spawn specialists for its tasks"
+echo "  4. Collect artifacts and synthesize across all layers"
 echo
-echo "Running: aia -c ${ORCH_CONFIG} --chat"
-echo
-
-expect <<'EXPECT_SCRIPT'
-set timeout 120
-log_user 1
-
-spawn aia -c aia_config_orchestrator.yml --chat
-
-expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for chat prompt ***"; exit 1 }
-}
-
-send "You will receive a complex engineering request shortly. Without executing anything yet, briefly explain which coordination strategy you would use and why: designing a production-ready REST API with authentication, rate limiting, and observability.\r"
-
-expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for response ***"; exit 1 }
-}
-
-send "exit\r"
-expect eof
-EXPECT_SCRIPT
-
-drain_terminal
-echo
-echo
-
-# --- Part 2: Spawn a lead agent ---
-
-echo "--- Part 2: Spawn a specialist lead agent ---"
-echo
-echo "Tobor (orchestrator) spawns a 'security-expert' lead agent on demand."
-echo "The task is routed to the specialist rather than answered by Tobor directly."
-echo "This shows Tier 2: orchestrator → specialist delegation."
-echo
+echo "Requirements document: ${REQUIREMENTS}"
 echo "Running: aia -c ${ORCH_CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo
+echo "Note: This demonstration runs 3+ tiers of agents in sequence."
+echo "      Each layer spawns 2-4 specialists. Allow 10-20 minutes"
+echo "      depending on Ollama model inference speed."
+echo
 
-expect <<'EXPECT_SCRIPT'
-set timeout 120
+REQUIREMENTS_CONTENT=$(cat "${REQUIREMENTS}")
+
+expect <<EXPECT_SCRIPT
+set timeout 1800
 log_user 1
 
 spawn aia -c aia_config_orchestrator.yml -m ollama/qwen3,ollama/phi4-mini --chat
@@ -117,62 +104,19 @@ expect {
   timeout { puts "\n*** Timed out waiting for chat prompt ***"; exit 1 }
 }
 
-send "/spawn security-expert\r"
-
-expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for spawn confirmation ***"; exit 1 }
-}
-
-send "List the five most critical security controls that must be in place before a REST API is exposed to the public internet.\r"
-
-expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for specialist response ***"; exit 1 }
-}
-
-send "exit\r"
-expect eof
-EXPECT_SCRIPT
-
-drain_terminal
-echo
-echo
-
-# --- Part 3: Parallel workstreams via /decompose ---
-
-echo "--- Part 3: Parallel workstreams (Tier 3 task runners) ---"
-echo
-echo "Tobor receives a multi-dimension design review. /decompose splits it"
-echo "into independent workstreams, Tobor and Quark each handle different"
-echo "dimensions concurrently, and Tobor synthesizes the final assessment."
-echo
-echo "Running: aia -c ${ORCH_CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
-echo
-
-expect <<'EXPECT_SCRIPT'
-set timeout 600
-log_user 1
-
-spawn aia -c aia_config_orchestrator.yml -m ollama/qwen3,ollama/phi4-mini --chat
-
-expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for chat prompt ***"; exit 1 }
-}
-
-send "/decompose\r"
+send "/orchestrate\r"
 
 expect {
   "#=> " {}
   timeout { puts "\n*** Timed out waiting for directive confirmation ***"; exit 1 }
 }
 
-send "Review this proposed system design and evaluate it across four dimensions: (1) architectural soundness of microservices on Kubernetes, (2) data layer choices of PostgreSQL + Redis, (3) operational complexity and team readiness, (4) scaling strategy for 10x traffic growth.\r"
+send {${REQUIREMENTS_CONTENT}}
+send "\r"
 
 expect {
   "#=> " {}
-  timeout { puts "\n*** Timed out waiting for decomposition results ***"; exit 1 }
+  timeout { puts "\n*** Timed out waiting for orchestration to complete ***"; exit 1 }
 }
 
 send "exit\r"
@@ -183,17 +127,16 @@ drain_terminal
 echo
 echo
 
-# --- Part 4: Your orchestration session ---
+# --- Interactive session ---
 
-echo "--- Part 4: Your turn ---"
+echo "--- Interactive orchestration session ---"
 echo
-echo "An open orchestration session with Tobor as your project director."
-echo "Try any combination of:"
-echo "  /spawn <specialist-type>   create a domain expert lead agent"
-echo "  /decompose                 split a multi-part task across the team"
-echo "  /delegate                  structured step-by-step execution plan"
-echo "  /debate                    have Tobor and Quark stress-test a decision"
-echo "  @Tobor or @Quark           address a specific robot directly"
+echo "The same session is now open for you to:"
+echo "  /orchestrate   run 3-tier orchestration on any requirements prompt"
+echo "  /spawn <type>  create a specialist lead agent for a focused task"
+echo "  /decompose     parallel workstreams for multi-part questions"
+echo "  @Tobor         address the orchestrator directly"
+echo "  @Quark         address the specialist network robot directly"
 echo
 echo "Running: aia -c ${ORCH_CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo

@@ -179,7 +179,7 @@ module AIA
       if follow_up_prompt.strip.start_with?(
             "/clear", "/checkpoint", "/restore", "/review", "/context",
             "/verify", "/decompose", "/debate", "/spawn", "/delegate", "/del",
-            "/concurrent", "/conc", "/model")
+            "/concurrent", "/conc", "/orchestrate", "/orch", "/model")
         @ui_presenter.display_info(directive_output) unless directive_output.nil? || directive_output.strip.empty?
         return nil
       end

@@ -15,12 +15,12 @@ module AIA
   class TurnState
     # Exclusive mode flags — only one may be active at a time via #request.
     EXCLUSIVE_MODES = %i[
-      verify decompose concurrent_mcp debate delegate spawn
+      verify decompose concurrent_mcp debate delegate spawn orchestrate
     ].freeze
 
     attr_accessor :force_verify, :force_decompose, :force_concurrent_mcp,
                   :force_debate, :force_delegate, :force_spawn, :spawn_type,
-                  :active_mcp_servers
+                  :force_orchestrate, :active_mcp_servers
 
     def initialize
       clear!
@@ -47,6 +47,7 @@ module AIA
       when :debate         then @force_debate          = true
       when :delegate       then @force_delegate        = true
       when :spawn          then @force_spawn = true; @spawn_type = type
+      when :orchestrate    then @force_orchestrate     = true
       end
     end
 
@@ -58,6 +59,7 @@ module AIA
       @force_delegate      = false
       @force_spawn         = false
       @spawn_type          = nil
+      @force_orchestrate   = false
       @active_mcp_servers  = nil
     end
 
@@ -69,6 +71,7 @@ module AIA
       return :debate         if @force_debate
       return :delegate       if @force_delegate
       return :spawn          if @force_spawn
+      return :orchestrate    if @force_orchestrate
       nil
     end
 
@@ -82,6 +85,7 @@ module AIA
       @force_delegate       = false
       @force_spawn          = false
       @spawn_type           = nil
+      @force_orchestrate    = false
     end
   end
 end
