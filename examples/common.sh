@@ -12,6 +12,15 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
+# When running from inside the development repo, prefer the local bin/aia
+# over any system-installed gem. bin/aia loads from ../lib/aia directly,
+# so demos always run against the version in this checkout.
+# Exported so child processes (including `expect`'s `spawn aia`) inherit it.
+REPO_BIN="$(cd "${SCRIPT_DIR}/.." && pwd)/bin"
+if [ -f "${REPO_BIN}/aia" ]; then
+  export PATH="${REPO_BIN}:${PATH}"
+fi
+
 # Clear all AIA_* env vars so personal settings don't leak in.
 while IFS= read -r var; do
   unset "$var"

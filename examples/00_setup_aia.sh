@@ -24,6 +24,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPTS_DIR="${SCRIPT_DIR}/prompts_dir"
 CONFIG_FILE="${SCRIPT_DIR}/aia_config.yml"
 
+# When running from inside the development repo, prefer the local bin/aia
+# over any system-installed gem so setup reflects the version being demoed.
+REPO_BIN="$(cd "${SCRIPT_DIR}/.." && pwd)/bin"
+if [ -f "${REPO_BIN}/aia" ]; then
+  export PATH="${REPO_BIN}:${PATH}"
+fi
+
 # The model to use for demos. qwen3 is Ollama's reference model
 # for tool calling and has strong instruction-following ability.
 DEMO_MODEL="qwen3"
@@ -34,8 +41,9 @@ echo
 # --- Step 1: Check that aia is installed ---
 
 if ! command -v aia &> /dev/null; then
-  echo "ERROR: 'aia' is not installed."
-  echo "       Install with: gem install aia"
+  echo "ERROR: 'aia' is not found."
+  echo "       From the repo:  just install   (installs local build)"
+  echo "       From RubyGems:  gem install aia"
   exit 1
 fi
 
