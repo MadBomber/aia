@@ -185,6 +185,54 @@ Docs: [Executable Prompts](https://madbomber.github.io/aia/guides/executable-pro
 
 Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Directives Reference](https://madbomber.github.io/aia/directives-reference/), [Workflows and Pipelines](https://madbomber.github.io/aia/workflows-and-pipelines/)
 
+### 23 — Verify Mode
+
+`23_verify.sh` — Demonstrates `/verify` mode via `VerificationNetwork`. Two robots independently answer the same question with slightly different system prompts, then a third reconciler robot compares both answers and produces a final verified response. Part 1 verifies a factual question (causes of the 2008 financial crisis); Part 2 verifies a technical explanation (TCP three-way handshake).
+
+**Requires:** `expect` (pre-installed on macOS).
+
+Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Chat Guide](https://madbomber.github.io/aia/guides/chat/)
+
+### 24 — Decompose Mode
+
+`24_decompose.sh` — Demonstrates `/decompose` mode via `PromptDecomposer`. A coordinator robot analyzes whether a prompt can be split into 2–5 independent sub-tasks. If decomposable, specialist robots run each in parallel and results are synthesized into a single coherent response. Falls back to normal mode if the prompt is not decomposable. Part 1 uses a complex multi-part TCP/UDP question; Part 2 demonstrates the fallback with a simple question.
+
+**Requires:** `expect` (pre-installed on macOS).
+
+Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Chat Guide](https://madbomber.github.io/aia/guides/chat/)
+
+### 25 — Spawn Mode
+
+`25_spawn.sh` — Demonstrates `/spawn` mode via `SpawnHandler`. Dynamically creates a specialist robot on demand. Part 1 explicitly names a specialist type (`/spawn security-expert`) and asks a SQL injection question. Part 2 uses auto-detection (`/spawn` with no args) where the primary robot determines the needed expertise from the question content. Specialists are cached and reused within the session.
+
+**Requires:** `expect` (pre-installed on macOS).
+
+Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Chat Guide](https://madbomber.github.io/aia/guides/chat/)
+
+### 26 — Debate Mode
+
+`26_debate.sh` — Demonstrates `/debate` mode via `DebateHandler`. Two robots debate a topic across multiple rounds. Each round, every robot sees what the other said and responds. The debate ends when a robot says CONVERGED or after 5 rounds. `SimilarityScorer` also detects convergence by comparing round-to-round similarity. Uses `qwen3` (Jade) vs `phi4-mini` (Quark) debating REST vs GraphQL.
+
+**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+
+Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
+
+### 27 — @mention Routing
+
+`27_mention_routing.sh` — Demonstrates `@mention` routing in a multi-model network. Prefixing a message with `@RobotName` directs it to a specific robot; only that robot responds. Robot names are assigned by AIA: `qwen3` becomes `Jade`, `phi4-mini` becomes `Quark`. Part 1 routes to `@Jade`; Part 2 routes to `@Quark`; Part 3 shows how an unknown `@mention` triggers a listing of available robot names. Part 4 opens interactive chat to mix directed and undirected turns freely.
+
+**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+
+Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
+
+### 28 — Model Switching
+
+`28_model_switching.sh` — Demonstrates the `/model` directive for switching models mid-conversation. Conversation history is transferred to the new model so it has full context of everything discussed before the switch. Part 1 asks a question with `qwen3` (Jade), switches to `phi4-mini` (Quark) via `/model ollama/phi4-mini`, then asks a follow-up that requires the previous exchange for context.
+
+**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+
+Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
+
 ## Running All Demos
 
 `run_all.sh` runs all non-interactive demo scripts in sequence and captures the combined output. It serves as a structural integration test — since LLM responses are non-deterministic, exact diffs between runs won't match, but you can spot missing sections, crashes, or changed command output.
@@ -221,6 +269,12 @@ diff output/run_PREV.log output/run_LATEST.log
 | `15_parameters.sh` | Part 2 prompts interactively for a required parameter |
 | `20_mcp_servers.sh` | Requires Node.js/npx + MCP filesystem server |
 | `22_chat_mode.sh` | Interactive chat session (uses `expect`) |
+| `23_verify.sh` | Uses `expect` for interactive chat |
+| `24_decompose.sh` | Uses `expect` for interactive chat |
+| `25_spawn.sh` | Uses `expect` for interactive chat |
+| `26_debate.sh` | Uses `expect` for interactive chat |
+| `27_mention_routing.sh` | Uses `expect` for interactive chat |
+| `28_model_switching.sh` | Uses `expect` for interactive chat |
 
 The output includes a banner with version info, per-script pass/fail status, and a summary with counts.
 
