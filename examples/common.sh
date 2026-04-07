@@ -18,3 +18,13 @@ while IFS= read -r var; do
 done < <(env | grep '^AIA_' | cut -d= -f1)
 
 CONFIG="aia_config.yml"
+
+# Drain leaked escape sequences from the terminal input buffer.
+# Reline queries cursor position (\e[6n) inside the pty; the
+# terminal's responses (\e[row;colR) can leak into bash's stdin
+# after expect exits. Call this after every expect block.
+drain_terminal() {
+    sleep 0.2
+    stty sane 2>/dev/null || true
+    while IFS= read -r -t 0.2 -n 100 _ 2>/dev/null; do :; done
+}

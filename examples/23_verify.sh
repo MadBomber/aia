@@ -26,12 +26,6 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-drain_terminal() {
-    sleep 0.2
-    stty sane 2>/dev/null || true
-    while IFS= read -r -t 0.2 -n 100 _ 2>/dev/null; do :; done
-}
-
 echo "=== Demo 23: Verify Mode (VerificationNetwork) ==="
 echo
 echo "The /verify directive runs two independent robots on the same"
