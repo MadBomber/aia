@@ -1,6 +1,16 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# In development (running directly from the repo), activate all gems via
+# Bundler so dependency version constraints are resolved before any require.
+# When installed as a standalone gem there is no adjacent Gemfile, so this
+# block is skipped and RubyGems handles activation as normal.
+_gemfile = File.expand_path('../Gemfile', __dir__)
+if File.exist?(_gemfile)
+  ENV['BUNDLE_GEMFILE'] ||= _gemfile
+  require 'bundler/setup'
+end
+
 # Ruby 4.x ships bigdecimal 4.x as a default gem. Some transitive deps (e.g. oj)
 # declare `bigdecimal >= 3.0`, which can cause RubyGems to try activating the
 # installed 3.x gem after 4.x is already active. Pin to >= 4.0 first so the
