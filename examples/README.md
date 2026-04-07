@@ -233,6 +233,16 @@ Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with 
 
 Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
 
+### 29 — Agent Harness
+
+`29_agent_harness.sh` — Demonstrates AIA as a full agent harness using a three-tier orchestration model. Tobor starts with an `orchestrator` role loaded via `--role orchestrator`, making it the primary coordinator. Part 1 shows Tobor describing its coordination strategy for a complex request. Part 2 uses `/spawn security-expert` to create a specialist lead agent on demand and route a task to it. Part 3 uses `/decompose` with a multi-dimension design review — Tobor and Quark run parallel workstreams as task runners, then Tobor synthesizes the result. Part 4 opens a free orchestration session where any combination of `/spawn`, `/decompose`, `/delegate`, `/debate`, and `@mention` routing can be tried.
+
+The orchestrator role file lives at `examples/prompts_dir/roles/orchestrator.md` and can be customized to tune Tobor's coordination behavior.
+
+**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+
+Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Roles](https://madbomber.github.io/aia/guides/roles/)
+
 ## Running All Demos
 
 `run_all.sh` runs all non-interactive demo scripts in sequence and captures the combined output. It serves as a structural integration test — since LLM responses are non-deterministic, exact diffs between runs won't match, but you can spot missing sections, crashes, or changed command output.
@@ -275,6 +285,7 @@ diff output/run_PREV.log output/run_LATEST.log
 | `26_debate.sh` | Uses `expect` for interactive chat |
 | `27_mention_routing.sh` | Uses `expect` for interactive chat |
 | `28_model_switching.sh` | Uses `expect` for interactive chat |
+| `29_agent_harness.sh` | Uses `expect` for interactive chat; Part 4 is fully interactive |
 
 The output includes a banner with version info, per-script pass/fail status, and a summary with counts.
 
