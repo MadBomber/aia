@@ -43,17 +43,23 @@ module AIA
 
     # Attempt to decompose a prompt into sub-tasks.
     #
+    # Uses a temporary probe robot (not the main conversation robot) so the
+    # decomposition analysis prompt and response do not pollute the main
+    # conversation history. Falls back to [] if the model's output is not
+    # parseable JSON or the prompt cannot be meaningfully decomposed.
+    #
     # @param prompt [String] the user's prompt
     # @return [Array<String>] array of sub-task descriptions (empty if not decomposable)
     def decompose(prompt)
-      result = @robot.run(
-        DECOMPOSITION_PROMPT % { prompt: prompt },
-        mcp: :none, tools: :none
-      )
-
+      probe = build_probe_robot
+      result = probe.run(DECOMPOSITION_PROMPT % { prompt: prompt }, mcp: :none, tools: :none)
       content = extract_content(result)
-      subtasks = JSON.parse(content)
 
+      # Reasoning models (e.g. qwen3) wrap output in <think>...</think> before
+      # the actual JSON response. Strip those blocks before parsing.
+      cleaned = content.gsub(/<think>.*?<\/think>/m, '').strip
+
+      subtasks = JSON.parse(cleaned)
       subtasks.is_a?(Array) ? subtasks.select { |t| t.is_a?(String) && !t.empty? } : []
     rescue JSON::ParserError, StandardError
       []
@@ -77,6 +83,18 @@ module AIA
 
     private
 
-    # extract_content provided by ContentExtractor module
+    # Build a fresh temporary robot for the decomposition probe.
+    # This robot has no conversation history and is discarded after use,
+    # keeping @robot's history clean for the normal or synthesis path.
+    def build_probe_robot
+      config     = AIA.config
+      run_config = RobotFactory.build_run_config(config)
+      RobotLab.build(
+        name:          "decompose-probe",
+        model:         config.models.first.name,
+        system_prompt: nil,
+        config:        run_config
+      )
+    end
   end
 end
