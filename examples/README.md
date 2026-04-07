@@ -211,7 +211,7 @@ Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/),
 
 ### 26 — Debate Mode
 
-`26_debate.sh` — Demonstrates `/debate` mode via `DebateHandler`. Two robots debate a topic across multiple rounds. Each round, every robot sees what the other said and responds. The debate ends when a robot says CONVERGED or after 5 rounds. `SimilarityScorer` also detects convergence by comparing round-to-round similarity. Uses `qwen3` (Jade) vs `phi4-mini` (Quark) debating REST vs GraphQL.
+`26_debate.sh` — Demonstrates `/debate` mode via `DebateHandler`. Two robots debate a topic across multiple rounds. Each round, every robot sees what the other said and responds. The debate ends when a robot says CONVERGED or after 5 rounds. `SimilarityScorer` also detects convergence by comparing round-to-round similarity. Uses `qwen3` (Tobor) vs `phi4-mini` (Quark) debating REST vs GraphQL.
 
 **Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
 
@@ -219,7 +219,7 @@ Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/),
 
 ### 27 — @mention Routing
 
-`27_mention_routing.sh` — Demonstrates `@mention` routing in a multi-model network. Prefixing a message with `@RobotName` directs it to a specific robot; only that robot responds. Robot names are assigned by AIA: `qwen3` becomes `Jade`, `phi4-mini` becomes `Quark`. Part 1 routes to `@Jade`; Part 2 routes to `@Quark`; Part 3 shows how an unknown `@mention` triggers a listing of available robot names. Part 4 opens interactive chat to mix directed and undirected turns freely.
+`27_mention_routing.sh` — Demonstrates `@mention` routing in a multi-model network. Prefixing a message with `@RobotName` directs it to a specific robot; only that robot responds. Robot names are assigned by AIA: `qwen3` becomes `Tobor`, `phi4-mini` becomes `Quark`. Part 1 routes to `@Tobor`; Part 2 routes to `@Quark`; Part 3 shows how an unknown `@mention` triggers a listing of available robot names. Part 4 opens interactive chat to mix directed and undirected turns freely.
 
 **Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
 
@@ -227,7 +227,7 @@ Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with 
 
 ### 28 — Model Switching
 
-`28_model_switching.sh` — Demonstrates the `/model` directive for switching models mid-conversation. Conversation history is transferred to the new model so it has full context of everything discussed before the switch. Part 1 asks a question with `qwen3` (Jade), switches to `phi4-mini` (Quark) via `/model ollama/phi4-mini`, then asks a follow-up that requires the previous exchange for context.
+`28_model_switching.sh` — Demonstrates the `/model` directive for switching models mid-conversation. Conversation history is transferred to the new model so it has full context of everything discussed before the switch. Part 1 asks a question with `qwen3` (Tobor), switches to `phi4-mini` (Quark) via `/model ollama/phi4-mini`, then asks a follow-up that requires the previous exchange for context.
 
 **Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
 

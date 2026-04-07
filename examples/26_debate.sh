@@ -39,7 +39,7 @@ echo "other said in the previous round and responds. The debate"
 echo "ends when a robot says CONVERGED or after 5 rounds."
 echo
 echo "Using models: ${MODEL_A} vs ${MODEL_B}"
-echo "Robot names:  Jade (qwen3) and Quark (phi4-mini)"
+echo "Robot names:  Tobor (qwen3) and Quark (phi4-mini)"
 echo
 
 # --- Check that the second model is available ---
