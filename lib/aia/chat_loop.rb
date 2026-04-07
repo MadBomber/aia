@@ -172,7 +172,14 @@ module AIA
     def process_directive(follow_up_prompt)
       directive_output = @directive_processor.process(follow_up_prompt, nil)
 
-      if follow_up_prompt.strip.start_with?("/clear", "/checkpoint", "/restore", "/review", "/context")
+      # These directives either mutate state or set a mode flag for the NEXT
+      # prompt.  Display their confirmation and return nil so the loop skips
+      # forwarding them to the robot (which would fire the handler prematurely
+      # on wrapper text and consume the flag before the real prompt arrives).
+      if follow_up_prompt.strip.start_with?(
+            "/clear", "/checkpoint", "/restore", "/review", "/context",
+            "/verify", "/decompose", "/debate", "/spawn", "/delegate", "/del",
+            "/concurrent", "/conc", "/model")
         @ui_presenter.display_info(directive_output) unless directive_output.nil? || directive_output.strip.empty?
         return nil
       end
