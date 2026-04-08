@@ -200,13 +200,18 @@ module AIA
       @ui_presenter.display_info("Starting 3-tier layered orchestration...")
 
       content = @layered_orchestrator.handle(HandlerContext.new(robot: @robot, prompt: prompt))
-      return false unless content
 
-      display_and_save(content)
-      true
+      if content
+        display_and_save(content)
+      else
+        @ui_presenter.display_separator
+      end
+
+      true  # always consume the prompt; never fall through to normal mode
     rescue StandardError => e
       @ui_presenter.display_info("Orchestration failed: #{e.class}: #{e.message}")
-      false
+      @ui_presenter.display_separator
+      true
     end
 
     # Display content, write to output file, and print separator.

@@ -127,6 +127,43 @@ drain_terminal
 echo
 echo
 
+# --- Show what was built ---
+
+echo "--- Generated application files ---"
+echo
+
+BUILD_DIR=$(ls -dt orchestrated_build_* 2>/dev/null | head -1)
+
+if [[ -z "${BUILD_DIR}" ]]; then
+    echo "No build directory found. The orchestration may not have completed."
+else
+    echo "Build directory: ${BUILD_DIR}"
+    echo
+    echo "Files produced by the agent team:"
+    find "${BUILD_DIR}" -type f | sort | grep -v INTEGRATION_REPORT.md | while read -r f; do
+        rel="${f#${BUILD_DIR}/}"
+        lines=$(wc -l < "${f}" 2>/dev/null | tr -d ' ' || echo "?")
+        printf "  %-50s  (%s lines)\n" "${rel}" "${lines}"
+    done
+    echo
+    REPORT="${BUILD_DIR}/INTEGRATION_REPORT.md"
+    if [[ -f "${REPORT}" ]]; then
+        echo "--- INTEGRATION_REPORT.md ---"
+        echo
+        cat "${REPORT}"
+        echo
+    fi
+
+    # Show a sample generated file (first non-report Ruby file found)
+    SAMPLE=$(find "${BUILD_DIR}" -type f -name "*.rb" | sort | head -1)
+    if [[ -n "${SAMPLE}" ]]; then
+        echo "--- Sample artifact: ${SAMPLE#${BUILD_DIR}/} ---"
+        echo
+        cat "${SAMPLE}"
+        echo
+    fi
+fi
+
 # --- Interactive session ---
 
 echo "--- Interactive orchestration session ---"

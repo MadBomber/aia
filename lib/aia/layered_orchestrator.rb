@@ -23,6 +23,7 @@
 # summary showing how the pieces fit together.
 
 require 'json'
+require 'fileutils'
 
 module AIA
   class LayeredOrchestrator
@@ -33,60 +34,42 @@ module AIA
     MAX_TASKS_PER_LAYER = 4
 
     # Tier 1 prompt: decompose requirements into layers
+    # Deliberately short and directive to minimise qwen3 think-block noise.
     LAYER_DECOMPOSE_PROMPT = <<~PROMPT
-      Analyze these application requirements and decompose them into major
-      architectural layers. Each layer must be a distinct technical concern
-      that can be implemented independently.
+      TASK: Decompose the application requirements below into architectural layers.
+      RESPOND WITH ONLY A JSON ARRAY. No explanation. No markdown. No code fences.
 
-      Output ONLY a valid JSON array — no explanation, no markdown fences.
+      JSON schema (array of objects):
+      name        - snake_case layer identifier
+      title       - short human-readable title
+      description - one sentence describing what this layer covers
+      requirements - comma-separated list of things to implement in this layer
 
-      Schema:
-      [
-        {
-          "name": "snake_case_identifier",
-          "title": "Human Readable Title",
-          "description": "One sentence: what this layer covers",
-          "requirements": "Specific things to implement in this layer, listed clearly"
-        }
-      ]
+      Rules: 3 to %{max_layers} layers. Infrastructure first, UI last.
 
-      Rules:
-      - Exactly 3 to %{max_layers} layers
-      - Each layer must be independently buildable
-      - Collectively cover all aspects of the requirements
-      - Order layers from infrastructure (lowest) to UI (highest)
-
-      Application requirements:
+      APPLICATION REQUIREMENTS:
       %{requirements}
+
+      JSON ARRAY RESPONSE:
     PROMPT
 
     # Tier 2 prompt: lead agent decomposes its layer into tasks
     TASK_DECOMPOSE_PROMPT = <<~PROMPT
-      You are the lead architect for the %{layer_title} layer.
-      Break this layer's requirements into specific implementation tasks.
-      Each task will be executed by a specialist and must produce one concrete artifact.
+      TASK: Break the %{layer_title} layer into implementation tasks.
+      RESPOND WITH ONLY A JSON ARRAY. No explanation. No markdown. No code fences.
 
-      Output ONLY a valid JSON array — no explanation, no markdown fences.
+      JSON schema (array of objects):
+      title      - short task title
+      specialist - specialist role name (e.g. sequel-migration-writer)
+      artifact   - exact filename to produce (e.g. db/migrations/001_create_users.rb)
+      prompt     - self-contained instruction for the specialist
 
-      Schema:
-      [
-        {
-          "title": "Short task title",
-          "specialist": "specialist-role-name",
-          "artifact": "filename or artifact name (e.g. db/migrations/001_create_users.rb)",
-          "prompt": "Precise instruction for the specialist — what to produce and how"
-        }
-      ]
+      Rules: 2 to %{max_tasks} tasks. Each task produces exactly one file.
 
-      Rules:
-      - Exactly 2 to %{max_tasks} tasks
-      - Each task produces exactly one artifact
-      - Specialist names should reflect the domain (e.g. sequel-migration-writer, sinatra-route-builder)
-      - Prompts must be self-contained — the specialist only sees its prompt
+      LAYER: %{layer_title}
+      REQUIREMENTS: %{requirements}
 
-      Layer: %{layer_title}
-      Requirements:
-      %{requirements}
+      JSON ARRAY RESPONSE:
     PROMPT
 
     # Layer synthesis prompt for the lead agent
@@ -116,10 +99,22 @@ module AIA
       3. The minimal steps to make the application runnable (config, migrations, startup)
     PROMPT
 
-    def initialize(robot:, ui_presenter:, tracker:)
+    def initialize(robot:, ui_presenter:, tracker:, build_dir: nil)
       @robot        = robot
       @ui_presenter = ui_presenter
       @tracker      = tracker
+      @build_dir    = build_dir || default_build_dir
+    end
+
+    def default_build_dir
+      File.join(Dir.pwd, "orchestrated_build_#{Time.now.strftime('%Y%m%d_%H%M%S')}")
+    end
+
+    # Print orchestration progress to stdout so it appears inline with the chat.
+    # (display_info uses $stderr which is invisible in interactive sessions.)
+    def say(msg)
+      $stdout.puts msg
+      $stdout.flush
     end
 
     attr_writer :robot
@@ -132,31 +127,39 @@ module AIA
       requirements = context.prompt
       primary      = primary_robot
 
-      @ui_presenter.display_info("")
-      @ui_presenter.display_info("╔══════════════════════════════════════════════════════════╗")
-      @ui_presenter.display_info("║           LAYERED ORCHESTRATION — 3-TIER BUILD           ║")
-      @ui_presenter.display_info("╚══════════════════════════════════════════════════════════╝")
-      @ui_presenter.display_info("Requirements: #{requirements.lines.first.strip}")
-      @ui_presenter.display_info("")
+      FileUtils.mkdir_p(@build_dir)
+      say("")
+      say("╔══════════════════════════════════════════════════════════╗")
+      say("║           LAYERED ORCHESTRATION — 3-TIER BUILD           ║")
+      say("╚══════════════════════════════════════════════════════════╝")
+      say("Requirements: #{requirements.lines.first.strip}")
+      say("Build output: #{@build_dir}")
+      say("")
 
       # Tier 1: Tobor decomposes requirements into layers
       layers = decompose_to_layers(primary, requirements)
-      return nil if layers.empty?
+      if layers.empty?
+        say("Could not decompose requirements into layers. Aborting orchestration.")
+        return nil
+      end
 
       display_layer_plan(layers)
 
       # Tier 2 & 3: Each layer → lead agent → specialist tasks
       layer_results = layers.map.with_index do |layer, i|
-        @ui_presenter.display_info("")
-        @ui_presenter.display_info("━━━ Layer #{i + 1}/#{layers.size}: #{layer['title']} ━━━")
+        say("")
+        say("━━━ Layer #{i + 1}/#{layers.size}: #{layer['title']} ━━━")
         process_layer(primary, layer, requirements)
       end
 
       # Final synthesis by Tobor
-      @ui_presenter.display_info("")
-      @ui_presenter.display_info("━━━ Tobor synthesizing all #{layers.size} layers ━━━")
+      say("")
+      say("━━━ Tobor synthesizing all #{layers.size} layers ━━━")
       final_result = synthesize_all(primary, requirements, layers, layer_results)
       final_text   = extract_content(final_result)
+
+      save_final_report(final_text)
+      say("Build complete: #{@build_dir}")
 
       @tracker.record_turn(
         model:  AIA.config.models.first.name,
@@ -166,7 +169,8 @@ module AIA
 
       final_text
     rescue StandardError => e
-      AIA.debug_warn("LayeredOrchestrator error: #{e.class}: #{e.message}", exc: e)
+      say("✗ Orchestration error: #{e.class}: #{e.message}")
+      e.backtrace&.first(5)&.each { |line| say("    #{line}") }
       nil
     end
 
@@ -179,7 +183,7 @@ module AIA
 
     # Tier 1: use a probe robot to decompose requirements into layer specs
     def decompose_to_layers(robot, requirements)
-      @ui_presenter.display_info("Tier 1 ▶ #{robot.name} decomposing requirements into layers...")
+      say("Tier 1 ▶ #{robot.name} decomposing requirements into layers...")
       probe  = build_probe(robot.name + "-layer-probe")
       prompt = LAYER_DECOMPOSE_PROMPT % {
         requirements: requirements,
@@ -189,13 +193,24 @@ module AIA
       result  = probe.run(prompt, mcp: :none, tools: :none)
       content = extract_content(result)
       layers  = parse_json_array(content)
+
+      if layers.empty?
+        preview = content.to_s.gsub(/<think>.*?<\/think>/m, '').strip[0, 300]
+        say("  ⚠  Layer decomposition parse failed.")
+        say("  Raw response preview: #{preview}")
+      end
+
       layers.first(MAX_LAYERS)
+    rescue StandardError => e
+      say("  ✗ decompose_to_layers failed: #{e.class}: #{e.message}")
+      e.backtrace&.first(3)&.each { |line| say("    #{line}") }
+      []
     end
 
     def display_layer_plan(layers)
-      @ui_presenter.display_info("Tier 1 ▶ #{layers.size} layers identified:")
+      say("Tier 1 ▶ #{layers.size} layers identified:")
       layers.each_with_index do |layer, i|
-        @ui_presenter.display_info("  #{i + 1}. #{layer['title']}: #{layer['description']}")
+        say("  #{i + 1}. #{layer['title']}: #{layer['description']}")
       end
     end
 
@@ -210,19 +225,19 @@ module AIA
         name:          "#{layer['name']}-lead",
         system_prompt: lead_system_prompt(layer_title)
       )
-      @ui_presenter.display_info("  Tier 2 ▶ #{layer_title} lead agent spawned")
+      say("  Tier 2 ▶ #{layer_title} lead agent spawned")
 
       # Lead decomposes into tasks
       tasks = decompose_layer_to_tasks(lead, layer_title, layer_reqs)
       if tasks.empty?
-        @ui_presenter.display_info("  ⚠  #{layer_title} lead produced no tasks")
+        say("  ⚠  #{layer_title} lead produced no tasks")
         return { layer: layer_title, tasks: [], summary: "(no tasks produced)" }
       end
 
-      @ui_presenter.display_info("  Tier 2 ▶ #{layer_title} lead assigned #{tasks.size} tasks:")
+      say("  Tier 2 ▶ #{layer_title} lead assigned #{tasks.size} tasks:")
       tasks.each_with_index do |task, i|
-        @ui_presenter.display_info("    #{i + 1}. [#{task['specialist']}] #{task['title']}")
-        @ui_presenter.display_info("       → #{task['artifact']}")
+        say("    #{i + 1}. [#{task['specialist']}] #{task['title']}")
+        say("       → #{task['artifact']}")
       end
 
       # Tier 3: Execute each task via a specialist
@@ -231,7 +246,7 @@ module AIA
       end
 
       # Lead synthesizes its layer
-      @ui_presenter.display_info("  Tier 2 ▶ #{layer_title} lead synthesizing...")
+      say("  Tier 2 ▶ #{layer_title} lead synthesizing...")
       summary = synthesize_layer(lead, layer_title, task_results)
 
       { layer: layer_title, tasks: task_results, summary: summary }
@@ -262,7 +277,7 @@ module AIA
       artifact        = task['artifact'].to_s
       task_prompt     = task['prompt'].to_s
 
-      @ui_presenter.display_info("    Tier 3 ▶ #{specialist_type}: #{task_title}...")
+      say("    Tier 3 ▶ #{specialist_type}: #{task_title}...")
 
       ensure_bus(primary)
       specialist = primary.spawn(
@@ -274,11 +289,12 @@ module AIA
       result      = specialist.run(full_prompt, mcp: :none, tools: :none)
       output      = extract_content(result)
 
-      @ui_presenter.display_info("    ✓  #{artifact}")
+      save_artifact(artifact, output)
+      say("    ✓  #{artifact}")
 
       { task: task_title, specialist: specialist_type, artifact: artifact, output: output }
     rescue StandardError => e
-      @ui_presenter.display_info("    ✗  #{task_title} failed: #{e.message}")
+      say("    ✗  #{task_title} failed: #{e.message}")
       { task: task_title, specialist: specialist_type, artifact: artifact, output: "Error: #{e.message}" }
     end
 
@@ -322,34 +338,82 @@ module AIA
       )
     end
 
-    # Parse JSON array from model output, stripping think blocks and code fences
+    # Parse JSON array from model output.
+    # Tries multiple extraction strategies to handle think blocks,
+    # markdown fences, prose before/after the JSON, and partial wrapping.
     def parse_json_array(content)
-      cleaned = content
-                  .gsub(/<think>.*?<\/think>/m, '')
-                  .gsub(/```(?:json)?\n?(.*?)```/ms, '\1')
-                  .strip
+      return [] if content.nil? || content.strip.empty?
 
-      # Find the first [...] array in the response
-      if (m = cleaned.match(/(\[.*\])/m))
-        cleaned = m[1]
+      # Strip think blocks (qwen3 reasoning models wrap output in <think>...)
+      text = content.gsub(/<think>.*?<\/think>/m, '').strip
+
+      # Strategy 1: extract content from markdown code fences
+      if (m = text.match(/```(?:json)?\s*\n?(.*?)```/m))
+        candidate = m[1].strip
+        result = try_json_parse(candidate)
+        return result unless result.empty?
       end
 
-      result = JSON.parse(cleaned)
-      result.is_a?(Array) ? result : []
+      # Strategy 2: find the first [...] block in the response
+      if (m = text.match(/(\[[\s\S]*\])/m))
+        result = try_json_parse(m[1])
+        return result unless result.empty?
+      end
+
+      # Strategy 3: parse the whole stripped text
+      try_json_parse(text)
+    end
+
+    def try_json_parse(text)
+      result = JSON.parse(text.strip)
+      result.is_a?(Array) ? result.select { |e| e.is_a?(Hash) } : []
     rescue JSON::ParserError
       []
     end
 
-    # Build a short-lived probe robot with no conversation history
+    # Build a short-lived probe robot with no conversation history.
+    # Uses the primary model spec so the provider is correctly wired.
     def build_probe(name)
       config     = AIA.config
       run_config = RobotFactory.build_run_config(config)
-      RobotLab.build(
+      model_spec = config.models.first
+
+      opts = {
         name:          name,
-        model:         config.models.first.name,
+        model:         model_spec.name,
         system_prompt: nil,
         config:        run_config
-      )
+      }
+      opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
+
+      RobotLab.build(**opts)
+    end
+
+    # Write an artifact to the build directory.
+    # Strips markdown code fences if the entire output is wrapped in them.
+    def save_artifact(artifact_path, content)
+      return unless content && !content.strip.empty?
+
+      # Strip a single wrapping code fence if the whole content is fenced
+      code = content.strip
+      if (m = code.match(/\A```[\w]*\n(.*)\n```\z/m))
+        code = m[1]
+      end
+
+      dest = File.join(@build_dir, artifact_path)
+      FileUtils.mkdir_p(File.dirname(dest))
+      File.write(dest, code)
+    rescue StandardError => e
+      say("    ⚠  Could not save #{artifact_path}: #{e.message}")
+    end
+
+    # Write the integration report to BUILD_DIR/INTEGRATION_REPORT.md
+    def save_final_report(text)
+      dest = File.join(@build_dir, "INTEGRATION_REPORT.md")
+      File.write(dest, text)
+      say("Integration report: #{dest}")
+    rescue StandardError
+      # best-effort
     end
 
     # Attach bus to the primary robot if not already attached (required for spawn)
