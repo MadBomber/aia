@@ -108,4 +108,8 @@ echo
 echo "Running: aia -c ${CONFIG} --chat"
 echo
 
-aia -c "${CONFIG}" --chat
+if [[ "${BATCH_MODE:-}" == "true" ]]; then
+  echo "(Skipping interactive session in batch mode)"
+else
+  aia -c "${CONFIG}" --chat
+fi

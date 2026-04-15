@@ -132,4 +132,8 @@ echo "The decomposer works best on prompts that have 2-5 clearly"
 echo "independent components."
 echo
 
-aia -c "${CONFIG}" --chat
+if [[ "${BATCH_MODE:-}" == "true" ]]; then
+  echo "(Skipping interactive session in batch mode)"
+else
+  aia -c "${CONFIG}" --chat
+fi

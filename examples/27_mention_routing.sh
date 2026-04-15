@@ -159,4 +159,8 @@ echo
 echo "Running: aia -c ${CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo
 
-aia -c "${CONFIG}" -m "${MODEL_A},${MODEL_B}" --chat
+if [[ "${BATCH_MODE:-}" == "true" ]]; then
+  echo "(Skipping interactive session in batch mode)"
+else
+  aia -c "${CONFIG}" -m "${MODEL_A},${MODEL_B}" --chat
+fi

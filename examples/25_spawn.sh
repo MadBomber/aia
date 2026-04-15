@@ -132,4 +132,8 @@ echo "or just /spawn and let AIA decide. Ask domain-specific questions"
 echo "that benefit from a focused specialist perspective."
 echo
 
-aia -c "${CONFIG}" --chat
+if [[ "${BATCH_MODE:-}" == "true" ]]; then
+  echo "(Skipping interactive session in batch mode)"
+else
+  aia -c "${CONFIG}" --chat
+fi

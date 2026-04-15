@@ -9,11 +9,15 @@
 # differences (missing sections, crashes, changed command output).
 #
 # What it skips:
-#   - 00_setup_aia.sh  — run manually first (pulls models, writes config)
-#   - 15_parameters.sh — Part 2 prompts interactively for a required param
-#   - 20_mcp_servers.sh — requires Node.js/npx + MCP filesystem server
-#   - 22_chat_mode.sh  — interactive chat (Parts 1-4 use expect; Part 5
-#                         opens a live session)
+#   - 00_setup_aia.sh     — run manually first (pulls models, writes config)
+#   - 15_parameters.sh    — Part 2 prompts interactively for a required param
+#   - 20_mcp_servers.sh   — requires Node.js/npx + MCP filesystem server
+#   - 22_chat_mode.sh     — interactive chat (Parts 1-4 use expect; Part 5
+#                           opens a live session)
+#   - 29_agent_harness.sh — 3-tier orchestration (10-20 min runtime)
+#
+# Scripts 23-28 run with BATCH_MODE=true, which skips their interactive
+# "your turn" sections but still executes the automated expect-based parts.
 #
 # Prerequisites:
 #   - Run 00_setup_aia.sh first
@@ -61,10 +65,14 @@ Comparing runs:
   diff output/run_PREV.log output/run_LATEST.log
 
 Skipped scripts (require manual or interactive setup):
-  00_setup_aia.sh   — run manually first (pulls models, writes config)
-  15_parameters.sh  — Part 2 prompts interactively for a required param
-  20_mcp_servers.sh — requires Node.js/npx + MCP filesystem server
-  22_chat_mode.sh   — interactive chat session
+  00_setup_aia.sh    — run manually first (pulls models, writes config)
+  15_parameters.sh   — Part 2 prompts interactively for a required param
+  20_mcp_servers.sh  — requires Node.js/npx + MCP filesystem server
+  22_chat_mode.sh    — interactive chat session
+  29_agent_harness.sh — 3-tier orchestration (10-20 min runtime)
+
+Scripts 23-28 run with BATCH_MODE=true, which skips their interactive
+"your turn" sections but still runs the automated expect-based parts.
 
 Prerequisites:
   1. Run 00_setup_aia.sh first
@@ -129,12 +137,20 @@ SCRIPTS=(
   # 20_mcp_servers.sh — skipped: requires npx + MCP server
   21_executable_prompts.sh
   # 22_chat_mode.sh — skipped: interactive chat session
+  23_verify.sh
+  24_decompose.sh
+  25_spawn.sh
+  26_debate.sh
+  27_mention_routing.sh
+  28_model_switching.sh
+  # 29_agent_harness.sh — skipped: 3-tier orchestration, 10-20 min runtime
 )
 
 SKIPPED=(
-  "15_parameters.sh (interactive parameter input)"
+  "15_parameters.sh  (interactive parameter input)"
   "20_mcp_servers.sh (requires Node.js/npx + MCP server)"
-  "22_chat_mode.sh  (interactive chat session)"
+  "22_chat_mode.sh   (interactive chat session)"
+  "29_agent_harness.sh (3-tier orchestration, 10-20 min runtime)"
 )
 
 # --- Set up output ---
@@ -200,6 +216,16 @@ run_script() {
   return ${status}
 }
 
+# Scripts that require BATCH_MODE=true to skip their interactive sessions
+BATCH_MODE_SCRIPTS=(
+  23_verify.sh
+  24_decompose.sh
+  25_spawn.sh
+  26_debate.sh
+  27_mention_routing.sh
+  28_model_switching.sh
+)
+
 # --- Main ---
 
 main() {
@@ -214,6 +240,13 @@ main() {
     local script="${SCRIPTS[$i]}"
     local index=$((i + 1))
 
+    # Enable batch mode for scripts with interactive "your turn" sessions
+    if printf '%s\n' "${BATCH_MODE_SCRIPTS[@]}" | grep -qx "${script}"; then
+      export BATCH_MODE=true
+    else
+      unset BATCH_MODE
+    fi
+
     if run_script "${script}" "${index}" "${total}"; then
       ((passed++))
     else
@@ -221,6 +254,8 @@ main() {
       failures+=("${script}")
     fi
   done
+
+  unset BATCH_MODE
 
   echo "================================================================================"
   echo "  Summary"

@@ -132,4 +132,8 @@ echo "Try /verify on any factual or technical question where you"
 echo "want cross-checked confidence rather than a single answer."
 echo
 
-aia -c "${CONFIG}" --chat
+if [[ "${BATCH_MODE:-}" == "true" ]]; then
+  echo "(Skipping interactive session in batch mode)"
+else
+  aia -c "${CONFIG}" --chat
+fi
