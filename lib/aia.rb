@@ -8,11 +8,6 @@ require 'pm'
 
 require_relative 'aia/patches/ruby_llm_tool_error'
 
-require 'debug_me'
-include DebugMe
-$DEBUG_ME = false
-DebugMeDefaultOptions[:skip1] = true
-
 require_relative 'aia/errors'
 require_relative 'aia/turn_state'
 require_relative 'aia/content_extractor'
@@ -64,6 +59,11 @@ require_relative 'aia/session'
 # The AIA module serves as the namespace for the AIA application, which
 # provides an interface for interacting with AI models and managing prompts.
 module AIA
+  require 'debug_me'
+  include DebugMe
+  $DEBUG_ME = false
+  DebugMeDefaultOptions[:skip1] = true
+
   at_exit do
     warn 'Exiting AIA application...'
   end
