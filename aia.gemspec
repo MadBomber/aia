@@ -54,10 +54,7 @@ spec.add_dependency 'myway_config'               # AIA-specific config (CLI sett
   spec.add_dependency 'tty-screen'                 # Terminal width detection
   spec.add_dependency 'tty-spinner'                # Loading animation and concurrent MCP connection spinners
   spec.add_dependency 'tty-table',    '~> 0.12'   # Adaptive terminal-width table rendering for metrics
-  spec.add_dependency 'classifier',  '~> 2.3'     # TF-IDF similarity, Bayes classification, LSI semantic search
-  spec.add_dependency 'zvec'                       # Embedded vector database for semantic tool search (Option C)
-  spec.add_dependency 'sqlite-vec'                 # SQLite-vec extension for semantic tool search (Option D)
-  spec.add_dependency 'informers'                  # ONNX-based text embeddings for semantic search
+  spec.add_dependency 'classifier',  '~> 2.3'     # TF-IDF similarity (Option A tool filtering)
   spec.add_dependency 'word_wrapper'               # Terminal text wrapping for tool listings
   spec.add_dependency 'amazing_print'              # Config dump formatting (--dump, /config)
   spec.add_dependency 'clipboard'                  # System clipboard access (/paste directive)

@@ -84,23 +84,11 @@ module AIA
           options[:tool_filter_a] = true
         end
 
-        opts.on("-B", "--tool-filter-zvec", "Use Zvec semantic vector search tool filtering") do
-          options[:tool_filter_b] = true
-        end
-
-        opts.on("-C", "--tool-filter-sqlite-vec", "Use SQLite-vec semantic vector search tool filtering") do
-          options[:tool_filter_c] = true
-        end
-
-        opts.on("-D", "--tool-filter-lsi", "Use LSI/SVD semantic tool filtering (classifier gem)") do
-          options[:tool_filter_d] = true
-        end
-
-        opts.on("--load", "Load persisted tool filter databases (-C/-D/-E) from ~/.config/aia/") do
+        opts.on("--load", "Load persisted tool filter databases from ~/.config/aia/") do
           options[:tool_filter_load] = true
         end
 
-        opts.on("--save", "Save tool filter databases (-C/-D/-E) to ~/.config/aia/") do
+        opts.on("--save", "Save tool filter databases to ~/.config/aia/") do
           options[:tool_filter_save] = true
         end
 

@@ -38,31 +38,4 @@ class ToolFilterFingerprintTest < Minitest::Test
     refute_equal fp_a, fp_b
   end
 
-  def test_lsi_load_returns_false_on_fingerprint_mismatch
-    Dir.mktmpdir do |dir|
-      tools = build_tools
-      fa = fact_asserter
-
-      # Save with original tools
-      filter = AIA::ToolFilter::LSI.new(
-        tools: tools, fact_asserter: fa,
-        db_dir: dir, save_db: true
-      )
-      filter.prep
-      assert filter.available?
-
-      # Load with a DIFFERENT tool set — fingerprint won't match
-      different_tools = [MockTool.new("completely_different", "A new tool")]
-      filter2 = AIA::ToolFilter::LSI.new(
-        tools: different_tools, fact_asserter: fa,
-        db_dir: dir, load_db: true
-      )
-      filter2.prep
-
-      # After mismatch, filter rebuilds from different_tools
-      results = filter2.filter("completely different")
-      # Either nil (all below threshold) or includes the new tool
-      assert results.nil? || results.include?("completely_different")
-    end
-  end
 end

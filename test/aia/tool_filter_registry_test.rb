@@ -10,9 +10,6 @@ class ToolFilterRegistryTest < Minitest::Test
 
     @base_flags = OpenStruct.new(
       tool_filter_a: false,
-      tool_filter_b: false,
-      tool_filter_c: false,
-      tool_filter_d: false,
       tool_filter_load: false,
       tool_filter_save: false
     )
@@ -41,28 +38,8 @@ class ToolFilterRegistryTest < Minitest::Test
     assert_equal tfidf_filter, result[:tfidf]
   end
 
-  def test_multiple_filters_can_be_active_simultaneously
+  def test_fact_asserter_instantiated_once_for_tfidf
     @base_flags.tool_filter_a = true
-    @base_flags.tool_filter_d = true
-
-    tfidf_filter = mock('tfidf_filter')
-    tfidf_filter.stubs(:prep)
-    AIA::ToolFilter::TFIDF.stubs(:new).returns(tfidf_filter)
-
-    lsi_filter = mock('lsi_filter')
-    lsi_filter.stubs(:prep)
-    AIA::ToolFilter::LSI.stubs(:new).returns(lsi_filter)
-
-    result = AIA::ToolFilterRegistry.build_from_config(@base_config, @tools)
-
-    assert result.key?(:tfidf)
-    assert result.key?(:lsi)
-    refute result.key?(:kbs)
-  end
-
-  def test_shared_fact_asserter_across_a_b_c_d
-    @base_flags.tool_filter_a = true
-    @base_flags.tool_filter_d = true
 
     fact_asserter_instances = []
     AIA::FactAsserter.stubs(:new).with { fact_asserter_instances << 1; true }.returns(mock('fa'))
@@ -71,13 +48,9 @@ class ToolFilterRegistryTest < Minitest::Test
     tfidf_filter.stubs(:prep)
     AIA::ToolFilter::TFIDF.stubs(:new).returns(tfidf_filter)
 
-    lsi_filter = mock('lsi_filter')
-    lsi_filter.stubs(:prep)
-    AIA::ToolFilter::LSI.stubs(:new).returns(lsi_filter)
-
     AIA::ToolFilterRegistry.build_from_config(@base_config, @tools)
 
     assert_equal 1, fact_asserter_instances.size,
-      "FactAsserter should be instantiated only once even when multiple filters are active"
+      "FactAsserter should be instantiated exactly once for TF-IDF"
   end
 end

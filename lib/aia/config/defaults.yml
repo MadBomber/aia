@@ -136,9 +136,6 @@ defaults:
     track_pipeline: false
     expert_routing: false
     tool_filter_a: false
-    tool_filter_b: false
-    tool_filter_c: false
-    tool_filter_d: false
     tool_filter_load: false
     tool_filter_save: false
     allow_ruby_eval: false

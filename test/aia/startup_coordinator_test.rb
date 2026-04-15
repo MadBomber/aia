@@ -10,8 +10,7 @@ class StartupCoordinatorTest < Minitest::Test
     @config = OpenStruct.new(
       flags: OpenStruct.new(
         chat: false, debug: false, verbose: false, no_mcp: true,
-        track_pipeline: false, tokens: false, tool_filter_a: false,
-        tool_filter_b: false, tool_filter_c: false, tool_filter_d: false
+        track_pipeline: false, tokens: false, tool_filter_a: false
       ),
       models: [OpenStruct.new(name: 'gpt-4o-mini')],
       mcp_servers: [],
@@ -70,8 +69,7 @@ class StartupCoordinatorTest < Minitest::Test
     config = OpenStruct.new(
       flags: OpenStruct.new(
         chat: false, debug: false, verbose: false, no_mcp: false,
-        track_pipeline: false, tokens: false, tool_filter_a: false,
-        tool_filter_b: false, tool_filter_c: false, tool_filter_d: false
+        track_pipeline: false, tokens: false, tool_filter_a: false
       ),
       models: [OpenStruct.new(name: 'gpt-4o-mini')],
       mcp_servers: [{ name: 'real_server' }],
