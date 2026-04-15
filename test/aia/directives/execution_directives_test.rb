@@ -79,4 +79,10 @@ class ExecutionDirectivesTest < Minitest::Test
     @instance.orchestrate([])
     assert_equal true, AIA.turn_state.force_orchestrate
   end
+
+  def test_say_calls_system_and_returns_empty_string
+    @instance.expects(:system).with('say', 'hello').returns(nil)
+    result = @instance.say(['hello'])
+    assert_equal '', result
+  end
 end
