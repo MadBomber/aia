@@ -21,6 +21,7 @@ module AIA
       save_db = config.flags.tool_filter_save
 
       if config.flags.tool_filter_a
+        require_relative 'tool_filter/tfidf'
         fact_asserter ||= AIA::FactAsserter.new
         tfidf_filter = ToolFilter::TFIDF.new(tools: tools, fact_asserter: fact_asserter)
         tfidf_filter.prep
@@ -28,6 +29,8 @@ module AIA
       end
 
       if config.flags.tool_filter_b
+        require_relative 'tool_filter/zvec'
+        require_relative 'tool_filter/embedding_model_loader'
         fact_asserter ||= AIA::FactAsserter.new
         zvec_filter = ToolFilter::Zvec.new(
           tools: tools, fact_asserter: fact_asserter,
@@ -38,6 +41,8 @@ module AIA
       end
 
       if config.flags.tool_filter_c
+        require_relative 'tool_filter/sqlite_vec'
+        require_relative 'tool_filter/embedding_model_loader'
         fact_asserter ||= AIA::FactAsserter.new
         sqvec_filter = ToolFilter::SqliteVec.new(
           tools: tools, fact_asserter: fact_asserter,
@@ -48,6 +53,8 @@ module AIA
       end
 
       if config.flags.tool_filter_d
+        require_relative 'tool_filter/lsi'
+        require_relative 'tool_filter/embedding_model_loader'
         fact_asserter ||= AIA::FactAsserter.new
         lsi_filter = ToolFilter::LSI.new(
           tools: tools, fact_asserter: fact_asserter,

@@ -3,6 +3,7 @@
 
 require_relative '../../test_helper'
 require_relative '../../../lib/aia'
+require_relative '../../../lib/aia/tool_filter/embedding_model_loader'
 
 class EmbeddingModelLoaderTest < Minitest::Test
   # A concrete class to include the mixin under test

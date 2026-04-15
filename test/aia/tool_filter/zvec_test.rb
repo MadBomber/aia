@@ -3,6 +3,8 @@
 
 require_relative '../../test_helper'
 require_relative '../../../lib/aia'
+require_relative '../../../lib/aia/tool_filter/embedding_model_loader'
+require_relative '../../../lib/aia/tool_filter/zvec'
 
 class ToolFilterZvecTest < Minitest::Test
   # =========================================================================
