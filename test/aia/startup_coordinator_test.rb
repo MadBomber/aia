@@ -3,6 +3,10 @@
 
 require_relative '../test_helper'
 require_relative '../../lib/aia'
+require_relative '../../lib/aia/trakflow_bridge'
+require_relative '../../lib/aia/task_coordinator'
+require_relative '../../lib/aia/tools/task_board_tool'
+require_relative '../../lib/aia/tools/delegate_to_foreman_tool'
 require_relative '../../lib/aia/startup_coordinator'
 
 class StartupCoordinatorTest < Minitest::Test

@@ -26,7 +26,7 @@ module AIA
       connect_mcp_servers(config)
       tools    = all_available_tools(config)
       @filters = ToolFilterRegistry.build_from_config(config, tools)
-      initialize_task_coordinator
+      initialize_task_coordinator if trakflow_available?
       attach_bus_if_network
     end
 
@@ -61,11 +61,26 @@ module AIA
 
     # Initialize TaskCoordinator, auto-creating the TrakFlow project if needed.
     def initialize_task_coordinator
+      require_relative 'task_coordinator'
+      require_relative 'trakflow_bridge'
+      require_relative 'tools/task_board_tool'
+      require_relative 'tools/delegate_to_foreman_tool'
+
       ensure_trakflow_initialized unless TrakFlow.initialized?
 
       AIA.task_coordinator = TaskCoordinator.new
     rescue StandardError => e
       AIA.debug_warn("TaskCoordinator initialization failed (non-fatal): #{e.message}", exc: e)
+    end
+
+    # Return true if the trak_flow gem is available; false if it cannot be loaded.
+    def trakflow_available?
+      defined?(TrakFlow) || begin
+        require 'trak_flow'
+        true
+      rescue LoadError
+        false
+      end
     end
 
     # Bootstrap a TrakFlow project so the task board is always available.
