@@ -93,6 +93,7 @@ module AIA
     # Comparison mode: run all active filters concurrently (Thread.new per filter).
     # Failed or timed-out filters produce a FilterError sentinel and are excluded
     # from display and selection. Returns nil if all filters fail.
+    # Auto-selects tfidf if available, otherwise the first valid filter.
     def resolve_comparison(prompt, active)
       threads = active.map do |key, filter|
         thread = Thread.new do
@@ -111,21 +112,21 @@ module AIA
       valid_results = results.reject { |_, v| v.is_a?(FilterError) }
       return nil if valid_results.empty?
 
-      # When only one filter survived errors, skip the prompt and use it directly.
       if valid_results.size == 1
         key, data = valid_results.first
-        display_filter_results(key, data[:scored])
-        display_timing_table(valid_results.transform_values { |r| r[:ms] })
-        names = data[:scored].map { |e| e[:name] }
-        return names.empty? ? nil : names
+        display_filter_results(key, data[:scored]) if AIA.debug?
+        display_timing_table({ key => data[:ms] }) if AIA.debug?
+        tools = data[:scored].map { |e| e[:name] }
+        return tools.empty? ? nil : tools
       end
 
-      display_multi_comparison(valid_results)
-      display_timing_table(valid_results.transform_values { |r| r[:ms] })
+      display_multi_comparison(valid_results) if AIA.debug?
+      display_timing_table(valid_results.transform_values { |r| r[:ms] }) if AIA.debug?
 
-      valid_active = active.select { |k, _| valid_results.key?(k) }
-      choice = prompt_multi_choice(valid_active)
-      pick_tools_by_choice(choice, valid_results)
+      # Auto-select: prefer tfidf, otherwise first available
+      preferred_key = valid_results.key?(:tfidf) ? :tfidf : valid_results.keys.first
+      tools = valid_results[preferred_key][:scored].map { |e| e[:name] }
+      tools.empty? ? nil : tools
     end
 
     # Run a filter and return {scored:, ms:}.
@@ -192,43 +193,6 @@ module AIA
 
       all_overlap = sets.values.reduce(:&).size
       $stderr.puts "\n  Overlap: #{pairs.join('  |  ')}  |  All: #{all_overlap}"
-    end
-
-    # Prompt user to pick a strategy in multi-comparison mode.
-    def prompt_multi_choice(active)
-      options = active.map { |key, _| "[#{meta_for(key)[:letter]}]#{meta_for(key)[:label]}" }
-      options << "[M]erge"
-      default_key    = active.key?(:tfidf) ? :tfidf : active.keys.first
-      default_letter = meta_for(default_key)[:letter]
-
-      $stderr.print "  Choose: #{options.join(' / ')} (default: #{default_letter}): "
-      input = $stdin.gets
-      return default_letter.downcase if input.nil?
-      input.strip.downcase[0] || default_letter.downcase
-    rescue StandardError
-      default_letter.downcase
-    end
-
-    # Return the tool list based on user's choice letter.
-    def pick_tools_by_choice(choice, results)
-      # Check if choice matches a specific filter's letter
-      results.each do |key, data|
-        if meta_for(key)[:letter].downcase == choice
-          tools = data[:scored].map { |e| e[:name] }
-          return tools.empty? ? nil : tools
-        end
-      end
-
-      # Merge mode
-      if choice == "m"
-        merged = results.values.flat_map { |data| data[:scored].map { |e| e[:name] } }.uniq
-        return merged.empty? ? nil : merged
-      end
-
-      # Default: first filter
-      first_data = results.values.first
-      tools = first_data[:scored].map { |e| e[:name] }
-      tools.empty? ? nil : tools
     end
 
     # Print the timing comparison table to $stderr.

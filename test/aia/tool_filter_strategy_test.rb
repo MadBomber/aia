@@ -134,7 +134,7 @@ class ToolFilterStrategyTest < Minitest::Test
   # Comparison mode (A+B = TF-IDF+Zvec)
   # =========================================================================
 
-  def test_comparison_mode_defaults_to_tfidf_on_a_input
+  def test_comparison_mode_auto_selects_tfidf_when_present
     tfidf = make_mock_filter(
       label: "TF-IDF",
       scored: [{ name: "tfidf_tool", score: 0.5 }]
@@ -145,28 +145,26 @@ class ToolFilterStrategyTest < Minitest::Test
     )
     strategy = build_strategy(filters: { tfidf: tfidf, zvec: zvec })
 
-    $stdin.stubs(:gets).returns("a\n")
     result = strategy.resolve("test prompt")
     assert_equal ["tfidf_tool"], result
   end
 
-  def test_comparison_mode_picks_zvec_on_b_choice
-    tfidf = make_mock_filter(
-      label: "TF-IDF",
-      scored: [{ name: "tfidf_tool", score: 0.5 }]
-    )
+  def test_comparison_mode_auto_selects_first_filter_when_no_tfidf
     zvec = make_mock_filter(
       label: "Zvec",
       scored: [{ name: "zvec_tool", score: 0.8 }]
     )
-    strategy = build_strategy(filters: { tfidf: tfidf, zvec: zvec })
+    sqlite_vec = make_mock_filter(
+      label: "SqVec",
+      scored: [{ name: "sqvec_tool", score: 0.7 }]
+    )
+    strategy = build_strategy(filters: { zvec: zvec, sqlite_vec: sqlite_vec })
 
-    $stdin.stubs(:gets).returns("b\n")
     result = strategy.resolve("test prompt")
     assert_equal ["zvec_tool"], result
   end
 
-  def test_comparison_mode_merges_on_m_choice
+  def test_comparison_mode_returns_array_not_nil_when_tools_match
     tfidf = make_mock_filter(
       label: "TF-IDF",
       scored: [{ name: "shared_tool", score: 0.5 }, { name: "tfidf_only", score: 0.3 }]
@@ -177,19 +175,16 @@ class ToolFilterStrategyTest < Minitest::Test
     )
     strategy = build_strategy(filters: { tfidf: tfidf, zvec: zvec })
 
-    $stdin.stubs(:gets).returns("m\n")
     result = strategy.resolve("test prompt")
-    assert_includes result, "shared_tool"
-    assert_includes result, "tfidf_only"
-    assert_includes result, "zvec_only"
-    assert_equal 3, result.size, "Merged should deduplicate"
+    # tfidf is auto-selected
+    assert_equal ["shared_tool", "tfidf_only"], result
   end
 
   # =========================================================================
   # Comparison mode with three filters (A+B+C)
   # =========================================================================
 
-  def test_comparison_mode_picks_sqlite_vec_on_c_choice
+  def test_comparison_mode_three_filters_auto_selects_tfidf
     tfidf = make_mock_filter(
       label: "TF-IDF",
       scored: [{ name: "tfidf_tool", score: 0.5 }]
@@ -204,16 +199,11 @@ class ToolFilterStrategyTest < Minitest::Test
     )
     strategy = build_strategy(filters: { tfidf: tfidf, zvec: zvec, sqlite_vec: sqlite_vec })
 
-    $stdin.stubs(:gets).returns("c\n")
     result = strategy.resolve("test prompt")
-    assert_equal ["sqvec_tool"], result
+    assert_equal ["tfidf_tool"], result
   end
 
-  def test_comparison_mode_merges_all_three
-    tfidf = make_mock_filter(
-      label: "TF-IDF",
-      scored: [{ name: "tfidf_tool", score: 0.5 }]
-    )
+  def test_comparison_mode_three_filters_no_tfidf_selects_first
     zvec = make_mock_filter(
       label: "Zvec",
       scored: [{ name: "zvec_tool", score: 0.8 }]
@@ -222,14 +212,14 @@ class ToolFilterStrategyTest < Minitest::Test
       label: "SqVec",
       scored: [{ name: "sqvec_tool", score: 0.7 }]
     )
-    strategy = build_strategy(filters: { tfidf: tfidf, zvec: zvec, sqlite_vec: sqlite_vec })
+    lsi = make_mock_filter(
+      label: "LSI",
+      scored: [{ name: "lsi_tool", score: 0.6 }]
+    )
+    strategy = build_strategy(filters: { zvec: zvec, sqlite_vec: sqlite_vec, lsi: lsi })
 
-    $stdin.stubs(:gets).returns("m\n")
     result = strategy.resolve("test prompt")
-    assert_includes result, "tfidf_tool"
-    assert_includes result, "zvec_tool"
-    assert_includes result, "sqvec_tool"
-    assert_equal 3, result.size, "Merged should include all unique tools"
+    assert_equal ["zvec_tool"], result
   end
 
   # =========================================================================
@@ -304,5 +294,28 @@ class ToolFilterStrategyTest < Minitest::Test
     # zvec timed out → excluded → tfidf result returned without prompting
     result = strategy.resolve("some prompt")
     assert_equal ["tfidf_tool"], result
+  end
+
+  # =========================================================================
+  # No blocking stdin in comparison mode (Task 7 / P4)
+  # =========================================================================
+
+  def test_resolve_does_not_read_from_stdin_in_comparison_mode
+    mock1 = make_mock_filter(
+      label: "TF-IDF",
+      scored: [{ name: "tool_a", score: 0.9 }],
+      prep_ms: 5.0
+    )
+    mock2 = make_mock_filter(
+      label: "Zvec",
+      scored: [{ name: "tool_a", score: 0.9 }],
+      prep_ms: 5.0
+    )
+
+    strategy = AIA::ToolFilterStrategy.new(filters: { tfidf: mock1, zvec: mock2 })
+
+    $stdin.expects(:gets).never
+    result = strategy.resolve("test prompt")
+    assert_kind_of Array, result
   end
 end
