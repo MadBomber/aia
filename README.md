@@ -1,5 +1,9 @@
 <div align="center">
   <h1>AI Assistant (AIA)</h1>
+
+  [![Gem Version](https://badge.fury.io/rb/aia.svg)](https://badge.fury.io/rb/aia)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
   <img src="docs/assets/images/aia.png" alt="Robots waiter ready to take your order."><br />
   **The Prompt is the Code**<br />
   <p>Check out the new <a href="http://madbomber.github.io/aia/guides/models/?h=inline+role+syntax#inline-role-syntax">Inline Role Syntax</a> when working with multiple concurrent models.</p>
@@ -20,6 +24,21 @@ For more information on AIA visit these locations:
 
 - **[The AIA Docs Website](https://madbomber.github.io/aia)**<br />
 - **[Blog Series on AIA](https://madbomber.github.io/blog/engineering/AIA-Philosophy/)**
+
+## Why AIA?
+
+| Feature | AIA | Other CLI AI Tools |
+|---------|-----|--------------------|
+| Multi-model comparison | Built-in — send one prompt to N models simultaneously | Usually single-model |
+| Prompt management | File-based system with history, variables, and fuzzy search | Limited or none |
+| Workflow pipelines | Native `--next` / `--pipeline` chaining | Manual chaining required |
+| Local model support | Ollama and LM Studio out of the box | Varies |
+| Tool integration | RubyLLM tools + MCP server ecosystem | Limited |
+| Shell & ERB integration | Native — prompts are live Ruby/shell programs | External only |
+| Agent orchestration | Debate, spawn, verify, decompose, delegate directives | Not available |
+| Context checkpoints | Save, restore, and review conversation state | Not available |
+
+---
 
 ## Quick Start
 
@@ -464,7 +483,9 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 
 ### Prompt Directives
 
-Directives are special commands in prompt files that begin with `/` and provide dynamic functionality:
+Directives are special commands in prompt files and chat sessions that begin with `/` and provide dynamic functionality.
+
+#### Model & Configuration
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
@@ -472,40 +493,73 @@ Directives are special commands in prompt files that begin with `/` and provide 
 | `/model` | | View or change the active AI model | `/model gpt-4o` |
 | `/temperature` | `/temp` | Set LLM temperature | `/temperature 0.3` |
 | `/top_p` | `/topp` | Set LLM top_p | `/top_p 0.9` |
-| `/cost` | | Dump per-turn cost/token metrics as CSV | `/cost` |
-| `/available_models` | `/models`, `/llms`, `/am` | List available models | `/available_models` |
-| `/compare` | `/cmp` | Compare responses from multiple models | `/compare` |
+
+#### Content & Data
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/include` | | Insert file contents | `/include path/to/file.txt` |
+| `/paste` | | Insert clipboard contents | `/paste` |
+| `/webpage` | `/web`, `/website` | Fetch and insert a webpage's text content | `/webpage https://example.com` |
+| `/skill` | | Include a Claude Code skill | `/skill code-quality` |
+| `/skills` | | List available Claude Code skills | `/skills` |
+
+#### Execution & Code
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
 | `/ruby` | `/rb` | Execute Ruby code | `/ruby puts "Hello World"` |
+| `/shell` | | Execute a shell command | `/shell ls -la` |
 | `/say` | | Speak a string via text-to-speech | `/say Hello there` |
 | `/concurrent` | `/conc` | Enable concurrent MCP for the next prompt | `/concurrent` |
-| `/verify` | | Verification mode: two independent answers + reconciliation | `/verify` |
+
+#### Agent Orchestration
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/verify` | | Two independent answers + reconciliation | `/verify` |
 | `/decompose` | | Decompose prompt into parallel sub-tasks | `/decompose` |
-| `/debate` | | Multi-round debate between robots with convergence detection | `/debate` |
-| `/spawn` | | Spawn a specialist robot for a subtask | `/spawn` |
+| `/debate` | | Multi-round debate between robots | `/debate` |
+| `/spawn` | | Spawn a specialist robot for a domain-specific question | `/spawn ruby-expert` |
 | `/delegate` | `/del` | Delegate a subtask via TrakFlow | `/delegate` |
+
+#### Prompt Workflows
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/next` | | Set next prompt in sequence | `/next summary` |
+| `/pipeline` | | Set prompt workflow sequence | `/pipeline analyze,summarize,report` |
+
+#### Context & Checkpoints
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
 | `/checkpoint` | `/ckp`, `/cp` | Create a named context checkpoint | `/checkpoint save_point` |
 | `/restore` | | Restore context to a previous checkpoint | `/restore save_point` |
 | `/review` | `/context` | Display current context with checkpoint markers | `/review` |
 | `/checkpoints` | | List all available checkpoints | `/checkpoints` |
 | `/clear` | | Clear conversation history and checkpoints | `/clear` |
-| `/include` | | Insert file contents | `/include path/to/file.txt` |
-| `/paste` | | Insert clipboard contents | `/paste` |
-| `/shell` | | Execute a shell command | `/shell ls -la` |
-| `/next` | | Set next prompt in sequence | `/next summary` |
-| `/pipeline` | | Set prompt workflow sequence | `/pipeline analyze,summarize,report` |
-| `/webpage` | `/web`, `/website` | Fetch and insert a webpage's text content | `/webpage https://example.com` |
-| `/skill` | | Include a Claude Code skill | `/skill code-quality` |
-| `/skills` | | List available Claude Code skills | `/skills` |
+
+#### Status & Info
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/available_models` | `/models`, `/llms`, `/am` | List available models | `/available_models` |
+| `/compare` | `/cmp` | Compare responses from multiple models | `/compare` |
+| `/cost` | | Dump per-turn cost/token metrics as CSV | `/cost` |
 | `/tools` | | Show available tools (optional name filter) | `/tools` or `/tools github` |
 | `/mcp` | | Show MCP server connection status | `/mcp` |
 | `/robots` | | Show active robot and network configuration | `/robots` |
 | `/robot` | | Display ASCII robot art with version info | `/robot` |
 | `/help` | | Show available directives | `/help` |
+
+#### TrakFlow
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
 | `/tasks` | `/tf` | Show TrakFlow ready tasks | `/tasks` |
 | `/plan` | | Create a TrakFlow plan from a description | `/plan` |
 | `/task` | | Create a TrakFlow task | `/task` |
-
-Directives can also be used in the interactive chat sessions.
 
 #### Configuration Directive Examples
 
