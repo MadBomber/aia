@@ -7,6 +7,8 @@
 
 require_relative '../test_helper'
 require_relative '../../lib/aia'
+require_relative '../../lib/aia/verification_network'
+require_relative '../../lib/aia/prompt_decomposer'
 
 class SpecialModeHandlerTest < Minitest::Test
   def setup

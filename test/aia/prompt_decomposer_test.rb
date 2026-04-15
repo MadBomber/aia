@@ -3,6 +3,7 @@
 
 require_relative '../test_helper'
 require_relative '../../lib/aia'
+require_relative '../../lib/aia/prompt_decomposer'
 
 class PromptDecomposerTest < Minitest::Test
   def setup

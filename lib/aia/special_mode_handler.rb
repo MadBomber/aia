@@ -86,6 +86,7 @@ module AIA
     private
 
     def handle_verification(prompt)
+      require_relative 'verification_network'
       @ui_presenter.display_info("Running verification (2 independent + reconciliation)...")
 
       network = VerificationNetwork.build(AIA.config)
@@ -99,6 +100,7 @@ module AIA
     end
 
     def handle_decomposition(prompt)
+      require_relative 'prompt_decomposer'
       @ui_presenter.display_info("Decomposing prompt into sub-tasks...")
 
       decomposer = PromptDecomposer.new(@robot)
