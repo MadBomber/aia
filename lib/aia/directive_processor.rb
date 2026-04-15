@@ -38,6 +38,17 @@ module AIA
     end
 
 
+    # Returns true when the directive mutates turn-state or sets a mode flag
+    # rather than returning text for the AI.  ChatLoop uses this to decide
+    # whether to skip forwarding the directive output to the robot.
+    def state_setting?(input)
+      name = extract_content(input).strip.split(' ').first.to_s.delete_prefix('/')
+      AIA::Directive.subclasses.any? do |klass|
+        klass.state_setting_methods.include?(name)
+      end
+    end
+
+
     # Process a chat-time directive by dispatching through PM.directives.
     # Returns the block's return value: non-blank string for content directives,
     # nil for operational directives.

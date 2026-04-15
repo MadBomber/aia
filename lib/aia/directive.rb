@@ -37,6 +37,25 @@ module AIA
     DIRECTIVE_PREFIX = '/'
 
     class << self
+      # ---- State-setting DSL -----------------------------------------------
+      # Directives that mutate turn-state or set a mode flag (rather than
+      # returning text for the AI) should declare themselves here so that
+      # ChatLoop can ask the processor instead of hardcoding a name list.
+      #
+      # Usage (in a subclass body):
+      #   state_setting! :verify, :decompose, :concurrent, :conc
+      #
+      # The names must match the directive method names (without the / prefix).
+
+      def state_setting!(*method_names)
+        @state_setting_methods ||= []
+        @state_setting_methods.concat(method_names.map(&:to_s))
+      end
+
+      def state_setting_methods
+        @state_setting_methods || []
+      end
+
       # ---- Dispatch override ------------------------------------------------
       # AIA directive methods use (args_array, context_manager) convention,
       # not (ctx, *args). Override build_dispatch_block to adapt.

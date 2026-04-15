@@ -176,10 +176,7 @@ module AIA
       # prompt.  Display their confirmation and return nil so the loop skips
       # forwarding them to the robot (which would fire the handler prematurely
       # on wrapper text and consume the flag before the real prompt arrives).
-      if follow_up_prompt.strip.start_with?(
-            "/clear", "/checkpoint", "/restore", "/review", "/context",
-            "/verify", "/decompose", "/debate", "/spawn", "/delegate", "/del",
-            "/concurrent", "/conc", "/orchestrate", "/orch", "/model")
+      if @directive_processor.state_setting?(follow_up_prompt)
         @ui_presenter.display_info(directive_output) unless directive_output.nil? || directive_output.strip.empty?
         return nil
       end

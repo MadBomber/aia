@@ -5,6 +5,8 @@
 
 module AIA
   class ContextDirectives < Directive
+    state_setting! :clear, :checkpoint, :ckp, :cp, :restore, :review, :context
+
     attr_accessor :checkpoint_store, :checkpoint_counter, :last_checkpoint_name
 
     def initialize

@@ -6,6 +6,9 @@ require 'shellwords'
 
 module AIA
   class ExecutionDirectives < Directive
+    state_setting! :concurrent, :conc, :verify, :decompose, :debate,
+                   :delegate, :del, :spawn, :orchestrate, :orch
+
     desc "Execute Ruby code (requires allow_ruby_eval: true in config)"
     def ruby(args, context_manager = nil)
       unless AIA.config.flags.allow_ruby_eval

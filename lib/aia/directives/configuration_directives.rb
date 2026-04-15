@@ -2,6 +2,8 @@
 
 module AIA
   class ConfigurationDirectives < Directive
+    state_setting! :model
+
     desc "View or set configuration values"
     def config(args = [], context_manager = nil)
       args = Array(args)

@@ -322,6 +322,7 @@ class ChatLoopTest < Minitest::Test
     directive_output = 'command output'
 
     @directive_processor.stubs(:process).returns(directive_output)
+    @directive_processor.stubs(:state_setting?).with(follow_up_prompt).returns(false)
 
     output = capture_io do
       result = @chat_loop.send(:process_directive, follow_up_prompt)
@@ -348,6 +349,7 @@ class ChatLoopTest < Minitest::Test
 
   def test_process_directive_checkpoint_returns_nil
     @directive_processor.stubs(:process).returns("Checkpoint created")
+    @directive_processor.stubs(:state_setting?).with("/checkpoint test").returns(true)
     @ui_presenter.expects(:display_info).with("Checkpoint created")
 
     result = @chat_loop.send(:process_directive, "/checkpoint test")
@@ -416,6 +418,7 @@ class ChatLoopTest < Minitest::Test
     @ui_presenter.stubs(:ask_question).returns("/help", nil)
     @directive_processor.stubs(:directive?).with("/help").returns(true)
     @directive_processor.stubs(:process).returns(nil)
+    @directive_processor.stubs(:state_setting?).with("/help").returns(false)
 
     @chat_loop.send(:run_loop)
   end
