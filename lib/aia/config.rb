@@ -49,7 +49,8 @@ module AIA
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
     attr_config :service, :llm, :prompts, :output, :audio, :image, :embedding,
-                :tools, :flags, :registry, :paths, :logger, :rules, :concurrency
+                :tools, :flags, :registry, :paths, :logger, :rules, :concurrency,
+                :tool_filter
 
     # Array/collection attributes
     attr_config :models, :pipeline, :require_libs, :mcp_servers, :mcp_use, :mcp_skip, :context_files
@@ -117,6 +118,7 @@ module AIA
       paths: config_section_coercion(:paths),
       rules: config_section_coercion(:rules),
       concurrency: config_section_coercion(:concurrency),
+      tool_filter: config_section_coercion(:tool_filter),
 
       # Arrays
       models: TO_MODEL_SPECS,
@@ -170,6 +172,7 @@ module AIA
       tool_filter_d: [:flags, :tool_filter_d],
       tool_filter_load: [:flags, :tool_filter_load],
       tool_filter_save: [:flags, :tool_filter_save],
+      tool_filter_timeout_s: [:tool_filter, :timeout_s],
       concurrent_auto: [:concurrency, :auto],
       # llm section
       temperature: [:llm, :temperature],

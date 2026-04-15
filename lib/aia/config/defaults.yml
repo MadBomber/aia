@@ -143,6 +143,14 @@ defaults:
     tool_filter_save: false
 
   # ---------------------------------------------------------------------------
+  # Tool Filter Configuration
+  # Access: AIA.config.tool_filter.timeout_s
+  # Env: AIA_TOOL_FILTER__TIMEOUT_S
+  # ---------------------------------------------------------------------------
+  tool_filter:
+    timeout_s: 10
+
+  # ---------------------------------------------------------------------------
   # Logger Configuration
   # Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
   # Env: AIA_LOGGER__AIA__FILE, AIA_LOGGER__LLM__LEVEL, etc.

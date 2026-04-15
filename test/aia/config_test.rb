@@ -44,6 +44,16 @@ class ConfigTest < Minitest::Test
     assert_instance_of AIA::ConfigSection, config.flags
   end
 
+  def test_config_has_tool_filter_section
+    config = AIA::Config.new
+    assert_respond_to config, :tool_filter
+  end
+
+  def test_tool_filter_timeout_s_default_is_10
+    config = AIA::Config.new
+    assert_equal 10, config.tool_filter.timeout_s
+  end
+
   def test_config_has_default_temperature
     config = AIA::Config.new
     assert config.llm.key?(:temperature), "LLM section should have temperature"
