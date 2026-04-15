@@ -219,6 +219,50 @@ class SessionTest < Minitest::Test
     AIA.config.output.file = nil
     @session.send(:output_to_file, 'test response')
   end
+
+  def test_start_does_not_register_at_exit_hook
+    # After the fix, Session#start must NOT call at_exit at all — even on
+    # the non-early-return code path that previously contained the hook.
+    # We verify this by counting Kernel-level at_exit registrations.
+    at_exit_call_count = 0
+
+    # Intercept Kernel-level at_exit calls for the duration of the test
+    original_at_exit = Kernel.instance_method(:at_exit)
+    Kernel.define_method(:at_exit) { |&blk| at_exit_call_count += 1 }
+
+    begin
+      mock_robot = mock('robot')
+      AIA::RobotFactory.stubs(:build).returns(mock_robot)
+      AIA.stubs(:client=)
+
+      mock_coordinator = mock('coordinator')
+      mock_coordinator.stubs(:run)
+      mock_coordinator.stubs(:filters).returns({})
+      mock_coordinator.stubs(:mcp_manager).returns(nil)
+      AIA::StartupCoordinator.stubs(:new).returns(mock_coordinator)
+      AIA.stubs(:session_tracker=)
+
+      # Do NOT take the early-return path so we reach the at_exit site
+      @session.stubs(:should_start_chat_immediately?).returns(false)
+
+      # Stub PipelineOrchestrator so we skip actual pipeline processing
+      mock_pipeline = mock('pipeline_orchestrator')
+      mock_pipeline.stubs(:process)
+      AIA::PipelineOrchestrator.stubs(:new).returns(mock_pipeline)
+
+      # AIA.chat? is already stubbed to false via AIA.stubs(:chat?)
+      # so the chat branch is skipped and execution reaches the at_exit line
+
+      @session.start
+      @session.start
+    ensure
+      # Restore original at_exit
+      Kernel.define_method(:at_exit, original_at_exit)
+    end
+
+    assert_equal 0, at_exit_call_count,
+      "Session#start must not register at_exit; expected 0 calls but got #{at_exit_call_count}"
+  end
 end
 
 

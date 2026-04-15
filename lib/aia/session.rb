@@ -72,10 +72,6 @@ module AIA
         @ui_presenter.display_separator
         @chat_loop.start(skip_context_files: true)
       end
-
-      # Register cleanup hook — runs on normal exit and uncaught exceptions
-      this_session = self
-      at_exit { this_session.cleanup }
     end
 
     # Release all held resources: MCP connections and filter state.

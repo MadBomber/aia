@@ -177,6 +177,7 @@ module AIA
       # AIA.client is set there as well.
 
       session = Session.new(prompt_handler)
+      at_exit { session.cleanup }
       session.start
     rescue AIA::ConfigurationError => e
       warn e.message
