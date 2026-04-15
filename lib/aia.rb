@@ -155,6 +155,9 @@ module AIA
       # Validate and tailor configuration (handles --dump early exit)
       return if ConfigValidator.tailor(@config) == :early_exit
 
+      # Configure RobotLab loggers and providers once at startup
+      RobotFactory.setup(@config)
+
       # Load Fzf if fuzzy search is enabled and fzf is installed
       if @config.flags.fuzzy
         begin

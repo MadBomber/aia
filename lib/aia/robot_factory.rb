@@ -16,13 +16,20 @@ require_relative 'history_transfer'
 module AIA
   class RobotFactory
     class << self
+      # One-time startup configuration of RobotLab loggers and providers.
+      # Must be called once before the first build (e.g., in AIA.run).
+      #
+      # @param config [AIA::Config] the AIA configuration
+      def setup(config)
+        configure_robot_lab(config)
+      end
+
       # Build a Robot or Network from the current AIA config
       #
       # @param config [AIA::Config] the AIA configuration
       # @return [RobotLab::Robot, RobotLab::Network] the built robot or network
       def build(config = AIA.config)
         @namer = RobotNamer.new(first_name: 'Tobor')
-        configure_robot_lab(config)
         if ToolLoader.cached_tools
           config.loaded_tools = ToolLoader.cached_tools
           config.tool_names = ToolLoader.cached_tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')

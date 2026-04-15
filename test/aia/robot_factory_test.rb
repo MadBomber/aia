@@ -46,6 +46,24 @@ class RobotFactoryTest < Minitest::Test
     assert_nil result
   end
 
+  # Task 3: configure_robot_lab must NOT be called during build
+  def test_build_does_not_call_configure_robot_lab
+    AIA::RobotFactory.expects(:configure_robot_lab).never
+
+    AIA::ToolLoader.stubs(:cached_tools).returns(nil)
+    AIA::ToolLoader.stubs(:load_tools)
+    mock_robot = mock('robot')
+    AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+
+    AIA::RobotFactory.build(@config)
+  end
+
+  # Task 3: setup must call configure_robot_lab exactly once
+  def test_setup_calls_configure_robot_lab_once
+    AIA::RobotFactory.expects(:configure_robot_lab).with(@config).once
+    AIA::RobotFactory.setup(@config)
+  end
+
   # I4/I5: Tool caching — build() uses ToolLoader
   def test_build_skips_load_tools_when_cache_exists
     tool = mock('cached_tool')
