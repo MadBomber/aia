@@ -2,6 +2,7 @@
 # test/aia/spawn_handler_test.rb
 
 require_relative '../test_helper'
+require_relative '../../lib/aia/spawn_handler'
 
 class SpawnHandlerTest < Minitest::Test
   def setup

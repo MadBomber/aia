@@ -3,6 +3,7 @@
 
 require_relative '../test_helper'
 require_relative '../../lib/aia'
+require_relative '../../lib/aia/layered_orchestrator'
 require 'tmpdir'
 
 class LayeredOrchestratorTest < Minitest::Test

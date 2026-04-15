@@ -9,6 +9,11 @@
 
 require_relative '../test_helper'
 require_relative '../../lib/aia'
+require_relative '../../lib/aia/debate_handler'
+require_relative '../../lib/aia/delegate_handler'
+require_relative '../../lib/aia/task_decomposer'
+require_relative '../../lib/aia/task_executor'
+require_relative '../../lib/aia/spawn_handler'
 
 # =============================================================================
 # DebateHandler Tests

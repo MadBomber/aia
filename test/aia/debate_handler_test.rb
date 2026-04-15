@@ -2,6 +2,7 @@
 # test/aia/debate_handler_test.rb
 
 require_relative '../test_helper'
+require_relative '../../lib/aia/debate_handler'
 
 class DebateHandlerTest < Minitest::Test
   def setup

@@ -225,9 +225,10 @@ class SpecialModeHandlerTest < Minitest::Test
   def test_handle_dispatches_to_debate
     AIA.turn_state.force_debate = true
 
-    # DebateHandler returns content directly
-    debate_handler = @handler.instance_variable_get(:@debate_handler)
+    # Pre-populate the lazy ivar with a mock so the accessor returns it.
+    debate_handler = mock('debate_handler')
     debate_handler.stubs(:handle).returns("debate result")
+    @handler.instance_variable_set(:@debate_handler, debate_handler)
 
     assert_equal true, @handler.handle("debate topic")
     assert_equal false, AIA.turn_state.force_debate
@@ -236,8 +237,9 @@ class SpecialModeHandlerTest < Minitest::Test
   def test_debate_returns_false_when_handler_returns_nil
     AIA.turn_state.force_debate = true
 
-    debate_handler = @handler.instance_variable_get(:@debate_handler)
+    debate_handler = mock('debate_handler')
     debate_handler.stubs(:handle).returns(nil)
+    @handler.instance_variable_set(:@debate_handler, debate_handler)
 
     assert_equal false, @handler.handle("debate topic")
   end
@@ -245,8 +247,9 @@ class SpecialModeHandlerTest < Minitest::Test
   def test_debate_clears_flag
     AIA.turn_state.force_debate = true
 
-    debate_handler = @handler.instance_variable_get(:@debate_handler)
+    debate_handler = mock('debate_handler')
     debate_handler.stubs(:handle).raises(StandardError.new("debate error"))
+    @handler.instance_variable_set(:@debate_handler, debate_handler)
 
     @handler.handle("topic")
 
@@ -258,8 +261,9 @@ class SpecialModeHandlerTest < Minitest::Test
   def test_handle_dispatches_to_delegation
     AIA.turn_state.force_delegate = true
 
-    delegate_handler = @handler.instance_variable_get(:@delegate_handler)
+    delegate_handler = mock('delegate_handler')
     delegate_handler.stubs(:handle).returns("delegation result")
+    @handler.instance_variable_set(:@delegate_handler, delegate_handler)
 
     assert_equal true, @handler.handle("delegate task")
     assert_equal false, AIA.turn_state.force_delegate
@@ -268,8 +272,9 @@ class SpecialModeHandlerTest < Minitest::Test
   def test_delegation_returns_false_when_handler_returns_nil
     AIA.turn_state.force_delegate = true
 
-    delegate_handler = @handler.instance_variable_get(:@delegate_handler)
+    delegate_handler = mock('delegate_handler')
     delegate_handler.stubs(:handle).returns(nil)
+    @handler.instance_variable_set(:@delegate_handler, delegate_handler)
 
     assert_equal false, @handler.handle("delegate task")
   end
@@ -277,8 +282,9 @@ class SpecialModeHandlerTest < Minitest::Test
   def test_delegation_clears_flag
     AIA.turn_state.force_delegate = true
 
-    delegate_handler = @handler.instance_variable_get(:@delegate_handler)
+    delegate_handler = mock('delegate_handler')
     delegate_handler.stubs(:handle).raises(StandardError.new("delegate error"))
+    @handler.instance_variable_set(:@delegate_handler, delegate_handler)
 
     @handler.handle("task")
 
@@ -291,8 +297,9 @@ class SpecialModeHandlerTest < Minitest::Test
     AIA.turn_state.force_spawn = true
     AIA.turn_state.spawn_type = 'security_expert'
 
-    spawn_handler = @handler.instance_variable_get(:@spawn_handler)
+    spawn_handler = mock('spawn_handler')
     spawn_handler.stubs(:handle).returns("spawn result")
+    @handler.instance_variable_set(:@spawn_handler, spawn_handler)
 
     assert_equal true, @handler.handle("spawn task")
     assert_equal false, AIA.turn_state.force_spawn
@@ -303,8 +310,9 @@ class SpecialModeHandlerTest < Minitest::Test
     AIA.turn_state.force_spawn = true
     AIA.turn_state.spawn_type = nil
 
-    spawn_handler = @handler.instance_variable_get(:@spawn_handler)
+    spawn_handler = mock('spawn_handler')
     spawn_handler.stubs(:handle).returns(nil)
+    @handler.instance_variable_set(:@spawn_handler, spawn_handler)
 
     assert_equal false, @handler.handle("spawn task")
   end
@@ -313,8 +321,9 @@ class SpecialModeHandlerTest < Minitest::Test
     AIA.turn_state.force_spawn = true
     AIA.turn_state.spawn_type = 'analyst'
 
-    spawn_handler = @handler.instance_variable_get(:@spawn_handler)
+    spawn_handler = mock('spawn_handler')
     spawn_handler.stubs(:handle).raises(StandardError.new("spawn error"))
+    @handler.instance_variable_set(:@spawn_handler, spawn_handler)
 
     @handler.handle("task")
 

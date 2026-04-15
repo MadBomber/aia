@@ -15,32 +15,24 @@ module AIA
     include ContentExtractor
 
     def initialize(robot:, ui_presenter:, tracker:)
-      @robot = robot
+      @robot        = robot
       @ui_presenter = ui_presenter
-      @tracker = tracker
-
-      @debate_handler = DebateHandler.new(
-        robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker
-      )
-      @delegate_handler = DelegateHandler.new(
-        robot: @robot, ui_presenter: @ui_presenter,
-        tracker: @tracker, task_coordinator: AIA.task_coordinator
-      )
-      @spawn_handler = SpawnHandler.new(
-        robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker
-      )
-      @layered_orchestrator = LayeredOrchestrator.new(
-        robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker
-      )
+      @tracker      = tracker
+      # Handlers are instantiated on first use to avoid loading their
+      # dependencies (async, trakflow, etc.) unless the mode is invoked.
+      @debate_handler       = nil
+      @delegate_handler     = nil
+      @spawn_handler        = nil
+      @layered_orchestrator = nil
     end
 
     # Update the robot reference (e.g., after a model switch).
     def robot=(new_robot)
       @robot = new_robot
-      @debate_handler.robot       = new_robot
-      @delegate_handler.robot     = new_robot
-      @spawn_handler.robot        = new_robot
-      @layered_orchestrator.robot = new_robot
+      @debate_handler&.robot       = new_robot
+      @delegate_handler&.robot     = new_robot
+      @spawn_handler&.robot        = new_robot
+      @layered_orchestrator&.robot = new_robot
     end
 
     # Check TurnState flags and dispatch to the appropriate handler.
@@ -177,7 +169,7 @@ module AIA
     end
 
     def handle_debate(prompt)
-      content = @debate_handler.handle(HandlerContext.new(prompt: prompt))
+      content = debate_handler.handle(HandlerContext.new(prompt: prompt))
       return false unless content
 
       display_and_save(content)
@@ -188,7 +180,7 @@ module AIA
     end
 
     def handle_delegation(prompt)
-      content = @delegate_handler.handle(HandlerContext.new(prompt: prompt))
+      content = delegate_handler.handle(HandlerContext.new(prompt: prompt))
       return false unless content
 
       display_and_save(content)
@@ -199,7 +191,7 @@ module AIA
     end
 
     def handle_spawn(prompt, specialist_type: nil)
-      content = @spawn_handler.handle(HandlerContext.new(prompt: prompt, specialist_type: specialist_type))
+      content = spawn_handler.handle(HandlerContext.new(prompt: prompt, specialist_type: specialist_type))
       return false unless content
 
       display_and_save(content)
@@ -212,7 +204,7 @@ module AIA
     def handle_orchestration(prompt)
       @ui_presenter.display_info("Starting 3-tier layered orchestration...")
 
-      content = @layered_orchestrator.handle(HandlerContext.new(robot: @robot, prompt: prompt))
+      content = layered_orchestrator.handle(HandlerContext.new(robot: @robot, prompt: prompt))
 
       if content
         display_and_save(content)
@@ -225,6 +217,39 @@ module AIA
       @ui_presenter.display_info("Orchestration failed: #{e.class}: #{e.message}")
       @ui_presenter.display_separator
       true
+    end
+
+    def debate_handler
+      @debate_handler ||= begin
+        require_relative 'debate_handler'
+        DebateHandler.new(robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker)
+      end
+    end
+
+    def delegate_handler
+      @delegate_handler ||= begin
+        require_relative 'delegate_handler'
+        require_relative 'task_decomposer'
+        require_relative 'task_executor'
+        DelegateHandler.new(
+          robot: @robot, ui_presenter: @ui_presenter,
+          tracker: @tracker, task_coordinator: AIA.task_coordinator
+        )
+      end
+    end
+
+    def spawn_handler
+      @spawn_handler ||= begin
+        require_relative 'spawn_handler'
+        SpawnHandler.new(robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker)
+      end
+    end
+
+    def layered_orchestrator
+      @layered_orchestrator ||= begin
+        require_relative 'layered_orchestrator'
+        LayeredOrchestrator.new(robot: @robot, ui_presenter: @ui_presenter, tracker: @tracker)
+      end
     end
 
     # Display content, write to output file, and print separator.

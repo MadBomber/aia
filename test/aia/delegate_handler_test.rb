@@ -2,6 +2,9 @@
 # test/aia/delegate_handler_test.rb
 
 require_relative '../test_helper'
+require_relative '../../lib/aia/delegate_handler'
+require_relative '../../lib/aia/task_decomposer'
+require_relative '../../lib/aia/task_executor'
 
 class DelegateHandlerTest < Minitest::Test
   def setup
