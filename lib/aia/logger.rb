@@ -160,6 +160,27 @@ module AIA
         @test_mode = false
       end
 
+      # Update existing loggers' levels in-place from current config.
+      # Call this after runtime config changes (e.g. /config debug = false)
+      # so the log level takes effect immediately without recreating loggers.
+      def reconfigure_levels!
+        return if test_mode?
+
+        [:aia, :llm, :mcp].each do |system|
+          logger = instance_variable_get(:"@#{system}_logger")
+          next unless logger
+
+          config  = logger_config_for(system)
+          level   = effective_log_level(config, system)
+          numeric = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+          logger.level = numeric
+        end
+
+        # Keep RubyLLM / MCP configs in sync so they don't override us
+        configure_llm_logger
+        configure_mcp_logger
+      end
+
       # =======================================================================
       # Test Mode Support
       # =======================================================================
