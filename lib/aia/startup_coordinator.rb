@@ -64,8 +64,8 @@ module AIA
       ensure_trakflow_initialized unless TrakFlow.initialized?
 
       AIA.task_coordinator = TaskCoordinator.new
-    rescue StandardError
-      # TrakFlow coordination is best-effort
+    rescue StandardError => e
+      AIA.debug_warn("TaskCoordinator initialization failed (non-fatal): #{e.message}", exc: e)
     end
 
     # Bootstrap a TrakFlow project so the task board is always available.
@@ -85,8 +85,8 @@ module AIA
       return unless @robot.is_a?(RobotLab::Network)
 
       RobotFactory.attach_bus(@robot)
-    rescue StandardError
-      # Bus attachment is best-effort
+    rescue StandardError => e
+      AIA.debug_warn("Bus attachment failed (non-fatal): #{e.message}", exc: e)
     end
 
     # Warn when --mcp-use names don't match any configured server.

@@ -152,4 +152,21 @@ class StartupCoordinatorTest < Minitest::Test
     coordinator.expects(:warn).at_least_once.with { |msg| msg.include?('typo_server') || msg.include?('real_server') }
     coordinator.send(:validate_mcp_use_names, config, [])
   end
+
+  def test_attach_bus_failure_logs_debug_warn
+    robot = mock('network_robot')
+    robot.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    AIA::RobotFactory.stubs(:attach_bus).raises(StandardError, "bus error")
+    AIA.expects(:debug_warn).with(regexp_matches(/bus/i), has_key(:exc)).once
+    coordinator = AIA::StartupCoordinator.new(robot: robot, ui_presenter: mock('ui'))
+    coordinator.send(:attach_bus_if_network)  # must not raise
+  end
+
+  def test_task_coordinator_failure_logs_debug_warn
+    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::StartupCoordinator.any_instance.stubs(:ensure_trakflow_initialized).raises(StandardError, "db error")
+    AIA.expects(:debug_warn).with(regexp_matches(/TaskCoordinator|coordinator/i), has_key(:exc)).once
+    coordinator = AIA::StartupCoordinator.new(robot: mock('robot'), ui_presenter: mock('ui'))
+    coordinator.send(:initialize_task_coordinator)  # must not raise
+  end
 end
