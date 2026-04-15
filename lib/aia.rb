@@ -16,11 +16,6 @@ require_relative 'aia/version'
 require_relative 'aia/config'
 require_relative 'aia/logger'
 
-# Top-level logger method available anywhere in the application
-def logger
-  AIA::LoggerManager.aia_logger
-end
-
 require_relative 'aia/config/cli_parser'
 require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
@@ -75,6 +70,10 @@ module AIA
 
   class << self
     attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator
+
+    def logger
+      AIA::LoggerManager.aia_logger
+    end
 
     def reset!
       @config = @client = @session_tracker = @turn_state =
