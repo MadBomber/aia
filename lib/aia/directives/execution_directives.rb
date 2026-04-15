@@ -6,12 +6,19 @@ require 'shellwords'
 
 module AIA
   class ExecutionDirectives < Directive
-    desc "Execute Ruby code"
+    desc "Execute Ruby code (requires allow_ruby_eval: true in config)"
     def ruby(args, context_manager = nil)
+      unless AIA.config.flags.allow_ruby_eval
+        return "ERROR: /ruby is disabled. Set `allow_ruby_eval: true` in " \
+               "~/.aia/config.yml or pass --allow-ruby-eval to enable it. " \
+               "Note: this executes arbitrary Ruby with full process privileges."
+      end
+
       ruby_code = args.join(' ')
+      warn "WARNING: /ruby executing: #{ruby_code}"
 
       begin
-        String(eval(ruby_code))
+        String(eval(ruby_code))  # rubocop:disable Security/Eval
       rescue StandardError => e
         <<~ERROR
           This ruby code failed: #{ruby_code}

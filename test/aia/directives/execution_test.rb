@@ -1,7 +1,12 @@
 require_relative '../../test_helper'
+require 'ostruct'
 
 class DirectivesExecutionTest < Minitest::Test
   def setup
+    @mock_flags  = OpenStruct.new(allow_ruby_eval: true)
+    @mock_config = OpenStruct.new(flags: @mock_flags)
+    AIA.stubs(:config).returns(@mock_config)
+
     @instance = AIA::ExecutionDirectives.new
   end
 

@@ -248,6 +248,10 @@ module AIA
       def setup_tool_options(opts, options)
         opts.separator "\nTool & Extension Options:"
 
+        opts.on('--allow-ruby-eval', 'Enable /ruby directive (executes arbitrary Ruby code with full process privileges)') do
+          options[:allow_ruby_eval] = true
+        end
+
         opts.on("--rq LIBS", "--require LIBS", "Require Ruby libraries for Ruby directive") do |libs|
           options[:require_libs] ||= []
           options[:require_libs] += libs.split(',')

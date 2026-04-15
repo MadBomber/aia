@@ -141,6 +141,7 @@ defaults:
     tool_filter_d: false
     tool_filter_load: false
     tool_filter_save: false
+    allow_ruby_eval: false
 
   # ---------------------------------------------------------------------------
   # Tool Filter Configuration
