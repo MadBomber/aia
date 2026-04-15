@@ -120,6 +120,23 @@ class StartupCoordinatorTest < Minitest::Test
     coordinator.send(:validate_mcp_use_names, config, [{ name: 'real_server' }])
   end
 
+  # initialize_task_coordinator must NOT call clear! on the task coordinator.
+  # Wiping task state on every startup silently destroys prior session work.
+  def test_initialize_task_coordinator_does_not_call_clear
+    mock_tc = mock('task_coordinator')
+    mock_tc.expects(:clear!).never
+
+    AIA::TaskCoordinator.stubs(:new).returns(mock_tc)
+    AIA.stubs(:task_coordinator=)
+    AIA.stubs(:task_coordinator).returns(mock_tc)
+    TrakFlow.stubs(:initialized?).returns(true)
+
+    coordinator = AIA::StartupCoordinator.new(
+      robot: mock('robot'), ui_presenter: @ui
+    )
+    coordinator.send(:initialize_task_coordinator)
+  end
+
   # validate_mcp_use_names issues a warning when requested servers are missing.
   # Since Kernel#warn bypasses stub interception in Ruby 4, verify via expects.
   def test_validate_mcp_use_names_issues_warning_for_missing_server

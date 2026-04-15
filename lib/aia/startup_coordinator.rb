@@ -64,7 +64,6 @@ module AIA
       ensure_trakflow_initialized unless TrakFlow.initialized?
 
       AIA.task_coordinator = TaskCoordinator.new
-      AIA.task_coordinator.clear!
     rescue StandardError
       # TrakFlow coordination is best-effort
     end
