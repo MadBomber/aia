@@ -114,9 +114,11 @@ module AIA
       def build_run_config(config)
         params = {
           temperature: config.llm.temperature,
-          top_p:       config.llm.top_p,
           max_tokens:  config.llm.max_tokens
         }
+
+        tp = config.llm.top_p
+        params[:top_p] = tp if tp
 
         fp = config.llm.frequency_penalty
         params[:frequency_penalty] = fp if fp && fp != 0.0

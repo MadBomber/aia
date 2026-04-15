@@ -1,16 +1,47 @@
 # Changelog
 
-## [Unreleased] - 2026-03-28
+## [Unreleased] - 2026-04-15
+
+### Added
+
+- **`LayeredOrchestrator`** (`lib/aia/layered_orchestrator.rb`): 3-tier agent orchestration — Tier 1 (Tobor) decomposes requirements into layers, Tier 2 lead agents decompose each layer into specialist tasks, Tier 3 specialists produce implementation artifacts. Activated via `/orchestrate` chat directive.
+- **`TaskDecomposer` + `TaskExecutor`** (`lib/aia/task_decomposer.rb`, `lib/aia/task_executor.rb`): `TaskDecomposer#decompose` calls the robot with a structured JSON prompt and returns `[{title:, assignee:}]` subtask lists. `TaskExecutor#execute` claims, dispatches, and completes individual subtasks.
+- **`OrchestratorError`, `DebateError`, `DecomposeError`** (`lib/aia/errors.rb`): Typed error classes for orchestration, debate, and decomposition failure paths.
+- **`tool_filter.timeout_s` config key** (`lib/aia/config/defaults.yml`): Configurable timeout for tool filter operations; defaults to 10 seconds.
+- **Parallel LLM calls** (`lib/aia/robot_factory.rb`): Multi-model network turns now dispatch model calls concurrently via `Async::Barrier` + `Thread.new`, reducing wall-clock latency proportionally to network size.
+- **Session cleanup** (`lib/aia/session.rb`, `lib/aia.rb`): `at_exit` hook (moved to `AIA.run`) calls `Session#cleanup!` — releases MCP connections, flushes SpawnHandler cache, closes TrakFlow — on process exit.
+- **`state_setting!` DSL** (`lib/aia/directive.rb`, `lib/aia/directives/execution_directives.rb`): Directive subclasses declare state-setting methods with `state_setting! :debate, :spawn, ...`. `DirectiveProcessor#state_setting?` uses this registry; `ChatLoop` no longer maintains a hardcoded prefix list.
+- **Demo 29** (`examples/29_agent_harness.sh`): End-to-end demonstration of 3-tier agent harness building a Sinatra/Sequel application from a full requirements document.
+- **`BATCH_MODE` support in example scripts** (`examples/23_verify.sh` – `examples/29_agent_harness.sh`, `examples/run_all.sh`): All interactive demo scripts check `BATCH_MODE=true` to skip live `aia --chat` sessions, enabling CI and `run_all.sh` automation. `run_all.sh` now covers demos 01–21 and 23–28 (29 excluded: 10–20 min runtime).
+
+### Changed
+
+- **`AIA.logger`** (`lib/aia.rb`): Promoted from a top-level `def logger` to a proper `def self.logger` inside `class << self`, aligning with the module method pattern used by `AIA.debug?` and peers.
+- **`DebugMe` scope** (`lib/aia.rb`): `include DebugMe` and `$DEBUG_ME` initialization moved inside `module AIA`, removing accidental `Object`-level pollution.
+- **TF-IDF as sole tool filter strategy** (`lib/aia/tool_filter_strategy.rb`, `lib/aia/tool_filter_registry.rb`, `aia.gemspec`): Zvec (B), SqliteVec (C), and LSI (D) strategies removed. `ToolFilterStrategy#resolve` simplified to a single `resolve_single` path. Multi-strategy comparison mode removed. ~2,150 LOC deleted.
+- **Lazy handler instantiation in `SpecialModeHandler`** (`lib/aia/special_mode_handler.rb`): `SpawnHandler`, `DebateHandler`, `DelegateHandler`, and `LayeredOrchestrator` are now created on first use via memoized private accessors instead of at construction time. Startup cost reduced for sessions that never invoke these handlers.
+- **Lazy-require for `VerificationNetwork` and `PromptDecomposer`** (`lib/aia/special_mode_handler.rb`): Files are `require_relative`'d inside `handle_verification` and `handle_decomposition` respectively, not at process boot.
+- **Lazy-require for TrakFlow infrastructure** (`lib/aia/startup_coordinator.rb`): `TaskCoordinator`, `TrakflowBridge`, and the TrakFlow tools are required and initialized only when TrakFlow is available in the load path. Startup no longer blocks or errors when TrakFlow is absent.
+- **`README.md`**: Added gem version and license badges; new "Why AIA?" feature comparison table; Prompt Directives table reorganized into seven category subsections (Model & Configuration, Content & Data, Execution & Code, Agent Orchestration, Prompt Workflows, Context & Checkpoints, Status & Info, TrakFlow).
 
 ### Removed
-- `kbs` gem dependency removed entirely
-- KBS Rule Engine (RuleRouter, KBDefinitions, FactAsserter, DynamicRuleBuilder, RulesDSL, DecisionApplier, ExpertRouter)
-- Tool filter strategy A (KBS rule-based filtering) — strategies renumbered: A=TF-IDF, B=Zvec, C=SqliteVec, D=LSI
-- `-A`/`--tool-filter-kbs` CLI flag
-- `/rules` chat directive
-- User-defined rule hooks (`~/.config/aia/rules/*.rb`)
-- Natural language model switching via KBS intent detection (use `/model` directive instead)
-- KBS-driven MCP discovery branch (MCPDiscovery simplified to explicit/all strategies)
+
+- **Zvec, SqliteVec, LSI tool filter strategies** (`lib/aia/tool_filter/zvec.rb`, `sqlite_vec.rb`, `lsi.rb`, `embedding_model_loader.rb`): Files deleted along with their test files.
+- **`zvec`, `sqlite-vec`, `informers` gem dependencies** (`aia.gemspec`): Removed from runtime dependencies.
+- **`build_streaming_callback`** (`lib/aia/robot_factory.rb`): Dead code path removed.
+- **KBS gem dependency** (carried forward from prior work): `kbs` gem removed; KBS Rule Engine (RuleRouter, KBDefinitions, FactAsserter, DynamicRuleBuilder, RulesDSL, DecisionApplier, ExpertRouter) deleted.
+- **Tool filter strategy A (KBS rule-based)**: Strategies renumbered — A=TF-IDF, B=Zvec, C=SqliteVec, D=LSI (Zvec/SqliteVec/LSI subsequently removed as well; see above).
+- `-A`/`--tool-filter-kbs` CLI flag, `/rules` chat directive, user-defined rule hooks (`~/.config/aia/rules/*.rb`), KBS-driven MCP discovery branch.
+
+### Fixed
+
+- **`/ruby` directive security gate** (`lib/aia/directives/execution_directives.rb`): `eval` is now guarded by `AIA.config.flags.allow_ruby_eval`. Attempts without the flag return an error message instead of executing arbitrary code.
+- **`RobotFactory` namer state leak** (`lib/aia/robot_factory.rb`): Class-level `@namer` was reset on every `build_single_robot` call, causing the second robot in a session to reuse name slot 0. Fixed by initializing `@namer` once in `RobotFactory.setup`.
+- **`at_exit` hook placement** (`lib/aia.rb`, `lib/aia/session.rb`): Hook was registered inside `Session#start`, meaning it could be registered multiple times in tests or pipeline re-entry. Moved to `AIA.run`, where it is registered exactly once per process.
+- **Swallowed exceptions in `StartupCoordinator`** (`lib/aia/startup_coordinator.rb`): Initialization failures (MCP connections, TrakFlow bootstrap) were silently rescued. Now logged at `warn` level with message and backtrace via `AIA.logger`.
+- **`configure_robot_lab` called on every build** (`lib/aia/robot_factory.rb`): Provider and logging configuration was re-applied on each `RobotFactory.build` call. Extracted to `RobotFactory.setup`, called once at process start.
+- **`TaskCoordinator.clear!` on every startup** (`lib/aia/startup_coordinator.rb`): Unconditional `TaskCoordinator.clear!` discarded in-flight tasks when AIA was re-entered within the same process. Now only called when explicitly resetting state.
+- **Tool filter `resolve()` stdin block** (`lib/aia/tool_filter_strategy.rb`): In multi-strategy comparison mode, `resolve` prompted stdin for user input, which blocked non-interactive pipelines. Comparison mode removed; `resolve` is now non-blocking.
 
 ## [2.0.9.alpha] - 2026-03-28
 
