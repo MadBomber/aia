@@ -149,6 +149,125 @@ class DebateHandlerTest < Minitest::Test
     handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
   end
 
+  def test_failed_robot_produces_failed_response_not_exception
+    robot_a = mock('robot_a')
+    robot_a.stubs(:name).returns("Alice")
+    robot_a.stubs(:with_bus)
+    robot_a.stubs(:run).raises(RuntimeError, "model timeout")
+
+    robot_b = build_mock_robot("Bob", "Bob's thoughtful reply.")
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Discuss AI"))
+    assert_includes result, "[FAILED]"
+    assert_includes result, "Alice"
+  end
+
+  def test_debate_continues_when_one_robot_fails
+    robot_a = mock('robot_a')
+    robot_a.stubs(:name).returns("Alice")
+    robot_a.stubs(:with_bus)
+    robot_a.stubs(:run).raises(RuntimeError, "timeout")
+
+    robot_b = build_mock_robot("Bob", "Bob's substantive response.")
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
+    assert_includes result, "Bob's substantive response."
+  end
+
+  def test_debate_raises_debate_error_when_all_robots_fail
+    robot_a = mock('robot_a')
+    robot_a.stubs(:name).returns("Alice")
+    robot_a.stubs(:with_bus)
+    robot_a.stubs(:run).raises(RuntimeError, "Alice failed")
+
+    robot_b = mock('robot_b')
+    robot_b.stubs(:name).returns("Bob")
+    robot_b.stubs(:with_bus)
+    robot_b.stubs(:run).raises(RuntimeError, "Bob failed")
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    assert_raises(AIA::DebateError) do
+      handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
+    end
+  end
+
+  def test_convergence_check_treats_failed_response_as_empty_string
+    # Alice always fails; Bob always gives identical replies.
+    # converged? must treat FailedResponse as "" and not crash.
+    robot_a = mock('robot_a')
+    robot_a.stubs(:name).returns("Alice")
+    robot_a.stubs(:with_bus)
+    robot_a.stubs(:run).raises(RuntimeError, "Alice failed")
+
+    same_reply = "The definitive answer that never changes at all."
+    robot_b = build_mock_robot("Bob", same_reply)
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
+    assert_kind_of String, result
+  end
+
+  def test_format_rounds_renders_failed_response_with_marker
+    robot_a = mock('robot_a')
+    robot_a.stubs(:name).returns("Alice")
+    robot_a.stubs(:with_bus)
+    robot_a.stubs(:run).raises(RuntimeError, "connection refused")
+
+    robot_b = build_mock_robot("Bob", "Bob succeeded with a clear answer.")
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
+    assert_includes result, "[FAILED]"
+    assert_includes result, "connection refused"
+  end
+
   def test_force_debate_flag
     @turn_state.force_debate = true
     assert @turn_state.force_debate

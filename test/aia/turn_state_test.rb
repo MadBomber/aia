@@ -186,7 +186,7 @@ class TurnStateTest < Minitest::Test
   end
 
   def test_exclusive_modes_contains_expected_modes
-    expected = %i[verify decompose concurrent_mcp debate delegate spawn]
+    expected = %i[verify decompose concurrent_mcp debate delegate spawn orchestrate]
     assert_equal expected, AIA::TurnState::EXCLUSIVE_MODES
   end
 end

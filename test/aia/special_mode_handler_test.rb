@@ -111,6 +111,82 @@ class SpecialModeHandlerTest < Minitest::Test
     assert_equal false, @handler.handle("simple prompt")
   end
 
+  def test_subtask_failure_does_not_abort_decomposition
+    AIA.turn_state.force_decompose = true
+
+    sub_result = mock('sub_result')
+    sub_result.stubs(:reply).returns('good answer')
+
+    decomposer = mock('decomposer')
+    decomposer.stubs(:decompose).returns(['task_fail', 'task_ok'])
+    decomposer.stubs(:synthesize).returns(sub_result)
+    AIA::PromptDecomposer.stubs(:new).returns(decomposer)
+
+    @robot.stubs(:run).with('task_fail', mcp: :inherit, tools: :inherit)
+          .raises(RuntimeError, "task_fail timed out")
+    @robot.stubs(:run).with('task_ok', mcp: :inherit, tools: :inherit)
+          .returns(sub_result)
+
+    # One subtask failed but the other succeeded — should still return true
+    assert_equal true, @handler.handle("complex prompt")
+  end
+
+  def test_subtask_failure_excludes_nil_from_synthesis
+    AIA.turn_state.force_decompose = true
+
+    sub_result = mock('sub_result')
+    sub_result.stubs(:reply).returns('good answer')
+
+    final_result = mock('final_result')
+    final_result.stubs(:reply).returns('synthesized')
+
+    decomposer = mock('decomposer')
+    decomposer.stubs(:decompose).returns(['task_fail', 'task_ok'])
+    # synthesize must receive only the non-nil result
+    decomposer.expects(:synthesize).with('multi-part question', ['good answer'])
+              .returns(final_result)
+    AIA::PromptDecomposer.stubs(:new).returns(decomposer)
+
+    @robot.stubs(:run).with('task_fail', mcp: :inherit, tools: :inherit)
+          .raises(RuntimeError, "failed")
+    @robot.stubs(:run).with('task_ok', mcp: :inherit, tools: :inherit)
+          .returns(sub_result)
+
+    assert_equal true, @handler.handle("multi-part question")
+  end
+
+  def test_all_subtasks_failing_returns_false
+    AIA.turn_state.force_decompose = true
+
+    decomposer = mock('decomposer')
+    decomposer.stubs(:decompose).returns(['task_a', 'task_b'])
+    AIA::PromptDecomposer.stubs(:new).returns(decomposer)
+    @robot.stubs(:run).raises(RuntimeError, "every task failed")
+
+    assert_equal false, @handler.handle("complex prompt")
+    assert_equal false, AIA.turn_state.force_decompose
+  end
+
+  def test_concurrent_subtasks_all_complete
+    AIA.turn_state.force_decompose = true
+
+    result_a = mock('result_a'); result_a.stubs(:reply).returns('answer_a')
+    result_b = mock('result_b'); result_b.stubs(:reply).returns('answer_b')
+    result_c = mock('result_c'); result_c.stubs(:reply).returns('answer_c')
+    final    = mock('final');    final.stubs(:reply).returns('synthesized all')
+
+    decomposer = mock('decomposer')
+    decomposer.stubs(:decompose).returns(['task_a', 'task_b', 'task_c'])
+    decomposer.stubs(:synthesize).returns(final)
+    AIA::PromptDecomposer.stubs(:new).returns(decomposer)
+
+    @robot.stubs(:run).with('task_a', mcp: :inherit, tools: :inherit).returns(result_a)
+    @robot.stubs(:run).with('task_b', mcp: :inherit, tools: :inherit).returns(result_b)
+    @robot.stubs(:run).with('task_c', mcp: :inherit, tools: :inherit).returns(result_c)
+
+    assert_equal true, @handler.handle("multi-part prompt")
+  end
+
   # --- force_concurrent_mcp ---
 
   def test_handle_dispatches_to_concurrent_mcp

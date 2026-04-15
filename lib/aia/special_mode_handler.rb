@@ -4,9 +4,11 @@
 #
 # Handles special execution modes triggered by directives:
 # /verify      — two independent answers + reconciliation
-# /decompose   — break into parallel sub-tasks
+# /decompose   — break into parallel sub-tasks (Async::Barrier for I/O concurrency)
 # /concurrent  — concurrent MCP server access
 # /orchestrate — 3-tier layered orchestration (orchestrator → leads → specialists)
+
+require 'async'
 
 module AIA
   class SpecialModeHandler
@@ -118,19 +120,30 @@ module AIA
       @ui_presenter.display_info("Decomposed into #{subtasks.size} sub-tasks:")
       subtasks.each_with_index { |t, i| @ui_presenter.display_info("  #{i + 1}. #{t}") }
 
-      results = subtasks.map.with_index do |task, i|
-        @ui_presenter.display_info("Processing sub-task #{i + 1}...")
-        r = if @robot.is_a?(RobotLab::Network)
-              @robot.run(message: task)
-            else
-              @robot.run(task, mcp: :inherit, tools: :inherit)
-            end
-        extract_content(r)
+      results = Sync do
+        barrier = Async::Barrier.new
+        tasks = subtasks.each_with_index.map do |task, i|
+          barrier.async do
+            @ui_presenter.display_info("Processing sub-task #{i + 1}...")
+            r = if @robot.is_a?(RobotLab::Network)
+                  @robot.run(message: task)
+                else
+                  @robot.run(task, mcp: :inherit, tools: :inherit)
+                end
+            extract_content(r)
+          rescue => e
+            @ui_presenter.display_info("  Sub-task #{i + 1} failed: #{e.message}")
+            nil
+          end
+        end
+        barrier.wait
+        tasks.map(&:wait)
       end
 
+      raise DecomposeError, "All sub-tasks failed" if results.all?(&:nil?)
+
       @ui_presenter.display_info("Synthesizing results...")
-      final = decomposer.synthesize(prompt, results)
-      content = extract_content(final)
+      final = decomposer.synthesize(prompt, results.compact)
 
       present_result(final, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true

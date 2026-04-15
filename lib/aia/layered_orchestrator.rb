@@ -9,12 +9,12 @@
 #   independent architectural layers (e.g. infrastructure, data models,
 #   auth, routes, views). Each layer is a distinct technical concern.
 #
-# Tier 2 — Lead Agents (one per layer)
+# Tier 2 — Lead Agents (one per layer, run in parallel via Async::Barrier)
 #   Each lead agent receives its layer's requirements and breaks them
 #   into specific implementation tasks, assigning a specialist type to
 #   each task.
 #
-# Tier 3 — Specialist Robots (one per task)
+# Tier 3 — Specialist Robots (one per task, all run in parallel via Async::Barrier)
 #   Each specialist receives a focused, concrete task and produces the
 #   actual implementation artifact: a code file, migration, spec, or
 #   configuration block.
@@ -24,6 +24,7 @@
 
 require 'json'
 require 'fileutils'
+require 'async'
 
 module AIA
   class LayeredOrchestrator
@@ -72,7 +73,7 @@ module AIA
       JSON ARRAY RESPONSE:
     PROMPT
 
-    # Layer synthesis prompt for the lead agent
+    # Layer synthesis prompt
     LAYER_SYNTHESIS_PROMPT = <<~PROMPT
       You implemented the %{layer_title} layer. Here are the artifacts produced
       by your specialist team:
@@ -145,12 +146,22 @@ module AIA
 
       display_layer_plan(layers)
 
-      # Tier 2 & 3: Each layer → lead agent → specialist tasks
-      layer_results = layers.map.with_index do |layer, i|
-        say("")
-        say("━━━ Layer #{i + 1}/#{layers.size}: #{layer['title']} ━━━")
-        process_layer(primary, layer, requirements)
+      # Tier 2: All lead agents run in parallel (Async::Barrier)
+      say("Running #{layers.size} lead agents in parallel...")
+      layer_task_map = run_leads_wave(layers)
+
+      if layer_task_map.values.all?(&:empty?)
+        say("All lead agents failed. Aborting orchestration.")
+        raise OrchestratorError, "All lead agents failed to produce tasks"
       end
+
+      # Tier 3: All specialists run in parallel (Async::Barrier)
+      say("")
+      say("Running specialists in parallel...")
+      specialist_results = run_specialists_wave(layer_task_map)
+
+      # Assemble layer_results for synthesis (same shape as the former sequential approach)
+      layer_results = build_layer_results(layers, layer_task_map, specialist_results)
 
       # Final synthesis by Tobor
       say("")
@@ -214,98 +225,120 @@ module AIA
       end
     end
 
-    # Tier 2 + Tier 3: spawn lead, decompose, run specialists
-    def process_layer(primary, layer, requirements)
-      layer_title = layer['title']
-      layer_reqs  = layer['requirements'].to_s
+    # Tier 2 Wave: run all lead agents in parallel via Async::Barrier.
+    # Each lead decomposes its layer into task specifications.
+    #
+    # @param layers [Array<Hash>] layer specs from Tier 1
+    # @return [Hash{ String => Array<Hash> }] layer_name => task list ([] on failure)
+    def run_leads_wave(layers)
+      results = {}
 
-      # Tier 2: Spawn lead agent for this layer
-      ensure_bus(primary)
-      lead = primary.spawn(
-        name:          "#{layer['name']}-lead",
-        system_prompt: lead_system_prompt(layer_title)
-      )
-      say("  Tier 2 ▶ #{layer_title} lead agent spawned")
-
-      # Lead decomposes into tasks
-      tasks = decompose_layer_to_tasks(lead, layer_title, layer_reqs)
-      if tasks.empty?
-        say("  ⚠  #{layer_title} lead produced no tasks")
-        return { layer: layer_title, tasks: [], summary: "(no tasks produced)" }
+      Sync do
+        barrier = Async::Barrier.new
+        layers.each do |layer|
+          barrier.async do
+            probe  = build_probe("#{layer['name']}-lead")
+            prompt = TASK_DECOMPOSE_PROMPT % {
+              layer_title:  layer['title'],
+              requirements: layer['requirements'].to_s,
+              max_tasks:    MAX_TASKS_PER_LAYER
+            }
+            result = probe.run(prompt, mcp: :none, tools: :none)
+            tasks  = parse_json_array(extract_content(result)).first(MAX_TASKS_PER_LAYER)
+            say("  ✓ #{layer['title']} lead: #{tasks.size} task(s)")
+            results[layer['name']] = tasks
+          rescue => e
+            say("  ✗ #{layer['title']} lead failed: #{e.message}")
+            results[layer['name']] = []
+          end
+        end
+        barrier.wait
       end
 
-      say("  Tier 2 ▶ #{layer_title} lead assigned #{tasks.size} tasks:")
-      tasks.each_with_index do |task, i|
-        say("    #{i + 1}. [#{task['specialist']}] #{task['title']}")
-        say("       → #{task['artifact']}")
+      results
+    end
+
+    # Tier 3 Wave: run all specialists in parallel via Async::Barrier.
+    # Flattens tasks from all layers into a single barrier so specialists
+    # across all layers execute concurrently.
+    #
+    # @param layer_task_map [Hash{ String => Array<Hash> }] output of run_leads_wave
+    # @return [Hash{ String => Hash }] "layer_name|artifact_path" => result hash
+    def run_specialists_wave(layer_task_map)
+      jobs = layer_task_map.flat_map do |layer_name, tasks|
+        tasks.map { |task| { layer_name: layer_name, task: task } }
       end
 
-      # Tier 3: Execute each task via a specialist
-      task_results = tasks.first(MAX_TASKS_PER_LAYER).map do |task|
-        execute_specialist(primary, task, layer_title)
+      results = {}
+
+      Sync do
+        barrier = Async::Barrier.new
+        jobs.each do |job|
+          barrier.async do
+            task  = job[:task]
+            key   = "#{job[:layer_name]}|#{task['artifact']}"
+            probe = build_probe("#{task['specialist']}-specialist")
+
+            full_prompt = "Artifact to produce: #{task['artifact']}\n\n#{task['prompt']}"
+            result      = probe.run(full_prompt, mcp: :none, tools: :none)
+            output      = extract_content(result)
+
+            save_artifact(task['artifact'], output)
+            say("    ✓ #{task['artifact']}")
+
+            results[key] = {
+              task:       task['title'],
+              specialist: task['specialist'],
+              artifact:   task['artifact'],
+              output:     output
+            }
+          rescue => e
+            task = job[:task]
+            key  = "#{job[:layer_name]}|#{task['artifact']}"
+            say("    ✗ #{task['artifact']} failed: #{e.message}")
+            results[key] = {
+              task:       task['title'],
+              specialist: task['specialist'],
+              artifact:   task['artifact'],
+              output:     "[FAILED: #{e.message}]"
+            }
+          end
+        end
+        barrier.wait
       end
 
-      # Lead synthesizes its layer
-      say("  Tier 2 ▶ #{layer_title} lead synthesizing...")
-      summary = synthesize_layer(lead, layer_title, task_results)
-
-      { layer: layer_title, tasks: task_results, summary: summary }
+      results
     end
 
-    def lead_system_prompt(layer_title)
-      "You are the lead architect for the #{layer_title} layer of a Ruby/Sinatra " \
-      "web application. Your job is to decompose your layer into specific implementation " \
-      "tasks, assign each to a specialist, and synthesize the results into a coherent layer."
+    # Assemble the layer_results array expected by synthesize_all.
+    # Shape: [{ layer:, tasks: [result_hashes], summary: }]
+    #
+    # @param layers [Array<Hash>] original layer specs
+    # @param layer_task_map [Hash] output of run_leads_wave
+    # @param specialist_results [Hash] output of run_specialists_wave
+    # @return [Array<Hash>]
+    def build_layer_results(layers, layer_task_map, specialist_results)
+      layers.map do |layer|
+        tasks_for_layer = layer_task_map[layer['name']] || []
+        task_results = tasks_for_layer.map do |task|
+          key = "#{layer['name']}|#{task['artifact']}"
+          specialist_results[key] || {
+            task:       task['title'],
+            specialist: task['specialist'],
+            artifact:   task['artifact'],
+            output:     "[FAILED: no result]"
+          }
+        end
+
+        summary = synthesize_layer_from_results(layer['title'], task_results)
+        say("  ✓ #{layer['title']} synthesis complete")
+        { layer: layer['title'], tasks: task_results, summary: summary }
+      end
     end
 
-    # Tier 2: lead agent decomposes its layer into specialist tasks
-    def decompose_layer_to_tasks(lead, layer_title, layer_reqs)
-      prompt = TASK_DECOMPOSE_PROMPT % {
-        layer_title: layer_title,
-        requirements: layer_reqs,
-        max_tasks:   MAX_TASKS_PER_LAYER
-      }
-      result  = lead.run(prompt, mcp: :none, tools: :none)
-      content = extract_content(result)
-      parse_json_array(content).first(MAX_TASKS_PER_LAYER)
-    end
-
-    # Tier 3: spawn specialist and execute a single task
-    def execute_specialist(primary, task, layer_title)
-      specialist_type = task['specialist'].to_s.strip
-      task_title      = task['title'].to_s
-      artifact        = task['artifact'].to_s
-      task_prompt     = task['prompt'].to_s
-
-      say("    Tier 3 ▶ #{specialist_type}: #{task_title}...")
-
-      ensure_bus(primary)
-      specialist = primary.spawn(
-        name:          specialist_type,
-        system_prompt: specialist_system_prompt(specialist_type, layer_title)
-      )
-
-      full_prompt = "Artifact to produce: #{artifact}\n\n#{task_prompt}"
-      result      = specialist.run(full_prompt, mcp: :none, tools: :none)
-      output      = extract_content(result)
-
-      save_artifact(artifact, output)
-      say("    ✓  #{artifact}")
-
-      { task: task_title, specialist: specialist_type, artifact: artifact, output: output }
-    rescue StandardError => e
-      say("    ✗  #{task_title} failed: #{e.message}")
-      { task: task_title, specialist: specialist_type, artifact: artifact, output: "Error: #{e.message}" }
-    end
-
-    def specialist_system_prompt(type, layer_title)
-      "You are a #{type} specialist building the #{layer_title} layer of a Ruby/Sinatra " \
-      "web application. Produce complete, production-ready code. No placeholders, no TODOs. " \
-      "Output only the artifact requested — no preamble, no explanation after the code."
-    end
-
-    # Lead agent synthesizes all task outputs for its layer
-    def synthesize_layer(lead, layer_title, task_results)
+    # Synthesize all task outputs for a layer into an integration summary.
+    # Uses a fresh probe robot (no conversation history).
+    def synthesize_layer_from_results(layer_title, task_results)
       results_text = task_results.map do |r|
         "### #{r[:task]} — #{r[:artifact]}\n#{r[:output]}"
       end.join("\n\n---\n\n")
@@ -315,7 +348,8 @@ module AIA
         task_results: results_text
       }
 
-      result = lead.run(prompt, mcp: :none, tools: :none)
+      probe  = build_probe("#{layer_title.downcase.gsub(/\s+/, '-')}-synthesis")
+      result = probe.run(prompt, mcp: :none, tools: :none)
       extract_content(result)
     rescue StandardError
       "(layer synthesis failed)"
@@ -331,7 +365,7 @@ module AIA
 
       primary.run(
         FINAL_SYNTHESIS_PROMPT % {
-          layer_summaries:    summaries,
+          layer_summaries:      summaries,
           requirements_excerpt: requirements.lines.first(15).join
         },
         mcp: :none, tools: :none
@@ -412,15 +446,6 @@ module AIA
       dest = File.join(@build_dir, "INTEGRATION_REPORT.md")
       File.write(dest, text)
       say("Integration report: #{dest}")
-    rescue StandardError
-      # best-effort
-    end
-
-    # Attach bus to the primary robot if not already attached (required for spawn)
-    def ensure_bus(robot)
-      return if robot.respond_to?(:bus) && robot.bus
-
-      robot.with_bus
     rescue StandardError
       # best-effort
     end

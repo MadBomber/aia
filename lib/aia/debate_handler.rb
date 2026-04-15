@@ -6,15 +6,22 @@
 # Each robot responds to the previous round's outputs until
 # convergence is reached or a round limit is hit.
 # Uses TypedBus for bus attachment and SharedMemory for state.
+# Uses Async::Barrier for concurrent robot execution per round.
+
+require 'async'
 
 module AIA
   class DebateHandler
     include ContentExtractor
     include HandlerProtocol
 
-    MAX_ROUNDS          = 5
-    MIN_ROUNDS          = 2
+    MAX_ROUNDS           = 5
+    MIN_ROUNDS           = 2
     SIMILARITY_THRESHOLD = 0.85
+
+    # Sentinel value for a robot that failed to respond in a round.
+    # Treated as empty string for convergence; rendered with [FAILED] marker.
+    FailedResponse = Data.define(:robot_name, :error_message)
 
     def initialize(robot:, ui_presenter:, tracker:)
       @robot        = robot
@@ -46,20 +53,27 @@ module AIA
       rounds = []
 
       MAX_ROUNDS.times do |round|
-        round_results = []
+        round_context = build_round_context(prompt, rounds)
 
-        robots.each do |robot|
-          @ui_presenter.display_info("  Round #{round + 1}: #{robot.name}...")
-
-          context = build_round_context(prompt, rounds)
-          result = robot.run(context, mcp: :inherit, tools: :inherit)
-          content = extract_content(result)
-
-          round_results << { robot: robot.name, content: content }
-
-          # Write to shared memory
-          write_to_memory(round, robot.name, content)
+        round_results = Sync do
+          barrier = Async::Barrier.new
+          tasks = robots.map do |robot|
+            barrier.async do
+              @ui_presenter.display_info("  Round #{round + 1}: #{robot.name}...")
+              result  = robot.run(round_context, mcp: :inherit, tools: :inherit)
+              content = extract_content(result)
+              write_to_memory(round, robot.name, content)
+              { robot: robot.name, content: content }
+            rescue => e
+              FailedResponse.new(robot_name: robot.name, error_message: e.message)
+            end
+          end
+          barrier.wait
+          tasks.map(&:wait)
         end
+
+        raise DebateError, "All robots failed in round #{round + 1}" if
+          round_results.all? { |r| r.is_a?(FailedResponse) }
 
         previous = rounds.last
         rounds << round_results
@@ -85,7 +99,11 @@ module AIA
       return prompt if rounds.empty?
 
       previous = rounds.last.map { |r|
-        "#{r[:robot]}: #{r[:content]}"
+        if r.is_a?(FailedResponse)
+          "#{r.robot_name}: [FAILED: #{r.error_message}]"
+        else
+          "#{r[:robot]}: #{r[:content]}"
+        end
       }.join("\n\n")
 
       <<~CONTEXT
@@ -102,8 +120,8 @@ module AIA
       return false if round_index < MIN_ROUNDS - 1
       return false if previous_results.nil?
 
-      current_text  = current_results.map  { |r| r[:content].to_s }.join(" ")
-      previous_text = previous_results.map { |r| r[:content].to_s }.join(" ")
+      current_text  = current_results.map  { |r| r.is_a?(FailedResponse) ? "" : r[:content].to_s }.join(" ")
+      previous_text = previous_results.map { |r| r.is_a?(FailedResponse) ? "" : r[:content].to_s }.join(" ")
 
       scores = SimilarityScorer.score([previous_text, current_text])
       (scores[1] || 0.0) >= SIMILARITY_THRESHOLD
@@ -121,7 +139,11 @@ module AIA
       rounds.each_with_index do |round, i|
         lines << "### Round #{i + 1}"
         round.each do |entry|
-          lines << "**#{entry[:robot]}**: #{entry[:content]}\n"
+          if entry.is_a?(FailedResponse)
+            lines << "**#{entry.robot_name}**: [FAILED] #{entry.error_message}\n"
+          else
+            lines << "**#{entry[:robot]}**: #{entry[:content]}\n"
+          end
         end
       end
       lines.join("\n")

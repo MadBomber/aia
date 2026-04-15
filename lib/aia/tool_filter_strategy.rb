@@ -7,10 +7,12 @@
 # (e.g. {tfidf: ..., zvec: ..., sqlite_vec: ...}).
 #
 # Single filter  -> run that filter, display timing
-# Multiple filters -> comparison mode with side-by-side display
+# Multiple filters -> comparison mode with side-by-side display (Thread.new per filter)
 #
 # After each resolve(), prints a timing comparison table showing
 # prep and filter times for all registered filters.
+
+require 'timeout'
 
 module AIA
   class ToolFilterStrategy
@@ -22,11 +24,19 @@ module AIA
       lsi:        { letter: "D", label: "LSI",    score_label: "similarity" },
     }.freeze
 
+    # Sentinel value for a filter that failed or timed out.
+    # Excluded from display and tool selection.
+    FilterError = Data.define(:filter_key, :error_message)
+
+    DEFAULT_TIMEOUT_S = 10
+
     # @param filters [Hash{Symbol => ToolFilter}] e.g. {tfidf: tfidf_filter, zvec: zvec_filter}
     # @param ui_presenter [UIPresenter, nil] for display (unused currently, reserved)
-    def initialize(filters: {}, ui_presenter: nil)
+    # @param timeout_s [Numeric] per-filter wall-clock timeout in seconds
+    def initialize(filters: {}, ui_presenter: nil, timeout_s: DEFAULT_TIMEOUT_S)
       @filters      = filters
       @ui_presenter = ui_presenter
+      @timeout_s    = timeout_s
     end
 
     # Resolve the tool list for this turn based on the active strategy.
@@ -75,21 +85,47 @@ module AIA
 
       names = scored.map { |e| e[:name] }
       names.empty? ? nil : names
+    rescue => e
+      $stderr.puts "\n[#{meta_for(key)[:label]}] Filter failed: #{e.message}"
+      nil
     end
 
-    # Comparison mode: run all active filters, display side-by-side, ask user to pick.
+    # Comparison mode: run all active filters concurrently (Thread.new per filter).
+    # Failed or timed-out filters produce a FilterError sentinel and are excluded
+    # from display and selection. Returns nil if all filters fail.
     def resolve_comparison(prompt, active)
-      results = {}  # key => {scored:, ms:}
-
-      active.each do |key, filter|
-        results[key] = run_filter_timed(key, filter, prompt)
+      threads = active.map do |key, filter|
+        thread = Thread.new do
+          Timeout.timeout(@timeout_s) { run_filter_timed(key, filter, prompt) }
+        rescue Timeout::Error
+          FilterError.new(filter_key: key, error_message: "timed out after #{@timeout_s}s")
+        rescue => e
+          FilterError.new(filter_key: key, error_message: e.message)
+        end
+        [key, thread]
       end
 
-      display_multi_comparison(results)
-      display_timing_table(results.transform_values { |r| r[:ms] })
+      results = {}
+      threads.each { |key, thread| results[key] = thread.value }
 
-      choice = prompt_multi_choice(active)
-      pick_tools_by_choice(choice, results)
+      valid_results = results.reject { |_, v| v.is_a?(FilterError) }
+      return nil if valid_results.empty?
+
+      # When only one filter survived errors, skip the prompt and use it directly.
+      if valid_results.size == 1
+        key, data = valid_results.first
+        display_filter_results(key, data[:scored])
+        display_timing_table(valid_results.transform_values { |r| r[:ms] })
+        names = data[:scored].map { |e| e[:name] }
+        return names.empty? ? nil : names
+      end
+
+      display_multi_comparison(valid_results)
+      display_timing_table(valid_results.transform_values { |r| r[:ms] })
+
+      valid_active = active.select { |k, _| valid_results.key?(k) }
+      choice = prompt_multi_choice(valid_active)
+      pick_tools_by_choice(choice, valid_results)
     end
 
     # Run a filter and return {scored:, ms:}.

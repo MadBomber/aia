@@ -8,6 +8,9 @@ class PromptDecomposerTest < Minitest::Test
   def setup
     @mock_robot = mock('robot')
     @decomposer = AIA::PromptDecomposer.new(@mock_robot)
+    # decompose builds a probe robot internally; redirect it to @mock_robot
+    # so that test stubs on @mock_robot.run are exercised correctly.
+    @decomposer.stubs(:build_probe_robot).returns(@mock_robot)
   end
 
   def teardown

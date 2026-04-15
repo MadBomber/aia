@@ -240,4 +240,69 @@ class ToolFilterStrategyTest < Minitest::Test
     strategy = build_strategy(filters: {})
     assert_nil strategy.resolve("some prompt")
   end
+
+  # =========================================================================
+  # FilterError sentinel — partial and total failure in comparison mode
+  # =========================================================================
+
+  def test_filter_raises_in_comparison_excluded_from_results
+    tfidf = make_mock_filter(
+      label: "TF-IDF",
+      scored: [{ name: "tfidf_tool", score: 0.9 }]
+    )
+    failing_zvec = make_mock_filter(label: "Zvec", scored: [], tool_count: 1)
+    failing_zvec.define_singleton_method(:filter_with_scores) do |_prompt|
+      raise RuntimeError, "HNSW index corrupted"
+    end
+
+    strategy = build_strategy(filters: { tfidf: tfidf, zvec: failing_zvec })
+    # zvec fails → only tfidf survives → returned without prompting
+    result = strategy.resolve("some prompt")
+    assert_equal ["tfidf_tool"], result
+  end
+
+  def test_all_filters_raise_in_comparison_returns_nil
+    failing_tfidf = make_mock_filter(label: "TF-IDF", scored: [], tool_count: 1)
+    failing_tfidf.define_singleton_method(:filter_with_scores) do |_prompt|
+      raise RuntimeError, "tfidf failed"
+    end
+
+    failing_zvec = make_mock_filter(label: "Zvec", scored: [], tool_count: 1)
+    failing_zvec.define_singleton_method(:filter_with_scores) do |_prompt|
+      raise RuntimeError, "zvec failed"
+    end
+
+    strategy = build_strategy(filters: { tfidf: failing_tfidf, zvec: failing_zvec })
+    assert_nil strategy.resolve("some prompt")
+  end
+
+  def test_single_filter_raises_returns_nil
+    failing_filter = make_mock_filter(label: "TF-IDF", scored: [], tool_count: 1)
+    failing_filter.define_singleton_method(:filter_with_scores) do |_prompt|
+      raise RuntimeError, "embedding model failed to load"
+    end
+
+    strategy = build_strategy(filters: { tfidf: failing_filter })
+    assert_nil strategy.resolve("some prompt")
+  end
+
+  def test_filter_timeout_excluded_from_comparison
+    tfidf = make_mock_filter(
+      label: "TF-IDF",
+      scored: [{ name: "tfidf_tool", score: 0.9 }]
+    )
+    timing_out_zvec = make_mock_filter(label: "Zvec", scored: [], tool_count: 1)
+    # Simulate a Timeout::Error raised by the filter itself
+    timing_out_zvec.define_singleton_method(:filter_with_scores) do |_prompt|
+      raise Timeout::Error, "execution expired"
+    end
+
+    strategy = AIA::ToolFilterStrategy.new(
+      filters: { tfidf: tfidf, zvec: timing_out_zvec },
+      timeout_s: 10
+    )
+    # zvec timed out → excluded → tfidf result returned without prompting
+    result = strategy.resolve("some prompt")
+    assert_equal ["tfidf_tool"], result
+  end
 end
