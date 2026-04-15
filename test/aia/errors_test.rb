@@ -19,6 +19,9 @@ class ErrorsTest < Minitest::Test
     AIA::AdapterError,
     AIA::DirectiveError,
     AIA::GateError,
+    AIA::OrchestratorError,
+    AIA::DebateError,
+    AIA::DecomposeError,
   ].freeze
 
   AIA_ERROR_CLASSES.each do |error_class|

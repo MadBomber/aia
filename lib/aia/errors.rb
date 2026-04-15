@@ -25,4 +25,13 @@ module AIA
   # Raised when a quality gate blocks prompt execution
   class GateError < Error; end
 
+  # Raised when all lead agents fail in LayeredOrchestrator
+  class OrchestratorError < Error; end
+
+  # Raised when all robots fail in a single DebateHandler round
+  class DebateError < Error; end
+
+  # Raised when all sub-tasks fail in SpecialModeHandler decompose mode
+  class DecomposeError < Error; end
+
 end
