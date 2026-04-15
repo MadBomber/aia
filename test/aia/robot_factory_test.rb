@@ -33,19 +33,6 @@ class RobotFactoryTest < Minitest::Test
     assert_instance_of RobotLab::RunConfig, result
   end
 
-  def test_build_streaming_callback_returns_nil_when_not_chat
-    @config.flags.chat = false
-    result = AIA::RobotFactory.send(:build_streaming_callback, @config)
-    assert_nil result
-  end
-
-  def test_build_streaming_callback_returns_nil_when_chat
-    # Streaming is disabled because it conflicts with the spinner in ChatLoop
-    @config.flags.chat = true
-    result = AIA::RobotFactory.send(:build_streaming_callback, @config)
-    assert_nil result
-  end
-
   # Task 3: configure_robot_lab must NOT be called during build
   def test_build_does_not_call_configure_robot_lab
     AIA::RobotFactory.expects(:configure_robot_lab).never

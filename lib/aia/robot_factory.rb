@@ -225,13 +225,6 @@ module AIA
         end
       end
 
-      # Stored on_content callback is not used. ChatLoop passes a per-call
-      # streaming block to robot.run() that stops the spinner on first chunk
-      # and prints content directly. This avoids spinner/stream conflicts.
-      def build_streaming_callback(_config)
-        nil
-      end
-
       # Decide between consensus and parallel multi-model.
       # Initializes shared memory and subscriptions on the resulting network.
       #
