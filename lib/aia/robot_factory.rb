@@ -29,7 +29,7 @@ module AIA
       # @param config [AIA::Config] the AIA configuration
       # @return [RobotLab::Robot, RobotLab::Network] the built robot or network
       def build(config = AIA.config)
-        @namer = RobotNamer.new(first_name: 'Tobor')
+        namer = RobotNamer.new(first_name: 'Tobor')
         if ToolLoader.cached_tools
           config.loaded_tools = ToolLoader.cached_tools
           config.tool_names = ToolLoader.cached_tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
@@ -38,11 +38,11 @@ module AIA
         end
 
         if config.pipeline.length > 1
-          NetworkBuilder.build_pipeline_network(config, @namer)
+          NetworkBuilder.build_pipeline_network(config, namer)
         elsif config.models.length > 1
-          build_multi_model(config)
+          build_multi_model(config, namer)
         else
-          build_single_robot(config)
+          build_single_robot(config, namer)
         end
       rescue RubyLLM::ModelNotFoundError => e
         model_names = config.models.map(&:name).join(', ')
@@ -96,17 +96,18 @@ module AIA
       # @param server_groups [Array<Array<Hash>>] groups of MCP server configs
       # @return [RobotLab::Network]
       def build_concurrent_mcp_network(config, server_groups)
-        @namer ||= RobotNamer.new(first_name: 'Tobor')
-        NetworkBuilder.build_concurrent_mcp_network(config, @namer, server_groups)
+        namer = RobotNamer.new(first_name: 'Tobor')
+        NetworkBuilder.build_concurrent_mcp_network(config, namer, server_groups)
       end
 
       # Build a single robot for one model.
       # Delegates to RobotBuilder for single-robot construction.
       #
       # @param config [AIA::Config] the AIA configuration
+      # @param namer [AIA::RobotNamer] fresh namer for this build
       # @return [RobotLab::Robot]
-      def build_single_robot(config)
-        RobotBuilder.build(config, namer: @namer)
+      def build_single_robot(config, namer)
+        RobotBuilder.build(config, namer: namer)
       end
 
       # Build RunConfig from AIA configuration.
@@ -233,11 +234,14 @@ module AIA
 
       # Decide between consensus and parallel multi-model.
       # Initializes shared memory and subscriptions on the resulting network.
-      def build_multi_model(config)
+      #
+      # @param config [AIA::Config] the AIA configuration
+      # @param namer [AIA::RobotNamer] fresh namer for this build
+      def build_multi_model(config, namer)
         network = if config.flags.consensus
-                    NetworkBuilder.build_consensus_network(config, @namer)
+                    NetworkBuilder.build_consensus_network(config, namer)
                   else
-                    NetworkBuilder.build_parallel_network(config, @namer)
+                    NetworkBuilder.build_parallel_network(config, namer)
                   end
         initialize_network_memory(network, config)
         setup_memory_subscriptions(network, config)

@@ -114,6 +114,29 @@ class RobotFactoryTest < Minitest::Test
     assert_match(/You are Tobor/, result)
   end
 
+  # Task 4: Each build must get a fresh RobotNamer to avoid used-name state leak.
+  # The bug: @namer is a class-level instance variable that persists between
+  # build() calls. After the fix, namer must be a local variable passed as a
+  # parameter to private helpers rather than stored in @namer.
+  def test_each_build_gets_fresh_namer
+    namer1 = mock('namer1')
+    namer2 = mock('namer2')
+    AIA::RobotNamer.expects(:new).with(first_name: 'Tobor').twice.returns(namer1, namer2)
+
+    AIA::ToolLoader.stubs(:cached_tools).returns(nil)
+    AIA::ToolLoader.stubs(:load_tools)
+    mock_robot = mock('robot')
+    AIA::RobotFactory.stubs(:configure_robot_lab)
+    AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+
+    AIA::RobotFactory.build(@config)
+    AIA::RobotFactory.build(@config)
+
+    # After the fix, @namer must NOT be set as a class ivar (no leaked state)
+    assert_nil AIA::RobotFactory.instance_variable_get(:@namer),
+               '@namer should not be stored as a class-level instance variable after the fix'
+  end
+
   private
 
   def create_test_config

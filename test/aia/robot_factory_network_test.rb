@@ -23,13 +23,14 @@ class RobotFactoryNetworkTest < Minitest::Test
     # Stub configure_robot_lab to skip logger/provider setup
     AIA::RobotFactory.stubs(:configure_robot_lab)
 
-    # Initialize the namer (normally done in build)
+    # Initialize the namer (used directly when testing NetworkBuilder methods)
     @namer = AIA::RobotNamer.new(first_name: 'Tobor')
-    AIA::RobotFactory.instance_variable_set(:@namer, @namer)
   end
 
   def teardown
     AIA::ToolLoader.clear_cache!
+    # Ensure no @namer class-level state leaks to other tests
+    AIA::RobotFactory.remove_instance_variable(:@namer) if AIA::RobotFactory.instance_variable_defined?(:@namer)
     super
   end
 
