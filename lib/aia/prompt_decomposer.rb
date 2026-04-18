@@ -6,27 +6,41 @@
 # A coordinator robot breaks them down, specialist robots execute,
 # and the coordinator reassembles.
 
-require 'json'
-
 module AIA
   class PromptDecomposer
     include ContentExtractor
 
     DECOMPOSITION_PROMPT = <<~PROMPT
       Analyze this user request and determine if it can be broken into independent sub-tasks.
-      If it can, output a JSON array of sub-task descriptions.
-      If it cannot be meaningfully decomposed, output an empty array [].
 
       Rules:
       - Only decompose if sub-tasks are truly independent (can run in parallel)
       - Each sub-task should be self-contained
       - 2-5 sub-tasks maximum
       - Keep sub-task descriptions clear and specific
-
-      Output ONLY valid JSON. No explanation.
+      - Use an empty subtasks array if the request cannot be meaningfully decomposed
 
       User request: %{prompt}
     PROMPT
+
+    # JSON schema for the decomposition response.
+    # Uses a wrapper object because Claude requires a top-level object (not a bare array).
+    SUBTASKS_SCHEMA = {
+      name: 'subtask_decomposition',
+      schema: {
+        type: 'object',
+        properties: {
+          subtasks: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Independent sub-task descriptions. Empty array if not decomposable.'
+          }
+        },
+        required: ['subtasks'],
+        additionalProperties: false
+      },
+      strict: true
+    }.freeze
 
     SYNTHESIS_TEMPLATE = <<~PROMPT
       Original request: %{prompt}
@@ -46,22 +60,17 @@ module AIA
     # Uses a temporary probe robot (not the main conversation robot) so the
     # decomposition analysis prompt and response do not pollute the main
     # conversation history. Falls back to [] if the model's output is not
-    # parseable JSON or the prompt cannot be meaningfully decomposed.
+    # parseable or the prompt cannot be meaningfully decomposed.
     #
     # @param prompt [String] the user's prompt
     # @return [Array<String>] array of sub-task descriptions (empty if not decomposable)
     def decompose(prompt)
       probe = build_probe_robot
+      probe.with_schema(SUBTASKS_SCHEMA)
       result = probe.run(DECOMPOSITION_PROMPT % { prompt: prompt }, mcp: :none, tools: :none)
-      content = extract_content(result)
-
-      # Reasoning models (e.g. qwen3) wrap output in <think>...</think> before
-      # the actual JSON response. Strip those blocks before parsing.
-      cleaned = content.gsub(/<think>.*?<\/think>/m, '').strip
-
-      subtasks = JSON.parse(cleaned)
+      subtasks = extract_subtasks(extract_content(result))
       subtasks.is_a?(Array) ? subtasks.select { |t| t.is_a?(String) && !t.empty? } : []
-    rescue JSON::ParserError, StandardError
+    rescue StandardError
       []
     end
 
@@ -95,6 +104,20 @@ module AIA
         system_prompt: nil,
         config:        run_config
       )
+    end
+
+    # Extract the subtasks array from the probe response.
+    # with_schema causes ruby_llm to auto-parse the JSON into a Hash.
+    # Falls back to text parsing for providers that ignore structured output.
+    def extract_subtasks(content)
+      case content
+      when Hash
+        content['subtasks'] || content[:subtasks] || []
+      when Array
+        content
+      else
+        []
+      end
     end
   end
 end
