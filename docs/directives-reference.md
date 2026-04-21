@@ -156,7 +156,7 @@ export PUREMD_API_KEY="your_api_key"
 **Aliases**: `/website`, `/web`
 
 ### `/skill`
-Include a Claude Code skill into the conversation context.
+Include an AIA skill into the conversation context.
 
 **Syntax**: `/skill skill_name`
 
@@ -169,38 +169,58 @@ Include a Claude Code skill into the conversation context.
 ```
 
 **Features**:
-- Reads `SKILL.md` from `~/.claude/skills/<skill_name>/`
+- Reads `SKILL.md` from the skills directory (default: `~/.prompts/skills/<skill_name>/`)
 - Supports prefix matching: `/skill code` finds the first subdirectory starting with "code"
 - Exact matches take priority over prefix matches
-- Returns the skill content for inclusion in the prompt
+- Injects only the **body content** of `SKILL.md` — the YAML front matter is stripped and never sent to the LLM
+- Skills directory is configured via `skills.dir` or `--skills-dir`
+
+**Role vs Skill**: A role defines the LLM's *personality*; a skill provides *task instructions* for how to carry out the user's request within that role. Skills are injected after the role and before the user prompt.
 
 **Error Handling**:
-- Missing skill name: `Error: /skill requires a skill name`
-- No matching directory: `Error: No skill matching 'name' found in ~/.claude/skills`
-- Directory exists but no SKILL.md: `Error: Skill directory 'name' has no SKILL.md`
+- Missing skill name: `Error: /skill requires a skill name. Use /skills to list available skills.`
+- No matching directory: `Error: No skill matching 'name' found in <dir>. Use /skills to list available skills.`
+- Directory exists but no SKILL.md: `Error: Skill directory 'name' has no SKILL.md. Use /skills to list available skills.`
+
+**See also**: `/skills` to list available skills, `--list-skills` CLI flag
 
 ### `/skills`
-List all available Claude Code skills.
+List available AIA skills with optional search filtering.
 
-**Syntax**: `/skills`
+**Syntax**: `/skills [search terms]`
+
+**Examples**:
+```markdown
+/skills                   # List all skills
+/skills ruby              # Skills matching "ruby"
+/skills -python           # Skills not matching "python"
+/skills ruby -deprecated  # Skills matching "ruby" but not "deprecated"
+```
+
+**Search term prefixes**:
+- Bare word or `+word` — positive filter (skill must match)
+- `-word`, `~word`, or `!word` — negative filter (skill must not match)
+- Searches skill name and SKILL.md front matter fields (name, description, etc.)
 
 **Example Output**:
 ```
-Available Skills
-================
-  algorithmic-art
-  api-developer
-  code-assist
-  code-quality
-  frontend-design
+Available Skills (~/.prompts/skills):
+======================================
 
-Total: 5 skills
+  code-quality
+    Improve code quality through comprehensive analysis and refactoring.
+
+  frontend-design
+    Create distinctive, production-grade frontend interfaces.
+
+Total: 2 skills
 ```
 
 **Features**:
-- Lists subdirectory basenames from `~/.claude/skills/`
+- Lists skill subdirectories from `AIA.config.skills.dir` (default: `~/.prompts/skills/`)
 - Sorted alphabetically
 - Displays to STDOUT only (does not inject content into the prompt)
+- Reads `SKILL.md` front matter for filtering and description display
 
 ## Execution Directives
 

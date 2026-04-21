@@ -76,7 +76,7 @@ For more information on AIA visit these locations:
 ```plain
 
        ,      ,
-       (\____/) AI Assistant (v1.0.0) is Online
+       (\____/) AI Assistant (v1.1.0) is Online
         (_oo_)   gpt-4o-mini
          (O)       using ruby_llm
        __||__    \) model db was last refreshed on
@@ -272,6 +272,9 @@ aia --fuzzy
 | `--no-consensus` | Force individual responses | `aia --no-consensus` |
 | `--role ROLE` | Use a role/system prompt (default for all models) | `aia --role expert` |
 | `--list-roles` | List available role files | `aia --list-roles` |
+| `-s, --skill SKILL_IDS` | Prepend skill(s) to prompt (comma-separated) | `aia -s code-quality my_prompt` |
+| `--list-skills` | List available skills and exit | `aia --list-skills` |
+| `--skills-dir DIR` | Set skills directory (default: `~/.prompts/skills`) | `aia --skills-dir ~/skills` |
 | `--output FILE` | Specify output file | `aia --output results.md` |
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
 | `--tokens` | Display token usage in chat mode | `aia --chat --tokens` |
@@ -289,6 +292,11 @@ aia --fuzzy
 ├── roles/              # Role/system prompts
 │   ├── expert.md       # Expert role
 │   └── teacher.md      # Teaching role
+├── skills/             # Skill directories
+│   ├── code-quality/   # Skill subdirectory
+│   │   └── SKILL.md   # Skill definition (YAML front matter + content)
+│   └── summarizer/
+│       └── SKILL.md
 └── _prompts.log        # History log
 ```
 
@@ -382,7 +390,7 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `llm.frequency_penalty` | `--frequency-penalty` | `0.0` | `AIA_LLM__FREQUENCY_PENALTY` |
 | `llm.presence_penalty` | `--presence-penalty` | `0.0` | `AIA_LLM__PRESENCE_PENALTY` |
 
-**Prompts & Roles:**
+**Prompts, Roles & Skills:**
 
 | Config Path | CLI Options | Default | Environment Variable |
 |-------------|-------------|---------|---------------------|
@@ -391,6 +399,9 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `prompts.roles_prefix` | `--roles-prefix` | `roles` | `AIA_PROMPTS__ROLES_PREFIX` |
 | `prompts.roles_dir` | | `~/.prompts/roles` | `AIA_PROMPTS__ROLES_DIR` |
 | `prompts.role` | `-r`, `--role` | | `AIA_PROMPTS__ROLE` |
+| `prompts.skills` | `-s`, `--skill` | `[]` | |
+| `prompts.skills_prefix` | `--skills-prefix` | `skills` | `AIA_PROMPTS__SKILLS_PREFIX` |
+| `skills.dir` | `--skills-dir` | `~/.prompts/skills` | `AIA_SKILLS__DIR` |
 | `prompts.system_prompt` | `--system-prompt` | | `AIA_PROMPTS__SYSTEM_PROMPT` |
 | `pipeline` | `-p`, `--pipeline` | `[]` | |
 | | `-n`, `--next` | | |
@@ -1201,7 +1212,7 @@ When MCP servers are configured, AIA displays them in the startup robot:
 
 ```
        ,      ,
-       (\____/) AI Assistant (v1.0.0) is Online
+       (\____/) AI Assistant (v1.1.0) is Online
         (_oo_)   gpt-4o-mini (supports tools)
          (O)       using ruby_llm
        __||__    \) model db was last refreshed on
