@@ -31,6 +31,7 @@ module AIA
         handle_dump_config(config)
         handle_mcp_list(config)
         handle_list_tools(config)
+        handle_list_skills(config)
         handle_completion_script(config)
         validate_required_prompt_id(config)
         process_role_configuration(config)
@@ -225,6 +226,40 @@ module AIA
           list_tools_terminal(local_tools, mcp_tool_groups)
         else
           list_tools_markdown(local_tools, mcp_tool_groups)
+        end
+
+        exit 0
+      end
+
+      def handle_list_skills(config)
+        return unless config.list_skills
+
+        skills_dir = AIA.config.skills.dir
+
+        unless Dir.exist?(skills_dir)
+          $stderr.puts "No skills directory found at #{skills_dir}"
+          exit 0
+        end
+
+        skill_dirs = Dir.glob("*/SKILL.md", base: skills_dir).map { |f| File.dirname(f) }.sort
+
+        if skill_dirs.empty?
+          $stderr.puts "No skills found in #{skills_dir}"
+          exit 0
+        end
+
+        skill_dirs.each do |skill_name|
+          skill_md = File.join(skills_dir, skill_name, 'SKILL.md')
+          fm = parse_skill_front_matter(skill_md)
+
+          puts "## #{skill_name}"
+          puts
+          puts "| Key | Value |"
+          puts "|-----|-------|"
+          fm.each do |key, value|
+            puts "| #{key} | #{value} |"
+          end
+          puts
         end
 
         exit 0
@@ -517,6 +552,21 @@ module AIA
 
         File.write(file, content)
         puts "Config successfully dumped to #{file}"
+      end
+
+      def parse_skill_front_matter(path)
+        return {} unless File.exist?(path)
+
+        content = File.read(path)
+        return {} unless content.start_with?('---')
+
+        end_marker = content.index("\n---", 3)
+        return {} unless end_marker
+
+        yaml_text = content[3...end_marker]
+        YAML.safe_load(yaml_text) || {}
+      rescue StandardError
+        {}
       end
     end
   end

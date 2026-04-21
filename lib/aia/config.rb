@@ -48,7 +48,7 @@ module AIA
     # ==========================================================================
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
-    attr_config :service, :llm, :prompts, :output, :audio, :image, :embedding,
+    attr_config :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
                 :tools, :flags, :registry, :paths, :logger
 
     # Array/collection attributes
@@ -56,7 +56,7 @@ module AIA
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :mcp_list, :list_tools,
+                  :completion, :mcp_list, :list_tools, :list_skills,
                   :executable_prompt_content,
                   :tool_names, :loaded_tools,
                   :log_level_override, :log_file_override,
@@ -105,6 +105,8 @@ module AIA
       service: config_section_coercion(:service),
       llm: config_section_coercion(:llm),
       prompts: config_section_coercion(:prompts),
+      roles: config_section_coercion(:roles),
+      skills: config_section_coercion(:skills),
       output: config_section_coercion(:output),
       audio: config_section_coercion(:audio),
       image: config_section_coercion(:image),
@@ -169,6 +171,9 @@ module AIA
       prompts_dir: [:prompts, :dir],
       roles_prefix: [:prompts, :roles_prefix],
       role: [:prompts, :role],
+      skills_dir: [:skills, :dir],
+      skills_prefix: [:prompts, :skills_prefix],
+      skills: [:prompts, :skills],
       parameter_regex: [:prompts, :parameter_regex],
       system_prompt: [:prompts, :system_prompt],
       # output section
@@ -235,6 +240,8 @@ module AIA
         llm: llm.to_h,
         models: models.map(&:to_h),
         prompts: prompts.to_h,
+        roles: roles.to_h,
+        skills: skills.to_h,
         output: output.to_h,
         audio: audio.to_h,
         image: image.to_h,
@@ -296,7 +303,7 @@ module AIA
           send("#{key}=", Array(value)) if respond_to?("#{key}=")
         when :mcp_servers
           self.mcp_servers = Array(value)
-        when :service, :llm, :prompts, :output, :audio, :image, :embedding,
+        when :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
              :tools, :flags, :registry, :paths, :logger
           section = send(key)
           if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
@@ -388,6 +395,18 @@ module AIA
       if output.history_file
         output.history_file = File.expand_path(output.history_file)
       end
+
+      if roles.dir
+        roles.dir = File.expand_path(roles.dir)
+      end
+
+      if skills.dir
+        skills.dir = File.expand_path(skills.dir)
+      end
+
+      if tools.dir
+        tools.dir = File.expand_path(tools.dir)
+      end
     end
 
     def ensure_arrays
@@ -401,6 +420,9 @@ module AIA
 
       # Ensure tools.paths is an array
       tools.paths = [] if tools.paths.nil?
+
+      # Ensure prompts.skills is an array
+      prompts.skills = [] if prompts.respond_to?(:skills) && prompts.skills.nil?
     end
 
     # Process MCP JSON files and merge servers into mcp_servers
@@ -441,6 +463,10 @@ module AIA
         registry.send("#{key}=", value) if registry.respond_to?("#{key}=")
       when :paths
         paths.send("#{key}=", value) if paths.respond_to?("#{key}=")
+      when :roles
+        roles.send("#{key}=", value) if roles.respond_to?("#{key}=")
+      when :skills
+        skills.send("#{key}=", value) if skills.respond_to?("#{key}=")
       end
     end
   end

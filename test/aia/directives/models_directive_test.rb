@@ -215,7 +215,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_17_show_rubyllm_models_displays_header_without_query
     Timeout.timeout(30) do
-      @instance.show_rubyllm_models(nil)
+      @instance.show_rubyllm_models([], [])
       output = @captured_output.string
 
       assert_includes output, "Available LLMs:"
@@ -228,7 +228,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_18_show_rubyllm_models_displays_header_with_query
     Timeout.timeout(30) do
-      @instance.show_rubyllm_models(['gpt'])
+      @instance.show_rubyllm_models(['gpt'], [])
       output = @captured_output.string
 
       assert_includes output, "Available LLMs for gpt:"
@@ -241,7 +241,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_19_show_rubyllm_models_lists_models
     Timeout.timeout(30) do
-      @instance.show_rubyllm_models(nil)
+      @instance.show_rubyllm_models([], [])
       output = @captured_output.string
 
       assert_match /- .+ \(.+\) in: \$[\d.]+ cw: \d+/, output
@@ -254,7 +254,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_20_show_rubyllm_models_displays_count
     Timeout.timeout(30) do
-      @instance.show_rubyllm_models(nil)
+      @instance.show_rubyllm_models([], [])
       output = @captured_output.string
 
       assert_match /\d+ LLMs matching your query/, output
@@ -329,7 +329,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_25_show_ollama_models_handles_connection_failure
     Timeout.timeout(10) do
-      @instance.show_ollama_models('http://localhost:99999', nil)
+      @instance.show_ollama_models('http://localhost:99999', [], [])
       output = @captured_output.string
 
       assert_match /Cannot connect to Ollama|Error fetching Ollama models/, output
@@ -342,7 +342,7 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
 
-      @instance.show_ollama_models(api_base, nil)
+      @instance.show_ollama_models(api_base, [], [])
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
@@ -361,7 +361,7 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
 
-      @instance.show_ollama_models(api_base, ['llama'])
+      @instance.show_ollama_models(api_base, ['llama'], [])
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
@@ -386,7 +386,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_28_show_lms_models_handles_connection_failure
     Timeout.timeout(10) do
-      @instance.show_lms_models('http://localhost:99998', nil)
+      @instance.show_lms_models('http://localhost:99998', [], [])
       output = @captured_output.string
 
       assert_match /Cannot connect to LM Studio|Error fetching LM Studio models/, output
@@ -399,7 +399,7 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
 
-      @instance.show_lms_models(api_base, nil)
+      @instance.show_lms_models(api_base, [], [])
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
@@ -418,7 +418,7 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
 
-      @instance.show_lms_models(api_base, ['gpt'])
+      @instance.show_lms_models(api_base, ['gpt'], [])
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
@@ -539,7 +539,7 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(20) do
       models = ['ollama/llama2', 'lms/gpt']
 
-      @instance.show_local_models(models, nil)
+      @instance.show_local_models(models, [], [])
       output = @captured_output.string
 
       assert_includes output, "Local LLM Models:"
@@ -559,6 +559,58 @@ class ModelsDirectiveTest < Minitest::Test
     result = @instance.format_bytes(huge_number)
 
     assert_match /\d+\.\d+ TB/, result
+  end
+
+  # ============================================================================
+  # Test AND NOT search for /llms
+  # ============================================================================
+
+  def test_39b_show_rubyllm_models_header_includes_excluding_when_negative_terms
+    Timeout.timeout(30) do
+      @instance.show_rubyllm_models([], ['openai'])
+      output = @captured_output.string
+
+      assert_includes output, "excluding: openai"
+    end
+  rescue Timeout::Error
+    flunk "show_rubyllm_models excluding header timed out"
+  rescue => e
+    skip "RubyLLM not available or error: #{e.message}"
+  end
+
+  def test_39c_show_rubyllm_models_excludes_negative_terms
+    Timeout.timeout(30) do
+      @instance.show_rubyllm_models([], ['openai'])
+      output = @captured_output.string
+
+      model_lines = output.split("\n").select { |l| l.start_with?('- ') }
+      model_lines.each do |line|
+        refute_includes line.downcase, 'openai', "Excluded term 'openai' should not appear in results"
+      end
+    end
+  rescue Timeout::Error
+    flunk "show_rubyllm_models exclusion test timed out"
+  rescue => e
+    skip "RubyLLM not available or error: #{e.message}"
+  end
+
+  def test_39d_show_rubyllm_models_positive_and_negative_combined
+    Timeout.timeout(30) do
+      @instance.show_rubyllm_models(['claude'], ['opus'])
+      output = @captured_output.string
+
+      assert_includes output, "excluding: opus"
+      model_lines = output.split("\n").select { |l| l.start_with?('- ') }
+      model_lines.each do |line|
+        line_down = line.downcase
+        assert_includes line_down, 'claude', "Positive filter 'claude' must match"
+        refute_includes line_down, 'opus', "Negative filter 'opus' must be excluded"
+      end
+    end
+  rescue Timeout::Error
+    flunk "show_rubyllm_models combined filter test timed out"
+  rescue => e
+    skip "RubyLLM not available or error: #{e.message}"
   end
 
   def test_40_help_with_arguments_is_ignored

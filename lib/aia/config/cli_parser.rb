@@ -93,6 +93,23 @@ module AIA
           exit 0
         end
 
+        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
+          options[:skills_dir] = dir
+        end
+
+        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
+          options[:skills_prefix] = prefix
+        end
+
+        opts.on("-s", "--skill SKILL_IDS", "Prepend skill(s) to prompt (comma-separated IDs)") do |ids|
+          options[:skills] ||= []
+          options[:skills] += ids.split(',').map(&:strip)
+        end
+
+        opts.on("--list-skills", "List available skills and exit") do
+          options[:list_skills] = true
+        end
+
         opts.on("--sm", "--speech-model MODEL", "Set speech model") do |model|
           options[:speech_model] = model
         end
