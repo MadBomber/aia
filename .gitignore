@@ -2,6 +2,7 @@
 .aigcm_msg
 *.gem
 *.rbc
+.DS_Store
 /.config
 /coverage/
 /InstalledFiles
@@ -11,6 +12,8 @@
 /test/tmp/
 /test/version_tmp/
 /tmp/
+
+Gemfile.lock
 
 # Ignore Byebug command history file.
 .byebug_history
