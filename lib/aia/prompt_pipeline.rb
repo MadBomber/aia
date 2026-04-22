@@ -113,7 +113,11 @@ module AIA
 
         skill_dir = find_skill_dir(skill_name, skills_dir)
         unless skill_dir
-          $stderr.puts "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
+          if path_based_id?(skill_name)
+            $stderr.puts "Warning: No skill directory found at '#{File.expand_path(skill_name)}'"
+          else
+            $stderr.puts "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
+          end
           next
         end
 
@@ -169,7 +173,7 @@ module AIA
     end
 
     def path_based_id?(id)
-      id.start_with?('/', './', '../') || id.start_with?('~/')
+      id.start_with?('/', './', '../', '~/')
     end
 
     # Send prompt to AI and handle the response

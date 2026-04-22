@@ -8,11 +8,13 @@ class PromptPipelineSkillsTest < Minitest::Test
   def setup
     @pipeline = AIA::PromptPipeline.allocate
 
-    skills_config = OpenStruct.new(dir: '/nonexistent')
+    @skills_dir = Dir.mktmpdir('aia_pipeline_skills_dir')
+    skills_config = OpenStruct.new(dir: @skills_dir)
     AIA.stubs(:config).returns(OpenStruct.new(skills: skills_config))
   end
 
   def teardown
+    FileUtils.rm_rf(@skills_dir) if @skills_dir
     super
   end
 
@@ -46,7 +48,7 @@ class PromptPipelineSkillsTest < Minitest::Test
       result = @pipeline.send(:load_skills, ['/nonexistent/absolute/my-skill'])
       assert_empty result
     end
-    assert_match(/No skill matching/, err)
+    assert_match(/No skill directory found at/, err)
   end
 
   def test_load_skills_path_without_skill_md_warns_and_skips
@@ -58,5 +60,23 @@ class PromptPipelineSkillsTest < Minitest::Test
     assert_match(/has no SKILL\.md/, err)
   ensure
     FileUtils.rm_rf(dir) if dir
+  end
+
+  def test_load_skills_mixed_path_and_id
+    # ID-based skill in configured dir
+    id_skill_dir = File.join(@skills_dir, 'id-based-skill')
+    FileUtils.mkdir_p(id_skill_dir)
+    File.write(File.join(id_skill_dir, 'SKILL.md'), "---\nname: ID Skill\n---\n# ID Body")
+
+    # Path-based skill in a separate tmpdir
+    path_skill_dir = Dir.mktmpdir('aia_mixed_path_skill')
+    File.write(File.join(path_skill_dir, 'SKILL.md'), "---\nname: Path Skill\n---\n# Path Body")
+
+    result = @pipeline.send(:load_skills, ['id-based-skill', path_skill_dir])
+    assert_equal 2, result.length
+    assert_includes result, '# ID Body'
+    assert_includes result, '# Path Body'
+  ensure
+    FileUtils.rm_rf(path_skill_dir) if path_skill_dir
   end
 end
