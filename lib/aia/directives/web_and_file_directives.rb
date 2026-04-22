@@ -115,7 +115,7 @@ module AIA
         return nil
       end
 
-      skill_body(File.read(skill_path))
+      File.read(skill_path)
     end
 
     desc "Paste content from the system clipboard"
@@ -176,12 +176,6 @@ module AIA
       lines.join("\n")
     end
 
-    def skill_body(content)
-      return content unless content.start_with?('---')
-      end_marker = content.index("\n---", 3)
-      return content unless end_marker
-      content[(end_marker + 4)..].lstrip
-    end
 
     def read_front_matter_text(path)
       return '' unless File.exist?(path)
