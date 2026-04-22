@@ -64,11 +64,7 @@ class PromptHandlerRolePathTest < Minitest::Test
 
   def test_fetch_role_path_not_found_warns
     _, err = capture_io do
-      begin
-        @handler.send(:fetch_role, '/nonexistent/path/to/role')
-      rescue => e
-        # handle_missing_role may raise — that's acceptable
-      end
+      @handler.send(:fetch_role, '/nonexistent/path/to/role')
     end
     assert_match(/not found/i, err)
   end

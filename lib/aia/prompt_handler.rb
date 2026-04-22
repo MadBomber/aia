@@ -310,7 +310,7 @@ module AIA
 
     def fetch_role_from_path(role_id)
       expanded = File.expand_path(role_id)
-      expanded += '.md' unless expanded.end_with?('.md')
+      expanded += '.md' if File.extname(expanded).empty?
 
       unless File.exist?(expanded)
         $stderr.puts "Warning: Role file not found at path: #{expanded}"
