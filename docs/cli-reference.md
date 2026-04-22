@@ -236,6 +236,83 @@ aia --model "gpt-4,claude-3-sonnet" --consensus my_prompt
 aia --model "gpt-4,claude-3-sonnet" --no-consensus my_prompt
 ```
 
+### `-s, --skill SKILL_IDS`
+Inject one or more skills into the prompt before it is sent to the AI. Skills are loaded from the skills directory (default: `~/.prompts/skills/`). Multiple skills can be specified as a comma-separated list, and the flag may be repeated.
+
+Skills are inserted **after the role and before the user prompt**, providing task-level instructions for how the LLM should approach the request:
+
+```
+Role content  (who the LLM is)
+Skill content (how to approach the task)
+User prompt   (what to do)
+```
+
+Only the body of each `SKILL.md` is injected — the YAML front matter is stripped.
+
+```bash
+# Single skill
+aia --skill code-review my_prompt
+aia -s summarizer my_prompt
+
+# Combine with a role: role sets persona, skill sets method
+aia --role ruby_expert --skill code-review review_prompt my_code.rb
+
+# Multiple skills applied in order (comma-separated)
+aia --skill "code-review,security-audit" my_prompt
+
+# Repeatable form
+aia -s code-review -s security-audit my_prompt
+```
+
+**See also**: `--list-skills` to discover available skills, `/skill` chat directive, `--role` for personality
+
+### `--list-skills`
+List all available skills and exit. Skills are subdirectories under the skills directory, each containing a `SKILL.md` file with YAML front matter.
+
+```bash
+aia --list-skills
+
+# With a custom skills directory
+aia --skills-dir ~/work/skills --list-skills
+```
+
+**Example output**:
+```markdown
+## code-quality
+
+| Key | Value |
+|-----|-------|
+| name | code-quality |
+| description | Improve code quality through analysis and refactoring. |
+| user-invocable | true |
+
+## summarizer
+
+| Key | Value |
+|-----|-------|
+| name | summarizer |
+| description | Summarize documents and conversations concisely. |
+```
+
+Each skill is shown as a `## skill-name` heading followed by a table of all front matter fields from its `SKILL.md`.
+
+### `--skills-dir DIR`
+Directory containing skill subdirectories (default: `~/.prompts/skills`). Each subdirectory must contain a `SKILL.md` file to be recognized as a skill.
+
+```bash
+aia --skills-dir ~/work/skills --list-skills
+aia --skills-dir /shared/team-skills -s code-review my_prompt
+```
+
+**Environment variable**: `AIA_SKILLS__DIR`
+
+### `--skills-prefix PREFIX`
+Subdirectory name within `--prompts-dir` used as the skills prefix (default: `skills`). Affects `AIA.config.prompts.skills_prefix`.
+
+```bash
+aia --skills-prefix team-skills --list-skills
+```
+
 ### `--sm, --speech-model MODEL`
 Speech model to use for text-to-speech functionality.
 

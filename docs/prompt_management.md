@@ -8,10 +8,15 @@ AIA provides sophisticated prompt management capabilities through the PM gem, en
 ```
 ~/.prompts/
 ├── README.md                    # Documentation for your prompt collection
-├── roles/                       # Role-based prompts for context setting
+├── roles/                       # Role definitions (LLM personality/persona)
 │   ├── assistant.md
 │   ├── code_expert.md
 │   └── teacher.md
+├── skills/                      # Skill definitions (task instructions)
+│   ├── code-review/
+│   │   └── SKILL.md             # YAML front matter + instruction body
+│   └── summarizer/
+│       └── SKILL.md
 ├── development/                 # Development-related prompts
 │   ├── code_review.md
 │   ├── debug_help.md
@@ -291,6 +296,88 @@ Current Task:
 
 Please provide guidance consistent with the project architecture and your role as <%= role %>.
 ```
+
+## Skills
+
+### Roles vs Skills
+
+These two concepts work together but serve distinct purposes:
+
+| Concept | Defines | Loaded from | Injected as |
+|---------|---------|-------------|-------------|
+| **Role** | LLM *personality* — who the model is | `~/.prompts/roles/<id>.md` | First, before skills and prompt |
+| **Skill** | Task *instructions* — how to approach the work | `~/.prompts/skills/<name>/SKILL.md` | After role, before user prompt |
+
+A **role** sets the persona: "You are a senior Ruby developer with deep expertise in performance optimization."
+
+A **skill** provides procedural guidance for that persona to follow when executing the user's request: "When reviewing code, always check for: N+1 queries, missing indexes, memory leaks, and security vulnerabilities. Present findings as a prioritized list."
+
+The assembled prompt order is:
+
+```
+1. Role content        ← WHO the LLM is (personality)
+2. Skill content(s)    ← HOW to approach the task (instructions)
+3. User prompt         ← WHAT to do (request)
+4. Context files       ← supporting material
+```
+
+### Skill File Format
+
+Each skill lives in its own subdirectory under `~/.prompts/skills/`. The subdirectory must contain a `SKILL.md` file with YAML front matter followed by the skill instruction body:
+
+```markdown
+---
+name: code-review
+description: Thorough code review focusing on correctness, security, and maintainability.
+user-invocable: true
+argument-hint: ["file or topic to review"]
+---
+
+When reviewing code, systematically check:
+
+1. **Correctness** — Does the logic match the stated intent? Are edge cases handled?
+2. **Security** — Are there injection risks, unsafe deserialization, or exposed secrets?
+3. **Performance** — Are there N+1 queries, unbounded loops, or unnecessary allocations?
+4. **Maintainability** — Is the code readable? Are names clear? Is complexity justified?
+
+Present findings as a prioritized list with file:line references where applicable.
+Always suggest a concrete fix, not just identification of the problem.
+```
+
+The YAML front matter is metadata only. Only the body (everything after the closing `---`) is injected into the prompt.
+
+### Using Skills
+
+```bash
+# Prepend a skill before the user prompt
+aia --skill code-review review_prompt my_code.rb
+
+# Combine role + skill for maximum context
+aia --role ruby_expert --skill code-review review_prompt my_code.rb
+
+# Multiple skills (applied in order)
+aia --skill code-review --skill security-audit review_prompt my_code.rb
+aia -s code-review,security-audit review_prompt my_code.rb
+
+# List available skills
+aia --list-skills
+
+# Use a skill from within a chat session
+/skill code-review
+```
+
+### Skills in Chat Mode
+
+In chat mode, use the `/skill` directive to inject a skill at any point in the conversation:
+
+```
+> /skill summarizer
+[Skill "summarizer" instructions are injected into the next message context]
+
+> Please summarize the discussion so far.
+```
+
+The `/skill` directive injects only the body content of `SKILL.md` — the YAML front matter is never sent to the LLM.
 
 ## Prompt Workflows and Pipelines
 

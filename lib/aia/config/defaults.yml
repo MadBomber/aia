@@ -59,11 +59,25 @@ defaults:
   prompts:
     dir: ~/.prompts
     extname: .md
-    roles_prefix: roles
-    roles_dir: ~/.prompts/roles
+    #
     role: ~
+    roles_dir: ~/.prompts/roles
+    roles_prefix: roles
+    #
+    skills: []
+    skills_prefix: skills
+    #
+    tool: ~
+    tools_prefix: tools
+    #
     system_prompt: ~
     parameter_regex: ~
+
+  roles:
+    dir: ~/.prompts/roles
+
+  skills:
+    dir: ~/.prompts/skills
 
   # ---------------------------------------------------------------------------
   # Output Configuration
@@ -112,6 +126,7 @@ defaults:
   # Env: AIA_TOOLS__PATHS, AIA_TOOLS__ALLOWED, etc.
   # ---------------------------------------------------------------------------
   tools:
+    dir: ~/.prompts/tools
     paths: []
     allowed: ~
     rejected: ~

@@ -1,4 +1,25 @@
 # Changelog
+## [1.1.0] - 2026-04-21
+
+### New Features
+- **Skills system**: Skills are subdirectories under `~/.prompts/skills` (configurable), each containing a `SKILL.md` file with YAML front matter (`name`, `description`, and any custom fields)
+  - `/skills [query]` directive lists available skills; supports positive/negative search filtering (`-term`, `~term`, `!term`)
+  - `/skill <name>` directive includes the `SKILL.md` content into the conversation; resolves by exact match then prefix match
+  - `--list-skills` CLI flag prints all skills as markdown tables (one `## skill` heading + `| Key | Value |` table per skill, showing all front matter fields)
+  - `--skill`/`-s SKILL_IDS` CLI option prepends one or more skills to the prompt (comma-separated, repeatable)
+  - `--skills-dir DIR` and `--skills-prefix PREFIX` CLI options configure the skills directory
+- **`roles` config section**: Top-level `roles.dir` config key (`~/.prompts/roles` default) alongside existing `prompts.roles_prefix`
+- **`parse_search_terms` helper**: New private method on `AIA::Directive` base class available to all directive subclasses; splits argument tokens into `[positive_terms, negative_terms]` arrays (negative prefixes: `-`, `~`, `!`; positive: `+` or bare; all downcased)
+
+### Improvements
+- **`/available_models` filtering** now uses `parse_search_terms` for consistent positive/negative term filtering across local (Ollama, LM Studio) and cloud model listings
+
+### Testing
+- Added `test/aia/config/cli_parser_skills_test.rb` — 8 tests covering all skills-related CLI options
+- Added `test/aia/config/skills_config_test.rb` — 8 tests covering skills config defaults and overrides
+- Added `test/aia/directive_search_terms_test.rb` — 10 tests covering all `parse_search_terms` token forms
+- Expanded `test/aia/directives/skill_directive_test.rb` and `models_directive_test.rb` with updated coverage
+
 ## [1.0.0] - 2026-02-22
 
 ### Security Fixes

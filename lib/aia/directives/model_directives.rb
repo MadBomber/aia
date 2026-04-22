@@ -4,6 +4,8 @@ module AIA
   class ModelDirectives < Directive
     desc "List all available AI models"
     def available_models(args = nil, context_manager = nil)
+      positive_terms, negative_terms = parse_search_terms(Array(args))
+
       current_models = AIA.config.models
 
       model_names = current_models.map do |m|
@@ -13,9 +15,9 @@ module AIA
       using_local_provider = model_names.any? { |m| m.start_with?('ollama/', 'lms/') }
 
       if using_local_provider
-        show_local_models(model_names, args)
+        show_local_models(model_names, positive_terms, negative_terms)
       else
-        show_rubyllm_models(args)
+        show_rubyllm_models(positive_terms, negative_terms)
       end
 
       ""
@@ -80,7 +82,7 @@ module AIA
 
     # --- helpers (no desc → not registered) ---
 
-    def show_local_models(current_models, args)
+    def show_local_models(current_models, positive_terms, negative_terms)
       require 'net/http'
       require 'json'
 
@@ -91,15 +93,15 @@ module AIA
         if model_spec.start_with?('ollama/')
           api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
           api_base = api_base.gsub(%r{/v1/?$}, '')
-          show_ollama_models(api_base, args)
+          show_ollama_models(api_base, positive_terms, negative_terms)
         elsif model_spec.start_with?('lms/')
           api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
-          show_lms_models(api_base, args)
+          show_lms_models(api_base, positive_terms, negative_terms)
         end
       end
     end
 
-    def show_ollama_models(api_base, args)
+    def show_ollama_models(api_base, positive_terms, negative_terms)
       begin
         uri = URI("#{api_base}/api/tags")
         response = Net::HTTP.get_response(uri)
@@ -127,8 +129,12 @@ module AIA
           modified = model['modified_at'] ? Time.parse(model['modified_at']).strftime('%Y-%m-%d') : 'unknown'
 
           entry = "- ollama/#{name} (size: #{size}, modified: #{modified})"
+          entry_down = entry.downcase
 
-          if args.nil? || args.empty? || args.any? { |q| entry.downcase.include?(q.downcase) }
+          show_it = positive_terms.empty? || positive_terms.any? { |q| entry_down.include?(q) }
+          show_it &&= negative_terms.none? { |q| entry_down.include?(q) }
+
+          if show_it
             puts entry
             counter += 1
           end
@@ -142,7 +148,7 @@ module AIA
       end
     end
 
-    def show_lms_models(api_base, args)
+    def show_lms_models(api_base, positive_terms, negative_terms)
       begin
         uri = URI("#{api_base.gsub(%r{/v1/?$}, '')}/v1/models")
         response = Net::HTTP.get_response(uri)
@@ -167,8 +173,12 @@ module AIA
         models.each do |model|
           name = model['id']
           entry = "- lms/#{name}"
+          entry_down = entry.downcase
 
-          if args.nil? || args.empty? || args.any? { |q| entry.downcase.include?(q.downcase) }
+          show_it = positive_terms.empty? || positive_terms.any? { |q| entry_down.include?(q) }
+          show_it &&= negative_terms.none? { |q| entry_down.include?(q) }
+
+          if show_it
             puts entry
             counter += 1
           end
@@ -192,21 +202,16 @@ module AIA
       "%.1f %s" % [bytes.to_f / (1024 ** exp), units[exp]]
     end
 
-    def show_rubyllm_models(args)
-      query = args
-
-      if query && 1 == query.size
-        query = query.first.split(',')
-      end
+    def show_rubyllm_models(positive_terms, negative_terms)
+      modality_terms = positive_terms.select { |q| q.include?('_to_') }
+      text_terms     = positive_terms.reject { |q| q.include?('_to_') }
 
       header = "\nAvailable LLMs"
-      header += " for #{query.join(' and ')}" if query
+      header += " for #{positive_terms.join(' and ')}" unless positive_terms.empty?
+      header += " excluding: #{negative_terms.join(', ')}" unless negative_terms.empty?
 
       puts header + ':'
       puts
-
-      q1 = query ? query.select { |q| q.include?('_to_') } : []
-      q2 = query ? query.reject { |q| q.include?('_to_') } : []
 
       counter = 0
 
@@ -218,16 +223,12 @@ module AIA
         mode = "#{inputs} to #{outputs}"
         in_1m = llm.pricing.text_tokens.standard.to_h[:input_per_million]
         entry = "- #{llm.id} (#{llm.provider}) in: $#{in_1m} cw: #{cw} mode: #{mode} caps: #{caps}"
-
-        if query.nil? || query.empty?
-          counter += 1
-          puts entry
-          next
-        end
+        entry_down = entry.downcase
 
         show_it = true
-        q1.each { |q| show_it &&= llm.modalities.send("#{q}?") }
-        q2.each { |q| show_it &&= entry.include?(q) }
+        modality_terms.each { |q| show_it &&= llm.modalities.send("#{q}?") }
+        text_terms.each     { |q| show_it &&= entry_down.include?(q) }
+        negative_terms.each { |q| show_it &&= !entry_down.include?(q) }
 
         if show_it
           counter += 1

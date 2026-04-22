@@ -84,5 +84,34 @@ module AIA
         ""
       end
     end
+
+    private
+
+    # Split args into positive and negative search terms.
+    # Tokens prefixed with -, ~, or ! are negative (exclusion) terms.
+    # All other tokens (bare or +-prefixed) are positive (inclusion) terms.
+    # All terms are downcased.
+    #
+    # @param args [Array<String>] raw argument tokens
+    # @return [Array<Array<String>>] [positive_terms, negative_terms]
+    def parse_search_terms(args)
+      positive = []
+      negative = []
+
+      Array(args).each do |arg|
+        arg.split.each do |token|
+          downcased = token.downcase
+          if downcased =~ /\A[-~!]/
+            negative << downcased[1..]
+          elsif downcased.start_with?('+')
+            positive << downcased[1..]
+          else
+            positive << downcased
+          end
+        end
+      end
+
+      [positive, negative]
+    end
   end
 end
