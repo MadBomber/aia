@@ -254,7 +254,7 @@ Only the body of each `SKILL.md` is injected — the YAML front matter is stripp
 aia --skill code-review my_prompt
 aia -s summarizer my_prompt
 
-# Path-based skill (relative or absolute path to a skill directory)
+# Path-based skill (relative, home-relative, or absolute path to a skill directory)
 aia --skill ./local-skills/code-review my_prompt
 aia --skill /shared/team-skills/security-audit my_prompt
 aia --skill ~/my-skills/custom-skill my_prompt
@@ -441,7 +441,7 @@ aia --model "gpt-4,claude" --role architect design.md
 aia --model "gpt-4=architect,claude=security" design.md
 ```
 
-**Path resolution**: If `ROLE_ID` starts with `/`, `~/`, `./`, or `../`, it is treated as a filesystem path to a role `.md` file. The `.md` extension is added automatically if omitted. Otherwise the ID is resolved relative to the roles directory.
+**Path resolution**: If `ROLE_ID` starts with `/`, `~/`, `./`, or `../`, it is treated as a filesystem path to a role `.md` file. The `.md` extension is added automatically when the path has no file extension. Otherwise the ID is resolved relative to the roles directory.
 
 **See also**: `--model` for inline role syntax, `--list-roles` for discovering available roles.
 
