@@ -252,7 +252,7 @@ class SkillDirectiveTest < Minitest::Test
   # --- Security tests for safe_skill_path / path traversal ---
 
   def test_skill_path_traversal_blocked
-    result = @instance.skill(['../../etc'])
+    result = @instance.skill(['../../nonexistent_aia_path_traversal_xyz_test'])
     assert_nil result
     assert @stderr_messages.any? { |m| m.include?("No skill matching") }
   end
@@ -267,6 +267,7 @@ class SkillDirectiveTest < Minitest::Test
     result = @instance.skill(['evil-link'])
     assert_nil result
   ensure
+    FileUtils.rm_f(symlink_path)
     FileUtils.rm_rf(external_dir)
   end
 
