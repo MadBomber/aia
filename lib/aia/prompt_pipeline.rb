@@ -95,46 +95,36 @@ module AIA
 
     # Load skill bodies for the given skill IDs in order.
     # Each skill lives at skills_dir/<name>/SKILL.md; supports prefix matching.
+    # Path-based IDs (starting with /, ~/, ./, ../) are resolved as direct paths.
     # Returns only the body content (front matter stripped).
     def load_skills(skill_ids)
       return [] if skill_ids.nil? || skill_ids.empty?
 
       skills_dir = AIA.config.skills.dir
-      return [] unless Dir.exist?(skills_dir)
 
       Array(skill_ids).filter_map do |skill_name|
         skill_name = skill_name.to_s.strip
         next if skill_name.empty?
 
+        unless path_based_id?(skill_name) || Dir.exist?(skills_dir)
+          $stderr.puts "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
+          next
+        end
+
         skill_dir = find_skill_dir(skill_name, skills_dir)
         unless skill_dir
-          warn "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
+          $stderr.puts "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
           next
         end
 
         skill_path = File.join(skill_dir, 'SKILL.md')
         unless File.exist?(skill_path)
-          warn "Warning: Skill '#{skill_name}' has no SKILL.md in #{skill_dir}"
+          $stderr.puts "Warning: Skill '#{skill_name}' has no SKILL.md in #{skill_dir}"
           next
         end
 
         skill_body(File.read(skill_path))
       end
-    end
-
-    def find_skill_dir(skill_name, base_dir)
-      exact = File.join(base_dir, skill_name)
-      return exact if Dir.exist?(exact)
-
-      Dir.children(base_dir).sort.each do |entry|
-        next unless entry.start_with?(skill_name)
-        candidate = File.join(base_dir, entry)
-        return candidate if Dir.exist?(candidate)
-      end
-
-      nil
-    rescue Errno::ENOENT
-      nil
     end
 
     def skill_body(content)
@@ -156,6 +146,31 @@ module AIA
     end
 
     private
+
+    def find_skill_dir(skill_name, base_dir)
+      if path_based_id?(skill_name)
+        expanded = File.expand_path(skill_name)
+        return expanded if Dir.exist?(expanded)
+        return nil
+      end
+
+      exact = File.join(base_dir, skill_name)
+      return exact if Dir.exist?(exact)
+
+      Dir.children(base_dir).sort.each do |entry|
+        next unless entry.start_with?(skill_name)
+        candidate = File.join(base_dir, entry)
+        return candidate if Dir.exist?(candidate)
+      end
+
+      nil
+    rescue Errno::ENOENT
+      nil
+    end
+
+    def path_based_id?(id)
+      id.start_with?('/', './', '../') || id.start_with?('~/')
+    end
 
     # Send prompt to AI and handle the response
     def send_and_get_response(prompt_text)
