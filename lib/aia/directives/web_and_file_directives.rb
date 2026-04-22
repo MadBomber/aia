@@ -134,6 +134,12 @@ module AIA
     end
 
     def resolve_skill_dir(skill_name, dir)
+      if path_based_id?(skill_name)
+        expanded = File.expand_path(skill_name)
+        return expanded if Dir.exist?(expanded)
+        return nil
+      end
+
       exact = File.join(dir, skill_name)
       return safe_skill_path(exact, dir) if Dir.exist?(exact)
 
@@ -144,6 +150,10 @@ module AIA
       end
 
       nil
+    end
+
+    def path_based_id?(id)
+      id.start_with?('/', './', '../') || id.start_with?('~/')
     end
 
     def safe_skill_path(path, dir)

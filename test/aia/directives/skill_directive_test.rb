@@ -102,6 +102,44 @@ class SkillDirectiveTest < Minitest::Test
     assert @stderr_messages.any? { |m| m.include?("has no SKILL.md") }
   end
 
+  def test_skill_absolute_path_resolves_skill_md
+    skill_dir = Dir.mktmpdir('aia_path_skill')
+    File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Path Skill\ndescription: From path.\n---\n# Path Body")
+
+    result = @instance.skill([skill_dir])
+    assert_equal "---\nname: Path Skill\ndescription: From path.\n---\n# Path Body", result
+  ensure
+    FileUtils.rm_rf(skill_dir) if skill_dir
+  end
+
+  def test_skill_path_directory_missing_returns_nil
+    result = @instance.skill(['/nonexistent/absolute/path/my-skill'])
+    assert_nil result
+    assert @stderr_messages.any? { |m| m.include?("No skill matching") }
+  end
+
+  def test_skill_path_directory_without_skill_md_returns_nil
+    dir = Dir.mktmpdir('aia_no_skill_md')
+    result = @instance.skill([dir])
+    assert_nil result
+    assert @stderr_messages.any? { |m| m.include?("has no SKILL.md") }
+  ensure
+    FileUtils.rm_rf(dir) if dir
+  end
+
+  def test_skill_relative_path_resolves_from_cwd
+    Dir.mktmpdir('aia_rel_skill') do |base|
+      skill_dir = File.join(base, 'my-skill')
+      FileUtils.mkdir_p(skill_dir)
+      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Relative Skill\n---\n# Relative Body")
+
+      Dir.chdir(base) do
+        result = @instance.skill(['./my-skill'])
+        assert_equal "---\nname: Relative Skill\n---\n# Relative Body", result
+      end
+    end
+  end
+
   # --- /skills tests ---
 
   def test_skills_lists_subdirectories
