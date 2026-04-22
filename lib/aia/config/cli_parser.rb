@@ -426,7 +426,18 @@ module AIA
         models
       end
 
+      def path_based_id?(id)
+        id.start_with?('/', './', '../', '~/')
+      end
+
       def validate_role_exists(role_id)
+        if path_based_id?(role_id)
+          expanded = File.expand_path(role_id)
+          expanded += '.md' if File.extname(expanded).empty?
+          raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
+          return
+        end
+
         prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
 

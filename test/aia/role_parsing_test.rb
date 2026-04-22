@@ -4,6 +4,7 @@ require_relative '../test_helper'
 require 'ostruct'
 require 'fileutils'
 require 'tmpdir'
+require 'tempfile'
 require_relative '../../lib/aia/config/cli_parser'
 
 class RoleParsingTest < Minitest::Test
@@ -235,5 +236,43 @@ class RoleParsingTest < Minitest::Test
     assert_nil result[3][:role]
     assert_equal 1, result[3][:instance]
     assert_equal 'gemini', result[3][:internal_id]
+  end
+
+  def test_validate_role_absolute_path_existing_file
+    role_file = Tempfile.new(['role', '.md'])
+    role_file.write("You are an expert.")
+    role_file.close
+
+    # Should not raise
+    AIA::CLIParser.send(:validate_role_exists, role_file.path)
+  ensure
+    role_file.unlink if role_file
+  end
+
+  def test_validate_role_absolute_path_without_extension
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'expert.md'), "You are an expert.")
+      role_path = File.join(dir, 'expert')
+
+      # Should not raise — auto-appends .md
+      AIA::CLIParser.send(:validate_role_exists, role_path)
+    end
+  end
+
+  def test_validate_role_relative_path_existing_file
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'teacher.md'), "You are a teacher.")
+
+      Dir.chdir(dir) do
+        # Should not raise
+        AIA::CLIParser.send(:validate_role_exists, './teacher')
+      end
+    end
+  end
+
+  def test_validate_role_absolute_path_missing_raises
+    assert_raises(ArgumentError) do
+      AIA::CLIParser.send(:validate_role_exists, '/nonexistent/path/missing-role')
+    end
   end
 end
