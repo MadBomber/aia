@@ -5,6 +5,7 @@ require 'ostruct'
 require 'fileutils'
 require 'tmpdir'
 require 'tempfile'
+require 'pathname'
 require_relative '../../lib/aia/config/cli_parser'
 
 class RoleParsingTest < Minitest::Test
@@ -262,17 +263,17 @@ class RoleParsingTest < Minitest::Test
   def test_validate_role_relative_path_existing_file
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, 'teacher.md'), "You are a teacher.")
-
-      Dir.chdir(dir) do
-        # Should not raise
-        AIA::CLIParser.send(:validate_role_exists, './teacher')
-      end
+      # Build a ./... relative path that path_based_id? recognises and that
+      # File.expand_path resolves correctly from the current working directory.
+      relative = "./#{Pathname.new(dir).relative_path_from(Dir.pwd)}/teacher"
+      AIA::CLIParser.send(:validate_role_exists, relative)
     end
   end
 
   def test_validate_role_absolute_path_missing_raises
-    assert_raises(ArgumentError) do
+    error = assert_raises(ArgumentError) do
       AIA::CLIParser.send(:validate_role_exists, '/nonexistent/path/missing-role')
     end
+    assert_match(/Role file not found/, error.message)
   end
 end
