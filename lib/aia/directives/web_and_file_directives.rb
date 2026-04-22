@@ -103,8 +103,13 @@ module AIA
 
       skill_dir = resolve_skill_dir(skill_name, dir)
       unless skill_dir
-        warn "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
-        AIA::LoggerManager.aia_logger.error("No skill matching '#{skill_name}' found in #{dir}")
+        if path_based_id?(skill_name)
+          warn "Error: No skill directory found at '#{File.expand_path(skill_name)}'. Use /skills to list available skills."
+          AIA::LoggerManager.aia_logger.error("No skill directory found at '#{File.expand_path(skill_name)}'")
+        else
+          warn "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
+          AIA::LoggerManager.aia_logger.error("No skill matching '#{skill_name}' found in #{dir}")
+        end
         return nil
       end
 
@@ -153,7 +158,7 @@ module AIA
     end
 
     def path_based_id?(id)
-      id.start_with?('/', './', '../') || id.start_with?('~/')
+      id.start_with?('/', './', '../', '~/')
     end
 
     def safe_skill_path(path, dir)

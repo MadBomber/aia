@@ -159,15 +159,22 @@ module AIA
       end
 
       exact = File.join(base_dir, skill_name)
-      return exact if Dir.exist?(exact)
+      return safe_skill_path(exact, base_dir) if Dir.exist?(exact)
 
       Dir.children(base_dir).sort.each do |entry|
         next unless entry.start_with?(skill_name)
         candidate = File.join(base_dir, entry)
-        return candidate if Dir.exist?(candidate)
+        return safe_skill_path(candidate, base_dir) if Dir.exist?(candidate)
       end
 
       nil
+    rescue Errno::ENOENT
+      nil
+    end
+
+    def safe_skill_path(path, dir)
+      resolved = File.realpath(path)
+      resolved.start_with?(File.realpath(dir)) ? resolved : nil
     rescue Errno::ENOENT
       nil
     end

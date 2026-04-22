@@ -115,7 +115,7 @@ class SkillDirectiveTest < Minitest::Test
   def test_skill_path_directory_missing_returns_nil
     result = @instance.skill(['/nonexistent/absolute/path/my-skill'])
     assert_nil result
-    assert @stderr_messages.any? { |m| m.include?("No skill matching") }
+    assert @stderr_messages.any? { |m| m.include?("No skill directory found at") }
   end
 
   def test_skill_path_directory_without_skill_md_returns_nil
@@ -254,7 +254,7 @@ class SkillDirectiveTest < Minitest::Test
   def test_skill_path_traversal_blocked
     result = @instance.skill(['../../nonexistent_aia_path_traversal_xyz_test'])
     assert_nil result
-    assert @stderr_messages.any? { |m| m.include?("No skill matching") }
+    assert @stderr_messages.any? { |m| m.include?("No skill directory found at") }
   end
 
   def test_skill_symlink_outside_skills_dir_blocked
