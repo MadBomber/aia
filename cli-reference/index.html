@@ -3344,19 +3344,25 @@
 </span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>User prompt   (what to do)
 </span></code></pre></div>
 <p>Only the body of each <code>SKILL.md</code> is injected — the YAML front matter is stripped.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Single skill</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Single skill (ID-based — resolved from skills directory)</span>
 </span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>aia<span class="w"> </span>--skill<span class="w"> </span>code-review<span class="w"> </span>my_prompt
 </span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>aia<span class="w"> </span>-s<span class="w"> </span>summarizer<span class="w"> </span>my_prompt
 </span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
-</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="c1"># Combine with a role: role sets persona, skill sets method</span>
-</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>aia<span class="w"> </span>--role<span class="w"> </span>ruby_expert<span class="w"> </span>--skill<span class="w"> </span>code-review<span class="w"> </span>review_prompt<span class="w"> </span>my_code.rb
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="c1"># Multiple skills applied in order (comma-separated)</span>
-</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>aia<span class="w"> </span>--skill<span class="w"> </span><span class="s2">&quot;code-review,security-audit&quot;</span><span class="w"> </span>my_prompt
-</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
-</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="c1"># Repeatable form</span>
-</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>aia<span class="w"> </span>-s<span class="w"> </span>code-review<span class="w"> </span>-s<span class="w"> </span>security-audit<span class="w"> </span>my_prompt
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="c1"># Path-based skill (relative, home-relative, or absolute path to a skill directory)</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>aia<span class="w"> </span>--skill<span class="w"> </span>./local-skills/code-review<span class="w"> </span>my_prompt
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>aia<span class="w"> </span>--skill<span class="w"> </span>/shared/team-skills/security-audit<span class="w"> </span>my_prompt
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>aia<span class="w"> </span>--skill<span class="w"> </span>~/my-skills/custom-skill<span class="w"> </span>my_prompt
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="c1"># Combine with a role: role sets persona, skill sets method</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>aia<span class="w"> </span>--role<span class="w"> </span>ruby_expert<span class="w"> </span>--skill<span class="w"> </span>code-review<span class="w"> </span>review_prompt<span class="w"> </span>my_code.rb
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="c1"># Multiple skills applied in order (comma-separated)</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>aia<span class="w"> </span>--skill<span class="w"> </span><span class="s2">&quot;code-review,security-audit&quot;</span><span class="w"> </span>my_prompt
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="c1"># Repeatable form</span>
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>aia<span class="w"> </span>-s<span class="w"> </span>code-review<span class="w"> </span>-s<span class="w"> </span>security-audit<span class="w"> </span>my_prompt
 </span></code></pre></div>
+<p><strong>Path resolution</strong>: If a skill ID starts with <code>/</code>, <code>~/</code>, <code>./</code>, or <code>../</code>, it is treated as a filesystem path to a skill directory (which must contain <code>SKILL.md</code>). Otherwise it is looked up by ID in the skills directory.</p>
 <p><strong>See also</strong>: <code>--list-skills</code> to discover available skills, <code>/skill</code> chat directive, <code>--role</code> for personality</p>
 <h3 id="-list-skills"><code>--list-skills</code><a class="headerlink" href="#-list-skills" title="Permanent link">&para;</a></h3>
 <p>List all available skills and exit. Skills are subdirectories under the skills directory, each containing a <code>SKILL.md</code> file with YAML front matter.</p>
@@ -3465,16 +3471,22 @@
 <h3 id="-r-role-role_id"><code>-r, --role ROLE_ID</code><a class="headerlink" href="#-r-role-role_id" title="Permanent link">&para;</a></h3>
 <p>Role ID to prepend to the prompt. This applies the same role to all models.</p>
 <p>For per-model role assignment, use the inline <code>MODEL=ROLE</code> syntax with <code>--model</code> instead.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># Apply role to all models</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># Apply role by ID (resolved from roles directory)</span>
 </span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>aia<span class="w"> </span>--role<span class="w"> </span>expert<span class="w"> </span>my_prompt
 </span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>aia<span class="w"> </span>-r<span class="w"> </span>teacher<span class="w"> </span>explain_concept
 </span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>
-</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="c1"># With multiple models (same role for all)</span>
-</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>aia<span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;gpt-4,claude&quot;</span><span class="w"> </span>--role<span class="w"> </span>architect<span class="w"> </span>design.md
-</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>
-</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="c1"># Per-model roles (inline syntax - see --model)</span>
-</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>aia<span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;gpt-4=architect,claude=security&quot;</span><span class="w"> </span>design.md
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="c1"># Path-based role (relative or absolute path to a .md file)</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>aia<span class="w"> </span>--role<span class="w"> </span>./local-roles/domain-expert<span class="w"> </span>my_prompt
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>aia<span class="w"> </span>--role<span class="w"> </span>/shared/roles/security-auditor<span class="w"> </span>review.md
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>aia<span class="w"> </span>--role<span class="w"> </span>~/my-roles/custom-persona<span class="w"> </span>my_prompt
+</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>
+</span><span id="__span-31-10"><a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="c1"># With multiple models (same role for all)</span>
+</span><span id="__span-31-11"><a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>aia<span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;gpt-4,claude&quot;</span><span class="w"> </span>--role<span class="w"> </span>architect<span class="w"> </span>design.md
+</span><span id="__span-31-12"><a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a>
+</span><span id="__span-31-13"><a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="c1"># Per-model roles (inline syntax - see --model)</span>
+</span><span id="__span-31-14"><a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a>aia<span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;gpt-4=architect,claude=security&quot;</span><span class="w"> </span>design.md
 </span></code></pre></div>
+<p><strong>Path resolution</strong>: If <code>ROLE_ID</code> starts with <code>/</code>, <code>~/</code>, <code>./</code>, or <code>../</code>, it is treated as a filesystem path to a role <code>.md</code> file. The <code>.md</code> extension is added automatically when the path has no file extension. Otherwise the ID is resolved relative to the roles directory.</p>
 <p><strong>See also</strong>: <code>--model</code> for inline role syntax, <code>--list-roles</code> for discovering available roles.</p>
 <h3 id="-list-roles"><code>--list-roles</code><a class="headerlink" href="#-list-roles" title="Permanent link">&para;</a></h3>
 <p>List all available roles and exit. Shows role IDs and their descriptions from the roles directory.</p>
