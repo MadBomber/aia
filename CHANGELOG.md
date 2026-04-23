@@ -1,24 +1,54 @@
 # Changelog
-## [1.1.0] - 2026-04-21
+## [1.1.0] - 2026-04-23
 
 ### New Features
 - **Skills system**: Skills are subdirectories under `~/.prompts/skills` (configurable), each containing a `SKILL.md` file with YAML front matter (`name`, `description`, and any custom fields)
   - `/skills [query]` directive lists available skills; supports positive/negative search filtering (`-term`, `~term`, `!term`)
   - `/skill <name>` directive includes the `SKILL.md` content into the conversation; resolves by exact match then prefix match
+  - `/skill <path>` directive accepts path-based IDs (absolute, `~/`, `./`, `../`) including direct `.md` files
   - `--list-skills` CLI flag prints all skills as markdown tables (one `## skill` heading + `| Key | Value |` table per skill, showing all front matter fields)
-  - `--skill`/`-s SKILL_IDS` CLI option prepends one or more skills to the prompt (comma-separated, repeatable)
+  - `--skill`/`-s SKILL_IDS` CLI option prepends one or more skills to the prompt (comma-separated, repeatable); accepts skill IDs or paths
   - `--skills-dir DIR` and `--skills-prefix PREFIX` CLI options configure the skills directory
+- **Path-based skill resolution**: `--skill` and `/skill` now accept file-system paths in addition to named IDs
+  - Absolute paths: `--skill /path/to/skill-dir` or `--skill /path/to/skill.md`
+  - Home-relative: `--skill ~/skills/my-skill`
+  - Working-directory-relative: `--skill ./temp_skill.md`
+  - Direct `.md` files: the file content is used as-is (front matter stripped); no `SKILL.md` lookup needed
+- **Path-based role resolution**: `--role` now accepts file-system paths in addition to role IDs
+  - Absolute and home-relative paths bypass the `~/.prompts/roles/` prefix lookup
+  - Example: `aia --role ~/custom/expert.md my_prompt`
+- **Skills in chat-only mode**: `ChatLoop` now loads and sends configured skills to the AI at session start via `process_skill_context`, even when no pipeline prompt is specified; the AI's acknowledgment is displayed so the user can confirm the skill was applied
+- **`AIA::SkillUtils` module**: New shared utility module (`lib/aia/skill_utils.rb`) consolidating path and skill helpers previously duplicated across four classes
+  - `path_based_id?(id)` — detects `/`, `~/`, `./`, `../` prefixes
+  - `parse_front_matter(path)` — reads and parses YAML front matter from a `.md` file; returns `{}` on any failure
+  - `find_skill_dir(skill_name, base_dir)` — resolves a skill name or path to its directory (or direct `.md` file); enforces symlink/prefix-traversal checks for ID-based lookups
+  - `safe_skill_path(path, dir)` — verifies a resolved path is contained within `dir` using `File::SEPARATOR`-terminated prefix to prevent sibling-directory attacks
+  - `skill_body(content)` — strips YAML front matter from skill file content
+  - Included by `PromptPipeline`, `PromptHandler`, `WebAndFileDirectives`, `CLIParser`, `ConfigValidator`, and `ChatLoop`
 - **`roles` config section**: Top-level `roles.dir` config key (`~/.prompts/roles` default) alongside existing `prompts.roles_prefix`
 - **`parse_search_terms` helper**: New private method on `AIA::Directive` base class available to all directive subclasses; splits argument tokens into `[positive_terms, negative_terms]` arrays (negative prefixes: `-`, `~`, `!`; positive: `+` or bare; all downcased)
 
+### Bug Fixes
+- **Direct `.md` skill files silently ignored**: `--skill ./my-skill.md` previously returned `nil` because `find_skill_dir` only checked `Dir.exist?`. Now checks `File.file?` and returns the path directly; `load_skills` and `/skill` read and strip front matter from the file without requiring a `SKILL.md` sub-file
+- **Path-prefix collision in `safe_skill_path`**: A sibling directory named `skills-attack` could bypass the containment check against `skills` because `start_with?(realpath)` matched the shared prefix. Fixed by appending `File::SEPARATOR` to the base path before the `start_with?` comparison
+- **Path-based role IDs incorrectly prefixed**: `ConfigValidator#process_role_configuration` was unconditionally prepending the roles prefix (e.g., `roles/`) to role IDs, corrupting absolute and relative paths like `/custom/role.md` into `roles//custom/role.md`. Now guards with `AIA::SkillUtils.path_based_id?` before applying the prefix
+
 ### Improvements
 - **`/available_models` filtering** now uses `parse_search_terms` for consistent positive/negative term filtering across local (Ollama, LM Studio) and cloud model listings
+- **Standardized warning output**: Replaced `$stderr.puts` with `warn` throughout `prompt_pipeline.rb` for idiomatic Ruby error reporting
+- **Skills CLI options moved to Prompt Options group**: `--skill`, `--skills-dir`, `--skills-prefix`, `--list-skills` now appear under `--help`'s Prompt Options section alongside `--role` and related options, rather than Model Options
 
 ### Testing
+- Added `test/aia/skill_utils_test.rb` — 24 tests covering all `AIA::SkillUtils` methods including symlink traversal blocking, sibling-prefix collision, direct `.md` file resolution, and nonexistent path handling
 - Added `test/aia/config/cli_parser_skills_test.rb` — 8 tests covering all skills-related CLI options
 - Added `test/aia/config/skills_config_test.rb` — 8 tests covering skills config defaults and overrides
 - Added `test/aia/directive_search_terms_test.rb` — 10 tests covering all `parse_search_terms` token forms
-- Expanded `test/aia/directives/skill_directive_test.rb` and `models_directive_test.rb` with updated coverage
+- Expanded `test/aia/directives/skill_directive_test.rb` with path-based, direct-file, security (path traversal, symlink), and edge-case coverage (36 tests total)
+- Added `test/aia/prompt_pipeline_skills_test.rb` — pipeline-level skill loading tests including absolute paths, direct `.md` files, warning capture via Mocha stubs, and mixed path+ID loading (6 tests)
+- Added `test/aia/session_test.rb` `ChatLoopTest` entries for `process_skill_context` — noop when no skills configured, sends skill content to processor when configured (2 tests)
+- Eliminated `Dir.chdir` side effects from 3 tests (`skill_directive_test.rb`, `prompt_pipeline_skills_test.rb`, `prompt_handler_role_path_test.rb`) that used it to simulate relative-path resolution; replaced with absolute-path construction
+- Updated 2 pipeline warning tests to use Mocha's `.stubs(:warn).with { }` argument-matcher pattern instead of `capture_io` (which cannot intercept `warn` when `$stderr` is reassigned in Ruby 4.0)
+- Full test suite: 925 runs, 0 failures, 0 errors, 0 skips
 
 ## [1.0.0] - 2026-02-22
 

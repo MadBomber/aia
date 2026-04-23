@@ -2,6 +2,7 @@
 
 require 'word_wrapper'
 require_relative '../adapter/gem_activator'
+require_relative '../skill_utils'
 
 # lib/aia/config/validator.rb
 #
@@ -129,14 +130,18 @@ module AIA
         return if role.nil? || role.empty?
 
         roles_prefix = config.prompts.roles_prefix
-        unless roles_prefix.nil? || roles_prefix.empty?
-          unless role.start_with?(roles_prefix)
-            config.prompts.role = "#{roles_prefix}/#{role}"
-            role = config.prompts.role
-          end
+
+        unless AIA::SkillUtils.path_based_id?(role) || roles_prefix.nil? || roles_prefix.empty? || role.start_with?(roles_prefix)
+          config.prompts.role = "#{roles_prefix}/#{role}"
+          role = config.prompts.role
         end
 
-        config.prompts.roles_dir ||= File.join(config.prompts.dir, roles_prefix)
+        config.prompts.roles_dir ||= File.join(config.prompts.dir, roles_prefix.to_s)
+
+        # In chat-only mode (no prompt_id), leave the role configured so ChatLoop
+        # can inject it as initial context. Promoting it to prompt_id would cause
+        # PM to receive the role path as a literal string rather than file content.
+        return if config.flags&.chat == true
 
         if config.prompt_id.nil? || config.prompt_id.empty?
           unless role.nil? || role.empty?
@@ -250,7 +255,7 @@ module AIA
 
         skill_dirs.each do |skill_name|
           skill_md = File.join(skills_dir, skill_name, 'SKILL.md')
-          fm = parse_skill_front_matter(skill_md)
+          fm = AIA::SkillUtils.parse_front_matter(skill_md)
 
           puts "## #{skill_name}"
           puts
@@ -554,20 +559,6 @@ module AIA
         puts "Config successfully dumped to #{file}"
       end
 
-      def parse_skill_front_matter(path)
-        return {} unless File.exist?(path)
-
-        content = File.read(path)
-        return {} unless content.start_with?('---')
-
-        end_marker = content.index("\n---", 3)
-        return {} unless end_marker
-
-        yaml_text = content[3...end_marker]
-        YAML.safe_load(yaml_text) || {}
-      rescue StandardError
-        {}
-      end
     end
   end
 end

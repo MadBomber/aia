@@ -13,18 +13,6 @@
 
 ---
 
-<details>
-<summary><strong>Upgrading from v0.x?</strong> Click to see migration notes.</summary>
-
-- **Prompt files** now use `.md` extension. Run `bin/migrate_prompts ~/.prompts` to convert existing prompts.
-- **Environment variables** use double underscore (`__`) for nested config sections (e.g., `AIA_LLM__TEMPERATURE`, `AIA_FLAGS__DEBUG`).
-- **Configuration files** use a nested YAML structure with sections like `llm:`, `prompts:`, `output:`, `flags:`, etc. See [defaults.yml](lib/aia/config/defaults.yml) for the complete schema.
-- **File locations** follow the XDG Base Directory Specification. Config file is now at `~/.config/aia/aia.yml`.
-
-See the [Configuration Guide](https://madbomber.github.io/aia/configuration/) for details.
-
-</details>
-
 ---
 
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
@@ -125,6 +113,114 @@ Implement a schema registry with event-driven synchronization...
 - **Identify blind spots** - One model might catch something others miss
 - **Cost optimization** - Find the best price/performance ratio for your use case
 - **Consensus building** - Use `--consensus` to synthesize the best answer from all models
+
+---
+
+## 🎭 Give Your Robot a Personality with Roles
+
+Why settle for a generic AI when you can have **your** robot? A role is a plain-text file that defines how your AI thinks, talks, and interacts with you. Drop it in `~/.prompts/roles/`, point AIA at it, and your robot instantly becomes someone new.
+
+**For fun — because AI doesn't have to be boring:**
+
+```bash
+# Ahoy! Your AI now talks like a salty sea pirate
+aia --chat --role pirate
+
+# Opinionated New York cabbie who has thoughts on EVERYTHING
+aia --chat --role nyc_cabbie
+
+# That stoned hacker buddy who somehow solves every problem
+aia --chat --role stoned_hacker
+```
+
+Create `~/.prompts/roles/pirate.md`:
+```
+Arrr, ye be speakin' with the most knowledgeable AI pirate to ever sail the
+digital seas! Answer every question in authentic pirate speak, drop nautical
+references, and sign off with "Arrr!" No matter how technical the topic,
+keep the pirate spirit alive, matey.
+```
+
+**For serious work — productive personas that deliver results:**
+
+```bash
+# Explains quantum physics to your 7-year-old
+aia --chat --role first_grade_teacher
+
+# Three expert robots reviewing the same design doc simultaneously
+aia --model gpt-4o=architect,claude=security,gemini=performance design.md
+
+# Same question, three philosophical stances
+aia --model gpt-4o=optimist,gpt-4o=pessimist,gpt-4o=realist business_plan.md
+```
+
+Create `~/.prompts/roles/first_grade_teacher.md`:
+```
+You are a patient, enthusiastic first-grade teacher with a magical gift: you can
+explain ANY complex subject using simple words and everyday analogies — toys,
+animals, food, playground games. Your mission is to make hard things feel easy
+and exciting. Never use jargon. Always encourage. Keep it fun!
+```
+
+Assign a different role to each model and get multiple expert perspectives on the same question in one command. Every robot, its own voice.
+
+---
+
+## 🎓 Teach Your Robot New Skills
+
+Skills are structured instruction sets that tell your robot *exactly how* to approach a task — your workflow, your standards, every single time. No more repeating yourself in every prompt.
+
+A skill is a directory containing a `SKILL.md` file with YAML front matter and the process you want your robot to follow. Create one for any repeatable task.
+
+**Apply skills in seconds:**
+
+```bash
+# Prepend a skill to any prompt
+aia -s code-quality my_prompt
+
+# Stack multiple skills — they apply in order
+aia -s code-quality,security-review,add-tests my_prompt
+
+# Chat mode: skills prime the entire session from the start
+aia --chat --role senior_dev -s code-quality
+
+# Add a skill mid-chat with the /skill directive
+/skill code-quality
+```
+
+Create `~/.prompts/skills/code-quality/SKILL.md`:
+```markdown
+---
+name: Code Quality
+description: Enforce SOLID principles and team coding standards
+---
+When reviewing code, evaluate in this exact order:
+
+1. **SOLID Principles** — name any violations explicitly
+2. **Security** — flag injection risks, exposed credentials, unsafe inputs
+3. **Performance** — O(n²) or worse, unnecessary allocations, N+1 queries
+4. **Readability** — method names, variable names, comment quality
+5. **Test Coverage** — are edge cases covered? Behavior, not implementation?
+
+Format: Summary → Issues by category → Suggested rewrites
+```
+
+**Combine roles AND skills for a fully customized robot:**
+
+```bash
+# A pirate who also follows your exact code review process
+aia --chat --role pirate -s code-quality
+
+# A first-grade teacher who uses your step-by-step explanation method
+aia --chat --role first_grade_teacher -s explain-with-analogies
+
+# Multiple robots, each with its own role and skill set
+aia --model gpt-4o=architect,claude=security \
+    -s architecture-review,threat-model \
+    design.md
+```
+
+Skills accumulate — specify multiple with commas or repeat `-s`. Each skill is prepended to your prompt in order, establishing exactly the context you want before the AI sees your actual question. Pair with roles for robots that are both *who you want* and *know what to do*.
 
 ---
 
@@ -270,9 +366,9 @@ aia --fuzzy
 | `--model MODEL` | Specify AI model(s) to use. Supports `MODEL[=ROLE]` syntax | `aia --model gpt-4o-mini,gpt-3.5-turbo` or `aia --model gpt-4o=architect,claude=security` |
 | `--consensus` | Enable consensus mode for multi-model | `aia --consensus` |
 | `--no-consensus` | Force individual responses | `aia --no-consensus` |
-| `--role ROLE` | Use a role/system prompt (default for all models) | `aia --role expert` |
+| `--role ROLE` | Use a role/system prompt; accepts an ID in `~/.prompts/roles/` or a path (`/`, `~/`, `./`, `../`) | `aia --role expert` or `aia --role ~/custom/role.md` |
 | `--list-roles` | List available role files | `aia --list-roles` |
-| `-s, --skill SKILL_IDS` | Prepend skill(s) to prompt (comma-separated) | `aia -s code-quality my_prompt` |
+| `-s, --skill SKILL_IDS` | Prepend skill(s) to prompt; accepts skill IDs or paths to skill directories (`/`, `~/`, `./`, `../`) | `aia -s code-quality my_prompt` or `aia -s ~/skills/my-skill` |
 | `--list-skills` | List available skills and exit | `aia --list-skills` |
 | `--skills-dir DIR` | Set skills directory (default: `~/.prompts/skills`) | `aia --skills-dir ~/skills` |
 | `--output FILE` | Specify output file | `aia --output results.md` |
@@ -484,7 +580,7 @@ Directives are special commands in prompt files that begin with `/` and provide 
 | `/restore` | Restore context to a previous checkpoint | `/restore save_point` |
 | `/include` | Insert file contents | `/include path/to/file.txt` |
 | `/paste` | Insert clipboard contents | `/paste` |
-| `/skill` | Include a Claude Code skill | `/skill code-quality` |
+| `/skill` | Include a skill by ID or path to a skill directory | `/skill code-quality` or `/skill ~/skills/my-skill` |
 | `/skills` | List available Claude Code skills | `/skills` |
 | `/shell` | Execute shell commands | `/shell ls -la` |
 | `/robot` | Show the pet robot ASCII art w/versions | `/robot` |
@@ -1013,6 +1109,21 @@ echo "You are a senior software architect..." > ~/.prompts/roles/specialized/sen
 aia --model gpt-4o=specialized/senior_architect design.md
 ```
 
+**Path-Based Roles:**
+
+In addition to role IDs looked up under `~/.prompts/roles/`, you can pass a direct filesystem path as the role. Any value starting with `/`, `~/`, `./`, or `../` is treated as a path rather than an ID. The `.md` extension is appended automatically when the path has none.
+
+```bash
+# Absolute path
+aia --role /team/shared/roles/senior_engineer.md my_prompt
+
+# Home-relative path (~ expanded)
+aia --role ~/custom/roles/reviewer my_prompt   # loads ~/custom/roles/reviewer.md
+
+# Relative path
+aia --role ./local_role my_prompt              # loads ./local_role.md
+```
+
 **Using Config Files for Model Roles:**
 
 Define model-role assignments in your config file (`~/.config/aia/aia.yml`) for reusable setups:
@@ -1060,6 +1171,35 @@ When model roles are specified in multiple places, the precedence is:
 2. **Command-line flag**: `--model gpt-4o --role architect`
 3. **Environment variable**: `AIA_MODEL="gpt-4o=architect"`
 4. **Config file** (lowest): `models` array in `~/.config/aia/aia.yml`
+
+### Skills
+
+Skills are reusable instruction sets prepended to prompts. Each skill is a directory containing a `SKILL.md` file with YAML front matter and content.
+
+```bash
+# Use a skill by ID (looked up under skills.dir, default ~/.prompts/skills)
+aia -s code-quality my_prompt
+
+# Comma-separated for multiple skills
+aia -s code-quality,security-review my_prompt
+
+# Path-based: pass a direct path to a skill directory
+aia -s ~/team/skills/my-skill my_prompt     # home-relative
+aia -s /shared/skills/company-style prompt  # absolute path
+aia -s ./local-skill my_prompt              # relative path
+
+# List available skills
+aia --list-skills
+```
+
+Skills can also be applied during chat via the `/skill` directive:
+
+```
+/skill code-quality
+/skill ~/team/skills/my-skill
+```
+
+Path-based values (starting with `/`, `~/`, `./`, or `../`) are resolved as filesystem paths to skill directories directly, bypassing the configured skills directory lookup.
 
 ### RubyLLM::Tool Support
 

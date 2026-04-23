@@ -250,9 +250,14 @@ User prompt   (what to do)
 Only the body of each `SKILL.md` is injected — the YAML front matter is stripped.
 
 ```bash
-# Single skill
+# Single skill (ID-based — resolved from skills directory)
 aia --skill code-review my_prompt
 aia -s summarizer my_prompt
+
+# Path-based skill (relative, home-relative, or absolute path to a skill directory)
+aia --skill ./local-skills/code-review my_prompt
+aia --skill /shared/team-skills/security-audit my_prompt
+aia --skill ~/my-skills/custom-skill my_prompt
 
 # Combine with a role: role sets persona, skill sets method
 aia --role ruby_expert --skill code-review review_prompt my_code.rb
@@ -263,6 +268,8 @@ aia --skill "code-review,security-audit" my_prompt
 # Repeatable form
 aia -s code-review -s security-audit my_prompt
 ```
+
+**Path resolution**: If a skill ID starts with `/`, `~/`, `./`, or `../`, it is treated as a filesystem path to a skill directory (which must contain `SKILL.md`). Otherwise it is looked up by ID in the skills directory.
 
 **See also**: `--list-skills` to discover available skills, `/skill` chat directive, `--role` for personality
 
@@ -418,9 +425,14 @@ Role ID to prepend to the prompt. This applies the same role to all models.
 For per-model role assignment, use the inline `MODEL=ROLE` syntax with `--model` instead.
 
 ```bash
-# Apply role to all models
+# Apply role by ID (resolved from roles directory)
 aia --role expert my_prompt
 aia -r teacher explain_concept
+
+# Path-based role (relative or absolute path to a .md file)
+aia --role ./local-roles/domain-expert my_prompt
+aia --role /shared/roles/security-auditor review.md
+aia --role ~/my-roles/custom-persona my_prompt
 
 # With multiple models (same role for all)
 aia --model "gpt-4,claude" --role architect design.md
@@ -428,6 +440,8 @@ aia --model "gpt-4,claude" --role architect design.md
 # Per-model roles (inline syntax - see --model)
 aia --model "gpt-4=architect,claude=security" design.md
 ```
+
+**Path resolution**: If `ROLE_ID` starts with `/`, `~/`, `./`, or `../`, it is treated as a filesystem path to a role `.md` file. The `.md` extension is added automatically when the path has no file extension. Otherwise the ID is resolved relative to the roles directory.
 
 **See also**: `--model` for inline role syntax, `--list-roles` for discovering available roles.
 

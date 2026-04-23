@@ -102,6 +102,51 @@ class SkillDirectiveTest < Minitest::Test
     assert @stderr_messages.any? { |m| m.include?("has no SKILL.md") }
   end
 
+  def test_skill_absolute_path_resolves_skill_md
+    skill_dir = Dir.mktmpdir('aia_path_skill')
+    File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Path Skill\ndescription: From path.\n---\n# Path Body")
+
+    result = @instance.skill([skill_dir])
+    assert_equal "---\nname: Path Skill\ndescription: From path.\n---\n# Path Body", result
+  ensure
+    FileUtils.rm_rf(skill_dir) if skill_dir
+  end
+
+  def test_skill_direct_md_file_path_returns_content
+    Dir.mktmpdir('aia_direct_md_skill') do |dir|
+      file = File.join(dir, 'my-skill.md')
+      File.write(file, "---\nname: Direct MD\ndescription: Direct file.\n---\n# Direct Body")
+      result = @instance.skill([file])
+      assert_equal "---\nname: Direct MD\ndescription: Direct file.\n---\n# Direct Body", result
+    end
+  end
+
+  def test_skill_path_directory_missing_returns_nil
+    result = @instance.skill(['/nonexistent/absolute/path/my-skill'])
+    assert_nil result
+    assert @stderr_messages.any? { |m| m.include?("No skill directory found at") }
+  end
+
+  def test_skill_path_directory_without_skill_md_returns_nil
+    dir = Dir.mktmpdir('aia_no_skill_md')
+    result = @instance.skill([dir])
+    assert_nil result
+    assert @stderr_messages.any? { |m| m.include?("has no SKILL.md") }
+  ensure
+    FileUtils.rm_rf(dir) if dir
+  end
+
+  def test_skill_absolute_path_to_skill_dir_returns_content
+    Dir.mktmpdir('aia_abs_skill') do |base|
+      skill_dir = File.join(base, 'my-skill')
+      FileUtils.mkdir_p(skill_dir)
+      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Absolute Skill\n---\n# Absolute Body")
+
+      result = @instance.skill([skill_dir])
+      assert_equal "---\nname: Absolute Skill\n---\n# Absolute Body", result
+    end
+  end
+
   # --- /skills tests ---
 
   def test_skills_lists_subdirectories
@@ -214,9 +259,9 @@ class SkillDirectiveTest < Minitest::Test
   # --- Security tests for safe_skill_path / path traversal ---
 
   def test_skill_path_traversal_blocked
-    result = @instance.skill(['../../etc'])
+    result = @instance.skill(['../../nonexistent_aia_path_traversal_xyz_test'])
     assert_nil result
-    assert @stderr_messages.any? { |m| m.include?("No skill matching") }
+    assert @stderr_messages.any? { |m| m.include?("No skill directory found at") }
   end
 
   def test_skill_symlink_outside_skills_dir_blocked
@@ -229,6 +274,7 @@ class SkillDirectiveTest < Minitest::Test
     result = @instance.skill(['evil-link'])
     assert_nil result
   ensure
+    FileUtils.rm_f(symlink_path)
     FileUtils.rm_rf(external_dir)
   end
 

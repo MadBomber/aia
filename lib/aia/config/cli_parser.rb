@@ -6,7 +6,9 @@
 # for the Config class.
 
 require 'optparse'
+require 'yaml'
 require_relative 'model_spec'
+require_relative '../skill_utils'
 
 module AIA
   module CLIParser
@@ -93,23 +95,6 @@ module AIA
           exit 0
         end
 
-        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
-          options[:skills_dir] = dir
-        end
-
-        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
-          options[:skills_prefix] = prefix
-        end
-
-        opts.on("-s", "--skill SKILL_IDS", "Prepend skill(s) to prompt (comma-separated IDs)") do |ids|
-          options[:skills] ||= []
-          options[:skills] += ids.split(',').map(&:strip)
-        end
-
-        opts.on("--list-skills", "List available skills and exit") do
-          options[:list_skills] = true
-        end
-
         opts.on("--sm", "--speech-model MODEL", "Set speech model") do |model|
           options[:speech_model] = model
         end
@@ -182,6 +167,23 @@ module AIA
         opts.on('--regex PATTERN', '[DEPRECATED] Parameter regex (PM v1.0.0 uses ERB parameters)') do |pattern|
           warn "Warning: --regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
           options[:parameter_regex] = pattern
+        end
+
+        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
+          options[:skills_dir] = dir
+        end
+
+        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
+          options[:skills_prefix] = prefix
+        end
+
+        opts.on("-s", "--skill SKILL_IDS", "Prepend skill(s) to prompt (comma-separated IDs or paths)") do |ids|
+          options[:skills] ||= []
+          options[:skills] += ids.split(',').map(&:strip)
+        end
+
+        opts.on("--list-skills", "List available skills and exit") do
+          options[:list_skills] = true
         end
       end
 
@@ -427,6 +429,13 @@ module AIA
       end
 
       def validate_role_exists(role_id)
+        if AIA::SkillUtils.path_based_id?(role_id)
+          expanded = File.expand_path(role_id)
+          expanded += '.md' if File.extname(expanded).empty?
+          raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
+          return
+        end
+
         prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
 
@@ -459,19 +468,30 @@ module AIA
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
         roles_dir = File.join(prompts_dir, roles_prefix)
 
-        if Dir.exist?(roles_dir)
-          roles = list_available_role_names(prompts_dir, roles_prefix)
-
-          if roles.empty?
-            puts "No role files found in #{roles_dir}"
-            puts "Create .md files in this directory to define roles."
-          else
-            puts "Available roles in #{roles_dir}:"
-            roles.each { |role| puts "  - #{role}" }
-          end
-        else
+        unless Dir.exist?(roles_dir)
           puts "No roles directory found at #{roles_dir}"
           puts "Create this directory and add role files to use roles."
+          return
+        end
+
+        roles = list_available_role_names(prompts_dir, roles_prefix)
+
+        if roles.empty?
+          puts "No role files found in #{roles_dir}"
+          puts "Create .md files in this directory to define roles."
+          return
+        end
+
+        roles.each do |role_id|
+          role_file = File.join(roles_dir, "#{role_id}.md")
+          fm = AIA::SkillUtils.parse_front_matter(role_file)
+
+          puts "## #{role_id}"
+          puts
+          puts "| Key | Value |"
+          puts "|-----|-------|"
+          fm.each { |key, value| puts "| #{key} | #{value} |" }
+          puts
         end
       end
 
@@ -481,6 +501,7 @@ module AIA
 
         Dir.glob("**/*.md", base: roles_dir)
           .map { |f| f.chomp('.md') }
+          .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
           .sort
       end
 

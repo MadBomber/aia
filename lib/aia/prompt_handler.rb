@@ -6,6 +6,14 @@ require 'erb'
 
 module AIA
   class PromptHandler
+    include AIA::SkillUtils
+
+    # Struct for path-based role content (bypasses PM parsing)
+    RoleContent = Struct.new(:content) do
+      def to_s; content; end
+      def metadata; nil; end
+    end
+
     # Root-level YAML keys that are shorthands for deeper config paths
     SHORTHAND_KEYS = %w[model temperature top_p next pipeline shell erb].freeze
 
@@ -58,6 +66,7 @@ module AIA
 
     def fetch_role(role_id)
       return handle_missing_role("roles/") if role_id.nil?
+      return fetch_role_from_path(role_id) if path_based_id?(role_id)
 
       unless role_id.start_with?(AIA.config.prompts.roles_prefix)
         role_id = "#{AIA.config.prompts.roles_prefix}/#{role_id}"
@@ -66,7 +75,9 @@ module AIA
       role_file_path = File.join(@prompts_dir, "#{role_id}#{AIA.config.prompts.extname}")
 
       parsed = if File.exist?(role_file_path)
-                 PM.parse(role_id)
+                 # PM.parse(role_id) cannot resolve subdirectory IDs like "roles/jersey_mike"
+                 # and returns the ID string as content.  Parse from raw file content instead.
+                 PM.parse_string(File.read(role_file_path))
                else
                  warn "Warning: Invalid role ID or file not found: #{role_id}"
                  logger.warn("Invalid role ID or file not found: #{role_id}")
@@ -293,6 +304,20 @@ module AIA
         warn "Error: Could not find prompt with ID: #{prompt_id}"
         exit 1
       end
+    end
+
+
+    def fetch_role_from_path(role_id)
+      expanded = File.expand_path(role_id)
+      expanded += '.md' if File.extname(expanded).empty?
+
+      unless File.exist?(expanded)
+        $stderr.puts "Warning: Role file not found at path: #{expanded}"
+        logger.warn("Role file not found at path: #{expanded}")
+        return handle_missing_role(role_id)
+      end
+
+      RoleContent.new(File.read(expanded))
     end
 
 

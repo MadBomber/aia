@@ -6,6 +6,8 @@ require "pm"
 
 module AIA
   class ChatLoop
+    include AIA::SkillUtils
+
     def initialize(chat_processor, ui_presenter, directive_processor)
       @chat_processor     = chat_processor
       @ui_presenter       = ui_presenter
@@ -15,6 +17,8 @@ module AIA
     # Start the interactive chat session
     def start(skip_context_files: false)
       setup_session
+      process_role_context
+      process_skill_context
       process_initial_context(skip_context_files)
       handle_piped_input
       run_loop
@@ -37,6 +41,56 @@ module AIA
 
     def setup_signals
       Signal.trap("INT") { exit }
+    end
+
+    def process_role_context
+      role = AIA.config.prompts.role
+      return if role.nil? || role.empty?
+
+      prompt_handler = AIA::PromptHandler.new
+      role_parsed = prompt_handler.fetch_role(role)
+      return if role_parsed.nil?
+
+      role_content = role_parsed.to_s
+      return if role_content.nil? || role_content.strip.empty?
+
+      return unless AIA.client.respond_to?(:chats)
+
+      system_msg = RubyLLM::Message.new(role: :system, content: role_content)
+
+      AIA.client.chats.each_value do |chat|
+        next if chat.messages.any? { |m| m.role == :system }
+        chat.add_message(system_msg)
+      end
+    end
+
+    def process_skill_context
+      skills = AIA.config.prompts.skills
+      return if skills.nil? || skills.empty?
+
+      skills_dir = AIA.config.skills.dir
+      bodies = Array(skills).filter_map do |skill_name|
+        skill_name = skill_name.to_s.strip
+        next if skill_name.empty?
+
+        skill_path = find_skill_dir(skill_name, skills_dir)
+        next unless skill_path
+
+        if File.file?(skill_path)
+          skill_body(File.read(skill_path))
+        else
+          md = File.join(skill_path, 'SKILL.md')
+          skill_body(File.read(md)) if File.exist?(md)
+        end
+      end
+
+      return if bodies.empty?
+
+      skill_content = bodies.join("\n\n")
+      response_data = @chat_processor.process_prompt(skill_content)
+      content = response_data.is_a?(Hash) ? response_data[:content] : response_data
+      @chat_processor.output_response(content)
+      @ui_presenter.display_separator
     end
 
     def process_initial_context(skip_context_files)

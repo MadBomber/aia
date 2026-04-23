@@ -309,6 +309,7 @@ class ValidatorRoleConfigurationTest < Minitest::Test
         roles_dir: nil,
         dir: '/tmp/prompts'
       ),
+      flags: OpenStruct.new(chat: false),
       prompt_id: nil,
       pipeline: []
     )
@@ -319,6 +320,25 @@ class ValidatorRoleConfigurationTest < Minitest::Test
     assert_includes config.pipeline, 'roles/architect'
   end
 
+  def test_role_not_promoted_to_prompt_id_in_chat_mode
+    config = OpenStruct.new(
+      prompts: OpenStruct.new(
+        role: 'jersey_mike',
+        roles_prefix: 'roles',
+        roles_dir: nil,
+        dir: '/tmp/prompts'
+      ),
+      flags: OpenStruct.new(chat: true),
+      prompt_id: nil,
+      pipeline: []
+    )
+
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+    assert_nil config.prompt_id
+    assert_equal 'roles/jersey_mike', config.prompts.role
+    assert_empty config.pipeline
+  end
+
   def test_sets_roles_dir
     config = OpenStruct.new(
       prompts: OpenStruct.new(
@@ -327,12 +347,49 @@ class ValidatorRoleConfigurationTest < Minitest::Test
         roles_dir: nil,
         dir: '/tmp/prompts'
       ),
+      flags: OpenStruct.new(chat: false),
       prompt_id: 'existing',
       pipeline: []
     )
 
     AIA::ConfigValidator.send(:process_role_configuration, config)
     assert_equal '/tmp/prompts/roles', config.prompts.roles_dir
+  end
+
+  def test_process_role_configuration_does_not_mangle_absolute_path_role
+    config = OpenStruct.new(
+      prompts: OpenStruct.new(
+        role: '/tmp/my-expert-role.md',
+        roles_prefix: 'roles',
+        dir: '/tmp/prompts',
+        roles_dir: nil
+      ),
+      flags: OpenStruct.new(chat: false),
+      prompt_id: 'some-prompt',
+      pipeline: []
+    )
+
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+
+    assert_equal '/tmp/my-expert-role.md', config.prompts.role
+  end
+
+  def test_process_role_configuration_does_not_mangle_tilde_path_role
+    config = OpenStruct.new(
+      prompts: OpenStruct.new(
+        role: '~/prompts/my-role',
+        roles_prefix: 'roles',
+        dir: '/tmp/prompts',
+        roles_dir: nil
+      ),
+      flags: OpenStruct.new(chat: false),
+      prompt_id: 'some-prompt',
+      pipeline: []
+    )
+
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+
+    assert_equal '~/prompts/my-role', config.prompts.role
   end
 end
 

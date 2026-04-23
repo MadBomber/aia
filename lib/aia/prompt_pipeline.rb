@@ -5,6 +5,8 @@ require "pm"
 
 module AIA
   class PromptPipeline
+    include AIA::SkillUtils
+
     def initialize(prompt_handler, chat_processor, ui_presenter, input_collector)
       @prompt_handler  = prompt_handler
       @chat_processor  = chat_processor
@@ -95,22 +97,33 @@ module AIA
 
     # Load skill bodies for the given skill IDs in order.
     # Each skill lives at skills_dir/<name>/SKILL.md; supports prefix matching.
+    # Path-based IDs (starting with /, ~/, ./, ../) are resolved as direct paths.
     # Returns only the body content (front matter stripped).
     def load_skills(skill_ids)
       return [] if skill_ids.nil? || skill_ids.empty?
 
       skills_dir = AIA.config.skills.dir
-      return [] unless Dir.exist?(skills_dir)
 
       Array(skill_ids).filter_map do |skill_name|
         skill_name = skill_name.to_s.strip
         next if skill_name.empty?
 
-        skill_dir = find_skill_dir(skill_name, skills_dir)
-        unless skill_dir
+        unless path_based_id?(skill_name) || Dir.exist?(skills_dir)
           warn "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
           next
         end
+
+        skill_dir = find_skill_dir(skill_name, skills_dir)
+        unless skill_dir
+          if path_based_id?(skill_name)
+            warn "Warning: No skill directory found at '#{File.expand_path(skill_name)}'"
+          else
+            warn "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
+          end
+          next
+        end
+
+        next skill_body(File.read(skill_dir)) if File.file?(skill_dir)
 
         skill_path = File.join(skill_dir, 'SKILL.md')
         unless File.exist?(skill_path)
@@ -120,28 +133,6 @@ module AIA
 
         skill_body(File.read(skill_path))
       end
-    end
-
-    def find_skill_dir(skill_name, base_dir)
-      exact = File.join(base_dir, skill_name)
-      return exact if Dir.exist?(exact)
-
-      Dir.children(base_dir).sort.each do |entry|
-        next unless entry.start_with?(skill_name)
-        candidate = File.join(base_dir, entry)
-        return candidate if Dir.exist?(candidate)
-      end
-
-      nil
-    rescue Errno::ENOENT
-      nil
-    end
-
-    def skill_body(content)
-      return content unless content.start_with?('---')
-      end_marker = content.index("\n---", 3)
-      return content unless end_marker
-      content[(end_marker + 4)..].lstrip
     end
 
     # Add context files to prompt text

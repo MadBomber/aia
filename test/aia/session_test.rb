@@ -273,6 +273,35 @@ class ChatLoopTest < Minitest::Test
     super
   end
 
+  def test_process_skill_context_sends_skill_content_when_skills_configured
+    Dir.mktmpdir do |dir|
+      skill_file = File.join(dir, 'my-skill.md')
+      File.write(skill_file, "---\nname: Test Skill\n---\nSkill body content")
+
+      skills_cfg = OpenStruct.new(dir: dir)
+      config = OpenStruct.new(
+        prompts: OpenStruct.new(skills: [skill_file]),
+        skills: skills_cfg
+      )
+      AIA.stubs(:config).returns(config)
+
+      @chat_processor.expects(:process_prompt).with("Skill body content").returns("acknowledged")
+      @chat_processor.expects(:output_response).with("acknowledged")
+      @ui_presenter.expects(:display_separator)
+
+      @chat_loop.send(:process_skill_context)
+    end
+  end
+
+  def test_process_skill_context_noop_when_no_skills_configured
+    config = OpenStruct.new(prompts: OpenStruct.new(skills: []))
+    AIA.stubs(:config).returns(config)
+
+    @chat_processor.expects(:process_prompt).never
+
+    @chat_loop.send(:process_skill_context)
+  end
+
   def test_handle_successful_directive_returns_formatted_string
     follow_up_prompt = '/test command'
     directive_output = 'command output'
