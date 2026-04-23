@@ -62,6 +62,16 @@ class PromptPipelineSkillsTest < Minitest::Test
     FileUtils.rm_rf(dir) if dir
   end
 
+  def test_load_skills_with_direct_md_file_path
+    Dir.mktmpdir('aia_direct_md') do |dir|
+      file = File.join(dir, 'my-skill.md')
+      File.write(file, "---\nname: Direct MD Skill\n---\n# Direct MD Body")
+      result = @pipeline.send(:load_skills, [file])
+      assert_equal 1, result.length
+      assert_equal '# Direct MD Body', result.first
+    end
+  end
+
   def test_load_skills_mixed_path_and_id
     # ID-based skill in configured dir
     id_skill_dir = File.join(@skills_dir, 'id-based-skill')

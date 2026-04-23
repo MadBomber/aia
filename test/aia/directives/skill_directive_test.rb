@@ -112,6 +112,15 @@ class SkillDirectiveTest < Minitest::Test
     FileUtils.rm_rf(skill_dir) if skill_dir
   end
 
+  def test_skill_direct_md_file_path_returns_content
+    Dir.mktmpdir('aia_direct_md_skill') do |dir|
+      file = File.join(dir, 'my-skill.md')
+      File.write(file, "---\nname: Direct MD\ndescription: Direct file.\n---\n# Direct Body")
+      result = @instance.skill([file])
+      assert_equal "---\nname: Direct MD\ndescription: Direct file.\n---\n# Direct Body", result
+    end
+  end
+
   def test_skill_path_directory_missing_returns_nil
     result = @instance.skill(['/nonexistent/absolute/path/my-skill'])
     assert_nil result

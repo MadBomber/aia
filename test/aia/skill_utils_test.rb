@@ -108,6 +108,19 @@ class SkillUtilsTest < Minitest::Test
     assert_nil AIA::SkillUtils.find_skill_dir('/nonexistent/skill-path', '/base')
   end
 
+  def test_resolves_direct_md_file_path
+    Dir.mktmpdir do |dir|
+      file = File.join(dir, 'my-skill.md')
+      File.write(file, "# My Skill")
+      result = AIA::SkillUtils.find_skill_dir(file, '/some/base')
+      assert_equal file, result
+    end
+  end
+
+  def test_returns_nil_for_nonexistent_file_path
+    assert_nil AIA::SkillUtils.find_skill_dir('/nonexistent/skill.md', '/base')
+  end
+
   def test_blocks_symlink_traversal_outside_base
     outer = Dir.mktmpdir('outer_target')
     Dir.mktmpdir do |base|

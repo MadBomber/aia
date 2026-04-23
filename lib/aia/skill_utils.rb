@@ -26,6 +26,7 @@ module AIA
       if path_based_id?(skill_name)
         expanded = File.expand_path(skill_name)
         return expanded if Dir.exist?(expanded)
+        return expanded if File.file?(expanded)
         return nil
       end
 
@@ -41,6 +42,13 @@ module AIA
       nil
     rescue Errno::ENOENT
       nil
+    end
+
+    def skill_body(content)
+      return content unless content.start_with?('---')
+      end_marker = content.index("\n---", 3)
+      return content unless end_marker
+      content[(end_marker + 4)..].lstrip
     end
 
     def safe_skill_path(path, dir)

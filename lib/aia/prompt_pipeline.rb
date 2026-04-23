@@ -123,6 +123,8 @@ module AIA
           next
         end
 
+        next skill_body(File.read(skill_dir)) if File.file?(skill_dir)
+
         skill_path = File.join(skill_dir, 'SKILL.md')
         unless File.exist?(skill_path)
           $stderr.puts "Warning: Skill '#{skill_name}' has no SKILL.md in #{skill_dir}"

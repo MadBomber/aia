@@ -115,6 +115,8 @@ module AIA
         return nil
       end
 
+      return File.read(skill_dir) if File.file?(skill_dir)
+
       skill_path = File.join(skill_dir, 'SKILL.md')
       unless File.exist?(skill_path)
         warn "Error: Skill directory '#{File.basename(skill_dir)}' has no SKILL.md. Use /skills to list available skills."
