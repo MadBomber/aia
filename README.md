@@ -13,18 +13,6 @@
 
 ---
 
-<details>
-<summary><strong>Upgrading from v0.x?</strong> Click to see migration notes.</summary>
-
-- **Prompt files** now use `.md` extension. Run `bin/migrate_prompts ~/.prompts` to convert existing prompts.
-- **Environment variables** use double underscore (`__`) for nested config sections (e.g., `AIA_LLM__TEMPERATURE`, `AIA_FLAGS__DEBUG`).
-- **Configuration files** use a nested YAML structure with sections like `llm:`, `prompts:`, `output:`, `flags:`, etc. See [defaults.yml](lib/aia/config/defaults.yml) for the complete schema.
-- **File locations** follow the XDG Base Directory Specification. Config file is now at `~/.config/aia/aia.yml`.
-
-See the [Configuration Guide](https://madbomber.github.io/aia/configuration/) for details.
-
-</details>
-
 ---
 
 AIA is a command-line utility that facilitates interaction with AI models through dynamic prompt management. It automates the management of pre-compositional prompts and executes generative AI commands with enhanced features including embedded directives, shell integration, embedded Ruby, history management, interactive chat, and prompt workflows.
@@ -125,6 +113,114 @@ Implement a schema registry with event-driven synchronization...
 - **Identify blind spots** - One model might catch something others miss
 - **Cost optimization** - Find the best price/performance ratio for your use case
 - **Consensus building** - Use `--consensus` to synthesize the best answer from all models
+
+---
+
+## 🎭 Give Your Robot a Personality with Roles
+
+Why settle for a generic AI when you can have **your** robot? A role is a plain-text file that defines how your AI thinks, talks, and interacts with you. Drop it in `~/.prompts/roles/`, point AIA at it, and your robot instantly becomes someone new.
+
+**For fun — because AI doesn't have to be boring:**
+
+```bash
+# Ahoy! Your AI now talks like a salty sea pirate
+aia --chat --role pirate
+
+# Opinionated New York cabbie who has thoughts on EVERYTHING
+aia --chat --role nyc_cabbie
+
+# That stoned hacker buddy who somehow solves every problem
+aia --chat --role stoned_hacker
+```
+
+Create `~/.prompts/roles/pirate.md`:
+```
+Arrr, ye be speakin' with the most knowledgeable AI pirate to ever sail the
+digital seas! Answer every question in authentic pirate speak, drop nautical
+references, and sign off with "Arrr!" No matter how technical the topic,
+keep the pirate spirit alive, matey.
+```
+
+**For serious work — productive personas that deliver results:**
+
+```bash
+# Explains quantum physics to your 7-year-old
+aia --chat --role first_grade_teacher
+
+# Three expert robots reviewing the same design doc simultaneously
+aia --model gpt-4o=architect,claude=security,gemini=performance design.md
+
+# Same question, three philosophical stances
+aia --model gpt-4o=optimist,gpt-4o=pessimist,gpt-4o=realist business_plan.md
+```
+
+Create `~/.prompts/roles/first_grade_teacher.md`:
+```
+You are a patient, enthusiastic first-grade teacher with a magical gift: you can
+explain ANY complex subject using simple words and everyday analogies — toys,
+animals, food, playground games. Your mission is to make hard things feel easy
+and exciting. Never use jargon. Always encourage. Keep it fun!
+```
+
+Assign a different role to each model and get multiple expert perspectives on the same question in one command. Every robot, its own voice.
+
+---
+
+## 🎓 Teach Your Robot New Skills
+
+Skills are structured instruction sets that tell your robot *exactly how* to approach a task — your workflow, your standards, every single time. No more repeating yourself in every prompt.
+
+A skill is a directory containing a `SKILL.md` file with YAML front matter and the process you want your robot to follow. Create one for any repeatable task.
+
+**Apply skills in seconds:**
+
+```bash
+# Prepend a skill to any prompt
+aia -s code-quality my_prompt
+
+# Stack multiple skills — they apply in order
+aia -s code-quality,security-review,add-tests my_prompt
+
+# Chat mode: skills prime the entire session from the start
+aia --chat --role senior_dev -s code-quality
+
+# Add a skill mid-chat with the /skill directive
+/skill code-quality
+```
+
+Create `~/.prompts/skills/code-quality/SKILL.md`:
+```markdown
+---
+name: Code Quality
+description: Enforce SOLID principles and team coding standards
+---
+When reviewing code, evaluate in this exact order:
+
+1. **SOLID Principles** — name any violations explicitly
+2. **Security** — flag injection risks, exposed credentials, unsafe inputs
+3. **Performance** — O(n²) or worse, unnecessary allocations, N+1 queries
+4. **Readability** — method names, variable names, comment quality
+5. **Test Coverage** — are edge cases covered? Behavior, not implementation?
+
+Format: Summary → Issues by category → Suggested rewrites
+```
+
+**Combine roles AND skills for a fully customized robot:**
+
+```bash
+# A pirate who also follows your exact code review process
+aia --chat --role pirate -s code-quality
+
+# A first-grade teacher who uses your step-by-step explanation method
+aia --chat --role first_grade_teacher -s explain-with-analogies
+
+# Multiple robots, each with its own role and skill set
+aia --model gpt-4o=architect,claude=security \
+    -s architecture-review,threat-model \
+    design.md
+```
+
+Skills accumulate — specify multiple with commas or repeat `-s`. Each skill is prepended to your prompt in order, establishing exactly the context you want before the AI sees your actual question. Pair with roles for robots that are both *who you want* and *know what to do*.
 
 ---
 
