@@ -138,6 +138,11 @@ module AIA
 
         config.prompts.roles_dir ||= File.join(config.prompts.dir, roles_prefix)
 
+        # In chat-only mode (no prompt_id), leave the role configured so ChatLoop
+        # can inject it as initial context. Promoting it to prompt_id would cause
+        # PM to receive the role path as a literal string rather than file content.
+        return if config.flags&.chat == true
+
         if config.prompt_id.nil? || config.prompt_id.empty?
           unless role.nil? || role.empty?
             config.prompt_id = role

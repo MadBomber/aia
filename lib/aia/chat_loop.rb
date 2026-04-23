@@ -15,6 +15,7 @@ module AIA
     # Start the interactive chat session
     def start(skip_context_files: false)
       setup_session
+      process_role_context
       process_initial_context(skip_context_files)
       handle_piped_input
       run_loop
@@ -37,6 +38,27 @@ module AIA
 
     def setup_signals
       Signal.trap("INT") { exit }
+    end
+
+    def process_role_context
+      role = AIA.config.prompts.role
+      return if role.nil? || role.empty?
+
+      prompt_handler = AIA::PromptHandler.new
+      role_parsed = prompt_handler.fetch_role(role)
+      return if role_parsed.nil?
+
+      role_content = role_parsed.to_s
+      return if role_content.nil? || role_content.strip.empty?
+
+      return unless AIA.client.respond_to?(:chats)
+
+      system_msg = RubyLLM::Message.new(role: :system, content: role_content)
+
+      AIA.client.chats.each_value do |chat|
+        next if chat.messages.any? { |m| m.role == :system }
+        chat.add_message(system_msg)
+      end
     end
 
     def process_initial_context(skip_context_files)

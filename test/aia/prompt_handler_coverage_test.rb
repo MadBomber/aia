@@ -120,23 +120,15 @@ class PromptHandlerFetchRoleTest < Minitest::Test
   def test_fetch_role_prepends_prefix
     File.write(File.join(@roles_dir, 'architect.md'), '# Architect Role')
 
-    mock_parsed = mock('parsed')
-    mock_parsed.stubs(:metadata).returns(nil)
-    PM.stubs(:parse).with('roles/architect').returns(mock_parsed)
-
     result = @handler.fetch_role('architect')
-    assert_equal mock_parsed, result
+    assert_includes result.to_s, '# Architect Role'
   end
 
   def test_fetch_role_already_prefixed
     File.write(File.join(@roles_dir, 'architect.md'), '# Architect Role')
 
-    mock_parsed = mock('parsed')
-    mock_parsed.stubs(:metadata).returns(nil)
-    PM.stubs(:parse).with('roles/architect').returns(mock_parsed)
-
     result = @handler.fetch_role('roles/architect')
-    assert_equal mock_parsed, result
+    assert_includes result.to_s, '# Architect Role'
   end
 
   def test_fetch_role_missing_without_fuzzy
@@ -184,25 +176,15 @@ class PromptHandlerLoadRoleForModelTest < Minitest::Test
   def test_load_role_from_model_spec_hash
     File.write(File.join(@roles_dir, 'coder.md'), '# Coder Role')
 
-    mock_parsed = mock('parsed')
-    mock_parsed.stubs(:metadata).returns(nil)
-    mock_parsed.stubs(:to_s).returns('Coder Role Content')
-    PM.stubs(:parse).with('roles/coder').returns(mock_parsed)
-
     result = @handler.load_role_for_model({ role: 'coder' })
-    assert_equal 'Coder Role Content', result
+    assert_includes result, '# Coder Role'
   end
 
   def test_load_role_with_default_role
-    File.write(File.join(@roles_dir, 'default.md'), '# Default')
-
-    mock_parsed = mock('parsed')
-    mock_parsed.stubs(:metadata).returns(nil)
-    mock_parsed.stubs(:to_s).returns('Default Role')
-    PM.stubs(:parse).with('roles/default').returns(mock_parsed)
+    File.write(File.join(@roles_dir, 'default.md'), '# Default Role')
 
     result = @handler.load_role_for_model({}, 'default')
-    assert_equal 'Default Role', result
+    assert_includes result, '# Default Role'
   end
 
   def test_load_role_nil_role_returns_nil
@@ -216,15 +198,10 @@ class PromptHandlerLoadRoleForModelTest < Minitest::Test
   end
 
   def test_load_role_non_hash_uses_default
-    File.write(File.join(@roles_dir, 'fallback.md'), '# Fallback')
-
-    mock_parsed = mock('parsed')
-    mock_parsed.stubs(:metadata).returns(nil)
-    mock_parsed.stubs(:to_s).returns('Fallback Role')
-    PM.stubs(:parse).with('roles/fallback').returns(mock_parsed)
+    File.write(File.join(@roles_dir, 'fallback.md'), '# Fallback Role')
 
     result = @handler.load_role_for_model('not_a_hash', 'fallback')
-    assert_equal 'Fallback Role', result
+    assert_includes result, '# Fallback Role'
   end
 
   def test_load_role_handles_error_gracefully

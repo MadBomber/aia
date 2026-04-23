@@ -270,9 +270,9 @@ aia --fuzzy
 | `--model MODEL` | Specify AI model(s) to use. Supports `MODEL[=ROLE]` syntax | `aia --model gpt-4o-mini,gpt-3.5-turbo` or `aia --model gpt-4o=architect,claude=security` |
 | `--consensus` | Enable consensus mode for multi-model | `aia --consensus` |
 | `--no-consensus` | Force individual responses | `aia --no-consensus` |
-| `--role ROLE` | Use a role/system prompt (default for all models) | `aia --role expert` |
+| `--role ROLE` | Use a role/system prompt; accepts an ID in `~/.prompts/roles/` or a path (`/`, `~/`, `./`, `../`) | `aia --role expert` or `aia --role ~/custom/role.md` |
 | `--list-roles` | List available role files | `aia --list-roles` |
-| `-s, --skill SKILL_IDS` | Prepend skill(s) to prompt (comma-separated) | `aia -s code-quality my_prompt` |
+| `-s, --skill SKILL_IDS` | Prepend skill(s) to prompt; accepts skill IDs or paths to skill directories (`/`, `~/`, `./`, `../`) | `aia -s code-quality my_prompt` or `aia -s ~/skills/my-skill` |
 | `--list-skills` | List available skills and exit | `aia --list-skills` |
 | `--skills-dir DIR` | Set skills directory (default: `~/.prompts/skills`) | `aia --skills-dir ~/skills` |
 | `--output FILE` | Specify output file | `aia --output results.md` |
@@ -484,7 +484,7 @@ Directives are special commands in prompt files that begin with `/` and provide 
 | `/restore` | Restore context to a previous checkpoint | `/restore save_point` |
 | `/include` | Insert file contents | `/include path/to/file.txt` |
 | `/paste` | Insert clipboard contents | `/paste` |
-| `/skill` | Include a Claude Code skill | `/skill code-quality` |
+| `/skill` | Include a skill by ID or path to a skill directory | `/skill code-quality` or `/skill ~/skills/my-skill` |
 | `/skills` | List available Claude Code skills | `/skills` |
 | `/shell` | Execute shell commands | `/shell ls -la` |
 | `/robot` | Show the pet robot ASCII art w/versions | `/robot` |
@@ -1013,6 +1013,21 @@ echo "You are a senior software architect..." > ~/.prompts/roles/specialized/sen
 aia --model gpt-4o=specialized/senior_architect design.md
 ```
 
+**Path-Based Roles:**
+
+In addition to role IDs looked up under `~/.prompts/roles/`, you can pass a direct filesystem path as the role. Any value starting with `/`, `~/`, `./`, or `../` is treated as a path rather than an ID. The `.md` extension is appended automatically when the path has none.
+
+```bash
+# Absolute path
+aia --role /team/shared/roles/senior_engineer.md my_prompt
+
+# Home-relative path (~ expanded)
+aia --role ~/custom/roles/reviewer my_prompt   # loads ~/custom/roles/reviewer.md
+
+# Relative path
+aia --role ./local_role my_prompt              # loads ./local_role.md
+```
+
 **Using Config Files for Model Roles:**
 
 Define model-role assignments in your config file (`~/.config/aia/aia.yml`) for reusable setups:
@@ -1060,6 +1075,35 @@ When model roles are specified in multiple places, the precedence is:
 2. **Command-line flag**: `--model gpt-4o --role architect`
 3. **Environment variable**: `AIA_MODEL="gpt-4o=architect"`
 4. **Config file** (lowest): `models` array in `~/.config/aia/aia.yml`
+
+### Skills
+
+Skills are reusable instruction sets prepended to prompts. Each skill is a directory containing a `SKILL.md` file with YAML front matter and content.
+
+```bash
+# Use a skill by ID (looked up under skills.dir, default ~/.prompts/skills)
+aia -s code-quality my_prompt
+
+# Comma-separated for multiple skills
+aia -s code-quality,security-review my_prompt
+
+# Path-based: pass a direct path to a skill directory
+aia -s ~/team/skills/my-skill my_prompt     # home-relative
+aia -s /shared/skills/company-style prompt  # absolute path
+aia -s ./local-skill my_prompt              # relative path
+
+# List available skills
+aia --list-skills
+```
+
+Skills can also be applied during chat via the `/skill` directive:
+
+```
+/skill code-quality
+/skill ~/team/skills/my-skill
+```
+
+Path-based values (starting with `/`, `~/`, `./`, or `../`) are resolved as filesystem paths to skill directories directly, bypassing the configured skills directory lookup.
 
 ### RubyLLM::Tool Support
 

@@ -98,7 +98,10 @@ module AIA
       first_model = models.first
       model_name = first_model.respond_to?(:name) ? first_model.name : first_model.to_s
 
-      unless model_name.downcase.include?(client_model.downcase)
+      # client_model is the full resolved ID (e.g. "claude-sonnet-4-20250514"),
+      # model_name is the configured alias (e.g. "claude-sonnet-4").
+      # The alias is always a prefix/substring of the resolved ID, so check that way.
+      unless client_model.downcase.include?(model_name.downcase)
         AIA.client = AIA.client.class.new
       end
     end

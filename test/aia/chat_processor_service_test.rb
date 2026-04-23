@@ -137,12 +137,23 @@ class ChatProcessorServiceTest < Minitest::Test
   def test_maybe_change_model_when_models_differ
     @config.model = 'gpt-4'
     @mock_model.stubs(:id).returns('gpt-3.5-turbo')
-    
+
     # Should create a new client when models differ
     new_client = mock('new_client')
     @mock_client.class.expects(:new).returns(new_client)
     AIA.expects(:client=).with(new_client)
-    
+
+    @service.send(:maybe_change_model)
+  end
+
+  def test_maybe_change_model_alias_resolves_to_full_id
+    # Config uses alias "claude-sonnet-4"; RubyLLM resolves it to the full dated ID.
+    # The alias is a prefix of the resolved ID, so no client recreation should happen.
+    @config.models = [OpenStruct.new(name: 'claude-sonnet-4')]
+    @mock_model.stubs(:id).returns('claude-sonnet-4-20250514')
+
+    AIA.expects(:client=).never
+
     @service.send(:maybe_change_model)
   end
 

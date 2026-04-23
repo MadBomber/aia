@@ -82,8 +82,8 @@ class CLIParserListRolesTest < Minitest::Test
     Dir.mktmpdir do |dir|
       roles_dir = File.join(dir, 'roles')
       Dir.mkdir(roles_dir)
-      File.write(File.join(roles_dir, 'architect.md'), '')
-      File.write(File.join(roles_dir, 'reviewer.md'), '')
+      File.write(File.join(roles_dir, 'architect.md'), "---\nname: architect\ndescription: test\n---\n")
+      File.write(File.join(roles_dir, 'reviewer.md'), "---\nname: reviewer\ndescription: test\n---\n")
 
       ENV['AIA_PROMPTS__DIR'] = dir
       ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
@@ -91,9 +91,9 @@ class CLIParserListRolesTest < Minitest::Test
       out, _err = capture_io do
         AIA::CLIParser.send(:list_available_roles)
       end
-      assert_match(/Available roles/, out)
-      assert_match(/architect/, out)
-      assert_match(/reviewer/, out)
+      assert_match(/## architect/, out)
+      assert_match(/## reviewer/, out)
+      assert_match(/\| Key \| Value \|/, out)
     end
   ensure
     ENV.delete('AIA_PROMPTS__DIR')

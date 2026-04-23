@@ -73,7 +73,9 @@ module AIA
       role_file_path = File.join(@prompts_dir, "#{role_id}#{AIA.config.prompts.extname}")
 
       parsed = if File.exist?(role_file_path)
-                 PM.parse(role_id)
+                 # PM.parse(role_id) cannot resolve subdirectory IDs like "roles/jersey_mike"
+                 # and returns the ID string as content.  Parse from raw file content instead.
+                 PM.parse_string(File.read(role_file_path))
                else
                  warn "Warning: Invalid role ID or file not found: #{role_id}"
                  logger.warn("Invalid role ID or file not found: #{role_id}")

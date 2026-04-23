@@ -6,6 +6,7 @@
 # for the Config class.
 
 require 'optparse'
+require 'yaml'
 require_relative 'model_spec'
 
 module AIA
@@ -470,19 +471,30 @@ module AIA
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
         roles_dir = File.join(prompts_dir, roles_prefix)
 
-        if Dir.exist?(roles_dir)
-          roles = list_available_role_names(prompts_dir, roles_prefix)
-
-          if roles.empty?
-            puts "No role files found in #{roles_dir}"
-            puts "Create .md files in this directory to define roles."
-          else
-            puts "Available roles in #{roles_dir}:"
-            roles.each { |role| puts "  - #{role}" }
-          end
-        else
+        unless Dir.exist?(roles_dir)
           puts "No roles directory found at #{roles_dir}"
           puts "Create this directory and add role files to use roles."
+          return
+        end
+
+        roles = list_available_role_names(prompts_dir, roles_prefix)
+
+        if roles.empty?
+          puts "No role files found in #{roles_dir}"
+          puts "Create .md files in this directory to define roles."
+          return
+        end
+
+        roles.each do |role_id|
+          role_file = File.join(roles_dir, "#{role_id}.md")
+          fm = parse_role_front_matter(role_file)
+
+          puts "## #{role_id}"
+          puts
+          puts "| Key | Value |"
+          puts "|-----|-------|"
+          fm.each { |key, value| puts "| #{key} | #{value} |" }
+          puts
         end
       end
 
@@ -492,7 +504,21 @@ module AIA
 
         Dir.glob("**/*.md", base: roles_dir)
           .map { |f| f.chomp('.md') }
+          .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
           .sort
+      end
+
+      def parse_role_front_matter(path)
+        return {} unless File.exist?(path)
+
+        content = File.read(path)
+        return {} unless content.start_with?('---')
+
+        end_marker = content.index("\n---", 3)
+        return {} unless end_marker
+
+        yaml_text = content[3...end_marker]
+        YAML.safe_load(yaml_text) || {}
       end
 
       def list_available_models(query)
