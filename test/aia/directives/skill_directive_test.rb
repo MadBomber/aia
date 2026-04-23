@@ -136,16 +136,14 @@ class SkillDirectiveTest < Minitest::Test
     FileUtils.rm_rf(dir) if dir
   end
 
-  def test_skill_relative_path_resolves_from_cwd
-    Dir.mktmpdir('aia_rel_skill') do |base|
+  def test_skill_absolute_path_to_skill_dir_returns_content
+    Dir.mktmpdir('aia_abs_skill') do |base|
       skill_dir = File.join(base, 'my-skill')
       FileUtils.mkdir_p(skill_dir)
-      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Relative Skill\n---\n# Relative Body")
+      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Absolute Skill\n---\n# Absolute Body")
 
-      Dir.chdir(base) do
-        result = @instance.skill(['./my-skill'])
-        assert_equal "---\nname: Relative Skill\n---\n# Relative Body", result
-      end
+      result = @instance.skill([skill_dir])
+      assert_equal "---\nname: Absolute Skill\n---\n# Absolute Body", result
     end
   end
 

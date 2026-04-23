@@ -109,16 +109,16 @@ module AIA
         next if skill_name.empty?
 
         unless path_based_id?(skill_name) || Dir.exist?(skills_dir)
-          $stderr.puts "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
+          warn "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
           next
         end
 
         skill_dir = find_skill_dir(skill_name, skills_dir)
         unless skill_dir
           if path_based_id?(skill_name)
-            $stderr.puts "Warning: No skill directory found at '#{File.expand_path(skill_name)}'"
+            warn "Warning: No skill directory found at '#{File.expand_path(skill_name)}'"
           else
-            $stderr.puts "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
+            warn "Warning: No skill matching '#{skill_name}' found in #{skills_dir}"
           end
           next
         end
@@ -127,19 +127,12 @@ module AIA
 
         skill_path = File.join(skill_dir, 'SKILL.md')
         unless File.exist?(skill_path)
-          $stderr.puts "Warning: Skill '#{skill_name}' has no SKILL.md in #{skill_dir}"
+          warn "Warning: Skill '#{skill_name}' has no SKILL.md in #{skill_dir}"
           next
         end
 
         skill_body(File.read(skill_path))
       end
-    end
-
-    def skill_body(content)
-      return content unless content.start_with?('---')
-      end_marker = content.index("\n---", 3)
-      return content unless end_marker
-      content[(end_marker + 4)..].lstrip
     end
 
     # Add context files to prompt text

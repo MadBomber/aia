@@ -51,14 +51,13 @@ class PromptHandlerRolePathTest < Minitest::Test
     end
   end
 
-  def test_fetch_role_with_relative_path
+  def test_fetch_role_with_absolute_path_no_extension_md_file
     Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'my-role.md'), "You are a mentor.")
+      role_path = File.join(dir, 'my-role')
+      File.write("#{role_path}.md", "You are a mentor.")
 
-      Dir.chdir(dir) do
-        result = @handler.send(:fetch_role, './my-role')
-        assert_equal "You are a mentor.", result.to_s
-      end
+      result = @handler.send(:fetch_role, role_path)
+      assert_equal "You are a mentor.", result.to_s
     end
   end
 
