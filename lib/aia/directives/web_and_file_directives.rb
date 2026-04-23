@@ -4,9 +4,11 @@ require 'faraday'
 require 'clipboard'
 require 'yaml'
 require 'io/console'
+require 'word_wrapper'
 
 module AIA
   class WebAndFileDirectives < Directive
+    include AIA::SkillUtils
     PUREMD_API_KEY = ENV.fetch('PUREMD_API_KEY', nil)
 
     desc "Fetch and include content from a webpage"
@@ -51,15 +53,15 @@ module AIA
         return nil
       end
 
-      matching = skill_dirs.select do |name|
-        fm_text = read_front_matter_text(File.join(dir, name, 'SKILL.md'))
-        text = "#{name} #{fm_text}"
+      skill_data = skill_dirs.filter_map do |name|
+        fm = parse_front_matter(File.join(dir, name, 'SKILL.md'))
+        text = "#{name} #{fm.values.join(' ').downcase}"
         pos_ok = positive_terms.empty? || positive_terms.all? { |t| text.include?(t) }
         neg_ok = negative_terms.none? { |t| text.include?(t) }
-        pos_ok && neg_ok
+        [name, fm] if pos_ok && neg_ok
       end
 
-      if matching.empty?
+      if skill_data.empty?
         puts "No skills matching your query"
         return nil
       end
@@ -68,17 +70,17 @@ module AIA
       puts "\nAvailable Skills (#{dir}):"
       puts "=" * [width, 60].min
 
-      matching.each do |name|
-        skill_path = File.join(dir, name, 'SKILL.md')
-        fm = parse_skill_front_matter(skill_path)
+      skill_data.each do |name, fm|
         display_name = fm['name'] || name
         desc_text = fm['description'].to_s.strip
         puts "\n  #{display_name}"
-        puts word_wrap(desc_text, width: width - 4, indent: '    ') unless desc_text.empty?
+        unless desc_text.empty?
+          puts WordWrapper::MinimumRaggedness.new(width - 4, desc_text).wrap
+            .split("\n").map { |l| "    #{l}" }.join("\n")
+        end
       end
 
-      puts "\nTotal: #{matching.size} skill#{'s' if matching.size != 1}"
-
+      puts "\nTotal: #{skill_data.size} skill#{'s' if skill_data.size != 1}"
       nil
     end
 
@@ -101,7 +103,7 @@ module AIA
         return nil
       end
 
-      skill_dir = resolve_skill_dir(skill_name, dir)
+      skill_dir = find_skill_dir(skill_name, dir)
       unless skill_dir
         if path_based_id?(skill_name)
           warn "Error: No skill directory found at '#{File.expand_path(skill_name)}'. Use /skills to list available skills."
@@ -138,75 +140,11 @@ module AIA
       AIA.config.skills.dir
     end
 
-    def resolve_skill_dir(skill_name, dir)
-      if path_based_id?(skill_name)
-        expanded = File.expand_path(skill_name)
-        return expanded if Dir.exist?(expanded)
-        return nil
-      end
-
-      exact = File.join(dir, skill_name)
-      return safe_skill_path(exact, dir) if Dir.exist?(exact)
-
-      Dir.children(dir).sort.each do |entry|
-        next unless entry.start_with?(skill_name)
-        candidate = File.join(dir, entry)
-        return safe_skill_path(candidate, dir) if Dir.exist?(candidate)
-      end
-
-      nil
-    end
-
-    def path_based_id?(id)
-      id.start_with?('/', './', '../', '~/')
-    end
-
-    def safe_skill_path(path, dir)
-      resolved = File.realpath(path)
-      resolved.start_with?(File.realpath(dir)) ? resolved : nil
-    rescue Errno::ENOENT
-      nil
-    end
-
     def terminal_width
       IO.console&.winsize&.last || 80
     rescue StandardError
       80
     end
 
-    def word_wrap(text, width:, indent:)
-      words = text.split
-      lines = []
-      current = indent.dup
-
-      words.each do |word|
-        if current.length + word.length + (current == indent ? 0 : 1) > width
-          lines << current
-          current = indent + word
-        else
-          current += current == indent ? word : " #{word}"
-        end
-      end
-      lines << current unless current == indent
-      lines.join("\n")
-    end
-
-
-    def read_front_matter_text(path)
-      return '' unless File.exist?(path)
-      parse_skill_front_matter(path).values.join(' ').downcase
-    end
-
-    def parse_skill_front_matter(path)
-      return {} unless File.exist?(path)
-      content = File.read(path)
-      return {} unless content.start_with?('---')
-      end_marker = content.index("\n---", 3)
-      return {} unless end_marker
-      yaml_text = content[3...end_marker]
-      YAML.safe_load(yaml_text) || {}
-    rescue StandardError
-      {}
-    end
   end
 end
