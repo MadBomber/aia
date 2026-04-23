@@ -25,6 +25,7 @@ require_relative 'refinements/string' # adds #include_any? #include_all?
 
 require_relative 'aia/errors'
 require_relative 'aia/utility'
+require_relative 'aia/skill_utils'
 require_relative 'aia/version'
 require_relative 'aia/config'
 require_relative 'aia/logger'
