@@ -45,7 +45,7 @@ module AIA
 
     def safe_skill_path(path, dir)
       resolved = File.realpath(path)
-      resolved.start_with?(File.realpath(dir)) ? resolved : nil
+      resolved.start_with?(File.realpath(dir) + File::SEPARATOR) ? resolved : nil
     rescue Errno::ENOENT
       nil
     end

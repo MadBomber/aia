@@ -143,6 +143,16 @@ class SkillUtilsTest < Minitest::Test
     assert_nil AIA::SkillUtils.safe_skill_path('/nonexistent/path', '/base')
   end
 
+  def test_safe_path_blocks_sibling_with_shared_prefix
+    Dir.mktmpdir do |parent|
+      base = File.join(parent, 'skills')
+      attacker = File.join(parent, 'skills-attack')
+      FileUtils.mkdir_p(base)
+      FileUtils.mkdir_p(attacker)
+      assert_nil AIA::SkillUtils.safe_skill_path(attacker, base)
+    end
+  end
+
   # --- include (instance method access) ---
 
   def test_methods_available_as_instance_methods_when_included
