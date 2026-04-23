@@ -6,6 +6,8 @@ require 'erb'
 
 module AIA
   class PromptHandler
+    include AIA::SkillUtils
+
     # Struct for path-based role content (bypasses PM parsing)
     RoleContent = Struct.new(:content) do
       def to_s; content; end
@@ -302,11 +304,6 @@ module AIA
         warn "Error: Could not find prompt with ID: #{prompt_id}"
         exit 1
       end
-    end
-
-
-    def path_based_id?(id)
-      id.start_with?('/', './', '../', '~/')
     end
 
 
