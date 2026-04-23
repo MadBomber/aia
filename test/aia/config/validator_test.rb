@@ -355,6 +355,42 @@ class ValidatorRoleConfigurationTest < Minitest::Test
     AIA::ConfigValidator.send(:process_role_configuration, config)
     assert_equal '/tmp/prompts/roles', config.prompts.roles_dir
   end
+
+  def test_process_role_configuration_does_not_mangle_absolute_path_role
+    config = OpenStruct.new(
+      prompts: OpenStruct.new(
+        role: '/tmp/my-expert-role.md',
+        roles_prefix: 'roles',
+        dir: '/tmp/prompts',
+        roles_dir: nil
+      ),
+      flags: OpenStruct.new(chat: false),
+      prompt_id: 'some-prompt',
+      pipeline: []
+    )
+
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+
+    assert_equal '/tmp/my-expert-role.md', config.prompts.role
+  end
+
+  def test_process_role_configuration_does_not_mangle_tilde_path_role
+    config = OpenStruct.new(
+      prompts: OpenStruct.new(
+        role: '~/prompts/my-role',
+        roles_prefix: 'roles',
+        dir: '/tmp/prompts',
+        roles_dir: nil
+      ),
+      flags: OpenStruct.new(chat: false),
+      prompt_id: 'some-prompt',
+      pipeline: []
+    )
+
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+
+    assert_equal '~/prompts/my-role', config.prompts.role
+  end
 end
 
 
