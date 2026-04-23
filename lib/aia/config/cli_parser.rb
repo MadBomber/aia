@@ -8,6 +8,7 @@
 require 'optparse'
 require 'yaml'
 require_relative 'model_spec'
+require_relative '../skill_utils'
 
 module AIA
   module CLIParser
@@ -94,23 +95,6 @@ module AIA
           exit 0
         end
 
-        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
-          options[:skills_dir] = dir
-        end
-
-        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
-          options[:skills_prefix] = prefix
-        end
-
-        opts.on("-s", "--skill SKILL_IDS", "Prepend skill(s) to prompt (comma-separated IDs)") do |ids|
-          options[:skills] ||= []
-          options[:skills] += ids.split(',').map(&:strip)
-        end
-
-        opts.on("--list-skills", "List available skills and exit") do
-          options[:list_skills] = true
-        end
-
         opts.on("--sm", "--speech-model MODEL", "Set speech model") do |model|
           options[:speech_model] = model
         end
@@ -183,6 +167,23 @@ module AIA
         opts.on('--regex PATTERN', '[DEPRECATED] Parameter regex (PM v1.0.0 uses ERB parameters)') do |pattern|
           warn "Warning: --regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
           options[:parameter_regex] = pattern
+        end
+
+        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
+          options[:skills_dir] = dir
+        end
+
+        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
+          options[:skills_prefix] = prefix
+        end
+
+        opts.on("-s", "--skill SKILL_IDS", "Prepend skill(s) to prompt (comma-separated IDs or paths)") do |ids|
+          options[:skills] ||= []
+          options[:skills] += ids.split(',').map(&:strip)
+        end
+
+        opts.on("--list-skills", "List available skills and exit") do
+          options[:list_skills] = true
         end
       end
 
@@ -427,12 +428,8 @@ module AIA
         models
       end
 
-      def path_based_id?(id)
-        id.start_with?('/', './', '../', '~/')
-      end
-
       def validate_role_exists(role_id)
-        if path_based_id?(role_id)
+        if AIA::SkillUtils.path_based_id?(role_id)
           expanded = File.expand_path(role_id)
           expanded += '.md' if File.extname(expanded).empty?
           raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
@@ -487,7 +484,7 @@ module AIA
 
         roles.each do |role_id|
           role_file = File.join(roles_dir, "#{role_id}.md")
-          fm = parse_role_front_matter(role_file)
+          fm = AIA::SkillUtils.parse_front_matter(role_file)
 
           puts "## #{role_id}"
           puts
@@ -506,19 +503,6 @@ module AIA
           .map { |f| f.chomp('.md') }
           .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
           .sort
-      end
-
-      def parse_role_front_matter(path)
-        return {} unless File.exist?(path)
-
-        content = File.read(path)
-        return {} unless content.start_with?('---')
-
-        end_marker = content.index("\n---", 3)
-        return {} unless end_marker
-
-        yaml_text = content[3...end_marker]
-        YAML.safe_load(yaml_text) || {}
       end
 
       def list_available_models(query)
