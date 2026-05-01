@@ -24,6 +24,10 @@ module AIA
         stdin_content = process_stdin_content
         config.stdin_content = stdin_content if stdin_content && !stdin_content.strip.empty?
 
+        # Require tool files early so AIA::Directive subclasses defined in them
+        # are registered into PM.directives before PromptHandler.new is called.
+        require_tool_files(config)
+
         # Process arguments and validate
         process_prompt_id_from_args(config, remaining_args)
         validate_and_set_context_files(config, remaining_args)
@@ -359,6 +363,19 @@ module AIA
 
       def mcp_filter_active?(config)
         !Array(config.mcp_use).empty? || !Array(config.mcp_skip).empty?
+      end
+
+      def require_tool_files(config)
+        Array(config.tools&.paths).each do |path|
+          expanded = File.expand_path(path)
+          if File.exist?(expanded)
+            require expanded
+          else
+            warn "Warning: Tool file not found: #{path}"
+          end
+        rescue LoadError, StandardError => e
+          warn "Warning: Failed to load tool '#{path}': #{e.message}"
+        end
       end
 
       def load_local_tools(config)

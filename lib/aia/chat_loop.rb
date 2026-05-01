@@ -48,7 +48,14 @@ module AIA
       return if role.nil? || role.empty?
 
       prompt_handler = AIA::PromptHandler.new
+
+      # fetch_role applies the role file's metadata (including any model: key) to
+      # AIA.config. Preserve the user's chosen model so the chat session keeps
+      # using the model from the CLI, not one embedded in the role file.
+      saved_models = AIA.config.models
       role_parsed = prompt_handler.fetch_role(role)
+      AIA.config.models = saved_models
+
       return if role_parsed.nil?
 
       role_content = role_parsed.to_s

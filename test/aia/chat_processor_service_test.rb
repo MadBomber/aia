@@ -157,6 +157,20 @@ class ChatProcessorServiceTest < Minitest::Test
     @service.send(:maybe_change_model)
   end
 
+  def test_maybe_change_model_ollama_prefix_stripped_before_comparison
+    # The adapter strips the "ollama/" prefix when creating the RubyLLM chat, so
+    # chat.model.id returns "qwen3" while the config stores "ollama/qwen3".
+    # The comparison must strip the prefix or "qwen3".include?("ollama/qwen3")
+    # returns false, causing a spurious adapter replacement on every pipeline step
+    # and destroying conversation history between prompts (Demo 06 regression).
+    @config.models = [OpenStruct.new(name: 'ollama/qwen3')]
+    @mock_model.stubs(:id).returns('qwen3')
+
+    AIA.expects(:client=).never
+
+    @service.send(:maybe_change_model)
+  end
+
   def test_output_response_to_stdout_when_out_file_nil
     @config.output.file = nil
     
@@ -252,6 +266,83 @@ class ChatProcessorServiceTest < Minitest::Test
 
     # Should return early when model is an array
     AIA.expects(:client=).never
+    @service.send(:maybe_change_model)
+  end
+
+  # ---------------------------------------------------------------------------
+  # Conversation history preservation (Issue #152)
+  # ---------------------------------------------------------------------------
+
+  def test_maybe_change_model_preserves_adapter_when_history_exists
+    # Models differ, but conversation history exists in the adapter.
+    # Replacing the adapter would destroy all context, so it must be kept.
+    @config.models = [OpenStruct.new(name: 'claude-3-5-sonnet')]
+    @mock_model.stubs(:id).returns('gpt-5.4')
+
+    mock_message = mock('message')
+    mock_chat    = mock('chat')
+    mock_chat.stubs(:messages).returns([mock_message])
+    @mock_client.stubs(:chats).returns({ 'gpt-5.4' => mock_chat })
+
+    AIA.expects(:client=).never
+
+    @service.send(:maybe_change_model)
+  end
+
+  def test_maybe_change_model_openai_model_with_role_specifying_anthropic_model
+    # Reproduces the exact bug from Issue #152:
+    # User runs gpt-5.4 but the role file's front matter set AIA.config.models
+    # to a Claude model. "gpt-5.4".include?("claude-3-5-sonnet") is false, which
+    # would normally trigger an adapter reset — destroying all pipeline history.
+    # With the fix, the presence of messages blocks the reset.
+    @config.models = [OpenStruct.new(name: 'claude-3-5-sonnet')]
+    @mock_model.stubs(:id).returns('gpt-5.4')
+
+    user_msg      = mock('user_message')
+    assistant_msg = mock('assistant_message')
+    mock_chat     = mock('chat')
+    mock_chat.stubs(:messages).returns([user_msg, assistant_msg])
+    @mock_client.stubs(:chats).returns({ 'gpt-5.4' => mock_chat })
+
+    AIA.expects(:client=).never
+
+    @service.send(:maybe_change_model)
+  end
+
+  def test_maybe_change_model_allows_model_switch_when_no_history
+    # When there is no conversation history a model mismatch should still
+    # replace the adapter so a fresh session uses the newly configured model.
+    @config.models = [OpenStruct.new(name: 'gpt-4')]
+    @mock_model.stubs(:id).returns('gpt-3.5-turbo')
+
+    mock_chat = mock('chat')
+    mock_chat.stubs(:messages).returns([])   # empty — no prior history
+    @mock_client.stubs(:chats).returns({ 'gpt-3.5-turbo' => mock_chat })
+
+    new_client = mock('new_client')
+    @mock_client.class.expects(:new).returns(new_client)
+    AIA.expects(:client=).with(new_client)
+
+    @service.send(:maybe_change_model)
+  end
+
+  def test_maybe_change_model_preserves_adapter_with_multiple_chats_when_any_has_history
+    # Even if only one of several chat instances has messages, the adapter
+    # should be preserved to protect that conversation history.
+    @config.models = [OpenStruct.new(name: 'different-model')]
+    @mock_model.stubs(:id).returns('gpt-5.4')
+
+    empty_chat   = mock('empty_chat')
+    history_chat = mock('history_chat')
+    empty_chat.stubs(:messages).returns([])
+    history_chat.stubs(:messages).returns([mock('msg')])
+    @mock_client.stubs(:chats).returns({
+      'gpt-5.4'       => empty_chat,
+      'gpt-5.4-extra' => history_chat
+    })
+
+    AIA.expects(:client=).never
+
     @service.send(:maybe_change_model)
   end
 

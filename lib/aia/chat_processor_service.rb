@@ -99,9 +99,23 @@ module AIA
       model_name = first_model.respond_to?(:name) ? first_model.name : first_model.to_s
 
       # client_model is the full resolved ID (e.g. "claude-sonnet-4-20250514"),
-      # model_name is the configured alias (e.g. "claude-sonnet-4").
-      # The alias is always a prefix/substring of the resolved ID, so check that way.
-      unless client_model.downcase.include?(model_name.downcase)
+      # model_name is the configured alias (e.g. "claude-sonnet-4") or a
+      # provider-prefixed name (e.g. "ollama/qwen3").
+      #
+      # The adapter strips provider prefixes when creating the RubyLLM chat
+      # (e.g. "ollama/qwen3" → model: "qwen3"), so client_model has no prefix.
+      # Strip the prefix from model_name before comparing so that
+      # "qwen3".include?("qwen3")  →  true  (was: "qwen3".include?("ollama/qwen3") → false).
+      comparable_name = model_name.sub(%r{\A[^/]+/}, '')
+      unless client_model.downcase.include?(comparable_name.downcase)
+        # Never replace the adapter when conversation history exists — doing so
+        # destroys all prior context. Role/prompt files can change AIA.config.models
+        # via front matter metadata, but that must not evict an active chat session.
+        if AIA.client.respond_to?(:chats) &&
+           AIA.client.chats.values.any? { |chat| chat.messages.any? }
+          warn "Warning: Model config changed to '#{model_name}' but keeping '#{client_model}' to preserve conversation history."
+          return
+        end
         AIA.client = AIA.client.class.new
       end
     end
