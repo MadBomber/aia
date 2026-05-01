@@ -1,4 +1,19 @@
 # Changelog
+## [1.1.1] - 2026-05-01
+
+### Bug Fixes
+- **Conversation context lost on Ollama model pipeline steps (Issue #152)**: `maybe_change_model` was unconditionally replacing the adapter whenever the configured model name (e.g. `ollama/qwen3`) did not literally appear in the resolved model ID (`qwen3`). Fixed by stripping the provider prefix before comparison and by never replacing the adapter when conversation messages exist in any chat instance — preserving all history across pipeline steps and role changes
+- **Role file front matter overwriting active model config**: `ChatLoop#process_role_context` was allowing `fetch_role` (which calls `apply_metadata_config`) to overwrite `AIA.config.models` with any `model:` key in the role file's YAML front matter. The active model is now saved before `fetch_role` and restored afterward, so a role's front matter cannot trigger a false mismatch in `maybe_change_model`
+- **Custom `--tools` directives not available in ERB prompts**: `AIA::Directive` subclasses defined in files loaded via `--tools` were required too late — after `PromptHandler.new` had already called `register_pm_directives`. Added `require_tool_files` as the first step in `ConfigValidator#tailor` so custom directive classes are defined and registered into `PM.directives` before `PromptHandler.new` runs; `<%= timestamp %>` and other custom ERB helpers now expand correctly
+- **Demo example path resolution**: `examples/prompts_dir/project_summary` referenced `../../*.gemspec` and `../../lib/aia/*.rb`, resolving two levels above the repo root from the `examples/` working directory; corrected to `../`
+
+### Improvements
+- **Demo scripts use develop-branch binary**: `examples/common.sh` now prepends `../bin` to `PATH` when the local `bin/aia` is executable, ensuring all demo scripts exercise working-tree changes rather than the installed gem
+
+### Testing
+- Added `test/aia/chat_loop_test.rb` — 6 tests covering `process_role_context`: early-return when no role configured, system message injection into chats, skipping chats that already have a system message, and model restoration after `fetch_role` side effects (Issue #152 regression tests)
+- Expanded `test/aia/chat_processor_service_test.rb` with 7 additional tests: provider-prefix stripping before model comparison, full-ID alias resolution (e.g. `claude-sonnet-4` vs `claude-sonnet-4-20250514`), adapter preservation when any chat has history, adapter replacement allowed when no history exists, and the exact Issue #152 regression scenario (OpenAI model active, role front matter specifies a Claude model)
+
 ## [1.1.0] - 2026-04-23
 
 ### New Features
