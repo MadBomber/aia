@@ -18,3 +18,10 @@ while IFS= read -r var; do
 done < <(env | grep '^AIA_' | cut -d= -f1)
 
 CONFIG="aia_config.yml"
+
+# When running from the develop branch, prefer the local bin/aia over any
+# installed gem so that uncommitted working-tree changes are exercised.
+LOCAL_AIA="${SCRIPT_DIR}/../bin/aia"
+if [[ -x "${LOCAL_AIA}" ]]; then
+  export PATH="${SCRIPT_DIR}/../bin:${PATH}"
+fi
