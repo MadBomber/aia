@@ -121,16 +121,12 @@ class AIAIntegrationTest < Minitest::Test
 
     AIA::Session.expects(:new).returns(mock_session)
 
-    # Capture output
-    output = capture_io do
+    capture_io do
       # Simulate the main workflow
       AIA::Utility.robot
       session = AIA::Session.new(AIA::PromptHandler.new)
       session.start
     end
-
-    # Check for key components without exact version (v2 banner format)
-    assert_match(/AIA v[\d.a-z]+ is Online/, output.first) # Should show robot ASCII art
   end
 
   def test_batch_mode_with_context_files_workflow

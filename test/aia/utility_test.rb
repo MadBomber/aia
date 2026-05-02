@@ -67,8 +67,7 @@ class UtilityTest < Minitest::Test
 
     output = @captured_output.string
 
-    # v2 banner format: "AIA v2.0.0 is Online w/ kbs vX.Y.Z"
-    assert_match(/AIA v[\d.a-z]+ is Online/, output)
+    assert_includes output, "AIA v#{AIA::VERSION} is Online"
     assert_includes output, "ruby_llm"
   end
 
@@ -312,35 +311,4 @@ class UtilityTest < Minitest::Test
     assert_includes output, "2 tools loaded"
   end
 
-  def test_robot_basic_execution_no_mocks
-    minimal_config = OpenStruct.new(
-      llm: OpenStruct.new(temperature: 0.7),
-      models: [OpenStruct.new(name: 'test-model')],
-      registry: OpenStruct.new(last_refresh: 'test-date'),
-      tools: OpenStruct.new(paths: []),
-      tool_names: nil,
-      loaded_tools: [],
-      mcp_servers: [],
-      mcp_use: [],
-      mcp_skip: [],
-      connected_mcp_servers: nil,
-      failed_mcp_servers: nil
-    )
-
-    original_config_method = AIA.method(:config) rescue nil
-    AIA.define_singleton_method(:config) { minimal_config }
-
-    TTY::Screen.expects(:width).returns(80).at_least_once
-
-    AIA::Utility.robot
-
-    output = @captured_output.string
-    # v2 format: "AIA vX.Y.Z is Online"
-    assert_match(/AIA v[\d.a-z]+ is Online/, output)
-
-  ensure
-    if original_config_method
-      AIA.define_singleton_method(:config, &original_config_method)
-    end
-  end
 end

@@ -45,6 +45,11 @@
 - **`--list-skills` CLI directory options** (`lib/aia/config/cli_parser.rb`): Skill listing now honors `--prompts-dir` and `--skills-prefix` regardless of option order instead of reading only environment/default locations.
 - **Skill symlink path containment** (`lib/aia/directives/web_and_file_directives.rb`): Skill resolution now checks real paths against the skills directory boundary, preventing symlinks to sibling directories with the same prefix from being treated as valid skills.
 
+### Known Issues
+
+- **`--skill` prompt injection in RobotLab flow** (`lib/aia/pipeline_orchestrator.rb`, `lib/aia/chat_loop.rb`): Mainline skill CLI/config support has been merged, but the RobotLab prompt execution path still needs to prepend configured skills to pipeline prompts and chat startup context.
+- **Path-based direct skill file restrictions** (`lib/aia/skill_utils.rb`, `lib/aia/directives/web_and_file_directives.rb`): Direct skill file paths should be limited to markdown skill files before reading, so arbitrary readable files cannot be injected via `/skill`.
+
 ## [1.1.1] - 2026-05-01
 
 ### Bug Fixes
