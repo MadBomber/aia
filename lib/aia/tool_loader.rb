@@ -151,24 +151,61 @@ module AIA
     # Activate a gem that isn't yet active by asking RubyGems to activate it.
     # This adds its lib paths to $LOAD_PATH AND activates its dependencies,
     # unlike a manual $LOAD_PATH manipulation which would leave deps unresolved.
+    #
+    # Under bundler/setup (dev mode), `gem name` raises Gem::LoadError for any
+    # gem not in the bundle. The fallback searches known gem install paths directly
+    # and adds the lib dir to $LOAD_PATH so Zeitwerk-based gems still load.
     def activate_unbundled_gem(name)
       gem name
       true
     rescue Gem::MissingSpecError, Gem::LoadError
+      lib_dir = [Gem.default_dir, Gem.user_dir].compact.flat_map { |d|
+        Dir.glob("#{d}/gems/#{name}-*/lib")
+      }.max
+      return false unless lib_dir
+      $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+      true
+    rescue StandardError
       false
     end
 
     # Eagerly load tool classes from any required gem that uses lazy loading
     # (e.g. Zeitwerk). Calls .load_all_tools on every module that responds to it,
     # so any gem following that convention works — not just SharedTools.
+    #
+    # Gem::LoadError (a LoadError, not a StandardError) can fire when a tool's
+    # dependency has a version conflict with an already-activated gem. The inner
+    # rescue handles that per-module; the fallback loads constants one-at-a-time
+    # so tools without conflicting deps still become available.
     def eager_load_gem_tools
       ObjectSpace.each_object(Module) do |mod|
-        mod.load_all_tools if mod.respond_to?(:load_all_tools)
-      rescue StandardError
+        if mod.respond_to?(:load_all_tools)
+          begin
+            mod.load_all_tools
+          rescue LoadError, StandardError
+            eager_load_namespace_fallback(mod)
+          end
+        end
+      rescue LoadError, StandardError
         next
       end
-    rescue StandardError => e
+    rescue LoadError, StandardError => e
       warn "Warning: Failed to eager-load gem tools: #{e.message}"
+    end
+
+    # Fallback when bulk load_all_tools fails: walk the module's namespace
+    # recursively (up to 3 levels) and trigger each constant's autoload
+    # individually, skipping any that raise a load error.
+    def eager_load_namespace_fallback(mod, depth = 0)
+      return if depth > 3
+      mod.constants.each do |const_name|
+        begin
+          child = mod.const_get(const_name)
+          eager_load_namespace_fallback(child, depth + 1) if child.is_a?(Module)
+        rescue LoadError, StandardError
+          next
+        end
+      end
     end
   end
 end

@@ -12,18 +12,16 @@
 #   synthesizes a unified response from all answers.
 #
 # Multiple models are specified as a comma-separated list with -m.
-# This demo uses two Ollama models. If you only have one model
-# available, pull a second one first:
-#   ollama pull phi4-mini
+# This demo uses two OpenAI models (gpt-4.1 and gpt-4.1-mini).
 #
-# Prerequisites: Run 00_setup_aia.sh first, plus a second model.
+# Prerequisites: Run 00_setup_aia.sh first (OPENAI_API_KEY must be set).
 # Usage: cd examples && bash 11_multi_model.sh
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-MODEL_A="ollama/phi4"
-MODEL_B="ollama/phi4-mini"
+MODEL_A="gpt-4.1"
+MODEL_B="gpt-4.1-mini"
 
 echo "=== Demo 11: Multiple Models ==="
 echo
@@ -39,14 +37,6 @@ echo "==="
 cat prompts_dir/explain_recursion.md
 echo "==="
 echo
-
-# --- Check that the second model is available ---
-
-if ! ollama list 2>/dev/null | grep -q "^phi4-mini"; then
-  echo "Model phi4-mini is not available. Pulling it now ..."
-  ollama pull phi4-mini
-  echo
-fi
 
 # --- Part 1: Comparison mode ---
 

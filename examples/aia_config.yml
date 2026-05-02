@@ -13,7 +13,7 @@ prompts:
   dir: ./prompts_dir
 
 models:
-  - name: ollama/qwen3:latest
+  - name: gpt-4.1
 
 output:
   file: ~

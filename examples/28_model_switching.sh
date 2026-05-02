@@ -7,13 +7,12 @@
 # while preserving the full conversation history. Context is
 # transferred so the new model can see everything discussed so far.
 #
-# Note: Natural language model switching ("use phi4-mini instead")
+# Note: Natural language model switching ("use gpt-4.1-mini instead")
 # is detected by ModelSwitchHandler but currently stubbed. Use
 # /model directly for reliable in-session model changes.
 #
 # Prerequisites:
-#   - Run 00_setup_aia.sh first
-#   - phi4-mini model (auto-pulled if missing)
+#   - Run 00_setup_aia.sh first (OPENAI_API_KEY must be set)
 # Usage: cd examples && bash 28_model_switching.sh
 
 set -euo pipefail
@@ -25,8 +24,8 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="ollama/phi4"
-MODEL_B="ollama/phi4-mini"
+MODEL_A="gpt-4.1"
+MODEL_B="gpt-4.1-mini"
 
 echo "=== Demo 28: Model Switching (/model directive) ==="
 echo
@@ -37,14 +36,6 @@ echo
 echo "Starting model: ${MODEL_A}"
 echo "Switch target:  ${MODEL_B}"
 echo
-
-# --- Check that the second model is available ---
-
-if ! ollama list 2>/dev/null | grep -q "^phi4-mini"; then
-    echo "Model phi4-mini is not available. Pulling it now ..."
-    ollama pull phi4-mini
-    echo
-fi
 
 # --- Part 1: Ask a question, switch models, ask a follow-up ---
 
@@ -75,7 +66,7 @@ expect {
   timeout { puts "\n*** Timed out waiting for first response ***"; exit 1 }
 }
 
-send "/model ollama/phi4-mini\r"
+send "/model gpt-4.1-mini\r"
 
 expect {
   "#=> " {}

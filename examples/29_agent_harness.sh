@@ -27,8 +27,8 @@
 # management web app using Ruby, Sinatra, Sequel (SQLite), and ERB templates.
 # Full requirements: examples/requirements/sinatra_taskflow_app.md
 #
-# Prerequisites: Run 00_setup_aia.sh first
-# Requires: phi4-mini (auto-pulled if missing), expect (brew install expect)
+# Prerequisites: Run 00_setup_aia.sh first (OPENAI_API_KEY must be set)
+# Requires: expect (brew install expect)
 # Usage: cd examples && bash 29_agent_harness.sh
 
 set -euo pipefail
@@ -40,8 +40,8 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="ollama/phi4"
-MODEL_B="ollama/phi4-mini"
+MODEL_A="gpt-4.1"
+MODEL_B="gpt-4.1-mini"
 ORCH_CONFIG="aia_config_orchestrator.yml"
 REQUIREMENTS="requirements/sinatra_taskflow_app.md"
 
@@ -63,14 +63,6 @@ if [[ ! -f "${REQUIREMENTS}" ]]; then
     exit 1
 fi
 
-# --- Check that the second model is available ---
-
-if ! ollama list 2>/dev/null | grep -q "^phi4-mini"; then
-    echo "Model phi4-mini is not available. Pulling it now ..."
-    ollama pull phi4-mini
-    echo
-fi
-
 # --- Orchestration run ---
 
 echo "--- Orchestrated build: /orchestrate ---"
@@ -88,7 +80,7 @@ echo "Running: aia -c ${ORCH_CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo
 echo "Note: This demonstration runs 3+ tiers of agents in sequence."
 echo "      Each layer spawns 2-4 specialists. Allow 10-20 minutes"
-echo "      depending on Ollama model inference speed."
+echo "      depending on OpenAI API response times."
 echo
 
 REQUIREMENTS_CONTENT=$(cat "${REQUIREMENTS}")
@@ -97,7 +89,7 @@ expect <<EXPECT_SCRIPT
 set timeout 1800
 log_user 1
 
-spawn aia -c aia_config_orchestrator.yml -m ollama/phi4,ollama/phi4-mini --chat
+spawn aia -c aia_config_orchestrator.yml -m gpt-4.1,gpt-4.1-mini --chat
 
 expect {
   "#=> " {}

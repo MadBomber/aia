@@ -20,8 +20,7 @@
 # "your turn" sections but still executes the automated expect-based parts.
 #
 # Prerequisites:
-#   - Run 00_setup_aia.sh first
-#   - Ollama running with phi4 model available
+#   - Run 00_setup_aia.sh first (OPENAI_API_KEY must be set)
 #
 # Usage:
 #   cd examples
@@ -75,8 +74,7 @@ Scripts 23-28 run with BATCH_MODE=true, which skips their interactive
 "your turn" sections but still runs the automated expect-based parts.
 
 Prerequisites:
-  1. Run 00_setup_aia.sh first
-  2. Ollama running with the phi4 model available
+  1. Run 00_setup_aia.sh first (OPENAI_API_KEY must be set)
 
 Exit codes:
   0  All scripts completed (some may have non-fatal warnings)

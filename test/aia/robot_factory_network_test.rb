@@ -285,17 +285,21 @@ class RobotFactoryNetworkTest < Minitest::Test
     assert_equal "aia-consensus", result.name
   end
 
-  def test_build_routes_pipeline_to_pipeline_network
+  def test_build_with_pipeline_and_single_model_builds_single_robot
+    # Pipeline chaining is handled sequentially by PipelineOrchestrator.
+    # RobotFactory always builds a single robot when only one model is configured,
+    # regardless of pipeline length.
     config = create_pipeline_config
     AIA.stubs(:config).returns(config)
 
     result = AIA::RobotFactory.build(config)
 
-    assert_instance_of RobotLab::Network, result
-    assert_equal "aia-pipeline", result.name
+    assert_instance_of RobotLab::Robot, result
   end
 
-  def test_build_pipeline_takes_precedence_over_multi_model
+  def test_build_with_pipeline_and_multi_model_builds_parallel_network
+    # When multiple models are configured, multi-model wins regardless of pipeline length.
+    # Pipeline sequential execution is still handled by PipelineOrchestrator.
     config = create_pipeline_config
     config.models = [
       OpenStruct.new(name: 'gpt-4o', role: nil, instance: 1, internal_id: 'gpt-4o', provider: nil),
@@ -305,8 +309,9 @@ class RobotFactoryNetworkTest < Minitest::Test
 
     result = AIA::RobotFactory.build(config)
 
-    assert_equal "aia-pipeline", result.name,
-      "Pipeline should take precedence over multi-model when both are configured"
+    assert_instance_of RobotLab::Network, result
+    assert_equal "aia-parallel", result.name,
+      "Multi-model config should build a parallel network when pipeline is also set"
   end
 
   # =========================================================================

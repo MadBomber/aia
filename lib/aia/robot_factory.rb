@@ -37,9 +37,7 @@ module AIA
           ToolLoader.load_tools(config)
         end
 
-        if config.pipeline.length > 1
-          NetworkBuilder.build_pipeline_network(config, namer)
-        elsif config.models.length > 1
+        if config.models.length > 1
           build_multi_model(config, namer)
         else
           build_single_robot(config, namer)

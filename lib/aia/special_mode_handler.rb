@@ -90,7 +90,7 @@ module AIA
       @ui_presenter.display_info("Running verification (2 independent + reconciliation)...")
 
       network = VerificationNetwork.build(AIA.config)
-      result = @ui_presenter.with_spinner("Verifying") { network.run(prompt) }
+      result = @ui_presenter.with_spinner("Verifying") { network.run(message: prompt) }
 
       present_result(result, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true
@@ -191,7 +191,7 @@ module AIA
       @ui_presenter.display_info("Running concurrent MCP across #{groups.size} server groups...")
 
       network = RobotFactory.build_concurrent_mcp_network(AIA.config, groups)
-      result = @ui_presenter.with_spinner("Processing (concurrent)") { network.run(prompt) }
+      result = @ui_presenter.with_spinner("Processing (concurrent)") { network.run(message: prompt) }
       content = extract_content(result)
 
       present_result(result, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)

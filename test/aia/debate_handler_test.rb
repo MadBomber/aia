@@ -269,6 +269,74 @@ class DebateHandlerTest < Minitest::Test
     assert_includes result, "connection refused"
   end
 
+  def test_debate_short_circuits_when_all_robots_signal_converged
+    # Both robots say CONVERGED in Round 2 → loop should break at Round 2,
+    # not continue through all 5 rounds (the bug described in Demo 26).
+    robot_a_replies = [
+      "My initial analysis of the topic.",
+      "CONVERGED: We are in agreement on all key points."
+    ]
+    robot_b_replies = [
+      "A different perspective on the same topic.",
+      "CONVERGED: The consensus is clear and well-reasoned."
+    ]
+
+    robot_a = mock('robot_a')
+    robot_a.stubs(:name).returns("Alice")
+    robot_a.stubs(:with_bus)
+    robot_a.stubs(:run).returns(
+      OpenStruct.new(reply: robot_a_replies[0]),
+      OpenStruct.new(reply: robot_a_replies[1])
+    )
+
+    robot_b = mock('robot_b')
+    robot_b.stubs(:name).returns("Bob")
+    robot_b.stubs(:with_bus)
+    robot_b.stubs(:run).returns(
+      OpenStruct.new(reply: robot_b_replies[0]),
+      OpenStruct.new(reply: robot_b_replies[1])
+    )
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Discuss AI safety"))
+
+    assert_includes result, "Round 1"
+    assert_includes result, "Round 2"
+    refute_includes result, "Round 3"
+  end
+
+  def test_debate_does_not_short_circuit_when_only_one_robot_signals_converged
+    # Only one robot says CONVERGED — should NOT short-circuit.
+    robot_a = build_mock_robot("Alice", "My position stands unchanged.")
+    robot_b = build_mock_robot("Bob", "CONVERGED: I agree completely.")
+
+    network = mock('network')
+    network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
+    network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+
+    handler = AIA::DebateHandler.new(
+      robot: network, ui_presenter: @ui, tracker: @tracker
+    )
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
+
+    # Debate runs past Round 2 because Alice never says CONVERGED.
+    # (Similarity check will trigger at Round 2 since mocks return same text every round.)
+    assert_includes result, "Round 1"
+    assert_includes result, "Round 2"
+  end
+
   def test_force_debate_flag
     @turn_state.force_debate = true
     assert @turn_state.force_debate

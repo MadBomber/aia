@@ -56,7 +56,7 @@ class SpecialModeHandlerTest < Minitest::Test
     result = mock('result')
     result.stubs(:reply).returns('verified answer')
 
-    network.stubs(:run).with("test prompt").returns(result)
+    network.stubs(:run).with(message: "test prompt").returns(result)
     AIA::VerificationNetwork.stubs(:build).returns(network)
     @ui.stubs(:with_spinner).yields.returns(result)
 
@@ -208,7 +208,7 @@ class SpecialModeHandlerTest < Minitest::Test
     result = mock('result')
     result.stubs(:reply).returns('concurrent result')
 
-    network.stubs(:run).with("test prompt").returns(result)
+    network.stubs(:run).with(message: "test prompt").returns(result)
     AIA::RobotFactory.stubs(:build_concurrent_mcp_network).returns(network)
     @ui.stubs(:with_spinner).yields.returns(result)
 
@@ -355,7 +355,7 @@ class SpecialModeHandlerTest < Minitest::Test
     result = mock('result')
     result.stubs(:reply).returns('verified')
 
-    network.stubs(:run).with("test").returns(result)
+    network.stubs(:run).with(message: "test").returns(result)
     AIA::VerificationNetwork.stubs(:build).returns(network)
     @ui.stubs(:with_spinner).yields.returns(result)
 

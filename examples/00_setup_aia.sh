@@ -6,10 +6,9 @@
 #
 # What it does:
 #   1. Verifies aia is installed
-#   2. Verifies ollama is installed and running
-#   3. Pulls the phi4 model (good tool-calling support)
-#   4. Verifies examples/prompts_dir exists
-#   5. Writes examples/aia_config.yml for use with -c flag
+#   2. Verifies OPENAI_API_KEY is set
+#   3. Verifies examples/prompts_dir exists
+#   4. Writes examples/aia_config.yml for use with -c flag
 #
 # Each demo script sources common.sh which clears AIA_* env vars
 # and sets CONFIG=aia_config.yml for clean, isolated runs.
@@ -31,9 +30,9 @@ if [ -f "${REPO_BIN}/aia" ]; then
   export PATH="${REPO_BIN}:${PATH}"
 fi
 
-# The model to use for demos. phi4 is Ollama's reference model
-# for tool calling and has strong instruction-following ability.
-DEMO_MODEL="phi4:latest"
+# The model to use for demos. gpt-4.1 is OpenAI's flagship model with
+# strong instruction-following and tool-calling support.
+DEMO_MODEL="gpt-4.1"
 
 echo "=== AIA Examples Setup ==="
 echo
@@ -50,43 +49,19 @@ fi
 AIA_VERSION=$(aia --version 2>/dev/null || echo "unknown")
 echo "[ok] aia is installed (v${AIA_VERSION})"
 
-# --- Step 2: Check that ollama is installed and running ---
+# --- Step 2: Check that OPENAI_API_KEY is set ---
 
-if ! command -v ollama &> /dev/null; then
-  echo "ERROR: 'ollama' is not installed."
-  echo "       Install from: https://ollama.com"
-  echo "       macOS: brew install ollama"
+if [ -z "${OPENAI_API_KEY:-}" ]; then
+  echo "ERROR: OPENAI_API_KEY is not set."
+  echo "       Export your key before running demos:"
+  echo "         export OPENAI_API_KEY=sk-..."
+  echo "       Get a key at: https://platform.openai.com/api-keys"
   exit 1
 fi
 
-echo "[ok] ollama is installed"
+echo "[ok] OPENAI_API_KEY is set"
 
-# Check if ollama is serving
-OLLAMA_BASE="${OLLAMA_API_BASE:-http://localhost:11434}"
-
-if ! curl -s "${OLLAMA_BASE}/api/tags" > /dev/null 2>&1; then
-  echo "WARNING: ollama does not appear to be running."
-  echo "         Start it with: ollama serve"
-  echo "         Then re-run this script."
-  exit 1
-fi
-
-echo "[ok] ollama is running at ${OLLAMA_BASE}"
-
-# --- Step 3: Pull the demo model ---
-
-echo
-echo "Checking for model: ${DEMO_MODEL} ..."
-
-if ollama list 2>/dev/null | grep -q "^${DEMO_MODEL}"; then
-  echo "[ok] ${DEMO_MODEL} is already available"
-else
-  echo "Pulling ${DEMO_MODEL} (this may take a few minutes on first run) ..."
-  ollama pull "${DEMO_MODEL}"
-  echo "[ok] ${DEMO_MODEL} pulled successfully"
-fi
-
-# --- Step 4: Verify prompts directory ---
+# --- Step 3: Verify prompts directory ---
 
 echo
 if [ -d "${PROMPTS_DIR}" ]; then
@@ -96,7 +71,7 @@ else
   echo "[ok] created prompts_dir at ${PROMPTS_DIR}"
 fi
 
-# --- Step 5: Write the config file ---
+# --- Step 4: Write the config file ---
 
 cat > "${CONFIG_FILE}" <<EOF
 # AIA configuration for example demos
@@ -114,7 +89,7 @@ prompts:
   dir: ./prompts_dir
 
 models:
-  - name: ollama/${DEMO_MODEL}
+  - name: ${DEMO_MODEL}
 
 output:
   file: ~
@@ -132,5 +107,5 @@ echo "=== Setup Complete ==="
 echo
 echo "All demo scripts use:"
 echo "  aia -c aia_config.yml ..."
-echo "  Model:       ollama/${DEMO_MODEL}"
+echo "  Model:       ${DEMO_MODEL}"
 echo "  Prompts dir: ${PROMPTS_DIR}"

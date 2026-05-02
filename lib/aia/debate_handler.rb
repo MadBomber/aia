@@ -18,6 +18,7 @@ module AIA
     MAX_ROUNDS           = 5
     MIN_ROUNDS           = 2
     SIMILARITY_THRESHOLD = 0.85
+    CONVERGENCE_SIGNAL   = "CONVERGED"
 
     # Sentinel value for a robot that failed to respond in a round.
     # Treated as empty string for convergence; rendered with [FAILED] marker.
@@ -118,6 +119,10 @@ module AIA
 
     def converged?(round_index, current_results, previous_results)
       return false if round_index < MIN_ROUNDS - 1
+
+      # Fast path: every robot explicitly signaled convergence.
+      return true if all_signaled_convergence?(current_results)
+
       return false if previous_results.nil?
 
       current_text  = current_results.map  { |r| r.is_a?(FailedResponse) ? "" : r[:content].to_s }.join(" ")
@@ -125,6 +130,13 @@ module AIA
 
       scores = SimilarityScorer.score([previous_text, current_text])
       (scores[1] || 0.0) >= SIMILARITY_THRESHOLD
+    end
+
+    def all_signaled_convergence?(round_results)
+      round_results.all? do |r|
+        next false if r.is_a?(FailedResponse)
+        r[:content].to_s.upcase.include?(CONVERGENCE_SIGNAL)
+      end
     end
 
     def write_to_memory(round, robot_name, content)

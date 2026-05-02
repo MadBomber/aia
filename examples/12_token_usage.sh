@@ -5,15 +5,14 @@
 # after each response. When used with multiple models this lets
 # you compare how verbose each model is.
 #
-# Prerequisites: Run 00_setup_aia.sh first, plus a second model.
-#   ollama pull phi4-mini
+# Prerequisites: Run 00_setup_aia.sh first (OPENAI_API_KEY must be set).
 # Usage: cd examples && bash 12_token_usage.sh
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-MODEL_A="ollama/phi4"
-MODEL_B="ollama/phi4-mini"
+MODEL_A="gpt-4.1"
+MODEL_B="gpt-4.1-mini"
 
 echo "=== Demo 12: Token Usage ==="
 echo
@@ -27,14 +26,6 @@ echo "==="
 cat prompts_dir/sort_compare.md
 echo "==="
 echo
-
-# --- Check that the second model is available ---
-
-if ! ollama list 2>/dev/null | grep -q "^phi4-mini"; then
-  echo "Model phi4-mini is not available. Pulling it now ..."
-  ollama pull phi4-mini
-  echo
-fi
 
 # --- Part 1: Single model with --tokens ---
 

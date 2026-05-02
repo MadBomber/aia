@@ -8,7 +8,7 @@
 #
 # Usage:
 #   aia -c aia_config_orchestrator.yml --chat
-#   aia -c aia_config_orchestrator.yml -m ollama/qwen3,ollama/phi4-mini --chat
+#   aia -c aia_config_orchestrator.yml -m gpt-4.1,gpt-4.1-mini --chat
 
 prompts:
   dir: ./prompts_dir
@@ -36,7 +36,7 @@ prompts:
     roles before execution so the user understands the plan.
 
 models:
-  - name: ollama/qwen3
+  - name: gpt-4.1
 
 output:
   file: ~
