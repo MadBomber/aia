@@ -13,7 +13,7 @@ prompts:
   dir: ./prompts_dir
 
 models:
-  - name: ollama/qwen3
+  - name: ollama/qwen3:latest
 
 output:
   file: ~

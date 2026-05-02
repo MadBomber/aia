@@ -116,7 +116,7 @@ module AIA
     private
 
     def structured_output?
-      RubyLLM.models.find(AIA.config.models.first.name).structured_output?
+      RubyLLM.models.find(AIA.config.models.first.internal_id).structured_output?
     rescue StandardError
       false
     end
@@ -129,7 +129,7 @@ module AIA
       run_config = RobotFactory.build_run_config(config)
       RobotLab.build(
         name:          "decompose-probe",
-        model:         config.models.first.name,
+        model:         config.models.first.internal_id,
         system_prompt: nil,
         config:        run_config
       )

@@ -29,32 +29,38 @@ module AIA
 
       bridge.create_plan_from_pipeline(config.pipeline) if tracking
 
-      config.pipeline.each do |prompt_id|
+      # Use shift-based loop so that prompt front matter which sets
+      # config.pipeline (via `next:` or `pipeline:`) is picked up on
+      # the next iteration rather than being silently ignored.
+      until config.pipeline.empty?
+        prompt_id = config.pipeline.shift
         next if prompt_id.nil? || prompt_id.empty?
 
-        bridge.update_step_status(prompt_id, :started) if tracking
+        begin
+          bridge.update_step_status(prompt_id, :started) if tracking
 
-        prompt_text = build_prompt_text(prompt_id, config)
-        next if prompt_text.nil? || prompt_text.strip.empty?
+          prompt_text = build_prompt_text(prompt_id, config)
+          next if prompt_text.nil? || prompt_text.strip.empty?
 
-        result  = execute_prompt(prompt_text, config)
-        content = extract_content(result)
+          result  = execute_prompt(prompt_text, config)
+          content = extract_content(result)
 
-        bridge.update_step_status(prompt_id, :completed) if tracking
+          bridge.update_step_status(prompt_id, :completed) if tracking
 
-        @tracker.record_turn(
-          model:  config.models.first.name,
-          input:  prompt_text,
-          result: result
-        )
+          @tracker.record_turn(
+            model:  config.models.first.name,
+            input:  prompt_text,
+            result: result
+          )
 
-        @ui.display_ai_response(content)
-        output_to_file(content, config)
-        display_metrics(result, config)
-        @ui.display_separator
-      rescue StandardError => e
-        bridge.update_step_status(prompt_id, :failed, reason: e.message) if tracking
-        raise
+          @ui.display_ai_response(content)
+          output_to_file(content, config)
+          display_metrics(result, config)
+          @ui.display_separator
+        rescue StandardError => e
+          bridge.update_step_status(prompt_id, :failed, reason: e.message) if tracking
+          raise
+        end
       end
     end
 
@@ -151,21 +157,51 @@ module AIA
       "#{prompt_text}\n\n#{context}"
     end
 
-    # Display token metrics if enabled
+    # Display token metrics if enabled.
+    # Uses result.raw (RubyLLM::Message) for token data, matching ChatLoop's approach.
     def display_metrics(result, config)
       return unless config.flags.tokens
 
-      if result.respond_to?(:output) && result.output.any?
-        last_msg = result.output.last
-        if last_msg.respond_to?(:input_tokens)
-          metrics = {
-            model_id:      result.robot_name,
-            input_tokens:  last_msg.input_tokens,
-            output_tokens: last_msg.output_tokens
-          }
-          @ui.display_token_metrics(metrics)
-        end
+      if defined?(SimpleFlow::Result) && result.is_a?(SimpleFlow::Result)
+        display_network_metrics(result)
+        return
       end
+
+      raw = result.respond_to?(:raw) ? result.raw : nil
+      return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+
+      model_id = (raw.respond_to?(:model_id) && raw.model_id) ||
+                 (raw.respond_to?(:model) && raw.model) ||
+                 config.models.first.name
+      @ui.display_token_metrics(
+        model_id:      model_id,
+        input_tokens:  raw.input_tokens,
+        output_tokens: raw.output_tokens
+      )
+    end
+
+    def display_network_metrics(flow_result)
+      metrics_list = []
+      flow_result.context.each do |task_name, robot_result|
+        next if task_name == :run_params
+        next unless robot_result.respond_to?(:raw)
+
+        raw = robot_result.raw
+        next unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+
+        model_id = (raw.respond_to?(:model_id) && raw.model_id) ||
+                   (raw.respond_to?(:model) && raw.model) ||
+                   task_name.to_s
+        display_name = robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
+        metrics_list << {
+          model_id:      model_id,
+          display_name:  display_name,
+          input_tokens:  raw.input_tokens || 0,
+          output_tokens: raw.output_tokens || 0,
+          elapsed:       robot_result.respond_to?(:duration) ? robot_result.duration : nil
+        }
+      end
+      @ui.display_multi_model_metrics(metrics_list) unless metrics_list.empty?
     end
 
     # Write content to the output file if configured

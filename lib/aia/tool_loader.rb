@@ -83,6 +83,10 @@ module AIA
       # (e.g., shared_tools provides .load_all_tools for this purpose)
       eager_load_gem_tools
 
+      # Re-register PM directives so any AIA::Directive subclasses defined
+      # in just-loaded tool files become available in ERB prompt rendering.
+      PM::Directive.register_all if defined?(PM::Directive)
+
       # Discover loaded tools via ObjectSpace and cache the result
       tools = discover_tools
       @tool_cache = tools

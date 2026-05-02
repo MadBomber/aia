@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# examples/26_debate.sh
+# examples/26_debate_fixed.sh
+#
+# Fixed version of the debate demonstration script
 #
 # Demonstrates /debate mode: DebateHandler.
 #
@@ -9,15 +11,6 @@
 # to also detect convergence when responses become too similar.
 #
 # Requires a 2-model network (-m MODEL_A,MODEL_B).
-#
-# How it works in chat:
-#   1. Type /debate  →  AIA sets debate mode for next prompt
-#   2. Type your debate topic  →  rounds begin
-#
-# Prerequisites:
-#   - Run 00_setup_aia.sh first
-#   - phi4-mini model (auto-pulled if missing)
-# Usage: cd examples && bash 26_debate.sh
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -28,8 +21,8 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="ollama/qwen3"
-MODEL_B="ollama/phi4-mini"
+MODEL_A="ollama/qwen3:latest"
+MODEL_B="ollama/phi4-mini:latest"
 
 echo "=== Demo 26: Debate Mode (DebateHandler) ==="
 echo
@@ -60,34 +53,35 @@ echo
 echo "Running: aia -c ${CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo
 
-expect <<'EXPECT_SCRIPT'
+# Create the expect script with proper variable substitution
+expect -c "
 set timeout 600
 log_user 1
 
-spawn aia -c aia_config.yml -m ollama/qwen3,ollama/phi4-mini --chat
+spawn aia -c ${CONFIG} -m ${MODEL_A},${MODEL_B} --chat
 
 expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for chat prompt ***"; exit 1 }
+  \"#=> \" {}
+  timeout { puts \"\n*** Timed out waiting for chat prompt ***\"; exit 1 }
 }
 
-send "/debate\r"
+send \"/debate\r\"
 
 expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for directive confirmation ***"; exit 1 }
+  \"#=> \" {}
+  timeout { puts \"\n*** Timed out waiting for directive confirmation ***\"; exit 1 }
 }
 
-send "REST vs GraphQL: which is the better default choice for a new web API in 2025, and why?\r"
+send \"REST vs GraphQL: which is the better default choice for a new web API in 2025, and why?\r\"
 
 expect {
-  "#=> " {}
-  timeout { puts "\n*** Timed out waiting for debate results ***"; exit 1 }
+  \"#=> \" {}
+  timeout { puts \"\n*** Timed out waiting for debate results ***\"; exit 1 }
 }
 
-send "exit\r"
+send \"exit\r\"
 expect eof
-EXPECT_SCRIPT
+"
 
 drain_terminal
 echo

@@ -98,22 +98,21 @@ class UIPresenterTest < Minitest::Test
     assert_includes output, "   Message content"
   end
 
-  def test_display_ai_response_with_out_file
+  def test_display_ai_response_writes_only_to_stdout_not_file
     temp_file = Tempfile.new('test_output')
     AIA.config.output.file = temp_file.path
-    
+
     @presenter.display_ai_response("Test output")
-    
-    # Check console output
+
+    # Console output should contain the response
     output = @captured_output.string
     assert_includes output, "AI:"
     assert_includes output, "   Test output"
-    
-    # Check file output
+
+    # File must NOT be written by display_ai_response — output_to_file owns that
     file_content = File.read(temp_file.path)
-    assert_includes file_content, "AI:"
-    assert_includes file_content, "   Test output"
-    
+    refute_includes file_content, "AI:"
+
     temp_file.close
     temp_file.unlink
   end

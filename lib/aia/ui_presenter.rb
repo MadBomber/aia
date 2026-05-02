@@ -25,14 +25,6 @@ module AIA
     def display_ai_response(response)
       puts "\nAI: "
       format_chat_response(response)
-
-      out_file = AIA.config.output.file
-      if out_file && !out_file.nil?
-        File.open(out_file, 'a') do |file|
-          file.puts "\nAI: "
-          format_chat_response(response, file)
-        end
-      end
     end
 
 

@@ -51,12 +51,12 @@ class MentionRouterTest < Minitest::Test
     refute @handler.handle(context)
   end
 
-  def test_returns_false_when_mentions_dont_match_any_robot
+  def test_returns_true_and_reports_when_all_mentions_are_unknown
     network = build_network("Alice", "Bob")
     context = AIA::HandlerContext.new(robot: network, prompt: "@Charlie do something")
 
-    @ui.stubs(:display_info)
-    refute @handler.handle(context)
+    @ui.expects(:display_info).with(regexp_matches(/Unknown robot.*Charlie/i))
+    assert @handler.handle(context)
   end
 
   def test_returns_true_when_mention_matches_a_robot

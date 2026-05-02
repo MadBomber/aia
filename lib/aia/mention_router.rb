@@ -35,7 +35,10 @@ module AIA
         all_robots.find { |r| r.name.downcase == token.downcase }
       end.uniq(&:name)
 
-      return false if matched.empty?
+      if matched.empty?
+        report_unknown_mentions(mention_tokens, all_robots)
+        return true
+      end
 
       clean_prompt = prompt.gsub(/@\w+\s*/i, '').strip
 

@@ -16,11 +16,12 @@ module AIA
       run_config = RobotFactory.build_run_config(config)
       tools = ToolLoader.filtered_tools(config)
       mcp = RobotFactory.mcp_server_configs(config)
+      model_id = model.internal_id
 
       RobotLab.create_network(name: "aia-verification") do
         worker_a = RobotLab.build(
           name:          "verifier-a",
-          model:         model.name,
+          model:         model_id,
           system_prompt: "Answer the following question. Be thorough and precise.",
           local_tools:   tools,
           mcp_servers:   mcp,
@@ -30,7 +31,7 @@ module AIA
 
         worker_b = RobotLab.build(
           name:          "verifier-b",
-          model:         model.name,
+          model:         model_id,
           system_prompt: "Answer the following question independently. " \
                          "Focus on correctness and completeness.",
           local_tools:   tools,
@@ -41,7 +42,7 @@ module AIA
 
         reconciler = RobotLab.build(
           name:          "reconciler",
-          model:         model.name,
+          model:         model_id,
           system_prompt: "Compare two independent answers to the same question. " \
                          "Identify agreements and disagreements. " \
                          "Produce a final, reconciled answer that is most accurate. " \

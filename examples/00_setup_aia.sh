@@ -33,7 +33,7 @@ fi
 
 # The model to use for demos. qwen3 is Ollama's reference model
 # for tool calling and has strong instruction-following ability.
-DEMO_MODEL="qwen3"
+DEMO_MODEL="qwen3:latest"
 
 echo "=== AIA Examples Setup ==="
 echo
