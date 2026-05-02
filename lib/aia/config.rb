@@ -168,7 +168,7 @@ module AIA
       consensus: [:flags, :consensus],
       track_pipeline: [:flags, :track_pipeline],
       expert_routing: [:flags, :expert_routing],
-      tool_filter_a: [:flags, :tool_filter_a],
+      auto_tool_filter: [:flags, :auto_tool_filter],
       tool_filter_load: [:flags, :tool_filter_load],
       tool_filter_save: [:flags, :tool_filter_save],
       allow_ruby_eval: [:flags, :allow_ruby_eval],

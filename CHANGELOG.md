@@ -22,6 +22,8 @@
 - **Lazy handler instantiation in `SpecialModeHandler`** (`lib/aia/special_mode_handler.rb`): `SpawnHandler`, `DebateHandler`, `DelegateHandler`, and `LayeredOrchestrator` are now created on first use via memoized private accessors instead of at construction time. Startup cost reduced for sessions that never invoke these handlers.
 - **Lazy-require for `VerificationNetwork` and `PromptDecomposer`** (`lib/aia/special_mode_handler.rb`): Files are `require_relative`'d inside `handle_verification` and `handle_decomposition` respectively, not at process boot.
 - **Lazy-require for TrakFlow infrastructure** (`lib/aia/startup_coordinator.rb`): `TaskCoordinator`, `TrakflowBridge`, and the TrakFlow tools are required and initialized only when TrakFlow is available in the load path. Startup no longer blocks or errors when TrakFlow is absent.
+- **`robot_lab` runtime dependency** (`aia.gemspec`): Updated the execution engine requirement from `robot_lab ~> 0.0.9` to `~> 0.1.0`, matching the v0.1 API used by the startup and robot configuration path.
+- **Automatic TF-IDF tool filtering** (`lib/aia/config/defaults.yml`, `lib/aia/config/cli_parser.rb`, `lib/aia/tool_filter_registry.rb`): Replaced the temporary `tool_filter_a` flag with `auto_tool_filter`, enabled it by default, and changed `-A` to support `--[no-]auto-tool-filter`.
 - **`README.md`**: Added gem version and license badges; new "Why AIA?" feature comparison table; Prompt Directives table reorganized into seven category subsections (Model & Configuration, Content & Data, Execution & Code, Agent Orchestration, Prompt Workflows, Context & Checkpoints, Status & Info, TrakFlow).
 
 ### Removed
@@ -52,6 +54,8 @@
 - **Tool filter `resolve()` stdin block** (`lib/aia/tool_filter_strategy.rb`): In multi-strategy comparison mode, `resolve` prompted stdin for user input, which blocked non-interactive pipelines. Comparison mode removed; `resolve` is now non-blocking.
 - **`--list-skills` CLI directory options** (`lib/aia/config/cli_parser.rb`): Skill listing now honors `--prompts-dir` and `--skills-prefix` regardless of option order instead of reading only environment/default locations.
 - **Skill symlink path containment** (`lib/aia/directives/web_and_file_directives.rb`): Skill resolution now checks real paths against the skills directory boundary, preventing symlinks to sibling directories with the same prefix from being treated as valid skills.
+- **GPT-5/OpenAI token parameter mismatch** (`lib/aia/robot_factory.rb`, `lib/aia/patches/ruby_llm_tool_error.rb`): Models whose RubyLLM metadata declares `temperature: false` no longer receive a temperature setting. OpenAI GPT-5/o-series requests now translate RobotLab's `max_tokens` run config into OpenAI's `max_completion_tokens` provider parameter, avoiding `Unsupported parameter: 'max_tokens'` failures while keeping `RobotLab::RunConfig` compatible.
+- **Installed gem BigDecimal activation conflict** (`lib/aia.rb`): AIA now activates and requires `bigdecimal >= 4.0` before loading transitive dependencies, preventing installed-gem startup failures when another dependency tries to activate an older BigDecimal version.
 
 ### Known Issues
 

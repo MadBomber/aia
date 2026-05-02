@@ -9,7 +9,7 @@ class ToolFilterRegistryTest < Minitest::Test
     @tools = []
 
     @base_flags = OpenStruct.new(
-      tool_filter_a: false,
+      auto_tool_filter: false,
       tool_filter_load: false,
       tool_filter_save: false
     )
@@ -27,7 +27,7 @@ class ToolFilterRegistryTest < Minitest::Test
   end
 
   def test_builds_tfidf_filter_when_flag_set
-    @base_flags.tool_filter_a = true
+    @base_flags.auto_tool_filter = true
 
     tfidf_filter = mock('tfidf_filter')
     tfidf_filter.expects(:prep).once
@@ -39,7 +39,7 @@ class ToolFilterRegistryTest < Minitest::Test
   end
 
   def test_fact_asserter_instantiated_once_for_tfidf
-    @base_flags.tool_filter_a = true
+    @base_flags.auto_tool_filter = true
 
     fact_asserter_instances = []
     AIA::FactAsserter.stubs(:new).with { fact_asserter_instances << 1; true }.returns(mock('fa'))

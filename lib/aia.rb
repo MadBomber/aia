@@ -3,6 +3,8 @@
 # Main entry point for the AIA application (v2).
 # AIA is a thin CLI shell orchestrating robot_lab robots.
 
+gem 'bigdecimal', '>= 4.0'
+require 'bigdecimal'
 require 'robot_lab'
 require 'pm'
 

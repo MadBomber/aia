@@ -87,8 +87,8 @@ module AIA
           options[:concurrent_auto] = true
         end
 
-        opts.on("-A", "--tool-filter-tfidf", "Use TF-IDF similarity-based tool filtering") do
-          options[:tool_filter_a] = true
+        opts.on("-A", "--[no-]auto-tool-filter", "Use TF-IDF similarity-based tool filtering (default: on)") do |v|
+          options[:auto_tool_filter] = v
         end
 
         opts.on("--load", "Load persisted tool filter databases from ~/.config/aia/") do

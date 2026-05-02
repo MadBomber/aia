@@ -57,6 +57,18 @@ class VersionTest < Minitest::Test
     end
   end
 
+  def test_gemspec_requires_robot_lab_0_1
+    gemspec_path = File.expand_path('../../aia.gemspec', __dir__)
+    spec = Gem::Specification.load(gemspec_path)
+    dependency = spec.runtime_dependencies.find { |dep| dep.name == 'robot_lab' }
+
+    refute_nil dependency, "robot_lab should be a runtime dependency"
+    assert dependency.requirement.satisfied_by?(Gem::Version.new('0.1.0')),
+           "robot_lab dependency should allow v0.1.0"
+    refute dependency.requirement.satisfied_by?(Gem::Version.new('0.0.12')),
+           "robot_lab dependency should exclude v0.0.12"
+  end
+
   def test_version_follows_semantic_versioning
     assert_match(/^\d+\.\d+\.\d+/, AIA::VERSION, "Version should start with MAJOR.MINOR.PATCH")
 

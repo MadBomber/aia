@@ -20,7 +20,7 @@ module AIA
       load_db = config.flags.tool_filter_load
       save_db = config.flags.tool_filter_save
 
-      if config.flags.tool_filter_a
+      if config.flags.auto_tool_filter
         require_relative 'tool_filter/tfidf'
         fact_asserter ||= AIA::FactAsserter.new
         tfidf_filter = ToolFilter::TFIDF.new(tools: tools, fact_asserter: fact_asserter)

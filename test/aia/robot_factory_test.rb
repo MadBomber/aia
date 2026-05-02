@@ -33,6 +33,17 @@ class RobotFactoryTest < Minitest::Test
     assert_instance_of RobotLab::RunConfig, result
   end
 
+  def test_build_run_config_omits_temperature_for_models_that_do_not_support_it
+    @config.models = [OpenStruct.new(name: 'gpt-5.4', role: nil, instance: 1, internal_id: 'gpt-5.4', provider: nil)]
+    model_info = OpenStruct.new(provider: 'openai', metadata: { temperature: false })
+    RubyLLM.models.expects(:find).with('gpt-5.4').returns(model_info)
+
+    result = AIA::RobotFactory.send(:build_run_config, @config).to_h
+
+    refute_includes result, :temperature
+    assert_equal 2048, result[:max_tokens]
+  end
+
   # Task 3: configure_robot_lab must NOT be called during build
   def test_build_does_not_call_configure_robot_lab
     AIA::RobotFactory.expects(:configure_robot_lab).never

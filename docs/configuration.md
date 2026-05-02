@@ -249,8 +249,8 @@ mcp_skip: ~                   # Array of MCP server names to skip
 #   track_pipeline: false     # Track which pipeline prompts are executed
 #   expert_routing: false     # Route chat turns to specialist robots
 #
-# Tool Filter Strategy Flags (A=TF-IDF, B=Zvec, C=SqliteVec, D=LSI)
-#   tool_filter_a: false      # TF-IDF cosine similarity filter
+# Tool Filter Strategy Flags
+#   auto_tool_filter: true    # TF-IDF cosine similarity filter (on by default)
 #   tool_filter_b: false      # Zvec HNSW vector DB filter
 #   tool_filter_c: false      # SqliteVec filter
 #   tool_filter_d: false      # LSI (latent semantic indexing) filter

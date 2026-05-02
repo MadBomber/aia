@@ -111,11 +111,20 @@ module AIA
       end
 
       # Build RunConfig from AIA configuration.
+      # Uses the ruby_llm model registry to skip parameters the model doesn't support:
+      # - temperature is omitted for models that declare temperature: false in metadata
+      # - max_tokens remains a RobotLab::RunConfig field; AIA normalizes it at
+      #   the RubyLLM/OpenAI provider boundary for models that need
+      #   max_completion_tokens
       def build_run_config(config)
-        params = {
-          temperature: config.llm.temperature,
-          max_tokens:  config.llm.max_tokens
-        }
+        model_spec = config.models.first
+        params     = {}
+
+        temp = config.llm.temperature
+        params[:temperature] = temp if temp && model_supports_temperature?(model_spec)
+
+        max = config.llm.max_tokens
+        params[:max_tokens] = max if max
 
         tp = config.llm.top_p
         params[:top_p] = tp if tp
@@ -127,6 +136,16 @@ module AIA
         params[:presence_penalty] = pp if pp && pp != 0.0
 
         RobotLab::RunConfig.new(**params)
+      end
+
+      # Returns false for models that explicitly declare temperature: false in the
+      # ruby_llm model registry (e.g. gpt-5.4, o1, o3 reasoning models).
+      def model_supports_temperature?(model_spec)
+        return true unless model_spec
+        info = RubyLLM.models.find(model_spec.name)
+        info.metadata[:temperature] != false
+      rescue StandardError
+        true
       end
 
       # Normalize all configured MCP server configs for robot_lab.
