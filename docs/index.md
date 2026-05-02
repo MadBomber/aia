@@ -47,80 +47,48 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 
 ---
 
-!!! danger "Breaking Changes in v1.0.0 (from v0.11.2)"
+!!! tip "🚀 New: AI Assistant Scheduler (AIAS)"
 
-    **Version 1.0.0 is a major release with breaking changes. Read this section before upgrading.**
+    **Schedule and automate your AIA prompts!** AIAS is a new Ruby gem that lets you run AIA prompts on a cron-like schedule — perfect for recurring AI tasks, automated reports, and timed workflows.
 
-!!! failure "Prompt File Format (Critical)"
+    **[View AIAS on GitHub →](https://github.com/madbomber/aias)**
 
-    The prompt file format has changed completely. You **must** migrate your prompts.
+---
 
-    - **File extension** — `.txt` is now `.md`
-    - **Parameters** — `[PLACEHOLDER]` is now `<%= placeholder %>`
-    - **Metadata** — Separate `.json` history files are now YAML front matter inside the `.md` file
-    - **Directive embedding** — `//config`, `//pipeline`, etc. are now YAML front matter keys
+!!! tip "🎭 Roles: Give Your Robot a Personality"
 
-    **Before (v0.11.2):**
+    Roles are plain-text prompt files that define how your AI thinks, talks, and interacts with you. Drop one in `~/.prompts/roles/` and your robot instantly becomes someone new.
 
-        # ~/.prompts/my_prompt.txt
-        //config temperature 0.7
-        //pipeline next_prompt, another_prompt
-        Tell me about [TOPIC] in [LANGUAGE]
+    **For fun:**
+    ```bash
+    aia --chat --role pirate           # Arrr, matey!
+    aia --chat --role nyc_cabbie       # opinions about EVERYTHING
+    aia --chat --role stoned_hacker    # solves it anyway, dude
+    ```
 
-    **After (v1.0.0):**
+    **For serious work:**
+    ```bash
+    # Explains quantum physics to your 7-year-old
+    aia --chat --role first_grade_teacher
 
-        ---
-        temperature: 0.7
-        pipeline: [next_prompt, another_prompt]
-        parameters:
-          topic: null
-          language: null
-        ---
-        Tell me about <%= topic %> in <%= language %>
+    # Three expert robots on the same design doc, simultaneously
+    aia --model gpt-4o=architect,claude=security,gemini=performance design.md
+    ```
 
-    **Run the migration tool:**
+    Assign a different role to each model and get multiple expert perspectives in one command. **[Full Roles Guide →](guides/models.md)**
 
-        # Back up first (recommended)
-        cp -r ~/.prompts ~/.prompts.backup
+!!! tip "🎓 Skills: Teach Your Robot Your Process"
 
-        # Migrate all prompts
-        migrate_prompts --verbose ~/.prompts
+    Skills are structured instruction sets that tell your robot *exactly how* to approach a task — your workflow, your standards, every single time. Each skill is a directory with a `SKILL.md` file in `~/.prompts/skills/`.
 
-        # Review flagged files (*.txt-review), then recover them
-        migrate_prompts --reprocess ~/.prompts
+    ```bash
+    aia -s code-quality my_prompt                      # one skill
+    aia -s code-quality,security-review my_prompt      # stack them
+    aia --chat --role senior_dev -s code-quality       # role + skill
+    /skill code-quality                                # add mid-chat
+    ```
 
-    The `migrate_prompts` script is a standalone program in `bin/`. It handles placeholder conversion, directive migration, history file merging, and flags files with code fences for manual review. See [Migration Guide](guides/migrate-prompts.md) for details.
-
-!!! warning "Removed and Deprecated CLI Options"
-
-    - **`--adapter` removed** — AIA now exclusively uses `ruby_llm`. Remove `--adapter` from any scripts or aliases.
-    - **`--regex` deprecated** — Parameter extraction uses ERB (`<%= param %>`) instead of regex. The flag prints a warning and has no effect.
-    - **`--terse` deprecated** — No longer supported. The flag prints a warning and has no effect.
-    - **`--metrics` renamed to `--tokens`** — Use `--tokens` to display token usage. `--cost` implies `--tokens`.
-
-!!! warning "Dependency: prompt_manager v0.5 to v1.0"
-
-    The `prompt_manager` gem has been upgraded from `~> 0.5.8` to `~> 1.0`. This is the root cause of the prompt file format changes above. The new version uses ERB for parameter interpolation and YAML front matter for metadata. All prompt files must be in the new format.
-
-!!! info "Environment Variables (from v0.10.0)"
-
-    If upgrading from v0.9.x, environment variable names changed in v0.10.0 to use double underscore (`__`) for nested config sections:
-
-    | Old (v0.9.x) | New (v1.0.0) |
-    |---|---|
-    | `AIA_PROMPTS_DIR` | `AIA_PROMPTS__DIR` |
-    | `AIA_OUT_FILE` | `AIA_OUTPUT__FILE` |
-    | `AIA_VERBOSE` | `AIA_FLAGS__VERBOSE` |
-    | `AIA_DEBUG` | `AIA_FLAGS__DEBUG` |
-    | `AIA_CHAT` | `AIA_FLAGS__CHAT` |
-    | `AIA_TEMPERATURE` | `AIA_LLM__TEMPERATURE` |
-    | `AIA_MARKDOWN` | `AIA_OUTPUT__MARKDOWN` |
-
-    `AIA_MODEL` is unchanged. See [Environment Variables](configuration.md#environment-variables) for the complete list.
-
-!!! info "Configuration Files (from v0.10.0)"
-
-    If upgrading from v0.9.x, configuration files now use a nested YAML structure with sections (`llm:`, `prompts:`, `output:`, `flags:`, etc.) and follow the XDG Base Directory Specification (`~/.config/aia/aia.yml`). See [Configuration Guide](configuration.md) for details.
+    Combine roles and skills: a pirate who follows your code review process, a first-grade teacher who uses your step-by-step explanation method, or multiple robots each with their own role and skill set — all from the command line. **[Full Skills Guide →](directives-reference.md)**
 
 ---
 
@@ -129,8 +97,14 @@ Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI inte
 ### 🚀 Dynamic Prompt Management
 - **Hierarchical Configuration**: Embedded directives > CLI args > environment variables > config files > defaults
 - **Prompt Sequences and Workflows**: Chain prompts together for complex AI workflows
-- **Role-based Prompts**: Use predefined roles to context your AI interactions
 - **Fuzzy Search**: Find prompts quickly with fuzzy matching (requires `fzf`)
+
+### 🎭 Roles & 🎓 Skills
+- **Robot Personalities**: Give any robot a voice — fun personas like a pirate or NYC cabbie, or professional ones like a senior architect or first-grade teacher
+- **Per-Model Roles**: Assign a different role to each model in a multi-model session — `--model gpt-4o=architect,claude=security`
+- **Reusable Skill Sets**: Encode your exact workflow once in a `SKILL.md` file; apply it to any prompt with `-s skill-name`
+- **Role + Skill Combos**: A robot can be *who you want* (role) and *know exactly what to do* (skill) simultaneously
+- **Mid-Chat Skills**: Add a skill to a running chat session with `/skill skill-name`
 
 ### 🔧 Powerful Integration
 - **Shell Integration**: Execute shell commands directly within prompts

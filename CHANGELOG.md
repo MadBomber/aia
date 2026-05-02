@@ -45,6 +45,39 @@
 - **`--list-skills` CLI directory options** (`lib/aia/config/cli_parser.rb`): Skill listing now honors `--prompts-dir` and `--skills-prefix` regardless of option order instead of reading only environment/default locations.
 - **Skill symlink path containment** (`lib/aia/directives/web_and_file_directives.rb`): Skill resolution now checks real paths against the skills directory boundary, preventing symlinks to sibling directories with the same prefix from being treated as valid skills.
 
+## [1.1.1] - 2026-05-01
+
+### Bug Fixes
+
+- **Ollama model pipeline context preservation**: Mainline fixed adapter replacement when provider-prefixed model names (for example `ollama/qwen3`) did not match resolved local model IDs, preserving conversation history across pipeline steps.
+- **Role front matter model isolation**: Mainline restored the active model after role loading so a role file's `model:` metadata cannot unexpectedly replace the configured model.
+- **Custom directive loading for ERB prompts**: Mainline loads tool files before PromptManager directive registration so directive classes provided by `--tools` are available inside ERB prompts.
+- **Demo example path resolution** (`examples/prompts_dir/project_summary`): Corrected repository-relative paths used by the example prompt.
+
+### Improvements
+
+- **Demo scripts prefer working-tree binary** (`examples/common.sh`): Mainline demo scripts prepend `../bin` to `PATH` when local `bin/aia` is executable.
+
+## [1.1.0] - 2026-04-23
+
+### New Features
+
+- **Skills system** (`lib/aia/skill_utils.rb`, `lib/aia/directives/web_and_file_directives.rb`): Mainline added `SKILL.md`-based skills, `/skill`, `/skills`, `--skill`, `--list-skills`, `--skills-dir`, `--skills-prefix`, path-based skill IDs, and shared `AIA::SkillUtils` helpers.
+- **Path-based role resolution** (`lib/aia/prompt_handler.rb`, `lib/aia/config/cli_parser.rb`, `lib/aia/config/validator.rb`): `--role` and role loading now accept file-system paths in addition to configured role IDs.
+- **Top-level `roles` and `skills` config sections** (`lib/aia/config/defaults.yml`): Added dedicated directory configuration while preserving prompt prefix settings.
+- **Shared search-term parsing** (`lib/aia/directive.rb`): Directive filtering now uses common positive and negative term parsing.
+
+### Bug Fixes
+
+- **Direct skill file resolution**: Skill loading now accepts direct `.md` file paths as well as skill directories.
+- **Skill path-prefix containment**: Mainline added realpath boundary checks to block sibling-directory prefix attacks.
+- **Path-based role prefixing**: Config tailoring no longer prepends the roles prefix to path-based role IDs.
+
+### Improvements
+
+- **Model and skill filtering consistency**: `/llms` and `/skills` use the shared positive/negative search term behavior.
+- **Skills CLI option placement**: Skill-related CLI flags now appear under Prompt Options.
+
 ## [2.0.9.alpha] - 2026-03-28
 
 ### Improvements (Section 9 — Design Correctness)

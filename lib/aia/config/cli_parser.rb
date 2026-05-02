@@ -6,7 +6,9 @@
 # for the Config class.
 
 require 'optparse'
+require 'yaml'
 require_relative 'model_spec'
+require_relative '../skill_utils'
 
 module AIA
   module CLIParser
@@ -21,8 +23,8 @@ module AIA
           parser = create_option_parser(options)
           parser.parse!
         rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
-          STDERR.puts "ERROR: #{e.message}"
-          STDERR.puts "       use --help for usage report"
+          warn "ERROR: #{e.message}"
+          warn "       use --help for usage report"
           exit 1
         end
 
@@ -173,11 +175,15 @@ module AIA
           options[:role] = role
         end
 
+        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
+          options[:skills_dir] = dir
+        end
+
         opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
           options[:skills_prefix] = prefix
         end
 
-        opts.on("-s", "--skill SKILL_IDS", "Append skill(s) to prompt; comma-separated or repeatable") do |skill_ids|
+        opts.on("-s", "--skill SKILL_IDS", "Append skill(s) to prompt; comma-separated IDs or paths") do |skill_ids|
           options[:skills] ||= []
           options[:skills] += skill_ids.split(',').map(&:strip).reject(&:empty?)
         end
@@ -452,6 +458,14 @@ module AIA
       end
 
       def validate_role_exists(role_id)
+        if AIA::SkillUtils.path_based_id?(role_id)
+          expanded = File.expand_path(role_id)
+          expanded += '.md' if File.extname(expanded).empty?
+          raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
+
+          return
+        end
+
         prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
 
@@ -484,19 +498,33 @@ module AIA
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
         roles_dir = File.join(prompts_dir, roles_prefix)
 
-        if Dir.exist?(roles_dir)
-          roles = list_available_role_names(prompts_dir, roles_prefix)
-
-          if roles.empty?
-            puts "No role files found in #{roles_dir}"
-            puts "Create .md files in this directory to define roles."
-          else
-            puts "Available roles in #{roles_dir}:"
-            roles.each { |role| puts "  - #{role}" }
-          end
-        else
+        unless Dir.exist?(roles_dir)
           puts "No roles directory found at #{roles_dir}"
           puts "Create this directory and add role files to use roles."
+          return
+        end
+
+        roles = list_available_role_names(prompts_dir, roles_prefix)
+
+        if roles.empty?
+          puts "No role files found in #{roles_dir}"
+          puts "Create .md files in this directory to define roles."
+          return
+        end
+
+        roles.each do |role_id|
+          role_file = File.join(roles_dir, "#{role_id}.md")
+          front_matter = AIA::SkillUtils.parse_front_matter(role_file)
+
+          puts "## #{role_id}"
+          puts
+          puts "| Key | Value |"
+          puts "|-----|-------|"
+          front_matter.each do |key, value|
+            safe_value = value.to_s.gsub('|', '\\|')
+            puts "| #{key} | #{safe_value} |"
+          end
+          puts
         end
       end
 
@@ -506,15 +534,17 @@ module AIA
 
         Dir.glob("**/*.md", base: roles_dir)
           .map { |f| f.chomp('.md') }
+          .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
           .sort
       end
 
       def list_available_skills(options = {})
-        require 'yaml'
-
-        prompts_dir    = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
-        skills_prefix  = options[:skills_prefix] || ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', 'skills')
-        skills_dir     = File.join(prompts_dir, skills_prefix)
+        skills_dir = options[:skills_dir]
+        unless skills_dir
+          prompts_dir = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
+          skills_prefix = options[:skills_prefix] || ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', 'skills')
+          skills_dir = File.join(prompts_dir, skills_prefix)
+        end
 
         unless Dir.exist?(skills_dir)
           puts "No skills directory found at #{skills_dir}"
@@ -538,7 +568,7 @@ module AIA
 
         lines = []
         skill_ids.each do |skill_id|
-          front_matter = parse_skill_front_matter(File.join(skills_dir, skill_id, 'SKILL.md'))
+          front_matter = AIA::SkillUtils.parse_front_matter(File.join(skills_dir, skill_id, 'SKILL.md'))
 
           lines << "## #{skill_id}"
           lines << ""
@@ -558,18 +588,6 @@ module AIA
         end
 
         puts lines.join("\n")
-      end
-
-      def parse_skill_front_matter(skill_md_path)
-        content = File.read(skill_md_path)
-        return {} unless content.start_with?("---")
-
-        end_pos = content.index("---", 3)
-        return {} unless end_pos
-
-        yaml_text = content[3...end_pos].strip
-        parsed    = YAML.safe_load(yaml_text, symbolize_names: false) rescue {}
-        parsed.is_a?(Hash) ? parsed : {}
       end
 
       def list_available_models(query)

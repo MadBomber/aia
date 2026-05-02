@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'word_wrapper'
+require_relative '../skill_utils'
 
 # lib/aia/config/validator.rb
 #
@@ -22,6 +23,9 @@ module AIA
         stdin_content = process_stdin_content
         config.stdin_content = stdin_content if stdin_content && !stdin_content.strip.empty?
 
+        # Tool files may define AIA::Directive subclasses used by PromptManager.
+        require_tool_files(config)
+
         # Process arguments and validate
         process_prompt_id_from_args(config, remaining_args)
         validate_and_set_context_files(config, remaining_args)
@@ -30,6 +34,7 @@ module AIA
         return :early_exit if handle_dump_config(config) == :early_exit
         return :early_exit if handle_mcp_list(config) == :early_exit
         return :early_exit if handle_list_tools(config) == :early_exit
+        return :early_exit if handle_list_skills(config) == :early_exit
         return :early_exit if handle_completion_script(config) == :early_exit
         validate_required_prompt_id(config)
         process_role_configuration(config)
@@ -131,14 +136,14 @@ module AIA
         return if role.nil? || role.empty?
 
         roles_prefix = config.prompts.roles_prefix
-        unless roles_prefix.nil? || roles_prefix.empty?
-          unless role.start_with?(roles_prefix)
-            config.prompts.role = "#{roles_prefix}/#{role}"
-            role = config.prompts.role
-          end
+        unless AIA::SkillUtils.path_based_id?(role) || roles_prefix.nil? || roles_prefix.empty? || role.start_with?(roles_prefix)
+          config.prompts.role = "#{roles_prefix}/#{role}"
+          role = config.prompts.role
         end
 
-        config.prompts.roles_dir ||= File.join(config.prompts.dir, roles_prefix)
+        config.prompts.roles_dir ||= File.join(config.prompts.dir, roles_prefix.to_s)
+
+        return if config.flags&.chat == true
 
         if config.prompt_id.nil? || config.prompt_id.empty?
           unless role.nil? || role.empty?
@@ -319,6 +324,51 @@ module AIA
 
       def mcp_filter_active?(config)
         !Array(config.mcp_use).empty? || !Array(config.mcp_skip).empty?
+      end
+
+      def require_tool_files(config)
+        Array(config.tools&.paths).each do |path|
+          expanded = File.expand_path(path)
+          if File.exist?(expanded)
+            require expanded
+          else
+            warn "Warning: Tool file not found: #{path}"
+          end
+        rescue LoadError, StandardError => e
+          warn "Warning: Failed to load tool '#{path}': #{e.message}"
+        end
+      end
+
+      def handle_list_skills(config)
+        return unless config.respond_to?(:list_skills) && config.list_skills
+
+        skills_dir = config.skills.dir
+
+        unless Dir.exist?(skills_dir)
+          warn "No skills directory found at #{skills_dir}"
+          return :early_exit
+        end
+
+        skill_dirs = Dir.glob("*/SKILL.md", base: skills_dir).map { |f| File.dirname(f) }.sort
+
+        if skill_dirs.empty?
+          warn "No skills found in #{skills_dir}"
+          return :early_exit
+        end
+
+        skill_dirs.each do |skill_name|
+          skill_md = File.join(skills_dir, skill_name, 'SKILL.md')
+          fm = AIA::SkillUtils.parse_front_matter(skill_md)
+
+          puts "## #{skill_name}"
+          puts
+          puts "| Key | Value |"
+          puts "|-----|-------|"
+          fm.each { |key, value| puts "| #{key} | #{value} |" }
+          puts
+        end
+
+        :early_exit
       end
 
       def load_local_tools(config)

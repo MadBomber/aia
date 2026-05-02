@@ -311,6 +311,90 @@ aia --model "gpt-4,claude-3-sonnet" --consensus my_prompt
 aia --model "gpt-4,claude-3-sonnet" --no-consensus my_prompt
 ```
 
+### `-s, --skill SKILL_IDS`
+Inject one or more skills into the prompt before it is sent to the AI. Skills are loaded from the skills directory (default: `~/.prompts/skills/`). Multiple skills can be specified as a comma-separated list, and the flag may be repeated.
+
+Skills are inserted **after the role and before the user prompt**, providing task-level instructions for how the LLM should approach the request:
+
+```
+Role content  (who the LLM is)
+Skill content (how to approach the task)
+User prompt   (what to do)
+```
+
+Only the body of each `SKILL.md` is injected — the YAML front matter is stripped.
+
+```bash
+# Single skill (ID-based — resolved from skills directory)
+aia --skill code-review my_prompt
+aia -s summarizer my_prompt
+
+# Path-based skill (relative, home-relative, or absolute path to a skill directory)
+aia --skill ./local-skills/code-review my_prompt
+aia --skill /shared/team-skills/security-audit my_prompt
+aia --skill ~/my-skills/custom-skill my_prompt
+
+# Combine with a role: role sets persona, skill sets method
+aia --role ruby_expert --skill code-review review_prompt my_code.rb
+
+# Multiple skills applied in order (comma-separated)
+aia --skill "code-review,security-audit" my_prompt
+
+# Repeatable form
+aia -s code-review -s security-audit my_prompt
+```
+
+**Path resolution**: If a skill ID starts with `/`, `~/`, `./`, or `../`, it is treated as a filesystem path to a skill directory (which must contain `SKILL.md`). Otherwise it is looked up by ID in the skills directory.
+
+**See also**: `--list-skills` to discover available skills, `/skill` chat directive, `--role` for personality
+
+### `--list-skills`
+List all available skills and exit. Skills are subdirectories under the skills directory, each containing a `SKILL.md` file with YAML front matter.
+
+```bash
+aia --list-skills
+
+# With a custom skills directory
+aia --skills-dir ~/work/skills --list-skills
+```
+
+**Example output**:
+```markdown
+## code-quality
+
+| Key | Value |
+|-----|-------|
+| name | code-quality |
+| description | Improve code quality through analysis and refactoring. |
+| user-invocable | true |
+
+## summarizer
+
+| Key | Value |
+|-----|-------|
+| name | summarizer |
+| description | Summarize documents and conversations concisely. |
+```
+
+Each skill is shown as a `## skill-name` heading followed by a table of all front matter fields from its `SKILL.md`.
+
+### `--skills-dir DIR`
+Directory containing skill subdirectories (default: `~/.prompts/skills`). Each subdirectory must contain a `SKILL.md` file to be recognized as a skill.
+
+```bash
+aia --skills-dir ~/work/skills --list-skills
+aia --skills-dir /shared/team-skills -s code-review my_prompt
+```
+
+**Environment variable**: `AIA_SKILLS__DIR`
+
+### `--skills-prefix PREFIX`
+Subdirectory name within `--prompts-dir` used as the skills prefix (default: `skills`). Affects `AIA.config.prompts.skills_prefix`.
+
+```bash
+aia --skills-prefix team-skills --list-skills
+```
+
 ### `--sm, --speech-model MODEL`
 Speech model to use for text-to-speech functionality.
 
@@ -416,9 +500,14 @@ Role ID to prepend to the prompt. This applies the same role to all models.
 For per-model role assignment, use the inline `MODEL=ROLE` syntax with `--model` instead.
 
 ```bash
-# Apply role to all models
+# Apply role by ID (resolved from roles directory)
 aia --role expert my_prompt
 aia -r teacher explain_concept
+
+# Path-based role (relative or absolute path to a .md file)
+aia --role ./local-roles/domain-expert my_prompt
+aia --role /shared/roles/security-auditor review.md
+aia --role ~/my-roles/custom-persona my_prompt
 
 # With multiple models (same role for all)
 aia --model "gpt-4,claude" --role architect design.md
@@ -426,6 +515,8 @@ aia --model "gpt-4,claude" --role architect design.md
 # Per-model roles (inline syntax - see --model)
 aia --model "gpt-4=architect,claude=security" design.md
 ```
+
+**Path resolution**: If `ROLE_ID` starts with `/`, `~/`, `./`, or `../`, it is treated as a filesystem path to a role `.md` file. The `.md` extension is added automatically when the path has no file extension. Otherwise the ID is resolved relative to the roles directory.
 
 **See also**: `--model` for inline role syntax, `--list-roles` for discovering available roles.
 

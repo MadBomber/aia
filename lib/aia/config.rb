@@ -57,7 +57,7 @@ module AIA
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :mcp_list, :list_tools,
+                  :completion, :mcp_list, :list_tools, :list_skills,
                   :executable_prompt_content,
                   :tool_names, :loaded_tools,
                   :log_level_override, :log_file_override,
@@ -184,6 +184,7 @@ module AIA
       prompts_dir: [:prompts, :dir],
       roles_prefix: [:prompts, :roles_prefix],
       role: [:prompts, :role],
+      skills_dir: [:skills, :dir],
       skills_prefix: [:prompts, :skills_prefix],
       skills: [:prompts, :skills],
       tools_prefix: [:prompts, :tools_prefix],
@@ -374,6 +375,7 @@ module AIA
       paths.config_file = File.expand_path(paths.config_file) if paths.config_file
       prompts.dir = File.expand_path(prompts.dir) if prompts.dir
       prompts.roles_dir = File.expand_path(prompts.roles_dir) if prompts.roles_dir
+      roles.dir = File.expand_path(roles.dir) if roles.respond_to?(:dir) && roles.dir
       skills.dir = File.expand_path(skills.dir) if skills.respond_to?(:dir) && skills.dir
       tools.dir  = File.expand_path(tools.dir)  if tools.respond_to?(:dir)  && tools.dir
       output.history_file = File.expand_path(output.history_file) if output.history_file

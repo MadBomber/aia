@@ -5,6 +5,8 @@ require 'clipboard'
 
 module AIA
   class WebAndFileDirectives < Directive
+    include AIA::SkillUtils
+
     PUREMD_API_KEY = ENV.fetch('PUREMD_API_KEY', nil)
 
     desc "Fetch and include content from a webpage"
@@ -84,7 +86,7 @@ module AIA
       end
 
       dir = aia_skills_dir
-      skill_dir = resolve_skill_dir(skill_name, dir)
+      skill_dir = find_skill_dir(skill_name, dir)
       unless skill_dir
         msg = "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
         AIA::LoggerManager.aia_logger.error(msg)
@@ -92,9 +94,15 @@ module AIA
         return nil
       end
 
+      return File.read(skill_dir) if File.file?(skill_dir)
+
       skill_path = File.join(skill_dir, 'SKILL.md')
       unless File.exist?(skill_path)
-        msg = "Error: Skill '#{File.basename(skill_dir)}' has no SKILL.md in #{dir}."
+        msg = if path_based_id?(skill_name)
+                "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
+              else
+                "Error: Skill '#{File.basename(skill_dir)}' has no SKILL.md in #{dir}."
+              end
         AIA::LoggerManager.aia_logger.error(msg)
         puts msg
         return nil
@@ -123,33 +131,6 @@ module AIA
       prompts_dir   = ENV.fetch('AIA_PROMPTS__DIR', File.expand_path('~/.prompts'))
       skills_prefix = ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', 'skills')
       File.join(prompts_dir, skills_prefix)
-    end
-
-    def resolve_skill_dir(skill_name, dir)
-      return nil unless Dir.exist?(dir)
-
-      exact = File.join(dir, skill_name)
-      return safe_skill_path(exact, dir) if Dir.exist?(exact)
-
-      Dir.children(dir)
-         .sort
-         .each do |entry|
-        next unless entry.start_with?(skill_name)
-        candidate = File.join(dir, entry)
-        return safe_skill_path(candidate, dir) if Dir.exist?(candidate)
-      end
-
-      nil
-    end
-
-    def safe_skill_path(path, dir)
-      resolved = File.realpath(path)
-      root = File.realpath(dir)
-      root_with_separator = File.join(root, '')
-
-      resolved == root || resolved.start_with?(root_with_separator) ? resolved : nil
-    rescue Errno::ENOENT
-      nil
     end
 
     def terminal_width

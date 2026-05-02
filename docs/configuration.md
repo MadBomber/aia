@@ -92,8 +92,26 @@ prompts:
   roles_prefix: roles         # Subdirectory name for role files
   roles_dir: ~/.prompts/roles # Full path to roles directory
   role: ~                     # Default role
+  skills: []                  # Skill IDs to prepend to prompt (set by --skill/-s)
+  skills_prefix: skills       # Subdirectory name for skill directories
   system_prompt: ~            # Default system prompt
   parameter_regex: ~          # Regex for parameter extraction
+
+# Roles Configuration
+# Access: AIA.config.roles.dir
+# Env: AIA_ROLES__DIR
+roles:
+  dir: ~/.prompts/roles       # Full path to roles directory
+
+# Skills Configuration
+# Access: AIA.config.skills.dir
+# Env: AIA_SKILLS__DIR
+#
+# Skills are subdirectories under skills.dir, each containing a SKILL.md
+# file with YAML front matter (name, description, and any custom fields).
+# Use --skill/-s to prepend skills to prompts, --list-skills to browse.
+skills:
+  dir: ~/.prompts/skills      # Directory containing skill subdirectories
 
 # Output Configuration
 # Access: AIA.config.output.file, AIA.config.output.append, etc.
@@ -266,6 +284,9 @@ export AIA_PROMPTS__ROLE="expert"
 export AIA_PROMPTS__SKILLS_PREFIX="skills"
 export AIA_PROMPTS__SYSTEM_PROMPT="my_system_prompt"
 export AIA_PROMPTS__PARAMETER_REGEX='\{\{(\w+)\}\}'
+
+# Skills settings (nested under skills:)
+export AIA_SKILLS__DIR="~/.prompts/skills"
 
 # Output settings (nested under output:)
 export AIA_OUTPUT__FILE="/tmp/aia_output.md"
