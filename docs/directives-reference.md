@@ -288,51 +288,62 @@ export PUREMD_API_KEY="your_api_key"
 **Aliases**: `/website`, `/web`
 
 ### `/skill`
-Include a Claude Code skill into the conversation context.
+Include an AIA skill into the conversation context.
 
 **Syntax**: `/skill skill_name`
 
 **Examples**:
 ```markdown
 /skill code-quality          # Exact match
-/skill code                  # Prefix match (finds first match starting with "code")
+/skill code                  # Prefix match (finds first alphabetical match starting with "code")
 /skill frontend-design       # Exact match
 /skill front                 # Prefix match (finds "frontend-design")
 ```
 
 **Features**:
-- Reads `SKILL.md` from `~/.claude/skills/<skill_name>/`
+- Reads `SKILL.md` from `<skills_dir>/<skill_name>/`
+- Skills directory resolves in order: `AIA.config.skills.dir` → `$AIA_PROMPTS__DIR/$AIA_PROMPTS__SKILLS_PREFIX` → `~/.prompts/skills`
 - Supports prefix matching: `/skill code` finds the first subdirectory starting with "code"
 - Exact matches take priority over prefix matches
-- Returns the skill content for inclusion in the prompt
+- Returns the full `SKILL.md` content for inclusion in the prompt
 
 **Error Handling**:
-- Missing skill name: `Error: /skill requires a skill name`
-- No matching directory: `Error: No skill matching 'name' found in ~/.claude/skills`
-- Directory exists but no SKILL.md: `Error: Skill directory 'name' has no SKILL.md`
+Errors are printed to stdout (visible to the user) and return `nil` so nothing is injected into the AI prompt:
+- Missing skill name: `Error: /skill requires a skill name. Use /skills to list available skills.`
+- No matching directory: `Error: No skill matching 'name' found in <skills_dir>. Use /skills to list available skills.`
+- Directory exists but no SKILL.md: `Error: Skill 'name' has no SKILL.md in <skills_dir>.`
 
 ### `/skills`
-List all available Claude Code skills.
+List available AIA skills, optionally filtered by search terms.
 
-**Syntax**: `/skills`
+**Syntax**: `/skills [search_terms...]`
 
-**Example Output**:
+**Example Output** (`/skills`):
 ```
-Available Skills
-================
-  algorithmic-art
-  api-developer
-  code-assist
-  code-quality
-  frontend-design
+code-assist: Code Assist
+  Help with coding tasks.
 
-Total: 5 skills
+code-quality: Code Quality
+  Enforce SOLID principles and clean code guidelines across all
+  language targets.
+
+frontend-design: Frontend Design
+  Build interfaces.
+
 ```
+
+**Search Term Filtering**:
+- `/skills ruby arch` — show only skills whose YAML front matter contains both `ruby` AND `arch` (AND logic, case-insensitive substring match)
+- Prefix `+` is treated as positive (same as bare term): `/skills +ruby`
+- Prefix `-`, `~`, or `!` is AND NOT — excludes matching skills: `/skills ruby -test`
+- Multiple negative terms each exclude independently
 
 **Features**:
-- Lists subdirectory basenames from `~/.claude/skills/`
-- Sorted alphabetically
-- Displays to STDOUT only (does not inject content into the prompt)
+- Only lists subdirectories that contain a `SKILL.md` file; plain files and dirs without `SKILL.md` are ignored
+- Skills directory resolves in order: `AIA.config.skills.dir` → `$AIA_PROMPTS__DIR/$AIA_PROMPTS__SKILLS_PREFIX` → `~/.prompts/skills`
+- Results sorted alphabetically by skill ID
+- Descriptions are word-wrapped to terminal width with 2-space indent on continuation lines
+- Displays to STDOUT only (does not inject content into the AI prompt)
 
 ## Execution Directives
 
@@ -409,7 +420,7 @@ Is this SQL query safe from injection attacks?
 - Requires a multi-model or network configuration
 
 ### `/decompose`
-Decompose the next prompt into parallel sub-tasks. The prompt is broken into independent pieces, each solved separately, then the results are combined.
+Decompose the next prompt into independent, concurrently-executable sub-tasks. The prompt is analyzed by a coordinator model, broken into pieces that have **no dependencies on each other**, each solved in parallel via `Async::Barrier`, and the results synthesized into a single response.
 
 **Syntax**: `/decompose`
 
@@ -420,10 +431,14 @@ Analyze this codebase: review the test coverage, check for security issues, and 
 ```
 
 **Features**:
-- Automatically identifies independent sub-tasks in the prompt
-- Sub-tasks are executed in parallel when possible
-- Results are synthesized into a single response
-- Best for prompts with multiple distinct aspects
+- Sub-tasks returned are **always guaranteed to be independent** — they can all run concurrently without waiting on each other
+- If the prompt cannot be split into parallel work (e.g., tasks that must run sequentially or build on each other's output), the model returns an **empty subtasks array** and the prompt executes normally as a single request
+- 2–5 sub-tasks maximum; single-step prompts are never decomposed
+- Results from all parallel branches are synthesized into one coherent final response by the coordinator
+- Best for prompts with multiple truly distinct aspects (e.g., "review X, analyze Y, and summarize Z" where X, Y, Z are independent)
+- **Not suitable for sequential workflows** — use `/pipeline` or `/next` when tasks must chain
+
+> **Design guarantee**: The decomposition model is explicitly instructed to return an empty `subtasks` array whenever any sub-task depends on the result of another. Parallelism is never approximated — it is either fully concurrent or the prompt runs as a whole.
 
 ### `/debate`
 Enable multi-round debate between robots in the network. Robots argue different perspectives and converge toward a consensus answer.

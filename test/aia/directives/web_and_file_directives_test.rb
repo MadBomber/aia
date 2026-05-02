@@ -147,27 +147,26 @@ class WebAndFileDirectivesTest < Minitest::Test
 
   def test_skills_lists_subdirectories
     Dir.mktmpdir('aia_skills_test') do |tmpdir|
-      create_skill(tmpdir, 'alpha-skill', '# Alpha')
-      create_skill(tmpdir, 'beta-skill', '# Beta')
+      create_skill(tmpdir, 'alpha-skill', "---\nname: Alpha\ndescription: Alpha desc.\n---\n")
+      create_skill(tmpdir, 'beta-skill',  "---\nname: Beta\ndescription: Beta desc.\n---\n")
       with_skills_dir(tmpdir) do
         @instance.skills
         out = @captured_stdout.string
-        assert_includes out, 'alpha-skill'
-        assert_includes out, 'beta-skill'
-        assert_includes out, 'Total: 2 skills'
+        assert_match(/^alpha-skill: Alpha$/, out)
+        assert_match(/^beta-skill: Beta$/, out)
       end
     end
   end
 
   def test_skills_excludes_regular_files
     Dir.mktmpdir('aia_skills_test') do |tmpdir|
-      create_skill(tmpdir, 'real-skill', '# Real')
+      create_skill(tmpdir, 'real-skill', "---\nname: Real\ndescription: Does things.\n---\n")
       File.write(File.join(tmpdir, 'not-a-skill.md'), 'just a file')
       with_skills_dir(tmpdir) do
         @instance.skills
         out = @captured_stdout.string
         refute_includes out, 'not-a-skill.md'
-        assert_includes out, 'Total: 1 skills'
+        assert_match(/^real-skill: Real$/, out)
       end
     end
   end
@@ -190,7 +189,7 @@ class WebAndFileDirectivesTest < Minitest::Test
       with_skills_dir(tmpdir) do
         result = @instance.skill([])
         assert_nil result
-        assert @stderr_messages.any? { |m| m.include?('requires a skill name') }
+        assert_match(/requires a skill name/, @captured_stdout.string)
       end
     end
   end
@@ -200,7 +199,7 @@ class WebAndFileDirectivesTest < Minitest::Test
       with_skills_dir(tmpdir) do
         result = @instance.skill(['   '])
         assert_nil result
-        assert @stderr_messages.any? { |m| m.include?('requires a skill name') }
+        assert_match(/requires a skill name/, @captured_stdout.string)
       end
     end
   end
@@ -220,19 +219,18 @@ class WebAndFileDirectivesTest < Minitest::Test
       with_skills_dir(tmpdir) do
         result = @instance.skill(['nonexistent'])
         assert_nil result
-        assert @stderr_messages.any? { |m| m.include?("No skill matching 'nonexistent'") }
+        assert_match(/No skill matching 'nonexistent'/, @captured_stdout.string)
       end
     end
   end
 
   def test_skill_returns_nil_when_no_skill_md_file
     Dir.mktmpdir('aia_skills_test') do |tmpdir|
-      # Create skill dir without SKILL.md
       FileUtils.mkdir_p(File.join(tmpdir, 'empty-skill'))
       with_skills_dir(tmpdir) do
         result = @instance.skill(['empty-skill'])
         assert_nil result
-        assert @stderr_messages.any? { |m| m.include?('has no SKILL.md') }
+        assert_match(/has no SKILL\.md/, @captured_stdout.string)
       end
     end
   end
@@ -244,10 +242,10 @@ class WebAndFileDirectivesTest < Minitest::Test
   def test_safe_skill_path_blocks_path_traversal_sequence
     Dir.mktmpdir('aia_skills_test') do |tmpdir|
       with_skills_dir(tmpdir) do
-        # Attempt path traversal via skill name
         result = @instance.skill(['../../etc/passwd'])
         assert_nil result,
           'Path traversal via ../../etc/passwd must be blocked and return nil'
+        assert_match(/No skill matching/, @captured_stdout.string)
       end
     end
   end
@@ -255,10 +253,10 @@ class WebAndFileDirectivesTest < Minitest::Test
   def test_safe_skill_path_blocks_absolute_path_outside_skills_dir
     Dir.mktmpdir('aia_skills_test') do |tmpdir|
       with_skills_dir(tmpdir) do
-        # Try to reference /tmp directly (outside SKILLS_DIR)
         result = @instance.skill(['/tmp'])
         assert_nil result,
-          'Absolute path outside SKILLS_DIR must be blocked'
+          'Absolute path outside SKILLS_DIR must be blocked and return nil'
+        assert_match(/No skill matching/, @captured_stdout.string)
       end
     end
   end
@@ -285,7 +283,7 @@ class WebAndFileDirectivesTest < Minitest::Test
         with_skills_dir(tmpdir) do
           result = @instance.skill(['evil-link'])
           assert_nil result,
-            'Symlink pointing outside SKILLS_DIR must be blocked by safe_skill_path'
+            'Symlink pointing outside SKILLS_DIR must be blocked and return nil'
         end
       end
     end
@@ -305,29 +303,45 @@ class WebAndFileDirectivesTest < Minitest::Test
   end
 
   # ---------------------------------------------------------------------------
-  # Constants
+  # aia_skills_dir resolution
   # ---------------------------------------------------------------------------
 
-  def test_skills_dir_constant_is_string
-    assert_kind_of String, AIA::WebAndFileDirectives::SKILLS_DIR
+  def test_aia_skills_dir_returns_string
+    AIA.stubs(:config).returns(nil)
+    assert_kind_of String, @instance.send(:aia_skills_dir)
+  ensure
+    AIA.unstub(:config)
   end
 
-  def test_skills_dir_constant_points_to_claude_skills
-    assert AIA::WebAndFileDirectives::SKILLS_DIR.end_with?('.claude/skills'),
-      "SKILLS_DIR should end with '.claude/skills'"
+  def test_aia_skills_dir_uses_aia_config_when_present
+    config = OpenStruct.new(skills: OpenStruct.new(dir: '/my/skills'))
+    AIA.stubs(:config).returns(config)
+
+    assert_equal '/my/skills', @instance.send(:aia_skills_dir)
+  ensure
+    AIA.unstub(:config)
+  end
+
+  def test_aia_skills_dir_falls_back_to_env_vars
+    AIA.stubs(:config).returns(nil)
+    ENV['AIA_PROMPTS__DIR']           = '/env/prompts'
+    ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'my_skills'
+
+    assert_equal '/env/prompts/my_skills', @instance.send(:aia_skills_dir)
+  ensure
+    AIA.unstub(:config)
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
   end
 
   private
 
-  # Helper: temporarily override SKILLS_DIR and yield
+  # Helper: stub aia_skills_dir and yield
   def with_skills_dir(path)
-    original = AIA::WebAndFileDirectives::SKILLS_DIR
-    AIA::WebAndFileDirectives.send(:remove_const, :SKILLS_DIR)
-    AIA::WebAndFileDirectives.const_set(:SKILLS_DIR, path)
+    @instance.stubs(:aia_skills_dir).returns(path)
     yield
   ensure
-    AIA::WebAndFileDirectives.send(:remove_const, :SKILLS_DIR)
-    AIA::WebAndFileDirectives.const_set(:SKILLS_DIR, original)
+    @instance.unstub(:aia_skills_dir)
   end
 
   # Helper: temporarily override any constant on a class and yield
@@ -341,9 +355,9 @@ class WebAndFileDirectivesTest < Minitest::Test
     klass.const_set(const_name, original)
   end
 
-  # Helper: create a skill directory with SKILL.md
-  def create_skill(base_dir, name, content)
-    skill_dir = File.join(base_dir, name)
+  # Helper: create a skill directory with SKILL.md (content is raw file body)
+  def create_skill(base_dir, id, content)
+    skill_dir = File.join(base_dir, id)
     FileUtils.mkdir_p(skill_dir)
     File.write(File.join(skill_dir, 'SKILL.md'), content)
   end

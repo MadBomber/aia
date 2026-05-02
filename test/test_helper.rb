@@ -5,8 +5,15 @@
 # test_prelude; require is idempotent so this is safe either way.
 require_relative "simplecov_helper"
 
+require "fileutils"
 require 'debug_me'
 include DebugMe
+
+TEST_TMPDIR = File.expand_path("tmp", __dir__)
+FileUtils.mkdir_p(TEST_TMPDIR)
+ENV["TMPDIR"] = TEST_TMPDIR
+ENV["TMP"] = TEST_TMPDIR
+ENV["TEMP"] = TEST_TMPDIR
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 

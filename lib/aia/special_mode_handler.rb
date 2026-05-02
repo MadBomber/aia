@@ -101,10 +101,13 @@ module AIA
 
     def handle_decomposition(prompt)
       require_relative 'prompt_decomposer'
-      @ui_presenter.display_info("Decomposing prompt into sub-tasks...")
+      total_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-      decomposer = PromptDecomposer.new(@robot)
-      subtasks = decomposer.decompose(prompt)
+      @ui_presenter.display_info("Decomposing prompt into sub-tasks...")
+      decomposer    = PromptDecomposer.new(@robot)
+      decompose_t0  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      subtasks      = decomposer.decompose(prompt)
+      decompose_dur = Process.clock_gettime(Process::CLOCK_MONOTONIC) - decompose_t0
 
       if subtasks.empty?
         @ui_presenter.display_info("Prompt cannot be meaningfully decomposed. Running normally.")
@@ -114,18 +117,26 @@ module AIA
       @ui_presenter.display_info("Decomposed into #{subtasks.size} sub-tasks:")
       subtasks.each_with_index { |t, i| @ui_presenter.display_info("  #{i + 1}. #{t}") }
 
+      timings         = Array.new(subtasks.size, 0.0)
+      raw_subtasks    = Array.new(subtasks.size)
+      wall_start      = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
       results = Sync do
         barrier = Async::Barrier.new
         tasks = subtasks.each_with_index.map do |task, i|
           barrier.async do
+            t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
             @ui_presenter.display_info("Processing sub-task #{i + 1}...")
             r = if @robot.is_a?(RobotLab::Network)
                   @robot.run(message: task)
                 else
                   @robot.run(task, mcp: :inherit, tools: :inherit)
                 end
+            timings[i]      = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
+            raw_subtasks[i] = r
             extract_content(r)
           rescue => e
+            timings[i] = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
             @ui_presenter.display_info("  Sub-task #{i + 1} failed: #{e.message}")
             nil
           end
@@ -134,10 +145,30 @@ module AIA
         tasks.map(&:wait)
       end
 
+      parallel_wall    = Process.clock_gettime(Process::CLOCK_MONOTONIC) - wall_start
+      serial_est       = timings.sum
+      parallel_speedup = serial_est / parallel_wall
+
       raise DecomposeError, "All sub-tasks failed" if results.all?(&:nil?)
 
       @ui_presenter.display_info("Synthesizing results...")
-      final = decomposer.synthesize(prompt, results.compact)
+      synth_t0  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      final     = decomposer.synthesize(prompt, results.compact)
+      synth_dur = Process.clock_gettime(Process::CLOCK_MONOTONIC) - synth_t0
+
+      total_wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - total_start
+
+      lines = ["", "Benchmark:"]
+      lines << "  Decompose probe : #{format('%.2f', decompose_dur)}s"
+      timings.each_with_index { |t, i| lines << "  Sub-task #{i + 1}      : #{format('%.2f', t)}s" }
+      lines << "  Synthesis       : #{format('%.2f', synth_dur)}s"
+      lines << "  ─────────────────────────────────────────"
+      lines << "  Sub-tasks serial est. : #{format('%.2f', serial_est)}s  (sum of sub-task times)"
+      lines << "  Sub-tasks concurrent  : #{format('%.2f', parallel_wall)}s  (#{format('%.1f', parallel_speedup)}x parallel speedup)"
+      lines << "  Total flow wall time  : #{format('%.2f', total_wall)}s  (compare against --tokens Time for a normal run)"
+      @ui_presenter.display_info(lines.join("\n"))
+
+      display_decompose_token_metrics(raw_subtasks, final, total_wall)
 
       present_result(final, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true
@@ -260,6 +291,37 @@ module AIA
       @ui_presenter.display_ai_response(content)
       output_to_file(content)
       @ui_presenter.display_separator
+    end
+
+    # Aggregate token counts from all sub-task raw results plus the synthesis
+    # result and display a combined metrics table. Only runs when --tokens is set.
+    def display_decompose_token_metrics(raw_subtasks, synthesis_result, total_elapsed)
+      return unless AIA.config.flags.tokens
+
+      total_input  = 0
+      total_output = 0
+
+      raw_subtasks.compact.each do |r|
+        raw = r.respond_to?(:raw) ? r.raw : nil
+        next unless raw&.respond_to?(:input_tokens) && raw.input_tokens
+        total_input  += raw.input_tokens  || 0
+        total_output += raw.output_tokens || 0
+      end
+
+      synth_raw = synthesis_result.respond_to?(:raw) ? synthesis_result.raw : nil
+      if synth_raw&.respond_to?(:input_tokens) && synth_raw.input_tokens
+        total_input  += synth_raw.input_tokens  || 0
+        total_output += synth_raw.output_tokens || 0
+      end
+
+      return if total_input.zero? && total_output.zero?
+
+      @ui_presenter.display_token_metrics({
+        model_id:      AIA.config.models.first.name,
+        input_tokens:  total_input,
+        output_tokens: total_output,
+        elapsed:       total_elapsed
+      })
     end
 
   end

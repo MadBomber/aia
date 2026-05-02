@@ -20,8 +20,10 @@ class DirectivesWebAndFileTest < Minitest::Test
     assert_respond_to @instance, :clipboard
   end
 
-  def test_skills_dir_constant
-    assert_kind_of String, AIA::WebAndFileDirectives::SKILLS_DIR
-    assert AIA::WebAndFileDirectives::SKILLS_DIR.end_with?('.claude/skills')
+  def test_aia_skills_dir_returns_string
+    AIA.stubs(:config).returns(nil)
+    assert_kind_of String, @instance.send(:aia_skills_dir)
+  ensure
+    AIA.unstub(:config)
   end
 end

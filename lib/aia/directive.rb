@@ -103,5 +103,30 @@ module AIA
         ""
       end
     end
+
+    private
+
+    # Split raw args into [positive_terms, negative_terms].
+    # Leading '+' is stripped; the term is treated as positive.
+    # Leading '-', '~', or '!' marks the term as negative (AND NOT).
+    # Bare terms are positive. All terms are lowercased.
+    def parse_search_terms(args)
+      positive = []
+      negative = []
+
+      args.flat_map { |a| a.to_s.split }.each do |raw|
+        if raw.start_with?('+')
+          term = raw[1..].downcase
+          positive << term unless term.empty?
+        elsif raw.start_with?('-', '~', '!')
+          term = raw[1..].downcase
+          negative << term unless term.empty?
+        else
+          positive << raw.downcase
+        end
+      end
+
+      [positive, negative]
+    end
   end
 end

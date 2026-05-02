@@ -263,6 +263,7 @@ export AIA_PROMPTS__EXTNAME=".md"
 export AIA_PROMPTS__ROLES_PREFIX="roles"
 export AIA_PROMPTS__ROLES_DIR="~/.prompts/roles"
 export AIA_PROMPTS__ROLE="expert"
+export AIA_PROMPTS__SKILLS_PREFIX="skills"
 export AIA_PROMPTS__SYSTEM_PROMPT="my_system_prompt"
 export AIA_PROMPTS__PARAMETER_REGEX='\{\{(\w+)\}\}'
 
@@ -525,9 +526,44 @@ prompts:
   roles_prefix: roles       # ~/.prompts/roles/
   roles_dir: ~/.prompts/roles
   role: ~                   # Default role (null = none)
+  skills_prefix: skills     # ~/.prompts/skills/
+  skills: []                # Default skills (empty = none)
   system_prompt: ~          # Default system prompt
   parameter_regex: ~        # Custom parameter extraction regex
+
+# Top-level directory shortcuts (expand ~ automatically)
+roles:
+  dir: ~/.prompts/roles
+
+skills:
+  dir: ~/.prompts/skills
 ```
+
+**Prompt assembly order** (first turn only):
+1. **System prompt** — guardrails and constraints (`--system-prompt`)
+2. **Role** — identity and personality (`--role`)
+3. **Skills** — capabilities and approach (`--skill`, in declaration order)
+4. **User prompt** — the actual request
+
+Follow-up turns in chat include only the system prompt and user message; role and skills are carried implicitly via conversation history.
+
+**Recommended directory layout**:
+```
+~/.prompts/
+├── roles/
+│   ├── ruby_expert.md          # "You are a senior Ruby developer..."
+│   └── teacher.md
+├── skills/
+│   ├── testing/
+│   │   └── SKILL.md            # Skill ID: "testing"
+│   ├── debugging/
+│   │   └── SKILL.md            # Skill ID: "debugging"
+│   └── refactoring/
+│       └── SKILL.md            # Skill ID: "refactoring"
+└── my_prompt.md
+```
+
+Each skill is a **subdirectory** containing a `SKILL.md` file. The skill ID is the subdirectory name. Subdirectories without `SKILL.md` and plain `.md` files are ignored by `--list-skills`.
 
 ## Configuration Examples
 

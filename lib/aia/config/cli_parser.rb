@@ -26,6 +26,11 @@ module AIA
           exit 1
         end
 
+        if options[:list_skills]
+          list_available_skills(options)
+          exit 0
+        end
+
         # Store remaining args for prompt_id and context files
         options[:remaining_args] = ARGV.dup
 
@@ -101,7 +106,7 @@ module AIA
           list_available_models(query)
         end
 
-        opts.on("-m MODEL", "--model MODEL", "Set LLM model(s) to use. Format: MODEL[=ROLE][,MODEL[=ROLE]]...") do |model_string|
+        opts.on("-m MODEL", "--model MODEL", "Set LLM model(s). Format: MODEL[=ROLE][,MODEL[=ROLE]]... Multiple models run in parallel; use --consensus to synthesize results") do |model_string|
           options[:models] = (options[:models] || []) + parse_models_with_roles(model_string)
         end
 
@@ -166,6 +171,19 @@ module AIA
 
         opts.on("-r", "--role ROLE_ID", "Prepend role to prompt") do |role|
           options[:role] = role
+        end
+
+        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
+          options[:skills_prefix] = prefix
+        end
+
+        opts.on("-s", "--skill SKILL_IDS", "Append skill(s) to prompt; comma-separated or repeatable") do |skill_ids|
+          options[:skills] ||= []
+          options[:skills] += skill_ids.split(',').map(&:strip).reject(&:empty?)
+        end
+
+        opts.on("--list-skills", "List available skills and exit") do
+          options[:list_skills] = true
         end
 
         opts.on("-n", "--next PROMPT_ID", "Set next prompt to process") do |next_prompt|
@@ -311,11 +329,11 @@ module AIA
           options[:completion] = shell
         end
 
-        opts.on("--tokens", "Display token usage") do
+        opts.on("--tokens", "Display token usage and elapsed response time after each turn") do
           options[:tokens] = true
         end
 
-        opts.on("--cost", "Display cost calculations (implies --tokens)") do
+        opts.on("--cost", "Display cost calculations and elapsed time (implies --tokens)") do
           options[:cost] = true
           options[:tokens] = true  # --cost implies --tokens
         end
@@ -357,6 +375,9 @@ module AIA
               - Run batch processes and prompt pipelines
               - Engage in interactive chat sessions
               - Use custom tools and MCP servers
+              - Compare the same prompt across multiple models (--model m1,m2,m3 [--consensus])
+              - Measure response time and token usage with --tokens; add cost with --cost
+              - Benchmark concurrent vs. serial performance (/decompose reports speedup metrics)
 
           HELP
 
@@ -486,6 +507,69 @@ module AIA
         Dir.glob("**/*.md", base: roles_dir)
           .map { |f| f.chomp('.md') }
           .sort
+      end
+
+      def list_available_skills(options = {})
+        require 'yaml'
+
+        prompts_dir    = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
+        skills_prefix  = options[:skills_prefix] || ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', 'skills')
+        skills_dir     = File.join(prompts_dir, skills_prefix)
+
+        unless Dir.exist?(skills_dir)
+          puts "No skills directory found at #{skills_dir}"
+          puts "Create this directory and add skill subdirectories to use skills."
+          return
+        end
+
+        skill_ids = Dir.entries(skills_dir)
+          .reject { |e| e.start_with?('.') }
+          .select { |e|
+            subdir = File.join(skills_dir, e)
+            File.directory?(subdir) && File.exist?(File.join(subdir, 'SKILL.md'))
+          }
+          .sort
+
+        if skill_ids.empty?
+          puts "No skill files found in #{skills_dir}"
+          puts "Create subdirectories with a SKILL.md file to define skills."
+          return
+        end
+
+        lines = []
+        skill_ids.each do |skill_id|
+          front_matter = parse_skill_front_matter(File.join(skills_dir, skill_id, 'SKILL.md'))
+
+          lines << "## #{skill_id}"
+          lines << ""
+
+          if front_matter.empty?
+            lines << "_No front matter found in SKILL.md_"
+          else
+            lines << "| Key | Value |"
+            lines << "|-----|-------|"
+            front_matter.each do |key, value|
+              safe_value = value.to_s.gsub('|', '\\|')
+              lines << "| #{key} | #{safe_value} |"
+            end
+          end
+
+          lines << ""
+        end
+
+        puts lines.join("\n")
+      end
+
+      def parse_skill_front_matter(skill_md_path)
+        content = File.read(skill_md_path)
+        return {} unless content.start_with?("---")
+
+        end_pos = content.index("---", 3)
+        return {} unless end_pos
+
+        yaml_text = content[3...end_pos].strip
+        parsed    = YAML.safe_load(yaml_text, symbolize_names: false) rescue {}
+        parsed.is_a?(Hash) ? parsed : {}
       end
 
       def list_available_models(query)

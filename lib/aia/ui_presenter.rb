@@ -103,9 +103,10 @@ module AIA
     # Load persistent chat history into Reline
     def load_chat_history
       Reline::HISTORY.clear
-      return unless File.exist?(HISTORY_FILE)
+      history_file = chat_history_file
+      return unless File.exist?(history_file)
 
-      lines = File.readlines(HISTORY_FILE, chomp: true).last(MAX_HISTORY)
+      lines = File.readlines(history_file, chomp: true).last(MAX_HISTORY)
       lines.each { |line| Reline::HISTORY << line }
     end
 
@@ -250,11 +251,21 @@ module AIA
     private
 
     def save_chat_history
-      dir = File.dirname(HISTORY_FILE)
+      history_file = chat_history_file
+      dir = File.dirname(history_file)
       FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
 
       entries = Reline::HISTORY.to_a.last(MAX_HISTORY)
-      File.write(HISTORY_FILE, entries.join("\n") + "\n")
+      File.write(history_file, entries.join("\n") + "\n")
+    end
+
+    def chat_history_file
+      config = AIA.config
+      if config.respond_to?(:paths) && config.paths&.respond_to?(:aia_dir) && config.paths.aia_dir
+        return File.join(File.expand_path(config.paths.aia_dir), 'chat_history')
+      end
+
+      HISTORY_FILE
     end
 
     def format_similarity(score)

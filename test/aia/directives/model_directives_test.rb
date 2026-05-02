@@ -70,32 +70,32 @@ class ModelDirectivesTest < Minitest::Test
   # ---------------------------------------------------------------------------
 
   def test_available_models_returns_empty_string
-    @instance.stubs(:show_rubyllm_models)
+    @instance.stubs(:show_rubyllm_models).with([], [])
     result = @instance.available_models
     assert_equal '', result
   end
 
   def test_available_models_calls_show_rubyllm_models_for_non_local_provider
-    @instance.expects(:show_rubyllm_models).with(nil).once
+    @instance.expects(:show_rubyllm_models).with([], []).once
     @instance.available_models
   end
 
   def test_available_models_calls_show_local_models_for_ollama
     @mock_config.models = [OpenStruct.new(name: 'ollama/llama2')]
-    @instance.expects(:show_local_models).with(['ollama/llama2'], nil).once
+    @instance.expects(:show_local_models).with(['ollama/llama2'], [], []).once
     @instance.available_models
   end
 
   def test_available_models_calls_show_local_models_for_lms
     @mock_config.models = [OpenStruct.new(name: 'lms/some-model')]
-    @instance.expects(:show_local_models).with(['lms/some-model'], nil).once
+    @instance.expects(:show_local_models).with(['lms/some-model'], [], []).once
     @instance.available_models
   end
 
   def test_available_models_uses_to_s_when_model_has_no_name_method
     plain_string_model = 'gpt-4'
     @mock_config.models = [plain_string_model]
-    @instance.expects(:show_rubyllm_models).with(nil).once
+    @instance.expects(:show_rubyllm_models).with([], []).once
     @instance.available_models
   end
 
@@ -230,13 +230,13 @@ class ModelDirectivesTest < Minitest::Test
 
   def test_show_rubyllm_models_prints_header_without_query
     stub_rubyllm_models([])
-    @instance.show_rubyllm_models(nil)
+    @instance.show_rubyllm_models([], [])
     assert_includes @captured.string, 'Available LLMs:'
   end
 
   def test_show_rubyllm_models_prints_header_with_query
     stub_rubyllm_models([])
-    @instance.show_rubyllm_models(['gpt'])
+    @instance.show_rubyllm_models(['gpt'], [])
     assert_includes @captured.string, 'Available LLMs for gpt:'
   end
 
@@ -244,7 +244,7 @@ class ModelDirectivesTest < Minitest::Test
     llm = build_fake_llm(id: 'gpt-4', provider: 'openai', cw: 128_000, price: 5.0,
                          caps: ['chat'], inputs: ['text'], outputs: ['text'])
     stub_rubyllm_models([llm])
-    @instance.show_rubyllm_models(nil)
+    @instance.show_rubyllm_models([], [])
     output = @captured.string
     assert_includes output, '- gpt-4 (openai)'
     assert_includes output, 'cw: 128000'
@@ -255,16 +255,16 @@ class ModelDirectivesTest < Minitest::Test
   def test_show_rubyllm_models_prints_count_line
     llm = build_fake_llm
     stub_rubyllm_models([llm])
-    @instance.show_rubyllm_models(nil)
+    @instance.show_rubyllm_models([], [])
     assert_match(/1 LLMs matching your query/, @captured.string)
   end
 
-  def test_show_rubyllm_models_filters_by_text_query
+  def test_show_rubyllm_models_filters_by_positive_term
     llm1 = build_fake_llm(id: 'gpt-4', provider: 'openai')
     llm2 = build_fake_llm(id: 'claude-3', provider: 'anthropic')
     stub_rubyllm_models([llm1, llm2])
 
-    @instance.show_rubyllm_models(['anthropic'])
+    @instance.show_rubyllm_models(['anthropic'], [])
     output = @captured.string
 
     assert_includes output, 'claude-3'
@@ -272,12 +272,58 @@ class ModelDirectivesTest < Minitest::Test
     assert_match(/1 LLMs matching your query/, output)
   end
 
+  def test_show_rubyllm_models_excludes_by_negative_term
+    llm1 = build_fake_llm(id: 'gpt-4', provider: 'openai')
+    llm2 = build_fake_llm(id: 'claude-3', provider: 'anthropic')
+    stub_rubyllm_models([llm1, llm2])
+
+    @instance.show_rubyllm_models([], ['openai'])
+    output = @captured.string
+
+    refute_includes output, 'gpt-4'
+    assert_includes output, 'claude-3'
+    assert_match(/1 LLMs matching your query/, output)
+  end
+
+  def test_show_rubyllm_models_positive_and_negative_combined
+    llm1 = build_fake_llm(id: 'gpt-4-turbo', provider: 'openai')
+    llm2 = build_fake_llm(id: 'gpt-4o', provider: 'openai')
+    llm3 = build_fake_llm(id: 'claude-3', provider: 'anthropic')
+    stub_rubyllm_models([llm1, llm2, llm3])
+
+    @instance.show_rubyllm_models(['openai'], ['turbo'])
+    output = @captured.string
+
+    assert_includes output, 'gpt-4o'
+    refute_includes output, 'gpt-4-turbo'
+    refute_includes output, 'claude-3'
+    assert_match(/1 LLMs matching your query/, output)
+  end
+
+  def test_show_rubyllm_models_negative_only_excludes_from_all
+    llm1 = build_fake_llm(id: 'gpt-4', provider: 'openai')
+    llm2 = build_fake_llm(id: 'claude-3', provider: 'anthropic')
+    stub_rubyllm_models([llm1, llm2])
+
+    @instance.show_rubyllm_models([], ['anthropic'])
+    output = @captured.string
+
+    assert_includes output, 'gpt-4'
+    refute_includes output, 'claude-3'
+  end
+
+  def test_show_rubyllm_models_header_includes_excluding_when_negative_terms_present
+    stub_rubyllm_models([])
+    @instance.show_rubyllm_models([], ['openai'])
+    assert_includes @captured.string, 'excluding: openai'
+  end
+
   def test_show_rubyllm_models_splits_comma_separated_single_arg
     llm = build_fake_llm(id: 'gpt-4', provider: 'openai')
     stub_rubyllm_models([llm])
 
-    # A single comma-separated arg should be split and used as multiple queries
-    @instance.show_rubyllm_models(['gpt-4,openai'])
+    # A single comma-separated positive arg should be split and used as multiple queries
+    @instance.show_rubyllm_models(['gpt-4,openai'], [])
     output = @captured.string
 
     assert_includes output, 'gpt-4'
@@ -287,7 +333,7 @@ class ModelDirectivesTest < Minitest::Test
     llm = build_fake_llm(id: 'gpt-4', provider: 'openai')
     stub_rubyllm_models([llm])
 
-    @instance.show_rubyllm_models(['nonexistent-provider-xyz'])
+    @instance.show_rubyllm_models(['nonexistent-provider-xyz'], [])
     assert_match(/0 LLMs matching your query/, @captured.string)
   end
 end

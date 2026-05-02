@@ -2,10 +2,14 @@ require_relative '../test_helper'
 require 'ostruct'
 require 'stringio'
 require 'reline'
+require 'fileutils'
 require_relative '../../lib/aia'
 
 class UIPresenterTest < Minitest::Test
   def setup
+    @test_aia_dir = File.expand_path('../tmp/aia', __dir__)
+    FileUtils.rm_rf(@test_aia_dir)
+
     @presenter = AIA::UIPresenter.new
     @original_stdout = $stdout
     @original_stderr = $stderr
@@ -17,7 +21,8 @@ class UIPresenterTest < Minitest::Test
     # Mock AIA.config with nested structure
     AIA.stubs(:config).returns(OpenStruct.new(
       output: OpenStruct.new(file: nil),
-      flags: OpenStruct.new(verbose: false)
+      flags: OpenStruct.new(verbose: false),
+      paths: OpenStruct.new(aia_dir: @test_aia_dir)
     ))
 
     # Mock AIA.verbose? method
@@ -30,6 +35,7 @@ class UIPresenterTest < Minitest::Test
   def teardown
     $stdout = @original_stdout
     $stderr = @original_stderr
+    FileUtils.rm_rf(@test_aia_dir)
     # Call super to ensure global Mocha cleanup runs
     super
   end
@@ -181,7 +187,9 @@ class UIPresenterTest < Minitest::Test
     # Stub Reline.readline to simulate user input
     Reline.stubs(:readline).returns("user input")
     result = @presenter.ask_question
+
     assert_equal 'user input', result
+    assert File.exist?(File.join(@test_aia_dir, 'chat_history'))
   end
 
   def test_ask_question_with_empty_input

@@ -33,6 +33,9 @@
     - [`--roles-prefix PREFIX`](#--roles-prefix-prefix)
     - [`-r, --role ROLE_ID`](#-r---role-role_id)
     - [`--list-roles`](#--list-roles)
+    - [`--skills-prefix PREFIX`](#--skills-prefix-prefix)
+    - [`-s, --skill SKILL_IDS`](#-s---skill-skill_ids)
+    - [`--list-skills`](#--list-skills)
     - [`-n, --next PROMPT_ID`](#-n---next-prompt_id)
     - [`-p PROMPTS, --pipeline PROMPTS`](#-p-prompts---pipeline-prompts)
     - [`--system-prompt PROMPT_ID`](#--system-prompt-prompt_id)
@@ -452,6 +455,82 @@ Roles are discovered from:
 **Use case**: Discover available roles before using them with `--role` or inline `MODEL=ROLE` syntax.
 
 **See also**: `--role`, `--model`, `--prompts-dir`, `--roles-prefix`
+
+### `--skills-prefix PREFIX`
+Subdirectory name for skills (default: `skills`).
+
+```bash
+# Use custom skills directory name
+aia --skills-prefix capabilities --skill expert
+# Results in looking for ~/.prompts/capabilities/expert/SKILL.md
+```
+
+### `-s, --skill SKILL_IDS`
+One or more skill IDs to layer into the prompt after the role. Skills define *what the LLM does* in order to respond — they sit between the role (identity) and the user prompt in the assembled system prompt.
+
+Each skill ID is the name of a subdirectory under `skills.dir` that contains a `SKILL.md` file (e.g., skill `testing` → `~/.prompts/skills/testing/SKILL.md`).
+
+Accepts comma-separated values, multiple flags, or a combination of both:
+
+```bash
+# Single skill
+aia --skill testing my_prompt
+aia -s testing my_prompt
+
+# Comma-separated
+aia --skill testing,debugging my_prompt
+
+# Repeatable flag
+aia --skill testing --skill debugging my_prompt
+
+# Combined
+aia --skill testing,debugging --skill refactoring my_prompt
+
+# With a role (system → role → skills → user)
+aia --role ruby_expert --skill testing --skill minitest my_prompt
+```
+
+**Prompt assembly order** (first turn only):
+1. System prompt (guardrails)
+2. Role prompt (identity/personality)
+3. Skill prompt(s) (capabilities, in declaration order)
+4. User prompt
+
+Follow-up turns in chat mode include only the system prompt and the user message; role and skills are carried implicitly via conversation history.
+
+**See also**: `--role`, `--list-skills`, `--skills-prefix`
+
+### `--list-skills`
+List all available skills and exit. A skill is a subdirectory of the skills directory that contains a `SKILL.md` file. Output is a formatted markdown document.
+
+```bash
+# List all available skills
+aia --list-skills
+
+# Example output:
+#
+# ## debugging
+#
+# | Key | Value |
+# |-----|-------|
+# | name | debugging |
+# | description | Debug Ruby applications. |
+#
+# ## minitest
+#
+# | Key | Value |
+# |-----|-------|
+# | name | minitest |
+# | description | Write tests using Minitest. |
+```
+
+Skills are discovered from:
+- **Default location**: `~/.prompts/skills/`
+- **Custom location**: Set via `--prompts-dir` and `--skills-prefix`
+- **Convention**: Each skill is a subdirectory containing a `SKILL.md` file; plain `.md` files and subdirectories without `SKILL.md` are ignored
+- **Output**: H2 heading per skill ID, followed by a two-column table of YAML front matter key/value pairs
+
+**See also**: `--skill`, `--skills-prefix`
 
 ### `-n, --next PROMPT_ID`
 Next prompt to process (can be used multiple times to build a pipeline).
@@ -902,6 +981,7 @@ export AIA_LLM__MAX_TOKENS="2048"
 # Prompts settings (nested under prompts:)
 export AIA_PROMPTS__DIR="/custom/prompts"
 export AIA_PROMPTS__ROLES_PREFIX="roles"
+export AIA_PROMPTS__SKILLS_PREFIX="skills"
 
 # Output settings (nested under output:)
 export AIA_OUTPUT__FILE="./output.md"

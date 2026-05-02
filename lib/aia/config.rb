@@ -48,7 +48,7 @@ module AIA
     # ==========================================================================
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
-    attr_config :service, :llm, :prompts, :output, :audio, :image, :embedding,
+    attr_config :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
                 :tools, :flags, :registry, :paths, :logger, :rules, :concurrency,
                 :tool_filter
 
@@ -107,6 +107,8 @@ module AIA
       service: config_section_coercion(:service),
       llm: config_section_coercion(:llm),
       prompts: config_section_coercion(:prompts),
+      roles: config_section_coercion(:roles),
+      skills: config_section_coercion(:skills),
       output: config_section_coercion(:output),
       audio: config_section_coercion(:audio),
       image: config_section_coercion(:image),
@@ -182,6 +184,10 @@ module AIA
       prompts_dir: [:prompts, :dir],
       roles_prefix: [:prompts, :roles_prefix],
       role: [:prompts, :role],
+      skills_prefix: [:prompts, :skills_prefix],
+      skills: [:prompts, :skills],
+      tools_prefix: [:prompts, :tools_prefix],
+      tool: [:prompts, :tool],
       system_prompt: [:prompts, :system_prompt],
       # output section
       output: [:output, :file],
@@ -251,6 +257,8 @@ module AIA
         llm: llm.to_h,
         models: models.map(&:to_h),
         prompts: prompts.to_h,
+        roles: roles.to_h,
+        skills: skills.to_h,
         output: output.to_h,
         audio: audio.to_h,
         image: image.to_h,
@@ -304,7 +312,7 @@ module AIA
           send("#{key}=", Array(value)) if respond_to?("#{key}=")
         when :mcp_servers
           self.mcp_servers = Array(value)
-        when :service, :llm, :prompts, :output, :audio, :image, :embedding,
+        when :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
              :tools, :flags, :registry, :paths, :logger, :rules, :concurrency
           section = send(key)
           if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
@@ -366,6 +374,8 @@ module AIA
       paths.config_file = File.expand_path(paths.config_file) if paths.config_file
       prompts.dir = File.expand_path(prompts.dir) if prompts.dir
       prompts.roles_dir = File.expand_path(prompts.roles_dir) if prompts.roles_dir
+      skills.dir = File.expand_path(skills.dir) if skills.respond_to?(:dir) && skills.dir
+      tools.dir  = File.expand_path(tools.dir)  if tools.respond_to?(:dir)  && tools.dir
       output.history_file = File.expand_path(output.history_file) if output.history_file
       rules.dir = File.expand_path(rules.dir) if rules.respond_to?(:dir) && rules.dir
     end
@@ -378,6 +388,7 @@ module AIA
       self.mcp_use = [] if mcp_use.nil?
       self.mcp_skip = [] if mcp_skip.nil?
       tools.paths = [] if tools.paths.nil?
+      prompts.skills = [] if prompts.respond_to?(:skills) && prompts.skills.nil?
     end
 
     def process_mcp_files(mcp_files)

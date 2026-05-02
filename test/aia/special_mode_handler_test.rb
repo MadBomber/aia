@@ -26,7 +26,8 @@ class SpecialModeHandlerTest < Minitest::Test
     @config = OpenStruct.new(
       models: [OpenStruct.new(name: 'gpt-4o')],
       output: OpenStruct.new(file: nil),
-      mcp_servers: []
+      mcp_servers: [],
+      flags: OpenStruct.new(tokens: false)
     )
     AIA.stubs(:config).returns(@config)
     AIA.stubs(:task_coordinator).returns(nil)

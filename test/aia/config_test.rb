@@ -80,6 +80,24 @@ class ConfigTest < Minitest::Test
     # Test prompts section has expected keys
     assert config.prompts.key?(:dir), "Prompts section should have dir key"
     assert config.prompts.key?(:roles_prefix), "Prompts section should have roles_prefix key"
+    assert config.prompts.key?(:skills), "Prompts section should have skills key"
+    assert config.prompts.key?(:skills_prefix), "Prompts section should have skills_prefix key"
+  end
+
+  def test_prompts_skills_defaults_to_empty_array
+    config = AIA::Config.new
+    assert_equal [], config.prompts.skills
+  end
+
+  def test_prompts_skills_prefix_defaults_to_skills
+    config = AIA::Config.new
+    assert_equal 'skills', config.prompts.skills_prefix
+  end
+
+  def test_skills_dir_defaults_to_prompts_skills_subdir
+    config = AIA::Config.new
+    assert config.skills.respond_to?(:dir)
+    assert_match(%r{/\.prompts/skills$}, config.skills.dir)
   end
 
   def test_config_nested_flags_section

@@ -275,6 +275,55 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     assert_equal 'architect', options[:role]
   end
 
+  def test_parses_skills_prefix
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skills-prefix', 'behaviours'])
+    assert_equal 'behaviours', options[:skills_prefix]
+  end
+
+  def test_parses_skill_single
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing'])
+    assert_equal ['testing'], options[:skills]
+  end
+
+  def test_parses_skill_short_flag
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['-s', 'testing'])
+    assert_equal ['testing'], options[:skills]
+  end
+
+  def test_parses_skill_comma_separated
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing,debugging'])
+    assert_equal ['testing', 'debugging'], options[:skills]
+  end
+
+  def test_parses_skill_repeatable
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing', '--skill', 'debugging'])
+    assert_equal ['testing', 'debugging'], options[:skills]
+  end
+
+  def test_parses_skill_combined_comma_and_repeat
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing,debugging', '--skill', 'refactoring'])
+    assert_equal ['testing', 'debugging', 'refactoring'], options[:skills]
+  end
+
+  def test_parses_skill_strips_whitespace
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', ' testing , debugging '])
+    assert_equal ['testing', 'debugging'], options[:skills]
+  end
+
   def test_parses_next_prompt
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)

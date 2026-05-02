@@ -501,8 +501,8 @@ Directives are special commands in prompt files and chat sessions that begin wit
 | `/include` | | Insert file contents | `/include path/to/file.txt` |
 | `/paste` | | Insert clipboard contents | `/paste` |
 | `/webpage` | `/web`, `/website` | Fetch and insert a webpage's text content | `/webpage https://example.com` |
-| `/skill` | | Include a Claude Code skill | `/skill code-quality` |
-| `/skills` | | List available Claude Code skills | `/skills` |
+| `/skill` | | Include an AIA skill from the skills directory | `/skill code-quality` |
+| `/skills` | | List available AIA skills (supports search terms) | `/skills ruby -test` |
 
 #### Execution & Code
 
@@ -518,7 +518,7 @@ Directives are special commands in prompt files and chat sessions that begin wit
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
 | `/verify` | | Two independent answers + reconciliation | `/verify` |
-| `/decompose` | | Decompose prompt into parallel sub-tasks | `/decompose` |
+| `/decompose` | | Decompose prompt into **fully independent**, concurrent sub-tasks; runs normally if tasks cannot all run in parallel | `/decompose` |
 | `/debate` | | Multi-round debate between robots | `/debate` |
 | `/spawn` | | Spawn a specialist robot for a domain-specific question | `/spawn ruby-expert` |
 | `/delegate` | `/del` | Delegate a subtask via TrakFlow | `/delegate` |

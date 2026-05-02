@@ -80,6 +80,205 @@ class CLIParserModelsTest < Minitest::Test
   end
 end
 
+class CLIParserListSkillsTest < Minitest::Test
+  TESTING_SKILL_MD = <<~MD
+    ---
+    name: testing
+    description: Write tests using Minitest.
+    ---
+    # Testing skill content
+  MD
+
+  DEBUGGING_SKILL_MD = <<~MD
+    ---
+    name: debugging
+    description: Debug Ruby applications.
+    ---
+    # Debugging skill content
+  MD
+
+  def test_list_available_skills_produces_markdown_h2_per_skill
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'skills')
+      Dir.mkdir(skills_dir)
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+      Dir.mkdir(File.join(skills_dir, 'debugging'))
+      File.write(File.join(skills_dir, 'debugging', 'SKILL.md'), DEBUGGING_SKILL_MD)
+
+      ENV['AIA_PROMPTS__DIR'] = dir
+      ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'skills'
+
+      out, _err = capture_io { AIA::CLIParser.send(:list_available_skills) }
+
+      assert_match(/^## debugging/, out)
+      assert_match(/^## testing/, out)
+    end
+  ensure
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+  end
+
+  def test_list_available_skills_renders_front_matter_as_table
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'skills')
+      Dir.mkdir(skills_dir)
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+
+      ENV['AIA_PROMPTS__DIR'] = dir
+      ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'skills'
+
+      out, _err = capture_io { AIA::CLIParser.send(:list_available_skills) }
+
+      assert_match(/\| Key \| Value \|/, out)
+      assert_match(/\| name \| testing \|/, out)
+      assert_match(/\| description \| Write tests using Minitest\. \|/, out)
+    end
+  ensure
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+  end
+
+  def test_list_available_skills_no_front_matter_shows_placeholder
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'skills')
+      Dir.mkdir(skills_dir)
+      Dir.mkdir(File.join(skills_dir, 'bare'))
+      File.write(File.join(skills_dir, 'bare', 'SKILL.md'), "# Just a heading, no front matter\n")
+
+      ENV['AIA_PROMPTS__DIR'] = dir
+      ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'skills'
+
+      out, _err = capture_io { AIA::CLIParser.send(:list_available_skills) }
+
+      assert_match(/^## bare/, out)
+      assert_match(/No front matter/, out)
+    end
+  ensure
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+  end
+
+  def test_list_available_skills_ignores_subdirs_without_skill_md
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'skills')
+      Dir.mkdir(skills_dir)
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+      Dir.mkdir(File.join(skills_dir, 'incomplete'))
+      File.write(File.join(skills_dir, 'incomplete', 'notes.md'), '# just notes')
+      File.write(File.join(skills_dir, 'orphan.md'), '# orphan')
+
+      ENV['AIA_PROMPTS__DIR'] = dir
+      ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'skills'
+
+      out, _err = capture_io { AIA::CLIParser.send(:list_available_skills) }
+
+      assert_match(/testing/, out)
+      refute_match(/incomplete/, out)
+      refute_match(/orphan/, out)
+    end
+  ensure
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+  end
+
+  def test_list_available_skills_with_empty_dir
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'skills')
+      Dir.mkdir(skills_dir)
+
+      ENV['AIA_PROMPTS__DIR'] = dir
+      ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'skills'
+
+      out, _err = capture_io { AIA::CLIParser.send(:list_available_skills) }
+
+      assert_match(/No skill files found/, out)
+    end
+  ensure
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+  end
+
+  def test_list_available_skills_no_dir
+    Dir.mktmpdir do |dir|
+      ENV['AIA_PROMPTS__DIR'] = dir
+      ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'nonexistent_skills'
+
+      out, _err = capture_io { AIA::CLIParser.send(:list_available_skills) }
+
+      assert_match(/No skills directory/, out)
+    end
+  ensure
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+  end
+
+  def test_list_available_skills_escapes_pipe_in_value
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'skills')
+      Dir.mkdir(skills_dir)
+      Dir.mkdir(File.join(skills_dir, 'piped'))
+      File.write(File.join(skills_dir, 'piped', 'SKILL.md'), <<~MD)
+        ---
+        name: piped
+        description: Use foo | bar syntax.
+        ---
+      MD
+
+      ENV['AIA_PROMPTS__DIR'] = dir
+      ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'skills'
+
+      out, _err = capture_io { AIA::CLIParser.send(:list_available_skills) }
+
+      assert_match(/Use foo \\| bar syntax\./, out)
+    end
+  ensure
+    ENV.delete('AIA_PROMPTS__DIR')
+    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+  end
+
+  def test_list_skills_uses_cli_prompts_dir_and_skills_prefix
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'capabilities')
+      Dir.mkdir(skills_dir)
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+
+      old_argv = ARGV.dup
+      ARGV.replace(['--prompts-dir', dir, '--skills-prefix', 'capabilities', '--list-skills'])
+
+      out, _err = capture_io { AIA::CLIParser.parse }
+
+      assert_match(/^## testing/, out)
+      refute_match(/No skills directory/, out)
+    ensure
+      ARGV.replace(old_argv)
+    end
+  end
+
+  def test_list_skills_uses_cli_directory_options_regardless_of_order
+    Dir.mktmpdir do |dir|
+      skills_dir = File.join(dir, 'capabilities')
+      Dir.mkdir(skills_dir)
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+
+      old_argv = ARGV.dup
+      ARGV.replace(['--list-skills', '--prompts-dir', dir, '--skills-prefix', 'capabilities'])
+
+      out, _err = capture_io { AIA::CLIParser.parse }
+
+      assert_match(/^## testing/, out)
+      refute_match(/No skills directory/, out)
+    ensure
+      ARGV.replace(old_argv)
+    end
+  end
+end
+
+
 class CLIParserToolsPathsTest < Minitest::Test
   def test_process_tools_paths_empty_raises
     # Empty string should trigger exit (which is intercepted in tests)
@@ -184,6 +383,7 @@ class CLIToNestedMapCompletenessTest < Minitest::Test
     completion
     mcp_list
     list_tools
+    list_skills
     log_level_override
     log_file_override
     executable_prompt_content

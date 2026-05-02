@@ -6,6 +6,8 @@
 # A coordinator robot breaks them down, specialist robots execute,
 # and the coordinator reassembles.
 
+require 'json'
+
 module AIA
   class PromptDecomposer
     include ContentExtractor
@@ -23,8 +25,16 @@ module AIA
       User request: %{prompt}
     PROMPT
 
-    # JSON schema for the decomposition response.
-    # Uses a wrapper object because Claude requires a top-level object (not a bare array).
+    # Appended to DECOMPOSITION_PROMPT when the model does not support
+    # structured output and with_schema cannot be used.
+    FALLBACK_JSON_INSTRUCTION = <<~INSTRUCTION
+
+      Respond with ONLY a JSON object — no explanation, no markdown, no prose:
+      {"subtasks": ["sub-task description 1", "sub-task description 2"]}
+    INSTRUCTION
+
+    # JSON schema for structured-output-capable models.
+    # Uses a wrapper object because Claude requires a top-level object.
     SUBTASKS_SCHEMA = {
       name: 'subtask_decomposition',
       schema: {
@@ -57,20 +67,33 @@ module AIA
 
     # Attempt to decompose a prompt into sub-tasks.
     #
-    # Uses a temporary probe robot (not the main conversation robot) so the
-    # decomposition analysis prompt and response do not pollute the main
-    # conversation history. Falls back to [] if the model's output is not
-    # parseable or the prompt cannot be meaningfully decomposed.
+    # Uses a temporary probe robot so the decomposition prompt and response do
+    # not pollute the main conversation history. When the configured model
+    # supports structured output (structured_output? == true) with_schema is
+    # used to get a guaranteed Hash back. Otherwise a JSON instruction is
+    # appended to the prompt and the text response is parsed manually.
     #
     # @param prompt [String] the user's prompt
-    # @return [Array<String>] array of sub-task descriptions (empty if not decomposable)
+    # @return [Array<String>] sub-task descriptions (empty if not decomposable)
     def decompose(prompt)
-      probe = build_probe_robot
-      probe.with_schema(SUBTASKS_SCHEMA)
-      result = probe.run(DECOMPOSITION_PROMPT % { prompt: prompt }, mcp: :none, tools: :none)
-      subtasks = extract_subtasks(extract_content(result))
+      probe      = build_probe_robot
+      use_schema = structured_output?
+
+      if use_schema
+        probe.with_schema(SUBTASKS_SCHEMA)
+        full_prompt = DECOMPOSITION_PROMPT % { prompt: prompt }
+      else
+        AIA.logger.warn("PromptDecomposer: configured model does not support structured output — using JSON prompt fallback")
+        full_prompt = (DECOMPOSITION_PROMPT + FALLBACK_JSON_INSTRUCTION) % { prompt: prompt }
+      end
+
+      result   = probe.run(full_prompt, mcp: :none, tools: :none)
+      content  = extract_content(result)
+      AIA.logger.debug("PromptDecomposer#decompose content class=#{content.class}")
+      subtasks = extract_subtasks(content)
       subtasks.is_a?(Array) ? subtasks.select { |t| t.is_a?(String) && !t.empty? } : []
-    rescue StandardError
+    rescue StandardError => e
+      AIA.logger.warn("PromptDecomposer#decompose failed: #{e.class}: #{e.message}")
       []
     end
 
@@ -92,6 +115,12 @@ module AIA
 
     private
 
+    def structured_output?
+      RubyLLM.models.find(AIA.config.models.first.name).structured_output?
+    rescue StandardError
+      false
+    end
+
     # Build a fresh temporary robot for the decomposition probe.
     # This robot has no conversation history and is discarded after use,
     # keeping @robot's history clean for the normal or synthesis path.
@@ -107,17 +136,22 @@ module AIA
     end
 
     # Extract the subtasks array from the probe response.
-    # with_schema causes ruby_llm to auto-parse the JSON into a Hash.
-    # Falls back to text parsing for providers that ignore structured output.
+    # Hash path: with_schema caused ruby_llm to auto-parse the JSON response.
+    # String path: fallback text parsing for models without structured output.
     def extract_subtasks(content)
       case content
       when Hash
         content['subtasks'] || content[:subtasks] || []
       when Array
         content
+      when String
+        parsed = JSON.parse(content.gsub(/```(?:json)?\s*/i, '').gsub(/```/, '').strip)
+        parsed.is_a?(Hash) ? parsed['subtasks'] || parsed[:subtasks] || [] : parsed
       else
         []
       end
+    rescue JSON::ParserError
+      []
     end
   end
 end
