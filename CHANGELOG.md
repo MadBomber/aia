@@ -42,6 +42,8 @@
 - **`configure_robot_lab` called on every build** (`lib/aia/robot_factory.rb`): Provider and logging configuration was re-applied on each `RobotFactory.build` call. Extracted to `RobotFactory.setup`, called once at process start.
 - **`TaskCoordinator.clear!` on every startup** (`lib/aia/startup_coordinator.rb`): Unconditional `TaskCoordinator.clear!` discarded in-flight tasks when AIA was re-entered within the same process. Now only called when explicitly resetting state.
 - **Tool filter `resolve()` stdin block** (`lib/aia/tool_filter_strategy.rb`): In multi-strategy comparison mode, `resolve` prompted stdin for user input, which blocked non-interactive pipelines. Comparison mode removed; `resolve` is now non-blocking.
+- **`--list-skills` CLI directory options** (`lib/aia/config/cli_parser.rb`): Skill listing now honors `--prompts-dir` and `--skills-prefix` regardless of option order instead of reading only environment/default locations.
+- **Skill symlink path containment** (`lib/aia/directives/web_and_file_directives.rb`): Skill resolution now checks real paths against the skills directory boundary, preventing symlinks to sibling directories with the same prefix from being treated as valid skills.
 
 ## [2.0.9.alpha] - 2026-03-28
 
