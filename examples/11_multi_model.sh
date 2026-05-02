@@ -22,7 +22,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-MODEL_A="ollama/qwen3"
+MODEL_A="ollama/phi4"
 MODEL_B="ollama/phi4-mini"
 
 echo "=== Demo 11: Multiple Models ==="

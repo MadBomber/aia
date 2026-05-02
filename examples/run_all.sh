@@ -21,7 +21,7 @@
 #
 # Prerequisites:
 #   - Run 00_setup_aia.sh first
-#   - Ollama running with qwen3 model available
+#   - Ollama running with phi4 model available
 #
 # Usage:
 #   cd examples
@@ -76,7 +76,7 @@ Scripts 23-28 run with BATCH_MODE=true, which skips their interactive
 
 Prerequisites:
   1. Run 00_setup_aia.sh first
-  2. Ollama running with the qwen3 model available
+  2. Ollama running with the phi4 model available
 
 Exit codes:
   0  All scripts completed (some may have non-fatal warnings)

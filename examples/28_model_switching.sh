@@ -25,7 +25,7 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="ollama/qwen3"
+MODEL_A="ollama/phi4"
 MODEL_B="ollama/phi4-mini"
 
 echo "=== Demo 28: Model Switching (/model directive) ==="

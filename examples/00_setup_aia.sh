@@ -7,7 +7,7 @@
 # What it does:
 #   1. Verifies aia is installed
 #   2. Verifies ollama is installed and running
-#   3. Pulls the qwen3 model (good tool-calling support)
+#   3. Pulls the phi4 model (good tool-calling support)
 #   4. Verifies examples/prompts_dir exists
 #   5. Writes examples/aia_config.yml for use with -c flag
 #
@@ -31,9 +31,9 @@ if [ -f "${REPO_BIN}/aia" ]; then
   export PATH="${REPO_BIN}:${PATH}"
 fi
 
-# The model to use for demos. qwen3 is Ollama's reference model
+# The model to use for demos. phi4 is Ollama's reference model
 # for tool calling and has strong instruction-following ability.
-DEMO_MODEL="qwen3:latest"
+DEMO_MODEL="phi4:latest"
 
 echo "=== AIA Examples Setup ==="
 echo

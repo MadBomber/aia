@@ -40,7 +40,7 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="ollama/qwen3"
+MODEL_A="ollama/phi4"
 MODEL_B="ollama/phi4-mini"
 ORCH_CONFIG="aia_config_orchestrator.yml"
 REQUIREMENTS="requirements/sinatra_taskflow_app.md"
@@ -97,7 +97,7 @@ expect <<EXPECT_SCRIPT
 set timeout 1800
 log_user 1
 
-spawn aia -c aia_config_orchestrator.yml -m ollama/qwen3,ollama/phi4-mini --chat
+spawn aia -c aia_config_orchestrator.yml -m ollama/phi4,ollama/phi4-mini --chat
 
 expect {
   "#=> " {}

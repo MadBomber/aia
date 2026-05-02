@@ -6,7 +6,7 @@
 # In a 2-model chat session, prefix any message with @RobotName
 # to direct it to a specific robot. Only that robot responds.
 # Robot names are assigned by AIA based on the model:
-#   ollama/qwen3     → Tobor  (first robot always gets the name "Tobor")
+#   ollama/phi4     → Tobor  (first robot always gets the name "Tobor")
 #   ollama/phi4-mini → Quark
 #
 # If the @name is not recognized, AIA lists available robot names.
@@ -26,7 +26,7 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="ollama/qwen3"
+MODEL_A="ollama/phi4"
 MODEL_B="ollama/phi4-mini"
 
 echo "=== Demo 27: @mention Routing ==="
@@ -35,7 +35,7 @@ echo "In a multi-model network, prefix your message with @RobotName"
 echo "to direct it to a specific robot. Only that robot responds."
 echo
 echo "Using models: ${MODEL_A} vs ${MODEL_B}"
-echo "Robot names:  Tobor (qwen3) and Quark (phi4-mini)"
+echo "Robot names:  Tobor (phi4) and Quark (phi4-mini)"
 echo
 
 # --- Check that the second model is available ---
@@ -46,7 +46,7 @@ if ! ollama list 2>/dev/null | grep -q "^phi4-mini"; then
     echo
 fi
 
-# --- Part 1: Route to Tobor (qwen3) ---
+# --- Part 1: Route to Tobor (phi4) ---
 
 echo "--- Part 1: Direct a question to @Tobor ---"
 echo
@@ -57,7 +57,7 @@ expect <<'EXPECT_SCRIPT'
 set timeout 180
 log_user 1
 
-spawn aia -c aia_config.yml -m ollama/qwen3,ollama/phi4-mini --chat
+spawn aia -c aia_config.yml -m ollama/phi4,ollama/phi4-mini --chat
 
 expect {
   "#=> " {}
@@ -90,7 +90,7 @@ expect <<'EXPECT_SCRIPT'
 set timeout 180
 log_user 1
 
-spawn aia -c aia_config.yml -m ollama/qwen3,ollama/phi4-mini --chat
+spawn aia -c aia_config.yml -m ollama/phi4,ollama/phi4-mini --chat
 
 expect {
   "#=> " {}
@@ -126,7 +126,7 @@ expect <<'EXPECT_SCRIPT'
 set timeout 60
 log_user 1
 
-spawn aia -c aia_config.yml -m ollama/qwen3,ollama/phi4-mini --chat
+spawn aia -c aia_config.yml -m ollama/phi4,ollama/phi4-mini --chat
 
 expect {
   "#=> " {}

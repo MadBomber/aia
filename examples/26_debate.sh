@@ -21,7 +21,7 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="ollama/qwen3:latest"
+MODEL_A="ollama/phi4:latest"
 MODEL_B="ollama/phi4-mini:latest"
 
 echo "=== Demo 26: Debate Mode (DebateHandler) ==="
@@ -32,7 +32,7 @@ echo "other said in the previous round and responds. The debate"
 echo "ends when a robot says CONVERGED or after 5 rounds."
 echo
 echo "Using models: ${MODEL_A} vs ${MODEL_B}"
-echo "Robot names:  Tobor (qwen3) and Quark (phi4-mini)"
+echo "Robot names:  Tobor (phi4) and Quark (phi4-mini)"
 echo
 
 # --- Check that the second model is available ---
