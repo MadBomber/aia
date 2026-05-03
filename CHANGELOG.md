@@ -1,72 +1,65 @@
 # Changelog
 
-## [Unreleased] - 2026-04-15
+## [Unreleased]
+
+This section captures all changes since v1.1.0.
 
 ### Added
 
-- **`LayeredOrchestrator`** (`lib/aia/layered_orchestrator.rb`): 3-tier agent orchestration — Tier 1 (Tobor) decomposes requirements into layers, Tier 2 lead agents decompose each layer into specialist tasks, Tier 3 specialists produce implementation artifacts. Activated via `/orchestrate` chat directive.
-- **`TaskDecomposer` + `TaskExecutor`** (`lib/aia/task_decomposer.rb`, `lib/aia/task_executor.rb`): `TaskDecomposer#decompose` calls the robot with a structured JSON prompt and returns `[{title:, assignee:}]` subtask lists. `TaskExecutor#execute` claims, dispatches, and completes individual subtasks.
-- **`OrchestratorError`, `DebateError`, `DecomposeError`** (`lib/aia/errors.rb`): Typed error classes for orchestration, debate, and decomposition failure paths.
-- **`tool_filter.timeout_s` config key** (`lib/aia/config/defaults.yml`): Configurable timeout for tool filter operations; defaults to 10 seconds.
-- **Parallel LLM calls** (`lib/aia/robot_factory.rb`): Multi-model network turns now dispatch model calls concurrently via `Async::Barrier` + `Thread.new`, reducing wall-clock latency proportionally to network size.
-- **Session cleanup** (`lib/aia/session.rb`, `lib/aia.rb`): `at_exit` hook (moved to `AIA.run`) calls `Session#cleanup!` — releases MCP connections, flushes SpawnHandler cache, closes TrakFlow — on process exit.
-- **`state_setting!` DSL** (`lib/aia/directive.rb`, `lib/aia/directives/execution_directives.rb`): Directive subclasses declare state-setting methods with `state_setting! :debate, :spawn, ...`. `DirectiveProcessor#state_setting?` uses this registry; `ChatLoop` no longer maintains a hardcoded prefix list.
-- **Demo 29** (`examples/29_agent_harness.sh`): End-to-end demonstration of 3-tier agent harness building a Sinatra/Sequel application from a full requirements document.
-- **`BATCH_MODE` support in example scripts** (`examples/23_verify.sh` – `examples/29_agent_harness.sh`, `examples/run_all.sh`): All interactive demo scripts check `BATCH_MODE=true` to skip live `aia --chat` sessions, enabling CI and `run_all.sh` automation. `run_all.sh` now covers demos 01–21 and 23–28 (29 excluded: 10–20 min runtime).
+- **`LayeredOrchestrator`**: 3-tier agent orchestration — Tobor decomposes requirements, lead agents break them into specialist tasks, specialists produce artifacts. Activated via `/orchestrate`.
+- **`TaskDecomposer` + `TaskExecutor`**: Break complex prompts into parallel subtasks and execute them via TrakFlow.
+- **`OrchestratorError`, `DebateError`, `DecomposeError`**: Typed error classes for orchestration and debate failure paths (`lib/aia/errors.rb`).
+- **`tool_filter.timeout_s` config key**: Configurable TF-IDF filter timeout; defaults to 10 seconds.
+- **Parallel LLM calls**: Multi-model network turns now run concurrently via `Async::Barrier`.
+- **Session cleanup**: `at_exit` hook in `AIA.run` calls `Session#cleanup!` to release MCP connections, flush caches, and close TrakFlow.
+- **`state_setting!` DSL**: Directive subclasses declare their exclusive mode with `state_setting! :debate, :spawn, ...`; `ChatLoop` no longer maintains a hardcoded prefix list.
+- **Demo 29**: End-to-end agent harness demo building a Sinatra/Sequel application from a requirements document.
+- **`BATCH_MODE` support**: Demos 23–28 skip live `--chat` sessions when `BATCH_MODE=true`, enabling `run_all.sh` CI automation.
 
 ### Changed
 
-- **`AIA.logger`** (`lib/aia.rb`): Promoted from a top-level `def logger` to a proper `def self.logger` inside `class << self`, aligning with the module method pattern used by `AIA.debug?` and peers.
-- **`DebugMe` scope** (`lib/aia.rb`): `include DebugMe` and `$DEBUG_ME` initialization moved inside `module AIA`, removing accidental `Object`-level pollution.
-- **TF-IDF as sole tool filter strategy** (`lib/aia/tool_filter_strategy.rb`, `lib/aia/tool_filter_registry.rb`, `aia.gemspec`): Zvec (B), SqliteVec (C), and LSI (D) strategies removed. `ToolFilterStrategy#resolve` simplified to a single `resolve_single` path. Multi-strategy comparison mode removed. ~2,150 LOC deleted.
-- **Lazy handler instantiation in `SpecialModeHandler`** (`lib/aia/special_mode_handler.rb`): `SpawnHandler`, `DebateHandler`, `DelegateHandler`, and `LayeredOrchestrator` are now created on first use via memoized private accessors instead of at construction time. Startup cost reduced for sessions that never invoke these handlers.
-- **Lazy-require for `VerificationNetwork` and `PromptDecomposer`** (`lib/aia/special_mode_handler.rb`): Files are `require_relative`'d inside `handle_verification` and `handle_decomposition` respectively, not at process boot.
-- **Lazy-require for TrakFlow infrastructure** (`lib/aia/startup_coordinator.rb`): `TaskCoordinator`, `TrakflowBridge`, and the TrakFlow tools are required and initialized only when TrakFlow is available in the load path. Startup no longer blocks or errors when TrakFlow is absent.
-- **`robot_lab` runtime dependency** (`aia.gemspec`): Updated the execution engine requirement from `robot_lab ~> 0.0.9` to `~> 0.1.0`, matching the v0.1 API used by the startup and robot configuration path.
-- **Automatic TF-IDF tool filtering** (`lib/aia/config/defaults.yml`, `lib/aia/config/cli_parser.rb`, `lib/aia/tool_filter_registry.rb`): Replaced the temporary `tool_filter_a` flag with `auto_tool_filter`, enabled it by default, and changed `-A` to support `--[no-]auto-tool-filter`.
-- **`README.md`**: Added gem version and license badges; new "Why AIA?" feature comparison table; Prompt Directives table reorganized into seven category subsections (Model & Configuration, Content & Data, Execution & Code, Agent Orchestration, Prompt Workflows, Context & Checkpoints, Status & Info, TrakFlow).
-- **`shared_tools` optional runtime dependencies** (`shared_tools/shared_tools.gemspec`, `shared_tools/lib/shared_tools/tools/`): Moved `dentaku`, `sequel`, and `openweathermap` from runtime `add_dependency` to `add_development_dependency`. Each tool file now guards its `require` with a `CONSTANT_AVAILABLE` boolean (`DENTAKU_AVAILABLE`, `SEQUEL_AVAILABLE`, `OPENWEATHERMAP_AVAILABLE`) and exposes `available?` so `ToolLoader.discover_tools` can skip tools whose underlying library is not installed. Added a conditional `bigdecimal >= 4.0` pin under Ruby >= 4.0 to prevent version-activation conflicts when `dentaku` or `sequel` transitively tries to activate an older BigDecimal.
+- **TF-IDF as sole tool filter strategy**: Zvec (B), SqliteVec (C), and LSI (D) strategies removed (~2,150 LOC deleted).
+- **`auto_tool_filter` flag**: Replaces `tool_filter_a`; enabled by default; toggled via `--[no-]auto-tool-filter`.
+- **`robot_lab` dependency**: Updated from `~> 0.0.9` to `~> 0.1.0`.
+- **Lazy handler instantiation**: `SpawnHandler`, `DebateHandler`, `DelegateHandler`, and `LayeredOrchestrator` are memoized and created on first use.
+- **Lazy-require for heavy subsystems**: `VerificationNetwork`, `PromptDecomposer`, and all TrakFlow infrastructure required only when invoked.
+- **`shared_tools` optional runtime dependencies**: `dentaku`, `sequel`, and `openweathermap` moved to dev dependencies; each tool guards its `require` with a boolean constant and exposes `available?`; `bigdecimal >= 4.0` pinned conditionally for Ruby >= 4.0.
+- **`README.md`**: Added badges, "Why AIA?" feature comparison table, and Prompt Directives reorganized into seven category subsections.
 
 ### Removed
 
-- **Zvec, SqliteVec, LSI tool filter strategies** (`lib/aia/tool_filter/zvec.rb`, `sqlite_vec.rb`, `lsi.rb`, `embedding_model_loader.rb`): Files deleted along with their test files.
-- **`zvec`, `sqlite-vec`, `informers` gem dependencies** (`aia.gemspec`): Removed from runtime dependencies.
-- **`build_streaming_callback`** (`lib/aia/robot_factory.rb`): Dead code path removed.
-- **KBS gem dependency** (carried forward from prior work): `kbs` gem removed; KBS Rule Engine (RuleRouter, KBDefinitions, FactAsserter, DynamicRuleBuilder, RulesDSL, DecisionApplier, ExpertRouter) deleted.
-- **Tool filter strategy A (KBS rule-based)**: Strategies renumbered — A=TF-IDF, B=Zvec, C=SqliteVec, D=LSI (Zvec/SqliteVec/LSI subsequently removed as well; see above).
-- `-A`/`--tool-filter-kbs` CLI flag, `/rules` chat directive, user-defined rule hooks (`~/.config/aia/rules/*.rb`), KBS-driven MCP discovery branch.
+- **Zvec, SqliteVec, LSI tool filter strategies** and their test files.
+- **`zvec`, `sqlite-vec`, `informers` gem dependencies** from gemspec.
+- **KBS gem and rule engine**: `kbs` gem and all KBS infrastructure (RuleRouter, KBDefinitions, FactAsserter, DynamicRuleBuilder, RulesDSL, DecisionApplier, ExpertRouter) deleted.
+- **`-A`/`--tool-filter-kbs` CLI flag**, `/rules` chat directive, and user-defined rule hooks.
+- **`build_streaming_callback`**: Dead code path in `RobotFactory`.
 
 ### Fixed
 
-- **Ollama model tag resolution in temporary robot builds** (`lib/aia/verification_network.rb`, `lib/aia/prompt_decomposer.rb`): `VerificationNetwork` and `PromptDecomposer` were passing `model.name` (e.g. `qwen3:latest`) to `RobotLab.build` instead of `model.internal_id` (e.g. `ollama/qwen3:latest`). RobotLab requires the provider prefix to route correctly; without it, builds silently used the wrong provider or raised a model-not-found error.
-- **Dynamic pipeline iteration drops mid-run replacements** (`lib/aia/pipeline_orchestrator.rb`): `PipelineOrchestrator#process` iterated with `config.pipeline.each`, which captured the array reference at call time. Prompt front-matter that sets `next:` or `pipeline:` replaces `AIA.config.pipeline` with a new array that `.each` never sees. Changed to `until config.pipeline.empty?` + `Array#shift` so any pipeline replacement made during a step is picked up on the next iteration.
-- **Token metrics crash on non-existent `result.output`** (`lib/aia/pipeline_orchestrator.rb`): `display_metrics` called `result.output`, which does not exist on `RobotLab::RobotResult`. Rewrote to use `result.raw` (a `RubyLLM::Message`) consistent with `ChatLoop`. Added `display_network_metrics` for `SimpleFlow::Result` (multi-robot network) that iterates `flow_result.context` and delegates to `UIPresenter#display_multi_model_metrics`.
-- **AI response written to output file twice** (`lib/aia/ui_presenter.rb`, `lib/aia/pipeline_orchestrator.rb`): `UIPresenter#display_ai_response` opened and wrote to the configured output file in addition to stdout. `PipelineOrchestrator#process` also called `output_to_file` after every step, resulting in every response being appended twice. Removed the file-writing code from `display_ai_response`; file output is now exclusively owned by `output_to_file`.
-- **Unknown `@mention` falling through to broadcast** (`lib/aia/mention_router.rb`): `MentionRouter#handle` returned `false` when all mentioned robot names were unrecognized, causing the caller to fall back to broadcasting the prompt to every robot in the network. Now returns `true` and reports each unknown name via `UIPresenter#display_info`, matching the contract that a `true` return means the handler consumed the turn.
-- **Custom directive classes unavailable in ERB prompts** (`lib/aia/tool_loader.rb`): `PM::Directive.register_all` snapshots subclasses at call time. Directive classes defined in tool files loaded by `--tools` were registered after the snapshot, making them invisible to `PM.parse`. Added a `PM::Directive.register_all` call at the end of `ToolLoader#load_tools` so any directive subclasses in freshly loaded tool files are included before the first prompt render.
-- **Demo scripts using untagged Ollama model name** (`examples/00_setup_aia.sh`, `examples/aia_config.yml`, `examples/26_debate.sh`): Model references `ollama/qwen3` and `ollama/phi4-mini` lacked the `:latest` tag, causing Ollama to fail silently or pull the wrong manifest. Updated all three files to use `qwen3:latest` and `phi4-mini:latest`.
-
-- **`/ruby` directive security gate** (`lib/aia/directives/execution_directives.rb`): `eval` is now guarded by `AIA.config.flags.allow_ruby_eval`. Attempts without the flag return an error message instead of executing arbitrary code.
-- **`RobotFactory` namer state leak** (`lib/aia/robot_factory.rb`): Class-level `@namer` was reset on every `build_single_robot` call, causing the second robot in a session to reuse name slot 0. Fixed by initializing `@namer` once in `RobotFactory.setup`.
-- **`at_exit` hook placement** (`lib/aia.rb`, `lib/aia/session.rb`): Hook was registered inside `Session#start`, meaning it could be registered multiple times in tests or pipeline re-entry. Moved to `AIA.run`, where it is registered exactly once per process.
-- **Swallowed exceptions in `StartupCoordinator`** (`lib/aia/startup_coordinator.rb`): Initialization failures (MCP connections, TrakFlow bootstrap) were silently rescued. Now logged at `warn` level with message and backtrace via `AIA.logger`.
-- **`configure_robot_lab` called on every build** (`lib/aia/robot_factory.rb`): Provider and logging configuration was re-applied on each `RobotFactory.build` call. Extracted to `RobotFactory.setup`, called once at process start.
-- **`TaskCoordinator.clear!` on every startup** (`lib/aia/startup_coordinator.rb`): Unconditional `TaskCoordinator.clear!` discarded in-flight tasks when AIA was re-entered within the same process. Now only called when explicitly resetting state.
-- **Tool filter `resolve()` stdin block** (`lib/aia/tool_filter_strategy.rb`): In multi-strategy comparison mode, `resolve` prompted stdin for user input, which blocked non-interactive pipelines. Comparison mode removed; `resolve` is now non-blocking.
-- **`--list-skills` CLI directory options** (`lib/aia/config/cli_parser.rb`): Skill listing now honors `--prompts-dir` and `--skills-prefix` regardless of option order instead of reading only environment/default locations.
-- **Skill symlink path containment** (`lib/aia/directives/web_and_file_directives.rb`): Skill resolution now checks real paths against the skills directory boundary, preventing symlinks to sibling directories with the same prefix from being treated as valid skills.
-- **GPT-5/OpenAI token parameter mismatch** (`lib/aia/robot_factory.rb`, `lib/aia/patches/ruby_llm_tool_error.rb`): Models whose RubyLLM metadata declares `temperature: false` no longer receive a temperature setting. OpenAI GPT-5/o-series requests now translate RobotLab's `max_tokens` run config into OpenAI's `max_completion_tokens` provider parameter, avoiding `Unsupported parameter: 'max_tokens'` failures while keeping `RobotLab::RunConfig` compatible.
-- **Installed gem BigDecimal activation conflict** (`lib/aia.rb`): AIA now activates and requires `bigdecimal >= 4.0` before loading transitive dependencies, preventing installed-gem startup failures when another dependency tries to activate an older BigDecimal version.
-- **`SpecialModeHandler` keyword argument crash for `network.run`** (`lib/aia/special_mode_handler.rb`): `handle_verification` and `handle_concurrent_mcp` called `network.run(prompt)` with a positional string. `RobotLab::Network#run` is keyword-only; the positional call raised `ArgumentError: wrong number of arguments`. Changed to `network.run(message: prompt)` and updated the matching test stubs in `test/aia/special_mode_handler_test.rb`.
-- **`ToolLoader` silently failing to eager-load gem tools** (`lib/aia/tool_loader.rb`): `Gem::LoadError` inherits from `LoadError < ScriptError`, not `StandardError`, so it escaped the `rescue StandardError` guard in `eager_load_gem_tools` and crashed the process. Widened all rescues to `LoadError, StandardError`. Added `eager_load_namespace_fallback` that recursively iterates module constants (up to depth 3) to trigger Zeitwerk autoloads one-at-a-time when `load_all_tools` fails. Fixed `activate_unbundled_gem` to fall back to scanning `Gem.default_dir` and `Gem.user_dir` when Bundler's strict `gem` call raises `Gem::LoadError` for non-bundled gems in development mode.
-- **`DebateHandler` runs all rounds despite explicit CONVERGED signal** (`lib/aia/debate_handler.rb`): `converged?` relied solely on `SimilarityScorer` TF-IDF cosine similarity (threshold 0.85). A "CONVERGED + summary" response scored below the threshold compared to the prior round's deliberation text, causing the debate to exhaust all five rounds even after both robots explicitly agreed. Added `all_signaled_convergence?` fast path: once `MIN_ROUNDS` have completed, if every non-failed robot response contains the `CONVERGED` keyword the loop breaks immediately, before the similarity check.
-- **Demo 18 tools overload prevents tool invocation** (`examples/18_tools.sh`): With all 35+ `shared_tools` tools loaded, `gpt-4.1` consistently narrated tool behavior instead of invoking any tool. Added `--allowed-tools current_date_time_tool,system_info_tool,dns_tool` to limit the exposed tool set to three, restoring reliable tool-call behavior.
-- **Demo 26/27 robot name "Quark" corrected to "Vanguard"** (`examples/26_debate.sh`, `examples/27_mention_routing.sh`): `RobotNamer` assigns the name "Vanguard" to `gpt-4.1-mini`, not "Quark". Demo echo text and `@mention` send commands referenced the wrong name, causing `@Quark` to be reported as unrecognized. Updated both scripts to use "Vanguard".
+- **`DebateHandler` convergence short-circuit** (`lib/aia/debate_handler.rb`): Added `all_signaled_convergence?` fast path — when all robots say `CONVERGED` after minimum rounds the debate ends immediately, without waiting for similarity scoring to catch up.
+- **`SpecialModeHandler` keyword argument crash** (`lib/aia/special_mode_handler.rb`): `network.run(prompt)` → `network.run(message: prompt)` to match `RobotLab::Network#run`'s keyword-only API.
+- **`ToolLoader` gem loading under Bundler** (`lib/aia/tool_loader.rb`): `Gem::LoadError` (`ScriptError`, not `StandardError`) now caught; added `eager_load_namespace_fallback` for Zeitwerk recovery; `activate_unbundled_gem` falls back to `Gem.default_dir`/`Gem.user_dir` scanning when Bundler blocks `gem name`.
+- **Demo 18 tool overload** (`examples/18_tools.sh`): Added `--allowed-tools` to expose only 3 tools; 35+ tools caused `gpt-4.1` to narrate instead of invoke.
+- **Demo 26/27 robot name** (`examples/26_debate.sh`, `examples/27_mention_routing.sh`): `RobotNamer` assigns "Vanguard" to `gpt-4.1-mini`, not "Quark"; corrected in both scripts.
+- **Ollama model tag resolution** (`lib/aia/verification_network.rb`, `lib/aia/prompt_decomposer.rb`): Pass `model.internal_id` (e.g. `ollama/qwen3:latest`) to `RobotLab.build` instead of `model.name`.
+- **Dynamic pipeline iteration** (`lib/aia/pipeline_orchestrator.rb`): Changed `config.pipeline.each` to `until config.pipeline.empty?` + `shift` so mid-run `next:`/`pipeline:` replacements are picked up immediately.
+- **AI response written to output file twice** (`lib/aia/ui_presenter.rb`): Removed file-writing from `display_ai_response`; file output exclusively owned by `output_to_file`.
+- **Unknown `@mention` falls through to broadcast** (`lib/aia/mention_router.rb`): Returns `true` and reports unrecognized names instead of silently broadcasting to all robots.
+- **Custom directive classes unavailable in ERB prompts** (`lib/aia/tool_loader.rb`): `PM::Directive.register_all` now called at the end of `ToolLoader#load_tools` so tool-provided directives are registered before the first prompt render.
+- **Demo scripts using untagged Ollama model names**: Updated to `phi4:latest` and `phi4-mini:latest`.
+- **`/ruby` directive security gate**: `eval` now guarded by `AIA.config.flags.allow_ruby_eval`.
+- **`RobotFactory` namer state leak**: `@namer` initialized once in `RobotFactory.setup` instead of reset on every robot build.
+- **`at_exit` hook registered multiple times**: Moved from `Session#start` to `AIA.run`, registered exactly once per process.
+- **GPT-5/OpenAI token parameter mismatch**: Models with `temperature: false` skip temperature; `max_tokens` translated to `max_completion_tokens` for o-series models.
+- **Installed gem BigDecimal activation conflict** (`lib/aia.rb`): AIA activates `bigdecimal >= 4.0` before loading transitive dependencies.
+- **Pipeline token metrics crash**: `display_metrics` uses `result.raw` instead of non-existent `result.output`.
+- **Skill symlink path containment**: Skill resolution checks real paths against the skills directory boundary.
+- **`--list-skills` CLI directory options**: Now honors `--prompts-dir` and `--skills-prefix` regardless of option order.
 
 ### Known Issues
 
-- **`--skill` prompt injection in RobotLab flow** (`lib/aia/pipeline_orchestrator.rb`, `lib/aia/chat_loop.rb`): Mainline skill CLI/config support has been merged, but the RobotLab prompt execution path still needs to prepend configured skills to pipeline prompts and chat startup context.
-- **Path-based direct skill file restrictions** (`lib/aia/skill_utils.rb`, `lib/aia/directives/web_and_file_directives.rb`): Direct skill file paths should be limited to markdown skill files before reading, so arbitrary readable files cannot be injected via `/skill`.
+- **`--skill` injection in RobotLab flow**: The RobotLab prompt execution path does not yet prepend configured skills to pipeline prompts and chat startup context.
+- **Path-based direct skill file restrictions**: `/skill` accepts any readable file path; should be limited to markdown files to prevent arbitrary injection.
 
 ## [1.1.1] - 2026-05-01
 
