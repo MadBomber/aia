@@ -90,7 +90,7 @@ module AIA
     def load_chat_history
       Reline::HISTORY.clear
       history_file = chat_history_file
-      return unless File.exist?(history_file)
+      return unless history_file && File.exist?(history_file)
 
       lines = File.readlines(history_file, chomp: true).last(MAX_HISTORY)
       lines.each { |line| Reline::HISTORY << line }
@@ -240,6 +240,7 @@ module AIA
 
     def save_chat_history
       history_file = chat_history_file
+      return unless history_file
       dir = File.dirname(history_file)
       FileUtils.mkdir_p(dir)
 
@@ -249,10 +250,14 @@ module AIA
 
     def chat_history_file
       config = AIA.config
+      if config.respond_to?(:output) && config.output.respond_to?(:history_file)
+        hf = config.output.history_file
+        return nil if hf == false   # --no-history-file disables chat history
+        return File.expand_path(hf) if hf
+      end
       if config.respond_to?(:paths) && config.paths.respond_to?(:aia_dir) && config.paths.aia_dir
         return File.join(File.expand_path(config.paths.aia_dir), 'chat_history')
       end
-
       HISTORY_FILE
     end
 

@@ -464,18 +464,29 @@ aia --output log.md --no-append my_prompt
 ```
 
 ### `--[no-]history-file [FILE]`
-Conversation history file for logging prompts and responses.
+Path to the Reline readline history file used in `--chat` mode. Each chat session saves the raw follow-up inputs you typed so they can be recalled with the up-arrow key in future sessions. Up to 50 entries are kept; oldest entries are dropped first when the limit is reached. Has no effect in pipeline mode.
+
+**File content**: plain text, one user input per line — no timestamps, no AI responses, no prompt IDs.
+
+**Path resolution** (first match wins):
+1. `FILE` supplied to this flag (or `AIA_OUTPUT__HISTORY_FILE` env var)
+2. `<aia_dir>/chat_history` when `paths.aia_dir` is configured
+3. `~/.config/aia/chat_history` (built-in default)
+
+**Large-file rotation**: when the history file exceeds an internal size threshold, the session renames it to `<file>.1` and starts a fresh file.
 
 ```bash
-# Enable history logging to default location
-aia --history-file my_prompt
+# Use the default history file location
+aia --chat my_prompt
 
-# Log to specific file
-aia --history-file /var/log/aia_history.log my_prompt
+# Use a custom history file
+aia --history-file ~/.aia_chat_history --chat my_prompt
 
-# Disable history logging
-aia --no-history-file my_prompt
+# Disable history entirely for this session
+aia --no-history-file --chat my_prompt
 ```
+
+**Environment variable**: `AIA_OUTPUT__HISTORY_FILE`
 
 ### `--md, --[no-]markdown`
 Format output with Markdown.

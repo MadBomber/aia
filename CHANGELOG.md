@@ -6,6 +6,8 @@ This section captures all changes since v1.1.0.
 
 ### Added
 
+- **`--history-file` fully implemented** (`lib/aia/ui_presenter.rb`): `chat_history_file` now checks `config.output.history_file` first — uses the configured path when set, returns `nil` when `--no-history-file` is given (disabling history). `load_chat_history` and `save_chat_history` both guard against `nil` so disabling history is a clean no-op. Resolution order: `config.output.history_file` → `paths.aia_dir/chat_history` → `~/.config/aia/chat_history`.
+
 - **`--skill` / `-s` fully implemented**: Injects skill content into the AI context; mode-aware — in `--chat` mode skills are appended to the system prompt once (persists across all turns); in pipeline mode skills are appended to each individual prompt text after the role content.
 - **`SkillUtils#skills_base_dir`**: New resolver centralising skills path computation — returns `skills.dir` when `skills_prefix` is unset, or `skills.dir / prefix` when prefix is set; shared by `SystemPromptAssembler` (chat mode) and `PipelineOrchestrator` (pipeline mode).
 - **`SkillUtils#load_skills_content` / `#load_single_skill_content`**: Load and join skill bodies from one or more skill IDs; strip YAML front matter; warn and skip missing skills without aborting.

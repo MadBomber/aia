@@ -266,4 +266,59 @@ class UIPresenterTest < Minitest::Test
     output = @captured_output.string
     assert_includes output, '═' * 120
   end
+
+  # --- chat_history_file ---
+
+  def test_chat_history_file_uses_config_output_history_file
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: '/custom/path/history'),
+      paths:  OpenStruct.new(aia_dir: @test_aia_dir)
+    ))
+    assert_equal '/custom/path/history', @presenter.send(:chat_history_file)
+  end
+
+  def test_chat_history_file_returns_nil_when_disabled
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: false),
+      paths:  OpenStruct.new(aia_dir: @test_aia_dir)
+    ))
+    assert_nil @presenter.send(:chat_history_file)
+  end
+
+  def test_chat_history_file_falls_through_to_aia_dir_when_no_history_file
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: nil),
+      paths:  OpenStruct.new(aia_dir: @test_aia_dir)
+    ))
+    assert_equal File.join(File.expand_path(@test_aia_dir), 'chat_history'),
+                 @presenter.send(:chat_history_file)
+  end
+
+  def test_chat_history_file_falls_through_to_constant_when_nothing_configured
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: nil),
+      paths:  OpenStruct.new(aia_dir: nil)
+    ))
+    assert_equal AIA::UIPresenter::HISTORY_FILE, @presenter.send(:chat_history_file)
+  end
+
+  def test_load_chat_history_no_ops_when_history_disabled
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: false),
+      paths:  OpenStruct.new(aia_dir: nil)
+    ))
+    Reline::HISTORY.clear
+    @presenter.send(:load_chat_history)
+    assert_equal 0, Reline::HISTORY.length
+  end
+
+  def test_save_chat_history_no_ops_when_history_disabled
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: false),
+      paths:  OpenStruct.new(aia_dir: nil)
+    ))
+    File.expects(:write).never
+    Reline::HISTORY << "test entry"
+    @presenter.send(:save_chat_history)
+  end
 end

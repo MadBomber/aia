@@ -120,7 +120,7 @@ output:
   file: temp.md               # Output file (null = no file output)
   append: false               # Append to output file instead of overwriting
   markdown: true              # Format output with Markdown
-  history_file: ~/.prompts/_prompts.log  # Conversation history log
+  history_file: ~/.prompts/_prompts.log  # Reline chat input history (chat mode only; up to 50 entries)
 
 # Audio Configuration
 # Access: AIA.config.audio.voice, AIA.config.audio.speak_command, etc.
