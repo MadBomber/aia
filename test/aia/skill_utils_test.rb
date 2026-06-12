@@ -166,6 +166,122 @@ class SkillUtilsTest < Minitest::Test
     end
   end
 
+  # --- load_single_skill_content ---
+
+  def test_load_single_skill_content_loads_skill_md
+    Dir.mktmpdir do |base|
+      skill_dir = File.join(base, 'my-skill')
+      FileUtils.mkdir_p(skill_dir)
+      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: My Skill\n---\nDo the thing.")
+      result = AIA::SkillUtils.load_single_skill_content('my-skill', base)
+      assert_equal 'Do the thing.', result
+    end
+  end
+
+  def test_load_single_skill_content_returns_nil_for_missing_skill
+    Dir.mktmpdir do |base|
+      result = AIA::SkillUtils.load_single_skill_content('nonexistent', base)
+      assert_nil result
+    end
+  end
+
+  def test_load_single_skill_content_loads_direct_md_file
+    Dir.mktmpdir do |base|
+      file = File.join(base, 'my-skill.md')
+      File.write(file, "---\nname: X\n---\nContent here.")
+      result = AIA::SkillUtils.load_single_skill_content(file, base)
+      assert_equal 'Content here.', result
+    end
+  end
+
+  def test_load_single_skill_content_returns_nil_when_skill_md_missing
+    Dir.mktmpdir do |base|
+      skill_dir = File.join(base, 'empty-skill')
+      FileUtils.mkdir_p(skill_dir)
+      result = AIA::SkillUtils.load_single_skill_content('empty-skill', base)
+      assert_nil result
+    end
+  end
+
+  # --- load_skills_content ---
+
+  def test_load_skills_content_returns_nil_for_empty_list
+    Dir.mktmpdir do |base|
+      assert_nil AIA::SkillUtils.load_skills_content([], base)
+    end
+  end
+
+  def test_load_skills_content_returns_nil_for_nil_list
+    Dir.mktmpdir do |base|
+      assert_nil AIA::SkillUtils.load_skills_content(nil, base)
+    end
+  end
+
+  def test_load_skills_content_returns_nil_when_base_missing
+    assert_nil AIA::SkillUtils.load_skills_content(['my-skill'], '/nonexistent/dir')
+  end
+
+  def test_load_skills_content_single_skill
+    Dir.mktmpdir do |base|
+      skill_dir = File.join(base, 'alpha')
+      FileUtils.mkdir_p(skill_dir)
+      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Alpha\n---\nAlpha body.")
+      result = AIA::SkillUtils.load_skills_content(['alpha'], base)
+      assert_equal 'Alpha body.', result
+    end
+  end
+
+  def test_load_skills_content_joins_multiple_skills
+    Dir.mktmpdir do |base|
+      %w[alpha beta].each do |name|
+        FileUtils.mkdir_p(File.join(base, name))
+        File.write(File.join(base, name, 'SKILL.md'), "---\nname: #{name}\n---\n#{name.capitalize} body.")
+      end
+      result = AIA::SkillUtils.load_skills_content(%w[alpha beta], base)
+      assert_equal "Alpha body.\n\nBeta body.", result
+    end
+  end
+
+  def test_load_skills_content_skips_missing_skills
+    Dir.mktmpdir do |base|
+      FileUtils.mkdir_p(File.join(base, 'good'))
+      File.write(File.join(base, 'good', 'SKILL.md'), "---\n---\nGood skill.")
+      result = AIA::SkillUtils.load_skills_content(%w[missing good], base)
+      assert_equal 'Good skill.', result
+    end
+  end
+
+  # --- skills_base_dir ---
+
+  def test_skills_base_dir_no_prefix_returns_dir
+    config = OpenStruct.new(
+      skills: OpenStruct.new(dir: '/base/skills'),
+      prompts: OpenStruct.new(skills_prefix: nil)
+    )
+    assert_equal '/base/skills', AIA::SkillUtils.skills_base_dir(config)
+  end
+
+  def test_skills_base_dir_with_prefix_joins_path
+    config = OpenStruct.new(
+      skills: OpenStruct.new(dir: '/base'),
+      prompts: OpenStruct.new(skills_prefix: 'my-skills')
+    )
+    assert_equal '/base/my-skills', AIA::SkillUtils.skills_base_dir(config)
+  end
+
+  def test_skills_base_dir_empty_prefix_returns_dir
+    config = OpenStruct.new(
+      skills: OpenStruct.new(dir: '/base/skills'),
+      prompts: OpenStruct.new(skills_prefix: '')
+    )
+    assert_equal '/base/skills', AIA::SkillUtils.skills_base_dir(config)
+  end
+
+  def test_skills_base_dir_nil_skills_returns_nil
+    config = OpenStruct.new(skills: nil, prompts: OpenStruct.new(skills_prefix: nil))
+    assert_nil AIA::SkillUtils.skills_base_dir(config)
+  end
+
   # --- include (instance method access) ---
 
   def test_methods_available_as_instance_methods_when_included
@@ -175,5 +291,8 @@ class SkillUtilsTest < Minitest::Test
     assert_respond_to obj, :parse_front_matter
     assert_respond_to obj, :find_skill_dir
     assert_respond_to obj, :safe_skill_path
+    assert_respond_to obj, :load_skills_content
+    assert_respond_to obj, :load_single_skill_content
+    assert_respond_to obj, :skills_base_dir
   end
 end

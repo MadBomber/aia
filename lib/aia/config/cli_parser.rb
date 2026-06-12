@@ -545,12 +545,16 @@ module AIA
 
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def list_available_skills(options = {})
-        skills_dir = options[:skills_dir]
-        unless skills_dir
-          prompts_dir = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
-          skills_prefix = options[:skills_prefix] || ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', 'skills')
-          skills_dir = File.join(prompts_dir, skills_prefix)
-        end
+        skills_prefix = options[:skills_prefix] || ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', nil)
+        skills_dir = if options[:skills_dir]
+                       base = options[:skills_dir]
+                       skills_prefix && !skills_prefix.strip.empty? ? File.join(base, skills_prefix) : base
+                     elsif skills_prefix && !skills_prefix.strip.empty?
+                       prompts_dir = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
+                       File.join(prompts_dir, skills_prefix)
+                     else
+                       ENV.fetch('AIA_SKILLS__DIR', File.join(Dir.home, '.prompts', 'skills'))
+                     end
 
         unless Dir.exist?(skills_dir)
           puts "No skills directory found at #{skills_dir}"

@@ -6,6 +6,16 @@ This section captures all changes since v1.1.0.
 
 ### Added
 
+- **`--skill` / `-s` fully implemented**: Injects skill content into the AI context; mode-aware — in `--chat` mode skills are appended to the system prompt once (persists across all turns); in pipeline mode skills are appended to each individual prompt text after the role content.
+- **`SkillUtils#skills_base_dir`**: New resolver centralising skills path computation — returns `skills.dir` when `skills_prefix` is unset, or `skills.dir / prefix` when prefix is set; shared by `SystemPromptAssembler` (chat mode) and `PipelineOrchestrator` (pipeline mode).
+- **`SkillUtils#load_skills_content` / `#load_single_skill_content`**: Load and join skill bodies from one or more skill IDs; strip YAML front matter; warn and skip missing skills without aborting.
+
+### Changed
+
+- **`skills_prefix` default changed from `"skills"` to `nil`**: When unset and no `--skills-dir` is given, the skills directory falls back to `~/.prompts/skills`; setting `--skills-prefix` appends to `--prompts-dir` (or `AIA_PROMPTS__DIR`) rather than to a fixed default.
+- **`--skills-prefix` path resolution** (`lib/aia/config/cli_parser.rb`): Three-branch logic — explicit `--skills-dir` + prefix → `skills_dir/prefix`; no `--skills-dir` but prefix set → `prompts_dir/prefix`; neither given → `AIA_SKILLS__DIR` or `~/.prompts/skills`.
+- **Docs updated for skills options**: `docs/cli-reference.md` — `--skills-prefix` default and resolution, chat-vs-pipeline injection note in `--skill`; `docs/configuration.md` — `skills_prefix` default, prompt assembly order section rewritten; `docs/directives-reference.md` — `/skill` directory resolution description.
+
 - **`.loki` asgard task runner**: Added per-project task file with quality gates (`test`, `flog`, `flay`, `rubocop`), each capturing output to `*_output.txt`; `quality` task runs all gates via `system()` and prints a per-gate pass/fail summary table; `aia` passthrough task runs `bin/aia` with arbitrary arguments from any working directory.
 - **`.rubocop.yml`**: Project-level RuboCop configuration achieving 0 offenses — disables intentional-pattern cops (`Style/FormatStringToken`, `Style/SafeNavigationChainLength`, `Lint/DuplicateBranch`), adds test-file exclusions for cops that conflict with minitest patterns, and raises Metrics thresholds to match actual method complexity.
 

@@ -7,10 +7,12 @@
 # Extracted from Session to separate startup concerns from per-turn concerns.
 
 require "json"
+require_relative 'skill_utils'
 
 module AIA
   class PipelineOrchestrator
     include ContentExtractor
+    include SkillUtils
 
     def initialize(robot:, prompt_handler:, input_collector:, ui_presenter:, session_tracker:)
       @robot           = robot
@@ -133,6 +135,16 @@ module AIA
         if role_parsed
           prompt_text = "#{role_parsed}\n\n#{prompt_text}"
         end
+      end
+
+      # In pipeline mode, append --skill content to each prompt text.
+      # In chat mode, skills are injected into the system prompt instead (system_prompt_assembler).
+      unless config.flags&.chat == true
+        skill_content = load_skills_content(
+          Array(config.prompts&.skills),
+          skills_base_dir(config)
+        )
+        prompt_text = "#{prompt_text}\n\n#{skill_content}" if skill_content
       end
 
       if config.stdin_content && !config.stdin_content.strip.empty?

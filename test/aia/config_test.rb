@@ -89,9 +89,9 @@ class ConfigTest < Minitest::Test
     assert_equal [], config.prompts.skills
   end
 
-  def test_prompts_skills_prefix_defaults_to_skills
+  def test_prompts_skills_prefix_defaults_to_nil
     config = AIA::Config.new
-    assert_equal 'skills', config.prompts.skills_prefix
+    assert_nil config.prompts.skills_prefix
   end
 
   def test_skills_dir_defaults_to_prompts_skills_subdir

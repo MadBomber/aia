@@ -6,6 +6,8 @@
 # Extracted from RobotFactory to isolate the prompt assembly concern.
 # Completely stateless — no module ivars.
 
+require_relative 'skill_utils'
+
 module AIA
   module SystemPromptAssembler
     module_function
@@ -24,6 +26,16 @@ module AIA
         if role_content
           system_prompt = [system_prompt, role_content].compact.join("\n\n")
         end
+      end
+
+      # In chat mode inject --skill content here so it persists across all turns.
+      # Pipeline mode appends skills to each prompt text instead (pipeline_orchestrator).
+      if config.flags&.chat == true
+        skill_content = AIA::SkillUtils.load_skills_content(
+          Array(config.prompts&.skills),
+          AIA::SkillUtils.skills_base_dir(config)
+        )
+        system_prompt = [system_prompt, skill_content].compact.join("\n\n") if skill_content
       end
 
       system_prompt

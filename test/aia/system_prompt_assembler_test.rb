@@ -114,17 +114,57 @@ class SystemPromptAssemblerTest < Minitest::Test
     FileUtils.rm_rf(@config.prompts.dir)
   end
 
+  def test_resolve_system_prompt_injects_skills_in_chat_mode
+    @config.flags = OpenStruct.new(chat: true)
+    @config.prompts.skills = ['coder']
+    skill_dir = File.join(@config.skills.dir, 'coder')
+    FileUtils.mkdir_p(skill_dir)
+    File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Coder\n---\nWrite clean code.")
+
+    result = AIA::SystemPromptAssembler.resolve_system_prompt(@config)
+    assert_match(/Write clean code\./, result)
+  ensure
+    FileUtils.rm_rf(@config.skills.dir)
+  end
+
+  def test_resolve_system_prompt_skips_skills_in_pipeline_mode
+    @config.flags = OpenStruct.new(chat: false)
+    @config.prompts.skills = ['coder']
+    skill_dir = File.join(@config.skills.dir, 'coder')
+    FileUtils.mkdir_p(skill_dir)
+    File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Coder\n---\nWrite clean code.")
+
+    @config.prompts.system_prompt = 'Base'
+    result = AIA::SystemPromptAssembler.resolve_system_prompt(@config)
+    assert_equal 'Base', result
+  ensure
+    FileUtils.rm_rf(@config.skills.dir)
+  end
+
+  def test_resolve_system_prompt_no_skills_unchanged
+    @config.flags = OpenStruct.new(chat: true)
+    @config.prompts.skills = []
+    @config.prompts.system_prompt = 'You are helpful'
+
+    result = AIA::SystemPromptAssembler.resolve_system_prompt(@config)
+    assert_equal 'You are helpful', result
+  end
+
   private
 
   def create_test_config
+    skills_base = Dir.mktmpdir('aia_test_skills')
     OpenStruct.new(
+      flags: OpenStruct.new(chat: false),
       prompts: OpenStruct.new(
         dir: Dir.mktmpdir('aia_test_prompts'),
         extname: '.md',
         roles_prefix: 'roles',
         role: nil,
-        system_prompt: nil
-      )
+        system_prompt: nil,
+        skills: []
+      ),
+      skills: OpenStruct.new(dir: skills_base)
     )
   end
 end

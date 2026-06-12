@@ -302,7 +302,7 @@ Include an AIA skill into the conversation context.
 
 **Features**:
 - Reads `SKILL.md` from `<skills_dir>/<skill_name>/`
-- Skills directory resolves in order: `AIA.config.skills.dir` → `$AIA_PROMPTS__DIR/$AIA_PROMPTS__SKILLS_PREFIX` → `~/.prompts/skills`
+- Skills directory: `AIA.config.skills.dir` (default `~/.prompts/skills`); if `AIA_PROMPTS__SKILLS_PREFIX` is set, appended to `AIA_PROMPTS__DIR` to form the base
 - Supports prefix matching: `/skill code` finds the first subdirectory starting with "code"
 - Exact matches take priority over prefix matches
 - Returns the full `SKILL.md` content for inclusion in the prompt
@@ -340,7 +340,7 @@ frontend-design: Frontend Design
 
 **Features**:
 - Only lists subdirectories that contain a `SKILL.md` file; plain files and dirs without `SKILL.md` are ignored
-- Skills directory resolves in order: `AIA.config.skills.dir` → `$AIA_PROMPTS__DIR/$AIA_PROMPTS__SKILLS_PREFIX` → `~/.prompts/skills`
+- Skills directory: `AIA.config.skills.dir` (default `~/.prompts/skills`); if `AIA_PROMPTS__SKILLS_PREFIX` is set, appended to `AIA_PROMPTS__DIR` to form the base
 - Results sorted alphabetically by skill ID
 - Descriptions are word-wrapped to terminal width with 2-space indent on continuation lines
 - Displays to STDOUT only (does not inject content into the AI prompt)

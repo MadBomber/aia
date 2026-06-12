@@ -10,8 +10,8 @@ class SkillsConfigTest < Minitest::Test
     assert_equal expected, @config.skills.dir
   end
 
-  def test_skills_prefix_defaults_to_skills
-    assert_equal 'skills', @config.prompts.skills_prefix
+  def test_skills_prefix_defaults_to_nil
+    assert_nil @config.prompts.skills_prefix
   end
 
   def test_skills_array_defaults_to_empty

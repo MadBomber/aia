@@ -93,7 +93,7 @@ prompts:
   roles_dir: ~/.prompts/roles # Full path to roles directory
   role: ~                     # Default role
   skills: []                  # Skill IDs to prepend to prompt (set by --skill/-s)
-  skills_prefix: skills       # Subdirectory name for skill directories
+  skills_prefix: ~            # Subdirectory appended to skills base path (nil = unset)
   system_prompt: ~            # Default system prompt
   parameter_regex: ~          # Regex for parameter extraction
 
@@ -281,7 +281,7 @@ export AIA_PROMPTS__EXTNAME=".md"
 export AIA_PROMPTS__ROLES_PREFIX="roles"
 export AIA_PROMPTS__ROLES_DIR="~/.prompts/roles"
 export AIA_PROMPTS__ROLE="expert"
-export AIA_PROMPTS__SKILLS_PREFIX="skills"
+# export AIA_PROMPTS__SKILLS_PREFIX="my-prefix"    # No default — unset means use skills.dir directly
 export AIA_PROMPTS__SYSTEM_PROMPT="my_system_prompt"
 export AIA_PROMPTS__PARAMETER_REGEX='\{\{(\w+)\}\}'
 
@@ -547,7 +547,7 @@ prompts:
   roles_prefix: roles       # ~/.prompts/roles/
   roles_dir: ~/.prompts/roles
   role: ~                   # Default role (null = none)
-  skills_prefix: skills     # ~/.prompts/skills/
+  skills_prefix: ~          # Prefix appended to skills base (nil = unset, uses skills.dir directly)
   skills: []                # Default skills (empty = none)
   system_prompt: ~          # Default system prompt
   parameter_regex: ~        # Custom parameter extraction regex
@@ -560,13 +560,19 @@ skills:
   dir: ~/.prompts/skills
 ```
 
-**Prompt assembly order** (first turn only):
-1. **System prompt** — guardrails and constraints (`--system-prompt`)
-2. **Role** — identity and personality (`--role`)
-3. **Skills** — capabilities and approach (`--skill`, in declaration order)
-4. **User prompt** — the actual request
+**Prompt assembly order**:
 
-Follow-up turns in chat include only the system prompt and user message; role and skills are carried implicitly via conversation history.
+In **pipeline mode** (default), each prompt text is assembled as:
+1. **Role content** — identity and personality (`--role`)
+2. **Skill content** — capabilities and approach (`--skill`, in declaration order)
+3. **User prompt** — the actual request
+
+In **chat mode** (`--chat`), the system prompt is assembled once at startup:
+1. **System prompt** — guardrails and constraints (`--system-prompt`)
+2. **Role content** — identity and personality (`--role`)
+3. **Skill content** — injected here so it persists across all turns without repetition
+
+Follow-up chat turns carry role and skill context implicitly via conversation history.
 
 **Recommended directory layout**:
 ```

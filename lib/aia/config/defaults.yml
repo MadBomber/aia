@@ -65,7 +65,7 @@ defaults:
     roles_prefix: roles
     #
     skills: []
-    skills_prefix: skills
+    skills_prefix: ~
     #
     tool: ~
     tools_prefix: tools

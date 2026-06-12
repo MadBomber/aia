@@ -339,9 +339,9 @@ module AIA
       def handle_list_skills(config)
         return unless config.respond_to?(:list_skills) && config.list_skills
 
-        skills_dir = config.skills.dir
+        skills_dir = AIA::SkillUtils.skills_base_dir(config) || config.skills&.dir
 
-        unless Dir.exist?(skills_dir)
+        unless Dir.exist?(skills_dir.to_s)
           warn "No skills directory found at #{skills_dir}"
           return :early_exit
         end

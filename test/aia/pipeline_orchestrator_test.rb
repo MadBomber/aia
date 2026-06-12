@@ -17,7 +17,8 @@ class PipelineOrchestratorTest < Minitest::Test
       pipeline: ['prompt1'],
       context_files: [],
       stdin_content: nil,
-      prompts: OpenStruct.new(role: nil, dir: '/tmp', extname: '.md'),
+      prompts: OpenStruct.new(role: nil, dir: '/tmp', extname: '.md', skills: []),
+      skills: OpenStruct.new(dir: Dir.mktmpdir('aia_test_skills')),
       mcp_servers: [],
       output: OpenStruct.new(file: nil, append: false),
       concurrency: nil
@@ -81,6 +82,66 @@ class PipelineOrchestratorTest < Minitest::Test
 
     orchestrator = build_orchestrator
     orchestrator.process(@config)
+  end
+
+  def test_build_prompt_text_appends_skills_in_pipeline_mode
+    Dir.mktmpdir do |skills_base|
+      skill_dir = File.join(skills_base, 'expert')
+      FileUtils.mkdir_p(skill_dir)
+      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Expert\n---\nBe an expert.")
+
+      @config.flags.chat = false
+      @config.prompts.skills = ['expert']
+      @config.skills = OpenStruct.new(dir: skills_base)
+
+      parsed = mock('parsed')
+      parsed.stubs(:parameters).returns(nil)
+      parsed.stubs(:to_s).returns('Base prompt.')
+      @prompt_handler.stubs(:fetch_prompt).with('prompt1').returns(parsed)
+
+      result = build_orchestrator.send(:build_prompt_text, 'prompt1', @config)
+      assert_match(/Base prompt\./, result)
+      assert_match(/Be an expert\./, result)
+    end
+  end
+
+  def test_build_prompt_text_skips_skills_in_chat_mode
+    Dir.mktmpdir do |skills_base|
+      skill_dir = File.join(skills_base, 'expert')
+      FileUtils.mkdir_p(skill_dir)
+      File.write(File.join(skill_dir, 'SKILL.md'), "---\nname: Expert\n---\nBe an expert.")
+
+      @config.flags.chat = true
+      @config.prompts.skills = ['expert']
+      @config.skills = OpenStruct.new(dir: skills_base)
+
+      orchestrator = build_orchestrator
+
+      # Access build_prompt_text via send to inspect return value
+      parsed = mock('parsed')
+      parsed.stubs(:parameters).returns(nil)
+      parsed.stubs(:to_s).returns('Base prompt.')
+      @prompt_handler.stubs(:fetch_prompt).with('prompt1').returns(parsed)
+
+      result = orchestrator.send(:build_prompt_text, 'prompt1', @config)
+      refute_match(/Be an expert/, result)
+      assert_match(/Base prompt/, result)
+    end
+  end
+
+  def test_build_prompt_text_no_skills_configured
+    @config.prompts.skills = []
+    @config.skills = OpenStruct.new(dir: Dir.mktmpdir)
+
+    orchestrator = build_orchestrator
+
+    parsed = mock('parsed')
+    parsed.stubs(:parameters).returns(nil)
+    parsed.stubs(:to_s).returns('Just the prompt.')
+    @prompt_handler.stubs(:fetch_prompt).with('prompt1').returns(parsed)
+
+    result = orchestrator.send(:build_prompt_text, 'prompt1', @config)
+    assert_equal 'Just the prompt.', result
   end
 
   private

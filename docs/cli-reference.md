@@ -314,8 +314,12 @@ aia --model "gpt-4,claude-3-sonnet" --no-consensus my_prompt
 ### `-s, --skill SKILL_IDS`
 Inject one or more skills into the prompt before it is sent to the AI. Skills are loaded from the skills directory (default: `~/.prompts/skills/`). Multiple skills can be specified as a comma-separated list, and the flag may be repeated.
 
-Skills are inserted **after the role and before the user prompt**, providing task-level instructions for how the LLM should approach the request:
+**Injection mode depends on `--chat`:**
 
+- **Chat mode** (`--chat`): skill content is appended to the system prompt once, so it persists across all turns without repetition.
+- **Pipeline mode** (default): skill content is appended to each individual prompt text, immediately after the role content.
+
+In both modes the assembled order is:
 ```
 Role content  (who the LLM is)
 Skill content (how to approach the task)
@@ -389,11 +393,21 @@ aia --skills-dir /shared/team-skills -s code-review my_prompt
 **Environment variable**: `AIA_SKILLS__DIR`
 
 ### `--skills-prefix PREFIX`
-Subdirectory name within `--prompts-dir` used as the skills prefix (default: `skills`). Affects `AIA.config.prompts.skills_prefix`.
+Subdirectory name appended to the skills base to build the full skills path (default: none — unset). Affects `AIA.config.prompts.skills_prefix`.
+
+Path resolution when prefix is set:
+- If `--skills-dir` is also given: `skills-dir/prefix`
+- Otherwise: `prompts-dir/prefix` (using `--prompts-dir` or `AIA_PROMPTS__DIR`)
 
 ```bash
 aia --skills-prefix team-skills --list-skills
+# Looks for skills under ~/.prompts/team-skills/
+
+aia --skills-dir /shared --skills-prefix team-skills --list-skills
+# Looks for skills under /shared/team-skills/
 ```
+
+**Environment variable**: `AIA_PROMPTS__SKILLS_PREFIX`
 
 ### `--sm, --speech-model MODEL`
 Speech model to use for text-to-speech functionality.
@@ -548,12 +562,18 @@ Roles are discovered from:
 **See also**: `--role`, `--model`, `--prompts-dir`, `--roles-prefix`
 
 ### `--skills-prefix PREFIX`
-Subdirectory name for skills (default: `skills`).
+Subdirectory name appended to the base path to form the skills directory (default: none — unset).
+
+When unset and no `--skills-dir` is given, skills are resolved from `~/.prompts/skills/`.
 
 ```bash
-# Use custom skills directory name
+# Use custom prefix under prompts-dir
 aia --skills-prefix capabilities --skill expert
-# Results in looking for ~/.prompts/capabilities/expert/SKILL.md
+# Looks for ~/.prompts/capabilities/expert/SKILL.md
+
+# Use prefix under an explicit skills-dir
+aia --skills-dir /shared --skills-prefix team --skill expert
+# Looks for /shared/team/expert/SKILL.md
 ```
 
 ### `-s, --skill SKILL_IDS`

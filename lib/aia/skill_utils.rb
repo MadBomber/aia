@@ -51,6 +51,70 @@ module AIA
       content[(end_marker + 4)..].lstrip
     end
 
+    # Resolve the effective skills base directory from config.
+    # When skills_prefix is nil/empty, skills.dir is used as-is.
+    # When skills_prefix is set, it is appended as a subdirectory.
+    #
+    # @param config [AIA::Config] the AIA configuration
+    # @return [String, nil] resolved base directory, or nil if not configured
+    def skills_base_dir(config)
+      base = config.skills&.dir
+      return nil unless base
+
+      prefix = config.prompts&.skills_prefix
+      if prefix && !prefix.strip.empty?
+        File.join(base, prefix)
+      else
+        base
+      end
+    end
+
+    # Load and concatenate content from multiple skills.
+    # Used by both pipeline mode (prompt text injection) and chat mode
+    # (system prompt injection) to honour the --skill CLI option.
+    #
+    # @param skill_ids [Array<String>] skill names or path-based IDs
+    # @param skills_base_dir [String] base directory for named skills
+    # @return [String, nil] joined skill bodies, or nil if none loaded
+    def load_skills_content(skill_ids, skills_base_dir)
+      ids = Array(skill_ids).reject { |s| s.nil? || s.strip.empty? }
+      return nil if ids.empty?
+      return nil unless skills_base_dir && Dir.exist?(skills_base_dir)
+
+      contents = ids.filter_map { |id| load_single_skill_content(id, skills_base_dir) }
+      contents.empty? ? nil : contents.join("\n\n")
+    end
+
+    # Load the body of a single skill (front matter stripped).
+    # Handles both name-based (looks in skills_base_dir) and path-based IDs.
+    #
+    # @param skill_id [String] skill name or path
+    # @param skills_base_dir [String] base directory for named skills
+    # @return [String, nil] skill body text, or nil on error
+    def load_single_skill_content(skill_id, skills_base_dir)
+      skill_dir = find_skill_dir(skill_id, skills_base_dir)
+      unless skill_dir
+        warn "Warning: Skill '#{skill_id}' not found in #{skills_base_dir}"
+        return nil
+      end
+
+      raw = if File.file?(skill_dir)
+              File.read(skill_dir)
+            else
+              skill_path = File.join(skill_dir, 'SKILL.md')
+              unless File.exist?(skill_path)
+                warn "Warning: SKILL.md not found in #{skill_dir}"
+                return nil
+              end
+              File.read(skill_path)
+            end
+
+      skill_body(raw)
+    rescue StandardError => e
+      warn "Warning: Could not load skill '#{skill_id}': #{e.message}"
+      nil
+    end
+
     def safe_skill_path(path, dir)
       resolved = File.realpath(path)
       root = File.realpath(dir)
