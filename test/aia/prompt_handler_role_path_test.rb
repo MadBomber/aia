@@ -58,14 +58,7 @@ class PromptHandlerRolePathTest < Minitest::Test
   end
 
   def test_fetch_role_path_not_found_warns
-    messages = []
-    @handler.stubs(:warn).with do |msg|
-      messages << msg
-      true
-    end
-
-    @handler.send(:fetch_role, '/nonexistent/path/to/role')
-
-    assert(messages.any? { |msg| msg.match?(/not found/i) })
+    _, err = capture_io { @handler.send(:fetch_role, '/nonexistent/path/to/role') }
+    assert_match(/not found/i, err)
   end
 end

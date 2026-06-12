@@ -24,7 +24,7 @@ module AIA
         new_robot.run(msg.content, mcp: :none, tools: :none)
       end
     rescue StandardError => e
-      warn "Warning: History replay failed: #{e.message}"
+      $stderr.puts "Warning: History replay failed: #{e.message}"
     end
 
     # Summarize conversation history and inject into new robot.
@@ -49,7 +49,7 @@ module AIA
 
       new_robot.run("Context from previous conversation: #{content}", mcp: :none, tools: :none)
     rescue StandardError => e
-      warn "Warning: History summarization failed: #{e.message}"
+      $stderr.puts "Warning: History summarization failed: #{e.message}"
     end
   end
 end

@@ -53,7 +53,7 @@ module AIA
 
       "Plan '#{plan_title}' created with #{pipeline.size} steps."
     rescue StandardError => e
-      warn "Warning: TrakFlow plan creation failed: #{e.message}"
+      $stderr.puts "Warning: TrakFlow plan creation failed: #{e.message}"
       nil
     end
 
@@ -81,7 +81,7 @@ module AIA
         @db.update_task(task)
       end
     rescue StandardError => e
-      warn "Warning: TrakFlow status update failed: #{e.message}"
+      $stderr.puts "Warning: TrakFlow status update failed: #{e.message}"
     end
 
     # List ready tasks (tasks with no open blockers).
@@ -96,7 +96,7 @@ module AIA
       lines = tasks.map { |t| "  - [#{t.id}] #{t.title} (#{t.status})" }
       "Ready tasks (#{tasks.size}):\n#{lines.join("\n")}"
     rescue StandardError => e
-      warn "Warning: TrakFlow ready tasks query failed: #{e.message}"
+      $stderr.puts "Warning: TrakFlow ready tasks query failed: #{e.message}"
       nil
     end
 
@@ -119,7 +119,7 @@ module AIA
 
       lines.join("\n")
     rescue StandardError => e
-      warn "Warning: TrakFlow summary failed: #{e.message}"
+      $stderr.puts "Warning: TrakFlow summary failed: #{e.message}"
       nil
     end
 
@@ -145,7 +145,7 @@ module AIA
 
       "Task created: [#{task.id}] #{title}"
     rescue StandardError => e
-      warn "Warning: TrakFlow task creation failed: #{e.message}"
+      $stderr.puts "Warning: TrakFlow task creation failed: #{e.message}"
       nil
     end
 

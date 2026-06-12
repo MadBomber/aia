@@ -94,7 +94,7 @@ module AIA
     def load_single_skill_content(skill_id, skills_base_dir)
       skill_dir = find_skill_dir(skill_id, skills_base_dir)
       unless skill_dir
-        warn "Warning: Skill '#{skill_id}' not found in #{skills_base_dir}"
+        $stderr.puts "Warning: Skill '#{skill_id}' not found in #{skills_base_dir}"
         return nil
       end
 
@@ -103,7 +103,7 @@ module AIA
             else
               skill_path = File.join(skill_dir, 'SKILL.md')
               unless File.exist?(skill_path)
-                warn "Warning: SKILL.md not found in #{skill_dir}"
+                $stderr.puts "Warning: SKILL.md not found in #{skill_dir}"
                 return nil
               end
               File.read(skill_path)
@@ -111,7 +111,7 @@ module AIA
 
       skill_body(raw)
     rescue StandardError => e
-      warn "Warning: Could not load skill '#{skill_id}': #{e.message}"
+      $stderr.puts "Warning: Could not load skill '#{skill_id}': #{e.message}"
       nil
     end
 

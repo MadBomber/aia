@@ -68,14 +68,8 @@ class PromptHandlerFetchPromptTest < Minitest::Test
   end
 
   def test_fetch_prompt_missing_file_without_fuzzy
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.fetch_prompt('nonexistent')
-    assert(stderr_messages.any? { |m| m.include?('Could not find prompt') })
+    _, err = capture_io { @handler.fetch_prompt('nonexistent') }
+    assert_includes err, 'Could not find prompt'
   end
 end
 
@@ -112,14 +106,8 @@ class PromptHandlerFetchRoleTest < Minitest::Test
   end
 
   def test_fetch_role_nil_exits
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.fetch_role(nil)
-    assert(stderr_messages.any? { |m| m.include?('Role ID cannot be empty') })
+    _, err = capture_io { @handler.fetch_role(nil) }
+    assert_includes err, 'Role ID cannot be empty'
   end
 
   def test_fetch_role_prepends_prefix
@@ -137,14 +125,8 @@ class PromptHandlerFetchRoleTest < Minitest::Test
   end
 
   def test_fetch_role_missing_without_fuzzy
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.fetch_role('nonexistent')
-    assert(stderr_messages.any? { |m| m.include?('Could not find role') })
+    _, err = capture_io { @handler.fetch_role('nonexistent') }
+    assert_includes err, 'Could not find role'
   end
 end
 
@@ -214,15 +196,10 @@ class PromptHandlerLoadRoleForModelTest < Minitest::Test
   def test_load_role_handles_error_gracefully
     @handler.stubs(:fetch_role).raises(StandardError, 'role error')
 
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    result = @handler.load_role_for_model({ role: 'broken' })
+    result = nil
+    _, err = capture_io { result = @handler.load_role_for_model({ role: 'broken' }) }
     assert_nil result
-    assert(stderr_messages.any? { |m| m.include?('Could not load role') })
+    assert_includes err, 'Could not load role'
   end
 end
 
@@ -523,60 +500,30 @@ class PromptHandlerHelperMethodsTest < Minitest::Test
   # --- handle_missing_prompt ---
 
   def test_handle_missing_prompt_empty_id
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.send(:handle_missing_prompt, '')
-    assert(stderr_messages.any? { |m| m.include?('cannot be empty') })
+    _, err = capture_io { @handler.send(:handle_missing_prompt, '') }
+    assert_includes err, 'cannot be empty'
   end
 
   def test_handle_missing_prompt_non_fuzzy_exits
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.send(:handle_missing_prompt, 'no_such_prompt')
-    assert(stderr_messages.any? { |m| m.include?('Could not find prompt') })
+    _, err = capture_io { @handler.send(:handle_missing_prompt, 'no_such_prompt') }
+    assert_includes err, 'Could not find prompt'
   end
 
   # --- handle_missing_role ---
 
   def test_handle_missing_role_empty
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.send(:handle_missing_role, '')
-    assert(stderr_messages.any? { |m| m.include?('Role ID cannot be empty') })
+    _, err = capture_io { @handler.send(:handle_missing_role, '') }
+    assert_includes err, 'Role ID cannot be empty'
   end
 
   def test_handle_missing_role_roles_slash
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.send(:handle_missing_role, 'roles/')
-    assert(stderr_messages.any? { |m| m.include?('Role ID cannot be empty') })
+    _, err = capture_io { @handler.send(:handle_missing_role, 'roles/') }
+    assert_includes err, 'Role ID cannot be empty'
   end
 
   def test_handle_missing_role_non_fuzzy_exits
-    stderr_messages = []
-    @handler.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    @handler.send(:handle_missing_role, 'no_such_role')
-    assert(stderr_messages.any? { |m| m.include?('Could not find role') })
+    _, err = capture_io { @handler.send(:handle_missing_role, 'no_such_role') }
+    assert_includes err, 'Could not find role'
   end
 end
 

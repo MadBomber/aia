@@ -18,7 +18,7 @@ module AIA
       end
 
       ruby_code = args.join(' ')
-      warn "WARNING: /ruby executing: #{ruby_code}"
+      $stderr.puts "WARNING: /ruby executing: #{ruby_code}"
 
       begin
         String(eval(ruby_code))  # rubocop:disable Security/Eval
@@ -33,7 +33,14 @@ module AIA
 
     desc "Use text-to-speech to speak the text"
     def say(args, context_manager = nil)
-      system('say', *args)
+      audio = AIA.config.audio
+      env   = {}
+      env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
+      if audio.voice && !audio.voice.strip.empty?
+        system(env, 'say', '-v', audio.voice, *args)
+      else
+        system(env, 'say', *args)
+      end
       ""
     end
 

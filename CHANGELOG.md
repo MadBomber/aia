@@ -8,6 +8,10 @@ This section captures all changes since v1.1.0.
 
 - **`--history-file` fully implemented** (`lib/aia/ui_presenter.rb`): `chat_history_file` now checks `config.output.history_file` first — uses the configured path when set, returns `nil` when `--no-history-file` is given (disabling history). `load_chat_history` and `save_chat_history` both guard against `nil` so disabling history is a clean no-op. Resolution order: `config.output.history_file` → `paths.aia_dir/chat_history` → `~/.config/aia/chat_history`.
 
+- **`--speech-model` fully implemented** (`lib/aia/robot_factory.rb`, `lib/aia/chat_loop.rb`, `lib/aia/mention_router.rb`): `configure_audio` stores the value and passes it as the `SPEECH_MODEL` environment variable to the speak subprocess, allowing custom TTS scripts to select a model. `--voice` wires to `say -v VOICE` for the macOS `say` command.
+
+- **`--transcription-model` fully implemented** (`lib/aia/robot_factory.rb`): `configure_audio` calls `RubyLLM.configure { |c| c.default_transcription_model = ... }` so the transcription model is active for the entire session.
+
 - **`--skill` / `-s` fully implemented**: Injects skill content into the AI context; mode-aware — in `--chat` mode skills are appended to the system prompt once (persists across all turns); in pipeline mode skills are appended to each individual prompt text after the role content.
 - **`SkillUtils#skills_base_dir`**: New resolver centralising skills path computation — returns `skills.dir` when `skills_prefix` is unset, or `skills.dir / prefix` when prefix is set; shared by `SystemPromptAssembler` (chat mode) and `PipelineOrchestrator` (pipeline mode).
 - **`SkillUtils#load_skills_content` / `#load_single_skill_content`**: Load and join skill bodies from one or more skill IDs; strip YAML front matter; warn and skip missing skills without aborting.
@@ -53,7 +57,7 @@ This section captures all changes since v1.1.0.
 
 - **`--no-mcp` flag ignored by `RobotBuilder`** (`lib/aia/robot_builder.rb`): Was directly mapping `config.mcp_servers` without checking `config.flags.no_mcp`; now delegates to `RobotFactory.mcp_server_configs(config)` which honours the flag — preventing MCP servers from connecting and tools from overflowing the model's 128-tool limit.
 - **`load_extra_config` falls through on missing file in tests** (`lib/aia/config.rb`): Restored `return` after `exit 1`; tests mock `exit` as a no-op, so without the guard the method continued to `YAML.safe_load_file` on the nonexistent path and raised `Errno::ENOENT`.
-- **`warn` bypasses `$stderr` in Ruby 4.0** (`lib/aia/ui_presenter.rb`, `lib/aia/config/validator.rb`): Ruby 4.0 `Kernel#warn` writes directly to the STDERR file descriptor, ignoring `$stderr` reassignment used in tests; changed to `$stderr.puts` so test output capture works correctly.
+- **`warn` → `$stderr.puts` across all lib files** (19 files): Ruby 4.0 suppresses `Kernel#warn` output by default (requires `-W` flag); messages were silently dropped — including unknown-option errors, missing-file warnings, and audio failures. Replaced all `warn` calls with `$stderr.puts` which always writes unconditionally. Test suite updated: replaced `stubs(:warn)` + `stderr_messages` patterns with `capture_io` to capture real `$stderr` output.
 
 - **`DebateHandler` convergence short-circuit** (`lib/aia/debate_handler.rb`): Added `all_signaled_convergence?` fast path — when all robots say `CONVERGED` after minimum rounds the debate ends immediately, without waiting for similarity scoring to catch up.
 - **`SpecialModeHandler` keyword argument crash** (`lib/aia/special_mode_handler.rb`): `network.run(prompt)` → `network.run(message: prompt)` to match `RobotLab::Network#run`'s keyword-only API.

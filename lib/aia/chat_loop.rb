@@ -287,9 +287,9 @@ module AIA
       local = Array(robot.local_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
       mcp   = Array(robot.mcp_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
 
-      warn "[DEBUG] Tool filter strategy: #{@tool_filter_strategy.active_strategy_label}"
-      warn "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"
-      warn "[DEBUG] Robot mcp_tools (#{mcp.size}): #{mcp.join(', ')}"
+      $stderr.puts "[DEBUG] Tool filter strategy: #{@tool_filter_strategy.active_strategy_label}"
+      $stderr.puts "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"
+      $stderr.puts "[DEBUG] Robot mcp_tools (#{mcp.size}): #{mcp.join(', ')}"
     end
 
     def log_user_input(input)
@@ -302,10 +302,18 @@ module AIA
     def speak(content)
       return unless AIA.speak?
 
-      command = AIA.config.audio.speak_command || 'say'
-      system(command, content.to_s)
+      audio   = AIA.config.audio
+      command = audio.speak_command || 'say'
+      env     = {}
+      env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
+
+      if command == 'say' && audio.voice && !audio.voice.strip.empty?
+        system(env, command, '-v', audio.voice, content.to_s)
+      else
+        system(env, command, content.to_s)
+      end
     rescue StandardError => e
-      warn "Warning: Speech failed: #{e.message}"
+      $stderr.puts "Warning: Speech failed: #{e.message}"
     end
   end
 end

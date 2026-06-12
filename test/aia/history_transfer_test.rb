@@ -77,10 +77,11 @@ class HistoryTransferTest < Minitest::Test
     @old_robot.stubs(:respond_to?).with(:messages).returns(true)
     @old_robot.stubs(:messages).raises(StandardError, "something broke")
 
-    # Should not raise — rescue block emits a warn and returns normally
-    assert_silent do
+    # Should not raise — rescue block emits a warning to $stderr and returns normally
+    _, err = capture_io do
       AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
     end
+    assert_includes err, "Warning: History replay failed"
   end
 
   def test_replay_history_skips_messages_without_role_method
@@ -198,10 +199,11 @@ class HistoryTransferTest < Minitest::Test
     @old_robot.stubs(:respond_to?).with(:messages).returns(true)
     @old_robot.stubs(:messages).raises(StandardError, "summarize broke")
 
-    # Should not raise — rescue block emits a warn and returns normally
-    assert_silent do
+    # Should not raise — rescue block emits a warning to $stderr and returns normally
+    _, err = capture_io do
       AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
     end
+    assert_includes err, "Warning: History summarization failed"
   end
 
   def test_summarize_history_includes_all_messages_in_prompt

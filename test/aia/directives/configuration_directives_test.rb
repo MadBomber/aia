@@ -29,12 +29,6 @@ class ConfigurationDirectivesTest < Minitest::Test
     AIA.stubs(:config).returns(@test_config)
 
     @instance = AIA::ConfigurationDirectives.new
-
-    @stderr_messages = []
-    @instance.stubs(:warn).with do |msg|
-      @stderr_messages << msg
-      true
-    end
   end
 
   def teardown
@@ -95,8 +89,8 @@ class ConfigurationDirectivesTest < Minitest::Test
     )
     AIA.stubs(:config).returns(strict_config)
 
-    @instance.config(%w[bogus value])
-    assert(@stderr_messages.any? { |m| m.include?("Unknown config option 'bogus'") })
+    _, err = capture_io { @instance.config(%w[bogus value]) }
+    assert_includes err, "Unknown config option 'bogus'"
   end
 
   # --- /cfg alias ---

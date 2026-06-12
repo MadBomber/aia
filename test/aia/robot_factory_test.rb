@@ -132,6 +132,34 @@ class RobotFactoryTest < Minitest::Test
                '@namer should not be stored as a class-level instance variable after the fix'
   end
 
+  # --- configure_audio ---
+
+  def test_configure_audio_sets_default_transcription_model
+    config = OpenStruct.new(audio: OpenStruct.new(transcription_model: 'whisper-large'))
+    RubyLLM.configure { |c| c.default_transcription_model = 'whisper-1' }
+
+    AIA::RobotFactory.send(:configure_audio, config)
+
+    assert_equal 'whisper-large', RubyLLM.config.default_transcription_model
+  ensure
+    RubyLLM.configure { |c| c.default_transcription_model = 'whisper-1' }
+  end
+
+  def test_configure_audio_skips_when_transcription_model_nil
+    config = OpenStruct.new(audio: OpenStruct.new(transcription_model: nil))
+    RubyLLM.configure { |c| c.default_transcription_model = 'whisper-1' }
+
+    AIA::RobotFactory.send(:configure_audio, config)
+
+    assert_equal 'whisper-1', RubyLLM.config.default_transcription_model
+  end
+
+  def test_configure_audio_skips_when_no_audio_config
+    config = OpenStruct.new(audio: nil)
+
+    assert_silent { AIA::RobotFactory.send(:configure_audio, config) }
+  end
+
   private
 
   def create_test_config

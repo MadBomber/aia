@@ -109,9 +109,9 @@ module AIA
 
       archive = "#{history_file}.1"
       FileUtils.mv(history_file, archive)
-      warn "History log rotated: #{File.basename(history_file)} → #{File.basename(archive)}"
+      $stderr.puts "History log rotated: #{File.basename(history_file)} → #{File.basename(archive)}"
     rescue StandardError => e
-      warn "Warning: Could not rotate history log: #{e.message}"
+      $stderr.puts "Warning: Could not rotate history log: #{e.message}"
     end
 
     def setup_output_file

@@ -329,10 +329,10 @@ module AIA
           if File.exist?(expanded)
             require expanded
           else
-            warn "Warning: Tool file not found: #{path}"
+            $stderr.puts "Warning: Tool file not found: #{path}"
           end
         rescue LoadError, StandardError => e
-          warn "Warning: Failed to load tool '#{path}': #{e.message}"
+          $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
         end
       end
 
@@ -342,14 +342,14 @@ module AIA
         skills_dir = AIA::SkillUtils.skills_base_dir(config) || config.skills&.dir
 
         unless Dir.exist?(skills_dir.to_s)
-          warn "No skills directory found at #{skills_dir}"
+          $stderr.puts "No skills directory found at #{skills_dir}"
           return :early_exit
         end
 
         skill_dirs = Dir.glob("*/SKILL.md", base: skills_dir).map { |f| File.dirname(f) }.sort
 
         if skill_dirs.empty?
-          warn "No skills found in #{skills_dir}"
+          $stderr.puts "No skills found in #{skills_dir}"
           return :early_exit
         end
 
@@ -373,10 +373,10 @@ module AIA
         Array(config.require_libs).each do |lib|
           require lib
         rescue LoadError => e
-          warn "Warning: Failed to require '#{lib}': #{e.message}"
-          warn "Hint: Make sure the gem is installed: gem install #{lib}"
+          $stderr.puts "Warning: Failed to require '#{lib}': #{e.message}"
+          $stderr.puts "Hint: Make sure the gem is installed: gem install #{lib}"
         rescue StandardError => e
-          warn "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
+          $stderr.puts "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
         end
 
         # Load tool files
@@ -385,10 +385,10 @@ module AIA
           if File.exist?(expanded)
             require expanded
           else
-            warn "Warning: Tool file not found: #{path}"
+            $stderr.puts "Warning: Tool file not found: #{path}"
           end
         rescue LoadError, StandardError => e
-          warn "Warning: Failed to load tool '#{path}': #{e.message}"
+          $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
         end
 
         # Scan ObjectSpace for RubyLLM::Tool subclasses
@@ -458,12 +458,12 @@ module AIA
             if client.alive?
               server_tools = client.tools rescue []
               groups[name] = server_tools
-              warn " #{server_tools.size} tools"
+              $stderr.puts " #{server_tools.size} tools"
             else
-              warn " failed"
+              $stderr.puts " failed"
             end
           rescue StandardError => e
-            warn " error: #{e.message}"
+            $stderr.puts " error: #{e.message}"
           end
           # rubocop:enable Metrics/BlockLength
         end
@@ -494,7 +494,7 @@ module AIA
         if File.exist?(script_path)
           puts File.read(script_path)
         else
-          warn "ERROR: The shell '#{shell}' is not supported or the completion script is missing."
+          $stderr.puts "ERROR: The shell '#{shell}' is not supported or the completion script is missing."
         end
       end
 
@@ -524,7 +524,7 @@ module AIA
 
           prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}#{config.prompts.extname}")
           unless File.exist?(prompt_file_path)
-            warn "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
+            $stderr.puts "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
             and_exit = true
           end
         end

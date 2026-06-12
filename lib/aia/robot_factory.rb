@@ -223,6 +223,20 @@ module AIA
 
         # Configure local provider API endpoints from environment variables
         configure_local_providers(config)
+
+        # Wire audio model settings into RubyLLM config
+        configure_audio(config)
+      end
+
+      # Wire AIA's audio config into RubyLLM so transcription calls pick up
+      # the user-configured model without requiring explicit model: arguments.
+      # speech_model has no ruby_llm TTS API backing yet — it is exposed as
+      # the SPEECH_MODEL env var for custom speak_command scripts.
+      def configure_audio(config)
+        transcription_model = config.audio&.transcription_model
+        return unless transcription_model
+
+        RubyLLM.configure { |c| c.default_transcription_model = transcription_model }
       end
 
       # Set API base URLs for local providers (Ollama, LM Studio) so

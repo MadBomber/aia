@@ -64,7 +64,7 @@ module AIA
   DebugMeDefaultOptions[:skip1] = true
 
   at_exit do
-    warn 'Exiting AIA application...'
+    $stderr.puts 'Exiting AIA application...'
   end
 
   @config = nil
@@ -110,9 +110,9 @@ module AIA
     # @param msg [String]
     # @param exc [Exception, nil]
     def debug_warn(msg, exc: nil)
-      warn msg
+      $stderr.puts msg
       return unless exc && exc.backtrace && config&.flags&.debug
-      warn exc.backtrace.first(5).join("\n")
+      $stderr.puts exc.backtrace.first(5).join("\n")
     end
 
     def verbose?
@@ -150,10 +150,10 @@ module AIA
           if system('which fzf >/dev/null 2>&1')
             require_relative 'aia/fzf'
           else
-            warn 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
+            $stderr.puts 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
           end
         rescue StandardError => e
-          warn "Warning: Failed to load fzf: #{e.message}"
+          $stderr.puts "Warning: Failed to load fzf: #{e.message}"
         end
       end
 
@@ -166,10 +166,10 @@ module AIA
       at_exit { session.cleanup }
       session.start
     rescue AIA::ConfigurationError => e
-      warn e.message
+      $stderr.puts e.message
       exit 1
     rescue AIA::Error => e
-      warn e.message
+      $stderr.puts e.message
       exit 1
     end
   end

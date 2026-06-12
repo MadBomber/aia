@@ -63,7 +63,7 @@ module AIA
           .sort_by { |e| -e[:score] }
           .first(@max_tools)
       rescue StandardError => e
-        warn "ToolFilter::TFIDF error: #{e.message}"
+        $stderr.puts "ToolFilter::TFIDF error: #{e.message}"
         []
       end
 

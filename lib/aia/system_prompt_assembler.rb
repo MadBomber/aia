@@ -81,7 +81,7 @@ module AIA
 
       File.read(role_file)
     rescue => e
-      warn "Warning: Could not load role '#{role_id}': #{e.message}"
+      $stderr.puts "Warning: Could not load role '#{role_id}': #{e.message}"
       nil
     end
   end

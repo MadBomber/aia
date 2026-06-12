@@ -118,8 +118,8 @@ module AIA
 
       return if missing.empty?
 
-      warn "WARNING: --mcp-use specified server(s) not found in config: #{missing.join(', ')}"
-      warn "         Available servers: #{available.join(', ')}" if available.any?
+      $stderr.puts "WARNING: --mcp-use specified server(s) not found in config: #{missing.join(', ')}"
+      $stderr.puts "         Available servers: #{available.join(', ')}" if available.any?
     end
 
     # Collect all tools available to the robot: local + MCP.

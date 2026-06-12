@@ -8,7 +8,8 @@ require 'ostruct'
 class ExecutionDirectivesTest < Minitest::Test
   def setup
     @mock_flags   = OpenStruct.new(allow_ruby_eval: false)
-    @mock_config  = OpenStruct.new(flags: @mock_flags)
+    @mock_audio   = OpenStruct.new(speech_model: nil, voice: nil)
+    @mock_config  = OpenStruct.new(flags: @mock_flags, audio: @mock_audio)
     AIA.stubs(:config).returns(@mock_config)
 
     @mock_turn_state = AIA::TurnState.new
@@ -81,7 +82,7 @@ class ExecutionDirectivesTest < Minitest::Test
   end
 
   def test_say_calls_system_and_returns_empty_string
-    @instance.expects(:system).with('say', 'hello').returns(nil)
+    @instance.expects(:system).with({}, 'say', 'hello').returns(nil)
     result = @instance.say(['hello'])
     assert_equal '', result
   end

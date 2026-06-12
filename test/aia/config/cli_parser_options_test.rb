@@ -488,14 +488,8 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
 
-    stderr_messages = []
-    AIA::CLIParser.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
-    end
-
-    parser.parse!(['--log-level', 'invalid'])
-    assert(stderr_messages.any? { |m| m.include?('Invalid log level') })
+    _, err = capture_io { parser.parse!(['--log-level', 'invalid']) }
+    assert_includes err, 'Invalid log level'
   end
 
   def test_parses_log_to
@@ -582,25 +576,15 @@ class CLIParserToolsPathsExtendedTest < Minitest::Test
       txt_file = File.join(dir, 'tool.txt')
       File.write(txt_file, '# not ruby')
 
-      stderr_messages = []
-      AIA::CLIParser.stubs(:warn).with do |msg|
-        stderr_messages << msg
-        true
-      end
-
-      AIA::CLIParser.send(:process_tools_paths, txt_file)
-      assert(stderr_messages.any? { |m| m.include?('should have *.rb extension') })
+      _, err = capture_io { AIA::CLIParser.send(:process_tools_paths, txt_file) }
+      assert_includes err, 'should have *.rb extension'
     end
   end
 
   def test_rejects_nonexistent_path
-    stderr_messages = []
-    AIA::CLIParser.stubs(:warn).with do |msg|
-      stderr_messages << msg
-      true
+    _, err = capture_io do
+      AIA::CLIParser.send(:process_tools_paths, '/nonexistent/path/tool.rb')
     end
-
-    AIA::CLIParser.send(:process_tools_paths, '/nonexistent/path/tool.rb')
-    assert(stderr_messages.any? { |m| m.include?('not valid') })
+    assert_includes err, 'not valid'
   end
 end

@@ -54,7 +54,7 @@ module AIA
           expanded_path = File.expand_path(file_path)
 
           unless File.exist?(expanded_path)
-            warn "Warning: MCP config file not found: #{file_path}"
+            $stderr.puts "Warning: MCP config file not found: #{file_path}"
             next
           end
 
@@ -63,9 +63,9 @@ module AIA
             parsed = JSON.parse(json_content)
             servers.concat(convert_to_config_format(parsed, file_path))
           rescue JSON::ParserError => e
-            warn "Warning: Invalid JSON in MCP config file '#{file_path}': #{e.message}"
+            $stderr.puts "Warning: Invalid JSON in MCP config file '#{file_path}': #{e.message}"
           rescue StandardError => e
-            warn "Warning: Error reading MCP config file '#{file_path}': #{e.message}"
+            $stderr.puts "Warning: Error reading MCP config file '#{file_path}': #{e.message}"
           end
         end
 

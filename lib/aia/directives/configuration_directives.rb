@@ -32,7 +32,7 @@ module AIA
         if write_config_value(config_item, new_value)
           AIA::LoggerManager.reconfigure_levels!
         else
-          warn "Warning: Unknown config option '#{config_item}'"
+          $stderr.puts "Warning: Unknown config option '#{config_item}'"
           AIA::LoggerManager.aia_logger.warn("Unknown config option '#{config_item}'")
         end
       end

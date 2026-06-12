@@ -52,7 +52,7 @@ module AIA
       parsed = if File.exist?(prompt_file_path)
                  PM.parse(prompt_id)
                else
-                 warn "Warning: Invalid prompt ID or file not found: #{prompt_id}"
+                 $stderr.puts "Warning: Invalid prompt ID or file not found: #{prompt_id}"
                  logger.warn("Invalid prompt ID or file not found: #{prompt_id}")
                  handle_missing_prompt(prompt_id)
                end
@@ -76,7 +76,7 @@ module AIA
                  # and returns the ID string as content.  Parse from raw file content instead.
                  PM.parse_string(File.read(role_file_path))
                else
-                 warn "Warning: Invalid role ID or file not found: #{role_id}"
+                 $stderr.puts "Warning: Invalid role ID or file not found: #{role_id}"
                  logger.warn("Invalid role ID or file not found: #{role_id}")
                  handle_missing_role(role_id)
                end
@@ -99,7 +99,7 @@ module AIA
       role_parsed = fetch_role(role_id)
       role_parsed.to_s
     rescue => e
-      warn "Warning: Could not load role '#{role_id}' for model: #{e.message}"
+      $stderr.puts "Warning: Could not load role '#{role_id}' for model: #{e.message}"
       logger.warn("Could not load role '#{role_id}' for model: #{e.message}")
       nil
     end
@@ -280,14 +280,14 @@ module AIA
     def handle_missing_prompt(prompt_id)
       prompt_id = prompt_id.to_s.strip
       if prompt_id.empty?
-        warn "Error: Prompt ID cannot be empty"
+        $stderr.puts "Error: Prompt ID cannot be empty"
         exit 1
       end
 
       if AIA.config.flags.fuzzy
         fuzzy_search_prompt(prompt_id)
       else
-        warn "Error: Could not find prompt with ID: #{prompt_id}"
+        $stderr.puts "Error: Could not find prompt with ID: #{prompt_id}"
         exit 1
       end
     end
@@ -297,7 +297,7 @@ module AIA
       expanded += '.md' if File.extname(expanded).empty?
 
       unless File.exist?(expanded)
-        warn "Warning: Role file not found at path: #{expanded}"
+        $stderr.puts "Warning: Role file not found at path: #{expanded}"
         logger.warn("Role file not found at path: #{expanded}")
         return handle_missing_role(role_id)
       end
@@ -318,14 +318,14 @@ module AIA
     def handle_missing_role(role_id)
       role_id = role_id.to_s.strip
       if role_id.empty? || role_id == "roles/"
-        warn "Error: Role ID cannot be empty"
+        $stderr.puts "Error: Role ID cannot be empty"
         exit 1
       end
 
       if AIA.config.flags.fuzzy
         fuzzy_search_role(role_id)
       else
-        warn "Error: Could not find role with ID: #{role_id}"
+        $stderr.puts "Error: Could not find role with ID: #{role_id}"
         exit 1
       end
     end

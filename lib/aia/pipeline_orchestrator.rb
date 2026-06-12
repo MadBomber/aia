@@ -113,7 +113,7 @@ module AIA
 
       RobotFactory.build_concurrent_mcp_network(config, groups)
     rescue StandardError => e
-      warn "Warning: Concurrent MCP setup failed: #{e.message}"
+      $stderr.puts "Warning: Concurrent MCP setup failed: #{e.message}"
       nil
     end
 

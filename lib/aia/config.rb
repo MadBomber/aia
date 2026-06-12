@@ -289,7 +289,7 @@ module AIA
       path = File.expand_path(path)
 
       unless File.exist?(path)
-        warn "ERROR: Config file not found: #{path}"
+        $stderr.puts "ERROR: Config file not found: #{path}"
         exit 1
         return # rubocop:disable Lint/UnreachableCode -- exit is mocked in tests
       end

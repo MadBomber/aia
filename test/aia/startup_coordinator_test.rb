@@ -141,8 +141,6 @@ class StartupCoordinatorTest < Minitest::Test
     coordinator.send(:initialize_task_coordinator)
   end
 
-  # validate_mcp_use_names issues a warning when requested servers are missing.
-  # Since Kernel#warn bypasses stub interception in Ruby 4, verify via expects.
   def test_validate_mcp_use_names_issues_warning_for_missing_server
     config = OpenStruct.new(
       mcp_use: ['typo_server'],
@@ -152,9 +150,9 @@ class StartupCoordinatorTest < Minitest::Test
       robot: mock('robot'), ui_presenter: @ui
     )
 
-    # Expect warn to be called at least once with a message about the missing server
-    coordinator.expects(:warn).at_least_once.with { |msg| msg.include?('typo_server') || msg.include?('real_server') }
-    coordinator.send(:validate_mcp_use_names, config, [])
+    _, err = capture_io { coordinator.send(:validate_mcp_use_names, config, []) }
+    assert(err.include?('typo_server') || err.include?('real_server'),
+           "Expected warning about missing server, got: #{err.inspect}")
   end
 
   def test_attach_bus_failure_logs_debug_warn

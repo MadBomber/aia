@@ -24,8 +24,8 @@ module AIA
           parser = create_option_parser(options)
           parser.parse!
         rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
-          warn "ERROR: #{e.message}"
-          warn "       use --help for usage report"
+          $stderr.puts "ERROR: #{e.message}"
+          $stderr.puts "       use --help for usage report"
           exit 1
         end
 
@@ -70,7 +70,7 @@ module AIA
 
         opts.on("-f", "--fuzzy", "Use fuzzy matching for prompt search") do
           unless system("which fzf > /dev/null 2>&1")
-            warn "Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option."
+            $stderr.puts "Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option."
             exit 1
           end
           options[:fuzzy] = true
@@ -294,8 +294,8 @@ module AIA
 
         opts.on("--log-level LEVEL", "Set log level (debug|info|warn|error|fatal)") do |level|
           level = level.downcase
-          unless %w[debug info warn error fatal].include?(level)
-            warn "ERROR: Invalid log level '#{level}'. Must be one of: debug, info, warn, error, fatal"
+          unless %w[debug info $stderr.puts error fatal].include?(level)
+            $stderr.puts "ERROR: Invalid log level '#{level}'. Must be one of: debug, info, warn, error, fatal"
             exit 1
           end
           options[:log_level_override] = level
@@ -656,7 +656,7 @@ module AIA
         paths = []
 
         if path_list.empty?
-          warn "No list of paths for --tools option"
+          $stderr.puts "No list of paths for --tools option"
           exit 1
         end
 
@@ -666,7 +666,7 @@ module AIA
               if File.extname(a_path) == '.rb'
                 paths << a_path
               else
-                warn "file should have *.rb extension: #{a_path}"
+                $stderr.puts "file should have *.rb extension: #{a_path}"
                 exit 1
               end
             elsif File.directory?(a_path)
@@ -674,7 +674,7 @@ module AIA
               paths += rb_files
             end
           else
-            warn "file/dir path is not valid: #{a_path}"
+            $stderr.puts "file/dir path is not valid: #{a_path}"
             exit 1
           end
         end

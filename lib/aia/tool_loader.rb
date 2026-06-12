@@ -61,7 +61,7 @@ module AIA
         if activate_unbundled_gem(lib)
           require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
         else
-          warn "Warning: Failed to require '#{lib}': gem not found"
+          $stderr.puts "Warning: Failed to require '#{lib}': gem not found"
         end
       end
 
@@ -71,10 +71,10 @@ module AIA
         if File.exist?(expanded)
           require expanded
         else
-          warn "Warning: Tool file not found: #{path}"
+          $stderr.puts "Warning: Tool file not found: #{path}"
         end
       rescue LoadError, StandardError => e
-        warn "Warning: Failed to load tool '#{path}': #{e.message}"
+        $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
       end
 
       # Eagerly load tools from gems that use zeitwerk lazy loading
@@ -137,7 +137,7 @@ module AIA
           instance = klass.new
           if instance.respond_to?(:available?) && !instance.available?
             tool_name = instance.respond_to?(:name) ? instance.name : klass.name
-            warn "Info: Tool '#{tool_name}' is not available, skipping"
+            $stderr.puts "Info: Tool '#{tool_name}' is not available, skipping"
             next false
           end
           true
@@ -189,7 +189,7 @@ module AIA
         next
       end
     rescue LoadError, StandardError => e
-      warn "Warning: Failed to eager-load gem tools: #{e.message}"
+      $stderr.puts "Warning: Failed to eager-load gem tools: #{e.message}"
     end
 
     # Fallback when bulk load_all_tools fails: walk the module's namespace

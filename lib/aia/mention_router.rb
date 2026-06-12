@@ -133,10 +133,18 @@ module AIA
     def speak(content)
       return unless AIA.speak?
 
-      command = AIA.config.audio.speak_command || 'say'
-      system(command, content.to_s)
+      audio   = AIA.config.audio
+      command = audio.speak_command || 'say'
+      env     = {}
+      env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
+
+      if command == 'say' && audio.voice && !audio.voice.strip.empty?
+        system(env, command, '-v', audio.voice, content.to_s)
+      else
+        system(env, command, content.to_s)
+      end
     rescue StandardError => e
-      warn "Warning: Speech failed: #{e.message}"
+      $stderr.puts "Warning: Speech failed: #{e.message}"
     end
   end
 end
