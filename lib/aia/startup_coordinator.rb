@@ -125,9 +125,14 @@ module AIA
       local + mcp
     end
 
-    # Retrieve MCP tools from all connected MCP clients.
+    # Retrieve MCP tools from the connection manager.
+    # MCPConnectionManager builds RobotLab::Tool instances via connect_one and
+    # absorb_ruby_llm_mcp_clients — those are what get injected into the robot
+    # and what robot_lab filters by name. RubyLLM::MCP.clients is a different
+    # registry and does not contain the tools connected here.
     def collect_mcp_tools
-      defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients.values.flat_map(&:tools) : []
+      return [] unless @mcp_manager
+      @mcp_manager.connected_tools
     end
   end
 end

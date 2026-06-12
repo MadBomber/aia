@@ -92,6 +92,7 @@ class StartupCoordinatorTest < Minitest::Test
     mock_manager.stubs(:connect_all)
     mock_manager.stubs(:absorb_ruby_llm_mcp_clients)
     mock_manager.stubs(:connected?).returns(false)
+    mock_manager.stubs(:connected_tools).returns([])
     AIA::MCPConnectionManager.stubs(:new).returns(mock_manager)
 
     robot = mock('robot')

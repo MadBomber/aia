@@ -129,6 +129,9 @@ module AIA
 
         # Resolve tool list via strategy (A=KBS, B=TF-IDF, or comparison)
         resolved_tools = @tool_filter_strategy.resolve(processed_prompt)
+        if (AIA.debug? || AIA.verbose?) && resolved_tools
+          puts "\nFiltered tools (#{resolved_tools.size}): #{resolved_tools.join(', ')}"
+        end
         begin
           result, streamed_content, elapsed = @streaming_runner.run(
             active_robot, processed_prompt, tools: resolved_tools

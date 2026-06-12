@@ -141,7 +141,7 @@ module AIA
             next false
           end
           true
-        rescue StandardError
+        rescue LoadError, StandardError
           false
         end
       end
