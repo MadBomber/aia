@@ -5,9 +5,9 @@
 # Bundler so dependency version constraints are resolved before any require.
 # When installed as a standalone gem there is no adjacent Gemfile, so this
 # block is skipped and RubyGems handles activation as normal.
-_gemfile = File.expand_path('../Gemfile', __dir__)
-if File.exist?(_gemfile)
-  ENV['BUNDLE_GEMFILE'] ||= _gemfile
+gemfile = File.expand_path('../Gemfile', __dir__)
+if File.exist?(gemfile)
+  ENV['BUNDLE_GEMFILE'] ||= gemfile
   require 'bundler/setup'
 end
 

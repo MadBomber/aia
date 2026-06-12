@@ -26,7 +26,7 @@ module AIA
           system_prompt: system_prompt,
           model:         model_spec.name,
           local_tools:   ToolLoader.filtered_tools(config),
-          mcp_servers:   Array(config.mcp_servers).map { |s| MCPConfigNormalizer.normalize(s) },
+          mcp_servers:   RobotFactory.mcp_server_configs(config),
           on_content:    nil,
           config:        RobotFactory.build_run_config(config)
         }

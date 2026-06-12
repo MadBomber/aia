@@ -66,12 +66,11 @@ module AIA
       ).process(AIA.config)
 
       # Start chat mode after all prompts are processed
-      if AIA.chat?
-        @chat_loop = build_chat_loop
-        AIA::Utility.robot
-        @ui_presenter.display_separator
-        @chat_loop.start(skip_context_files: true)
-      end
+      return unless AIA.chat?
+      @chat_loop = build_chat_loop
+      AIA::Utility.robot
+      @ui_presenter.display_separator
+      @chat_loop.start(skip_context_files: true)
     end
 
     # Release all held resources: MCP connections and filter state.
@@ -81,6 +80,8 @@ module AIA
       @mcp_manager&.close_all
       @filters&.each_value(&:cleanup)
     end
+
+    MAX_HISTORY_BYTES = 10 * 1024 * 1024  # 10 MB
 
     private
 
@@ -97,8 +98,6 @@ module AIA
 
       rotate_history_log_if_needed
     end
-
-    MAX_HISTORY_BYTES = 10 * 1024 * 1024  # 10 MB
 
     # Rotate the prompt history log if it has grown too large.
     # Renames <file> to <file>.1 so the next session starts fresh.
@@ -117,9 +116,8 @@ module AIA
 
     def setup_output_file
       out_file = AIA.config.output.file
-      if out_file && !out_file.nil? && !AIA.append? && File.exist?(out_file)
-        File.open(out_file, "w") { }
-      end
+      return unless out_file && !out_file.nil? && !AIA.append? && File.exist?(out_file)
+      File.write(out_file, '')
     end
 
     def build_chat_loop

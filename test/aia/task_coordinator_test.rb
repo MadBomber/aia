@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/task_coordinator_test.rb
 
 require_relative '../test_helper'
@@ -64,7 +65,7 @@ class TaskCoordinatorTest < Minitest::Test
     @mock_db.expects(:add_label).once
     @mock_db.expects(:add_dependency).with(instance_of(TrakFlow::Models::Dependency)).twice
 
-    @coordinator.create_task("Blocked task", blocked_by: ["tf-001", "tf-002"])
+    @coordinator.create_task("Blocked task", blocked_by: %w[tf-001 tf-002])
   end
 
   def test_create_task_with_parent_id
@@ -72,12 +73,12 @@ class TaskCoordinatorTest < Minitest::Test
 
     @mock_db.expects(:create_task).returns(task)
     @mock_db.expects(:add_label).once
-    @mock_db.expects(:add_dependency).with { |dep|
+    @mock_db.expects(:add_dependency).with do |dep|
       dep.is_a?(TrakFlow::Models::Dependency) &&
         dep.source_id == "tf-parent" &&
         dep.target_id == "tf-abc5" &&
         dep.type == "parent-child"
-    }.once
+    end.once
 
     @coordinator.create_task("Child task", parent_id: "tf-parent")
   end
@@ -100,9 +101,9 @@ class TaskCoordinatorTest < Minitest::Test
     @mock_db.expects(:add_dependency).once  # step1 blocks step2
 
     result = @coordinator.create_plan("My plan", steps: [
-      { title: "Step 1", assignee: "alice" },
-      { title: "Step 2", assignee: "bob" }
-    ])
+                                        { title: "Step 1", assignee: "alice" },
+                                        { title: "Step 2", assignee: "bob" }
+                                      ])
 
     assert_equal plan, result[:plan]
     assert_equal 2, result[:steps].size

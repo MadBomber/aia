@@ -124,6 +124,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.prompt as requirements text
     # @return [String, nil] final synthesis or nil on failure
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       requirements = context.prompt
       primary      = primary_robot
@@ -184,6 +185,7 @@ module AIA
       e.backtrace&.first(5)&.each { |line| say("    #{line}") }
       nil
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     private
 
@@ -206,7 +208,7 @@ module AIA
       layers  = parse_json_array(content)
 
       if layers.empty?
-        preview = content.to_s.gsub(/<think>.*?<\/think>/m, '').strip[0, 300]
+        preview = content.to_s.gsub(%r{<think>.*?</think>}m, '').strip[0, 300]
         say("  ⚠  Layer decomposition parse failed.")
         say("  Raw response preview: #{preview}")
       end
@@ -271,6 +273,7 @@ module AIA
 
       results = {}
 
+      # rubocop:disable Metrics/BlockLength
       Sync do
         barrier = Async::Barrier.new
         jobs.each do |job|
@@ -304,9 +307,9 @@ module AIA
             }
           end
         end
+        # rubocop:enable Metrics/BlockLength
         barrier.wait
       end
-
       results
     end
 
@@ -379,7 +382,7 @@ module AIA
       return [] if content.nil? || content.strip.empty?
 
       # Strip think blocks (qwen3 reasoning models wrap output in <think>...)
-      text = content.gsub(/<think>.*?<\/think>/m, '').strip
+      text = content.gsub(%r{<think>.*?</think>}m, '').strip
 
       # Strategy 1: extract content from markdown code fences
       if (m = text.match(/```(?:json)?\s*\n?(.*?)```/m))
@@ -400,7 +403,7 @@ module AIA
 
     def try_json_parse(text)
       result = JSON.parse(text.strip)
-      result.is_a?(Array) ? result.select { |e| e.is_a?(Hash) } : []
+      result.is_a?(Array) ? result.grep(Hash) : []
     rescue JSON::ParserError
       []
     end
@@ -430,7 +433,7 @@ module AIA
 
       # Strip a single wrapping code fence if the whole content is fenced
       code = content.strip
-      if (m = code.match(/\A```[\w]*\n(.*)\n```\z/m))
+      if (m = code.match(/\A```\w*\n(.*)\n```\z/m))
         code = m[1]
       end
 

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/network_memory_manager_test.rb
 
 require_relative '../test_helper'
@@ -35,7 +36,7 @@ class NetworkMemoryManagerTest < Minitest::Test
     AIA::NetworkMemoryManager.initialize_memory(network, config)
 
     assert_equal 2, data.model_count
-    assert_equal ['gpt-4', 'claude'], data.model_names
+    assert_equal %w[gpt-4 claude], data.model_names
     assert_equal :consensus, data.mode
     assert_equal 0, data.turn_count
   end

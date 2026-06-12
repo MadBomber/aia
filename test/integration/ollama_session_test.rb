@@ -52,5 +52,4 @@ class OllamaSessionChatFlagsTest < Minitest::Test
   ensure
     AIA.config.context_files = []
   end
-
 end

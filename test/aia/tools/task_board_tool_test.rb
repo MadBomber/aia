@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tools/task_board_tool_test.rb
 
 require_relative '../../test_helper'

@@ -12,7 +12,7 @@ module AIA
   class ToolFilterStrategy
     # Maps filter keys to display info.
     FILTER_META = {
-      tfidf: { letter: "A", label: "TF-IDF", score_label: "score" },
+      tfidf: { letter: "A", label: "TF-IDF", score_label: "score" }
     }.freeze
 
     DEFAULT_TIMEOUT_S = 10
@@ -33,12 +33,10 @@ module AIA
     def resolve(prompt)
       active = available_filters
 
-      if active.size >= 1
-        resolve_single(prompt, active.first)
-      else
-        # No filters — all tools available
-        nil
-      end
+      return resolve_single(prompt, active.first) if active.size >= 1
+
+      # No filters — all tools available
+      nil
     end
 
     # @return [String] label for the active strategy (used in debug logging)
@@ -103,6 +101,7 @@ module AIA
     end
 
     # Print the timing table via logger.
+    # rubocop:disable Metrics/AbcSize
     def display_timing_table(filter_ms_by_key)
       columns = @filters.map do |key, filter|
         meta = meta_for(key)
@@ -123,15 +122,16 @@ module AIA
       end
 
       lines = []
-      lines << "┌─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┬─#{'─' * widths[i]}─" }.join + "┐"
-      lines << "│ #{'Process'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:header].ljust(widths[i])} " }.join + "│"
-      lines << "│ #{' ' * pw} " + columns.each_with_index.map { |col, i| "│ #{col[:sub].ljust(widths[i])} " }.join + "│"
-      lines << "├─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┼─#{'─' * widths[i]}─" }.join + "┤"
-      lines << "│ #{'prep'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:prep].rjust(widths[i])} " }.join + "│"
-      lines << "│ #{'filter'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:filter].rjust(widths[i])} " }.join + "│"
-      lines << "└─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┴─#{'─' * widths[i]}─" }.join + "┘"
+      lines << ("┌─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┬─#{'─' * widths[i]}─" }.join + "┐")
+      lines << ("│ #{'Process'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:header].ljust(widths[i])} " }.join + "│")
+      lines << ("│ #{' ' * pw} " + columns.each_with_index.map { |col, i| "│ #{col[:sub].ljust(widths[i])} " }.join + "│")
+      lines << ("├─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┼─#{'─' * widths[i]}─" }.join + "┤")
+      lines << ("│ #{'prep'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:prep].rjust(widths[i])} " }.join + "│")
+      lines << ("│ #{'filter'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:filter].rjust(widths[i])} " }.join + "│")
+      lines << ("└─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┴─#{'─' * widths[i]}─" }.join + "┘")
       lines.each { |line| AIA.logger.debug line }
     end
+    # rubocop:enable Metrics/AbcSize
 
     def fmt_ms(ms)
       "#{ms.round(1)}ms"

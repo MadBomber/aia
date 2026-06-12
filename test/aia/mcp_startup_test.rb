@@ -185,7 +185,7 @@ class MCPStartupTest < Minitest::Test
   end
 
   def test_banner_shows_all_connected_counts
-    @config.connected_mcp_servers = ['serverA', 'serverB', 'serverC']
+    @config.connected_mcp_servers = %w[serverA serverB serverC]
     @config.failed_mcp_servers = []
 
     mock_model = mock('model')
@@ -211,8 +211,8 @@ class MCPStartupTest < Minitest::Test
 
   def test_mcp_connection_logs_initialization_start
     mock_robot = build_mock_robot(server_configs: [
-      { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
-    ])
+                                    { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
+                                  ])
 
     client = build_mock_client(connected: true, tools: [])
     server_obj = mock('server')
@@ -231,8 +231,8 @@ class MCPStartupTest < Minitest::Test
 
   def test_mcp_connection_logs_connected_servers
     mock_robot = build_mock_robot(server_configs: [
-      { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
-    ])
+                                    { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
+                                  ])
 
     client = build_mock_client(connected: true, tools: [{ name: 'tool1', description: 'desc', inputSchema: {} }])
     server_obj = mock('server')
@@ -252,8 +252,8 @@ class MCPStartupTest < Minitest::Test
 
   def test_mcp_connection_logs_failed_servers
     mock_robot = build_mock_robot(server_configs: [
-      { name: 'serverB', transport: { type: 'stdio', command: 'bad_cmd' } }
-    ])
+                                    { name: 'serverB', transport: { type: 'stdio', command: 'bad_cmd' } }
+                                  ])
 
     client = build_mock_client(connected: false)
     RobotLab::MCP::Client.stubs(:new).returns(client)
@@ -269,8 +269,8 @@ class MCPStartupTest < Minitest::Test
 
   def test_mcp_connection_logs_completion
     mock_robot = build_mock_robot(server_configs: [
-      { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
-    ])
+                                    { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
+                                  ])
 
     client = build_mock_client(connected: true, tools: [])
     server_obj = mock('server')
@@ -289,8 +289,8 @@ class MCPStartupTest < Minitest::Test
 
   def test_mcp_connection_logs_error_on_exception
     mock_robot = build_mock_robot(server_configs: [
-      { name: 'serverX', transport: { type: 'stdio', command: 'bad' } }
-    ])
+                                    { name: 'serverX', transport: { type: 'stdio', command: 'bad' } }
+                                  ])
 
     RobotLab::MCP::Client.stubs(:new).raises(StandardError.new("connection timeout"))
 
@@ -309,8 +309,8 @@ class MCPStartupTest < Minitest::Test
 
   def test_connected_mcp_servers_set_even_when_all_servers_fail
     mock_robot = build_mock_robot(server_configs: [
-      { name: 'serverA', transport: { type: 'stdio', command: 'bad' } }
-    ])
+                                    { name: 'serverA', transport: { type: 'stdio', command: 'bad' } }
+                                  ])
 
     RobotLab::MCP::Client.stubs(:new).raises(StandardError.new("total failure"))
 
@@ -338,7 +338,7 @@ class MCPStartupTest < Minitest::Test
   def test_mcp_server_names_falls_back_before_connection_attempted
     @config.connected_mcp_servers = nil
     names = AIA::Utility.mcp_server_names
-    assert_equal ['serverA', 'serverB', 'serverC'], names
+    assert_equal %w[serverA serverB serverC], names
   end
 
   # =========================================================================

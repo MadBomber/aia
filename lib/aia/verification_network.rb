@@ -18,6 +18,7 @@ module AIA
       mcp = RobotFactory.mcp_server_configs(config)
       model_id = model.internal_id
 
+      # rubocop:disable Metrics/BlockLength
       RobotLab.create_network(name: "aia-verification") do
         worker_a = RobotLab.build(
           name:          "verifier-a",
@@ -49,8 +50,9 @@ module AIA
                          "Note any areas of uncertainty.",
           config:        run_config
         )
-        task :reconcile, reconciler, depends_on: [:verify_a, :verify_b]
+        task :reconcile, reconciler, depends_on: %i[verify_a verify_b]
       end
+      # rubocop:enable Metrics/BlockLength
     end
   end
 end

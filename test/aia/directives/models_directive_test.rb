@@ -9,7 +9,7 @@ require_relative '../../../lib/aia'
 class ModelsDirectiveTest < Minitest::Test
   # Override setup to print test progress
   def setup
-    puts "\n→ Running: #{self.name}"
+    puts "\n→ Running: #{name}"
 
     # Allow real HTTP connections for this test (no mocks!)
     if defined?(WebMock)
@@ -35,7 +35,7 @@ class ModelsDirectiveTest < Minitest::Test
     OpenStruct.new(
       models: models,
       prompts: OpenStruct.new(
-        dir: File.join(ENV['HOME'], '.prompts'),
+        dir: File.join(Dir.home, '.prompts'),
         roles_prefix: 'roles'
       ),
       flags: OpenStruct.new(
@@ -55,7 +55,7 @@ class ModelsDirectiveTest < Minitest::Test
     end
 
     $stdout = @original_stdout
-    puts "✓ Completed: #{self.name}"
+    puts "✓ Completed: #{name}"
 
     # Call super to ensure Mocha cleanup runs properly
     super
@@ -206,7 +206,7 @@ class ModelsDirectiveTest < Minitest::Test
     help_instance.help
     output = @captured_output.string
 
-    assert_match /Total: \d+ directives available/, output
+    assert_match(/Total: \d+ directives available/, output)
   end
 
   # ============================================================================
@@ -244,7 +244,7 @@ class ModelsDirectiveTest < Minitest::Test
       @instance.show_rubyllm_models([], [])
       output = @captured_output.string
 
-      assert_match /- .+ \(.+\) in: \$[\d.]+ cw: \d+/, output
+      assert_match(/- .+ \(.+\) in: \$[\d.]+ cw: \d+/, output)
     end
   rescue Timeout::Error
     flunk "show_rubyllm_models model listing timed out after 30 seconds"
@@ -257,7 +257,7 @@ class ModelsDirectiveTest < Minitest::Test
       @instance.show_rubyllm_models([], [])
       output = @captured_output.string
 
-      assert_match /\d+ LLMs matching your query/, output
+      assert_match(/\d+ LLMs matching your query/, output)
     end
   rescue Timeout::Error
     flunk "show_rubyllm_models count display timed out after 30 seconds"
@@ -285,10 +285,10 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(30) do
       @test_config.models = [OpenStruct.new(name: 'claude-3-sonnet', role: nil, instance: 1, internal_id: 'claude-3-sonnet')]
 
-      result = @instance.available_models
+      @instance.available_models
       output = @captured_output.string
 
-      assert_match /Available LLMs/, output
+      assert_match(/Available LLMs/, output)
     end
   rescue Timeout::Error
     flunk "available_models with string model timed out after 30 seconds"
@@ -301,10 +301,10 @@ class ModelsDirectiveTest < Minitest::Test
         OpenStruct.new(name: 'claude-3-sonnet', role: nil, instance: 1, internal_id: 'claude-3-sonnet')
       ]
 
-      result = @instance.available_models
+      @instance.available_models
       output = @captured_output.string
 
-      assert_match /Available LLMs/, output
+      assert_match(/Available LLMs/, output)
     end
   rescue Timeout::Error
     flunk "available_models with array model timed out after 30 seconds"
@@ -314,10 +314,10 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(30) do
       @test_config.models = [OpenStruct.new(name: 'gpt-4', role: 'assistant', instance: 1, internal_id: 'gpt-4')]
 
-      result = @instance.available_models
+      @instance.available_models
       output = @captured_output.string
 
-      assert_match /Available LLMs/, output
+      assert_match(/Available LLMs/, output)
     end
   rescue Timeout::Error
     flunk "available_models with hash model timed out after 30 seconds"
@@ -332,7 +332,7 @@ class ModelsDirectiveTest < Minitest::Test
       @instance.show_ollama_models('http://localhost:99999', [], [])
       output = @captured_output.string
 
-      assert_match /Cannot connect to Ollama|Error fetching Ollama models/, output
+      assert_match(/Cannot connect to Ollama|Error fetching Ollama models/, output)
     end
   rescue Timeout::Error
     flunk "show_ollama_models connection failure handling timed out"
@@ -346,11 +346,11 @@ class ModelsDirectiveTest < Minitest::Test
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        assert_match /Cannot connect to Ollama|Error fetching/, output,
-          "Should show appropriate error message when Ollama is not available"
+        assert_match(/Cannot connect to Ollama|Error fetching/, output,
+                     "Should show appropriate error message when Ollama is not available")
       else
-        assert_match /Ollama Models.*:/, output
-        assert_match /\d+ Ollama model\(s\) available/, output
+        assert_match(/Ollama Models.*:/, output)
+        assert_match(/\d+ Ollama model\(s\) available/, output)
       end
     end
   rescue Timeout::Error
@@ -365,14 +365,12 @@ class ModelsDirectiveTest < Minitest::Test
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        assert_match /Cannot connect to Ollama|Error fetching/, output,
-          "Should show appropriate error message when Ollama is not available"
-      else
-        if output =~ /(\d+) Ollama model\(s\) available/
-          lines = output.split("\n").select { |l| l.start_with?('- ollama/') }
-          lines.each do |line|
-            assert_match /llama/i, line, "Filtered results should match query"
-          end
+        assert_match(/Cannot connect to Ollama|Error fetching/, output,
+                     "Should show appropriate error message when Ollama is not available")
+      elsif output =~ /(\d+) Ollama model\(s\) available/
+        lines = output.split("\n").select { |l| l.start_with?('- ollama/') }
+        lines.each do |line|
+          assert_match(/llama/i, line, "Filtered results should match query")
         end
       end
     end
@@ -389,7 +387,7 @@ class ModelsDirectiveTest < Minitest::Test
       @instance.show_lms_models('http://localhost:99998', [], [])
       output = @captured_output.string
 
-      assert_match /Cannot connect to LM Studio|Error fetching LM Studio models/, output
+      assert_match(/Cannot connect to LM Studio|Error fetching LM Studio models/, output)
     end
   rescue Timeout::Error
     flunk "show_lms_models connection failure handling timed out"
@@ -403,11 +401,11 @@ class ModelsDirectiveTest < Minitest::Test
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        assert_match /Cannot connect to LM Studio|Error fetching/, output,
-          "Should show appropriate error message when LM Studio is not available"
+        assert_match(/Cannot connect to LM Studio|Error fetching/, output,
+                     "Should show appropriate error message when LM Studio is not available")
       else
-        assert_match /LM Studio Models.*:/, output
-        assert_match /\d+ LM Studio model\(s\) available/, output
+        assert_match(/LM Studio Models.*:/, output)
+        assert_match(/\d+ LM Studio model\(s\) available/, output)
       end
     end
   rescue Timeout::Error
@@ -422,14 +420,12 @@ class ModelsDirectiveTest < Minitest::Test
       output = @captured_output.string
 
       if output.include?('Cannot connect') || output.include?('Error fetching')
-        assert_match /Cannot connect to LM Studio|Error fetching/, output,
-          "Should show appropriate error message when LM Studio is not available"
-      else
-        if output =~ /(\d+) LM Studio model\(s\) available/
-          lines = output.split("\n").select { |l| l.start_with?('- lms/') }
-          lines.each do |line|
-            assert_match /gpt/i, line, "Filtered results should match query"
-          end
+        assert_match(/Cannot connect to LM Studio|Error fetching/, output,
+                     "Should show appropriate error message when LM Studio is not available")
+      elsif output =~ /(\d+) LM Studio model\(s\) available/
+        lines = output.split("\n").select { |l| l.start_with?('- lms/') }
+        lines.each do |line|
+          assert_match(/gpt/i, line, "Filtered results should match query")
         end
       end
     end
@@ -455,7 +451,7 @@ class ModelsDirectiveTest < Minitest::Test
 
   def test_33_compare_parses_models_argument
     Timeout.timeout(60) do
-      result = @instance.compare(['test prompt', '--models', 'gpt-4,claude-3'])
+      @instance.compare(['test prompt', '--models', 'gpt-4,claude-3'])
       output = @captured_output.string
 
       assert_includes output, "Comparing responses for: test prompt"
@@ -463,17 +459,17 @@ class ModelsDirectiveTest < Minitest::Test
     end
   rescue Timeout::Error
     skip "compare test timed out - may require API access"
-  rescue => e
+  rescue
     assert true, "Parsing logic executed as expected"
   end
 
   def test_34_compare_handles_model_errors_gracefully
     Timeout.timeout(60) do
-      result = @instance.compare([
-        'test prompt',
-        '--models',
-        'fake-model-1,fake-model-2'
-      ])
+      @instance.compare([
+                          'test prompt',
+                          '--models',
+                          'fake-model-1,fake-model-2'
+                        ])
       output = @captured_output.string
 
       assert_includes output, "Comparing responses"
@@ -481,27 +477,27 @@ class ModelsDirectiveTest < Minitest::Test
     end
   rescue Timeout::Error
     skip "compare error handling test timed out"
-  rescue => e
+  rescue
     assert true, "Error handling executed"
   end
 
   def test_35_compare_displays_results_format
     Timeout.timeout(60) do
-      result = @instance.compare([
-        'What is 2+2?',
-        '--models',
-        'nonexistent-model'
-      ])
+      @instance.compare([
+                          'What is 2+2?',
+                          '--models',
+                          'nonexistent-model'
+                        ])
       output = @captured_output.string
 
       assert_includes output, "Comparing responses for: What is 2+2?"
       assert_includes output, "=" * 80
       assert_includes output, "Comparison complete!"
-      assert_match /🤖.*nonexistent-model/, output
+      assert_match(/🤖.*nonexistent-model/, output)
     end
   rescue Timeout::Error
     skip "compare format test timed out"
-  rescue => e
+  rescue
     assert true, "Format display executed"
   end
 
@@ -513,10 +509,10 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       @test_config.models = [OpenStruct.new(name: 'ollama/llama2', role: nil, instance: 1, internal_id: 'ollama/llama2')]
 
-      result = @instance.available_models
+      @instance.available_models
       output = @captured_output.string
 
-      assert_match /Ollama|Cannot connect|Local LLM/, output
+      assert_match(/Ollama|Cannot connect|Local LLM/, output)
     end
   rescue Timeout::Error
     flunk "Ollama detection test timed out after 10 seconds"
@@ -526,10 +522,10 @@ class ModelsDirectiveTest < Minitest::Test
     Timeout.timeout(10) do
       @test_config.models = [OpenStruct.new(name: 'lms/some-model', role: nil, instance: 1, internal_id: 'lms/some-model')]
 
-      result = @instance.available_models
+      @instance.available_models
       output = @captured_output.string
 
-      assert_match /LM Studio|Cannot connect|Local LLM/, output
+      assert_match(/LM Studio|Cannot connect|Local LLM/, output)
     end
   rescue Timeout::Error
     flunk "LM Studio detection test timed out after 10 seconds"
@@ -558,7 +554,7 @@ class ModelsDirectiveTest < Minitest::Test
     huge_number = 5 * 1024 * 1024 * 1024 * 1024 * 1024
     result = @instance.format_bytes(huge_number)
 
-    assert_match /\d+\.\d+ TB/, result
+    assert_match(/\d+\.\d+ TB/, result)
   end
 
   # ============================================================================
@@ -622,7 +618,7 @@ class ModelsDirectiveTest < Minitest::Test
     @captured_output = StringIO.new
     $stdout = @captured_output
 
-    result2 = help_instance.help(['some', 'args'])
+    result2 = help_instance.help(%w[some args])
     output2 = @captured_output.string
 
     assert_equal result1, result2

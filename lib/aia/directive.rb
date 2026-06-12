@@ -34,7 +34,7 @@
 
 module AIA
   class Directive < PM::Directive
-    DIRECTIVE_PREFIX = '/'
+    DIRECTIVE_PREFIX = '/'.freeze
 
     class << self
       # ---- State-setting DSL -----------------------------------------------

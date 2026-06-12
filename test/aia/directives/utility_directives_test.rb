@@ -62,7 +62,7 @@ class UtilityDirectivesTest < Minitest::Test
 
     @test_config.loaded_tools = [tool_a, tool_b]
 
-    result = @instance.tools(['calc'])
+    @instance.tools(['calc'])
     output = @captured_output.string
     assert_includes output, "calculator"
     refute_includes output, "web_search"

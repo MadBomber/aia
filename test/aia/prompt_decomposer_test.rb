@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/prompt_decomposer_test.rb
 
 require_relative '../test_helper'
@@ -50,7 +51,7 @@ class PromptDecomposerTest < Minitest::Test
 
     result = @decomposer.decompose("Complex request")
 
-    assert_equal ['valid', 'another'], result
+    assert_equal %w[valid another], result
   end
 
   def test_decompose_returns_empty_for_empty_subtasks_hash

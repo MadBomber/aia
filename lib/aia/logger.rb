@@ -124,10 +124,9 @@ module AIA
           config.log_file = resolve_log_file_io(file)
         end
 
-        if config.respond_to?(:log_level=)
-          level = effective_log_level(logger_config_for(:mcp))
-          config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
-        end
+        return unless config.respond_to?(:log_level=)
+        level = effective_log_level(logger_config_for(:mcp))
+        config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
       end
 
       # Convert log file specification to IO object or file path
@@ -166,7 +165,7 @@ module AIA
       def reconfigure_levels!
         return if test_mode?
 
-        [:aia, :llm, :mcp].each do |system|
+        %i[aia llm mcp].each do |system|
           logger = instance_variable_get(:"@#{system}_logger")
           next unless logger
 

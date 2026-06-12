@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/delegate_handler_test.rb
 
 require_relative '../test_helper'
@@ -87,7 +88,7 @@ class DelegateHandlerTest < Minitest::Test
     lead.stubs(:name).returns("Alice")
     # First call: decomposition; subsequent calls: step execution
     lead.stubs(:run).returns(OpenStruct.new(reply: plan_json))
-                    .then.returns(OpenStruct.new(reply: "Research results here"))
+        .then.returns(OpenStruct.new(reply: "Research results here"))
 
     robot_b = mock('robot_b')
     robot_b.stubs(:name).returns("Bob")
@@ -131,7 +132,7 @@ class DelegateHandlerTest < Minitest::Test
     lead = mock('lead')
     lead.stubs(:name).returns("Alice")
     lead.stubs(:run).returns(OpenStruct.new(reply: plan_json))
-                    .then.returns(OpenStruct.new(reply: "Done"))
+        .then.returns(OpenStruct.new(reply: "Done"))
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/mcp_discovery_test.rb
 
 require_relative '../test_helper'
@@ -7,10 +8,6 @@ require_relative '../../lib/aia'
 class MCPDiscoveryTest < Minitest::Test
   def setup
     @discovery = AIA::MCPDiscovery.new
-  end
-
-  def teardown
-    super
   end
 
   def test_discover_returns_all_servers_when_no_mcp_use_set
@@ -96,7 +93,7 @@ class MCPDiscoveryTest < Minitest::Test
     result = @discovery.discover(config)
 
     assert_equal 2, result.length,
-      "Empty mcp_use should fall through to all-servers, not filter to zero"
+                 "Empty mcp_use should fall through to all-servers, not filter to zero"
   end
 
   # ---------------------------------------------------------------------------

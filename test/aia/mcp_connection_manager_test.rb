@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/mcp_connection_manager_test.rb
 
 require_relative '../test_helper'
@@ -17,10 +18,6 @@ class MCPConnectionManagerTest < Minitest::Test
     AIA.config.stubs(:connected_mcp_servers=)
     AIA.config.stubs(:mcp_server_tool_counts=)
     AIA.config.stubs(:failed_mcp_servers=)
-  end
-
-  def teardown
-    super
   end
 
   # Initial state

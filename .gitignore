@@ -1,7 +1,10 @@
+
+*_output.txt
 .aider*
 .aigcm_msg
 *.gem
 Gemfile.lock
+Gemfile.local.lock
 *.rbc
 .DS_Store
 /.config

@@ -6,28 +6,23 @@ class PromptHandlerTest < Minitest::Test
   def setup
     # Mock AIA module methods to prevent actual operations
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: [OpenStruct.new(name: 'test-model')],
-      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
-      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
-      tools: OpenStruct.new(paths: []),
-      context_files: [],
-      prompts: OpenStruct.new(
-        dir: '/tmp/test_prompts',
-        extname: '.md',
-        roles_dir: '/tmp/test_prompts/roles',
-        roles_prefix: 'roles',
-        role: nil,
-        parameter_regex: '\\{\\{\\w+\\}\\}'
-      ),
-      prompt_id: 'test_prompt'
-    ))
+                                 models: [OpenStruct.new(name: 'test-model')],
+                                 llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+                                 flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+                                 tools: OpenStruct.new(paths: []),
+                                 context_files: [],
+                                 prompts: OpenStruct.new(
+                                   dir: '/tmp/test_prompts',
+                                   extname: '.md',
+                                   roles_dir: '/tmp/test_prompts/roles',
+                                   roles_prefix: 'roles',
+                                   role: nil,
+                                   parameter_regex: '\\{\\{\\w+\\}\\}'
+                                 ),
+                                 prompt_id: 'test_prompt'
+                               ))
 
     @handler = AIA::PromptHandler.new
-  end
-
-  def teardown
-    # Call super to ensure Mocha cleanup runs
-    super
   end
 
   def test_initialization
@@ -50,7 +45,7 @@ class PromptHandlerTest < Minitest::Test
   def test_handler_methods_exist
     # Test that core methods exist and are callable
     handler = AIA::PromptHandler.new
-    
+
     # These methods should exist
     assert handler.respond_to?(:fetch_prompt)
     assert handler.respond_to?(:fetch_role)

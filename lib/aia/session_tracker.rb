@@ -97,6 +97,7 @@ module AIA
 
     # Expand a network SimpleFlow::Result into one turn entry per robot.
     # Computes TF-IDF similarity of each response against the first.
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def record_network_turn(input:, flow_result:, decisions: nil, elapsed: nil)
       @turn_count += 1
       now = Time.now
@@ -105,19 +106,20 @@ module AIA
       robot_entries = []
       response_texts = []
 
+      # rubocop:disable Metrics/BlockLength
       flow_result.context.each do |task_name, robot_result|
         next if task_name == :run_params
         next unless robot_result.respond_to?(:raw)
 
         raw = robot_result.raw
-        input_tokens  = (raw&.respond_to?(:input_tokens) && raw.input_tokens) || 0
-        output_tokens = (raw&.respond_to?(:output_tokens) && raw.output_tokens) || 0
+        input_tokens  = (raw.respond_to?(:input_tokens) && raw.input_tokens) || 0
+        output_tokens = (raw.respond_to?(:output_tokens) && raw.output_tokens) || 0
         tokens = input_tokens + output_tokens
 
         model_id = extract_model_id_from_raw(raw)
         model_id ||= robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
 
-        cost = tokens > 0 ? compute_cost_for_model(model_id, input_tokens, output_tokens) : 0.0
+        cost = tokens.positive? ? compute_cost_for_model(model_id, input_tokens, output_tokens) : 0.0
         robot_elapsed = robot_result.respond_to?(:duration) ? (robot_result.duration || 0) : 0
 
         text = if robot_result.respond_to?(:reply)
@@ -127,6 +129,7 @@ module AIA
                else
                  ""
                end
+        # rubocop:enable Metrics/BlockLength
         response_texts << text
 
         robot_entries << {
@@ -141,6 +144,7 @@ module AIA
           timestamp: now
         }
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       # Compute similarity scores (first model is reference)
       scores = if robot_entries.size > 1
@@ -180,13 +184,13 @@ module AIA
                  result.output.last
                end
 
-      if source&.respond_to?(:input_tokens) && source.input_tokens
+      if source.respond_to?(:input_tokens) && source.input_tokens
         input_tokens = source.input_tokens || 0
         output_tokens = source.output_tokens || 0
       end
 
       tokens = input_tokens + output_tokens
-      cost = tokens > 0 ? compute_cost(result, input_tokens, output_tokens) : 0.0
+      cost = tokens.positive? ? compute_cost(result, input_tokens, output_tokens) : 0.0
 
       { input_tokens: input_tokens, output_tokens: output_tokens, tokens: tokens, cost: cost }
     end

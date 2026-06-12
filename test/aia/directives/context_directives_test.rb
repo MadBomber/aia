@@ -223,7 +223,7 @@ class ContextDirectivesTest < Minitest::Test
   def test_checkpoint_names_returns_keys
     @instance.checkpoint(['a'])
     @instance.checkpoint(['b'])
-    assert_equal ['a', 'b'], @instance.checkpoint_names
+    assert_equal %w[a b], @instance.checkpoint_names
   end
 
   def test_reset_clears_all_state

@@ -42,31 +42,29 @@ class VersionTest < Minitest::Test
 
     assert major < 100, "Major version should be reasonable (< 100)"
     assert minor < 1000, "Minor version should be reasonable (< 1000)"
-    assert patch < 10000, "Patch version should be reasonable (< 10000)"
+    assert patch < 10_000, "Patch version should be reasonable (< 10000)"
   end
 
   def test_version_consistency_with_gemspec
     gemspec_path = File.join(File.dirname(__FILE__), '..', '..', 'aia.gemspec')
 
-    if File.exist?(gemspec_path)
-      gemspec_content = File.read(gemspec_path)
+    return unless File.exist?(gemspec_path)
+    gemspec_content = File.read(gemspec_path)
 
-      if gemspec_content.match(/version\s*=\s*AIA::VERSION/)
-        assert_equal AIA::VERSION, AIA::VERSION, "Version should be self-consistent"
-      end
-    end
+    return unless gemspec_content.match(/version\s*=\s*AIA::VERSION/)
+    assert_equal AIA::VERSION, AIA::VERSION, "Version should be self-consistent"
   end
 
-  def test_gemspec_requires_robot_lab_0_1
+  def test_gemspec_requires_robot_lab_0_2
     gemspec_path = File.expand_path('../../aia.gemspec', __dir__)
     spec = Gem::Specification.load(gemspec_path)
     dependency = spec.runtime_dependencies.find { |dep| dep.name == 'robot_lab' }
 
     refute_nil dependency, "robot_lab should be a runtime dependency"
-    assert dependency.requirement.satisfied_by?(Gem::Version.new('0.1.0')),
-           "robot_lab dependency should allow v0.1.0"
-    refute dependency.requirement.satisfied_by?(Gem::Version.new('0.0.12')),
-           "robot_lab dependency should exclude v0.0.12"
+    assert dependency.requirement.satisfied_by?(Gem::Version.new('0.2.0')),
+           "robot_lab dependency should allow v0.2.0"
+    refute dependency.requirement.satisfied_by?(Gem::Version.new('0.1.9')),
+           "robot_lab dependency should exclude v0.1.9"
   end
 
   def test_version_follows_semantic_versioning
@@ -83,10 +81,9 @@ class VersionTest < Minitest::Test
   def test_version_file_consistency
     version_file_path = File.join(File.dirname(__FILE__), '..', '..', '.version')
 
-    if File.exist?(version_file_path)
-      file_version = File.read(version_file_path).strip
-      assert_equal file_version, AIA::VERSION, "Version in .version file should match AIA::VERSION constant"
-    end
+    return unless File.exist?(version_file_path)
+    file_version = File.read(version_file_path).strip
+    assert_equal file_version, AIA::VERSION, "Version in .version file should match AIA::VERSION constant"
   end
 
   def test_version_immutability
@@ -109,12 +106,11 @@ class VersionTest < Minitest::Test
   end
 
   def test_version_for_development_vs_release
-    if AIA::VERSION.match(/\d+\.\d+\.\d+$/)
-      refute_match(/-/, AIA::VERSION, "Release version should not contain dashes")
-      refute_match(/pre/, AIA::VERSION.downcase, "Release version should not contain 'pre'")
-      refute_match(/alpha/, AIA::VERSION.downcase, "Release version should not contain 'alpha'")
-      refute_match(/beta/, AIA::VERSION.downcase, "Release version should not contain 'beta'")
-      refute_match(/rc/, AIA::VERSION.downcase, "Release version should not contain 'rc'")
-    end
+    return unless AIA::VERSION.match(/\d+\.\d+\.\d+$/)
+    refute_match(/-/, AIA::VERSION, "Release version should not contain dashes")
+    refute_match(/pre/, AIA::VERSION.downcase, "Release version should not contain 'pre'")
+    refute_match(/alpha/, AIA::VERSION.downcase, "Release version should not contain 'alpha'")
+    refute_match(/beta/, AIA::VERSION.downcase, "Release version should not contain 'beta'")
+    refute_match(/rc/, AIA::VERSION.downcase, "Release version should not contain 'rc'")
   end
 end

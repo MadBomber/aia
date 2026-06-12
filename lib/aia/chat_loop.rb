@@ -72,12 +72,13 @@ module AIA
 
       result, streamed_content, _elapsed = @streaming_runner.run(@robot, context)
       present_result(result,
-        streamed_content: streamed_content,
-        ui_presenter: @ui_presenter
-      )
+                     streamed_content: streamed_content,
+                     ui_presenter: @ui_presenter)
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def run_loop
+      # rubocop:disable Metrics/BlockLength
       loop do
         follow_up_prompt = @ui_presenter.ask_question
 
@@ -90,7 +91,7 @@ module AIA
             follow_up_prompt = process_directive(follow_up_prompt)
             next if follow_up_prompt.nil?
           else
-            name = follow_up_prompt.strip.split(' ').first
+            name = follow_up_prompt.strip.split.first
             @ui_presenter.display_info("Unknown directive: #{name}  (use /help to see available directives)")
             next
           end
@@ -146,16 +147,17 @@ module AIA
         end
 
         present_result(result,
-          streamed_content: streamed_content,
-          prompt: processed_prompt,
-          elapsed: elapsed,
-          ui_presenter: @ui_presenter,
-          tracker: @tracker
-        )
+                       streamed_content: streamed_content,
+                       prompt: processed_prompt,
+                       elapsed: elapsed,
+                       ui_presenter: @ui_presenter,
+                       tracker: @tracker)
 
         # Clear per-turn MCP filter for next turn
         clear_turn_mcp_filter
       end
+      # rubocop:enable Metrics/BlockLength
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
     end
 
     # Clear per-turn MCP server filter so next turn sees all
@@ -282,9 +284,9 @@ module AIA
       local = Array(robot.local_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
       mcp   = Array(robot.mcp_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
 
-      $stderr.puts "[DEBUG] Tool filter strategy: #{@tool_filter_strategy.active_strategy_label}"
-      $stderr.puts "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"
-      $stderr.puts "[DEBUG] Robot mcp_tools (#{mcp.size}): #{mcp.join(', ')}"
+      warn "[DEBUG] Tool filter strategy: #{@tool_filter_strategy.active_strategy_label}"
+      warn "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"
+      warn "[DEBUG] Robot mcp_tools (#{mcp.size}): #{mcp.join(', ')}"
     end
 
     def log_user_input(input)

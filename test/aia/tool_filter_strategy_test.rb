@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_filter_strategy_test.rb
 
 require_relative '../test_helper'
@@ -23,12 +24,12 @@ class ToolFilterStrategyTest < Minitest::Test
     filter.define_singleton_method(:label) { label }
     filter.define_singleton_method(:prep_ms) { prep_ms }
     filter.define_singleton_method(:tool_count) { tool_count }
-    filter.define_singleton_method(:available?) { tool_count > 0 }
+    filter.define_singleton_method(:available?) { tool_count.positive? }
     filter.define_singleton_method(:filter_with_scores) { |_prompt| scored }
-    filter.define_singleton_method(:filter) { |_prompt|
+    filter.define_singleton_method(:filter) do |_prompt|
       names = scored.map { |e| e[:name] }
       names.empty? ? nil : names
-    }
+    end
     filter
   end
 
@@ -77,7 +78,7 @@ class ToolFilterStrategyTest < Minitest::Test
     strategy = build_strategy(filters: { tfidf: tfidf })
 
     result = strategy.resolve("find files")
-    assert_equal ["search_tool", "code_tool"], result
+    assert_equal %w[search_tool code_tool], result
   end
 
   def test_tfidf_returns_nil_when_no_matches
@@ -103,7 +104,7 @@ class ToolFilterStrategyTest < Minitest::Test
   def test_single_filter_raises_returns_nil
     failing_filter = make_mock_filter(label: "TF-IDF", scored: [], tool_count: 1)
     failing_filter.define_singleton_method(:filter_with_scores) do |_prompt|
-      raise RuntimeError, "embedding model failed to load"
+      raise "embedding model failed to load"
     end
 
     strategy = build_strategy(filters: { tfidf: failing_filter })

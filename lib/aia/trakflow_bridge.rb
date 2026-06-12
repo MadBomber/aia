@@ -42,10 +42,10 @@ module AIA
 
         if prev_step
           @db.add_dependency(TrakFlow::Models::Dependency.new(
-            source_id: prev_step.id,
-            target_id: step.id,
-            type:      "blocks"
-          ))
+                               source_id: prev_step.id,
+                               target_id: step.id,
+                               type:      "blocks"
+                             ))
         end
 
         prev_step = step

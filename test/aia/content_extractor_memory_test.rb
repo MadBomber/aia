@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/content_extractor_memory_test.rb
 
 require_relative '../test_helper'

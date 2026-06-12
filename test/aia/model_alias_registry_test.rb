@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/model_alias_registry_test.rb
 
 require_relative '../test_helper'
@@ -6,10 +7,6 @@ require_relative '../test_helper'
 class ModelAliasRegistryTest < Minitest::Test
   def setup
     @registry = AIA::ModelAliasRegistry.new
-  end
-
-  def teardown
-    super
   end
 
   # =========================================================================
@@ -294,7 +291,7 @@ class ModelAliasRegistryTest < Minitest::Test
     aliases["injected"] = "bad-model"
 
     refute @registry.known?("injected"),
-      "Modifying all_aliases output should not affect the registry"
+           "Modifying all_aliases output should not affect the registry"
   end
 
   def test_all_aliases_includes_custom_entries
@@ -338,6 +335,6 @@ class ModelAliasRegistryTest < Minitest::Test
 
   def test_default_aliases_is_frozen
     assert AIA::ModelAliasRegistry::DEFAULT_ALIASES.frozen?,
-      "DEFAULT_ALIASES constant should be frozen"
+           "DEFAULT_ALIASES constant should be frozen"
   end
 end

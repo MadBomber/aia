@@ -137,7 +137,7 @@ class ValidatorHelpersTest < Minitest::Test
         { name: 'server2' },
         { name: 'server3' }
       ],
-      mcp_use: ['server1', 'server3'],
+      mcp_use: %w[server1 server3],
       mcp_skip: []
     )
     result = AIA::ConfigValidator.send(:filter_mcp_servers, config)
@@ -247,7 +247,7 @@ class ValidatorHelpersTest < Minitest::Test
   def test_prepare_pipeline_prepends_prompt_id
     config = OpenStruct.new(prompt_id: 'test_prompt', pipeline: ['other'])
     AIA::ConfigValidator.send(:prepare_pipeline, config)
-    assert_equal ['test_prompt', 'other'], config.pipeline
+    assert_equal %w[test_prompt other], config.pipeline
   end
 
   def test_prepare_pipeline_skips_nil_prompt_id
@@ -263,13 +263,12 @@ class ValidatorHelpersTest < Minitest::Test
   end
 
   def test_prepare_pipeline_skips_if_already_first
-    config = OpenStruct.new(prompt_id: 'test', pipeline: ['test', 'other'])
+    config = OpenStruct.new(prompt_id: 'test', pipeline: %w[test other])
     AIA::ConfigValidator.send(:prepare_pipeline, config)
-    assert_equal ['test', 'other'], config.pipeline
+    assert_equal %w[test other], config.pipeline
   end
 
   # =========================================================================
   # configure_prompt_manager (deprecation warning)
   # =========================================================================
-
 end

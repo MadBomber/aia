@@ -59,6 +59,7 @@ require_relative 'aia/session'
 module AIA
   require 'debug_me'
   include DebugMe
+
   $DEBUG_ME = false
   DebugMeDefaultOptions[:skip1] = true
 
@@ -80,7 +81,7 @@ module AIA
 
     def reset!
       @config = @client = @session_tracker = @turn_state =
-        @task_coordinator = nil
+                            @task_coordinator = nil
       ToolLoader.reset_instance!
     end
 

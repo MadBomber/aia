@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/mcp_grouper_test.rb
 
 require_relative '../test_helper'
@@ -7,10 +8,6 @@ require_relative '../../lib/aia'
 class MCPGrouperTest < Minitest::Test
   def setup
     @grouper = AIA::MCPGrouper.new
-  end
-
-  def teardown
-    super
   end
 
   def test_group_with_empty_array_returns_empty

@@ -21,15 +21,17 @@ class WebAndFileDirectivesTest < Minitest::Test
 
     # Capture warn calls (stderr)
     @stderr_messages = []
-    @instance.stubs(:warn).with { |msg| @stderr_messages << msg; true }
+    @instance.stubs(:warn).with do |msg|
+      @stderr_messages << msg
+      true
+    end
 
     # Stub AIA::LoggerManager so skill / skills methods don't blow up
     mock_logger = stub('logger',
-      error: nil,
-      warn: nil,
-      info: nil,
-      debug: nil
-    )
+                       error: nil,
+                       warn: nil,
+                       info: nil,
+                       debug: nil)
     AIA::LoggerManager.stubs(:aia_logger).returns(mock_logger)
   end
 
@@ -244,7 +246,7 @@ class WebAndFileDirectivesTest < Minitest::Test
       with_skills_dir(tmpdir) do
         result = @instance.skill(['../../etc/passwd'])
         assert_nil result,
-          'Path traversal via ../../etc/passwd must be blocked and return nil'
+                   'Path traversal via ../../etc/passwd must be blocked and return nil'
         assert_match(/No skill matching/, @captured_stdout.string)
       end
     end
@@ -255,7 +257,7 @@ class WebAndFileDirectivesTest < Minitest::Test
       with_skills_dir(tmpdir) do
         result = @instance.skill(['/tmp'])
         assert_nil result,
-          'Absolute path outside SKILLS_DIR must be blocked and return nil'
+                   'Absolute path outside SKILLS_DIR must be blocked and return nil'
         assert_match(/No skill matching/, @captured_stdout.string)
       end
     end
@@ -268,7 +270,7 @@ class WebAndFileDirectivesTest < Minitest::Test
         # safe_skill_path is private; test it through the public skill method
         result = @instance.skill(['valid-skill'])
         assert_equal '# Valid', result,
-          'A valid skill inside SKILLS_DIR must be read successfully'
+                     'A valid skill inside SKILLS_DIR must be read successfully'
       end
     end
   end
@@ -283,7 +285,7 @@ class WebAndFileDirectivesTest < Minitest::Test
         with_skills_dir(tmpdir) do
           result = @instance.skill(['evil-link'])
           assert_nil result,
-            'Symlink pointing outside SKILLS_DIR must be blocked and return nil'
+                     'Symlink pointing outside SKILLS_DIR must be blocked and return nil'
         end
       end
     end
@@ -297,7 +299,7 @@ class WebAndFileDirectivesTest < Minitest::Test
       with_skills_dir(tmpdir) do
         result = @instance.skill(['broken-link'])
         assert_nil result,
-          'Broken symlink must return nil without raising'
+                   'Broken symlink must return nil without raising'
       end
     end
   end

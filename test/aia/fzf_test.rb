@@ -9,7 +9,7 @@ class FzfTest < Minitest::Test
     # Only skip if fzf is truly not available (check with full path)
     skip "fzf not available" unless system('which fzf >/dev/null 2>&1') || File.exist?('/opt/homebrew/bin/fzf')
 
-    @list = ['item1', 'item2', 'item3']
+    @list = %w[item1 item2 item3]
     @directory = '/test/dir'
     @fzf = AIA::Fzf.new(
       list: @list,
@@ -110,7 +110,8 @@ class FzfTest < Minitest::Test
     # Mock Open3.capture2 to return a selection
     mock_status = mock('status')
     mock_status.stubs(:success?).returns(true)
-    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args), stdin_data: @list.join("\n")).returns(["item2\n", mock_status])
+    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args),
+                                  stdin_data: @list.join("\n")).returns(["item2\n", mock_status])
 
     result = @fzf.run
 
@@ -132,7 +133,8 @@ class FzfTest < Minitest::Test
     # Mock Open3.capture2 to return whitespace
     mock_status = mock('status')
     mock_status.stubs(:success?).returns(true)
-    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args), stdin_data: @list.join("\n")).returns(["   \n  ", mock_status])
+    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args),
+                                  stdin_data: @list.join("\n")).returns(["   \n  ", mock_status])
 
     result = @fzf.run
 
@@ -143,7 +145,8 @@ class FzfTest < Minitest::Test
     # Mock Open3.capture2 to return selection with whitespace
     mock_status = mock('status')
     mock_status.stubs(:success?).returns(true)
-    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args), stdin_data: @list.join("\n")).returns(["  item1  \n", mock_status])
+    Open3.expects(:capture2).with('fzf', *@fzf.instance_variable_get(:@fzf_args),
+                                  stdin_data: @list.join("\n")).returns(["  item1  \n", mock_status])
 
     result = @fzf.run
 
@@ -153,18 +156,18 @@ class FzfTest < Minitest::Test
   def test_run_uses_stdin_data_not_tempfile
     mock_status = mock('status')
     mock_status.stubs(:success?).returns(true)
-    Open3.expects(:capture2).with { |*args, **kwargs| kwargs.key?(:stdin_data) }.returns(["item1\n", mock_status])
+    Open3.expects(:capture2).with { |*_args, **kwargs| kwargs.key?(:stdin_data) }.returns(["item1\n", mock_status])
 
     @fzf.run
   end
 
   def test_tempfile_path_method_removed
     refute AIA::Fzf.method_defined?(:tempfile_path),
-      "Fzf#tempfile_path dead code should have been removed"
+           "Fzf#tempfile_path dead code should have been removed"
   end
 
   def test_run_passes_list_items_as_stdin
-    fzf = AIA::Fzf.new(list: ['alpha', 'beta'], directory: '/test')
+    fzf = AIA::Fzf.new(list: %w[alpha beta], directory: '/test')
     mock_status = mock('status')
     mock_status.stubs(:success?).returns(true)
 

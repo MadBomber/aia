@@ -14,69 +14,65 @@ class SessionTest < Minitest::Test
 
     # Mock AIA.config with nested structure (matching v2 config layout)
     AIA.stubs(:config).returns(OpenStruct.new(
-      prompt_id: 'test_prompt',
-      context_files: [],
-      stdin_content: nil,
-      pipeline: ['test_prompt'],
-      mcp_servers: [],
-      tool_names: '',
-      prompts: OpenStruct.new(
-        dir: '/tmp/test_prompts',
-        extname: '.md',
-        roles_prefix: 'roles',
-        roles_dir: '/tmp/test_prompts/roles',
-        role: nil,
-        system_prompt: 'You are a helpful assistant'
-      ),
-      output: OpenStruct.new(
-        file: nil,
-        append: false,
-        markdown: true,
-        history_file: nil
-      ),
-      flags: OpenStruct.new(
-        chat: false,
-        fuzzy: false,
-        debug: false,
-        verbose: false,
-        speak: false,
-        tokens: false
-      ),
-      llm: OpenStruct.new(
-        temperature: 0.7,
-        max_tokens: 2048,
-        top_p: 1.0,
-        frequency_penalty: 0.0,
-        presence_penalty: 0.0
-      ),
-      models: [OpenStruct.new(name: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini')],
-      tools: OpenStruct.new(
-        paths: [],
-        allowed: nil,
-        rejected: nil
-      ),
-      audio: OpenStruct.new(
-        voice: 'alloy',
-        speak_command: 'afplay',
-        speech_model: 'tts-1'
-      ),
-      registry: OpenStruct.new(
-        refresh: 7,
-        last_refresh: nil
-      ),
-      rules: OpenStruct.new(
-        dir: nil,
-        enabled: false
-      )
-    ))
+                                 prompt_id: 'test_prompt',
+                                 context_files: [],
+                                 stdin_content: nil,
+                                 pipeline: ['test_prompt'],
+                                 mcp_servers: [],
+                                 tool_names: '',
+                                 prompts: OpenStruct.new(
+                                   dir: '/tmp/test_prompts',
+                                   extname: '.md',
+                                   roles_prefix: 'roles',
+                                   roles_dir: '/tmp/test_prompts/roles',
+                                   role: nil,
+                                   system_prompt: 'You are a helpful assistant'
+                                 ),
+                                 output: OpenStruct.new(
+                                   file: nil,
+                                   append: false,
+                                   markdown: true,
+                                   history_file: nil
+                                 ),
+                                 flags: OpenStruct.new(
+                                   chat: false,
+                                   fuzzy: false,
+                                   debug: false,
+                                   verbose: false,
+                                   speak: false,
+                                   tokens: false
+                                 ),
+                                 llm: OpenStruct.new(
+                                   temperature: 0.7,
+                                   max_tokens: 2048,
+                                   top_p: 1.0,
+                                   frequency_penalty: 0.0,
+                                   presence_penalty: 0.0
+                                 ),
+                                 models: [OpenStruct.new(name: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini')],
+                                 tools: OpenStruct.new(
+                                   paths: [],
+                                   allowed: nil,
+                                   rejected: nil
+                                 ),
+                                 audio: OpenStruct.new(
+                                   voice: 'alloy',
+                                   speak_command: 'afplay',
+                                   speech_model: 'tts-1'
+                                 ),
+                                 registry: OpenStruct.new(
+                                   refresh: 7,
+                                   last_refresh: nil
+                                 ),
+                                 rules: OpenStruct.new(
+                                   dir: nil,
+                                   enabled: false
+                                 )
+                               ))
 
     @prompt_handler = mock('prompt_handler')
 
     @session = AIA::Session.new(@prompt_handler)
-  end
-
-  def teardown
-    super
   end
 
   def build_pipeline_orchestrator
@@ -228,7 +224,7 @@ class SessionTest < Minitest::Test
 
     # Intercept Kernel-level at_exit calls for the duration of the test
     original_at_exit = Kernel.instance_method(:at_exit)
-    Kernel.define_method(:at_exit) { |&blk| at_exit_call_count += 1 }
+    Kernel.define_method(:at_exit) { at_exit_call_count += 1 }
 
     begin
       mock_robot = mock('robot')
@@ -261,18 +257,13 @@ class SessionTest < Minitest::Test
     end
 
     assert_equal 0, at_exit_call_count,
-      "Session#start must not register at_exit; expected 0 calls but got #{at_exit_call_count}"
+                 "Session#start must not register at_exit; expected 0 calls but got #{at_exit_call_count}"
   end
 end
-
 
 class InputCollectorTest < Minitest::Test
   def setup
     @collector = AIA::InputCollector.new
-  end
-
-  def teardown
-    super
   end
 
   def test_collect_returns_empty_for_nil_params
@@ -303,7 +294,6 @@ class InputCollectorTest < Minitest::Test
   end
 end
 
-
 class ChatLoopTest < Minitest::Test
   def setup
     @robot = mock('robot')
@@ -311,10 +301,6 @@ class ChatLoopTest < Minitest::Test
     @directive_processor = mock('directive_processor')
 
     @chat_loop = AIA::ChatLoop.new(@robot, @ui_presenter, @directive_processor)
-  end
-
-  def teardown
-    super
   end
 
   def test_process_directive_returns_formatted_string
@@ -360,9 +346,9 @@ class ChatLoopTest < Minitest::Test
 
   def test_process_initial_context_skips_when_flag_set
     AIA.stubs(:config).returns(OpenStruct.new(
-      context_files: ['some_file.txt'],
-      output: OpenStruct.new(file: nil)
-    ))
+                                 context_files: ['some_file.txt'],
+                                 output: OpenStruct.new(file: nil)
+                               ))
 
     # Should not call streaming_runner at all
     @chat_loop.send(:process_initial_context, true)
@@ -370,18 +356,18 @@ class ChatLoopTest < Minitest::Test
 
   def test_process_initial_context_skips_when_no_context_files
     AIA.stubs(:config).returns(OpenStruct.new(
-      context_files: [],
-      output: OpenStruct.new(file: nil)
-    ))
+                                 context_files: [],
+                                 output: OpenStruct.new(file: nil)
+                               ))
 
     @chat_loop.send(:process_initial_context, false)
   end
 
   def test_process_initial_context_skips_when_context_files_nil
     AIA.stubs(:config).returns(OpenStruct.new(
-      context_files: nil,
-      output: OpenStruct.new(file: nil)
-    ))
+                                 context_files: nil,
+                                 output: OpenStruct.new(file: nil)
+                               ))
 
     @chat_loop.send(:process_initial_context, false)
   end

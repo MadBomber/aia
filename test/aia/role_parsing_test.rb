@@ -5,7 +5,6 @@ require 'ostruct'
 require 'fileutils'
 require 'tmpdir'
 require 'tempfile'
-require 'pathname'
 require_relative '../../lib/aia/config/cli_parser'
 
 class RoleParsingTest < Minitest::Test
@@ -209,8 +208,7 @@ class RoleParsingTest < Minitest::Test
   # Test complex real-world scenario
   def test_complex_real_world_scenario
     result = AIA::CLIParser.send(:parse_models_with_roles,
-      'gpt-4o=architect,gpt-4o=security,claude=performance,gemini'
-    )
+                                 'gpt-4o=architect,gpt-4o=security,claude=performance,gemini')
 
     assert_equal 4, result.length
 

@@ -106,7 +106,7 @@ module AIA
       grouper = MCPGrouper.new
       groups  = grouper.group(relevant_servers)
 
-      threshold = concurrency&.respond_to?(:threshold) ? (concurrency.threshold || 2) : 2
+      threshold = concurrency.respond_to?(:threshold) ? (concurrency.threshold || 2) : 2
       return nil if groups.size < threshold
 
       RobotFactory.build_concurrent_mcp_network(config, groups)

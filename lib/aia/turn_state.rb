@@ -41,12 +41,13 @@ module AIA
       clear_exclusive_flags!
 
       case mode
-      when :verify         then @force_verify         = true
-      when :decompose      then @force_decompose       = true
+      when :verify         then @force_verify = true
+      when :decompose      then @force_decompose = true
       when :concurrent_mcp then @force_concurrent_mcp = true
       when :debate         then @force_debate          = true
       when :delegate       then @force_delegate        = true
-      when :spawn          then @force_spawn = true; @spawn_type = type
+      when :spawn          then @force_spawn = true
+                                @spawn_type = type
       when :orchestrate    then @force_orchestrate     = true
       end
     end

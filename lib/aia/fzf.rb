@@ -11,19 +11,18 @@ class AIA::Fzf
     --prompt='Search term: '
     --delimiter :
     --preview-window=down:50%:wrap
-  ]
+  ].freeze
 
   attr_reader :list, :directory, :query, :subject, :prompt, :extension, :command
 
   def initialize(
-      list:,          # Array of Strings (basenames of files w/o extension)
-      directory:,     # Parent directory of the list items
-      query:      '', # String, the thing be searched for
-      subject:    'Prompt IDs', # or 'Role Names'
-      prompt:     'Select one:',
-      extension:  '.md'
-    )
-
+    list:,          # Array of Strings (basenames of files w/o extension)
+    directory:,     # Parent directory of the list items
+    query:      '', # String, the thing be searched for
+    subject:    'Prompt IDs', # or 'Role Names'
+    prompt:     'Select one:',
+    extension:  '.md'
+  )
     @list       = list
     @directory  = directory
     @query      = query
@@ -33,7 +32,6 @@ class AIA::Fzf
 
     build_command
   end
-
 
   def build_command
     fzf_options = DEFAULT_PARAMETERS.dup
@@ -46,13 +44,11 @@ class AIA::Fzf
     @fzf_args = fzf_options
   end
 
-
   def run
     input = list.join("\n")
     selected, _status = Open3.capture2('fzf', *@fzf_args, stdin_data: input)
     selected.strip.empty? ? nil : selected.strip
   end
-
 end
 
 

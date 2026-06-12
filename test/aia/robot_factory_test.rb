@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/robot_factory_test.rb
 
 require_relative '../test_helper'
@@ -8,10 +9,6 @@ class RobotFactoryTest < Minitest::Test
   def setup
     @config = create_test_config
     AIA.stubs(:config).returns(@config)
-  end
-
-  def teardown
-    super
   end
 
   def test_mcp_server_configs_returns_empty_when_no_mcp

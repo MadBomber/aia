@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/trakflow_bridge_test.rb
 
 require_relative '../test_helper'
@@ -47,7 +48,7 @@ class TrakFlowBridgeTest < Minitest::Test
     TrakFlow.stubs(:initialized?).returns(false)
     bridge = AIA::TrakFlowBridge.new
 
-    assert_nil bridge.create_plan_from_pipeline(['a', 'b'])
+    assert_nil bridge.create_plan_from_pipeline(%w[a b])
   end
 
   def test_check_ready_tasks_returns_nil_when_unavailable
@@ -214,7 +215,7 @@ class TrakFlowBridgeTest < Minitest::Test
     @mock_db.expects(:create_child_task).with(mock_plan.id, has_entry(:title, "Step 2: prompt_b")).returns(step2)
     @mock_db.expects(:add_dependency).with { |d| d.source_id == step1.id && d.target_id == step2.id }
 
-    result = bridge.create_plan_from_pipeline(['prompt_a', 'prompt_b'])
+    result = bridge.create_plan_from_pipeline(%w[prompt_a prompt_b])
 
     assert_includes result, "Pipeline"
     assert_includes result, "2 steps"

@@ -70,7 +70,7 @@ module AIA
     # ==========================================================================
 
     # Convert array of hashes to array of ModelSpec objects
-    TO_MODEL_SPECS = ->(v) {
+    TO_MODEL_SPECS = lambda { |v|
       return [] if v.nil?
       return v if v.is_a?(Array) && v.first.is_a?(ModelSpec)
 
@@ -158,60 +158,60 @@ module AIA
     # Mapping of flat CLI keys to their nested config locations
     CLI_TO_NESTED_MAP = {
       # flags section
-      chat: [:flags, :chat],
-      cost: [:flags, :cost],
-      fuzzy: [:flags, :fuzzy],
-      tokens: [:flags, :tokens],
-      no_mcp: [:flags, :no_mcp],
-      debug: [:flags, :debug],
-      verbose: [:flags, :verbose],
-      consensus: [:flags, :consensus],
-      track_pipeline: [:flags, :track_pipeline],
-      expert_routing: [:flags, :expert_routing],
-      auto_tool_filter: [:flags, :auto_tool_filter],
-      tool_filter_load: [:flags, :tool_filter_load],
-      tool_filter_save: [:flags, :tool_filter_save],
-      allow_ruby_eval: [:flags, :allow_ruby_eval],
-      tool_filter_timeout_s: [:tool_filter, :timeout_s],
-      concurrent_auto: [:concurrency, :auto],
+      chat: %i[flags chat],
+      cost: %i[flags cost],
+      fuzzy: %i[flags fuzzy],
+      tokens: %i[flags tokens],
+      no_mcp: %i[flags no_mcp],
+      debug: %i[flags debug],
+      verbose: %i[flags verbose],
+      consensus: %i[flags consensus],
+      track_pipeline: %i[flags track_pipeline],
+      expert_routing: %i[flags expert_routing],
+      auto_tool_filter: %i[flags auto_tool_filter],
+      tool_filter_load: %i[flags tool_filter_load],
+      tool_filter_save: %i[flags tool_filter_save],
+      allow_ruby_eval: %i[flags allow_ruby_eval],
+      tool_filter_timeout_s: %i[tool_filter timeout_s],
+      concurrent_auto: %i[concurrency auto],
       # llm section
-      temperature: [:llm, :temperature],
-      max_tokens: [:llm, :max_tokens],
-      top_p: [:llm, :top_p],
-      frequency_penalty: [:llm, :frequency_penalty],
-      presence_penalty: [:llm, :presence_penalty],
+      temperature: %i[llm temperature],
+      max_tokens: %i[llm max_tokens],
+      top_p: %i[llm top_p],
+      frequency_penalty: %i[llm frequency_penalty],
+      presence_penalty: %i[llm presence_penalty],
       # prompts section
-      prompts_dir: [:prompts, :dir],
-      roles_prefix: [:prompts, :roles_prefix],
-      role: [:prompts, :role],
-      skills_dir: [:skills, :dir],
-      skills_prefix: [:prompts, :skills_prefix],
-      skills: [:prompts, :skills],
-      tools_prefix: [:prompts, :tools_prefix],
-      tool: [:prompts, :tool],
-      system_prompt: [:prompts, :system_prompt],
+      prompts_dir: %i[prompts dir],
+      roles_prefix: %i[prompts roles_prefix],
+      role: %i[prompts role],
+      skills_dir: %i[skills dir],
+      skills_prefix: %i[prompts skills_prefix],
+      skills: %i[prompts skills],
+      tools_prefix: %i[prompts tools_prefix],
+      tool: %i[prompts tool],
+      system_prompt: %i[prompts system_prompt],
       # output section
-      output: [:output, :file],
-      history_file: [:output, :history_file],
-      append: [:output, :append],
-      markdown: [:output, :markdown],
+      output: %i[output file],
+      history_file: %i[output history_file],
+      append: %i[output append],
+      markdown: %i[output markdown],
       # audio section (speak is a flag, not audio config)
-      speak: [:flags, :speak],
-      voice: [:audio, :voice],
-      speech_model: [:audio, :speech_model],
-      transcription_model: [:audio, :transcription_model],
+      speak: %i[flags speak],
+      voice: %i[audio voice],
+      speech_model: %i[audio speech_model],
+      transcription_model: %i[audio transcription_model],
       # image section
-      image_size: [:image, :size],
-      image_quality: [:image, :quality],
-      image_style: [:image, :style],
+      image_size: %i[image size],
+      image_quality: %i[image quality],
+      image_style: %i[image style],
       # tools section
-      tool_paths: [:tools, :paths],
-      allowed_tools: [:tools, :allowed],
-      rejected_tools: [:tools, :rejected],
+      tool_paths: %i[tools paths],
+      allowed_tools: %i[tools allowed],
+      rejected_tools: %i[tools rejected],
       # registry section
-      refresh: [:registry, :refresh],
+      refresh: %i[registry refresh],
       # rules section
-      rules_enabled: [:rules, :enabled],
+      rules_enabled: %i[rules enabled]
     }.freeze
 
     def initialize(overrides: {})
@@ -252,6 +252,7 @@ module AIA
     end
 
     # Convert config to hash (for dump, etc.)
+    # rubocop:disable Metrics/AbcSize
     def to_h
       {
         service: service.to_h,
@@ -279,6 +280,7 @@ module AIA
         context_files: context_files
       }
     end
+    # rubocop:enable Metrics/AbcSize
 
     private
 
@@ -289,17 +291,14 @@ module AIA
       unless File.exist?(path)
         warn "ERROR: Config file not found: #{path}"
         exit 1
-        return
+        return # rubocop:disable Lint/UnreachableCode -- exit is mocked in tests
       end
 
       reset_to_defaults
 
-      raw = YAML.safe_load(
-        File.read(path),
-        permitted_classes: [Symbol],
+      raw = YAML.safe_load_file(path, permitted_classes: [Symbol],
         symbolize_names: true,
-        aliases: true
-      ) || {}
+        aliases: true) || {}
 
       config_hash = raw.key?(:defaults) ? (raw[:defaults] || {}) : raw
 
@@ -364,12 +363,13 @@ module AIA
     end
 
     def apply_models_env_var
-      models_env = ENV['AIA_MODEL']
+      models_env = ENV.fetch('AIA_MODEL', nil)
       return if models_env.nil? || models_env.empty?
 
       self.models = TO_MODEL_SPECS.call(models_env.split(',').map(&:strip))
     end
 
+    # rubocop:disable Metrics/AbcSize
     def expand_paths
       paths.aia_dir = File.expand_path(paths.aia_dir) if paths.aia_dir
       paths.config_file = File.expand_path(paths.config_file) if paths.config_file
@@ -381,6 +381,7 @@ module AIA
       output.history_file = File.expand_path(output.history_file) if output.history_file
       rules.dir = File.expand_path(rules.dir) if rules.respond_to?(:dir) && rules.dir
     end
+    # rubocop:enable Metrics/AbcSize
 
     def ensure_arrays
       self.pipeline = [] if pipeline.nil?

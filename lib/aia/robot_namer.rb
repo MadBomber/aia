@@ -62,17 +62,17 @@ module AIA
       [/dolphin/i,              'Reef'],
       [/nous/i,                 'Oracle'],
       [/stable/i,               'Anchor'],
-      [/gemma/i,                'Jewel'],
+      [/gemma/i,                'Jewel']
     ].freeze
 
     # Fallback pool for unrecognized models — deterministically
     # selected by hashing the model name
     FALLBACK_NAMES = %w[
-      Beacon  Drift   Echo    Fable   Glimmer Halo    Iris
-      Kindle  Lumen   Mirth   Nexus   Orbit   Pixel   Quill
-      Ripple  Sentry  Trace   Unity   Vault   Wisp    Zephyr
-      Ember   Frost   Crest   Flint   Haze    Slate   Plume
-      Comet   Aura    Blaze   Dusk    Flux    Helix   Onyx
+      Beacon Drift Echo Fable Glimmer Halo Iris
+      Kindle Lumen Mirth Nexus Orbit Pixel Quill
+      Ripple Sentry Trace Unity Vault Wisp Zephyr
+      Ember Frost Crest Flint Haze Slate Plume
+      Comet Aura Blaze Dusk Flux Helix Onyx
     ].freeze
 
     def initialize(first_name: nil)

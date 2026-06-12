@@ -6,6 +6,8 @@ require_relative '../../lib/aia'
 class OpenAIParameterNormalizerTest < Minitest::Test
   NormalizingProvider = Class.new(RubyLLM::Provider) do
     def initialize
+      @config = OpenStruct.new
+      @connection = nil
     end
 
     def slug
@@ -67,11 +69,12 @@ class OpenAIParameterNormalizerTest < Minitest::Test
   end
 
   private
-    def openai_provider
-      provider('openai')
-    end
 
-    def provider(slug)
-      OpenStruct.new(slug: slug)
-    end
+  def openai_provider
+    provider('openai')
+  end
+
+  def provider(slug)
+    OpenStruct.new(slug: slug)
+  end
 end

@@ -23,7 +23,10 @@ class SkillDirectiveTest < Minitest::Test
     $stdout = @captured_stdout
 
     @stderr_messages = []
-    @instance.stubs(:warn).with { |msg| @stderr_messages << msg; true }
+    @instance.stubs(:warn).with do |msg|
+      @stderr_messages << msg
+      true
+    end
 
     mock_logger = stub('logger', error: nil, warn: nil, info: nil, debug: nil)
     AIA::LoggerManager.stubs(:aia_logger).returns(mock_logger)
@@ -63,13 +66,13 @@ class SkillDirectiveTest < Minitest::Test
   def test_skill_no_argument_returns_nil
     result = @instance.skill([])
     assert_nil result
-    assert_match(/Error: \/skill requires a skill name/, @captured_stdout.string)
+    assert_match(%r{Error: /skill requires a skill name}, @captured_stdout.string)
   end
 
   def test_skill_empty_argument_returns_nil
     result = @instance.skill(['  '])
     assert_nil result
-    assert_match(/Error: \/skill requires a skill name/, @captured_stdout.string)
+    assert_match(%r{Error: /skill requires a skill name}, @captured_stdout.string)
   end
 
   def test_skill_no_matching_directory_returns_nil
@@ -119,8 +122,10 @@ class SkillDirectiveTest < Minitest::Test
 
     lines = output.lines.select { |l| l.start_with?('  ') }.map(&:chomp)
     assert lines.size > 1, "Expected description to wrap onto multiple lines"
-    lines.each { |l| assert l.start_with?('  '), "Each wrapped line must be indented" }
-    lines.each { |l| assert l.length <= 32, "No line should exceed width+indent (#{l.inspect})" }
+    lines.each do |l|
+      assert l.start_with?('  '), "Each wrapped line must be indented"
+      assert l.length <= 32, "No line should exceed width+indent (#{l.inspect})"
+    end
   end
 
   def test_skills_returns_nil
@@ -131,7 +136,7 @@ class SkillDirectiveTest < Minitest::Test
   def test_skills_sorted_alphabetically
     @instance.skills
     output = @captured_stdout.string
-    id_lines = output.lines.select { |l| l =~ /^\w/ }.map(&:chomp)
+    id_lines = output.lines.grep(/^\w/).map(&:chomp)
 
     assert_equal ['code-assist: Code Assist',
                   'code-quality: Code Quality',
@@ -184,9 +189,9 @@ class SkillDirectiveTest < Minitest::Test
   def test_skills_with_multiple_terms_requires_all
     create_skill('ruby-testing',  'Ruby Testing',  'Write Ruby tests with minitest.')
     create_skill('ruby-style',    'Ruby Style',    'Enforce Ruby coding style.')
-    create_skill('python-testing','Python Testing','Write Python tests with pytest.')
+    create_skill('python-testing', 'Python Testing', 'Write Python tests with pytest.')
 
-    @instance.skills(['ruby', 'test'])
+    @instance.skills(%w[ruby test])
     output = @captured_stdout.string
 
     assert_match(/^ruby-testing:/, output)
@@ -197,7 +202,7 @@ class SkillDirectiveTest < Minitest::Test
   def test_skills_search_is_case_insensitive
     create_skill('arch-skill', 'Architecture', 'Ruby architecture patterns.')
 
-    @instance.skills(['RUBY', 'ARCH'])
+    @instance.skills(%w[RUBY ARCH])
     output = @captured_stdout.string
 
     assert_match(/^arch-skill:/, output)
@@ -361,11 +366,11 @@ class SkillDirectiveTest < Minitest::Test
   def test_skill_nil_argument_returns_nil
     result = @instance.skill(nil)
     assert_nil result
-    assert_match(/Error: \/skill requires a skill name/, @captured_stdout.string)
+    assert_match(%r{Error: /skill requires a skill name}, @captured_stdout.string)
   end
 
   def test_skill_multiple_arguments_uses_first
-    result = @instance.skill(['code-quality', 'extra-arg'])
+    result = @instance.skill(%w[code-quality extra-arg])
     assert_includes result, 'name: Code Quality'
   end
 

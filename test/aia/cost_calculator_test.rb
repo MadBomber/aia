@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/cost_calculator_test.rb
 
 require_relative '../test_helper'

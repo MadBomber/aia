@@ -9,6 +9,7 @@ require_relative '../skill_utils'
 # Handles prompt ID extraction, context file validation, role processing, etc.
 
 module AIA
+  # rubocop:disable Metrics/ModuleLength
   module ConfigValidator
     class << self
       # Tailor and validate the configuration
@@ -50,10 +51,10 @@ module AIA
       def process_stdin_content
         stdin_content = String.new
 
-        if !STDIN.tty? && !STDIN.closed?
+        if !$stdin.tty? && !$stdin.closed?
           begin
-            stdin_content << "\n" + STDIN.read
-            STDIN.reopen('/dev/tty')
+            stdin_content << ("\n" + $stdin.read)
+            $stdin.reopen('/dev/tty')
           rescue => _
             # If we can't reopen, continue without error
           end
@@ -68,9 +69,8 @@ module AIA
         maybe_id = remaining_args.first
         maybe_id_plus = File.join(config.prompts.dir, maybe_id + config.prompts.extname)
 
-        if AIA.bad_file?(maybe_id) && AIA.good_file?(maybe_id_plus)
-          config.prompt_id = remaining_args.shift
-        end
+        return unless AIA.bad_file?(maybe_id) && AIA.good_file?(maybe_id_plus)
+        config.prompt_id = remaining_args.shift
       end
 
       def validate_and_set_context_files(config, remaining_args)
@@ -79,7 +79,7 @@ module AIA
         bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
         if bad_files.any?
           # Detect likely flag typos: "_B" instead of "-B", "_CD" instead of "-CD", etc.
-          flag_typos = bad_files.select { |f| f.match?(/\A_[A-Za-z]/) }
+          flag_typos = bad_files.grep(/\A_[A-Za-z]/)
           if flag_typos.any?
             suggestions = flag_typos.map { |f| "-#{f[1..]}" }.join(', ')
             raise AIA::ConfigurationError,
@@ -125,7 +125,7 @@ module AIA
       end
 
       def validate_required_prompt_id(config)
-        return unless config.prompt_id.nil? && !(config.flags.chat == true) && !(config.flags.fuzzy == true)
+        return unless config.prompt_id.nil? && config.flags.chat != true && config.flags.fuzzy != true
 
         raise AIA::ConfigurationError,
               "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
@@ -145,13 +145,11 @@ module AIA
 
         return if config.flags&.chat == true
 
-        if config.prompt_id.nil? || config.prompt_id.empty?
-          unless role.nil? || role.empty?
-            config.prompt_id = role
-            config.pipeline.prepend(config.prompt_id)
-            config.prompts.role = ''
-          end
-        end
+        return unless config.prompt_id.nil? || config.prompt_id.empty?
+        return if role.nil? || role.empty?
+        config.prompt_id = role
+        config.pipeline.prepend(config.prompt_id)
+        config.prompts.role = ''
       end
 
       def handle_fuzzy_search_prompt_id(config)
@@ -186,7 +184,7 @@ module AIA
         return unless config.dump_file
 
         dump_config(config, config.dump_file)
-        return :early_exit
+        :early_exit
       end
 
       def handle_mcp_list(config)
@@ -212,7 +210,7 @@ module AIA
           end
         end
 
-        return :early_exit
+        :early_exit
       end
 
       def handle_list_tools(config)
@@ -226,7 +224,7 @@ module AIA
         end
 
         if local_tools.empty? && mcp_tool_groups.empty?
-          $stderr.puts "No tools available."
+          $stderr.puts "No tools available." # rubocop:disable Style/StderrPuts
           return :early_exit
         end
 
@@ -236,7 +234,7 @@ module AIA
           list_tools_markdown(local_tools, mcp_tool_groups)
         end
 
-        return :early_exit
+        :early_exit
       end
 
       def list_tools_terminal(local_tools, mcp_tool_groups)
@@ -295,21 +293,20 @@ module AIA
 
         puts "### `#{name}`"
         puts
-        unless desc.empty?
-          puts nest_markdown_headings(desc, 3)
-          puts
-        end
+        return if desc.empty?
+        puts nest_markdown_headings(desc, 3)
+        puts
       end
 
       def nest_markdown_headings(text, parent_level)
-        text.gsub(/^[ \t]*(\#{1,6})\s/) do |match|
-          existing = $1
-          "#" * (existing.length + parent_level) + " "
+        text.gsub(/^[ \t]*(\#{1,6})\s/) do |_match|
+          existing = ::Regexp.last_match(1)
+          ("#" * (existing.length + parent_level)) + " "
         end
       end
 
       def filter_mcp_servers(config)
-        servers  = config.mcp_servers || []
+        servers = config.mcp_servers || []
         use_list  = Array(config.mcp_use)
         skip_list = Array(config.mcp_skip)
 
@@ -374,14 +371,12 @@ module AIA
       def load_local_tools(config)
         # Load required libraries
         Array(config.require_libs).each do |lib|
-          begin
-            require lib
-          rescue LoadError => e
-            warn "Warning: Failed to require '#{lib}': #{e.message}"
-            warn "Hint: Make sure the gem is installed: gem install #{lib}"
-          rescue StandardError => e
-            warn "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
-          end
+          require lib
+        rescue LoadError => e
+          warn "Warning: Failed to require '#{lib}': #{e.message}"
+          warn "Hint: Make sure the gem is installed: gem install #{lib}"
+        rescue StandardError => e
+          warn "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
         end
 
         # Load tool files
@@ -403,7 +398,7 @@ module AIA
           begin
             klass.new
             true
-          rescue ArgumentError, LoadError, StandardError
+          rescue StandardError
             false
           end
         end
@@ -416,6 +411,7 @@ module AIA
         result.empty? ? normalized : result
       end
 
+      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
       def load_mcp_tools_grouped(config)
         servers = filter_mcp_servers(config)
         return {} if servers.empty?
@@ -425,6 +421,7 @@ module AIA
         groups = {}
         default_timeout = 8_000
 
+        # rubocop:disable Metrics/BlockLength
         servers.each do |server|
           name      = AIA::Utility.server_name(server)
           transport = server[:transport] || server['transport'] || {}
@@ -461,33 +458,34 @@ module AIA
             if client.alive?
               server_tools = client.tools rescue []
               groups[name] = server_tools
-              $stderr.puts " #{server_tools.size} tools"
+              warn " #{server_tools.size} tools"
             else
-              $stderr.puts " failed"
+              warn " failed"
             end
           rescue StandardError => e
-            $stderr.puts " error: #{e.message}"
+            warn " error: #{e.message}"
           end
+          # rubocop:enable Metrics/BlockLength
         end
+        # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
         groups
       end
+      # rubocop:enable Metrics/ModuleLength
 
       def quiet_mcp_logger
-        if defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:config)
-          mcp_config = RubyLLM::MCP.config
-          if mcp_config.respond_to?(:logger=)
-            quiet = Logger.new(File::NULL)
-            mcp_config.logger = quiet
-          end
-        end
+        return unless defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:config)
+        mcp_config = RubyLLM::MCP.config
+        return unless mcp_config.respond_to?(:logger=)
+        quiet = Logger.new(File::NULL)
+        mcp_config.logger = quiet
       end
 
       def handle_completion_script(config)
         return unless config.completion
 
         generate_completion_script(config.completion)
-        return :early_exit
+        :early_exit
       end
 
       def generate_completion_script(shell)
@@ -503,10 +501,11 @@ module AIA
       def validate_final_prompt_requirements(config)
         chat_mode = config.flags.chat == true
         fuzzy_mode = config.flags.fuzzy == true
-        if !chat_mode && !fuzzy_mode && (config.prompt_id.nil? || config.prompt_id.empty?) && (config.context_files.nil? || config.context_files.empty?)
-          raise AIA::ConfigurationError,
-                "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
-        end
+        no_prompt = config.prompt_id.nil? || config.prompt_id.empty?
+        no_context = config.context_files.nil? || config.context_files.empty?
+        return unless !chat_mode && !fuzzy_mode && no_prompt && no_context
+        raise AIA::ConfigurationError,
+              "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
       end
 
       def prepare_pipeline(config)

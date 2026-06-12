@@ -51,16 +51,16 @@ class ModelDirectivesTest < Minitest::Test
   end
 
   def test_format_bytes_gigabytes
-    assert_equal '1.0 GB', @instance.format_bytes(1024 ** 3)
-    assert_equal '3.5 GB', @instance.format_bytes((3.5 * 1024 ** 3).to_i)
+    assert_equal '1.0 GB', @instance.format_bytes(1024**3)
+    assert_equal '3.5 GB', @instance.format_bytes((3.5 * (1024**3)).to_i)
   end
 
   def test_format_bytes_terabytes
-    assert_equal '1.0 TB', @instance.format_bytes(1024 ** 4)
+    assert_equal '1.0 TB', @instance.format_bytes(1024**4)
   end
 
   def test_format_bytes_caps_at_terabytes_for_huge_values
-    huge = 5 * 1024 ** 5
+    huge = 5 * (1024**5)
     result = @instance.format_bytes(huge)
     assert_match(/\d+\.\d+ TB/, result)
   end

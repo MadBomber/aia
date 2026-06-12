@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/handler_protocol_test.rb
 
 require_relative '../test_helper'
@@ -23,7 +24,7 @@ class HandlerProtocolTest < Minitest::Test
   end
 
   def test_handler_context_accepts_keyword_args
-    robot  = Object.new
+    robot = Object.new
     ctx = AIA::HandlerContext.new(robot: robot, prompt: "hello", specialist_type: "coder")
     assert_equal robot,   ctx.robot
     assert_equal "hello", ctx.prompt
@@ -76,11 +77,10 @@ class HandlerProtocolTest < Minitest::Test
       AIA::DebateHandler,
       AIA::DelegateHandler,
       AIA::MentionRouter,
-      AIA::ModelSwitchHandler,
+      AIA::ModelSwitchHandler
     ]
     handlers.each do |klass|
       assert klass.method_defined?(:handle), "#{klass} should define #handle"
     end
   end
-
 end

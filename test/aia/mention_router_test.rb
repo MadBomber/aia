@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/mention_router_test.rb
 
 require_relative '../test_helper'
@@ -79,13 +80,16 @@ class MentionRouterTest < Minitest::Test
 
     captured_prompt = nil
     @streaming_runner.stubs(:run)
-      .with { |*args| captured_prompt = args[1]; true }
+                     .with do |*args|
+      captured_prompt = args[1]
+      true
+    end
       .returns([OpenStruct.new(reply: "hi"), nil, 0.05])
 
     @handler.handle(AIA::HandlerContext.new(robot: network, prompt: "@Alice please help me"))
 
     refute_includes captured_prompt, "@Alice",
-      "The @mention should be stripped before sending to the robot"
+                    "The @mention should be stripped before sending to the robot"
     assert_includes captured_prompt, "please help me"
   end
 
@@ -96,7 +100,10 @@ class MentionRouterTest < Minitest::Test
 
     prompts_captured = []
     @streaming_runner.stubs(:run)
-      .with { |*args| prompts_captured << args[1]; true }
+                     .with do |*args|
+      prompts_captured << args[1]
+      true
+    end
       .returns([OpenStruct.new(reply: "ok"), nil, 0.05])
 
     @handler.handle(AIA::HandlerContext.new(robot: network, prompt: "@Alice @Bob what is 2+2?"))
@@ -114,7 +121,10 @@ class MentionRouterTest < Minitest::Test
 
     captured = nil
     @streaming_runner.stubs(:run)
-      .with { |*args| captured = args[1]; true }
+                     .with do |*args|
+      captured = args[1]
+      true
+    end
       .returns([OpenStruct.new(reply: "response"), nil, 0.0])
 
     @handler.handle(AIA::HandlerContext.new(robot: network, prompt: "@alice summarize this"))
@@ -140,7 +150,7 @@ class MentionRouterTest < Minitest::Test
   def mock_network(robot_list)
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
-    robot_hash = robot_list.each_with_object({}) { |r, h| h[r.name.downcase.to_sym] = r }
+    robot_hash = robot_list.to_h { |r| [r.name.downcase.to_sym, r] }
     network.stubs(:robots).returns(robot_hash)
     network.robots.stubs(:values).returns(robot_list)
     network

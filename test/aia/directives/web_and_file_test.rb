@@ -7,11 +7,10 @@ class DirectivesWebAndFileTest < Minitest::Test
   end
 
   def test_webpage_returns_error_without_api_key
-    if AIA::WebAndFileDirectives::PUREMD_API_KEY.nil?
-      result = @instance.webpage(['http://example.com'])
-      assert_includes result, 'ERROR'
-      assert_includes result, 'PUREMD_API_KEY'
-    end
+    return unless AIA::WebAndFileDirectives::PUREMD_API_KEY.nil?
+    result = @instance.webpage(['http://example.com'])
+    assert_includes result, 'ERROR'
+    assert_includes result, 'PUREMD_API_KEY'
   end
 
   def test_aliases_exist

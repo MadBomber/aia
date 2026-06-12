@@ -20,7 +20,7 @@ module AIA
     # with a custom API base so it doesn't conflict with real OpenAI models.
     PROVIDER_ALIASES = {
       'ollama' => 'ollama',
-      'lms'    => 'lms',
+      'lms'    => 'lms'
     }.freeze
 
     def initialize(hash = {})
@@ -91,10 +91,9 @@ module AIA
       return unless @name&.include?('/')
 
       prefix, rest = @name.split('/', 2)
-      if PROVIDER_ALIASES.key?(prefix)
-        @provider = PROVIDER_ALIASES[prefix]
-        @name = rest
-      end
+      return unless PROVIDER_ALIASES.key?(prefix)
+      @provider = PROVIDER_ALIASES[prefix]
+      @name = rest
     end
   end
 end

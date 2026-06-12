@@ -9,9 +9,9 @@ require 'json'
 require 'ostruct'
 
 module OllamaTestHelper
-  OLLAMA_BASE    = 'http://localhost:11434'
-  OLLAMA_API_BASE = "#{OLLAMA_BASE}/v1"
-  OLLAMA_MODEL   = 'ollama/gpt-oss:latest'
+  OLLAMA_BASE = 'http://localhost:11434'.freeze
+  OLLAMA_API_BASE = "#{OLLAMA_BASE}/v1".freeze
+  OLLAMA_MODEL   = 'ollama/gpt-oss:latest'.freeze
 
   def self.ollama_available?
     response = Net::HTTP.get_response(URI("#{OLLAMA_BASE}/api/tags"))
@@ -50,9 +50,9 @@ module OllamaTestHelper
 
     AIA.config = AIA::Config.setup(no_mcp: true)
     AIA.config.models = AIA::Config::TO_MODEL_SPECS.call([
-      { name: OLLAMA_MODEL },
-      { name: OLLAMA_MODEL }
-    ])
+                                                           { name: OLLAMA_MODEL },
+                                                           { name: OLLAMA_MODEL }
+                                                         ])
     AIA.config.context_files = []
     AIA.config.output.file = nil
     AIA.config.flags.verbose = false

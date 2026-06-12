@@ -20,10 +20,10 @@ class UIPresenterTest < Minitest::Test
 
     # Mock AIA.config with nested structure
     AIA.stubs(:config).returns(OpenStruct.new(
-      output: OpenStruct.new(file: nil),
-      flags: OpenStruct.new(verbose: false),
-      paths: OpenStruct.new(aia_dir: @test_aia_dir)
-    ))
+                                 output: OpenStruct.new(file: nil),
+                                 flags: OpenStruct.new(verbose: false),
+                                 paths: OpenStruct.new(aia_dir: @test_aia_dir)
+                               ))
 
     # Mock AIA.verbose? method
     AIA.stubs(:verbose?).returns(false)
@@ -50,7 +50,7 @@ class UIPresenterTest < Minitest::Test
 
   def test_display_chat_header
     @presenter.display_chat_header
-    
+
     output = @captured_output.string
     assert_includes output, '═' * 80
     assert_includes output, "\n"
@@ -58,14 +58,14 @@ class UIPresenterTest < Minitest::Test
 
   def test_display_separator
     @presenter.display_separator
-    
+
     output = @captured_output.string
     assert_includes output, '─' * 80
   end
 
   def test_display_chat_end
     @presenter.display_chat_end
-    
+
     output = @captured_output.string
     assert_includes output, "Chat session ended."
   end
@@ -79,7 +79,7 @@ class UIPresenterTest < Minitest::Test
 
   def test_display_ai_response_with_string
     @presenter.display_ai_response("Hello, world!")
-    
+
     output = @captured_output.string
     assert_includes output, "AI:"
     assert_includes output, "   Hello, world!"
@@ -90,9 +90,9 @@ class UIPresenterTest < Minitest::Test
     mock_message = mock('message')
     mock_message.stubs(:is_a?).with(RubyLLM::Message).returns(true)
     mock_message.stubs(:content).returns("Message content")
-    
+
     @presenter.display_ai_response(mock_message)
-    
+
     output = @captured_output.string
     assert_includes output, "AI:"
     assert_includes output, "   Message content"
@@ -120,7 +120,7 @@ class UIPresenterTest < Minitest::Test
   def test_format_chat_response_with_regular_text
     output_buffer = StringIO.new
     @presenter.format_chat_response("Simple text", output_buffer)
-    
+
     assert_equal "   Simple text\n", output_buffer.string
   end
 
@@ -128,7 +128,7 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     text = "Line 1\nLine 2\nLine 3"
     @presenter.format_chat_response(text, output_buffer)
-    
+
     expected = "   Line 1\n   Line 2\n   Line 3\n"
     assert_equal expected, output_buffer.string
   end
@@ -137,7 +137,7 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     text = "Here's some code:\n```ruby\ndef hello\n  puts 'world'\nend\n```\nThat's it!"
     @presenter.format_chat_response(text, output_buffer)
-    
+
     output = output_buffer.string
     assert_includes output, "   ```ruby"
     assert_includes output, "   def hello"
@@ -151,7 +151,7 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     text = "```\nsome code\n```"
     @presenter.format_chat_response(text, output_buffer)
-    
+
     output = output_buffer.string
     assert_includes output, "   ```"
     assert_includes output, "   some code"
@@ -162,9 +162,9 @@ class UIPresenterTest < Minitest::Test
     mock_message = mock('message')
     mock_message.stubs(:is_a?).with(RubyLLM::Message).returns(true)
     mock_message.stubs(:content).returns("Message content")
-    
+
     @presenter.format_chat_response(mock_message, output_buffer)
-    
+
     assert_equal "   Message content\n", output_buffer.string
   end
 
@@ -251,7 +251,7 @@ class UIPresenterTest < Minitest::Test
 
     assert_raises(StandardError) do
       @presenter.with_spinner("Testing") do
-        raise StandardError.new("Test error")
+        raise StandardError, "Test error"
       end
     end
   end
@@ -259,10 +259,10 @@ class UIPresenterTest < Minitest::Test
   def test_terminal_width_initialization
     # Mock TTY::Screen.width to return a specific value
     TTY::Screen.stubs(:width).returns(120)
-    
+
     presenter = AIA::UIPresenter.new
     presenter.display_chat_header
-    
+
     output = @captured_output.string
     assert_includes output, '═' * 120
   end

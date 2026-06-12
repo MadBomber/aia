@@ -11,6 +11,7 @@ require_relative 'model_spec'
 require_relative '../skill_utils'
 
 module AIA
+  # rubocop:disable Metrics/ModuleLength
   module CLIParser
     class << self
       # Parse CLI arguments and return a hash of overrides
@@ -56,8 +57,8 @@ module AIA
       end
 
       def setup_banner(opts)
-        opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n" +
-                      "       aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*"
+        opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n       " \
+                      "aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*"
       end
 
       def setup_mode_options(opts, options)
@@ -98,7 +99,6 @@ module AIA
         opts.on("--save", "Save tool filter databases to ~/.config/aia/") do
           options[:tool_filter_save] = true
         end
-
       end
 
       def setup_model_options(opts, options)
@@ -108,7 +108,9 @@ module AIA
           list_available_models(query)
         end
 
-        opts.on("-m MODEL", "--model MODEL", "Set LLM model(s). Format: MODEL[=ROLE][,MODEL[=ROLE]]... Multiple models run in parallel; use --consensus to synthesize results") do |model_string|
+        opts.on("-m MODEL", "--model MODEL",
+                "Set LLM model(s). Format: MODEL[=ROLE][,MODEL[=ROLE]]... " \
+                "Multiple models run in parallel; use --consensus to synthesize results") do |model_string|
           options[:models] = (options[:models] || []) + parse_models_with_roles(model_string)
         end
 
@@ -138,13 +140,13 @@ module AIA
         end
 
         opts.on("-o", "--[no-]output [FILE]", "Write response to FILE (default: temp.md; --no-output to disable)") do |file|
-          if file == false
-            options[:output] = nil
-          elsif file.nil?
-            options[:output] = 'temp.md'
-          else
-            options[:output] = File.expand_path(file, Dir.pwd)
-          end
+          options[:output] = if file == false
+                               nil
+                             elsif file.nil?
+                               'temp.md'
+                             else
+                               File.expand_path(file, Dir.pwd)
+                             end
         end
 
         opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|
@@ -202,11 +204,9 @@ module AIA
           options[:pipeline] += pipeline.split(',').map(&:strip)
         end
 
-
         opts.on("--system-prompt PROMPT_ID", "Set system prompt for chat sessions") do |prompt_id|
           options[:system_prompt] = prompt_id
         end
-
       end
 
       def setup_ai_parameters(opts, options)
@@ -288,6 +288,7 @@ module AIA
         end
       end
 
+      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def setup_utility_options(opts, options)
         opts.separator "\nUtility Options:"
 
@@ -372,6 +373,7 @@ module AIA
           exit
         end
 
+        # rubocop:disable Metrics/BlockLength
         opts.on("-h", "--help", "Show this help and exit") do
           puts <<~HELP
 
@@ -408,7 +410,9 @@ module AIA
 
           exit
         end
+        # rubocop:enable Metrics/BlockLength
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       # Parse model string into array of ModelSpec-compatible hashes
       #
@@ -418,6 +422,7 @@ module AIA
         models = []
         model_counts = Hash.new(0)
 
+        # rubocop:disable Metrics/BlockLength
         model_string.split(',').each do |spec|
           spec.strip!
 
@@ -453,6 +458,7 @@ module AIA
             }
           end
         end
+        # rubocop:enable Metrics/BlockLength
 
         models
       end
@@ -466,7 +472,7 @@ module AIA
           return
         end
 
-        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
+        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
 
         unless role_id.start_with?(roles_prefix)
@@ -475,26 +481,25 @@ module AIA
 
         role_file_path = File.join(prompts_dir, "#{role_id}.md")
 
-        unless File.exist?(role_file_path)
-          available_roles = list_available_role_names(prompts_dir, roles_prefix)
+        return if File.exist?(role_file_path)
+        available_roles = list_available_role_names(prompts_dir, roles_prefix)
 
-          error_msg = "Role file not found: #{role_file_path}\n\n"
+        error_msg = "Role file not found: #{role_file_path}\n\n"
 
-          if available_roles.empty?
-            error_msg += "No roles directory found at #{File.join(prompts_dir, roles_prefix)}\n"
-            error_msg += "Create the directory and add role files to use this feature."
-          else
-            error_msg += "Available roles:\n"
-            error_msg += available_roles.map { |r| "  - #{r}" }.join("\n")
-            error_msg += "\n\nCreate the role file or use an existing role."
-          end
-
-          raise ArgumentError, error_msg
+        if available_roles.empty?
+          error_msg += "No roles directory found at #{File.join(prompts_dir, roles_prefix)}\n"
+          error_msg += "Create the directory and add role files to use this feature."
+        else
+          error_msg += "Available roles:\n"
+          error_msg += available_roles.map { |r| "  - #{r}" }.join("\n")
+          error_msg += "\n\nCreate the role file or use an existing role."
         end
+
+        raise ArgumentError, error_msg
       end
 
       def list_available_roles
-        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
+        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
         roles_dir = File.join(prompts_dir, roles_prefix)
 
@@ -533,15 +538,16 @@ module AIA
         return [] unless Dir.exist?(roles_dir)
 
         Dir.glob("**/*.md", base: roles_dir)
-          .map { |f| f.chomp('.md') }
-          .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
-          .sort
+           .map { |f| f.chomp('.md') }
+           .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
+           .sort
       end
 
+      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def list_available_skills(options = {})
         skills_dir = options[:skills_dir]
         unless skills_dir
-          prompts_dir = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
+          prompts_dir = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
           skills_prefix = options[:skills_prefix] || ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', 'skills')
           skills_dir = File.join(prompts_dir, skills_prefix)
         end
@@ -553,11 +559,11 @@ module AIA
         end
 
         skill_ids = Dir.entries(skills_dir)
-          .reject { |e| e.start_with?('.') }
-          .select { |e|
-            subdir = File.join(skills_dir, e)
-            File.directory?(subdir) && File.exist?(File.join(subdir, 'SKILL.md'))
-          }
+                       .reject { |e| e.start_with?('.') }
+                       .select do |e|
+                         subdir = File.join(skills_dir, e)
+                         File.directory?(subdir) && File.exist?(File.join(subdir, 'SKILL.md'))
+                       end
           .sort
 
         if skill_ids.empty?
@@ -589,15 +595,18 @@ module AIA
 
         puts lines.join("\n")
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
+      # rubocop:disable Metrics/AbcSize
       def list_available_models(query)
         require 'ruby_llm'
 
-        if query.nil?
-          query = []
-        else
-          query = query.split(',')
-        end
+        query = if query.nil?
+                  []
+                else
+                  query.split(',')
+                end
+        # rubocop:enable Metrics/AbcSize
 
         header = "\nAvailable LLMs"
         header += " for #{query.join(' and ')}" if query.any?
@@ -631,12 +640,13 @@ module AIA
           end
         end
 
-        puts if counter > 0
+        puts if counter.positive?
         puts "#{counter} LLMs matching your query"
         puts
 
         exit
       end
+      # rubocop:enable Metrics/ModuleLength
 
       def process_tools_paths(path_list)
         paths = []
@@ -649,7 +659,7 @@ module AIA
         path_list.split(',').map(&:strip).uniq.each do |a_path|
           if File.exist?(a_path)
             if File.file?(a_path)
-              if '.rb' == File.extname(a_path)
+              if File.extname(a_path) == '.rb'
                 paths << a_path
               else
                 warn "file should have *.rb extension: #{a_path}"

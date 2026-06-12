@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/mcp_config_normalizer_test.rb
 
 require_relative '../test_helper'
@@ -26,5 +27,4 @@ class MCPConfigNormalizerTest < Minitest::Test
     assert_equal 'test', result[:name]
     assert_equal 'cmd', result[:transport][:command]
   end
-
 end

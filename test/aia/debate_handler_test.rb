@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/debate_handler_test.rb
 
 require_relative '../test_helper'

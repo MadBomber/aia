@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/content_extractor_test.rb
 
 require_relative '../test_helper'
@@ -17,10 +18,10 @@ class ContentExtractorTest < Minitest::Test
   def setup
     @host = ContentExtractorTestHost.new
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: [OpenStruct.new(name: 'test-model')],
-      output: OpenStruct.new(file: nil),
-      flags: OpenStruct.new(tokens: false)
-    ))
+                                 models: [OpenStruct.new(name: 'test-model')],
+                                 output: OpenStruct.new(file: nil),
+                                 flags: OpenStruct.new(tokens: false)
+                               ))
   end
 
   def teardown
@@ -82,7 +83,7 @@ class ContentExtractorTest < Minitest::Test
 
   def test_extract_content_falls_back_to_to_s
     obj = Object.new
-    def obj.to_s; "stringified"; end
+    def obj.to_s = "stringified"
     assert_equal "stringified", @host.extract_content(obj)
   end
 

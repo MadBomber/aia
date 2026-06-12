@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_filter_registry_test.rb
 
 require_relative '../test_helper'
@@ -42,7 +43,10 @@ class ToolFilterRegistryTest < Minitest::Test
     @base_flags.auto_tool_filter = true
 
     fact_asserter_instances = []
-    AIA::FactAsserter.stubs(:new).with { fact_asserter_instances << 1; true }.returns(mock('fa'))
+    AIA::FactAsserter.stubs(:new).with do
+      fact_asserter_instances << 1
+      true
+    end.returns(mock('fa'))
 
     tfidf_filter = mock('tfidf_filter')
     tfidf_filter.stubs(:prep)
@@ -51,6 +55,6 @@ class ToolFilterRegistryTest < Minitest::Test
     AIA::ToolFilterRegistry.build_from_config(@base_config, @tools)
 
     assert_equal 1, fact_asserter_instances.size,
-      "FactAsserter should be instantiated exactly once for TF-IDF"
+                 "FactAsserter should be instantiated exactly once for TF-IDF"
   end
 end

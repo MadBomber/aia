@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/task_decomposer_test.rb
 
 require_relative '../test_helper'
@@ -28,7 +29,7 @@ class TaskDecomposerTest < Minitest::Test
     lead = build_lead(json)
 
     decomposer = AIA::TaskDecomposer.new(lead_robot: lead, ui_presenter: @ui)
-    steps = decomposer.decompose("Research AI safety and write a report", ["Alice", "Bob"])
+    steps = decomposer.decompose("Research AI safety and write a report", %w[Alice Bob])
 
     assert_equal 2, steps.size
     assert_equal "Research AI safety", steps[0][:title]
@@ -51,7 +52,7 @@ class TaskDecomposerTest < Minitest::Test
     lead = build_lead(json)
 
     decomposer = AIA::TaskDecomposer.new(lead_robot: lead, ui_presenter: @ui)
-    steps = decomposer.decompose("Do work", ["Alice", "Bob"])
+    steps = decomposer.decompose("Do work", %w[Alice Bob])
 
     assert_equal "Alice", steps[0][:assignee]
   end

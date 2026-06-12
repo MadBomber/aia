@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/session_tracker_test.rb
 
 require_relative '../test_helper'
@@ -7,10 +8,6 @@ require_relative '../../lib/aia'
 class SessionTrackerTest < Minitest::Test
   def setup
     @tracker = AIA::SessionTracker.new
-  end
-
-  def teardown
-    super
   end
 
   # =========================================================================
@@ -194,7 +191,7 @@ class SessionTrackerTest < Minitest::Test
     @tracker.record_model_switch(from: "gpt-4o-mini", to: "gpt-4o")
 
     assert_equal 0, @tracker.turn_count,
-      "Model switch events should not increment turn_count"
+                 "Model switch events should not increment turn_count"
   end
 
   # =========================================================================

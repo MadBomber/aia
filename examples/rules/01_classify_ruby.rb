@@ -9,7 +9,7 @@ AIA.rules_for(:classify) do
     on :turn_input do
       text matches(/\b(ruby|rails|gem|bundler|rake|rspec|minitest|rubocop|sorbet)\b/i)
     end
-    perform do |facts|
+    perform do |_facts|
       AIA.decisions.add(:classification, domain: "code", subdomain: "ruby", source: "user_ruby_request")
     end
   end

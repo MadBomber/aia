@@ -184,11 +184,11 @@ class DebateHandlerIntegrationTest < Minitest::Test
     # Capture the prompts sent to alice in round 2
     round2_prompts = []
     call_count = 0
-    alice.stubs(:run).with { |prompt, **_|
+    alice.stubs(:run).with do |prompt, **_|
       call_count += 1
       round2_prompts << prompt if call_count > 1
       true
-    }.returns(mock_result("response"), mock_result("CONVERGED"))
+    end.returns(mock_result("response"), mock_result("CONVERGED"))
 
     bob.stubs(:run).returns(mock_result("Bob says hi"))
 
@@ -208,7 +208,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
     )
 
     new_network = mock_network([mock_robot('A'), mock_robot('B')])
-    new_network.robots.values.each { |r| r.stubs(:run).returns(mock_result("CONVERGED")) }
+    new_network.robots.each_value { |r| r.stubs(:run).returns(mock_result("CONVERGED")) }
 
     handler.robot = new_network
     result = handler.handle(AIA::HandlerContext.new(prompt: "topic"))
@@ -229,7 +229,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
 
   def mock_network(robots)
     network = mock('network')
-    robots_hash = robots.each_with_object({}) { |r, h| h[r.name] = r }
+    robots_hash = robots.to_h { |r| [r.name, r] }
     network.stubs(:robots).returns(robots_hash)
     network.stubs(:is_a?).returns(false)
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
@@ -244,7 +244,6 @@ class DebateHandlerIntegrationTest < Minitest::Test
     result
   end
 end
-
 
 # =============================================================================
 # DelegateHandler Tests
@@ -463,10 +462,10 @@ class DelegateHandlerIntegrationTest < Minitest::Test
       mock_result(plan_json),
       mock_result("Step 1 done")
     )
-    worker.stubs(:run).with { |prompt, **_|
+    worker.stubs(:run).with do |prompt, **_|
       step2_prompt = prompt
       true
-    }.returns(mock_result("Step 2 done"))
+    end.returns(mock_result("Step 2 done"))
 
     coordinator = mock_coordinator_with_plan(2)
 
@@ -509,7 +508,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
 
   def mock_network(robots)
     network = mock('network')
-    robots_hash = robots.each_with_object({}) { |r, h| h[r.name] = r }
+    robots_hash = robots.to_h { |r| [r.name, r] }
     network.stubs(:robots).returns(robots_hash)
     network.stubs(:is_a?).returns(false)
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
@@ -542,7 +541,6 @@ class DelegateHandlerIntegrationTest < Minitest::Test
     coordinator
   end
 end
-
 
 # =============================================================================
 # SpawnHandler Tests
@@ -707,7 +705,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     coordinator.stubs(:available?).returns(true)
     coordinator.expects(:create_task).once.with(
       anything,
-      has_entries(assignee: 'expert', labels: ['specialist', 'spawned'])
+      has_entries(assignee: 'expert', labels: %w[specialist spawned])
     )
     AIA.stubs(:task_coordinator).returns(coordinator)
 
@@ -768,7 +766,7 @@ class SpawnHandlerIntegrationTest < Minitest::Test
 
   def mock_network(robots)
     network = mock('network')
-    robots_hash = robots.each_with_object({}) { |r, h| h[r.name] = r }
+    robots_hash = robots.to_h { |r| [r.name, r] }
     network.stubs(:robots).returns(robots_hash)
     network.stubs(:is_a?).returns(false)
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)

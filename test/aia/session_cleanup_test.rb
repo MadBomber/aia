@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/session_cleanup_test.rb
 
 require_relative '../test_helper'
@@ -55,7 +56,7 @@ class SessionCleanupTest < Minitest::Test
     begin
       session.cleanup
       passed = true
-    rescue => e
+    rescue
       passed = false
     end
     assert passed, "cleanup should not raise when @mcp_manager is nil"

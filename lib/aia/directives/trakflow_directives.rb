@@ -17,7 +17,7 @@ module AIA
         bridge.check_ready_tasks || "No ready tasks found."
       end
     end
-    alias_method :tf, :tasks
+    alias tf tasks
 
     desc "Create a TrakFlow plan from a description"
     def plan(args, context_manager = nil)

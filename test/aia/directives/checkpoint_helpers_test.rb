@@ -37,7 +37,7 @@ class DirectivesCheckpointHelpersTest < Minitest::Test
     @instance.checkpoint_store['c'] = { position: 1 }
 
     positions = @instance.checkpoint_positions
-    assert_equal ['a', 'c'], positions[1].sort
+    assert_equal %w[a c], positions[1].sort
     assert_equal ['b'], positions[2]
   end
 

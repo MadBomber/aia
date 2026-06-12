@@ -33,5 +33,4 @@ module AIA
 
   # Raised when all sub-tasks fail in SpecialModeHandler decompose mode
   class DecomposeError < Error; end
-
 end

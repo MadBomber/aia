@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/model_switch_handler_test.rb
 
 require_relative '../test_helper'
@@ -10,10 +11,6 @@ class ModelSwitchHandlerTest < Minitest::Test
     @ui_presenter = mock('ui_presenter')
     @handler = AIA::ModelSwitchHandler.new(@alias_registry, @ui_presenter)
     @config = create_test_config
-  end
-
-  def teardown
-    super
   end
 
   # ---------------------------------------------------------------------------

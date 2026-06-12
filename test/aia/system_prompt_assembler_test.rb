@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/system_prompt_assembler_test.rb
 
 require_relative '../test_helper'

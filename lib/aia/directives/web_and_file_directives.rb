@@ -21,17 +21,18 @@ module AIA
           req.headers['x-puremd-api-token'] = PUREMD_API_KEY
         end
 
-        if 200 == response.status
+        if response.status == 200
           response.body
         else
           "Error: Status was #{response.status}\n#{ap response}"
         end
       end
     end
-    alias_method :website, :webpage
-    alias_method :web,     :webpage
+    alias website webpage
+    alias web webpage
 
     desc "List available AIA skills"
+    # rubocop:disable Metrics/AbcSize
     def skills(args = [], _context_manager = nil)
       dir = aia_skills_dir
       unless Dir.exist?(dir)
@@ -41,18 +42,16 @@ module AIA
 
       positive_terms, negative_terms = parse_search_terms(Array(args))
 
-      entries = Dir.children(dir)
-                   .select { |e|
-                     File.directory?(File.join(dir, e)) &&
-                     File.exist?(File.join(dir, e, 'SKILL.md'))
-                   }
-                   .select { |e|
-                     next true if positive_terms.empty? && negative_terms.empty?
-                     text = read_front_matter_text(File.join(dir, e, 'SKILL.md'))
-                     positive_terms.all? { |t| text.include?(t) } &&
-                       negative_terms.none? { |t| text.include?(t) }
-                   }
-                   .sort
+      skill_dirs = Dir.children(dir).select do |e|
+        File.directory?(File.join(dir, e)) &&
+          File.exist?(File.join(dir, e, 'SKILL.md'))
+      end
+      entries = skill_dirs.select do |e|
+        next true if positive_terms.empty? && negative_terms.empty?
+        text = read_front_matter_text(File.join(dir, e, 'SKILL.md'))
+        positive_terms.all? { |t| text.include?(t) } &&
+          negative_terms.none? { |t| text.include?(t) }
+      end.sort
 
       if entries.empty?
         all_terms = positive_terms + negative_terms
@@ -73,6 +72,7 @@ module AIA
 
       nil
     end
+    # rubocop:enable Metrics/AbcSize
 
     desc "Include an AIA skill from the configured skills directory"
     def skill(args = [], _context_manager = nil)
@@ -118,13 +118,13 @@ module AIA
     rescue StandardError => e
       "Error: Unable to paste from clipboard - #{e.message}"
     end
-    alias_method :clipboard, :paste
+    alias clipboard paste
 
     private
 
     # Resolve the AIA skills directory from config, env vars, or defaults.
     def aia_skills_dir
-      if AIA.respond_to?(:config) && AIA.config&.skills&.respond_to?(:dir) && AIA.config.skills.dir
+      if AIA.respond_to?(:config) && AIA.config&.skills.respond_to?(:dir) && AIA.config.skills.dir
         return AIA.config.skills.dir
       end
 
@@ -144,7 +144,7 @@ module AIA
     def word_wrap(text, width:, indent: '')
       return "#{indent}#{text}" if text.length <= width
 
-      words = text.split(' ')
+      words = text.split
       lines = []
       line  = +''
 

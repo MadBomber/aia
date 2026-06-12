@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/multi_model_isolation_test.rb
 # Tests for v2 multi-model support via RobotFactory
 

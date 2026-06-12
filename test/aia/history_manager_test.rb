@@ -75,7 +75,10 @@ class HistoryManagerTest < Minitest::Test
 
   def test_request_variable_value_shows_default_in_prompt
     question_asked = nil
-    Reline.stubs(:readline).with { |q, _| question_asked = q; true }.returns("val")
+    Reline.stubs(:readline).with do |q, _|
+      question_asked = q
+      true
+    end.returns("val")
     Reline.stubs(:line_editor).returns(OpenStruct.new(prompt_proc: nil, :prompt_proc= => nil))
 
     @history_manager.request_variable_value(variable_name: 'color', default_value: 'blue')
@@ -85,7 +88,10 @@ class HistoryManagerTest < Minitest::Test
 
   def test_request_variable_value_shows_required_when_no_default
     question_asked = nil
-    Reline.stubs(:readline).with { |q, _| question_asked = q; true }.returns("val")
+    Reline.stubs(:readline).with do |q, _|
+      question_asked = q
+      true
+    end.returns("val")
     Reline.stubs(:line_editor).returns(OpenStruct.new(prompt_proc: nil, :prompt_proc= => nil))
 
     @history_manager.request_variable_value(variable_name: 'color', default_value: nil)

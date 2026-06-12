@@ -9,7 +9,7 @@ module AIA
   module ToolUtility
     def tools?
       return true if AIA.config&.tool_names && !AIA.config.tool_names.empty?
-      total_tool_count > 0
+      total_tool_count.positive?
     end
 
     def total_tool_count

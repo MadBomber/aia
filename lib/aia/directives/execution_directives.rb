@@ -29,7 +29,7 @@ module AIA
         ERROR
       end
     end
-    alias_method :rb, :ruby
+    alias rb ruby
 
     desc "Use text-to-speech to speak the text"
     def say(args, context_manager = nil)
@@ -42,7 +42,7 @@ module AIA
       AIA.turn_state.force_concurrent_mcp = true
       "Concurrent MCP mode enabled for next prompt."
     end
-    alias_method :conc, :concurrent
+    alias conc concurrent
 
     desc "Run next prompt through verification (two independent answers + reconciliation)"
     def verify(args, context_manager = nil)
@@ -67,7 +67,7 @@ module AIA
       AIA.turn_state.force_delegate = true
       "Delegation mode enabled for next prompt."
     end
-    alias_method :del, :delegate
+    alias del delegate
 
     desc "Spawn a specialist robot for the next prompt"
     def spawn(args, context_manager = nil)
@@ -82,6 +82,6 @@ module AIA
       AIA.turn_state.force_orchestrate = true
       "Orchestration mode enabled. Your next prompt is the application requirements."
     end
-    alias_method :orch, :orchestrate
+    alias orch orchestrate
   end
 end

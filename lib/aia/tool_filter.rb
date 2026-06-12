@@ -45,7 +45,7 @@ module AIA
 
     # True when the filter has indexed at least one tool.
     def available?
-      @tool_count > 0
+      @tool_count.positive?
     end
 
     # True when this filter supports database persistence (--load / --save).

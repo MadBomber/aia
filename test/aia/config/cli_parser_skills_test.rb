@@ -32,12 +32,12 @@ class CLIParserSkillsOptionsTest < Minitest::Test
 
   def test_skill_option_comma_separated
     options = parse(['--skill', 'summarizer,formatter'])
-    assert_equal ['summarizer', 'formatter'], options[:skills]
+    assert_equal %w[summarizer formatter], options[:skills]
   end
 
   def test_skill_option_strips_whitespace
     options = parse(['--skill', ' summarizer , formatter '])
-    assert_equal ['summarizer', 'formatter'], options[:skills]
+    assert_equal %w[summarizer formatter], options[:skills]
   end
 
   def test_list_skills_option

@@ -7,8 +7,7 @@
 
 module AIA
   class MCPDiscovery
-    def initialize
-    end
+    def initialize; end
 
     # Discover relevant MCP servers for the current prompt.
     # Priority: explicit --mcp-use list > all configured servers.

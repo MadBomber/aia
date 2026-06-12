@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/directives/special_directives_test.rb
 
 require_relative '../../test_helper'

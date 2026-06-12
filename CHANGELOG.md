@@ -6,6 +6,9 @@ This section captures all changes since v1.1.0.
 
 ### Added
 
+- **`.loki` asgard task runner**: Added per-project task file with quality gates (`test`, `flog`, `flay`, `rubocop`), each capturing output to `*_output.txt`; `quality` task runs all gates via `system()` and prints a per-gate pass/fail summary table; `aia` passthrough task runs `bin/aia` with arbitrary arguments from any working directory.
+- **`.rubocop.yml`**: Project-level RuboCop configuration achieving 0 offenses — disables intentional-pattern cops (`Style/FormatStringToken`, `Style/SafeNavigationChainLength`, `Lint/DuplicateBranch`), adds test-file exclusions for cops that conflict with minitest patterns, and raises Metrics thresholds to match actual method complexity.
+
 - **`LayeredOrchestrator`**: 3-tier agent orchestration — Tobor decomposes requirements, lead agents break them into specialist tasks, specialists produce artifacts. Activated via `/orchestrate`.
 - **`TaskDecomposer` + `TaskExecutor`**: Break complex prompts into parallel subtasks and execute them via TrakFlow.
 - **`OrchestratorError`, `DebateError`, `DecomposeError`**: Typed error classes for orchestration and debate failure paths (`lib/aia/errors.rb`).
@@ -35,6 +38,10 @@ This section captures all changes since v1.1.0.
 - **`build_streaming_callback`**: Dead code path in `RobotFactory`.
 
 ### Fixed
+
+- **`--no-mcp` flag ignored by `RobotBuilder`** (`lib/aia/robot_builder.rb`): Was directly mapping `config.mcp_servers` without checking `config.flags.no_mcp`; now delegates to `RobotFactory.mcp_server_configs(config)` which honours the flag — preventing MCP servers from connecting and tools from overflowing the model's 128-tool limit.
+- **`load_extra_config` falls through on missing file in tests** (`lib/aia/config.rb`): Restored `return` after `exit 1`; tests mock `exit` as a no-op, so without the guard the method continued to `YAML.safe_load_file` on the nonexistent path and raised `Errno::ENOENT`.
+- **`warn` bypasses `$stderr` in Ruby 4.0** (`lib/aia/ui_presenter.rb`, `lib/aia/config/validator.rb`): Ruby 4.0 `Kernel#warn` writes directly to the STDERR file descriptor, ignoring `$stderr` reassignment used in tests; changed to `$stderr.puts` so test output capture works correctly.
 
 - **`DebateHandler` convergence short-circuit** (`lib/aia/debate_handler.rb`): Added `all_signaled_convergence?` fast path — when all robots say `CONVERGED` after minimum rounds the debate ends immediately, without waiting for similarity scoring to catch up.
 - **`SpecialModeHandler` keyword argument crash** (`lib/aia/special_mode_handler.rb`): `network.run(prompt)` → `network.run(message: prompt)` to match `RobotLab::Network#run`'s keyword-only API.

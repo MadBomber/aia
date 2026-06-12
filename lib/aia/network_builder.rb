@@ -52,27 +52,12 @@ module AIA
       tools = ToolLoader.filtered_tools(config)
       mcp = RobotFactory.mcp_server_configs(config)
       aia_config = config
-
       roster = config.models.map { |spec| { name: namer.name_for(spec.name), spec: spec } }
+      build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, run_config, aia_config) }
 
       RobotLab.create_network(name: "aia-parallel") do
         roster.each do |entry|
-          spec = entry[:spec]
-          identity = SystemPromptAssembler.build_identity_prompt(entry[:name], spec, roster)
-          base_prompt = SystemPromptAssembler.resolve_system_prompt(aia_config, spec)
-          system_prompt = [identity, base_prompt].compact.join("\n\n")
-
-          build_opts = {
-            name:          entry[:name],
-            system_prompt: system_prompt,
-            model:         spec.name,
-            local_tools:   tools,
-            mcp_servers:   mcp,
-            config:        run_config
-          }
-          build_opts[:provider] = RobotFactory.resolve_provider(spec) if spec.provider
-          robot = RobotLab.build(**build_opts)
-          task spec.internal_id.to_sym, robot, depends_on: :none
+          task entry[:spec].internal_id.to_sym, build_robot.call(entry), depends_on: :none
         end
       end
     end
@@ -89,32 +74,19 @@ module AIA
       mcp = RobotFactory.mcp_server_configs(config)
       primary = config.models.first
       aia_config = config
-
       roster = config.models.map { |spec| { name: namer.name_for(spec.name), spec: spec } }
+      build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, run_config, aia_config) }
 
       RobotLab.create_network(name: "aia-consensus") do
         roster.each do |entry|
-          spec = entry[:spec]
-          identity = SystemPromptAssembler.build_identity_prompt(entry[:name], spec, roster)
-          base_prompt = SystemPromptAssembler.resolve_system_prompt(aia_config, spec)
-          system_prompt = [identity, base_prompt].compact.join("\n\n")
-
-          build_opts = {
-            name:          entry[:name],
-            system_prompt: system_prompt,
-            model:         spec.name,
-            local_tools:   tools,
-            mcp_servers:   mcp,
-            config:        run_config
-          }
-          build_opts[:provider] = RobotFactory.resolve_provider(spec) if spec.provider
-          robot = RobotLab.build(**build_opts)
-          task spec.internal_id.to_sym, robot, depends_on: :none
+          task entry[:spec].internal_id.to_sym, build_robot.call(entry), depends_on: :none
         end
 
         synth_opts = {
           name:          "Weaver",
-          system_prompt: "You are a synthesizer. Review the responses from multiple AI models and create a unified, coherent response that captures the best insights from each.",
+          system_prompt: "You are a synthesizer. Review the responses from multiple AI models " \
+                         "and create a unified, coherent response that captures the best " \
+                         "insights from each.",
           model:         primary.name,
           config:        run_config
         }
@@ -123,6 +95,24 @@ module AIA
         task :consensus, synthesizer,
              depends_on: config.models.map { |s| s.internal_id.to_sym }
       end
+    end
+
+    # Shared helper: builds a single roster robot (used by parallel and consensus networks).
+    def build_roster_robot(entry, roster, tools, mcp, run_config, aia_config)
+      spec = entry[:spec]
+      identity = SystemPromptAssembler.build_identity_prompt(entry[:name], spec, roster)
+      base_prompt = SystemPromptAssembler.resolve_system_prompt(aia_config, spec)
+      system_prompt = [identity, base_prompt].compact.join("\n\n")
+      build_opts = {
+        name:          entry[:name],
+        system_prompt: system_prompt,
+        model:         spec.name,
+        local_tools:   tools,
+        mcp_servers:   mcp,
+        config:        run_config
+      }
+      build_opts[:provider] = RobotFactory.resolve_provider(spec) if spec.provider
+      RobotLab.build(**build_opts)
     end
 
     # Build a concurrent MCP network where independent server groups

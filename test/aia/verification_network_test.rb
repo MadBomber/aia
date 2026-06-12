@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/verification_network_test.rb
 
 require_relative '../test_helper'
@@ -8,10 +9,6 @@ require_relative '../../lib/aia/verification_network'
 class VerificationNetworkTest < Minitest::Test
   def setup
     @config = create_test_config
-  end
-
-  def teardown
-    super
   end
 
   def test_build_does_not_raise_with_mocked_robot_lab

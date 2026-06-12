@@ -30,6 +30,7 @@ module AIA
     #
     # @param servers [Array<Hash>] MCP server configurations
     # @return [self]
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def connect_all(servers)
       return self unless servers.is_a?(Array) && servers.any?
 
@@ -70,7 +71,7 @@ module AIA
       logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
 
       connected_names = @mutex.synchronize { @connected_clients.keys.to_set }
-      failed_names    = @mutex.synchronize { @failed_servers.map { |f| f[:name] }.to_set }
+      failed_names    = @mutex.synchronize { @failed_servers.to_set { |f| f[:name] } }
 
       servers.each do |server_config|
         srv_name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
@@ -80,6 +81,7 @@ module AIA
         end
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     # Inject connected MCP clients and tools into robot(s).
     #
@@ -205,17 +207,19 @@ module AIA
     # Read global MCP connection timeout from config.
     # Falls back to 120s if config is unavailable.
     def global_connection_timeout
-      AIA.config&.concurrency&.mcp_timeout.to_i.then { |v| v > 0 ? v : 120 }
+      AIA.config&.concurrency&.mcp_timeout.to_i.then { |v| v.positive? ? v : 120 }
     rescue StandardError
       120
     end
 
     # Connect a single MCP server, updating the spinner on completion.
+    # rubocop:disable Metrics/MethodLength
     def connect_one(server_config, name, spinner, logger)
       timeout = server_timeout(server_config)
       spinner.auto_spin
 
       logger.info("MCP: connecting to '#{name}'...")
+      # rubocop:disable Metrics/BlockLength
       Timeout.timeout(timeout) do
         client = RobotLab::MCP::Client.new(server_config)
         client.connect
@@ -249,6 +253,7 @@ module AIA
           spinner.error("(connection failed)")
         end
       end
+      # rubocop:enable Metrics/BlockLength
     rescue Timeout::Error
       @mutex.synchronize do
         @failed_servers << { name: name, error: "timed out after #{timeout}s" }
@@ -262,6 +267,7 @@ module AIA
       logger.warn("MCP: '#{name}' error: #{e.message}")
       spinner.error("(#{e.message})")
     end
+    # rubocop:enable Metrics/MethodLength
 
     # Add tools to @connected_tools, skipping any whose name is already present.
     # Logs a warning for each duplicate so the user knows which server wins.
@@ -293,7 +299,7 @@ module AIA
       return DEFAULT_TIMEOUT if raw.nil?
 
       seconds = raw.to_f
-      seconds = seconds / 1000.0 if seconds >= 1000
+      seconds /= 1000.0 if seconds >= 1000
       [seconds, DEFAULT_TIMEOUT].min
     end
   end

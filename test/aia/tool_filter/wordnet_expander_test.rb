@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_filter/wordnet_expander_test.rb
 
 require_relative '../../test_helper'
@@ -15,7 +16,7 @@ class WordNetExpanderTest < Minitest::Test
 
   def test_available_returns_boolean
     result = AIA::ToolFilter::WordNetExpander.available?
-    assert result == true || result == false
+    assert [true, false].include?(result)
   end
 
   def test_synonyms_for_returns_array
@@ -66,8 +67,8 @@ class WordNetExpanderTest < Minitest::Test
   # ------------------------------------------------------------------
 
   def test_synonyms_for_combines_noun_and_verb_results
-    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'n').returns(["search", "hunt"])
-    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'v').returns(["seek", "look"])
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'n').returns(%w[search hunt])
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'v').returns(%w[seek look])
     result = AIA::ToolFilter::WordNetExpander.synonyms_for("find")
     assert_includes result, "search"
     assert_includes result, "seek"
@@ -77,8 +78,8 @@ class WordNetExpanderTest < Minitest::Test
   end
 
   def test_synonyms_for_deduplicates_across_pos
-    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'n').returns(["search", "seek"])
-    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'v').returns(["seek", "hunt"])
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'n').returns(%w[search seek])
+    AIA::ToolFilter::WordNetExpander.stubs(:query_wn).with("find", 'v').returns(%w[seek hunt])
     result = AIA::ToolFilter::WordNetExpander.synonyms_for("find")
     assert_equal result.uniq, result, "synonyms_for should not contain duplicates"
   ensure

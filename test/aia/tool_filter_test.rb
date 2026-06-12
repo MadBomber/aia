@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_filter_test.rb
 
 require_relative '../test_helper'
@@ -71,7 +72,7 @@ class ToolFilterTest < Minitest::Test
   def test_filter_returns_names
     f = DummyFilter.new(scores: [{ name: "tool_a", score: 0.5 }, { name: "tool_b", score: 0.3 }])
     result = f.filter("anything")
-    assert_equal ["tool_a", "tool_b"], result
+    assert_equal %w[tool_a tool_b], result
   end
 
   def test_filter_returns_nil_when_empty

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/robot_builder_test.rb
 
 require_relative '../test_helper'
@@ -46,7 +47,10 @@ class RobotBuilderTest < Minitest::Test
 
   def test_build_uses_namer_for_robot_name
     captured_name = nil
-    RobotLab.stubs(:build).with { |opts| captured_name = opts[:name]; true }.returns(mock('robot'))
+    RobotLab.stubs(:build).with do |opts|
+      captured_name = opts[:name]
+      true
+    end.returns(mock('robot'))
     AIA::SystemPromptAssembler.stubs(:build_identity_prompt).returns("id")
     AIA::SystemPromptAssembler.stubs(:resolve_system_prompt).returns(nil)
     AIA::ToolLoader.stubs(:filtered_tools).returns([])

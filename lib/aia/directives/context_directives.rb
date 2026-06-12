@@ -34,9 +34,9 @@ module AIA
 
       first_chat_messages = chats.values.first&.messages || []
       @checkpoint_store[name] = {
-        messages: chats.transform_values { |chat|
+        messages: chats.transform_values do |chat|
           chat.messages.map { |msg| deep_copy_message(msg) }
-        },
+        end,
         position: first_chat_messages.size,
         created_at: Time.now,
         topic_preview: extract_last_user_message(first_chat_messages)
@@ -46,8 +46,8 @@ module AIA
       puts "Checkpoint '#{name}' created at position #{@checkpoint_store[name][:position]}."
       ""
     end
-    alias_method :ckp, :checkpoint
-    alias_method :cp,  :checkpoint
+    alias ckp checkpoint
+    alias cp checkpoint
 
     desc "Restore context to a previous checkpoint"
     def restore(args, _unused = nil)
@@ -84,7 +84,7 @@ module AIA
       @last_checkpoint_name = name
 
       msg = "Context restored to checkpoint '#{name}' (position #{restored_position})."
-      msg += " Removed #{removed_count} checkpoint(s) that were beyond this position." if removed_count > 0
+      msg += " Removed #{removed_count} checkpoint(s) that were beyond this position." if removed_count.positive?
       msg
     end
 
@@ -107,6 +107,7 @@ module AIA
     end
 
     desc "Display the current conversation context with checkpoint markers"
+    # rubocop:disable Metrics/AbcSize
     def review(args, _unused = nil)
       chats = get_chats
       return "Error: No active chat sessions found." if chats.nil? || chats.empty?
@@ -143,7 +144,8 @@ module AIA
       puts "=== End of Context ==="
       ""
     end
-    alias_method :context, :review
+    # rubocop:enable Metrics/AbcSize
+    alias context review
 
     desc "List all available checkpoints"
     def checkpoints_list(args, _unused = nil)
@@ -163,7 +165,7 @@ module AIA
       puts "=== End of Checkpoints ==="
       ""
     end
-    alias_method :checkpoints, :checkpoints_list
+    alias checkpoints checkpoints_list
 
     # --- helpers (no desc → not registered as directives) ---
 
@@ -212,7 +214,7 @@ module AIA
       robots = get_robots
       return nil unless robots
 
-      robots.transform_values { |robot| robot.chat }
+      robots.transform_values(&:chat)
     end
 
     def deep_copy_message(msg)
@@ -243,12 +245,12 @@ module AIA
     def extract_last_user_message(messages, max_length: 70)
       return "" if messages.nil? || messages.empty?
 
-      last_user_msg = messages.reverse.find { |msg| msg.role == :user }
+      last_user_msg = messages.rfind { |msg| msg.role == :user }
       return "" unless last_user_msg
 
       content = last_user_msg.content.to_s.strip
       content = content.gsub(/\s+/, ' ')
-      content.length > max_length ? "#{content[0..max_length - 4]}..." : content
+      content.length > max_length ? "#{content[0..(max_length - 4)]}..." : content
     end
   end
 end

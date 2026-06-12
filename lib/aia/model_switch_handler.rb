@@ -21,7 +21,7 @@ module AIA
     #
     # @param context [HandlerContext]
     # @return [Boolean] always false
-    def handle(context)
+    def handle(context) # rubocop:disable Naming/PredicateMethod
       false
     end
 
@@ -32,10 +32,10 @@ module AIA
       return false if models.empty?
 
       resolved = models.map { |m| @aliases.resolve(m) }
-      return confirm_and_apply(config, resolved)
+      confirm_and_apply(config, resolved)
     end
 
-    def handle_compare(intent, config)
+    def handle_compare(intent, config) # rubocop:disable Naming/PredicateMethod
       models = extract_model_names(intent[:raw_text])
       return false if models.size < 2
 
@@ -55,10 +55,10 @@ module AIA
     def handle_capability_switch(intent, config)
       capability = intent[:capability]
       resolved = [@aliases.resolve(capability)]
-      return confirm_and_apply(config, resolved)
+      confirm_and_apply(config, resolved)
     end
 
-    def confirm_and_apply(config, resolved)
+    def confirm_and_apply(config, resolved) # rubocop:disable Naming/PredicateMethod
       @ui.display_info("Interpreted as: /model #{resolved.join(', ')}")
       @ui.display_info("Proceed? (y/n)")
 

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_filter/wordnet_expansion_wiring_test.rb
 #
 # Verifies that TFIDF calls WordNetExpander.expand during build_index.

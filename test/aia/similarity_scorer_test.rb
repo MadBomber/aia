@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/similarity_scorer_test.rb
 
 require_relative '../test_helper'
@@ -75,9 +76,9 @@ class SimilarityScorerTest < Minitest::Test
     result = AIA::SimilarityScorer.score(texts)
 
     result.each_with_index do |score, i|
-      next if i == 0 # reference is nil
+      next if i.zero? # reference is nil
       assert_kind_of Float, score
-      assert score >= 0.0 && score <= 1.0, "Score should be 0..1 (got #{score})"
+      assert score.between?(0.0, 1.0), "Score should be 0..1 (got #{score})"
     end
   end
 

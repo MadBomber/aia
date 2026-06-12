@@ -74,7 +74,6 @@ class ValidatorProcessPromptIdTest < Minitest::Test
   end
 end
 
-
 class ValidatorContextFilesTest < Minitest::Test
   def test_sets_context_files_from_remaining_args
     Dir.mktmpdir do |dir|
@@ -128,7 +127,6 @@ class ValidatorContextFilesTest < Minitest::Test
     assert_equal ['file.rb'], config.context_files
   end
 end
-
 
 class ValidatorExecutablePromptTest < Minitest::Test
   def test_detects_shebang_file_as_executable_prompt
@@ -184,7 +182,6 @@ class ValidatorExecutablePromptTest < Minitest::Test
     end
   end
 end
-
 
 class ValidatorStdinAsPromptTest < Minitest::Test
   def test_stdin_content_becomes_executable_prompt
@@ -242,7 +239,6 @@ class ValidatorStdinAsPromptTest < Minitest::Test
   end
 end
 
-
 class ValidatorRequiredPromptIdTest < Minitest::Test
   def test_exits_when_no_prompt_id_and_not_chat_or_fuzzy
     config = OpenStruct.new(
@@ -286,7 +282,6 @@ class ValidatorRequiredPromptIdTest < Minitest::Test
     AIA::ConfigValidator.send(:validate_required_prompt_id, config)
   end
 end
-
 
 class ValidatorRoleConfigurationTest < Minitest::Test
   def test_prepends_roles_prefix
@@ -431,7 +426,6 @@ class ValidatorRoleConfigurationTest < Minitest::Test
   end
 end
 
-
 class ValidatorFuzzySearchTest < Minitest::Test
   def test_sets_fuzzy_search_sentinel
     config = OpenStruct.new(
@@ -464,7 +458,6 @@ class ValidatorFuzzySearchTest < Minitest::Test
   end
 end
 
-
 class ValidatorDumpConfigTest < Minitest::Test
   def test_handle_dump_config_triggers_dump_and_exit
     Dir.mktmpdir do |dir|
@@ -488,7 +481,6 @@ class ValidatorDumpConfigTest < Minitest::Test
     AIA::ConfigValidator.send(:handle_dump_config, config)
   end
 end
-
 
 class ValidatorMcpListTest < Minitest::Test
   include ValidatorTestHelpers
@@ -586,7 +578,6 @@ class ValidatorMcpListTest < Minitest::Test
   end
 end
 
-
 class ValidatorCompletionScriptTest < Minitest::Test
   def test_handle_completion_script_skips_when_nil
     config = OpenStruct.new(completion: nil)
@@ -596,10 +587,13 @@ class ValidatorCompletionScriptTest < Minitest::Test
 
   def test_generate_completion_script_missing_shell
     stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
+    AIA::ConfigValidator.stubs(:warn).with do |msg|
+      stderr_messages << msg
+      true
+    end
 
     AIA::ConfigValidator.send(:generate_completion_script, 'nonexistent_shell')
-    assert stderr_messages.any? { |m| m.include?('not supported') }
+    assert(stderr_messages.any? { |m| m.include?('not supported') })
   end
 
   def test_generate_completion_script_existing_shell
@@ -617,7 +611,6 @@ class ValidatorCompletionScriptTest < Minitest::Test
     end
   end
 end
-
 
 class ValidatorFinalPromptRequirementsTest < Minitest::Test
   def test_exits_when_no_prompt_no_context_no_chat_no_fuzzy
@@ -678,7 +671,6 @@ class ValidatorFinalPromptRequirementsTest < Minitest::Test
   end
 end
 
-
 class ValidatorPipelineTest < Minitest::Test
   def test_validate_pipeline_prompts_passes_for_existing_files
     Dir.mktmpdir do |dir|
@@ -686,7 +678,7 @@ class ValidatorPipelineTest < Minitest::Test
       File.write(File.join(dir, 'prompt2.md'), '# prompt 2')
 
       config = OpenStruct.new(
-        pipeline: ['prompt1', 'prompt2'],
+        pipeline: %w[prompt1 prompt2],
         prompts: OpenStruct.new(dir: dir, extname: '.md')
       )
 
@@ -715,7 +707,7 @@ class ValidatorPipelineTest < Minitest::Test
 
   def test_validate_pipeline_prompts_skips_sentinels
     config = OpenStruct.new(
-      pipeline: ['__FUZZY_SEARCH__', '__EXECUTABLE_PROMPT__'],
+      pipeline: %w[__FUZZY_SEARCH__ __EXECUTABLE_PROMPT__],
       prompts: OpenStruct.new(dir: '/tmp', extname: '.md')
     )
 
@@ -745,7 +737,6 @@ class ValidatorPipelineTest < Minitest::Test
   end
 end
 
-
 class ValidatorNormalizeBooleanFlagsTest < Minitest::Test
   def test_normalizes_all_flags
     config = OpenStruct.new(
@@ -758,7 +749,6 @@ class ValidatorNormalizeBooleanFlagsTest < Minitest::Test
     assert_equal false, config.flags.consensus
   end
 end
-
 
 class ValidatorListToolsTest < Minitest::Test
   include ValidatorTestHelpers

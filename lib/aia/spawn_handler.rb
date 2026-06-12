@@ -60,7 +60,7 @@ module AIA
         AIA.task_coordinator.create_task(
           "Specialist: #{prompt[0, 60]}",
           assignee: role,
-          labels:   ["specialist", "spawned"],
+          labels:   %w[specialist spawned],
           creator:  primary.name
         )
       end
@@ -99,6 +99,5 @@ module AIA
 
       [role, instruction]
     end
-
   end
 end

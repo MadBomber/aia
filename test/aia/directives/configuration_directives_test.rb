@@ -31,7 +31,10 @@ class ConfigurationDirectivesTest < Minitest::Test
     @instance = AIA::ConfigurationDirectives.new
 
     @stderr_messages = []
-    @instance.stubs(:warn).with { |msg| @stderr_messages << msg; true }
+    @instance.stubs(:warn).with do |msg|
+      @stderr_messages << msg
+      true
+    end
   end
 
   def teardown
@@ -69,19 +72,19 @@ class ConfigurationDirectivesTest < Minitest::Test
 
   def test_config_sets_value
     # OpenStruct responds to any setter, so this should set the value
-    result = @instance.config(['llm', 'new_value'])
+    result = @instance.config(%w[llm new_value])
     assert_equal "", result
   end
 
   def test_config_sets_boolean_value_true
     # AIA has a debug? method, so 'debug' is treated as boolean
-    result = @instance.config(['debug', 'true'])
+    result = @instance.config(%w[debug true])
     assert_equal "", result
   end
 
   def test_config_sets_boolean_value_false
     # AIA has a verbose? method, so 'verbose' is treated as boolean
-    result = @instance.config(['verbose', 'no'])
+    result = @instance.config(%w[verbose no])
     assert_equal "", result
   end
 
@@ -92,8 +95,8 @@ class ConfigurationDirectivesTest < Minitest::Test
     )
     AIA.stubs(:config).returns(strict_config)
 
-    @instance.config(['bogus', 'value'])
-    assert @stderr_messages.any? { |m| m.include?("Unknown config option 'bogus'") }
+    @instance.config(%w[bogus value])
+    assert(@stderr_messages.any? { |m| m.include?("Unknown config option 'bogus'") })
   end
 
   # --- /cfg alias ---

@@ -6,13 +6,13 @@ class DirectiveProcessorTest < Minitest::Test
   def setup
     # Mock AIA module methods to prevent actual operations
     AIA.stubs(:config).returns(OpenStruct.new(
-      model: 'test-model',
-      temperature: 0.7,
-      max_tokens: 2048,
-      chat: false,
-      tools: [],
-      context_files: []
-    ))
+                                 model: 'test-model',
+                                 temperature: 0.7,
+                                 max_tokens: 2048,
+                                 chat: false,
+                                 tools: [],
+                                 context_files: []
+                               ))
 
     # PM::Directive.register_all is called at load time, registering
     # all AIA directive subclasses.  Ensure directives are available.
@@ -95,5 +95,4 @@ class DirectiveProcessorTest < Minitest::Test
     result = processor.process("/config model gpt-4", nil)
     assert_equal "", result
   end
-
 end

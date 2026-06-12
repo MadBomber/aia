@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/history_rotation_test.rb
 
 require_relative '../test_helper'
@@ -30,7 +31,7 @@ class HistoryRotationTest < Minitest::Test
 
   def test_rotate_history_renames_file_when_over_limit
     # Create a file that exceeds the 10MB threshold
-    File.write(@history_file, "x" * (10 * 1024 * 1024 + 1))
+    File.write(@history_file, "x" * ((10 * 1024 * 1024) + 1))
 
     session = AIA::Session.allocate
     session.send(:rotate_history_log_if_needed)

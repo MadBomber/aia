@@ -43,25 +43,25 @@ module AIA
       task = @db.create_task(task)
 
       @db.add_label(TrakFlow::Models::Label.new(
-        task_id: task.id, name: "creator:#{creator}"
-      ))
+                      task_id: task.id, name: "creator:#{creator}"
+                    ))
 
       labels.each do |label|
         @db.add_label(TrakFlow::Models::Label.new(
-          task_id: task.id, name: label
-        ))
+                        task_id: task.id, name: label
+                      ))
       end
 
       blocked_by.each do |blocker_id|
         @db.add_dependency(TrakFlow::Models::Dependency.new(
-          source_id: blocker_id, target_id: task.id, type: "blocks"
-        ))
+                             source_id: blocker_id, target_id: task.id, type: "blocks"
+                           ))
       end
 
       if parent_id
         @db.add_dependency(TrakFlow::Models::Dependency.new(
-          source_id: parent_id, target_id: task.id, type: "parent-child"
-        ))
+                             source_id: parent_id, target_id: task.id, type: "parent-child"
+                           ))
       end
 
       task
@@ -83,8 +83,8 @@ module AIA
       plan = @db.create_task(plan)
 
       @db.add_label(TrakFlow::Models::Label.new(
-        task_id: plan.id, name: "creator:#{creator}"
-      ))
+                      task_id: plan.id, name: "creator:#{creator}"
+                    ))
 
       prev_step = nil
       step_tasks = steps.map.with_index do |step_def, _i|
@@ -96,14 +96,14 @@ module AIA
 
         Array(step_def[:labels]).each do |label|
           @db.add_label(TrakFlow::Models::Label.new(
-            task_id: step.id, name: label
-          ))
+                          task_id: step.id, name: label
+                        ))
         end
 
         if prev_step
           @db.add_dependency(TrakFlow::Models::Dependency.new(
-            source_id: prev_step.id, target_id: step.id, type: "blocks"
-          ))
+                               source_id: prev_step.id, target_id: step.id, type: "blocks"
+                             ))
         end
 
         prev_step = step
@@ -153,8 +153,8 @@ module AIA
 
       task.close!(reason: result)
       @db.add_comment(TrakFlow::Models::Comment.new(
-        task_id: task_id, author: robot_name, body: result
-      ))
+                        task_id: task_id, author: robot_name, body: result
+                      ))
       @db.update_task(task)
     end
 

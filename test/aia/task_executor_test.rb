@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/task_executor_test.rb
 
 require_relative '../test_helper'
@@ -55,7 +56,10 @@ class TaskExecutorTest < Minitest::Test
     received_context = nil
     robot = mock('robot')
     robot.stubs(:name).returns("Bob")
-    robot.stubs(:run).with { |ctx, **| received_context = ctx; true }.returns(OpenStruct.new(reply: "Done"))
+    robot.stubs(:run).with do |ctx, **|
+      received_context = ctx
+      true
+    end.returns(OpenStruct.new(reply: "Done"))
 
     executor = AIA::TaskExecutor.new(task_coordinator: coordinator)
     prior = [{ robot: "Alice", task: "Research", content: "Alice's findings" }]
@@ -71,7 +75,10 @@ class TaskExecutorTest < Minitest::Test
     received_context = nil
     robot = mock('robot')
     robot.stubs(:name).returns("Alice")
-    robot.stubs(:run).with { |ctx, **| received_context = ctx; true }.returns(OpenStruct.new(reply: "Done"))
+    robot.stubs(:run).with do |ctx, **|
+      received_context = ctx
+      true
+    end.returns(OpenStruct.new(reply: "Done"))
 
     executor = AIA::TaskExecutor.new(task_coordinator: coordinator)
     executor.execute(task, robot, { title: "First task" }, "Original prompt", [])

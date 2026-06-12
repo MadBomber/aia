@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_filter/tfidf_test.rb
 
 require_relative '../../test_helper'
@@ -20,7 +21,7 @@ class ToolFilterTFIDFTest < Minitest::Test
       MockTool.new("database_query", "Run SQL queries against PostgreSQL databases"),
       MockTool.new("email_sender", "Send emails via SMTP with attachments"),
       MockTool.new("image_gen", "Generate images from text descriptions using DALL-E"),
-      MockTool.new("calculator", "Perform mathematical calculations and unit conversions"),
+      MockTool.new("calculator", "Perform mathematical calculations and unit conversions")
     ]
   end
 
@@ -79,10 +80,9 @@ class ToolFilterTFIDFTest < Minitest::Test
     names = results.map { |r| r[:name] }
     assert_includes names, "file_search", "file_search should match a file search prompt"
 
-    if results.size > 1
-      file_entry = results.find { |r| r[:name] == "file_search" }
-      assert file_entry[:score] > 0.0
-    end
+    return unless results.size > 1
+    file_entry = results.find { |r| r[:name] == "file_search" }
+    assert file_entry[:score] > 0.0
   end
 
   def test_filter_returns_tool_names
@@ -97,14 +97,14 @@ class ToolFilterTFIDFTest < Minitest::Test
     results = filter.filter("something vaguely related")
     # With a very high threshold, few or no tools should match
     assert results.nil? || results.size <= 2,
-      "Very high threshold should filter aggressively (got #{results&.size})"
+           "Very high threshold should filter aggressively (got #{results&.size})"
   end
 
   def test_max_tools_cap
     filter = build_filter(threshold: 0.0, max_tools: 3)
     results = filter.filter("tools for everything")
     assert results.nil? || results.size <= 3,
-      "Should cap at max_tools (got #{results&.size})"
+           "Should cap at max_tools (got #{results&.size})"
   end
 
   # =========================================================================
@@ -125,7 +125,7 @@ class ToolFilterTFIDFTest < Minitest::Test
   def test_tools_with_missing_descriptions
     tools = [
       MockTool.new("no_desc_tool", ""),
-      MockTool.new("has_desc", "A tool that searches for patterns"),
+      MockTool.new("has_desc", "A tool that searches for patterns")
     ]
     filter = build_filter(tools)
     assert_equal 2, filter.tool_count
@@ -145,7 +145,7 @@ class ToolFilterTFIDFTest < Minitest::Test
       assert entry.key?(:score), "Each entry should have :score"
       assert_kind_of String, entry[:name]
       assert_kind_of Float, entry[:score]
-      assert entry[:score] >= 0.0 && entry[:score] <= 1.0
+      assert entry[:score].between?(0.0, 1.0)
     end
   end
 

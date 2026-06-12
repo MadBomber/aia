@@ -1,0 +1,150 @@
+# frozen_string_literal: true
+# aia/.loki — asgard task runner for the aia gem
+
+class Tasks
+  @@rr ||= Dir.pwd.freeze
+
+  header "aia — AI Assistant CLI gem"
+  footer "Run `asgard help TASK` for details on any task"
+
+  map "t"   => :test
+  map "i"   => :install
+  map "inc" => :bump
+
+  default_task :list
+
+  # ── Terminal utilities ─────────────────────────────────────────────────────
+
+  desc "Fix half-duplex terminal"
+  def fix = sh "stty sane"
+
+  desc "Clear the scroll-back buffer"
+  def clear_buffer = sh 'printf "\e[3J"'
+
+  # ── Mods ──────────────────────────────────────────────────────────────────
+
+  desc "Delete all mods saved conversations"
+  def mods_delete_all
+    sh "mods -l | awk '{print $1}' | xargs -I {} mods -d {}"
+  end
+
+  # ── Run ───────────────────────────────────────────────────────────────────
+
+  desc "aia [ARGS]", "Run the aia CLI with pass-through arguments (e.g. asgard aia --chat)"
+  def aia(*args)
+    sh "#{@@rr}/bin/aia #{args.join(' ')}"
+  end
+
+  # ── Tests & Quality ────────────────────────────────────────────────────────
+
+  desc "Run unit tests"
+  def test = sh "bundle exec rake test"
+
+  depends_on :test
+  desc "Open coverage report in browser (depends on: test)"
+  def coverage = sh "open #{@@rr}/coverage/index.html"
+
+  desc "Check code complexity with Flog"
+  def flog = sh "bundle exec rake flog_check > flog_output.txt 2>&1"
+
+  desc "Check for structural duplication with Flay"
+  def flay = sh "bundle exec rake flay_check > flay_output.txt 2>&1"
+
+  desc "Check code style with RuboCop"
+  def rubocop = sh "bundle exec rubocop > rubocop_output.txt 2>&1"
+
+  desc "Auto-correct RuboCop offenses"
+  def rubocop_fix = sh "bundle exec rubocop -a"
+
+  desc "Run all quality gates with per-gate pass/fail summary"
+  def quality
+    gates = {
+      test:    "bundle exec rake test",
+      flog:    "bundle exec rake flog_check > flog_output.txt 2>&1",
+      flay:    "bundle exec rake flay_check > flay_output.txt 2>&1",
+      rubocop: "bundle exec rubocop         > rubocop_output.txt 2>&1"
+    }
+
+    results = gates.transform_values { |cmd| system(cmd) }
+
+    puts "\n  Quality Gate Summary"
+    puts "  #{'─' * 32}"
+    results.each do |gate, ok|
+      badge = ok ? "\e[32mPASS\e[0m" : "\e[31mFAIL\e[0m"
+      file  = gate == :test ? "test_output.txt" : "#{gate}_output.txt"
+      puts "  #{badge}  #{gate.to_s.ljust(10)}  see #{file}"
+    end
+    puts "  #{'─' * 32}"
+
+    if results.values.all?
+      puts "\n  \e[32mAll quality gates passed.\e[0m\n\n"
+    else
+      failed = results.reject { |_, v| v }.keys.join(', ')
+      abort "\n  \e[31mFailed: #{failed}\e[0m\n\n"
+    end
+  end
+
+  # ── Documentation ─────────────────────────────────────────────────────────
+
+  desc "Update README table of contents"
+  def update_toc_in_readmen = sh "rake toc"
+
+  depends_on :update_toc_in_readmen
+  desc "Generate documentation (depends on: update_toc_in_readmen)"
+  def gen_doc = puts "Documentation generated."
+
+  # ── Build & Install ────────────────────────────────────────────────────────
+
+  depends_on :update_toc_in_readmen
+  desc "Install gem locally (depends on: update_toc_in_readmen)"
+  def install = sh "rake install"
+
+  # ── Backup ────────────────────────────────────────────────────────────────
+
+  desc "Backup .envrc and *.loki support files"
+  def backup_support_files
+    backup_loki_files
+    backup_envrc_files
+  end
+
+  # ── Version management ────────────────────────────────────────────────────
+
+  desc "Create a git tag for the current version"
+  def tag = sh "git tag v#{current_version}"
+
+  desc "Push commits and all tags to origin"
+  def push
+    sh "git push"
+    sh "git push origin --tags"
+  end
+
+  desc "bump [LEVEL]", "Increment version level: major, minor, or patch (default: patch)"
+  def bump(level = "patch")
+    require "versionaire"
+    path    = version_filepath
+    old_ver = Versionaire::Version(File.read(path).strip)
+    new_ver = old_ver.bump(level.to_sym)
+    puts "Bumping #{level}:  #{old_ver} to #{new_ver}"
+    File.write(path, "#{new_ver}\n")
+    sh "git add #{path}", silent: true
+  end
+
+  depends_on :tag, :push, :bump
+  desc "Tag the current commit, push it, then bump the version"
+  def tag_push_and_bump = puts "Tagged, pushed, and bumped."
+
+  # ── List ──────────────────────────────────────────────────────────────────
+
+  desc "List available tasks (default)"
+  def list = sh "asgard help"
+
+  # ── Private helpers ───────────────────────────────────────────────────────
+
+  private
+
+  def version_filepath = File.join(@@rr, ".version")
+  def current_version  = File.read(version_filepath).strip
+
+  def backup_loki_files  = sh "backup_just.rb",  silent: true
+  def backup_envrc_files = sh "backup_envrc.rb", silent: true
+end

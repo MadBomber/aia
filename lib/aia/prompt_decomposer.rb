@@ -145,7 +145,7 @@ module AIA
       when Array
         content
       when String
-        parsed = JSON.parse(content.gsub(/```(?:json)?\s*/i, '').gsub(/```/, '').strip)
+        parsed = JSON.parse(content.gsub(/```(?:json)?\s*/i, '').gsub('```', '').strip)
         parsed.is_a?(Hash) ? parsed['subtasks'] || parsed[:subtasks] || [] : parsed
       else
         []

@@ -6,7 +6,7 @@ require 'ruby_llm/tool'
 class WordCountTool < RubyLLM::Tool
   def self.name = 'word_count'
 
-  description <<~'DESC'
+  description <<~DESC
     Count words, characters, lines, and sentences in a given text.
     Useful for text analysis and content length checks.
   DESC

@@ -16,9 +16,9 @@ module AIA
       filters       = {}
       fact_asserter = nil
 
-      db_dir  = config.paths&.aia_dir
-      load_db = config.flags.tool_filter_load
-      save_db = config.flags.tool_filter_save
+      config.paths&.aia_dir
+      config.flags.tool_filter_load
+      config.flags.tool_filter_save
 
       if config.flags.auto_tool_filter
         require_relative 'tool_filter/tfidf'

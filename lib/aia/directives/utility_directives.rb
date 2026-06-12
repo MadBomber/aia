@@ -6,6 +6,7 @@ require 'word_wrapper'
 module AIA
   class UtilityDirectives < Directive
     desc "List available tools (optional filter by name or description substring)"
+    # rubocop:disable Metrics/AbcSize
     def tools(args = [], context_manager = nil)
       indent = 4
       spaces = " " * indent
@@ -47,8 +48,10 @@ module AIA
 
       ''
     end
+    # rubocop:enable Metrics/AbcSize
 
     desc "Show MCP server connection status and available tools"
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def mcp(args = [], context_manager = nil)
       connected = AIA.config&.connected_mcp_servers || []
       failed    = AIA.config&.failed_mcp_servers || []
@@ -98,6 +101,7 @@ module AIA
 
       ''
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     desc "Show active robot configuration"
     def robots(args = [], context_manager = nil)
@@ -175,10 +179,10 @@ module AIA
       mcp_count = Array(bot.mcp_tools).size
       total = local_count + mcp_count
       tool_parts = []
-      tool_parts << "#{local_count} local" if local_count > 0
-      tool_parts << "#{mcp_count} mcp" if mcp_count > 0
-      puts "    Tools:    #{total} (#{tool_parts.join(', ')})" if total > 0
-      puts "    Tools:    none" if total == 0
+      tool_parts << "#{local_count} local" if local_count.positive?
+      tool_parts << "#{mcp_count} mcp" if mcp_count.positive?
+      puts "    Tools:    #{total} (#{tool_parts.join(', ')})" if total.positive?
+      puts "    Tools:    none" if total.zero?
 
       role = role_for(bot)
       puts "    Role:     #{role}"
@@ -225,7 +229,7 @@ module AIA
 
         if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
           first_robot = robot.robots.values.first
-          if first_robot&.respond_to?(:mcp_tools) && first_robot.mcp_tools&.any?
+          if first_robot.respond_to?(:mcp_tools) && first_robot.mcp_tools&.any?
             return Array(first_robot.mcp_tools)
           end
         end

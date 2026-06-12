@@ -99,6 +99,7 @@ module AIA
       false
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def handle_decomposition(prompt)
       require_relative 'prompt_decomposer'
       total_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -144,6 +145,7 @@ module AIA
         barrier.wait
         tasks.map(&:wait)
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       parallel_wall    = Process.clock_gettime(Process::CLOCK_MONOTONIC) - wall_start
       serial_est       = timings.sum
@@ -192,7 +194,7 @@ module AIA
 
       network = RobotFactory.build_concurrent_mcp_network(AIA.config, groups)
       result = @ui_presenter.with_spinner("Processing (concurrent)") { network.run(message: prompt) }
-      content = extract_content(result)
+      extract_content(result)
 
       present_result(result, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
       true
@@ -303,13 +305,13 @@ module AIA
 
       raw_subtasks.compact.each do |r|
         raw = r.respond_to?(:raw) ? r.raw : nil
-        next unless raw&.respond_to?(:input_tokens) && raw.input_tokens
+        next unless raw.respond_to?(:input_tokens) && raw.input_tokens
         total_input  += raw.input_tokens  || 0
         total_output += raw.output_tokens || 0
       end
 
       synth_raw = synthesis_result.respond_to?(:raw) ? synthesis_result.raw : nil
-      if synth_raw&.respond_to?(:input_tokens) && synth_raw.input_tokens
+      if synth_raw.respond_to?(:input_tokens) && synth_raw.input_tokens
         total_input  += synth_raw.input_tokens  || 0
         total_output += synth_raw.output_tokens || 0
       end
@@ -323,6 +325,5 @@ module AIA
         elapsed:       total_elapsed
       })
     end
-
   end
 end

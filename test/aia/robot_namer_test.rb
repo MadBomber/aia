@@ -351,7 +351,7 @@ class RobotNamerTest < Minitest::Test
   def test_many_duplicates_increment_correctly
     namer = AIA::RobotNamer.new
     names = 5.times.map { namer.name_for('gpt-4o') }
-    assert_equal ['Flash', 'Flash2', 'Flash3', 'Flash4', 'Flash5'], names
+    assert_equal %w[Flash Flash2 Flash3 Flash4 Flash5], names
   end
 
   # Mixed scenario: first_name then duplicates
@@ -402,7 +402,7 @@ class RobotNamerTest < Minitest::Test
 
   # Verify FALLBACK_NAMES contains expected names
   def test_fallback_names_contains_expected_values
-    expected = ['Beacon', 'Drift', 'Echo', 'Fable', 'Glimmer']
+    expected = %w[Beacon Drift Echo Fable Glimmer]
     expected.each do |name|
       assert AIA::RobotNamer::FALLBACK_NAMES.include?(name), "FALLBACK_NAMES should include #{name}"
     end

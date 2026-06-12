@@ -3,15 +3,14 @@
 require 'pm'
 require 'erb'
 
-
 module AIA
   class PromptHandler
     include AIA::SkillUtils
 
     # Struct for path-based role content (bypasses PM parsing)
     RoleContent = Struct.new(:content) do
-      def to_s; content; end
-      def metadata; nil; end
+      def to_s = content
+      def metadata = nil
     end
 
     # Root-level YAML keys that are shorthands for deeper config paths
@@ -25,7 +24,7 @@ module AIA
       'next'        => [%w[config next], %w[config pipeline]],
       'pipeline'    => [%w[config pipeline], %w[config next]],
       'shell'       => [%w[config shell], %w[config flags shell]],
-      'erb'         => [%w[config erb], %w[config flags erb]],
+      'erb'         => [%w[config erb], %w[config flags erb]]
     }.freeze
 
     def initialize
@@ -38,7 +37,6 @@ module AIA
 
       register_pm_directives
     end
-
 
     def fetch_prompt(prompt_id)
       if prompt_id == '__FUZZY_SEARCH__'
@@ -62,7 +60,6 @@ module AIA
       apply_metadata_config(parsed) if parsed
       parsed
     end
-
 
     def fetch_role(role_id)
       return handle_missing_role("roles/") if role_id.nil?
@@ -88,7 +85,6 @@ module AIA
       parsed
     end
 
-
     # Load role for a specific model (ADR-005)
     # Takes a model spec hash and default role, returns rendered role text
     def load_role_for_model(model_spec, default_role = nil)
@@ -107,7 +103,6 @@ module AIA
       logger.warn("Could not load role '#{role_id}' for model: #{e.message}")
       nil
     end
-
 
     # Applies YAML front matter metadata to AIA.config.
     # Processes root-level shorthand keys, detects conflicts with config: section,
@@ -132,9 +127,7 @@ module AIA
       deep_merge_config(config_section) if config_section
     end
 
-
     private
-
 
     def fetch_executable_prompt
       content = AIA.config.executable_prompt_content
@@ -143,18 +136,16 @@ module AIA
       parsed
     end
 
-
     def register_pm_directives
       AIA::Directive.register_all
     end
-
 
     # Detect conflicts between root shorthand keys and the config: section.
     # Raises AIA::ConfigurationError when the same setting is specified in both places.
     def detect_shorthand_conflicts(meta_hash, config_section)
       # Check for mutually exclusive root keys: next and pipeline
-      has_next     = meta_hash.key?('next')     || meta_hash.key?(:next)
-      has_pipeline = meta_hash.key?('pipeline')  || meta_hash.key?(:pipeline)
+      has_next     = meta_hash.key?('next') || meta_hash.key?(:next)
+      has_pipeline = meta_hash.key?('pipeline') || meta_hash.key?(:pipeline)
 
       if has_next && has_pipeline
         raise ConfigurationError, "Both 'next' and 'pipeline' specified at root level — they are mutually exclusive"
@@ -173,14 +164,14 @@ module AIA
 
           unless value.nil?
             raise ConfigurationError,
-              "Conflict: '#{root_key}' at root level and '#{path.join('.')}' in config section"
+                  "Conflict: '#{root_key}' at root level and '#{path.join('.')}' in config section"
           end
         end
       end
     end
 
-
     # Apply root-level shorthand keys to AIA.config
+    # rubocop:disable Metrics/AbcSize
     def apply_root_shorthands(meta_hash)
       # model → AIA.config.models (replace with single-model array)
       model_val = meta_hash['model'] || meta_hash[:model]
@@ -226,11 +217,10 @@ module AIA
 
       # erb → AIA.config.flags.erb (and PM's erb via metadata)
       erb_val = meta_hash['erb'] || meta_hash[:erb]
-      unless erb_val.nil?
-        AIA.config.flags.erb = erb_val
-      end
+      return if erb_val.nil?
+      AIA.config.flags.erb = erb_val
     end
-
+    # rubocop:enable Metrics/AbcSize
 
     def logger
       @logger ||= LoggerManager.aia_logger
@@ -253,7 +243,6 @@ module AIA
       end
     end
 
-
     # Recursively merge a hash into a config object
     def deep_merge_into_config(config_obj, hash)
       hash.each do |key, value|
@@ -266,7 +255,6 @@ module AIA
       end
     end
 
-
     # Dig into a hash with an array of keys, returning nil if any key is missing
     def dig_hash(hash, keys)
       keys.reduce(hash) do |h, key|
@@ -274,7 +262,6 @@ module AIA
         h[key] || h[key.to_s]
       end
     end
-
 
     # Recursively symbolize all keys in a hash
     def symbolize_keys_deep(obj)
@@ -289,7 +276,6 @@ module AIA
         obj
       end
     end
-
 
     def handle_missing_prompt(prompt_id)
       prompt_id = prompt_id.to_s.strip
@@ -306,7 +292,6 @@ module AIA
       end
     end
 
-
     def fetch_role_from_path(role_id)
       expanded = File.expand_path(role_id)
       expanded += '.md' if File.extname(expanded).empty?
@@ -320,7 +305,6 @@ module AIA
       RoleContent.new(File.read(expanded))
     end
 
-
     def fuzzy_search_prompt(prompt_id)
       new_prompt_id = search_prompt_id_with_fzf(prompt_id)
 
@@ -330,7 +314,6 @@ module AIA
 
       PM.parse(new_prompt_id)
     end
-
 
     def handle_missing_role(role_id)
       role_id = role_id.to_s.strip
@@ -347,7 +330,6 @@ module AIA
       end
     end
 
-
     def fuzzy_search_role(role_id)
       new_role_id = search_role_id_with_fzf(role_id)
       if new_role_id.nil? || new_role_id.empty?
@@ -357,10 +339,9 @@ module AIA
       PM.parse(new_role_id)
     end
 
-
     def search_prompt_id_with_fzf(initial_query)
       prompt_files = Dir.glob(File.join(@prompts_dir, "*#{AIA.config.prompts.extname}"))
-                       .map { |file| File.basename(file, AIA.config.prompts.extname) }
+                        .map { |file| File.basename(file, AIA.config.prompts.extname) }
       fzf = AIA::Fzf.new(
         list: prompt_files,
         directory: @prompts_dir,
@@ -371,10 +352,9 @@ module AIA
       fzf.run || (raise "No prompt ID selected")
     end
 
-
     def search_role_id_with_fzf(initial_query)
       role_files = Dir.glob(File.join(@roles_dir, "*#{AIA.config.prompts.extname}"))
-                    .map { |file| File.basename(file, AIA.config.prompts.extname) }
+                      .map { |file| File.basename(file, AIA.config.prompts.extname) }
       fzf = AIA::Fzf.new(
         list: role_files,
         directory: @prompts_dir,

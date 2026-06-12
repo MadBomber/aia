@@ -80,7 +80,7 @@ class SpecialModeHandlerTest < Minitest::Test
     AIA.turn_state.force_decompose = true
 
     decomposer = mock('decomposer')
-    decomposer.stubs(:decompose).returns(['subtask1', 'subtask2'])
+    decomposer.stubs(:decompose).returns(%w[subtask1 subtask2])
     sub_result = mock('sub_result')
     sub_result.stubs(:reply).returns('sub answer')
     decomposer.stubs(:synthesize).returns(sub_result)
@@ -121,7 +121,7 @@ class SpecialModeHandlerTest < Minitest::Test
     sub_result.stubs(:reply).returns('good answer')
 
     decomposer = mock('decomposer')
-    decomposer.stubs(:decompose).returns(['task_fail', 'task_ok'])
+    decomposer.stubs(:decompose).returns(%w[task_fail task_ok])
     decomposer.stubs(:synthesize).returns(sub_result)
     AIA::PromptDecomposer.stubs(:new).returns(decomposer)
 
@@ -144,7 +144,7 @@ class SpecialModeHandlerTest < Minitest::Test
     final_result.stubs(:reply).returns('synthesized')
 
     decomposer = mock('decomposer')
-    decomposer.stubs(:decompose).returns(['task_fail', 'task_ok'])
+    decomposer.stubs(:decompose).returns(%w[task_fail task_ok])
     # synthesize must receive only the non-nil result
     decomposer.expects(:synthesize).with('multi-part question', ['good answer'])
               .returns(final_result)
@@ -162,7 +162,7 @@ class SpecialModeHandlerTest < Minitest::Test
     AIA.turn_state.force_decompose = true
 
     decomposer = mock('decomposer')
-    decomposer.stubs(:decompose).returns(['task_a', 'task_b'])
+    decomposer.stubs(:decompose).returns(%w[task_a task_b])
     AIA::PromptDecomposer.stubs(:new).returns(decomposer)
     @robot.stubs(:run).raises(RuntimeError, "every task failed")
 
@@ -173,13 +173,17 @@ class SpecialModeHandlerTest < Minitest::Test
   def test_concurrent_subtasks_all_complete
     AIA.turn_state.force_decompose = true
 
-    result_a = mock('result_a'); result_a.stubs(:reply).returns('answer_a')
-    result_b = mock('result_b'); result_b.stubs(:reply).returns('answer_b')
-    result_c = mock('result_c'); result_c.stubs(:reply).returns('answer_c')
-    final    = mock('final');    final.stubs(:reply).returns('synthesized all')
+    result_a = mock('result_a')
+    result_a.stubs(:reply).returns('answer_a')
+    result_b = mock('result_b')
+    result_b.stubs(:reply).returns('answer_b')
+    result_c = mock('result_c')
+    result_c.stubs(:reply).returns('answer_c')
+    final    = mock('final')
+    final.stubs(:reply).returns('synthesized all')
 
     decomposer = mock('decomposer')
-    decomposer.stubs(:decompose).returns(['task_a', 'task_b', 'task_c'])
+    decomposer.stubs(:decompose).returns(%w[task_a task_b task_c])
     decomposer.stubs(:synthesize).returns(final)
     AIA::PromptDecomposer.stubs(:new).returns(decomposer)
 

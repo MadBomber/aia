@@ -2,7 +2,6 @@
 
 require 'faraday'
 require 'word_wrapper'
-require 'set'
 require_relative 'directive'
 require_relative 'directives/configuration_directives'
 require_relative 'directives/context_directives'
@@ -20,7 +19,6 @@ module AIA
       @prefix_size = DIRECTIVE_PREFIX.size
     end
 
-
     # Checks whether a string looks like a chat-time directive.
     # Uses PM.directives as the source of truth for known directive names.
     def directive?(string)
@@ -31,23 +29,21 @@ module AIA
 
       # Extract the directive name and check it's registered
       sans_prefix = stripped[@prefix_size..]
-      method_name = sans_prefix.split(' ').first&.downcase
+      method_name = sans_prefix.split.first&.downcase
       return false if method_name.nil? || method_name.empty?
 
       PM.directives.key?(method_name.to_sym)
     end
 
-
     # Returns true when the directive mutates turn-state or sets a mode flag
     # rather than returning text for the AI.  ChatLoop uses this to decide
     # whether to skip forwarding the directive output to the robot.
     def state_setting?(input)
-      name = extract_content(input).strip.split(' ').first.to_s.delete_prefix('/')
+      name = extract_content(input).strip.split.first.to_s.delete_prefix('/')
       AIA::Directive.subclasses.any? do |klass|
         klass.state_setting_methods.include?(name)
       end
     end
-
 
     # Process a chat-time directive by dispatching through PM.directives.
     # Returns the block's return value: non-blank string for content directives,
@@ -58,7 +54,7 @@ module AIA
       content = extract_content(string)
       key = content.strip
       sans_prefix = key[@prefix_size..]
-      args = sans_prefix.split(' ')
+      args = sans_prefix.split
       method_name = args.shift.downcase
 
       block = PM.directives[method_name.to_sym]
@@ -70,7 +66,6 @@ module AIA
       block.call(render_context, *args)
     end
 
-
     private
 
     def render_context
@@ -79,7 +74,7 @@ module AIA
         params:    {},
         included:  Set.new,
         depth:     0,
-        metadata:  OpenStruct.new(includes: [])
+        metadata:  Struct.new(:includes).new([])
       )
     end
 

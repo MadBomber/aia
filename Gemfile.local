@@ -2,16 +2,17 @@
 
 source "https://rubygems.org"
 
-gem 'ractor_queue', path: '../../ractor_queue'
-
 group :development do
   gem 'aigcm'
   gem 'debug_me'
-  gem 'deep-cover', require: false
   gem 'flay'
   gem 'flog'
   gem 'rubocop'
   gem 'simplecov_lcov_formatter'
+  gem 'deep-cover', require: false
 end
 
 gemspec
+
+gem 'robot_lab', path: '../robot_lab'
+gem 'ractor_queue', path: '../../ractor_queue'

@@ -5,15 +5,10 @@ class AIAMockingTest < Minitest::Test
   def setup
     # Basic mocking setup
     AIA.stubs(:config).returns(OpenStruct.new(
-      model: 'test-model',
-      tools: [],
-      context_files: []
-    ))
-  end
-
-  def teardown
-    # Call super to ensure Mocha cleanup runs properly
-    super
+                                 model: 'test-model',
+                                 tools: [],
+                                 context_files: []
+                               ))
   end
 
   def test_basic_mocking_functionality
@@ -32,7 +27,7 @@ class AIAMockingTest < Minitest::Test
   def test_system_operations_can_be_mocked
     # Basic system operations test
     system_result = true
-    self.stubs(:system).returns(system_result)
+    stubs(:system).returns(system_result)
     result = system('echo test')
     assert_equal true, result
   end

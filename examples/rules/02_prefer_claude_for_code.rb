@@ -12,8 +12,8 @@ AIA.rules_for(:model_select) do
     on :model, name: satisfies { |n| n.to_s.include?("claude") }
     perform do |facts|
       AIA.decisions.add(:model_decision,
-        model: facts[1][:name],
-        reason: "user rule: prefer Claude for code tasks")
+                        model: facts[1][:name],
+                        reason: "user rule: prefer Claude for code tasks")
     end
   end
 end

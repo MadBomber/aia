@@ -25,7 +25,7 @@ module AIA
       vectors = texts.map { |t| tfidf.transform(t) }
 
       vectors.each_with_index.map do |_vec, i|
-        if i == 0
+        if i.zero?
           nil # reference model -- no comparison
         else
           cosine_similarity(vectors[0], vectors[i])

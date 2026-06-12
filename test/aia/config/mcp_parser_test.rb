@@ -155,7 +155,7 @@ class McpParserTest < Minitest::Test
       "mcpServers" => {
         "filesystem" => {
           "command" => "npx",
-          "topics" => ["files", "code", "directory"]
+          "topics" => %w[files code directory]
         }
       }
     }
@@ -163,7 +163,7 @@ class McpParserTest < Minitest::Test
     with_temp_json(json) do |path|
       servers = AIA::McpParser.parse_files([path])
       assert_equal 1, servers.size
-      assert_equal ["files", "code", "directory"], servers.first[:topics]
+      assert_equal %w[files code directory], servers.first[:topics]
     end
   end
 

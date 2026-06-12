@@ -6,20 +6,20 @@ class CLITest < Minitest::Test
   BIN = File.expand_path('../bin/aia', __dir__)
 
   def test_help_option
-    stdout, stderr, status = Open3.capture3('ruby', BIN, '--help')
+    stdout, _, status = Open3.capture3('ruby', BIN, '--help')
     assert status.success?, "Expected exit status 0, got \\#{status.exitstatus}"
     assert_includes stdout, 'Usage:'
   end
 
   def test_version_option
-    stdout, stderr, status = Open3.capture3('ruby', BIN, '--version')
+    stdout, _, status = Open3.capture3('ruby', BIN, '--version')
     assert status.success?
     expected = AIA::VERSION + "\n"
     assert_equal expected, stdout
   end
 
   def test_mcp_list_exits_successfully
-    stdout, stderr, status = Open3.capture3('ruby', BIN, '--mcp-list')
+    stdout, _, status = Open3.capture3('ruby', BIN, '--mcp-list')
     assert status.success?, "Expected exit status 0, got #{status.exitstatus}"
     # Output will be either "No MCP servers configured." or "Configured MCP servers:"
     # depending on user's config file

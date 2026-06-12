@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_loader_test.rb
 
 require_relative '../test_helper'
@@ -112,8 +113,8 @@ class ToolLoaderTest < Minitest::Test
     assert_includes tools, available_tool_class,
                     "Available tool should be included"
   ensure
-    unavailable_tool_class = nil
-    available_tool_class = nil
+    nil
+    nil
     GC.start
   end
 
@@ -159,7 +160,7 @@ class ToolLoaderTest < Minitest::Test
     assert_includes tools, basic_tool_class,
                     "Tools without available? should be included"
   ensure
-    basic_tool_class = nil
+    nil
     GC.start
   end
 

@@ -97,8 +97,7 @@ module AIA
     # @param tracker [SessionTracker, nil] to record the turn
     # @param decisions [Hash, nil] routing decisions for tracker
     # @return [String] the extracted content
-    def present_result(result, streamed_content: nil, prompt: nil, elapsed: nil,
-                       ui_presenter:, tracker: nil, decisions: nil)
+    def present_result(result, ui_presenter:, streamed_content: nil, prompt: nil, elapsed: nil, tracker: nil, decisions: nil)
       content = streamed_content || extract_content(result)
 
       if tracker && prompt

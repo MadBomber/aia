@@ -105,7 +105,7 @@ module AIA
 
           # Preserve routing metadata for KBS/AIA
           server[:topics]      = Array(config['topics']) if config['topics']
-          server[:independent] = config['independent'] if config['independent'] != nil
+          server[:independent] = config['independent'] unless config['independent'].nil?
           server[:group]       = config['group'] if config['group']
 
           server

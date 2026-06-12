@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/streaming_runner_test.rb
 
 require_relative '../test_helper'
@@ -63,8 +64,8 @@ class StreamingRunnerTest < Minitest::Test
 
   def test_run_passes_tool_list_when_provided
     robot = build_non_network_robot
-    robot.expects(:run).with("hello", mcp: :inherit, tools: ["tool_a", "tool_b"]).returns(@result)
-    @runner.run(robot, "hello", tools: ["tool_a", "tool_b"])
+    robot.expects(:run).with("hello", mcp: :inherit, tools: %w[tool_a tool_b]).returns(@result)
+    @runner.run(robot, "hello", tools: %w[tool_a tool_b])
   end
 
   def test_run_collects_streamed_chunks_into_content

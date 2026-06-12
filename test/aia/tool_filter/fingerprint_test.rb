@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/tool_filter/fingerprint_test.rb
 
 require_relative '../../test_helper'
@@ -11,7 +12,7 @@ class ToolFilterFingerprintTest < Minitest::Test
   def build_tools
     [
       MockTool.new("search", "Search for files"),
-      MockTool.new("browse", "Browse web pages"),
+      MockTool.new("browse", "Browse web pages")
     ]
   end
 
@@ -37,5 +38,4 @@ class ToolFilterFingerprintTest < Minitest::Test
     fp_b = filter.send(:fingerprint_from_tools, tools_b)
     refute_equal fp_a, fp_b
   end
-
 end

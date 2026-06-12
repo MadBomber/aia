@@ -41,7 +41,7 @@ class LoggerManagerTest < Minitest::Test
     AIA::LoggerManager.aia_logger.info("test message from aia")
 
     entries = AIA::LoggerManager.test_entries(:aia)
-    assert entries.any? { |e| e.message.include?("test message from aia") }
+    assert(entries.any? { |e| e.message.include?("test message from aia") })
   end
 
   def test_test_entries_by_system
@@ -54,9 +54,9 @@ class LoggerManagerTest < Minitest::Test
     llm_entries = AIA::LoggerManager.test_entries(:llm)
     mcp_entries = AIA::LoggerManager.test_entries(:mcp)
 
-    assert aia_entries.any? { |e| e.message.include?("aia log") }
-    assert llm_entries.any? { |e| e.message.include?("llm log") }
-    assert mcp_entries.any? { |e| e.message.include?("mcp log") }
+    assert(aia_entries.any? { |e| e.message.include?("aia log") })
+    assert(llm_entries.any? { |e| e.message.include?("llm log") })
+    assert(mcp_entries.any? { |e| e.message.include?("mcp log") })
   end
 
   def test_test_entries_raises_for_unknown_system
@@ -115,7 +115,7 @@ class LoggerManagerTest < Minitest::Test
 
   def test_reset_clears_loggers
     # Save test mode state
-    was_test_mode = AIA::LoggerManager.test_mode?
+    AIA::LoggerManager.test_mode?
 
     AIA::LoggerManager.reset!
     refute AIA::LoggerManager.test_mode?
@@ -139,5 +139,4 @@ class LoggerManagerTest < Minitest::Test
     # Restore default
     AIA::LoggerManager.test_mode!(level: :debug)
   end
-
 end

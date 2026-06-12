@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/display_metrics_test.rb
 
 require_relative '../test_helper'
@@ -119,7 +120,7 @@ class DisplayMetricsTest < Minitest::Test
       :ok, context: { lyric: robot_a, spark: robot_b }
     )
 
-    @ui.expects(:display_multi_model_metrics).with { |list|
+    @ui.expects(:display_multi_model_metrics).with do |list|
       list.size == 2 &&
         list[0][:model_id] == 'claude-sonnet-4' &&
         list[0][:display_name] == 'Lyric' &&
@@ -129,7 +130,7 @@ class DisplayMetricsTest < Minitest::Test
         list[1][:display_name] == 'Spark' &&
         list[1][:input_tokens] == 200 &&
         list[1][:elapsed] == 2.1
-    }
+    end
 
     loop_instance = build_chat_loop
     loop_instance.send(:display_metrics, flow_result)
@@ -143,9 +144,9 @@ class DisplayMetricsTest < Minitest::Test
       :ok, context: { run_params: { message: 'test' }, spark: robot_a }
     )
 
-    @ui.expects(:display_multi_model_metrics).with { |list|
+    @ui.expects(:display_multi_model_metrics).with do |list|
       list.size == 1 && list[0][:display_name] == 'Spark'
-    }
+    end
 
     loop_instance = build_chat_loop
     loop_instance.send(:display_metrics, flow_result)
@@ -172,9 +173,9 @@ class DisplayMetricsTest < Minitest::Test
       :ok, context: { spark: robot_a }
     )
 
-    @ui.expects(:display_multi_model_metrics).with { |list|
+    @ui.expects(:display_multi_model_metrics).with do |list|
       list.size == 1 && list[0][:elapsed].nil?
-    }
+    end
 
     loop_instance = build_chat_loop
     loop_instance.send(:display_metrics, flow_result)
@@ -199,11 +200,11 @@ class DisplayMetricsTest < Minitest::Test
       :ok, context: { lyric: robot_a, spark: robot_b }
     )
 
-    @ui.expects(:display_multi_model_metrics).with { |list|
+    @ui.expects(:display_multi_model_metrics).with do |list|
       list.size == 2 &&
         list[0][:similarity].nil? &&
         list[1].key?(:similarity)
-    }
+    end
 
     loop_instance = build_chat_loop
     loop_instance.send(:display_metrics, flow_result)
@@ -217,9 +218,9 @@ class DisplayMetricsTest < Minitest::Test
       :ok, context: { spark: robot_a }
     )
 
-    @ui.expects(:display_multi_model_metrics).with { |list|
+    @ui.expects(:display_multi_model_metrics).with do |list|
       list.size == 1 && !list[0].key?(:similarity)
-    }
+    end
 
     loop_instance = build_chat_loop
     loop_instance.send(:display_metrics, flow_result)

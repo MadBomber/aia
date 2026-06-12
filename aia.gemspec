@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.metadata['homepage_uri']     = spec.homepage
   spec.metadata['source_code_uri']  = spec.homepage
   spec.metadata['changelog_uri']    = spec.homepage
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
@@ -42,7 +43,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bigdecimal',   '>= 4.0'
 
   # Core dependencies
-  spec.add_dependency 'robot_lab',    '~> 0.1.0'              # Execution engine: robots, networks, tools, MCP, memory
+  spec.add_dependency 'robot_lab',    '~> 0.2'                # Execution engine: robots, networks, tools, MCP, memory
   spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
   spec.add_dependency 'prompt_manager', '~> 1.0.2' # Prompt parsing/directive DSL
   spec.add_dependency 'lumberjack'                 # Structured logging with 3 loggers (aia, llm, mcp)
@@ -74,7 +75,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'tocer'
   spec.add_development_dependency 'webmock'
 
-
   spec.post_install_message = <<~MSG
 
     ╔══════════════════════════════════════════════════════════════╗
@@ -88,5 +88,4 @@ Gem::Specification.new do |spec|
     Full docs:    https://madbomber.github.io/aia
 
   MSG
-
 end

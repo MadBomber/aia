@@ -22,17 +22,18 @@ module AIA
       end
 
       private
-        def uses_completion_tokens_param?(model, provider)
-          provider_slug(provider) == 'openai' && model_id(model).match?(/\A(o\d|gpt-5)/i)
-        end
 
-        def provider_slug(provider)
-          provider.respond_to?(:slug) ? provider.slug.to_s : nil
-        end
+      def uses_completion_tokens_param?(model, provider)
+        provider_slug(provider) == 'openai' && model_id(model).match?(/\A(o\d|gpt-5)/i)
+      end
 
-        def model_id(model)
-          model.respond_to?(:id) ? model.id.to_s : model.to_s
-        end
+      def provider_slug(provider)
+        provider.respond_to?(:slug) ? provider.slug.to_s : nil
+      end
+
+      def model_id(model)
+        model.respond_to?(:id) ? model.id.to_s : model.to_s
+      end
     end
   end
 
@@ -74,9 +75,9 @@ module RubyLLM
 
       begin
         tool.call(tool_call.arguments)
-      rescue Interrupt, SignalException, SystemExit
+      rescue SignalException, SystemExit
         raise
-      rescue Exception => e
+      rescue Exception => e # rubocop:disable Lint/RescueException
         RubyLLM.logger.warn { "Tool #{tool_call.name} raised #{e.class}: #{e.message}" }
         { error: "#{e.class}: #{e.message}" }
       end

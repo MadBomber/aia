@@ -76,7 +76,6 @@ class CLIParserValidateRoleExistsTest < Minitest::Test
   end
 end
 
-
 class CLIParserListRolesTest < Minitest::Test
   def test_list_available_roles_with_roles
     Dir.mktmpdir do |dir|
@@ -133,7 +132,6 @@ class CLIParserListRolesTest < Minitest::Test
     ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
   end
 end
-
 
 class CLIParserCreateOptionParserTest < Minitest::Test
   def test_create_option_parser_returns_parser
@@ -300,28 +298,28 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--skill', 'testing,debugging'])
-    assert_equal ['testing', 'debugging'], options[:skills]
+    assert_equal %w[testing debugging], options[:skills]
   end
 
   def test_parses_skill_repeatable
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--skill', 'testing', '--skill', 'debugging'])
-    assert_equal ['testing', 'debugging'], options[:skills]
+    assert_equal %w[testing debugging], options[:skills]
   end
 
   def test_parses_skill_combined_comma_and_repeat
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--skill', 'testing,debugging', '--skill', 'refactoring'])
-    assert_equal ['testing', 'debugging', 'refactoring'], options[:skills]
+    assert_equal %w[testing debugging refactoring], options[:skills]
   end
 
   def test_parses_skill_strips_whitespace
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--skill', ' testing , debugging '])
-    assert_equal ['testing', 'debugging'], options[:skills]
+    assert_equal %w[testing debugging], options[:skills]
   end
 
   def test_parses_next_prompt
@@ -335,7 +333,7 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['-p', 'a,b,c'])
-    assert_equal ['a', 'b', 'c'], options[:pipeline]
+    assert_equal %w[a b c], options[:pipeline]
   end
 
   def test_parses_system_prompt
@@ -377,21 +375,21 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--rq', 'lib1,lib2'])
-    assert_equal ['lib1', 'lib2'], options[:require_libs]
+    assert_equal %w[lib1 lib2], options[:require_libs]
   end
 
   def test_parses_allowed_tools
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--at', 'tool1,tool2'])
-    assert_equal ['tool1', 'tool2'], options[:allowed_tools]
+    assert_equal %w[tool1 tool2], options[:allowed_tools]
   end
 
   def test_parses_rejected_tools
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--rt', 'tool1,tool2'])
-    assert_equal ['tool1', 'tool2'], options[:rejected_tools]
+    assert_equal %w[tool1 tool2], options[:rejected_tools]
   end
 
   def test_parses_list_tools
@@ -448,7 +446,7 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--mu', 'server1,server2'])
-    assert_equal ['server1', 'server2'], options[:mcp_use]
+    assert_equal %w[server1 server2], options[:mcp_use]
   end
 
   def test_parses_mcp_skip
@@ -491,10 +489,13 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     parser = AIA::CLIParser.send(:create_option_parser, options)
 
     stderr_messages = []
-    AIA::CLIParser.stubs(:warn).with { |msg| stderr_messages << msg; true }
+    AIA::CLIParser.stubs(:warn).with do |msg|
+      stderr_messages << msg
+      true
+    end
 
     parser.parse!(['--log-level', 'invalid'])
-    assert stderr_messages.any? { |m| m.include?('Invalid log level') }
+    assert(stderr_messages.any? { |m| m.include?('Invalid log level') })
   end
 
   def test_parses_log_to
@@ -575,7 +576,6 @@ class CLIParserCreateOptionParserTest < Minitest::Test
   end
 end
 
-
 class CLIParserToolsPathsExtendedTest < Minitest::Test
   def test_rejects_non_rb_file
     Dir.mktmpdir do |dir|
@@ -583,18 +583,24 @@ class CLIParserToolsPathsExtendedTest < Minitest::Test
       File.write(txt_file, '# not ruby')
 
       stderr_messages = []
-      AIA::CLIParser.stubs(:warn).with { |msg| stderr_messages << msg; true }
+      AIA::CLIParser.stubs(:warn).with do |msg|
+        stderr_messages << msg
+        true
+      end
 
       AIA::CLIParser.send(:process_tools_paths, txt_file)
-      assert stderr_messages.any? { |m| m.include?('should have *.rb extension') }
+      assert(stderr_messages.any? { |m| m.include?('should have *.rb extension') })
     end
   end
 
   def test_rejects_nonexistent_path
     stderr_messages = []
-    AIA::CLIParser.stubs(:warn).with { |msg| stderr_messages << msg; true }
+    AIA::CLIParser.stubs(:warn).with do |msg|
+      stderr_messages << msg
+      true
+    end
 
     AIA::CLIParser.send(:process_tools_paths, '/nonexistent/path/tool.rb')
-    assert stderr_messages.any? { |m| m.include?('not valid') }
+    assert(stderr_messages.any? { |m| m.include?('not valid') })
   end
 end

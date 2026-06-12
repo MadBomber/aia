@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/layered_orchestrator_test.rb
 
 require_relative '../test_helper'
@@ -145,9 +146,9 @@ class LayeredOrchestratorTest < Minitest::Test
 
   def test_handle_returns_nil_when_all_leads_produce_empty_tasks
     @orchestrator.stubs(:decompose_to_layers).returns([
-      { 'name' => 'infra', 'title' => 'Infrastructure', 'requirements' => 'r1' },
-      { 'name' => 'data',  'title' => 'Data',            'requirements' => 'r2' }
-    ])
+                                                        { 'name' => 'infra', 'title' => 'Infrastructure', 'requirements' => 'r1' },
+                                                        { 'name' => 'data',  'title' => 'Data',            'requirements' => 'r2' }
+                                                      ])
     @orchestrator.stubs(:run_leads_wave).returns({ 'infra' => [], 'data' => [] })
 
     result = @orchestrator.handle(AIA::HandlerContext.new(prompt: "build a Rails app"))

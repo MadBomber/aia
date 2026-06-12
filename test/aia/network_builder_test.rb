@@ -21,7 +21,7 @@ class NetworkBuilderTest < Minitest::Test
     )
 
     @config = OpenStruct.new(
-      pipeline:       ['prompt_a', 'prompt_b'],
+      pipeline:       %w[prompt_a prompt_b],
       models:         [@model_spec],
       context_files:  [],
       mcp_servers:    [],
@@ -79,7 +79,7 @@ class NetworkBuilderTest < Minitest::Test
     network = AIA::NetworkBuilder.build_pipeline_network(@config, @namer)
 
     assert_equal "aia-pipeline", network.name,
-      "build_pipeline_network must create a network named 'aia-pipeline'"
+                 "build_pipeline_network must create a network named 'aia-pipeline'"
   end
 
   # =========================================================================
@@ -87,12 +87,12 @@ class NetworkBuilderTest < Minitest::Test
   # =========================================================================
 
   def test_build_pipeline_network_builds_one_robot_per_pipeline_step
-    @config.pipeline = ['step_one', 'step_two', 'step_three']
+    @config.pipeline = %w[step_one step_two step_three]
 
     network = AIA::NetworkBuilder.build_pipeline_network(@config, @namer)
 
     assert_equal 3, network.robots.size,
-      "Pipeline network should have exactly one robot per pipeline step"
+                 "Pipeline network should have exactly one robot per pipeline step"
   end
 
   # =========================================================================
@@ -110,7 +110,7 @@ class NetworkBuilderTest < Minitest::Test
     network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 
     assert_equal "aia-parallel", network.name,
-      "build_parallel_network must create a network named 'aia-parallel'"
+                 "build_parallel_network must create a network named 'aia-parallel'"
   end
 
   # =========================================================================
@@ -134,7 +134,7 @@ class NetworkBuilderTest < Minitest::Test
 
     model_names.each do |expected|
       assert_includes names_requested, expected,
-        "namer.name_for should have been called with '#{expected}'"
+                      "namer.name_for should have been called with '#{expected}'"
     end
   end
 end

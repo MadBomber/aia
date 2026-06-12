@@ -13,7 +13,7 @@ module AIA
       parameters.each do |name, default|
         value = input_manager.request_variable_value(
           variable_name: name,
-          default_value: default,
+          default_value: default
         )
         values[name] = value
       end

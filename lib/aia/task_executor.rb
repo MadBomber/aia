@@ -39,9 +39,9 @@ module AIA
       context = "Original request: #{prompt}\n\n"
 
       unless prior_results.empty?
-        prior = prior_results.map { |r|
+        prior = prior_results.map do |r|
           "#{r[:robot]} completed '#{r[:task]}':\n#{r[:content]}"
-        }.join("\n\n")
+        end.join("\n\n")
         context += "Prior work:\n#{prior}\n\n"
       end
 

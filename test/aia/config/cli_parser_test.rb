@@ -81,7 +81,7 @@ class CLIParserModelsTest < Minitest::Test
 end
 
 class CLIParserListSkillsTest < Minitest::Test
-  TESTING_SKILL_MD = <<~MD
+  TESTING_SKILL_MD = <<~MD.freeze
     ---
     name: testing
     description: Write tests using Minitest.
@@ -89,7 +89,7 @@ class CLIParserListSkillsTest < Minitest::Test
     # Testing skill content
   MD
 
-  DEBUGGING_SKILL_MD = <<~MD
+  DEBUGGING_SKILL_MD = <<~MD.freeze
     ---
     name: debugging
     description: Debug Ruby applications.
@@ -278,7 +278,6 @@ class CLIParserListSkillsTest < Minitest::Test
   end
 end
 
-
 class CLIParserToolsPathsTest < Minitest::Test
   def test_process_tools_paths_empty_raises
     # Empty string should trigger exit (which is intercepted in tests)
@@ -304,7 +303,7 @@ class CLIParserToolsPathsTest < Minitest::Test
 
       result = AIA::CLIParser.send(:process_tools_paths, dir)
       assert_equal 2, result.size
-      assert result.all? { |p| p.end_with?('.rb') }
+      assert(result.all? { |p| p.end_with?('.rb') })
     end
   end
 
@@ -338,7 +337,7 @@ class CLIParserToolsPathsTest < Minitest::Test
       File.write(File.join(roles_dir, 'reviewer.md'), '')
 
       result = AIA::CLIParser.send(:list_available_role_names, dir, 'roles')
-      assert_equal ['architect', 'reviewer'], result
+      assert_equal %w[architect reviewer], result
     end
   end
 
@@ -357,7 +356,6 @@ class CLIParserToolsPathsTest < Minitest::Test
     assert_equal [], result
   end
 end
-
 
 # P1: Verify CLI_TO_NESTED_MAP covers all flat CLI keys that need mapping
 class CLIToNestedMapCompletenessTest < Minitest::Test
@@ -400,33 +398,34 @@ class CLIToNestedMapCompletenessTest < Minitest::Test
     unmapped = cli_keys - all_known
 
     assert_empty unmapped,
-      "CLI parser keys not in CLI_TO_NESTED_MAP, SPECIAL_KEYS, or RUNTIME_KEYS: #{unmapped.inspect}\n" \
-      "Add them to the appropriate location."
+                 "CLI parser keys not in CLI_TO_NESTED_MAP, SPECIAL_KEYS, or RUNTIME_KEYS: #{unmapped.inspect}\n" \
+                 "Add them to the appropriate location."
   end
 
   def test_cli_to_nested_map_targets_valid_sections
-    schema_sections = %i[service llm prompts roles skills output audio image embedding tools flags registry paths logger rules concurrency tool_filter]
+    schema_sections = %i[service llm prompts roles skills output audio image embedding tools flags registry paths logger rules concurrency
+                         tool_filter]
 
     AIA::Config::CLI_TO_NESTED_MAP.each do |cli_key, (section, _nested_key)|
       assert_includes schema_sections, section,
-        "CLI_TO_NESTED_MAP[:#{cli_key}] targets unknown section :#{section}"
+                      "CLI_TO_NESTED_MAP[:#{cli_key}] targets unknown section :#{section}"
     end
   end
 
   # I12: Validate that every nested key in CLI_TO_NESTED_MAP exists in defaults.yml
   def test_cli_to_nested_map_targets_valid_schema_keys
-    defaults_path = File.expand_path('../../../../lib/aia/config/defaults.yml', __FILE__)
-    schema = YAML.safe_load(File.read(defaults_path), permitted_classes: [Symbol], symbolize_names: true)
+    defaults_path = File.expand_path('../../../lib/aia/config/defaults.yml', __dir__)
+    schema = YAML.safe_load_file(defaults_path, permitted_classes: [Symbol], symbolize_names: true)
     defaults = schema[:defaults] || schema
 
     AIA::Config::CLI_TO_NESTED_MAP.each do |cli_key, (section, nested_key)|
       section_hash = defaults[section]
       assert section_hash.is_a?(Hash),
-        "CLI_TO_NESTED_MAP[:#{cli_key}] targets section :#{section} which is not a Hash in defaults.yml"
+             "CLI_TO_NESTED_MAP[:#{cli_key}] targets section :#{section} which is not a Hash in defaults.yml"
 
       assert section_hash.key?(nested_key),
-        "CLI_TO_NESTED_MAP[:#{cli_key}] targets :#{section}.#{nested_key} which does not exist in defaults.yml. " \
-        "Add :#{nested_key} to the :#{section} section in defaults.yml or fix the mapping."
+             "CLI_TO_NESTED_MAP[:#{cli_key}] targets :#{section}.#{nested_key} which does not exist in defaults.yml. " \
+             "Add :#{nested_key} to the :#{section} section in defaults.yml or fix the mapping."
     end
   end
 
@@ -434,7 +433,7 @@ class CLIToNestedMapCompletenessTest < Minitest::Test
 
   def extract_cli_parser_keys
     # Parse the CLI parser source to find all `options[:key]` assignments
-    parser_path = File.expand_path('../../../../lib/aia/config/cli_parser.rb', __FILE__)
+    parser_path = File.expand_path('../../../lib/aia/config/cli_parser.rb', __dir__)
     source = File.read(parser_path)
 
     source.scan(/options\[:(\w+)\]/).flatten.map(&:to_sym).uniq

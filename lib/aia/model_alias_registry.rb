@@ -31,7 +31,7 @@ module AIA
       "cheap"      => "gpt-4o-mini",
       "best"       => "claude-opus-4-20250514",
       "coding"     => "claude-sonnet-4-20250514",
-      "vision"     => "gpt-4o",
+      "vision"     => "gpt-4o"
     }.freeze
 
     def initialize(custom_aliases = {})

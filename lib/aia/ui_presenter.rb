@@ -8,10 +8,9 @@ require 'fileutils'
 
 module AIA
   class UIPresenter
-    USER_PROMPT = "Follow up (cntl-D or 'exit' to end) #=> "
+    USER_PROMPT = "Follow up (cntl-D or 'exit' to end) #=> ".freeze
     HISTORY_FILE = File.join(Dir.home, '.config', 'aia', 'chat_history')
     MAX_HISTORY = 50
-
 
     def initialize
       @terminal_width = TTY::Screen.width
@@ -21,12 +20,10 @@ module AIA
       puts "#{'═' * @terminal_width}\n"
     end
 
-
     def display_ai_response(response)
       puts "\nAI: "
       format_chat_response(response)
     end
-
 
     def format_chat_response(response, output = $stdout)
       indent = '   '
@@ -66,16 +63,13 @@ module AIA
       end
     end
 
-
     def display_separator
       puts "\n#{'─' * @terminal_width}"
     end
 
-
     def display_chat_end
       puts "\nChat session ended."
     end
-
 
     # This is the follow up question in a chat session
     def ask_question
@@ -88,7 +82,7 @@ module AIA
         input
       rescue Interrupt
         puts "\nChat session interrupted."
-        return 'exit'
+        'exit'
       end
     end
 
@@ -103,15 +97,15 @@ module AIA
     end
 
     def display_info(message)
-      $stderr.puts "\n#{message}"
+      $stderr.puts "\n#{message}" # rubocop:disable Style/StderrPuts
     end
 
     def display_error(message)
-      $stderr.puts "\n❌ ERROR: #{message}\n"
+      $stderr.puts "\n❌ ERROR: #{message}\n" # rubocop:disable Style/StderrPuts
     end
 
     def display_warning(message)
-      $stderr.puts "\n⚠  WARNING: #{message}\n"
+      $stderr.puts "\n⚠  WARNING: #{message}\n" # rubocop:disable Style/StderrPuts
     end
 
     def with_spinner(message = "Processing", operation_type = nil)
@@ -139,7 +133,7 @@ module AIA
       if AIA.config.flags.cost
         cost_data = calculate_cost(metrics)
         if cost_data[:available]
-          header = ["Model", "Input", "Output", "Total", "Cost", "x1000", "Time"]
+          header = %w[Model Input Output Total Cost x1000 Time]
           row    = [
             model_id,
             input_tokens, output_tokens, total_tokens,
@@ -147,16 +141,16 @@ module AIA
             "$#{'%.2f' % (cost_data[:total_cost] * 1000)}",
             time_str
           ]
-          alignments = [:left, :right, :right, :right, :right, :right, :right]
+          alignments = %i[left right right right right right right]
         else
-          header = ["Model", "Input", "Output", "Total", "Cost", "Time"]
+          header = %w[Model Input Output Total Cost Time]
           row    = [model_id, input_tokens, output_tokens, total_tokens, "N/A", time_str]
-          alignments = [:left, :right, :right, :right, :right, :right]
+          alignments = %i[left right right right right right]
         end
       else
-        header = ["Model", "Input", "Output", "Total", "Time"]
+        header = %w[Model Input Output Total Time]
         row    = [model_id, input_tokens, output_tokens, total_tokens, time_str]
-        alignments = [:left, :right, :right, :right, :right]
+        alignments = %i[left right right right right]
       end
 
       table = TTY::Table.new(header, [row])
@@ -166,6 +160,7 @@ module AIA
       write_to_output_file(rendered)
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
     def display_multi_model_metrics(metrics_list)
       return unless metrics_list && !metrics_list.empty?
 
@@ -176,8 +171,8 @@ module AIA
       total_cost      = 0.0
       max_elapsed     = 0.0
 
-      header = ["Model", "Input", "Output", "Total"]
-      header += ["Cost", "x1000"] if show_cost
+      header = %w[Model Input Output Total]
+      header += %w[Cost x1000] if show_cost
       header << "Time"
       header << "Sim" if show_similarity
 
@@ -217,7 +212,7 @@ module AIA
       rows << :separator
 
       totals = ["TOTAL", total_input, total_output, all_tokens]
-      if show_cost && total_cost > 0
+      if show_cost && total_cost.positive?
         totals << "$#{'%.5f' % total_cost}"
         totals << "$#{'%.2f' % (total_cost * 1000)}"
       elsif show_cost
@@ -227,8 +222,8 @@ module AIA
       totals << "" if show_similarity
       rows << totals
 
-      alignments = [:left, :right, :right, :right]
-      alignments += [:right, :right] if show_cost
+      alignments = %i[left right right right]
+      alignments += %i[right right] if show_cost
       alignments << :right
       alignments << :right if show_similarity
 
@@ -239,13 +234,14 @@ module AIA
       puts rendered
       write_to_output_file("Multi-Model Token Usage\n#{rendered}")
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     private
 
     def save_chat_history
       history_file = chat_history_file
       dir = File.dirname(history_file)
-      FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+      FileUtils.mkdir_p(dir)
 
       entries = Reline::HISTORY.to_a.last(MAX_HISTORY)
       File.write(history_file, entries.join("\n") + "\n")
@@ -253,7 +249,7 @@ module AIA
 
     def chat_history_file
       config = AIA.config
-      if config.respond_to?(:paths) && config.paths&.respond_to?(:aia_dir) && config.paths.aia_dir
+      if config.respond_to?(:paths) && config.paths.respond_to?(:aia_dir) && config.paths.aia_dir
         return File.join(File.expand_path(config.paths.aia_dir), 'chat_history')
       end
 

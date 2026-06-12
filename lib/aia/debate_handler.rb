@@ -36,6 +36,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.prompt
     # @return [String, nil] formatted debate results, or nil if not applicable
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       prompt = context.prompt
       return nil unless @robot.is_a?(RobotLab::Network)
@@ -74,7 +75,7 @@ module AIA
         end
 
         raise DebateError, "All robots failed in round #{round + 1}" if
-          round_results.all? { |r| r.is_a?(FailedResponse) }
+          round_results.all?(FailedResponse)
 
         previous = rounds.last
         rounds << round_results
@@ -93,19 +94,20 @@ module AIA
 
       format_rounds(rounds)
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     private
 
     def build_round_context(prompt, rounds)
       return prompt if rounds.empty?
 
-      previous = rounds.last.map { |r|
+      previous = rounds.last.map do |r|
         if r.is_a?(FailedResponse)
           "#{r.robot_name}: [FAILED: #{r.error_message}]"
         else
           "#{r[:robot]}: #{r[:content]}"
         end
-      }.join("\n\n")
+      end.join("\n\n")
 
       <<~CONTEXT
         Topic: #{prompt}
@@ -151,11 +153,11 @@ module AIA
       rounds.each_with_index do |round, i|
         lines << "### Round #{i + 1}"
         round.each do |entry|
-          if entry.is_a?(FailedResponse)
-            lines << "**#{entry.robot_name}**: [FAILED] #{entry.error_message}\n"
-          else
-            lines << "**#{entry[:robot]}**: #{entry[:content]}\n"
-          end
+          lines << if entry.is_a?(FailedResponse)
+                     "**#{entry.robot_name}**: [FAILED] #{entry.error_message}\n"
+                   else
+                     "**#{entry[:robot]}**: #{entry[:content]}\n"
+                   end
         end
       end
       lines.join("\n")

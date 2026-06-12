@@ -55,15 +55,13 @@ module AIA
     # Subsequent calls to RobotFactory.build skip this entirely if cache exists.
     def load_tools(config)
       Array(config.require_libs).each do |lib|
-        begin
-          require lib
-        rescue LoadError
-          # Not yet active — activate it (and its deps) via RubyGems, then retry
-          if activate_unbundled_gem(lib)
-            require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
-          else
-            warn "Warning: Failed to require '#{lib}': gem not found"
-          end
+        require lib
+      rescue LoadError
+        # Not yet active — activate it (and its deps) via RubyGems, then retry
+        if activate_unbundled_gem(lib)
+          require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
+        else
+          warn "Warning: Failed to require '#{lib}': gem not found"
         end
       end
 
@@ -95,6 +93,7 @@ module AIA
     end
 
     # Filter tools based on allowed/rejected lists and KBS decisions.
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def filtered_tools(config)
       tools = config.loaded_tools || []
       allowed = config.tools&.allowed
@@ -116,7 +115,6 @@ module AIA
         end
       end
 
-
       seen = {}
       tools.select do |t|
         name = t.respond_to?(:name) ? t.name : t.class.name
@@ -128,6 +126,7 @@ module AIA
         end
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     # Discover RubyLLM::Tool subclasses from ObjectSpace.
     # Skips tools that report themselves as unavailable via #available?.
@@ -142,7 +141,7 @@ module AIA
             next false
           end
           true
-        rescue ArgumentError, LoadError, StandardError
+        rescue StandardError
           false
         end
       end
@@ -158,10 +157,10 @@ module AIA
     def activate_unbundled_gem(name)
       gem name
       true
-    rescue Gem::MissingSpecError, Gem::LoadError
-      lib_dir = [Gem.default_dir, Gem.user_dir].compact.flat_map { |d|
+    rescue Gem::LoadError
+      lib_dir = [Gem.default_dir, Gem.user_dir].compact.flat_map do |d|
         Dir.glob("#{d}/gems/#{name}-*/lib")
-      }.max
+      end.max
       return false unless lib_dir
       $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
       true
@@ -199,12 +198,10 @@ module AIA
     def eager_load_namespace_fallback(mod, depth = 0)
       return if depth > 3
       mod.constants.each do |const_name|
-        begin
-          child = mod.const_get(const_name)
-          eager_load_namespace_fallback(child, depth + 1) if child.is_a?(Module)
-        rescue LoadError, StandardError
-          next
-        end
+        child = mod.const_get(const_name)
+        eager_load_namespace_fallback(child, depth + 1) if child.is_a?(Module)
+      rescue LoadError, StandardError
+        next
       end
     end
   end

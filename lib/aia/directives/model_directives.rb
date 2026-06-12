@@ -22,13 +22,14 @@ module AIA
 
       ""
     end
-    alias_method :am,         :available_models
-    alias_method :available,   :available_models
-    alias_method :models,      :available_models
-    alias_method :all_models,  :available_models
-    alias_method :llms,        :available_models
+    alias am available_models
+    alias available available_models
+    alias models available_models
+    alias all_models available_models
+    alias llms available_models
 
     desc "Compare responses from multiple models"
+    # rubocop:disable Metrics/MethodLength
     def compare(args, context_manager = nil)
       return 'Error: No prompt provided for comparison' if args.empty?
 
@@ -73,12 +74,13 @@ module AIA
         end
       end
 
-      puts '\n' + '=' * 80
+      puts '\n' + ('=' * 80)
       puts "\nComparison complete!"
 
       ''
     end
-    alias_method :cmp, :compare
+    # rubocop:enable Metrics/MethodLength
+    alias cmp compare
 
     # --- helpers (no desc → not registered) ---
 
@@ -103,6 +105,7 @@ module AIA
       end
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def show_ollama_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
@@ -154,7 +157,9 @@ module AIA
         puts "❌ Error fetching Ollama models: #{e.message}"
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def show_lms_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
@@ -203,17 +208,19 @@ module AIA
         puts "❌ Error fetching LM Studio models: #{e.message}"
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def format_bytes(bytes)
-      units = ['B', 'KB', 'MB', 'GB', 'TB']
+      units = %w[B KB MB GB TB]
       return "0 B" if bytes.zero?
 
       exp = (Math.log(bytes) / Math.log(1024)).to_i
       exp = [exp, units.length - 1].min
 
-      "%.1f %s" % [bytes.to_f / (1024 ** exp), units[exp]]
+      "%.1f %s" % [bytes.to_f / (1024**exp), units[exp]]
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def show_rubyllm_models(positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
@@ -231,8 +238,7 @@ module AIA
 
       # modality terms (e.g. "text_to_text") trigger capability checks; the rest
       # are plain substring filters applied to the formatted entry string
-      q1 = positive_terms.select { |q| q.include?('_to_') }
-      q2 = positive_terms.reject { |q| q.include?('_to_') }
+      q1, q2 = positive_terms.partition { |q| q.include?('_to_') }
 
       counter = 0
 
@@ -262,10 +268,11 @@ module AIA
         end
       end
 
-      puts if counter > 0
+      puts if counter.positive?
       puts "#{counter} LLMs matching your query"
       puts
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def normalized_model_search_terms(positive_terms, negative_terms = nil)
       return parse_search_terms(Array(positive_terms)) if negative_terms.nil?

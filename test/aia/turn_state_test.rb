@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/turn_state_test.rb
 
 require_relative '../test_helper'
@@ -158,7 +159,6 @@ class TurnStateTest < Minitest::Test
     @ts.clear!
     assert_nil @ts.active_mcp_servers
   end
-
 
   # ---------------------------------------------------------------------------
   # Error handling

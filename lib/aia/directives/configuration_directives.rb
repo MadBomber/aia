@@ -10,17 +10,13 @@ module AIA
 
       if args.empty?
         ap AIA.config.to_h
-        ""
       elsif args.length == 1
         config_item = args.first
         local_cfg = {}
-        if AIA.config.respond_to?(config_item)
-          local_cfg[config_item] = AIA.config.send(config_item)
-        else
-          local_cfg[config_item] = nil
-        end
+        local_cfg[config_item] = if AIA.config.respond_to?(config_item)
+                                   AIA.config.send(config_item)
+                                 end
         ap local_cfg
-        ""
       else
         config_item = args.shift
         new_value   = args.join(' ').gsub('=', '').strip
@@ -33,18 +29,19 @@ module AIA
           new_value = %w[true t yes y on 1 yea yeah yep yup].include?(new_value.downcase)
         end
 
-        if set_config_value(config_item, new_value)
+        if write_config_value(config_item, new_value)
           AIA::LoggerManager.reconfigure_levels!
         else
           warn "Warning: Unknown config option '#{config_item}'"
           AIA::LoggerManager.aia_logger.warn("Unknown config option '#{config_item}'")
         end
-        ""
       end
+      ""
     end
-    alias_method :cfg, :config
+    alias cfg config
 
     desc "View or change the AI model"
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def model(args, context_manager = nil)
       if args.empty?
         puts
@@ -74,7 +71,7 @@ module AIA
 
           models.each_with_index do |model_spec, index|
             model_name = model_spec.respond_to?(:name) ? model_spec.name : model_spec.to_s
-            puts "#{index + 1}. #{model_name}#{index == 0 ? ' (primary)' : ''}"
+            puts "#{index + 1}. #{model_name}#{' (primary)' if index.zero?}"
 
             begin
               model_info = RubyLLM::Models.find(model_name)
@@ -103,20 +100,22 @@ module AIA
 
       ''
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     desc "Set the temperature parameter for AI responses"
     def temperature(args, context_manager = nil)
       config(args.prepend('temperature'), context_manager)
     end
-    alias_method :temp, :temperature
+    alias temp temperature
 
     desc "Set the top_p parameter for AI responses"
     def top_p(args, context_manager = nil)
       config(args.prepend('top_p'), context_manager)
     end
-    alias_method :topp, :top_p
+    alias topp top_p
 
     desc "Dump session cost/token metrics as CSV"
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def cost(args = [], context_manager = nil)
       tracker = AIA.session_tracker
       unless tracker
@@ -188,6 +187,7 @@ module AIA
 
       ''
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     private
 
@@ -197,7 +197,7 @@ module AIA
     #   direct setter — "log_level_override" → AIA.config.<key>=
     #
     # Returns true if the value was set, false if the key was unknown.
-    def set_config_value(config_item, new_value)
+    def write_config_value(config_item, new_value) # rubocop:disable Naming/PredicateMethod
       key_str = config_item.to_s
 
       # Dot-notation: walk the config object by path segments

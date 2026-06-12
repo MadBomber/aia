@@ -57,7 +57,7 @@ module AIA
                  else
                    robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
                  end
-      rescue Exception
+      rescue Exception # rubocop:disable Lint/RescueException
         @spinner.stop unless header_printed
         raise
       end

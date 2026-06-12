@@ -46,7 +46,7 @@ module AIA
           '   /    /___\\',
           '  (\   /_____\\',
           '     :::     :::',
-          '     :::     :::',
+          '     :::     :::'
         ].join("\n")
 
         art_width   = art.lines.map(&:length).max
@@ -59,7 +59,7 @@ module AIA
         inner = TTY::Table.new(banner_detail_rows)
         details = inner.render(:basic, multiline: true,
                                column_widths: [label_width, value_width],
-                               alignments: [:right, :left])
+                               alignments: %i[right left])
 
         outer = TTY::Table.new([[art, "#{header}\n\n#{details}"]])
         puts "\n#{outer.render(:basic, multiline: true, column_widths: [art_width, info_width], padding: [0, 1, 0, 0])}"
@@ -84,20 +84,20 @@ module AIA
           ['Libs:',   banner_libs],
           ['Tools:',  banner_tools],
           ['MCP:',    banner_mcp],
-          ['Crew:',   banner_crew],
+          ['Crew:',   banner_crew]
         ]
       end
 
       def banner_models
         models = AIA.config&.models
         return 'unknown-model' if models.nil? || models.empty?
-        models.map { |spec|
+        models.map do |spec|
           case spec
           when AIA::ModelSpec then spec.name
           when Hash           then spec[:name] || spec['name'] || spec.to_s
           else                     spec.to_s
           end
-        }.join(', ')
+        end.join(', ')
       end
 
       def banner_libs
@@ -112,7 +112,11 @@ module AIA
 
       def banner_tools
         count = total_tool_count
-        count > 0 ? "#{count} #{count == 1 ? 'tool' : 'tools'} loaded" : 'none loaded'
+        if count.positive?
+          "#{count} #{count == 1 ? 'tool' : 'tools'} loaded"
+        else
+          'none loaded'
+        end
       end
 
       def banner_mcp
@@ -134,10 +138,10 @@ module AIA
         connected = AIA.config&.connected_mcp_servers
         unless connected.nil?
           counts = AIA.config&.mcp_server_tool_counts || {}
-          return connected.map { |name|
+          return connected.map do |name|
             count = counts[name]
             count ? "#{name}(#{count})" : name
-          }
+          end
         end
 
         return [] unless defined?(RubyLLM::MCP)

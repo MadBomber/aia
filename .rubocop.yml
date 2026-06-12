@@ -1,0 +1,113 @@
+inherit_from: ../.rubocop.yml.common
+
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  Exclude:
+    - 'examples/**/*'
+    - 'site/**/*'
+    - 'notes/**/*'
+    - 'docs/**/*'
+    - 'coverage/**/*'
+    - 'pkg/**/*'
+    - 'orchestrated_build_*/**/*'
+    - 'rubyllm_with_schema_test.rb'
+    - 'with_schema_test.rb'
+
+# ── Gemspec: dev deps in gemspec for publisher convenience ───────────────────
+Gemspec/DevelopmentDependencies:
+  EnforcedStyle: gemspec
+  Exclude:
+    - 'Gemfile'
+    - 'Gemfile.local'
+
+# ── Style: intentional lib patterns ─────────────────────────────────────────
+# extend self used in skill_utils.rb so methods are public when included
+Style/ModuleFunction:
+  Exclude:
+    - 'lib/aia/skill_utils.rb'
+
+# $DEBUG_ME is an intentional global for CLI debug toggle
+Style/GlobalVars:
+  Exclude:
+    - 'lib/aia.rb'
+    - 'lib/aia/config/cli_parser.rb'
+
+# %{key} Ruby format tokens are intentional for LLM prompt template interpolation
+Style/FormatStringToken:
+  Enabled: false
+
+# Safe navigation chains > 2 are intentional in this codebase
+Style/SafeNavigationChainLength:
+  Enabled: false
+
+# Duplicate branch bodies are intentional in several dispatch patterns
+Lint/DuplicateBranch:
+  Enabled: false
+
+# ── Test files: relax cops that fire on intentional test patterns ─────────────
+Style/OpenStructUse:
+  Exclude:
+    - 'test/**/*'
+
+Lint/MissingSuper:
+  Exclude:
+    - 'test/**/*'
+
+Lint/FloatComparison:
+  Exclude:
+    - 'test/**/*'
+
+Style/MixinUsage:
+  Exclude:
+    - 'test/test_helper.rb'
+
+Style/OptionalBooleanParameter:
+  Exclude:
+    - 'test/test_helper.rb'
+
+Naming/VariableNumber:
+  Exclude:
+    - 'test/**/*'
+
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'Rakefile'
+    - 'test/**/*'
+
+Metrics/AbcSize:
+  Max: 40
+  Exclude:
+    - 'test/**/*'
+
+Metrics/MethodLength:
+  Max: 35
+  CountAsOne:
+    - heredoc
+    - array
+    - hash
+  Exclude:
+    - 'test/**/*'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'Rakefile'
+    - '*.gemspec'
+    - 'test/**/*'
+
+Metrics/CyclomaticComplexity:
+  Max: 20
+  Exclude:
+    - 'test/**/*'
+
+Metrics/PerceivedComplexity:
+  Max: 20
+  Exclude:
+    - 'test/**/*'
+
+Metrics/ModuleLength:
+  Max: 200
+  Exclude:
+    - 'test/**/*'

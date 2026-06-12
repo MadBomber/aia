@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # test/aia/spawn_handler_test.rb
 
 require_relative '../test_helper'
@@ -133,7 +134,7 @@ class SpawnHandlerTest < Minitest::Test
     coordinator.expects(:create_task).with(
       anything,
       assignee: "test_expert",
-      labels: ["specialist", "spawned"],
+      labels: %w[specialist spawned],
       creator: "Alice"
     )
     AIA.stubs(:task_coordinator).returns(coordinator)
@@ -187,8 +188,6 @@ class SpawnHandlerTest < Minitest::Test
     primary.stubs(:respond_to?).with(:bus).returns(true)
     primary.stubs(:bus).returns(mock('bus'))
     primary.stubs(:with_bus)
-
-    call_count = 0
     primary.stubs(:spawn).with { true }.returns(*(specialists + [specialists[0]]))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)

@@ -22,7 +22,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.robot and context.prompt
     # @return [Boolean]
-    def handle(context)
+    def handle(context) # rubocop:disable Naming/PredicateMethod
       robot  = context.robot
       prompt = context.prompt
       return false unless robot.is_a?(RobotLab::Network)
@@ -63,6 +63,7 @@ module AIA
     def run_mentioned_robots(robots, prompt)
       parts = []
 
+      # rubocop:disable Metrics/BlockLength
       robots.each do |bot|
         begin
           result, streamed_content, elapsed = @streaming_runner.run(
@@ -97,6 +98,7 @@ module AIA
         display_metrics(result, elapsed: elapsed)
         speak(content)
       end
+      # rubocop:enable Metrics/BlockLength
 
       unless parts.empty?
         @ui_presenter.display_ai_response(parts.join("\n\n"))

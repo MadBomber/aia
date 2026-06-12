@@ -7,7 +7,6 @@
 require 'optparse'
 require 'json'
 require 'yaml'
-require 'pathname'
 require 'fileutils'
 
 class PromptMigrator
@@ -15,7 +14,7 @@ class PromptMigrator
   SPACE_PLACEHOLDER = /\[([A-Z][A-Z0-9_ ]*[A-Z0-9_])\]/   # clean except for spaces
   ALL_BRACKETS      = /\[([^\[\]]+)\]/
 
-  PATH_COMMENT_RE   = /\A#\s+\S*\/\S*\.txt\s*\z/
+  PATH_COMMENT_RE   = %r{\A#\s+\S*/\S*\.txt\s*\z}
   DESC_START_RE     = /\A#\s+Desc:\s*(.*)/
   DESC_CONT_RE      = /\A#\s{2,}(\S.*)/
   COMMENT_RE        = /\A#/
@@ -23,17 +22,17 @@ class PromptMigrator
   END_MARKER_RE     = /\A__END__\s*\z/
   CODE_FENCE_RE     = /\A```/
 
-  CONFIG_RE         = /\A\/\/config[.\s]\s*(.*)/i
-  CONFIG_BARE_RE    = /\A\/\/config\s*\z/i
-  TEMP_RE           = /\A\/\/temp\s+(.*)/i
-  TOPP_RE           = /\A\/\/topp\s+(.*)/i
-  NEXT_RE           = /\A\/\/next\s+(.*)/i
-  PIPELINE_RE       = /\A\/\/pipeline\s+(.*)/i
-  INCLUDE_RE        = /\A\/\/include\s+(.*)/i
-  SHELL_RE          = /\A\/\/shell\s+(.*)/i
-  RUBY_RE           = /\A\/\/ruby\s+(.*)/i
-  BACKEND_RE        = /\A\/\/backend(\s|$)/i
-  DIRECTIVE_RE      = /\A\/\/(\w+)/
+  CONFIG_RE         = %r{\A//config[.\s]\s*(.*)}i
+  CONFIG_BARE_RE    = %r{\A//config\s*\z}i
+  TEMP_RE           = %r{\A//temp\s+(.*)}i
+  TOPP_RE           = %r{\A//topp\s+(.*)}i
+  NEXT_RE           = %r{\A//next\s+(.*)}i
+  PIPELINE_RE       = %r{\A//pipeline\s+(.*)}i
+  INCLUDE_RE        = %r{\A//include\s+(.*)}i
+  SHELL_RE          = %r{\A//shell\s+(.*)}i
+  RUBY_RE           = %r{\A//ruby\s+(.*)}i
+  BACKEND_RE        = %r{\A//backend(\s|$)}i
+  DIRECTIVE_RE      = %r{\A//(\w+)}
 
   def initialize(options)
     @options = options
@@ -79,7 +78,7 @@ class PromptMigrator
   private
 
   def log(msg)
-    $stderr.puts msg
+    warn msg
   end
 
   # --- File resolution ---
@@ -125,6 +124,7 @@ class PromptMigrator
 
   # --- Per-file orchestration ---
 
+  # rubocop:disable Metrics/AbcSize
   def process_file(txt_path)
     md_path  = txt_path.sub_ext('.md')
     basename = txt_path.basename('.txt').to_s
@@ -159,11 +159,13 @@ class PromptMigrator
     parsed[:warnings].each { |w| @stats[:warnings] << "#{txt_path.basename}: #{w}" }
     @stats[:migrated] += 1
   end
+  # rubocop:enable Metrics/AbcSize
 
   # --- Reprocessing previously flagged files ---
+  # rubocop:disable Metrics/AbcSize
 
   def reprocess_file(review_path)
-    txt_path = Pathname.new(review_path.to_s.sub(/\-review\z/, ''))
+    txt_path = Pathname.new(review_path.to_s.sub(/-review\z/, ''))
     md_path  = txt_path.sub_ext('.md')
     basename = txt_path.basename('.txt').to_s
 
@@ -194,12 +196,15 @@ class PromptMigrator
     parsed[:warnings].each { |w| @stats[:warnings] << "#{basename}: #{w}" }
     @stats[:reprocessed] += 1
   end
+  # rubocop:enable Metrics/AbcSize
 
   # --- Review detection ---
 
+  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   def needs_review?(lines)
     in_erb_block = false
 
+    # rubocop:disable Metrics/BlockLength
     lines.each do |line|
       # Files with code fences need manual review
       return true if line.match?(CODE_FENCE_RE)
@@ -225,6 +230,7 @@ class PromptMigrator
           return true if erb_regions.any? { |r| pos >= r[0] && pos < r[1] }
         end
       end
+      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       # Check for non-clean bracket expressions that look like placeholder attempts
       line.scan(ALL_BRACKETS) do |match|
@@ -240,6 +246,7 @@ class PromptMigrator
         return true if inner.match?(/\b[A-Z]{2,}\b/)
       end
     end
+    # rubocop:enable Metrics/BlockLength
 
     false
   end
@@ -289,6 +296,7 @@ class PromptMigrator
   end
 
   # --- File parsing ---
+  # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
   def parse_file(lines, basename)
     result = {
@@ -403,40 +411,45 @@ class PromptMigrator
     flush_comments(comment_buffer, result[:body_lines])
     result
   end
+  # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
   # --- Directive handling ---
 
+  # rubocop:disable Metrics/AbcSize
   def handle_directive(line, result)
     case line
     when CONFIG_BARE_RE
       # Bare //config with no args — ignore
     when CONFIG_RE
-      parse_config_directive($1, result[:yaml])
+      parse_config_directive(::Regexp.last_match(1), result[:yaml])
     when TEMP_RE
-      result[:yaml]['temperature'] = parse_value($1.strip)
+      result[:yaml]['temperature'] = parse_value(::Regexp.last_match(1).strip)
     when TOPP_RE
-      result[:yaml]['top_p'] = parse_value($1.strip)
+      result[:yaml]['top_p'] = parse_value(::Regexp.last_match(1).strip)
     when NEXT_RE
-      result[:yaml]['next'] = $1.strip
+      result[:yaml]['next'] = ::Regexp.last_match(1).strip
     when PIPELINE_RE
-      result[:yaml]['pipeline'] = $1.strip.split(/\s*,\s*/)
+      result[:yaml]['pipeline'] = ::Regexp.last_match(1).strip.split(/\s*,\s*/)
     when BACKEND_RE
       # Silently ignored (deprecated)
     when INCLUDE_RE
-      arg = $1.strip
+      arg = ::Regexp.last_match(1).strip
       result[:body_lines] << "<%= include(#{directive_arg_to_ruby(arg)}) %>"
     when SHELL_RE
-      arg = $1.strip
+      arg = ::Regexp.last_match(1).strip
       result[:body_lines] << "<%= system(#{directive_arg_to_ruby(arg)}) %>"
     when RUBY_RE
-      code = $1.strip
-      code = code.gsub(CLEAN_PLACEHOLDER) { $1.downcase }
-      code = code.gsub(SPACE_PLACEHOLDER) { fixable_space_placeholder?($1) ? normalize_placeholder($1) : $& }
+      code = ::Regexp.last_match(1).strip
+      code = code.gsub(CLEAN_PLACEHOLDER) { ::Regexp.last_match(1).downcase }
+      code = code.gsub(SPACE_PLACEHOLDER) do
+        fixable_space_placeholder?(::Regexp.last_match(1)) ? normalize_placeholder(::Regexp.last_match(1)) : ::Regexp.last_match(0)
+      end
       result[:body_lines] << "<%= #{code} %>"
     when DIRECTIVE_RE
       result[:warnings] << "Unrecognized directive: #{line}"
       result[:body_lines] << line
     end
+    # rubocop:enable Metrics/AbcSize
   end
 
   def parse_config_directive(args_str, yaml)
@@ -463,15 +476,15 @@ class PromptMigrator
     if arg.match?(/\A\[([A-Z][A-Z0-9_]*)\]\z/)
       # Entire arg is a single clean placeholder — bare variable reference
       arg.match(/\A\[([A-Z][A-Z0-9_]*)\]\z/)[1].downcase
-    elsif arg.match?(/\A\[([A-Z][A-Z0-9_ ]*[A-Z0-9_])\]\z/) && fixable_space_placeholder?($1)
+    elsif arg.match?(/\A\[([A-Z][A-Z0-9_ ]*[A-Z0-9_])\]\z/) && fixable_space_placeholder?(::Regexp.last_match(1))
       # Entire arg is a single space placeholder — bare variable reference
-      normalize_placeholder($1)
+      normalize_placeholder(::Regexp.last_match(1))
     elsif has_clean || has_space
       # Arg contains embedded placeholders — use double-quoted string with interpolation
       inner = arg.gsub('"', '\\"')
-      inner = inner.gsub(CLEAN_PLACEHOLDER) { "\#{#{$1.downcase}}" }
+      inner = inner.gsub(CLEAN_PLACEHOLDER) { "\#{#{::Regexp.last_match(1).downcase}}" }
       inner = inner.gsub(SPACE_PLACEHOLDER) do
-        fixable_space_placeholder?($1) ? "\#{#{normalize_placeholder($1)}}" : $&
+        fixable_space_placeholder?(::Regexp.last_match(1)) ? "\#{#{normalize_placeholder(::Regexp.last_match(1))}}" : ::Regexp.last_match(0)
       end
       "\"#{inner}\""
     else
@@ -512,11 +525,9 @@ class PromptMigrator
 
     data.each do |key, values|
       name = key.gsub(/\A\[|\]\z/, '').tr(' ', '_').downcase
-      if values.is_a?(Array) && !values.empty?
-        params[name] = values.last
-      else
-        params[name] = nil
-      end
+      params[name] = if values.is_a?(Array) && !values.empty?
+                       values.last
+                     end
     end
 
     params
@@ -537,13 +548,13 @@ class PromptMigrator
 
   def transform_body(body_lines)
     body_lines.map do |line|
-      result = line.gsub(CLEAN_PLACEHOLDER) { "<%= #{$1.downcase} %>" }
+      result = line.gsub(CLEAN_PLACEHOLDER) { "<%= #{::Regexp.last_match(1).downcase} %>" }
       result.gsub(SPACE_PLACEHOLDER) do
-        inner = $1
+        inner = ::Regexp.last_match(1)
         if fixable_space_placeholder?(inner)
           "<%= #{normalize_placeholder(inner)} %>"
         else
-          $&  # leave non-fixable matches unchanged
+          ::Regexp.last_match(0)  # leave non-fixable matches unchanged
         end
       end
     end
@@ -602,11 +613,11 @@ class PromptMigrator
     unless params.empty?
       lines << "parameters:"
       params.each do |name, default|
-        if default.nil?
-          lines << "  #{name}: null"
-        else
-          lines << "  #{name}: #{yaml_quote(default.to_s)}"
-        end
+        lines << if default.nil?
+                   "  #{name}: null"
+                 else
+                   "  #{name}: #{yaml_quote(default.to_s)}"
+                 end
       end
     end
 
@@ -650,7 +661,7 @@ class PromptMigrator
     return true if str.match?(/\A\s|\s\z/)
     return true if %w[null true false yes no on off].include?(str.downcase)
     return true if str.match?(/\A-?\d/)
-    return true if str.match?(/[:\{\}\[\],&*#?|<>=!%@`"']/)
+    return true if str.match?(/[:{}\[\],&*#?|<>=!%@`"']/)
     false
   end
 
@@ -691,10 +702,9 @@ class PromptMigrator
     log "  Migrated:           #{@stats[:migrated]} files"
     log "  Flagged for review: #{@stats[:flagged]} files (*.txt-review)"
     log "  Skipped:            #{@stats[:skipped]} files (*.md already exists)"
-    if @stats[:warnings].any?
-      log "  Warnings:           #{@stats[:warnings].size}"
-      @stats[:warnings].each { |w| log "    - #{w}" }
-    end
+    return unless @stats[:warnings].any?
+    log "  Warnings:           #{@stats[:warnings].size}"
+    @stats[:warnings].each { |w| log "    - #{w}" }
   end
 
   def print_reprocess_summary
@@ -702,10 +712,9 @@ class PromptMigrator
     log "Reprocess summary:"
     log "  Recovered: #{@stats[:reprocessed]} files (*.txt-review → *.txt → *.md)"
     log "  Still flagged: #{@stats[:still_flagged]} files (unchanged)"
-    if @stats[:warnings].any?
-      log "  Warnings:  #{@stats[:warnings].size}"
-      @stats[:warnings].each { |w| log "    - #{w}" }
-    end
+    return unless @stats[:warnings].any?
+    log "  Warnings:  #{@stats[:warnings].size}"
+    @stats[:warnings].each { |w| log "    - #{w}" }
   end
 end
 

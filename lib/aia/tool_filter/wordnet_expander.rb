@@ -62,8 +62,8 @@ module AIA
           @cache_mutex.synchronize { return @cache[word] if @cache.key?(word) }
 
           syns = (query_wn(word, 'n') + query_wn(word, 'v'))
-                   .uniq
-                   .reject { |w| w == word }
+                 .uniq
+                 .reject { |w| w == word }
 
           # write path: first writer wins; read-back in same lock so clear_cache!
           # between write and read cannot cause nil to escape

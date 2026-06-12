@@ -70,9 +70,9 @@ class RobotFactoryNetworkTest < Minitest::Test
     network.robots.each_value do |robot|
       prompt = robot.system_prompt
       assert_match(/You are .+, powered by/, prompt,
-        "Robot #{robot.name} should have an identity prompt")
+                   "Robot #{robot.name} should have an identity prompt")
       assert_match(/You are part of a team/, prompt,
-        "Robot #{robot.name} should know about the team")
+                   "Robot #{robot.name} should know about the team")
     end
   end
 
@@ -144,7 +144,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     non_weaver = network.robots.values.reject { |r| r.name == "Weaver" }
     non_weaver.each do |robot|
       assert_match(/You are part of a team/, robot.system_prompt,
-        "Robot #{robot.name} should know about the team")
+                   "Robot #{robot.name} should know about the team")
     end
   end
 
@@ -264,7 +264,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     result = AIA::RobotFactory.build(single_config)
 
     assert_instance_of RobotLab::Robot, result,
-      "Single model should build a Robot, not a Network"
+                       "Single model should build a Robot, not a Network"
   end
 
   def test_build_routes_multi_model_no_consensus_to_parallel
@@ -311,7 +311,7 @@ class RobotFactoryNetworkTest < Minitest::Test
 
     assert_instance_of RobotLab::Network, result
     assert_equal "aia-parallel", result.name,
-      "Multi-model config should build a parallel network when pipeline is also set"
+                 "Multi-model config should build a parallel network when pipeline is also set"
   end
 
   # =========================================================================
@@ -453,7 +453,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     config
   end
 
-  def create_pipeline_config(prompts: ['analyze', 'write', 'review'])
+  def create_pipeline_config(prompts: %w[analyze write review])
     config = create_multi_model_config
     config.models = [
       OpenStruct.new(name: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini', provider: nil)
