@@ -277,29 +277,49 @@ AI: Absolutely! Let's use a simple example everyone can relate to...
 ## Voice and Audio Features
 
 ### Text-to-Speech
+
+`--speak` runs a three-stage pipeline after each AI response:
+
+1. **Generation** — LLM streams text to the terminal (`Processing...`)
+2. **Conversion** — text is converted to an audio file (`Converting to audio...`)
+3. **Playback** — audio file is played (`Speaking...`)
+
+**Local TTS (default):** the macOS `say` command handles both conversion and
+playback in one step, so it shows a single `Speaking...` spinner.
+
 ```bash
-# Enable speech output
+# Enable speech (uses macOS say, system default voice)
 aia --chat --speak
 
-# Choose specific voice
-aia --chat --speak --voice nova
+# Choose a specific macOS voice (run `say -v '?'` to list available voices)
+aia --chat --speak --voice Samantha
+aia --chat --speak --voice Alex
+```
 
-# Use high-quality speech model
-aia --chat --speak --speech-model tts-1-hd
+**OpenAI TTS:** point `speak_command` at `~/.config/aia/tts.sh` (installed with
+AIA). The script converts text to an audio file; AIA plays it with `afplay` and
+shows separate spinners for each stage.
+
+```bash
+aia --chat --speak \
+    --speak-command ~/.config/aia/tts.sh \
+    --speech-model tts-1-hd \
+    --voice nova \
+    my_prompt
+```
+
+```yaml
+# ~/.config/aia/aia.yml
+audio:
+  speak_command: ~/.config/aia/tts.sh
+  speech_model: tts-1-hd        # passed as SPEECH_MODEL env var to the script
+  voice: nova                   # passed as AIA_AUDIO__VOICE env var
 ```
 
 ### Audio Input
 ```bash
 # Use speech-to-text for input
 aia --chat --transcription-model whisper-1 audio_input.wav
-```
-
-### Interactive Voice Chat
-```bash
-# Full voice interaction
-aia --chat --speak --voice echo --transcription-model whisper-1
-
-# Great for hands-free operation or accessibility
 ```
 
 ## Session Management
@@ -480,10 +500,10 @@ llm:
   temperature: 0.7
   max_tokens: 2048
 
-# Audio for /say directive
+# Audio for --speak and /say directive
 audio:
-  voice: alloy
-  speak_command: afplay
+  voice: ~                  # macOS system default; set e.g. "Samantha" to pick a voice
+  speak_command: say        # macOS local TTS; use ~/.config/aia/tts.sh for OpenAI TTS
 ```
 
 Start chat with specific options via CLI:

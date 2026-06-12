@@ -198,6 +198,7 @@ module AIA
       # audio section (speak is a flag, not audio config)
       speak: %i[flags speak],
       voice: %i[audio voice],
+      speak_command: %i[audio speak_command],
       speech_model: %i[audio speech_model],
       transcription_model: %i[audio transcription_model],
       # image section

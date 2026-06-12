@@ -410,7 +410,9 @@ aia --skills-dir /shared --skills-prefix team-skills --list-skills
 **Environment variable**: `AIA_PROMPTS__SKILLS_PREFIX`
 
 ### `--sm, --speech-model MODEL`
-Speech model to use for text-to-speech functionality.
+Set the `SPEECH_MODEL` environment variable that AIA passes to the
+`speak_command`. AIA does not call any TTS API — this value is only meaningful
+if your `speak_command` script reads `$SPEECH_MODEL`.
 
 ```bash
 aia --speech-model tts-1 --speak my_prompt
@@ -747,23 +749,77 @@ aia --presence-penalty -0.5 deep_dive
 ## Audio/Image Options
 
 ### `--speak`
-Convert text to audio and play it. Uses the configured speech model and voice.
+After each AI response, AIA runs a three-stage pipeline with a progress spinner
+for each stage:
+
+| Stage | What happens | Spinner |
+|-------|-------------|---------|
+| 1. Generation | LLM streams text to the terminal | `Processing...` |
+| 2. Conversion | Text is converted to an audio file | `Converting to audio...` |
+| 3. Playback | Audio file is played | `Speaking...` |
+
+**Local TTS (default):** `say` converts and plays in one step, so stages 2 and 3
+share a single `Speaking...` spinner.
 
 ```bash
-aia --speak my_prompt
-aia --speak --voice nova my_prompt
+aia --chat --speak my_prompt
+aia --speak --voice Samantha my_prompt
+```
+
+**Custom TTS script (e.g. OpenAI TTS):** AIA calls the script with two
+arguments — the text (`$1`) and the path to write the audio file (`$2`) — then
+plays the resulting file with `afplay`. The script is responsible **only** for
+conversion; AIA handles playback and shows both spinners.
+
+AIA does **not** call any TTS API itself. A ready-made script for OpenAI TTS is
+installed at `~/.config/aia/tts.sh`:
+
+```bash
+# ~/.config/aia/tts.sh — called as: tts.sh "text" /path/to/output.mp3
+#!/usr/bin/env bash
+model="${SPEECH_MODEL:-tts-1}"
+voice="${AIA_AUDIO__VOICE:-alloy}"
+curl -s https://api.openai.com/v1/audio/speech \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"model\": \"$model\", \"input\": $(printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'), \"voice\": \"$voice\"}" \
+  --output "$2"
+```
+
+```yaml
+# ~/.config/aia/aia.yml
+audio:
+  speak_command: ~/.config/aia/tts.sh
+  speech_model: tts-1-hd
+  voice: nova
+```
+
+Or entirely from the CLI:
+
+```bash
+aia --chat --speak \
+    --speak-command ~/.config/aia/tts.sh \
+    --speech-model tts-1-hd \
+    --voice nova \
+    my_prompt
 ```
 
 ### `--voice VOICE`
-Voice to use for speech synthesis.
+Voice name passed to the `speak_command`.
+
+For macOS `say` (default), specify a macOS voice name (run `say -v '?'` to list
+available voices):
+
+```bash
+aia --voice Samantha --speak my_prompt
+aia --voice Alex --speak my_prompt
+```
+
+For a custom OpenAI TTS script, use an OpenAI voice name instead:
 
 ```bash
 aia --voice alloy --speak my_prompt
-aia --voice echo --speak my_prompt
-aia --voice fable --speak my_prompt
-aia --voice nova --speak my_prompt  
-aia --voice onyx --speak my_prompt
-aia --voice shimmer --speak my_prompt
+aia --voice nova --speak my_prompt
 ```
 
 ### `--is, --image-size SIZE`
@@ -1080,8 +1136,11 @@ aia --config-file ./project_config.yml --prompts-dir ./project_prompts/ my_promp
 # Save output with markdown formatting
 aia --output analysis.md --markdown --append data_analysis dataset.csv
 
-# Audio processing
-aia --transcription-model whisper-1 --speech-model tts-1-hd --voice echo audio_prompt audio_file.wav
+# Speak responses aloud (macOS say, default voice)
+aia --speak my_prompt
+
+# Speak with a specific macOS voice
+aia --speak --voice Samantha my_prompt
 ```
 
 ## Environment Variables
@@ -1111,8 +1170,9 @@ export AIA_OUTPUT__APPEND="true"
 export AIA_OUTPUT__HISTORY_FILE="~/.prompts/_prompts.log"
 
 # Audio settings (nested under audio:)
-export AIA_AUDIO__VOICE="alloy"
-export AIA_AUDIO__SPEECH_MODEL="tts-1"
+export AIA_AUDIO__VOICE="Samantha"         # macOS voice (say -v '?'); or OpenAI voice for custom scripts
+export AIA_AUDIO__SPEAK_COMMAND="say"      # default; replace with a custom TTS script for OpenAI TTS
+export AIA_AUDIO__SPEECH_MODEL="tts-1"    # passed as SPEECH_MODEL to the speak_command script
 
 # Image settings (nested under image:)
 export AIA_IMAGE__SIZE="1024x1024"

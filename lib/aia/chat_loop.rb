@@ -307,13 +307,46 @@ module AIA
       env     = {}
       env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
 
-      if command == 'say' && audio.voice && !audio.voice.strip.empty?
-        system(env, command, '-v', audio.voice, content.to_s)
+      if command == 'say'
+        # Local TTS: say converts and plays in one step
+        run_with_spinner("Speaking...") do
+          if audio.voice && !audio.voice.to_s.strip.empty?
+            system(env, command, '-v', audio.voice, content.to_s)
+          else
+            system(env, command, content.to_s)
+          end
+        end
       else
-        system(env, command, content.to_s)
+        # Custom TTS script: stage 2 = convert text → audio file,
+        # stage 3 = play the file. AIA passes the output path as $2.
+        require 'tempfile'
+        tmpfile = Tempfile.new(['aia-tts-', '.mp3'])
+        tmpfile.close
+        begin
+          run_with_spinner("Converting to audio...") do
+            system(env, command, content.to_s, tmpfile.path)
+          end
+          if File.size?(tmpfile.path)
+            run_with_spinner("Speaking...") do
+              system('afplay', tmpfile.path)
+            end
+          end
+        ensure
+          tmpfile.unlink
+        end
       end
     rescue StandardError => e
       $stderr.puts "Warning: Speech failed: #{e.message}"
+    end
+
+    def run_with_spinner(message)
+      spinner = TTY::Spinner.new("[:spinner] #{message}", format: :bouncing_ball, output: $stderr)
+      spinner.auto_spin
+      begin
+        yield
+      ensure
+        spinner.stop
+      end
     end
   end
 end

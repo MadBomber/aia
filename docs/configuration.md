@@ -126,10 +126,10 @@ output:
 # Access: AIA.config.audio.voice, AIA.config.audio.speak_command, etc.
 # Env: AIA_AUDIO__VOICE, AIA_AUDIO__SPEAK_COMMAND, etc.
 audio:
-  voice: alloy                # Voice for speech synthesis
-  speak_command: afplay       # Command to play audio files
-  speech_model: tts-1         # Model for text-to-speech
-  transcription_model: whisper-1  # Model for speech-to-text
+  voice: ~                    # Voice name (macOS say: e.g. Samantha; OpenAI: alloy/nova/echo/…)
+  speak_command: say          # TTS command; macOS default is `say`
+  speech_model: ~             # Passed as SPEECH_MODEL env var to the speak command (unset = not passed)
+  transcription_model: ~      # Default transcription model for RubyLLM (unset = RubyLLM default)
 
 # Image Configuration
 # Access: AIA.config.image.model, AIA.config.image.size, etc.
@@ -295,9 +295,9 @@ export AIA_OUTPUT__MARKDOWN="true"
 export AIA_OUTPUT__HISTORY_FILE="~/.prompts/_prompts.log"
 
 # Audio settings (nested under audio:)
-export AIA_AUDIO__VOICE="alloy"
-export AIA_AUDIO__SPEAK_COMMAND="afplay"
-export AIA_AUDIO__SPEECH_MODEL="tts-1"
+export AIA_AUDIO__VOICE="Samantha"       # macOS say voice (see: say -v '?')
+export AIA_AUDIO__SPEAK_COMMAND="say"    # default; swap for custom TTS script
+export AIA_AUDIO__SPEECH_MODEL="tts-1"  # passed as SPEECH_MODEL to speak_command
 export AIA_AUDIO__TRANSCRIPTION_MODEL="whisper-1"
 
 # Image settings (nested under image:)

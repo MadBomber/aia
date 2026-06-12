@@ -95,10 +95,10 @@ defaults:
   # Env: AIA_AUDIO__VOICE, AIA_AUDIO__SPEAK_COMMAND, etc.
   # ---------------------------------------------------------------------------
   audio:
-    voice: alloy
-    speak_command: afplay
-    speech_model: tts-1
-    transcription_model: whisper-1
+    voice: ~
+    speak_command: say
+    speech_model: ~
+    transcription_model: ~
 
   # ---------------------------------------------------------------------------
   # Image Configuration

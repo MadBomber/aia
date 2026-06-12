@@ -240,8 +240,12 @@ module AIA
           options[:speak] = true
         end
 
-        opts.on("--voice VOICE", "Set voice for speech output (default: alloy)") do |voice|
+        opts.on("--voice VOICE", "Set voice for speech output") do |voice|
           options[:voice] = voice
+        end
+
+        opts.on("--speak-command CMD", "Command used for TTS (default: say)") do |cmd|
+          options[:speak_command] = cmd
         end
 
         opts.on("--is", "--image-size SIZE", "Set image size for generation (default: 1024x1024)") do |size|

@@ -430,10 +430,10 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 
 | Config Path | CLI Options | Default | Environment Variable |
 |-------------|-------------|---------|---------------------|
-| `audio.voice` | `--voice` | `alloy` | `AIA_AUDIO__VOICE` |
-| `audio.speak_command` | | `afplay` | `AIA_AUDIO__SPEAK_COMMAND` |
-| `audio.speech_model` | `--sm`, `--speech-model` | `tts-1` | `AIA_AUDIO__SPEECH_MODEL` |
-| `audio.transcription_model` | `--tm`, `--transcription-model` | `whisper-1` | `AIA_AUDIO__TRANSCRIPTION_MODEL` |
+| `audio.voice` | `--voice` | `~` (system default) | `AIA_AUDIO__VOICE` |
+| `audio.speak_command` | | `say` (macOS TTS) | `AIA_AUDIO__SPEAK_COMMAND` |
+| `audio.speech_model` | `--sm`, `--speech-model` | `~` (unset) | `AIA_AUDIO__SPEECH_MODEL` |
+| `audio.transcription_model` | `--tm`, `--transcription-model` | `~` (unset) | `AIA_AUDIO__TRANSCRIPTION_MODEL` |
 | `image.size` | `--is`, `--image-size` | `1024x1024` | `AIA_IMAGE__SIZE` |
 | `image.quality` | `--iq`, `--image-quality` | `standard` | `AIA_IMAGE__QUALITY` |
 | `image.style` | `--style`, `--image-style` | `vivid` | `AIA_IMAGE__STYLE` |

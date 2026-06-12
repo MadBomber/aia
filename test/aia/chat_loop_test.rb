@@ -186,7 +186,10 @@ class ChatLoopREPLTest < Minitest::Test
   def test_speak_uses_custom_speak_command
     AIA.stubs(:speak?).returns(true)
     @config.audio = OpenStruct.new(speak_command: 'mplayer', speech_model: nil, voice: nil)
-    @chat_loop.expects(:system).with({}, 'mplayer', 'hello').returns(true)
+    # Custom commands get two system calls: convert (command + tmpfile), then afplay
+    @chat_loop.expects(:system).with({}, 'mplayer', 'hello', anything).returns(true)
+    File.stubs(:size?).returns(1024)
+    @chat_loop.expects(:system).with('afplay', anything).returns(true)
     @chat_loop.send(:speak, 'hello')
   end
 
