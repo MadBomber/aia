@@ -44,8 +44,12 @@ module AIA
       discovered = MCPDiscovery.new.discover(config)
       validate_mcp_use_names(config, discovered) if Array(config.mcp_use).any?
 
+      # Prefer the robot's pre-built mcp_config (already normalized) when
+      # present, but always apply --mcp-skip so that flag is honoured.
+      # Fall back to the MCPDiscovery result (which includes both filters).
       servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
-                  @robot.mcp_config
+                  skip_list = Array(config.mcp_skip)
+                  @robot.mcp_config.reject { |s| skip_list.include?(AIA::Utility.server_name(s)) }
                 else
                   discovered.map { |s| MCPConfigNormalizer.normalize(s) }
                 end
