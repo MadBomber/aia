@@ -216,7 +216,7 @@ module AIA
           options[:temperature] = temp
         end
 
-        opts.on("--max-tokens TOKENS", Integer, "Set maximum tokens for text generation (default: 2048)") do |tokens|
+        opts.on("--max-tokens TOKENS", Integer, "Set maximum tokens for text generation (default: 32767)") do |tokens|
           options[:max_tokens] = tokens
         end
 
