@@ -29,7 +29,7 @@ module AIA
     # @return [String, nil] combined results, or nil if not applicable
     def handle(context)
       prompt = context.prompt
-      return nil unless @robot.is_a?(RobotLab::Network)
+      return nil unless @robot.network?
       return nil unless @task_coordinator&.available?
 
       robots      = @robot.robots

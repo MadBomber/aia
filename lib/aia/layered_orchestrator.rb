@@ -127,7 +127,7 @@ module AIA
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       requirements = context.prompt
-      primary      = primary_robot
+      primary      = @robot.chief
 
       FileUtils.mkdir_p(@build_dir)
       say("")
@@ -188,11 +188,6 @@ module AIA
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     private
-
-    # Return the single primary robot (first robot in a network, or @robot itself)
-    def primary_robot
-      @robot.is_a?(RobotLab::Network) ? @robot.robots.values.first : @robot
-    end
 
     # Tier 1: use a probe robot to decompose requirements into layer specs
     def decompose_to_layers(robot, requirements)

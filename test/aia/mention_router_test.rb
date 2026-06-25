@@ -41,6 +41,7 @@ class MentionRouterTest < Minitest::Test
   def test_returns_false_for_non_network_robot
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
 
     context = AIA::HandlerContext.new(robot: robot, prompt: "@Alice hello")
     refute @handler.handle(context)
@@ -150,9 +151,11 @@ class MentionRouterTest < Minitest::Test
   def mock_network(robot_list)
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     robot_hash = robot_list.to_h { |r| [r.name.downcase.to_sym, r] }
     network.stubs(:robots).returns(robot_hash)
     network.robots.stubs(:values).returns(robot_list)
+    network.stubs(:crew).returns(robot_hash.values)
     network
   end
 end

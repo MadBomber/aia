@@ -85,6 +85,7 @@ class MCPStartupTest < Minitest::Test
     mock_robot.stubs(:respond_to?).with(:robots).returns(false)
     mock_robot.stubs(:mcp_config).returns(server_configs)
     mock_robot.stubs(:inject_mcp!)
+    mock_robot.stubs(:crew).returns([mock_robot])
     mock_robot
   end
 
@@ -147,6 +148,7 @@ class MCPStartupTest < Minitest::Test
     mock_client = mock('client')
     mock_client.stubs(:model).returns(mock_model)
     mock_client.stubs(:name).returns('TestBot')
+    mock_client.stubs(:crew).returns([mock_client])
     AIA.stubs(:client).returns(mock_client)
 
     AIA::Utility.robot
@@ -172,6 +174,7 @@ class MCPStartupTest < Minitest::Test
     mock_client = mock('client')
     mock_client.stubs(:model).returns(mock_model)
     mock_client.stubs(:name).returns('TestBot')
+    mock_client.stubs(:crew).returns([mock_client])
     AIA.stubs(:client).returns(mock_client)
 
     AIA::Utility.robot
@@ -193,6 +196,7 @@ class MCPStartupTest < Minitest::Test
     mock_client = mock('client')
     mock_client.stubs(:model).returns(mock_model)
     mock_client.stubs(:name).returns('TestBot')
+    mock_client.stubs(:crew).returns([mock_client])
     AIA.stubs(:client).returns(mock_client)
 
     AIA::Utility.robot

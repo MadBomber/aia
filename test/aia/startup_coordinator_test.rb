@@ -32,6 +32,7 @@ class StartupCoordinatorTest < Minitest::Test
   def test_run_sets_filters
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
     robot.stubs(:mcp_config).returns([])
 
     AIA::TaskCoordinator.stubs(:new).raises(StandardError, "no trakflow")
@@ -48,6 +49,7 @@ class StartupCoordinatorTest < Minitest::Test
   def test_skips_mcp_when_no_mcp_flag_set
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
     AIA::TaskCoordinator.stubs(:new).raises(StandardError)
 
     coordinator = AIA::StartupCoordinator.new(
@@ -60,6 +62,7 @@ class StartupCoordinatorTest < Minitest::Test
   def test_attach_bus_skipped_for_single_robot
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
     AIA::TaskCoordinator.stubs(:new).raises(StandardError)
 
     AIA::RobotFactory.expects(:attach_bus).never
@@ -97,6 +100,7 @@ class StartupCoordinatorTest < Minitest::Test
 
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
     robot.stubs(:respond_to?).with(:mcp_config).returns(false)
     AIA::TaskCoordinator.stubs(:new).raises(StandardError)
 
@@ -158,6 +162,7 @@ class StartupCoordinatorTest < Minitest::Test
   def test_attach_bus_failure_logs_debug_warn
     robot = mock('network_robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    robot.stubs(:network?).returns(true)
     AIA::RobotFactory.stubs(:attach_bus).raises(StandardError, "bus error")
     AIA.expects(:debug_warn).with(regexp_matches(/bus/i), has_key(:exc)).once
     coordinator = AIA::StartupCoordinator.new(robot: robot, ui_presenter: mock('ui'))

@@ -95,6 +95,7 @@ class AIAIntegrationTest < Minitest::Test
     mock_robot = mock('robot')
     mock_robot.stubs(:model).returns(mock_model)
     mock_robot.stubs(:name).returns('test-robot')
+    mock_robot.stubs(:crew).returns([mock_robot])
     AIA.client = mock_robot
 
     AIA.stubs(:config).returns(@mock_config)

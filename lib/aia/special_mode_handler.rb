@@ -128,11 +128,7 @@ module AIA
           barrier.async do
             t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
             @ui_presenter.display_info("Processing sub-task #{i + 1}...")
-            r = if @robot.is_a?(RobotLab::Network)
-                  @robot.run(message: task)
-                else
-                  @robot.run(task, mcp: :inherit, tools: :inherit)
-                end
+            r = @robot.run(task, mcp: :inherit, tools: :inherit)
             timings[i]      = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
             raw_subtasks[i] = r
             extract_content(r)

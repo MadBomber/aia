@@ -21,6 +21,8 @@ class LayeredOrchestratorTest < Minitest::Test
 
     @robot = mock('robot')
     @robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    @robot.stubs(:network?).returns(false)
+    @robot.stubs(:chief).returns(@robot)
     @robot.stubs(:name).returns("Tobor")
 
     @config = OpenStruct.new(

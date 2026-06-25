@@ -101,7 +101,7 @@ module AIA
 
     # Attach a shared TypedBus to multi-model networks.
     def attach_bus_if_network
-      return unless @robot.is_a?(RobotLab::Network)
+      return unless @robot.network?
 
       RobotFactory.attach_bus(@robot)
     rescue StandardError => e

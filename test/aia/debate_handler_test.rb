@@ -28,6 +28,7 @@ class DebateHandlerTest < Minitest::Test
   def test_returns_nil_for_single_robot
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
 
     handler = AIA::DebateHandler.new(
       robot: robot, ui_presenter: @ui, tracker: @tracker
@@ -39,10 +40,12 @@ class DebateHandlerTest < Minitest::Test
   def test_returns_nil_for_network_with_one_robot
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     robot = mock('robot')
     network.stubs(:robots).returns({ a: robot })
     robot.stubs(:values).returns([robot])
     network.robots.stubs(:values).returns([robot])
+    network.stubs(:crew).returns([robot])
 
     handler = AIA::DebateHandler.new(
       robot: network, ui_presenter: @ui, tracker: @tracker
@@ -57,8 +60,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -87,8 +92,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -111,8 +118,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -136,8 +145,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(true)
     network.stubs(:memory).returns(memory)
 
@@ -161,8 +172,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -184,8 +197,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -209,8 +224,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -235,8 +252,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -257,8 +276,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -300,8 +321,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(
@@ -322,8 +345,10 @@ class DebateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot_a, bob: robot_b })
     network.robots.stubs(:values).returns([robot_a, robot_b])
+    network.stubs(:crew).returns([robot_a, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
 
     handler = AIA::DebateHandler.new(

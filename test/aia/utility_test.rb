@@ -15,6 +15,7 @@ class UtilityTest < Minitest::Test
     mock_client = mock('client')
     mock_client.stubs(:model).returns(mock_model)
     mock_client.stubs(:name).returns('TestBot')
+    mock_client.stubs(:crew).returns([mock_client])
     AIA.stubs(:client).returns(mock_client)
 
     # Mock AIA.config with nested structure (matching new config layout)

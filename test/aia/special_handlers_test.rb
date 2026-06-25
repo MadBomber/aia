@@ -224,6 +224,11 @@ class DebateHandlerIntegrationTest < Minitest::Test
     robot.stubs(:run).returns(mock_result(response))
     robot.stubs(:with_bus)
     robot.stubs(:is_a?).returns(false)
+    # Runnable protocol: a single robot is a crew of one, led by itself.
+    robot.stubs(:network?).returns(false)
+    robot.stubs(:crew).returns([robot])
+    robot.stubs(:chief).returns(robot)
+    robot.stubs(:robot_count).returns(1)
     robot
   end
 
@@ -235,6 +240,11 @@ class DebateHandlerIntegrationTest < Minitest::Test
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
     network.stubs(:respond_to?).returns(true)
     network.stubs(:respond_to?).with(:memory).returns(false)
+    # Runnable protocol mirrors the robots Hash.
+    network.stubs(:network?).returns(true)
+    network.stubs(:crew).returns(robots)
+    network.stubs(:chief).returns(robots.first)
+    network.stubs(:robot_count).returns(robots.size)
     network
   end
 
@@ -268,6 +278,7 @@ class DelegateHandlerIntegrationTest < Minitest::Test
   def test_returns_nil_for_single_robot
     robot = mock('robot')
     robot.stubs(:is_a?).returns(false)
+    robot.stubs(:network?).returns(false)
 
     coordinator = mock('coordinator')
     coordinator.stubs(:available?).returns(true)
@@ -503,6 +514,10 @@ class DelegateHandlerIntegrationTest < Minitest::Test
     robot.stubs(:name).returns(name)
     robot.stubs(:run).returns(mock_result("default"))
     robot.stubs(:is_a?).returns(false)
+    robot.stubs(:network?).returns(false)
+    robot.stubs(:crew).returns([robot])
+    robot.stubs(:chief).returns(robot)
+    robot.stubs(:robot_count).returns(1)
     robot
   end
 
@@ -514,6 +529,10 @@ class DelegateHandlerIntegrationTest < Minitest::Test
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
     network.stubs(:respond_to?).returns(true)
     network.stubs(:respond_to?).with(:memory).returns(false)
+    network.stubs(:network?).returns(true)
+    network.stubs(:crew).returns(robots)
+    network.stubs(:chief).returns(robots.first)
+    network.stubs(:robot_count).returns(robots.size)
     network
   end
 
@@ -761,6 +780,10 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     robot.stubs(:respond_to?).with(:bus).returns(true)
     robot.stubs(:with_bus)
     robot.stubs(:is_a?).returns(false)
+    robot.stubs(:network?).returns(false)
+    robot.stubs(:crew).returns([robot])
+    robot.stubs(:chief).returns(robot)
+    robot.stubs(:robot_count).returns(1)
     robot
   end
 
@@ -770,6 +793,10 @@ class SpawnHandlerIntegrationTest < Minitest::Test
     network.stubs(:robots).returns(robots_hash)
     network.stubs(:is_a?).returns(false)
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
+    network.stubs(:crew).returns(robots)
+    network.stubs(:chief).returns(robots.first)
+    network.stubs(:robot_count).returns(robots.size)
     network
   end
 

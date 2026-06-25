@@ -39,9 +39,9 @@ module AIA
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       prompt = context.prompt
-      return nil unless @robot.is_a?(RobotLab::Network)
+      return nil unless @robot.network?
 
-      robots = @robot.robots.values
+      robots = @robot.crew
       return nil if robots.size < 2
 
       # Ensure all robots share a bus

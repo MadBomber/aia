@@ -52,11 +52,7 @@ module AIA
       tools_param = tools && !tools.empty? ? tools : :inherit
 
       begin
-        result = if robot.is_a?(RobotLab::Network)
-                   robot.run(message: prompt)
-                 else
-                   robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
-                 end
+        result = robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
       rescue Exception # rubocop:disable Lint/RescueException
         @spinner.stop unless header_printed
         raise

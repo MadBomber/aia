@@ -112,7 +112,7 @@ module AIA
       end
 
       puts
-      if client.is_a?(RobotLab::Network)
+      if client.network?
         show_network(client)
       else
         show_single_robot(client)
@@ -136,7 +136,7 @@ module AIA
     private
 
     def show_network(network)
-      robot_count = network.robots.size
+      robot_count = network.robot_count
       mode = if AIA.config.flags.consensus
                "Consensus"
              elsif AIA.config.pipeline.length > 1
@@ -150,7 +150,7 @@ module AIA
       puts "=" * header.length
       puts "Mode: #{mode} Network (#{robot_count} robots)"
 
-      network.robots.each_value do |bot|
+      network.crew.each do |bot|
         puts
         show_robot_detail(bot)
       end
@@ -227,11 +227,9 @@ module AIA
           return Array(robot.mcp_tools)
         end
 
-        if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
-          first_robot = robot.robots.values.first
-          if first_robot.respond_to?(:mcp_tools) && first_robot.mcp_tools&.any?
-            return Array(first_robot.mcp_tools)
-          end
+        first_robot = robot.chief
+        if first_robot.respond_to?(:mcp_tools) && first_robot.mcp_tools&.any?
+          return Array(first_robot.mcp_tools)
         end
       end
 

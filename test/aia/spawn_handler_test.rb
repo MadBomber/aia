@@ -35,13 +35,12 @@ class SpawnHandlerTest < Minitest::Test
     primary.stubs(:respond_to?).with(:bus).returns(false)
     primary.stubs(:bus).returns(nil)
     primary.stubs(:with_bus)
+    primary.stubs(:chief).returns(primary)
+    primary.stubs(:network?).returns(false)
     primary.expects(:spawn).with(
       name: "security_expert",
       system_prompt: "You are a security_expert specialist. Answer precisely within your domain of expertise."
     ).returns(specialist)
-
-    robot = mock('robot')
-    robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
 
     handler = AIA::SpawnHandler.new(
       robot: primary, ui_presenter: @ui, tracker: @tracker
@@ -61,6 +60,8 @@ class SpawnHandlerTest < Minitest::Test
     primary.stubs(:respond_to?).with(:bus).returns(true)
     primary.stubs(:bus).returns(mock('bus'))
     primary.stubs(:with_bus)
+    primary.stubs(:chief).returns(primary)
+    primary.stubs(:network?).returns(false)
 
     # First call: detect specialist type
     primary.stubs(:run)
@@ -90,6 +91,8 @@ class SpawnHandlerTest < Minitest::Test
     primary.stubs(:respond_to?).with(:bus).returns(true)
     primary.stubs(:bus).returns(mock('bus'))
     primary.stubs(:with_bus)
+    primary.stubs(:chief).returns(primary)
+    primary.stubs(:network?).returns(false)
     # spawn should only be called once
     primary.expects(:spawn).once.returns(specialist)
 
@@ -114,6 +117,8 @@ class SpawnHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
+    network.stubs(:chief).returns(primary)
     network.stubs(:robots).returns({ alice: primary })
     network.robots.stubs(:values).returns([primary])
 
@@ -144,6 +149,8 @@ class SpawnHandlerTest < Minitest::Test
     primary.stubs(:respond_to?).with(:bus).returns(true)
     primary.stubs(:bus).returns(mock('bus'))
     primary.stubs(:with_bus)
+    primary.stubs(:chief).returns(primary)
+    primary.stubs(:network?).returns(false)
     primary.stubs(:spawn).returns(specialist)
 
     handler = AIA::SpawnHandler.new(
@@ -166,6 +173,8 @@ class SpawnHandlerTest < Minitest::Test
     primary.stubs(:respond_to?).with(:bus).returns(true)
     primary.stubs(:bus).returns(mock('bus'))
     primary.stubs(:with_bus)
+    primary.stubs(:chief).returns(primary)
+    primary.stubs(:network?).returns(false)
     primary.stubs(:spawn).returns(specialist)
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
@@ -188,6 +197,8 @@ class SpawnHandlerTest < Minitest::Test
     primary.stubs(:respond_to?).with(:bus).returns(true)
     primary.stubs(:bus).returns(mock('bus'))
     primary.stubs(:with_bus)
+    primary.stubs(:chief).returns(primary)
+    primary.stubs(:network?).returns(false)
     primary.stubs(:spawn).with { true }.returns(*(specialists + [specialists[0]]))
 
     handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)

@@ -35,7 +35,7 @@ module AIA
     def handle(context)
       prompt          = context.prompt
       specialist_type = context.specialist_type
-      primary = @robot.is_a?(RobotLab::Network) ? @robot.robots.values.first : @robot
+      primary = @robot.chief
       primary.with_bus unless primary.respond_to?(:bus) && primary.bus
 
       role, instruction = if specialist_type

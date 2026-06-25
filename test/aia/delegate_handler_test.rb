@@ -30,6 +30,7 @@ class DelegateHandlerTest < Minitest::Test
   def test_returns_nil_for_single_robot
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
 
     handler = AIA::DelegateHandler.new(
       robot: robot, ui_presenter: @ui,
@@ -67,6 +68,7 @@ class DelegateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: lead, bob: robot_b })
     network.robots.stubs(:values).returns([lead, robot_b])
 
@@ -96,6 +98,7 @@ class DelegateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: lead, bob: robot_b })
     network.robots.stubs(:values).returns([lead, robot_b])
     network.stubs(:respond_to?).with(:memory).returns(false)
@@ -136,6 +139,7 @@ class DelegateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: lead })
     network.robots.stubs(:values).returns([lead])
     network.stubs(:respond_to?).with(:memory).returns(false)
@@ -172,6 +176,7 @@ class DelegateHandlerTest < Minitest::Test
 
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
+    network.stubs(:network?).returns(true)
     network.stubs(:robots).returns({ alice: robot })
     network.robots.stubs(:values).returns([robot])
     network

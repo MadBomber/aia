@@ -118,11 +118,7 @@ module AIA
         end
       else
         @ui.with_spinner("Processing") do
-          if @robot.is_a?(RobotLab::Network)
-            @robot.run(message: prompt_text)
-          else
-            @robot.run(prompt_text, mcp: :inherit, tools: :inherit)
-          end
+          @robot.run(prompt_text, mcp: :inherit, tools: :inherit)
         end
       end
     end

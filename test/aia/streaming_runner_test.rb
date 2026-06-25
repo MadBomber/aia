@@ -102,7 +102,8 @@ class StreamingRunnerTest < Minitest::Test
   def test_run_network_uses_message_form
     network = mock('network')
     network.stubs(:is_a?).with(RobotLab::Network).returns(true)
-    network.expects(:run).with(message: "hello").returns(@result)
+    network.stubs(:network?).returns(true)
+    network.expects(:run).with("hello", mcp: :inherit, tools: :inherit).returns(@result)
     @runner.run(network, "hello")
   end
 
@@ -111,6 +112,7 @@ class StreamingRunnerTest < Minitest::Test
   def build_non_network_robot
     robot = mock('robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
+    robot.stubs(:network?).returns(false)
     robot
   end
 end

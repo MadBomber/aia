@@ -70,7 +70,7 @@ module AIA
       def robot_names
         client = AIA.client
         return [] unless client
-        client.is_a?(RobotLab::Network) ? client.robots.values.map(&:name) : [client.name]
+        client.crew.map(&:name)
       end
 
       def format_crew_mentions(names)

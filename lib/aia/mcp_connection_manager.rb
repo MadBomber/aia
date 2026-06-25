@@ -90,11 +90,7 @@ module AIA
     def inject_into(robot)
       clients, tools = @mutex.synchronize { [@connected_clients.dup, @connected_tools.dup] }
 
-      targets = if robot.respond_to?(:robots) && robot.robots.is_a?(Hash)
-                  robot.robots.values
-                else
-                  [robot]
-                end
+      targets = robot.crew
 
       targets.each do |target|
         target.inject_mcp!(clients: clients, tools: tools)

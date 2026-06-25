@@ -25,12 +25,12 @@ module AIA
     def handle(context) # rubocop:disable Naming/PredicateMethod
       robot  = context.robot
       prompt = context.prompt
-      return false unless robot.is_a?(RobotLab::Network)
+      return false unless robot.network?
 
       mention_tokens = prompt.scan(/@(\w+)/i).flatten
       return false if mention_tokens.empty?
 
-      all_robots = robot.robots.values
+      all_robots = robot.crew
       matched = mention_tokens.filter_map do |token|
         all_robots.find { |r| r.name.downcase == token.downcase }
       end.uniq(&:name)

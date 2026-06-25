@@ -84,6 +84,7 @@ class MCPConnectionManagerTest < Minitest::Test
   def test_inject_into_single_robot_calls_inject_mcp
     robot = mock('robot')
     robot.stubs(:respond_to?).with(:robots).returns(false)
+    robot.stubs(:crew).returns([robot])
     robot.expects(:inject_mcp!).with(clients: {}, tools: []).once
 
     @manager.inject_into(robot)
@@ -98,6 +99,7 @@ class MCPConnectionManagerTest < Minitest::Test
     network = mock('network')
     network.stubs(:respond_to?).with(:robots).returns(true)
     network.stubs(:robots).returns({ a: robot_a, b: robot_b })
+    network.stubs(:crew).returns([robot_a, robot_b])
 
     @manager.inject_into(network)
   end
