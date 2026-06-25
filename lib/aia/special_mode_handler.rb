@@ -14,6 +14,29 @@ module AIA
   class SpecialModeHandler
     include ContentExtractor
 
+    # Special-mode dispatch table. Each row is triggered by a TurnState flag and
+    # runs either a bespoke method (`run:`) or, for the uniform "sub-handler
+    # returns content" family, the shared #run_sub_handler (`sub:`). Adding a
+    # mode means adding a row here plus (for a bespoke mode) its handle_* method
+    # — never editing #handle.
+    MODES = [
+      { flag: :force_verify,         run: :handle_verification   },
+      { flag: :force_decompose,      run: :handle_decomposition  },
+      { flag: :force_concurrent_mcp, run: :handle_concurrent_mcp },
+      { flag: :force_debate,         sub: { handler: :debate_handler,   label: 'Debate'     } },
+      { flag: :force_delegate,       sub: { handler: :delegate_handler, label: 'Delegation' } },
+      { flag: :force_spawn,          sub: { handler: :spawn_handler,    label: 'Spawn',
+                                            context: lambda { |prompt, ts|
+                                              type = ts.spawn_type
+                                              ts.spawn_type = nil
+                                              { prompt: prompt, specialist_type: type }
+                                            } } },
+      { flag: :force_orchestrate,    run: :handle_orchestration  }
+    ].freeze
+
+    # Memoized sub-handler accessors, used to propagate a robot swap.
+    HANDLERS = %i[debate_handler delegate_handler spawn_handler layered_orchestrator].freeze
+
     def initialize(robot:, ui_presenter:, tracker:)
       @robot        = robot
       @ui_presenter = ui_presenter
@@ -29,10 +52,10 @@ module AIA
     # Update the robot reference (e.g., after a model switch).
     def robot=(new_robot)
       @robot = new_robot
-      @debate_handler&.robot       = new_robot
-      @delegate_handler&.robot     = new_robot
-      @spawn_handler&.robot        = new_robot
-      @layered_orchestrator&.robot = new_robot
+      HANDLERS.each do |name|
+        inst = instance_variable_get(:"@#{name}")
+        inst.robot = new_robot if inst
+      end
     end
 
     # Check TurnState flags and dispatch to the appropriate handler.
@@ -42,48 +65,33 @@ module AIA
     # @return [Boolean]
     def handle(prompt)
       turn_state = AIA.turn_state
+      mode = MODES.find { |m| turn_state.public_send(m[:flag]) }
+      return false unless mode
 
-      if turn_state.force_verify
-        turn_state.force_verify = false
-        return handle_verification(prompt)
+      turn_state.public_send(:"#{mode[:flag]}=", false)
+      if mode[:sub]
+        run_sub_handler(mode[:sub], prompt, turn_state)
+      else
+        send(mode[:run], prompt)
       end
-
-      if turn_state.force_decompose
-        turn_state.force_decompose = false
-        return handle_decomposition(prompt)
-      end
-
-      if turn_state.force_concurrent_mcp
-        turn_state.force_concurrent_mcp = false
-        return handle_concurrent_mcp(prompt)
-      end
-
-      if turn_state.force_debate
-        turn_state.force_debate = false
-        return handle_debate(prompt)
-      end
-
-      if turn_state.force_delegate
-        turn_state.force_delegate = false
-        return handle_delegation(prompt)
-      end
-
-      if turn_state.force_spawn
-        turn_state.force_spawn = false
-        type = turn_state.spawn_type
-        turn_state.spawn_type = nil
-        return handle_spawn(prompt, specialist_type: type)
-      end
-
-      if turn_state.force_orchestrate
-        turn_state.force_orchestrate = false
-        return handle_orchestration(prompt)
-      end
-
-      false
     end
 
     private
+
+    # Run a "sub-handler returns content" mode: debate / delegate / spawn share
+    # this exact shape, differing only by handler, label, and (spawn) an extra
+    # context field built by spec[:context].
+    def run_sub_handler(spec, prompt, turn_state)
+      ctx_args = spec[:context] ? spec[:context].call(prompt, turn_state) : { prompt: prompt }
+      content  = send(spec[:handler]).handle(HandlerContext.new(**ctx_args))
+      return false unless content
+
+      display_and_save(content)
+      true
+    rescue StandardError => e
+      @ui_presenter.display_info("#{spec[:label]} failed: #{e.message}. Falling back to normal mode.")
+      false
+    end
 
     def handle_verification(prompt)
       require_relative 'verification_network'
@@ -196,39 +204,6 @@ module AIA
       true
     rescue StandardError => e
       @ui_presenter.display_info("Concurrent MCP failed: #{e.message}. Falling back to normal mode.")
-      false
-    end
-
-    def handle_debate(prompt)
-      content = debate_handler.handle(HandlerContext.new(prompt: prompt))
-      return false unless content
-
-      display_and_save(content)
-      true
-    rescue StandardError => e
-      @ui_presenter.display_info("Debate failed: #{e.message}. Falling back to normal mode.")
-      false
-    end
-
-    def handle_delegation(prompt)
-      content = delegate_handler.handle(HandlerContext.new(prompt: prompt))
-      return false unless content
-
-      display_and_save(content)
-      true
-    rescue StandardError => e
-      @ui_presenter.display_info("Delegation failed: #{e.message}. Falling back to normal mode.")
-      false
-    end
-
-    def handle_spawn(prompt, specialist_type: nil)
-      content = spawn_handler.handle(HandlerContext.new(prompt: prompt, specialist_type: specialist_type))
-      return false unless content
-
-      display_and_save(content)
-      true
-    rescue StandardError => e
-      @ui_presenter.display_info("Spawn failed: #{e.message}. Falling back to normal mode.")
       false
     end
 
