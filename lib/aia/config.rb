@@ -59,7 +59,7 @@ module AIA
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
                   :completion, :mcp_list, :list_tools, :list_skills,
                   :executable_prompt_content,
-                  :tool_names, :loaded_tools,
+                  :tool_names, :loaded_tools, :loaded_plugins,
                   :log_level_override, :log_file_override,
                   :connected_mcp_servers,  # Array of successfully connected MCP server names
                   :mcp_server_tool_counts, # Hash of name => tool_count for connected MCP servers

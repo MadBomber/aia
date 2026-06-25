@@ -10,6 +10,10 @@ require "tty-spinner"
 
 module AIA
   class StreamingRunner
+    # Hard ceiling on tools sent to the provider. OpenAI and Anthropic both
+    # reject tool arrays longer than 128. Overridable via config.max_tools.
+    DEFAULT_MAX_TOOLS = 128
+
     def initialize
       @spinner = TTY::Spinner.new("[:spinner] Processing...", format: :bouncing_ball)
     end
@@ -46,21 +50,7 @@ module AIA
         $stdout.print(text)
       end
 
-      # Translate the resolved tool list into robot_lab's ToolConfig vocabulary:
-      #   nil   -> :inherit  (no filter active / filter errored — use the full set)
-      #   []    -> :none     (filter ran and found nothing relevant — send no tools)
-      #   names -> names     (filtered subset; ToolConfig.filter_tools applies them)
-      # Distinguishing [] from nil is what lets a "nothing relevant" turn send
-      # zero tools instead of the entire build-time set (which can blow past a
-      # provider's max-tools limit).
-      tools_param =
-        if tools.nil?
-          :inherit
-        elsif tools.empty?
-          :none
-        else
-          tools
-        end
+      tools_param = resolve_tools_param(tools, robot)
 
       begin
         result = robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
@@ -73,6 +63,63 @@ module AIA
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
       content = streamed.empty? ? nil : streamed.join
       [result, content, elapsed]
+    end
+
+    private
+
+    # Translate the resolved tool list into robot_lab's ToolConfig vocabulary,
+    # then clamp it to the provider's limit:
+    #   nil   -> :inherit  (no filter active / filter errored — use the full set)
+    #   []    -> :none     (filter ran and found nothing relevant — send no tools)
+    #   names -> names     (filtered subset; ToolConfig.filter_tools applies them)
+    # Distinguishing [] from nil is what lets a "nothing relevant" turn send zero
+    # tools instead of the whole build-time set.
+    def resolve_tools_param(tools, robot)
+      param =
+        if tools.nil?
+          :inherit
+        elsif tools.empty?
+          :none
+        else
+          tools
+        end
+
+      enforce_tool_cap(param, robot)
+    end
+
+    # Clamp the effective tool list to the provider's maximum. Returns the
+    # value unchanged when it's already within budget (including :none, and
+    # :inherit when the robot's own tool count is under the cap). When over,
+    # expands :inherit to the robot's tool names, trims to the cap, and warns —
+    # a reduced tool set beats a failed turn.
+    def enforce_tool_cap(tools_param, robot)
+      return tools_param if tools_param == :none
+
+      max   = max_tools
+      names = tools_param == :inherit ? robot_tool_names(robot) : tools_param
+      return tools_param if names.size <= max
+
+      dropped = names.size - max
+      $stderr.puts(
+        "⚠ Tool list (#{names.size}) exceeds the provider limit of #{max}; " \
+        "sending #{max}, dropping #{dropped}. Enable --auto-tool-filter or reduce " \
+        "the available tools to control which ones are sent."
+      )
+      names.first(max)
+    end
+
+    # The provider tool cap, from config.max_tools when set, else the default.
+    def max_tools
+      configured = AIA.respond_to?(:config) && AIA.config.respond_to?(:max_tools) ? AIA.config.max_tools : nil
+      configured&.positive? ? configured : DEFAULT_MAX_TOOLS
+    end
+
+    # The robot's full set of tool names (local + MCP). Used only to size and
+    # trim an over-limit :inherit set.
+    def robot_tool_names(robot)
+      local = robot.respond_to?(:local_tools) ? Array(robot.local_tools) : []
+      mcp   = robot.respond_to?(:mcp_tools)   ? Array(robot.mcp_tools)   : []
+      (local + mcp).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
     end
   end
 end

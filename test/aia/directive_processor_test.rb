@@ -74,6 +74,7 @@ class DirectiveProcessorTest < Minitest::Test
 
     # config is registered via register_test_directives
     assert processor.directive?("/config")
+    assert processor.directive?("/plugins")
 
     # unregistered names return false
     refute processor.directive?("/nonexistent_directive_xyz")

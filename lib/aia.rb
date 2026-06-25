@@ -23,6 +23,7 @@ require_relative 'aia/config/cli_parser'
 require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
 require_relative 'aia/tool_loader'
+require_relative 'aia/plugin_loader'
 require_relative 'aia/system_prompt_assembler'
 require_relative 'aia/mcp_config_normalizer'
 require_relative 'aia/network_memory_manager'
@@ -144,6 +145,8 @@ module AIA
 
       # Validate and tailor configuration (handles --dump early exit)
       return if ConfigValidator.tailor(@config) == :early_exit
+
+      PluginLoader.load!(@config)
 
       # Configure RobotLab loggers and providers once at startup
       RobotFactory.setup(@config)

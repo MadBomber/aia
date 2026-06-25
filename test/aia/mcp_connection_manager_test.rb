@@ -64,15 +64,18 @@ class MCPConnectionManagerTest < Minitest::Test
     assert_equal 15.0, result
   end
 
-  def test_server_timeout_capped_at_default
+  def test_server_timeout_honors_value_above_default
+    # A configured timeout larger than DEFAULT_TIMEOUT must be HONORED, not
+    # clamped. Clamping silently dropped slow-starting servers (npx/uvx cold
+    # starts) so their tools never reached the robot or the tool filter.
     result = @manager.send(:server_timeout, { timeout: 999 })
-    assert_equal AIA::MCPConnectionManager::DEFAULT_TIMEOUT, result
+    assert_equal 999.0, result
   end
 
   def test_server_timeout_milliseconds_converted_to_seconds
-    # 5000ms → 5.0s, which is < DEFAULT_TIMEOUT
-    result = @manager.send(:server_timeout, { timeout: 5000 })
-    assert_equal 5.0, result
+    # 360000ms → 360.0s (6 min) — honored in full, not capped at DEFAULT_TIMEOUT.
+    result = @manager.send(:server_timeout, { timeout: 360_000 })
+    assert_equal 360.0, result
   end
 
   def test_server_timeout_non_hash_config_returns_default

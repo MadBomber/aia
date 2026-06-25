@@ -50,6 +50,23 @@ module AIA
     end
     # rubocop:enable Metrics/AbcSize
 
+    desc "List loaded plugin basenames"
+    def plugins(args = [], context_manager = nil)
+      loaded_plugins = Array(AIA.config&.loaded_plugins)
+
+      if loaded_plugins.empty?
+        puts "No plugins are loaded"
+      else
+        puts
+        puts "Loaded Plugins"
+        puts "=============="
+        loaded_plugins.each { |name| puts name }
+      end
+      puts
+
+      ''
+    end
+
     desc "Show MCP server connection status and available tools"
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def mcp(args = [], context_manager = nil)

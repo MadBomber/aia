@@ -58,7 +58,9 @@ module AIA
         end
       end
 
-      global_limit = global_connection_timeout
+      # The global cap must never be smaller than the slowest single server's
+      # timeout, or concurrent connections get killed before they can finish.
+      global_limit = [global_connection_timeout, *servers.map { |s| server_timeout(s) }].max
       Timeout.timeout(global_limit) do
         threads.each(&:join)
       end
@@ -295,8 +297,12 @@ module AIA
       return DEFAULT_TIMEOUT if raw.nil?
 
       seconds = raw.to_f
-      seconds /= 1000.0 if seconds >= 1000
-      [seconds, DEFAULT_TIMEOUT].min
+      seconds /= 1000.0 if seconds >= 1000 # values >= 1000 are milliseconds
+      # Honor the configured per-server timeout. DEFAULT_TIMEOUT is only the
+      # fallback when no timeout is set (handled above) — it must NOT cap a
+      # larger configured value, or slow-starting servers (npx/uvx cold starts)
+      # get dropped and their tools never reach the robot or the tool filter.
+      seconds.positive? ? seconds : DEFAULT_TIMEOUT
     end
   end
 end

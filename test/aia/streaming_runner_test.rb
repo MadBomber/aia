@@ -64,6 +64,40 @@ class StreamingRunnerTest < Minitest::Test
     @runner.run(robot, "hello", tools: [])
   end
 
+  def test_run_caps_inherit_when_robot_tool_count_exceeds_limit
+    robot = build_non_network_robot
+    robot.stubs(:local_tools).returns(make_tools(191))
+    robot.stubs(:mcp_tools).returns([])
+    expected = (1..128).map { |i| "tool_#{i}" }
+    robot.expects(:run).with("hello", mcp: :inherit, tools: expected).returns(@result)
+    capture_io { @runner.run(robot, "hello", tools: nil) }
+  end
+
+  def test_run_warns_naming_dropped_count_when_capping
+    robot = build_non_network_robot
+    robot.stubs(:local_tools).returns(make_tools(191))
+    robot.stubs(:mcp_tools).returns([])
+    robot.stubs(:run).returns(@result)
+    _out, err = capture_io { @runner.run(robot, "hello", tools: nil) }
+    assert_match(/exceeds the provider limit of 128/, err)
+    assert_match(/dropping 63/, err)
+  end
+
+  def test_run_keeps_inherit_when_robot_tool_count_under_limit
+    robot = build_non_network_robot
+    robot.stubs(:local_tools).returns(make_tools(10))
+    robot.stubs(:mcp_tools).returns([])
+    robot.expects(:run).with("hello", mcp: :inherit, tools: :inherit).returns(@result)
+    @runner.run(robot, "hello", tools: nil)
+  end
+
+  def test_run_caps_explicit_tool_list_over_limit
+    robot = build_non_network_robot
+    names = (1..200).map { |i| "tool_#{i}" }
+    robot.expects(:run).with("hello", mcp: :inherit, tools: names.first(128)).returns(@result)
+    capture_io { @runner.run(robot, "hello", tools: names) }
+  end
+
   def test_run_passes_tool_list_when_provided
     robot = build_non_network_robot
     robot.expects(:run).with("hello", mcp: :inherit, tools: %w[tool_a tool_b]).returns(@result)
@@ -116,5 +150,14 @@ class StreamingRunnerTest < Minitest::Test
     robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
     robot.stubs(:network?).returns(false)
     robot
+  end
+
+  # n tool doubles named tool_1..tool_n.
+  def make_tools(count)
+    (1..count).map do |i|
+      t = mock("tool#{i}")
+      t.stubs(:name).returns("tool_#{i}")
+      t
+    end
   end
 end
