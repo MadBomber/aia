@@ -426,6 +426,40 @@ class ValidatorRoleConfigurationTest < Minitest::Test
   end
 end
 
+class ValidatorPluginsDirTest < Minitest::Test
+  def test_validate_plugins_dir_warns_when_missing
+    config = OpenStruct.new(paths: OpenStruct.new(plugins_dir: '/definitely/missing/plugins'))
+
+    _out, err = capture_io do
+      AIA::ConfigValidator.send(:validate_plugins_dir, config)
+    end
+
+    assert_match(/configured plugins directory does not exist/, err)
+  end
+
+  def test_validate_plugins_dir_is_silent_when_directory_exists
+    Dir.mktmpdir do |dir|
+      config = OpenStruct.new(paths: OpenStruct.new(plugins_dir: dir))
+
+      _out, err = capture_io do
+        AIA::ConfigValidator.send(:validate_plugins_dir, config)
+      end
+
+      assert_equal '', err
+    end
+  end
+
+  def test_validate_plugins_dir_is_silent_when_nil
+    config = OpenStruct.new(paths: OpenStruct.new(plugins_dir: nil))
+
+    _out, err = capture_io do
+      AIA::ConfigValidator.send(:validate_plugins_dir, config)
+    end
+
+    assert_equal '', err
+  end
+end
+
 class ValidatorFuzzySearchTest < Minitest::Test
   def test_sets_fuzzy_search_sentinel
     config = OpenStruct.new(

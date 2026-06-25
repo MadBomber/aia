@@ -213,6 +213,8 @@ module AIA
       rejected_tools: %i[tools rejected],
       # registry section
       refresh: %i[registry refresh],
+      # paths section
+      plugins_dir: %i[paths plugins_dir],
       # rules section
       rules_enabled: %i[rules enabled]
     }.freeze
@@ -226,7 +228,9 @@ module AIA
       load_extra_config(extra_config_path) if extra_config_path
 
       apply_models_env_var unless overrides[:models]
+      apply_plugins_dir_env_var unless overrides[:plugins_dir]
       apply_overrides(overrides) if overrides && !overrides.empty?
+      expand_paths
       process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
     end
 
@@ -372,10 +376,20 @@ module AIA
       self.models = TO_MODEL_SPECS.call(models_env.split(',').map(&:strip))
     end
 
+    # Backward-compatible top-level env var for plugin directory.
+    # Unlike most nested config values, this uses AIA_PLUGINS_DIR per requirements.
+    def apply_plugins_dir_env_var
+      plugins_dir_env = ENV.fetch('AIA_PLUGINS_DIR', nil)
+      return if plugins_dir_env.nil? || plugins_dir_env.empty?
+
+      paths.plugins_dir = plugins_dir_env
+    end
+
     # rubocop:disable Metrics/AbcSize
     def expand_paths
       paths.aia_dir = File.expand_path(paths.aia_dir) if paths.aia_dir
       paths.config_file = File.expand_path(paths.config_file) if paths.config_file
+      paths.plugins_dir = File.expand_path(paths.plugins_dir) if paths.plugins_dir
       prompts.dir = File.expand_path(prompts.dir) if prompts.dir
       prompts.roles_dir = File.expand_path(prompts.roles_dir) if prompts.roles_dir
       roles.dir = File.expand_path(roles.dir) if roles.respond_to?(:dir) && roles.dir

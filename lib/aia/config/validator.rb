@@ -39,6 +39,7 @@ module AIA
         return :early_exit if handle_completion_script(config) == :early_exit
         validate_required_prompt_id(config)
         process_role_configuration(config)
+        validate_plugins_dir(config)
         handle_fuzzy_search_prompt_id(config)
         normalize_boolean_flags(config)
         validate_final_prompt_requirements(config)
@@ -150,6 +151,14 @@ module AIA
         config.prompt_id = role
         config.pipeline.prepend(config.prompt_id)
         config.prompts.role = ''
+      end
+
+      def validate_plugins_dir(config)
+        plugins_dir = config.paths&.plugins_dir
+        return if plugins_dir.nil? || plugins_dir.to_s.strip.empty?
+        return if Dir.exist?(plugins_dir)
+
+        $stderr.puts "Warning: configured plugins directory does not exist: #{plugins_dir}"
       end
 
       def handle_fuzzy_search_prompt_id(config)

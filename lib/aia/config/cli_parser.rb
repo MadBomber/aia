@@ -169,6 +169,10 @@ module AIA
           options[:prompts_dir] = dir
         end
 
+        opts.on("--plugins-dir DIR", "Set directory containing AIA plugin files") do |dir|
+          options[:plugins_dir] = dir
+        end
+
         opts.on("--roles-prefix PREFIX", "Set subdirectory name for role files (default: roles)") do |prefix|
           options[:roles_prefix] = prefix
         end

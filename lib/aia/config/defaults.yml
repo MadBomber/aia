@@ -213,12 +213,14 @@ defaults:
 
   # ---------------------------------------------------------------------------
   # Paths Configuration
-  # Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
+  # Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file, AIA.config.paths.plugins_dir
   # Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
+  # Special-case env: AIA_PLUGINS_DIR
   # ---------------------------------------------------------------------------
   paths:
     aia_dir: ~/.config/aia
     config_file: ~/.config/aia/aia.yml
+    plugins_dir: ~
 
   # ---------------------------------------------------------------------------
   # Model Aliases (user-defined aliases override defaults)

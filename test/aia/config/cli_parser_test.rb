@@ -278,6 +278,23 @@ class CLIParserListSkillsTest < Minitest::Test
   end
 end
 
+class CLIParserPromptOptionsTest < Minitest::Test
+  def test_parse_plugins_dir_option
+    old_argv = ARGV.dup
+    ARGV.replace(['--plugins-dir', '/tmp/aia_plugins'])
+
+    result = AIA::CLIParser.parse
+    assert_equal '/tmp/aia_plugins', result[:plugins_dir]
+  ensure
+    ARGV.replace(old_argv)
+  end
+
+  def test_plugins_dir_cli_override_expands_tilde_path_in_config
+    config = AIA::Config.new(overrides: { plugins_dir: '~/cli_plugins' })
+    assert_equal File.expand_path('~/cli_plugins'), config.paths.plugins_dir
+  end
+end
+
 class CLIParserToolsPathsTest < Minitest::Test
   def test_process_tools_paths_empty_raises
     # Empty string should trigger exit (which is intercepted in tests)

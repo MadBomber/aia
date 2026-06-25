@@ -138,6 +138,32 @@ class ConfigTest < Minitest::Test
     assert_kind_of Array, config.context_files
   end
 
+  def test_plugins_dir_defaults_to_nil
+    config = AIA::Config.new
+    assert_nil config.paths.plugins_dir
+  end
+
+  def test_plugins_dir_override_sets_paths_plugins_dir
+    config = AIA::Config.new(overrides: { plugins_dir: '/tmp/aia_plugins' })
+    assert_equal '/tmp/aia_plugins', config.paths.plugins_dir
+  end
+
+  def test_plugins_dir_uses_aia_plugins_dir_env_var
+    ENV['AIA_PLUGINS_DIR'] = '/tmp/env_plugins'
+    config = AIA::Config.new
+    assert_equal '/tmp/env_plugins', config.paths.plugins_dir
+  ensure
+    ENV.delete('AIA_PLUGINS_DIR')
+  end
+
+  def test_plugins_dir_env_var_expands_tilde_path
+    ENV['AIA_PLUGINS_DIR'] = '~/env_plugins'
+    config = AIA::Config.new
+    assert_equal File.expand_path('~/env_plugins'), config.paths.plugins_dir
+  ensure
+    ENV.delete('AIA_PLUGINS_DIR')
+  end
+
   def test_runtime_attributes
     config = AIA::Config.new
 
