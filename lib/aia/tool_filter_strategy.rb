@@ -68,8 +68,11 @@ module AIA
         display_timing_table({ key => filter_ms[:ms] })
       end
 
-      names = scored.map { |e| e[:name] }
-      names.empty? ? nil : names
+      # Return the matched names. An EMPTY array is meaningful: the filter ran
+      # and judged no tool relevant to this prompt, so the caller should send NO
+      # tools (not the full set). Only a missing filter (see #resolve's no-filter
+      # path) or a filter error (the rescue below) yields nil = "use all tools".
+      scored.map { |e| e[:name] }
     rescue => e
       AIA.logger.debug "ToolFilterStrategy: #{meta_for(key)[:label]} filter failed: #{e.message}" if AIA.debug?
       nil

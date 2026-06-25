@@ -46,10 +46,21 @@ module AIA
         $stdout.print(text)
       end
 
-      # When a filtered tool list is provided, pass those names to
-      # robot.run so robot_lab's ToolConfig.filter_tools applies them.
-      # Otherwise inherit the full build-time tool set.
-      tools_param = tools && !tools.empty? ? tools : :inherit
+      # Translate the resolved tool list into robot_lab's ToolConfig vocabulary:
+      #   nil   -> :inherit  (no filter active / filter errored — use the full set)
+      #   []    -> :none     (filter ran and found nothing relevant — send no tools)
+      #   names -> names     (filtered subset; ToolConfig.filter_tools applies them)
+      # Distinguishing [] from nil is what lets a "nothing relevant" turn send
+      # zero tools instead of the entire build-time set (which can blow past a
+      # provider's max-tools limit).
+      tools_param =
+        if tools.nil?
+          :inherit
+        elsif tools.empty?
+          :none
+        else
+          tools
+        end
 
       begin
         result = robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)

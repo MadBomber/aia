@@ -56,9 +56,11 @@ class StreamingRunnerTest < Minitest::Test
     @runner.run(robot, "hello", tools: nil)
   end
 
-  def test_run_uses_inherit_when_tools_empty_array
+  def test_run_uses_none_when_tools_empty_array
+    # An empty list means the filter ran and found nothing relevant — send NO
+    # tools, rather than coercing to :inherit (the whole build-time set).
     robot = build_non_network_robot
-    robot.expects(:run).with("hello", mcp: :inherit, tools: :inherit).returns(@result)
+    robot.expects(:run).with("hello", mcp: :inherit, tools: :none).returns(@result)
     @runner.run(robot, "hello", tools: [])
   end
 

@@ -81,11 +81,16 @@ class ToolFilterStrategyTest < Minitest::Test
     assert_equal %w[search_tool code_tool], result
   end
 
-  def test_tfidf_returns_nil_when_no_matches
-    tfidf = make_mock_filter(label: "TF-IDF", scored: [])
+  def test_tfidf_returns_empty_when_no_matches
+    # An active filter that matches nothing returns [] (send no tools), NOT nil.
+    # nil is reserved for "no filter active" (use all tools); [] means the
+    # filter deliberately selected zero tools for this prompt. tool_count: 1
+    # marks the filter as available (it has indexed tools) even though this
+    # prompt scored no matches.
+    tfidf = make_mock_filter(label: "TF-IDF", scored: [], tool_count: 1)
     strategy = build_strategy(filters: { tfidf: tfidf })
 
-    assert_nil strategy.resolve("something obscure")
+    assert_equal [], strategy.resolve("something obscure")
   end
 
   # =========================================================================
