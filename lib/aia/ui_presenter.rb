@@ -97,15 +97,15 @@ module AIA
     end
 
     def display_info(message)
-      $stderr.puts "\n#{message}" # rubocop:disable Style/StderrPuts
+      $stderr.puts "\n#{message}"
     end
 
     def display_error(message)
-      $stderr.puts "\n❌ ERROR: #{message}\n" # rubocop:disable Style/StderrPuts
+      $stderr.puts "\n❌ ERROR: #{message}\n"
     end
 
     def display_warning(message)
-      $stderr.puts "\n⚠  WARNING: #{message}\n" # rubocop:disable Style/StderrPuts
+      $stderr.puts "\n⚠  WARNING: #{message}\n"
     end
 
     def with_spinner(message = "Processing", operation_type = nil)

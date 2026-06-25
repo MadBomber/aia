@@ -224,7 +224,7 @@ module AIA
         end
 
         if local_tools.empty? && mcp_tool_groups.empty?
-          $stderr.puts "No tools available." # rubocop:disable Style/StderrPuts
+          $stderr.puts "No tools available."
           return :early_exit
         end
 

@@ -127,6 +127,10 @@ module AIA
       @config&.flags&.speak == true
     end
 
+    def paint?
+      @config&.flags&.paint == true
+    end
+
     def append?
       @config&.output&.append == true
     end

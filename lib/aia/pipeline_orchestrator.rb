@@ -44,8 +44,7 @@ module AIA
           prompt_text = build_prompt_text(prompt_id, config)
           next if prompt_text.nil? || prompt_text.strip.empty?
 
-          result  = execute_prompt(prompt_text, config)
-          content = extract_content(result)
+          result, content = compute_result(prompt_text, config)
 
           bridge.update_step_status(prompt_id, :completed) if tracking
 
@@ -70,6 +69,44 @@ module AIA
     attr_writer :robot
 
     private
+
+    # Returns [result, displayable_content] for one prompt — image when in paint
+    # mode, otherwise the LLM text response.
+    def compute_result(prompt_text, config)
+      if AIA.paint?
+        image = generate_image(prompt_text, config)
+        [image, image]
+      else
+        result = execute_prompt(prompt_text, config)
+        [result, extract_content(result)]
+      end
+    end
+
+    def generate_image(prompt_text, config)
+      img_cfg = config.image
+      params  = {}
+      params[:quality] = img_cfg.quality if img_cfg.quality && !img_cfg.quality.to_s.strip.empty?
+      params[:style]   = img_cfg.style   if img_cfg.style   && !img_cfg.style.to_s.strip.empty?
+
+      image = @ui.with_spinner("Generating image") do
+        RubyLLM.paint(
+          prompt_text,
+          model:  img_cfg.model || 'dall-e-3',
+          size:   img_cfg.size  || '1024x1024',
+          params: params
+        )
+      end
+
+      out_file = config.output.file
+      if out_file
+        ext  = '.png'
+        path = out_file.chomp(File.extname(out_file)) + ext
+        image.save(path)
+        "Image saved to: #{path}"
+      else
+        image.url || "(image returned no URL)"
+      end
+    end
 
     # Execute a prompt, optionally using concurrent MCP
     def execute_prompt(prompt_text, config)

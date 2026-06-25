@@ -202,6 +202,8 @@ module AIA
       speech_model: %i[audio speech_model],
       transcription_model: %i[audio transcription_model],
       # image section
+      paint: %i[flags paint],
+      image_model: %i[image model],
       image_size: %i[image size],
       image_quality: %i[image quality],
       image_style: %i[image style],

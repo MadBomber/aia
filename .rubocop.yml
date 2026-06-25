@@ -1,4 +1,6 @@
-inherit_from: ../.rubocop.yml.common
+inherit_from:
+  - .rubocop_todo.yml
+  - ../.rubocop.yml.common
 
 inherit_mode:
   merge:

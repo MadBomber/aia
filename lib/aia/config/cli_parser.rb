@@ -248,6 +248,14 @@ module AIA
           options[:speak_command] = cmd
         end
 
+        opts.on("--paint", "Generate an image from the prompt instead of a text response") do
+          options[:paint] = true
+        end
+
+        opts.on("--im", "--image-model MODEL", "Set image model for generation (default: dall-e-3)") do |model|
+          options[:image_model] = model
+        end
+
         opts.on("--is", "--image-size SIZE", "Set image size for generation (default: 1024x1024)") do |size|
           options[:image_size] = size
         end
