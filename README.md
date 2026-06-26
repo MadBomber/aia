@@ -160,6 +160,7 @@ Implement a schema registry with event-driven synchronization...
       - [Individual Responses Mode](#individual-responses-mode)
       - [Model Information](#model-information)
       - [@mention Routing](#mention-routing)
+      - [Building a Crew at Runtime](#building-a-crew-at-runtime)
       - [Dynamic Model Switching](#dynamic-model-switching)
       - [Token Usage and Cost Tracking](#token-usage-and-cost-tracking)
     - [Local Model Support](#local-model-support)
@@ -773,18 +774,58 @@ Model Details:
 
 #### @mention Routing
 
-In a multi-model network, direct a prompt to a specific robot by prefixing its name with `@`:
+Every chat session is a **crew** of robots (a single model is simply a crew of
+one). The lead robot is the **chief**, and you can address other members
+directly by prefixing a name with `@`:
 
 ```bash
 aia --chat -m gpt-4o,claude-3-5-sonnet
 
-# Address a specific robot in the network
+# Address a specific robot in the crew
 > @claude-3-5-sonnet What do you think about this approach?
 
-# All other robots are silent; only the mentioned robot responds
+# Only the mentioned robot responds; the @mention is stripped from the prompt
 ```
 
-Robot names are derived from the model name. Use `/robots` to see the active crew and their `@mention` handles.
+Robot names are derived from the model name (recruited robots use the name you
+give them). Use `/robots` to see the active crew and their `@mention` handles.
+
+**Where** you place the mentions changes how they run:
+
+```bash
+# Leading address → concurrent: both run at once, replies render as they finish
+> @gpt-4o @claude-3-5-sonnet what are the trade-offs of optimistic locking?
+
+# Body mention → sequential pipeline: each reply is shared into the others'
+# context, so later robots build on earlier ones
+> draft a plan @gpt-4o then have @claude-3-5-sonnet poke holes in it
+
+# @crew is a reserved handle that broadcasts to every member, concurrently
+> @crew in one sentence, what is your specialty?
+```
+
+#### Building a Crew at Runtime
+
+Add and remove members mid-session. Recruited robots persist for the session,
+answer to `@name`, and inherit the chief's tools and MCP servers.
+
+```bash
+# Inherit the chief's model
+/add_recruit researcher
+
+# Explicit provider/model plus a system prompt (alias: /add)
+/add_recruit critic anthropic/claude-3-5-sonnet You are a ruthless design critic.
+
+# A local member
+/add_recruit local ollama/qwen3.6:latest You are concise and fast.
+
+# Remove a member (alias: /drop); the chief cannot be dropped
+/drop_recruit researcher
+```
+
+Unlike `/spawn` — a one-shot specialist for the next prompt only — recruited
+members stay in the crew. See the [Crews guide](docs/guides/crew.md) for the
+full picture.
 
 #### Dynamic Model Switching
 

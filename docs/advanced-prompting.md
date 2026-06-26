@@ -794,7 +794,8 @@ In interactive chat sessions, the following directives invoke specialized multi-
 - `/verify` — Generates two independent answers to the same question, then has a third robot reconcile them into a final response.
 - `/decompose` — Breaks a complex prompt into parallel sub-tasks, executes them concurrently, and merges the results.
 - `/debate` — Initiates a multi-round debate between robots with convergence detection; rounds end when agreement is reached or the round limit is hit.
-- `/spawn` — Dynamically spawns a specialist robot to handle a specific subtask without disrupting the current session.
+- `/spawn` — Dynamically spawns a one-shot specialist robot to handle a specific subtask without disrupting the current session. For a persistent, `@mention`-able crew member, use `/add_recruit` instead (see the [Crews guide](guides/crew.md)).
+- `/add_recruit` (`/add`) / `/drop_recruit` (`/drop`) — Add or remove a persistent robot in the session's crew; recruits answer to `@name` and inherit the chief's tools and MCP servers.
 - `/delegate` — Delegates a subtask to a specialist via TrakFlow for asynchronous handling.
 - `/concurrent` — Enables concurrent MCP server access for the immediately following prompt turn.
 

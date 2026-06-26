@@ -12,6 +12,7 @@ Welcome to the AIA guides section! These comprehensive guides will help you mast
 
 - [Chat Mode](chat.md) - Interactive conversations with AI models
 - [Working with Models](models.md) - Multi-model support and configuration
+- [Crews](crew.md) - Address robots with @mention, broadcast with @crew, and recruit members at runtime
 - [Available Models](available-models.md) - Complete list of supported AI models
 - [Image Generation](image-generation.md) - Generate images with AI
 - [Tools Integration](tools.md) - Extend AIA with custom Ruby tools

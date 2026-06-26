@@ -26,6 +26,8 @@
     - [`/debate`](#debate)
     - [`/delegate`](#delegate)
     - [`/spawn`](#spawn)
+    - [`/add_recruit`](#add_recruit)
+    - [`/drop_recruit`](#drop_recruit)
   - [Utility Directives](#utility-directives)
     - [`/tools`](#tools)
     - [`/next`](#next)
@@ -92,7 +94,9 @@ Use `/help` at any time to see all available directives.
 | `/decompose` | | Decompose prompt into parallel sub-tasks |
 | `/debate` | | Multi-round debate between robots |
 | `/delegate` | `/del` | Delegate subtasks via TrakFlow plan |
-| `/spawn` | | Spawn a specialist robot |
+| `/spawn` | | Spawn a one-shot specialist robot for the next prompt |
+| `/add_recruit` | `/add` | Recruit a persistent, `@mention`-able robot into the crew |
+| `/drop_recruit` | `/drop` | Remove a robot from the crew |
 | `/tools` | | List available tools |
 | `/mcp` | | MCP server connection status |
 | `/robots` | | Show active robot configuration |
@@ -481,25 +485,76 @@ Build a REST API with authentication, rate limiting, and documentation.
 **Aliases**: `/del`
 
 ### `/spawn`
-Spawn a specialist robot for the next prompt. Creates (or reuses) a dynamically configured robot tuned for a specific domain.
+Spawn a specialist robot for the **next prompt only**. The specialist is a
+one-shot helper — it does not join the crew. To add a persistent, `@mention`-able
+member instead, use [`/add_recruit`](#add_recruit).
 
-**Syntax**: `/spawn [specialist_type]`
+**Syntax**: `/spawn` | `/spawn <type>` | `/spawn <name> <provider/model> <system prompt...>`
 
 **Examples**:
 ```markdown
+# Auto-detect the best specialist type from the prompt
+/spawn
+Write a comprehensive test suite for the User model.
+
+# Named specialist type
 /spawn security
 Audit this authentication module for vulnerabilities.
 
-/spawn
-Write a comprehensive test suite for the User model.
+# Fully explicit: name, provider/model, and system prompt
+/spawn researcher ollama/qwen3.6:latest You are careful and cite sources.
+Summarize the latest changes to the locking strategy.
 ```
 
 **Features**:
-- With a type argument: spawns a specialist of the named type (e.g., `security`, `testing`, `performance`)
-- Without a type: auto-detects the best specialist type from the prompt content
-- Specialist robots are cached and reused within the session
-- Creates a TrakFlow task when task coordination is active
-- Specialist inherits the current model but gets a domain-specific system prompt
+- No arguments: auto-detects the best specialist type from the prompt content.
+- A single `<type>` argument: spawns a specialist of that type (e.g., `security`, `testing`, `performance`), inheriting the current model with a domain-specific system prompt.
+- Explicit form (`<name> <provider/model> <system prompt>`): sets the name, model/provider, and system prompt directly. Use `-` or `inherit` as the model token to keep the parent's model; `lms/...` maps to the `openai` provider.
+- Specialist robots are cached and reused within the session.
+- Creates a TrakFlow task when task coordination is active.
+
+### `/add_recruit`
+Recruit a new robot into the crew. Unlike `/spawn`, a recruit **persists** for
+the rest of the session, appears in [`/robots`](#robots), and answers to
+`@name`. Recruits inherit the chief's local tools and connected MCP servers.
+
+**Aliases**: `/add`
+
+**Syntax**: `/add_recruit <name> [provider/model] [system prompt...]`
+
+**Examples**:
+```markdown
+# Inherit the chief's model and a default persona
+/add_recruit researcher
+
+# Explicit provider/model plus a system prompt
+/add_recruit critic anthropic/claude-3-5-sonnet You are a ruthless design critic.
+
+# A local-model member
+/add_recruit local ollama/qwen3.6:latest You are concise and fast.
+```
+
+**Features**:
+- `<name>` is required and must be unique within the crew. `crew` is reserved (it is the broadcast handle, `@crew`).
+- Omit `provider/model` to inherit the chief's model and provider; use `-` or `inherit` to inherit explicitly while still supplying a system prompt.
+- Everything after the model becomes the member's system prompt.
+- Address the recruit afterward with `@name`, or broadcast to the whole crew with `@crew`.
+
+### `/drop_recruit`
+Remove a robot from the crew by name. The chief (the session's lead robot)
+cannot be dropped.
+
+**Aliases**: `/drop`
+
+**Syntax**: `/drop_recruit <name>`
+
+**Examples**:
+```markdown
+/drop_recruit researcher
+```
+
+See the [Crews guide](guides/crew.md) for `@mention` routing, `@crew`
+broadcast, and concurrent vs. sequential execution.
 
 ## Utility Directives
 

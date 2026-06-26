@@ -6,6 +6,14 @@ This section captures all changes since v1.1.0.
 
 ### Added
 
+- **Crews — every session is a team of robots** (`lib/aia/crew.rb`, `lib/aia/mention_router.rb`, `lib/aia/directives/execution_directives.rb`): Every chat session is now a crew (a `RobotLab::Network`), even with a single model; the lead robot is the **chief**.
+  - **`/add_recruit <name> [provider/model] [system prompt]`** (alias `/add`): Adds a persistent member to the crew that survives the session, shows in `/robots`, and answers to `@name`. Omit the model to inherit the chief's; use `-`/`inherit` to inherit explicitly. Recruits inherit the chief's local tools and connected MCP servers.
+  - **`/drop_recruit <name>`** (alias `/drop`): Removes a member; the chief cannot be dropped.
+  - **`@crew` broadcast handle**: Sends a prompt to every member concurrently. `crew` is reserved as a member name.
+  - **Position-aware `@mention` routing**: A leading address (`@a @b ...`) runs the addressees concurrently; a `@name` woven into the body runs the members sequentially as a pipeline, sharing each reply into the others' context so later members build on earlier ones.
+  - **`/spawn` extended** to the explicit form `/spawn <name> <provider/model> <system prompt>` alongside the existing `/spawn` and `/spawn <type>` forms. `/spawn` remains a one-shot specialist for the next prompt; `/add_recruit` is its persistent counterpart.
+  - **Docs**: new [Crews guide](docs/guides/crew.md); README `@mention`/crew section and `docs/directives-reference.md` updated for `/add_recruit`, `/drop_recruit`, and the extended `/spawn`.
+
 - **`--history-file` fully implemented** (`lib/aia/ui_presenter.rb`): `chat_history_file` now checks `config.output.history_file` first — uses the configured path when set, returns `nil` when `--no-history-file` is given (disabling history). `load_chat_history` and `save_chat_history` both guard against `nil` so disabling history is a clean no-op. Resolution order: `config.output.history_file` → `paths.aia_dir/chat_history` → `~/.config/aia/chat_history`.
 
 - **`--speech-model` fully implemented** (`lib/aia/robot_factory.rb`, `lib/aia/chat_loop.rb`, `lib/aia/mention_router.rb`): `configure_audio` stores the value and passes it as the `SPEECH_MODEL` environment variable to the speak subprocess, allowing custom TTS scripts to select a model. `--voice` wires to `say -v VOICE` for the macOS `say` command.
