@@ -98,8 +98,24 @@ module AIA
     end
 
     # Robots mentioned in the body run one at a time, each streaming its reply.
+    # After each reply, it is injected into every *other* member's conversation
+    # so later robots build on it and earlier ones carry it forward — the
+    # sequential pipeline becomes a shared, accumulating conversation.
     def run_sequentially(robots, prompt)
-      robots.each { |bot| run_streamed(bot, prompt) }
+      robots.each do |bot|
+        content = run_streamed(bot, prompt)
+        share_with_peers(robots, bot, content) if content
+      end
+    end
+
+    # Add one robot's reply to every other pipeline member's chat history.
+    def share_with_peers(robots, author, content)
+      note = "[#{author.name}]: #{content}"
+      (robots - [author]).each do |peer|
+        next unless peer.respond_to?(:chat) && peer.chat
+
+        peer.chat.add_message({ role: :user, content: note })
+      end
     end
 
     # A single addressed robot streams its reply token-by-token.
@@ -119,8 +135,10 @@ module AIA
       end
 
       finalize_reply(bot, prompt, result, content, elapsed)
+      content
     rescue StandardError => e
       @ui_presenter.display_info("Error from #{bot.name}: #{e.class}: #{e.message}")
+      nil
     end
 
     # A broadcast to multiple robots runs them concurrently — no token streaming,

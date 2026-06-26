@@ -181,6 +181,29 @@ class MentionRouterTest < Minitest::Test
     assert ran, "@crew should broadcast (run robots), not be treated as an unknown name"
   end
 
+  def test_sequential_replies_are_shared_with_peer_robots
+    alice = mock('Alice')
+    alice.stubs(:name).returns("Alice")
+
+    bob_chat = mock('bob_chat')
+    bob = mock('Bob')
+    bob.stubs(:name).returns("Bob")
+    bob.stubs(:respond_to?).with(:chat).returns(true)
+    bob.stubs(:chat).returns(bob_chat)
+
+    carol_chat = mock('carol_chat')
+    carol = mock('Carol')
+    carol.stubs(:name).returns("Carol")
+    carol.stubs(:respond_to?).with(:chat).returns(true)
+    carol.stubs(:chat).returns(carol_chat)
+
+    # Alice's reply lands in Bob's and Carol's history, but not Alice's own.
+    bob_chat.expects(:add_message).with({ role: :user, content: "[Alice]: found the bug" })
+    carol_chat.expects(:add_message).with({ role: :user, content: "[Alice]: found the bug" })
+
+    @handler.send(:share_with_peers, [alice, bob, carol], alice, "found the bug")
+  end
+
   private
 
   # A plain robot double for the concurrent broadcast path: its #run executes in
@@ -205,6 +228,7 @@ class MentionRouterTest < Minitest::Test
     r = mock(name.downcase)
     r.stubs(:name).returns(name)
     r.stubs(:model).returns("gpt-4o-mini")
+    r.stubs(:respond_to?).with(:chat).returns(false) # no context-sharing in these doubles
     r
   end
 
