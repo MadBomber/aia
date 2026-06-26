@@ -7,7 +7,8 @@ require 'shellwords'
 module AIA
   class ExecutionDirectives < Directive
     state_setting! :concurrent, :conc, :verify, :decompose, :debate,
-                   :delegate, :del, :spawn, :orchestrate, :orch
+                   :delegate, :del, :spawn, :orchestrate, :orch,
+                   :add_recruit, :add, :drop_recruit, :drop
 
     desc "Execute Ruby code (requires allow_ruby_eval: true in config)"
     def ruby(args, context_manager = nil)
@@ -93,6 +94,30 @@ module AIA
         "Spawn mode enabled#{type_msg} for next prompt."
       end
     end
+
+    desc "Recruit a robot into the crew (persists, @mention-able). " \
+         "Usage: /add_recruit <name> [provider/model] [system prompt]  (alias: /add)"
+    def add_recruit(args, context_manager = nil)
+      return "Usage: /add_recruit <name> [provider/model] [system prompt]" if args.empty?
+
+      spec = args.size >= 2 ? AIA::SpawnSpecParser.parse(args) : { name: args[0] }
+      robot = AIA::Crew.recruit(spec)
+      "Recruited '#{robot.name}' into the crew (#{spawn_model_summary(spec)})."
+    rescue AIA::CrewError => e
+      "Recruit failed: #{e.message}"
+    end
+    alias add add_recruit
+
+    desc "Drop a robot from the crew. Usage: /drop_recruit <name>  (alias: /drop)"
+    def drop_recruit(args, context_manager = nil)
+      return "Usage: /drop_recruit <name>" if args.empty?
+
+      AIA::Crew.drop(args.first)
+      "Dropped '#{args.first}' from the crew."
+    rescue AIA::CrewError => e
+      "Drop failed: #{e.message}"
+    end
+    alias drop drop_recruit
 
     desc "3-tier layered orchestration: orchestrator → lead agents → specialists"
     def orchestrate(args, context_manager = nil)

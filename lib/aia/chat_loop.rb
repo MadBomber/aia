@@ -76,7 +76,7 @@ module AIA
                      ui_presenter: @ui_presenter)
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
     def run_loop
       # rubocop:disable Metrics/BlockLength
       loop do
@@ -137,9 +137,13 @@ module AIA
         if (AIA.debug? || AIA.verbose?) && resolved_tools
           puts "\nFiltered tools (#{resolved_tools.size}): #{resolved_tools.join(', ')}"
         end
+        # The session always holds a crew (Network). A plain turn runs the chief
+        # directly so token streaming is preserved; aggregation modes (consensus /
+        # parallel / pipeline) run the whole network.
+        turn_target = aggregation_mode? ? active_robot : active_robot.chief
         begin
           result, streamed_content, elapsed = @streaming_runner.run(
-            active_robot, processed_prompt, tools: resolved_tools
+            turn_target, processed_prompt, tools: resolved_tools
           )
         rescue StandardError => e
           @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
@@ -165,7 +169,7 @@ module AIA
         clear_turn_mcp_filter
       end
       # rubocop:enable Metrics/BlockLength
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
     end
 
     # Clear per-turn MCP server filter so next turn sees all
@@ -183,6 +187,13 @@ module AIA
     # (e.g. /model). No-op when the client is unchanged or unset.
     def rebind_robot_if_rebuilt
       update_robot if AIA.client && !AIA.client.equal?(@robot)
+    end
+
+    # True when the crew should run as an aggregation network (consensus /
+    # parallel / pipeline) rather than routing a plain turn to the chief.
+    def aggregation_mode?
+      cfg = AIA.config
+      cfg.flags.consensus || Array(cfg.pipeline).length > 1 || Array(cfg.models).length > 1
     end
 
     def process_directive(follow_up_prompt)

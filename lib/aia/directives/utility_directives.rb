@@ -158,14 +158,17 @@ module AIA
                "Consensus"
              elsif AIA.config.pipeline.length > 1
                "Pipeline"
-             else
+             elsif AIA.config.models.length > 1
                "Parallel"
+             else
+               "Crew" # single-model session wrapped as a one-member crew
              end
 
       header = "Active Robots"
       puts header
       puts "=" * header.length
-      puts "Mode: #{mode} Network (#{robot_count} robots)"
+      noun = robot_count == 1 ? "robot" : "robots"
+      puts "Mode: #{mode} (#{robot_count} #{noun})"
 
       network.crew.each do |bot|
         puts

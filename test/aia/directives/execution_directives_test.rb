@@ -19,6 +19,43 @@ class ExecutionDirectivesTest < Minitest::Test
   end
 
   # ---------------------------------------------------------------------------
+  # /add_recruit and /drop_recruit directives
+  # ---------------------------------------------------------------------------
+
+  def test_add_recruit_recruits_via_crew
+    robot = mock('robot')
+    robot.stubs(:name).returns('joker')
+    AIA::Crew.expects(:recruit).returns(robot)
+
+    out = @instance.add_recruit(%w[joker ollama/qwen3.6:latest You are the joker])
+
+    assert_match(/Recruited 'joker'/, out)
+    assert_match(%r{ollama/qwen3.6:latest}, out)
+  end
+
+  def test_add_recruit_usage_when_empty
+    assert_match(/Usage/, @instance.add_recruit([]))
+  end
+
+  def test_add_recruit_reports_crew_error
+    AIA::Crew.stubs(:recruit).raises(AIA::CrewError, 'boom')
+
+    assert_match(/Recruit failed: boom/, @instance.add_recruit(%w[joker ollama/qwen hi]))
+  end
+
+  def test_drop_recruit_drops_via_crew
+    AIA::Crew.expects(:drop).with('joker')
+
+    assert_match(/Dropped 'joker'/, @instance.drop_recruit(['joker']))
+  end
+
+  def test_drop_recruit_reports_crew_error
+    AIA::Crew.stubs(:drop).raises(AIA::CrewError, 'nope')
+
+    assert_match(/Drop failed: nope/, @instance.drop_recruit(['ghost']))
+  end
+
+  # ---------------------------------------------------------------------------
   # /ruby directive — guarded by allow_ruby_eval flag
   # ---------------------------------------------------------------------------
 

@@ -257,14 +257,17 @@ class RobotFactoryNetworkTest < Minitest::Test
   # build dispatch routing
   # =========================================================================
 
-  def test_build_routes_single_model_to_single_robot
+  def test_build_routes_single_model_to_one_member_crew
     single_config = create_single_model_config
     AIA.stubs(:config).returns(single_config)
 
     result = AIA::RobotFactory.build(single_config)
 
-    assert_instance_of RobotLab::Robot, result,
-                       "Single model should build a Robot, not a Network"
+    assert_instance_of RobotLab::Network, result,
+                       "Single model should build a one-member crew Network"
+    assert_equal "aia-crew", result.name
+    assert_equal 1, result.robot_count
+    assert_instance_of RobotLab::Robot, result.chief
   end
 
   def test_build_routes_multi_model_no_consensus_to_parallel
@@ -285,16 +288,16 @@ class RobotFactoryNetworkTest < Minitest::Test
     assert_equal "aia-consensus", result.name
   end
 
-  def test_build_with_pipeline_and_single_model_builds_single_robot
+  def test_build_with_pipeline_and_single_model_builds_crew
     # Pipeline chaining is handled sequentially by PipelineOrchestrator.
-    # RobotFactory always builds a single robot when only one model is configured,
-    # regardless of pipeline length.
+    # A single model is wrapped in a one-member crew regardless of pipeline length.
     config = create_pipeline_config
     AIA.stubs(:config).returns(config)
 
     result = AIA::RobotFactory.build(config)
 
-    assert_instance_of RobotLab::Robot, result
+    assert_instance_of RobotLab::Network, result
+    assert_equal "aia-crew", result.name
   end
 
   def test_build_with_pipeline_and_multi_model_builds_parallel_network

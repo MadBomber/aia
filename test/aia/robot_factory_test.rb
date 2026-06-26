@@ -84,6 +84,7 @@ class RobotFactoryTest < Minitest::Test
     AIA::ToolLoader.stubs(:load_tools)
     mock_robot = mock('robot')
     AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+    AIA::RobotFactory.stubs(:build_crew).returns(mock_robot) # bypass crew wrapping in plumbing tests
 
     AIA::RobotFactory.build(@config)
   end
@@ -107,6 +108,7 @@ class RobotFactoryTest < Minitest::Test
     # Stub the actual robot building
     mock_robot = mock('robot')
     AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+    AIA::RobotFactory.stubs(:build_crew).returns(mock_robot) # bypass crew wrapping in plumbing tests
 
     AIA::RobotFactory.build(@config)
 
@@ -158,6 +160,7 @@ class RobotFactoryTest < Minitest::Test
     mock_robot = mock('robot')
     AIA::RobotFactory.stubs(:configure_robot_lab)
     AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+    AIA::RobotFactory.stubs(:build_crew).returns(mock_robot) # bypass crew wrapping in plumbing tests
 
     AIA::RobotFactory.build(@config)
     AIA::RobotFactory.build(@config)

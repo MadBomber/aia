@@ -30,17 +30,16 @@ module AIA
       # @return [RobotLab::Robot, RobotLab::Network] the built robot or network
       def build(config = AIA.config)
         namer = RobotNamer.new(first_name: 'Tobor')
-        if ToolLoader.cached_tools
-          config.loaded_tools = ToolLoader.cached_tools
-          config.tool_names = ToolLoader.cached_tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
-        else
-          ToolLoader.load_tools(config)
-        end
+        apply_tool_cache(config)
 
+        # The interactive session always runs a *crew* (a Network), so robots can
+        # be recruited/dropped at runtime. A single model is wrapped in a one-member
+        # crew whose chief is that robot; multi-model aggregation networks are
+        # already Networks. (Normal turns still stream via the chief — see ChatLoop.)
         if config.models.length > 1
           build_multi_model(config, namer)
         else
-          build_single_robot(config, namer)
+          build_crew(build_single_robot(config, namer))
         end
       rescue RubyLLM::ModelNotFoundError => e
         model_names = config.models.map(&:name).join(', ')
@@ -106,6 +105,29 @@ module AIA
       # @return [RobotLab::Robot]
       def build_single_robot(config, namer)
         RobotBuilder.build(config, namer: namer)
+      end
+
+      # Reuse the build-time tool cache when present, else load tools fresh.
+      def apply_tool_cache(config)
+        if ToolLoader.cached_tools
+          config.loaded_tools = ToolLoader.cached_tools
+          config.tool_names = ToolLoader.cached_tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
+        else
+          ToolLoader.load_tools(config)
+        end
+      end
+
+      # Wrap a single robot in a one-member crew Network so the session can
+      # recruit/drop robots at runtime. The robot becomes the crew's chief
+      # (the lone pipeline task); normal turns are routed to it directly so
+      # token streaming is preserved.
+      #
+      # @param chief [RobotLab::Robot]
+      # @return [RobotLab::Network]
+      def build_crew(chief)
+        RobotLab.create_network(name: 'aia-crew') do
+          task chief.name.to_sym, chief, depends_on: :none
+        end
       end
 
       # Build RunConfig from AIA configuration.

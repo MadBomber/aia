@@ -12,6 +12,9 @@ class ChatLoopREPLTest < Minitest::Test
 
   def setup
     @robot = mock('robot')
+    # The crew is its own chief here, so a plain turn (routed to the chief)
+    # targets the same mock the assertions expect.
+    @robot.stubs(:chief).returns(@robot)
     @robot.stubs(:is_a?).returns(false)
     @robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
     @robot.stubs(:respond_to?).returns(false)
