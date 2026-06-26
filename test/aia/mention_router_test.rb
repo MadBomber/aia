@@ -94,22 +94,16 @@ class MentionRouterTest < Minitest::Test
     assert_includes captured_prompt, "please help me"
   end
 
-  def test_multiple_mentions_are_stripped_from_prompt
-    alice = build_mock_robot("Alice")
-    bob   = build_mock_robot("Bob")
+  def test_leading_mentions_run_concurrently_with_stripped_prompt
+    # Leading address → concurrent path (FakeMember#run, in worker threads).
+    alice = FakeMember.new("Alice")
+    bob   = FakeMember.new("Bob")
     network = mock_network([alice, bob])
-
-    prompts_captured = []
-    @streaming_runner.stubs(:run)
-                     .with do |*args|
-      prompts_captured << args[1]
-      true
-    end
-      .returns([OpenStruct.new(reply: "ok"), nil, 0.05])
 
     @handler.handle(AIA::HandlerContext.new(robot: network, prompt: "@Alice @Bob what is 2+2?"))
 
-    prompts_captured.each do |p|
+    [alice, bob].each do |bot|
+      p = bot.prompts.pop # only populated if the concurrent path ran this robot
       refute_includes p, "@Alice"
       refute_includes p, "@Bob"
       assert_includes p, "what is 2+2?"
@@ -134,7 +128,78 @@ class MentionRouterTest < Minitest::Test
     assert_includes captured, "summarize this"
   end
 
+  def test_body_mentions_run_sequentially_preserving_names
+    # @names woven into the body → sequential path (streaming runner, one robot
+    # at a time), and the @names survive in the message each robot receives.
+    hemie = build_mock_robot("hemie")
+    joker = build_mock_robot("joker")
+    network = mock_network([hemie, joker])
+
+    captured = []
+    @streaming_runner.stubs(:run)
+                     .with do |*args|
+      captured << args[1]
+      true
+    end
+                     .returns([OpenStruct.new(reply: "ok"), nil, 0.0])
+
+    @handler.handle(AIA::HandlerContext.new(robot: network, prompt: "hello @hemie have you met @joker"))
+
+    assert_equal 2, captured.size, "both body-mentioned robots run via the sequential streaming path"
+    captured.each do |p|
+      assert_includes p, "@hemie"
+      assert_includes p, "@joker"
+      assert_includes p, "hello"
+    end
+  end
+
+  def test_crew_token_broadcasts_concurrently_to_every_member
+    alice = FakeMember.new("Alice")
+    bob   = FakeMember.new("Bob")
+    network = mock_network([alice, bob])
+
+    handled = @handler.handle(AIA::HandlerContext.new(robot: network, prompt: "@crew status report"))
+
+    assert handled
+    refute alice.prompts.empty?, "Alice should have been broadcast to"
+    refute bob.prompts.empty?, "Bob should have been broadcast to"
+  end
+
+  def test_crew_token_is_recognized_not_unknown
+    alice = build_mock_robot("Alice")
+    network = mock_network([alice])
+    ran = false
+    @streaming_runner.stubs(:run).with do |*_|
+      ran = true
+      true
+    end
+                                 .returns([OpenStruct.new(reply: "ok"), nil, 0.0])
+
+    handled = @handler.handle(AIA::HandlerContext.new(robot: network, prompt: "@crew hello"))
+
+    assert handled
+    assert ran, "@crew should broadcast (run robots), not be treated as an unknown name"
+  end
+
   private
+
+  # A plain robot double for the concurrent broadcast path: its #run executes in
+  # a worker thread, where Mocha's thread-local mockery wouldn't see stubs, so we
+  # use a real object that records prompts to a thread-safe queue.
+  class FakeMember
+    attr_reader :name, :model, :prompts
+
+    def initialize(name)
+      @name    = name
+      @model   = "gpt-4o-mini"
+      @prompts = Queue.new
+    end
+
+    def run(prompt, **_opts)
+      @prompts << prompt
+      OpenStruct.new(reply: "ok from #{@name}")
+    end
+  end
 
   def build_mock_robot(name)
     r = mock(name.downcase)

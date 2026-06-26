@@ -43,6 +43,11 @@ class CrewTest < Minitest::Test
     assert_match(/already exists/, error.message)
   end
 
+  def test_recruit_rejects_reserved_crew_name
+    error = assert_raises(AIA::CrewError) { AIA::Crew.recruit(name: 'crew') }
+    assert_match(/reserved/, error.message)
+  end
+
   def test_recruit_requires_a_crew
     AIA.stubs(:client).returns(Object.new) # no #add_robot
 

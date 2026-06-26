@@ -19,6 +19,9 @@ module AIA
     def recruit(spec)
       crew = require_crew
       name = spec[:name].to_s
+      if name.casecmp?(MentionRouter::BROADCAST_TOKEN)
+        raise CrewError, "'#{name}' is reserved (@crew broadcasts to every member)."
+      end
       raise CrewError, "A crewmate named '#{name}' already exists." if member?(crew, name)
 
       robot = crew.chief.spawn(
