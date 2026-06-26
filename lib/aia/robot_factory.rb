@@ -243,16 +243,17 @@ module AIA
       # RubyLLM can reach them. Reads from standard env vars.
       def configure_local_providers(config)
         providers_used = config.models.map(&:provider).compact.uniq
-        return if providers_used.empty?
 
         RubyLLM.configure do |c|
-          if providers_used.include?('ollama')
-            c.ollama_api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
-          end
+          # Always configure Ollama's base so switching to an `ollama/` model
+          # mid-session works even when the session started on a cloud model.
+          # It only affects the Ollama provider, so it's harmless when unused.
+          c.ollama_api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
 
+          # LM Studio exposes an OpenAI-compatible API and reuses the OpenAI
+          # provider, so only override the OpenAI base when an `lms/` model is
+          # actually in use — otherwise it would hijack real OpenAI requests.
           if providers_used.include?('lms')
-            # LM Studio exposes an OpenAI-compatible API.
-            # Set openai_api_base to LM Studio's endpoint.
             c.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
           end
         end

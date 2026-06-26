@@ -11,6 +11,41 @@ class RobotFactoryTest < Minitest::Test
     AIA.stubs(:config).returns(@config)
   end
 
+  def test_configure_local_providers_always_sets_ollama_base
+    # Cloud-only session (no ollama model) must still configure the Ollama base
+    # so a later `/model ollama/...` switch can reach the local server.
+    @config.models = [OpenStruct.new(provider: nil)]
+    original = RubyLLM.config.ollama_api_base
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    assert_equal ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434'), RubyLLM.config.ollama_api_base
+  ensure
+    RubyLLM.config.ollama_api_base = original
+  end
+
+  def test_configure_local_providers_does_not_hijack_openai_base_without_lms
+    @config.models = [OpenStruct.new(provider: nil)]
+    original = RubyLLM.config.openai_api_base
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    refute_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234'), RubyLLM.config.openai_api_base
+  ensure
+    RubyLLM.config.openai_api_base = original
+  end
+
+  def test_configure_local_providers_sets_openai_base_for_lms
+    @config.models = [OpenStruct.new(provider: 'lms')]
+    original = RubyLLM.config.openai_api_base
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    assert_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234'), RubyLLM.config.openai_api_base
+  ensure
+    RubyLLM.config.openai_api_base = original
+  end
+
   def test_mcp_server_configs_returns_empty_when_no_mcp
     @config.flags.no_mcp = true
     result = AIA::RobotFactory.send(:mcp_server_configs, @config)
