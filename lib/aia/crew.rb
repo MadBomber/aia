@@ -17,18 +17,21 @@ module AIA
     # @return [RobotLab::Robot] the recruited robot
     # @raise [AIA::CrewError]
     def recruit(spec)
-      crew = require_crew
-      name = spec[:name].to_s
+      crew  = require_crew
+      chief = crew.chief
+      name  = spec[:name].to_s
       if name.casecmp?(MentionRouter::BROADCAST_TOKEN)
         raise CrewError, "'#{name}' is reserved (@crew broadcasts to every member)."
       end
       raise CrewError, "A crewmate named '#{name}' already exists." if member?(crew, name)
 
-      robot = crew.chief.spawn(
+      robot = chief.spawn(
         name:          name,
         system_prompt: spec[:system_prompt] || "You are #{name}.",
+        local_tools:   chief_local_tools(chief),
         **model_opts(spec)
       )
+      inherit_mcp(robot, chief)
       crew.add_robot(robot)
       robot
     end
@@ -73,6 +76,28 @@ module AIA
       return {} unless spec[:model]
 
       { model: spec[:model], provider: spec[:provider] }
+    end
+
+    # The chief's local tool instances, shared with the recruit so it can do the
+    # same work (file/shell/etc.). Tool instances are effectively stateless, so
+    # sharing them across crew members is safe.
+    #
+    # @return [Array]
+    def chief_local_tools(chief)
+      chief.respond_to?(:local_tools) ? Array(chief.local_tools) : []
+    end
+
+    # Hand the recruit the chief's already-connected MCP clients and tools rather
+    # than opening fresh connections.
+    #
+    # @return [void]
+    def inherit_mcp(robot, chief)
+      return unless robot.respond_to?(:inject_mcp!) && chief.respond_to?(:mcp_clients)
+
+      clients = chief.mcp_clients
+      return if clients.nil? || clients.empty?
+
+      robot.inject_mcp!(clients: clients, tools: Array(chief.mcp_tools))
     end
   end
 end

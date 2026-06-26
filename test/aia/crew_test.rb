@@ -6,6 +6,12 @@ require_relative '../../lib/aia'
 class CrewTest < Minitest::Test
   def setup
     @chief = stub_robot('Tobor')
+    # The chief exposes its tools/MCP so recruits can inherit them.
+    @chief.stubs(:respond_to?).with(:local_tools).returns(true)
+    @chief.stubs(:local_tools).returns([])
+    @chief.stubs(:respond_to?).with(:mcp_clients).returns(true)
+    @chief.stubs(:mcp_clients).returns({})
+
     @crew  = mock('crew') # the Network behind AIA.client
     @crew.stubs(:chief).returns(@chief)
     @crew.stubs(:crew).returns([@chief])
@@ -16,7 +22,7 @@ class CrewTest < Minitest::Test
   def test_recruit_spawns_from_chief_with_model_and_adds_to_crew
     joker = stub_robot('joker')
     @chief.expects(:spawn).with(
-      name: 'joker', system_prompt: 'You are funny',
+      name: 'joker', system_prompt: 'You are funny', local_tools: [],
       model: 'qwen3.6:latest', provider: 'ollama'
     ).returns(joker)
     @crew.expects(:add_robot).with(joker)
@@ -30,8 +36,25 @@ class CrewTest < Minitest::Test
 
   def test_recruit_inherits_model_and_defaults_prompt_when_absent
     helper = stub_robot('helper')
-    @chief.expects(:spawn).with(name: 'helper', system_prompt: 'You are helper.').returns(helper)
+    @chief.expects(:spawn).with(name: 'helper', system_prompt: 'You are helper.', local_tools: []).returns(helper)
     @crew.expects(:add_robot).with(helper)
+
+    AIA::Crew.recruit(name: 'helper')
+  end
+
+  def test_recruit_inherits_chief_tools_and_mcp
+    tool        = mock('file_tool')
+    mcp_clients = { 'github' => mock('client') }
+    mcp_tools   = [mock('mcp_tool')]
+    @chief.stubs(:local_tools).returns([tool])
+    @chief.stubs(:mcp_clients).returns(mcp_clients)
+    @chief.stubs(:mcp_tools).returns(mcp_tools)
+
+    recruit = stub_robot('helper')
+    recruit.stubs(:respond_to?).with(:inject_mcp!).returns(true)
+    recruit.expects(:inject_mcp!).with(clients: mcp_clients, tools: mcp_tools)
+    @chief.expects(:spawn).with(name: 'helper', system_prompt: 'You are helper.', local_tools: [tool]).returns(recruit)
+    @crew.expects(:add_robot).with(recruit)
 
     AIA::Crew.recruit(name: 'helper')
   end
