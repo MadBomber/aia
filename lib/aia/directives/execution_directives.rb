@@ -76,12 +76,22 @@ module AIA
     end
     alias del delegate
 
-    desc "Spawn a specialist robot for the next prompt"
+    desc "Spawn a specialist robot for the next prompt. " \
+         "Usage: /spawn  |  /spawn <type>  |  /spawn <name> <provider/model> <system prompt>"
     def spawn(args, context_manager = nil)
       AIA.turn_state.force_spawn = true
-      AIA.turn_state.spawn_type = args.first
-      type_msg = args.first ? " (#{args.first})" : " (auto-detect)"
-      "Spawn mode enabled#{type_msg} for next prompt."
+
+      if args.size >= 2
+        spec = AIA::SpawnSpecParser.parse(args)
+        AIA.turn_state.spawn_spec = spec
+        AIA.turn_state.spawn_type = nil
+        "Spawn mode enabled: '#{spec[:name]}' (#{spawn_model_summary(spec)}) for next prompt."
+      else
+        AIA.turn_state.spawn_spec = nil
+        AIA.turn_state.spawn_type = args.first
+        type_msg = args.first ? " (#{args.first})" : " (auto-detect)"
+        "Spawn mode enabled#{type_msg} for next prompt."
+      end
     end
 
     desc "3-tier layered orchestration: orchestrator → lead agents → specialists"
@@ -90,5 +100,14 @@ module AIA
       "Orchestration mode enabled. Your next prompt is the application requirements."
     end
     alias orch orchestrate
+
+    private
+
+    # Human-readable model description for the /spawn confirmation message.
+    def spawn_model_summary(spec)
+      return 'inherited model' unless spec[:model]
+
+      spec[:provider] ? "#{spec[:provider]}/#{spec[:model]}" : spec[:model]
+    end
   end
 end

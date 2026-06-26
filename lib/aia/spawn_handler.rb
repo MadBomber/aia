@@ -30,24 +30,20 @@ module AIA
 
     # Spawn a specialist robot to handle a prompt.
     #
-    # @param context [HandlerContext] — reads context.prompt and context.specialist_type
+    # @param context [HandlerContext] — reads context.prompt, context.specialist_type,
+    #   and context.spawn_spec (explicit {name:, model:, provider:, system_prompt:})
     # @return [String, nil] specialist's response
     def handle(context)
-      prompt          = context.prompt
-      specialist_type = context.specialist_type
+      prompt  = context.prompt
       primary = @robot.chief
       primary.with_bus unless primary.respond_to?(:bus) && primary.bus
 
-      role, instruction = if specialist_type
-                            [specialist_type, "You are a #{specialist_type} specialist. Answer precisely within your domain of expertise."]
-                          else
-                            detect_specialist(primary, prompt)
-                          end
+      role, instruction, spawn_opts = resolve_specialist(context, primary, prompt)
 
       # Spawn or reuse specialist (evict oldest when cache is full)
       specialist = @spawned[role] ||= begin
         evict_oldest! if @spawned.size >= MAX_CACHE_SIZE
-        primary.spawn(name: role, system_prompt: instruction)
+        primary.spawn(name: role, system_prompt: instruction, **spawn_opts)
       end
 
       @ui_presenter.display_info("Specialist '#{role}' responding...")
@@ -75,6 +71,36 @@ module AIA
     end
 
     private
+
+    # Decide the specialist's role, system prompt, and any model/provider
+    # override, from (in priority order): an explicit /spawn spec, an explicit
+    # specialist type, or LLM auto-detection.
+    #
+    # @return [Array(String, String, Hash)] [role, instruction, spawn_opts]
+    def resolve_specialist(context, primary, prompt)
+      if (spec = context.spawn_spec)
+        role        = spec[:name]
+        instruction = spec[:system_prompt] || "You are #{role}."
+        [role, instruction, model_opts(spec)]
+      elsif (type = context.specialist_type)
+        [type, "You are a #{type} specialist. Answer precisely within your domain of expertise.", {}]
+      else
+        role, instruction = detect_specialist(primary, prompt)
+        [role, instruction, {}]
+      end
+    end
+
+    # Model/provider override for an explicit spawn. When a model is given we
+    # pass the provider too (even nil) so it overrides the inherited parent
+    # provider — e.g. spawning a cloud model from a local-model parent. With no
+    # model, the spawned robot inherits its parent's model and provider.
+    #
+    # @return [Hash]
+    def model_opts(spec)
+      return {} unless spec[:model]
+
+      { model: spec[:model], provider: spec[:provider] }
+    end
 
     def evict_oldest!
       @spawned.delete(@spawned.keys.first)

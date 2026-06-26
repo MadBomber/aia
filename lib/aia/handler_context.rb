@@ -11,6 +11,7 @@ module AIA
     :prompt,          # String — the user prompt
     :config,          # AIA config object
     :specialist_type, # String or nil — explicit specialist role for SpawnHandler
+    :spawn_spec,      # Hash or nil — explicit {name:, model:, provider:, system_prompt:} for SpawnHandler
     keyword_init: true
   )
 end

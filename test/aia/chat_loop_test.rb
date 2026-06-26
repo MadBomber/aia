@@ -122,6 +122,23 @@ class ChatLoopREPLTest < Minitest::Test
     @chat_loop.start
   end
 
+  def test_model_changing_directive_rebinds_robot_to_rebuilt_client
+    # /model rebuilds AIA.client; the loop must re-bind @robot to it so the
+    # NEXT prompt uses the new model instead of the one the session started on.
+    new_robot = mock('new_robot')
+    AIA.stubs(:client).returns(new_robot)
+    @ui.stubs(:ask_question).returns("/model ollama/qwen3.6:latest", "")
+    @directive_processor.stubs(:directive?).with("/model ollama/qwen3.6:latest").returns(true)
+    @directive_processor.stubs(:process).with("/model ollama/qwen3.6:latest", nil).returns(nil)
+    @directive_processor.stubs(:state_setting?).with("/model ollama/qwen3.6:latest").returns(true)
+
+    # Re-bind is proven by the robot= propagation to the special-mode handler.
+    @special_mode_handler.expects(:robot=).with(new_robot).once
+    @streaming_runner.expects(:run).never
+
+    @chat_loop.start
+  end
+
   # ===================================================================
   # Normal prompt → tool filter strategy invoked
   # ===================================================================

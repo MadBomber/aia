@@ -28,8 +28,10 @@ module AIA
       { flag: :force_spawn,          sub: { handler: :spawn_handler,    label: 'Spawn',
                                             context: lambda { |prompt, ts|
                                               type = ts.spawn_type
+                                              spec = ts.spawn_spec
                                               ts.spawn_type = nil
-                                              { prompt: prompt, specialist_type: type }
+                                              ts.spawn_spec = nil
+                                              { prompt: prompt, specialist_type: type, spawn_spec: spec }
                                             } } },
       { flag: :force_orchestrate,    run: :handle_orchestration  }
     ].freeze

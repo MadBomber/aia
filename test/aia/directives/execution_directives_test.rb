@@ -76,6 +76,18 @@ class ExecutionDirectivesTest < Minitest::Test
     assert_equal 'mysql-expert', AIA.turn_state.spawn_type
   end
 
+  def test_spawn_with_explicit_spec_sets_spawn_spec
+    @instance.spawn(%w[researcher ollama/qwen3.6:latest You are careful])
+
+    assert AIA.turn_state.force_spawn
+    assert_nil AIA.turn_state.spawn_type
+    spec = AIA.turn_state.spawn_spec
+    assert_equal 'researcher', spec[:name]
+    assert_equal 'qwen3.6:latest', spec[:model]
+    assert_equal 'ollama', spec[:provider]
+    assert_equal 'You are careful', spec[:system_prompt]
+  end
+
   def test_orchestrate_sets_turn_state_flag
     @instance.orchestrate([])
     assert_equal true, AIA.turn_state.force_orchestrate

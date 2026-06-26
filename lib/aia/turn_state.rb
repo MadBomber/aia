@@ -20,7 +20,7 @@ module AIA
 
     attr_accessor :force_verify, :force_decompose, :force_concurrent_mcp,
                   :force_debate, :force_delegate, :force_spawn, :spawn_type,
-                  :force_orchestrate, :active_mcp_servers
+                  :spawn_spec, :force_orchestrate, :active_mcp_servers
 
     def initialize
       clear!
@@ -60,6 +60,7 @@ module AIA
       @force_delegate      = false
       @force_spawn         = false
       @spawn_type          = nil
+      @spawn_spec          = nil
       @force_orchestrate   = false
       @active_mcp_servers  = nil
     end
@@ -86,6 +87,7 @@ module AIA
       @force_delegate       = false
       @force_spawn          = false
       @spawn_type           = nil
+      @spawn_spec           = nil
       @force_orchestrate    = false
     end
   end

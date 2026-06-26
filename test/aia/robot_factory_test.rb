@@ -19,7 +19,7 @@ class RobotFactoryTest < Minitest::Test
 
     AIA::RobotFactory.send(:configure_local_providers, @config)
 
-    assert_equal ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434'), RubyLLM.config.ollama_api_base
+    assert_equal ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434/v1'), RubyLLM.config.ollama_api_base
   ensure
     RubyLLM.config.ollama_api_base = original
   end

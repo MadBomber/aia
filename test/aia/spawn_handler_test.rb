@@ -51,6 +51,44 @@ class SpawnHandlerTest < Minitest::Test
     assert_equal "Expert answer here", result
   end
 
+  def test_spawn_with_explicit_spec_passes_name_model_provider_and_prompt
+    specialist = mock('specialist')
+    specialist.stubs(:run).returns(OpenStruct.new(reply: "answer"))
+
+    primary = build_primary
+    primary.expects(:spawn).with(
+      name: "researcher",
+      system_prompt: "You are a careful researcher",
+      model: "qwen3.6:latest",
+      provider: "ollama"
+    ).returns(specialist)
+
+    handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
+    spec = { name: "researcher", model: "qwen3.6:latest", provider: "ollama",
+             system_prompt: "You are a careful researcher" }
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "find papers", spawn_spec: spec))
+
+    assert_equal "answer", result
+  end
+
+  def test_spawn_with_explicit_spec_inherits_model_when_absent
+    specialist = mock('specialist')
+    specialist.stubs(:run).returns(OpenStruct.new(reply: "answer"))
+
+    primary = build_primary
+    # No model in the spec → spawn called without model/provider so robot_lab
+    # inherits the parent's. Default instruction when no system prompt given.
+    primary.expects(:spawn).with(name: "helper", system_prompt: "You are helper.").returns(specialist)
+
+    handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
+    spec = { name: "helper", model: nil, provider: nil, system_prompt: nil }
+
+    result = handler.handle(AIA::HandlerContext.new(prompt: "help me", spawn_spec: spec))
+
+    assert_equal "answer", result
+  end
+
   def test_spawn_with_auto_detect
     specialist = mock('specialist')
     specialist.stubs(:run).returns(OpenStruct.new(reply: "Database insight"))
@@ -230,5 +268,19 @@ class SpawnHandlerTest < Minitest::Test
     @turn_state.clear!
     refute @turn_state.force_spawn
     assert_nil @turn_state.spawn_type
+  end
+
+  private
+
+  # A primary robot mock that is its own chief and already on a bus.
+  def build_primary
+    primary = mock('primary')
+    primary.stubs(:name).returns("Tobor")
+    primary.stubs(:respond_to?).with(:bus).returns(true)
+    primary.stubs(:bus).returns(mock('bus'))
+    primary.stubs(:with_bus)
+    primary.stubs(:chief).returns(primary)
+    primary.stubs(:network?).returns(false)
+    primary
   end
 end

@@ -248,7 +248,9 @@ module AIA
           # Always configure Ollama's base so switching to an `ollama/` model
           # mid-session works even when the session started on a cloud model.
           # It only affects the Ollama provider, so it's harmless when unused.
-          c.ollama_api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
+          # RubyLLM's Ollama provider subclasses OpenAI and appends
+          # `chat/completions`, so the base must include the `/v1` suffix.
+          c.ollama_api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434/v1')
 
           # LM Studio exposes an OpenAI-compatible API and reuses the OpenAI
           # provider, so only override the OpenAI base when an `lms/` model is

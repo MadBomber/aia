@@ -76,7 +76,7 @@ module AIA
                      ui_presenter: @ui_presenter)
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
     def run_loop
       # rubocop:disable Metrics/BlockLength
       loop do
@@ -89,6 +89,10 @@ module AIA
         if follow_up_prompt.strip.start_with?('/')
           if @directive_processor.directive?(follow_up_prompt)
             follow_up_prompt = process_directive(follow_up_prompt)
+            # A directive (e.g. /model, /config) may have rebuilt AIA.client;
+            # re-bind the loop's robot so the next prompt uses the new model
+            # instead of the one the session started with.
+            rebind_robot_if_rebuilt
             next if follow_up_prompt.nil?
           else
             name = follow_up_prompt.strip.split.first
@@ -161,7 +165,7 @@ module AIA
         clear_turn_mcp_filter
       end
       # rubocop:enable Metrics/BlockLength
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
     end
 
     # Clear per-turn MCP server filter so next turn sees all
@@ -173,6 +177,12 @@ module AIA
     def update_robot
       @robot = AIA.client
       @special_mode_handler.robot = @robot
+    end
+
+    # Re-bind @robot when a directive rebuilt AIA.client into a different robot
+    # (e.g. /model). No-op when the client is unchanged or unset.
+    def rebind_robot_if_rebuilt
+      update_robot if AIA.client && !AIA.client.equal?(@robot)
     end
 
     def process_directive(follow_up_prompt)
