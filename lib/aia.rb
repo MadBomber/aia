@@ -24,6 +24,7 @@ require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
 require_relative 'aia/tool_loader'
 require_relative 'aia/plugin_loader'
+require_relative 'aia/plugin_monitor'
 require_relative 'aia/system_prompt_assembler'
 require_relative 'aia/mcp_config_normalizer'
 require_relative 'aia/network_memory_manager'
@@ -147,6 +148,13 @@ module AIA
       return if ConfigValidator.tailor(@config) == :early_exit
 
       PluginLoader.load!(@config)
+
+      # In interactive chat, watch the plugins directory and live-reload changes
+      # (new files loaded, edited files reloaded, deleted files removed).
+      if @config.flags.chat
+        @plugin_monitor = PluginMonitor.new(@config).start
+        at_exit { @plugin_monitor&.stop }
+      end
 
       # Configure RobotLab loggers and providers once at startup
       RobotFactory.setup(@config)

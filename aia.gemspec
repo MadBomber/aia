@@ -63,6 +63,7 @@ Gem::Specification.new do |spec|
 
   # Utilities
   spec.add_dependency 'faraday'                    # HTTP client for /webpage directive
+  spec.add_dependency 'listen'                     # File-watch for live plugin reload (polling fallback if absent)
   spec.add_dependency 'shellwords'                 # Shell escaping
 
   spec.add_development_dependency 'debug_me'

@@ -99,6 +99,7 @@ module AIA
 
         begin
           processed_prompt = PM.parse_string(follow_up_prompt).to_s
+          next if processed_prompt.nil?
         rescue StandardError => e
           @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
           next
