@@ -9,6 +9,7 @@ require 'robot_lab'
 require 'pm'
 
 require_relative 'aia/patches/ruby_llm_tool_error'
+require_relative 'aia/patches/ruby_llm_streaming_error'
 
 require_relative 'aia/errors'
 require_relative 'aia/turn_state'
