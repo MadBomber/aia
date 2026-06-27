@@ -7,6 +7,7 @@
 # Extracted from Session to give Session a single responsibility.
 
 require "fileutils"
+require "tty-spinner"
 
 module AIA
   class StartupCoordinator
@@ -24,9 +25,16 @@ module AIA
     # @param config [AIA::Config]
     def run(config)
       connect_mcp_servers(config)
-      tools    = all_available_tools(config)
+
+      tools = all_available_tools(config)
+
+      spinner = TTY::Spinner.new("  [:spinner] Initializing tool filters...", format: :dots)
+      spinner.auto_spin
       @filters = ToolFilterRegistry.build_from_config(config, tools)
+      spinner.success
+
       initialize_task_coordinator if trakflow_available?
+
       attach_bus_if_network
     end
 
