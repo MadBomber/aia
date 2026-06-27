@@ -30,7 +30,7 @@ class RobotFactoryTest < Minitest::Test
 
     AIA::RobotFactory.send(:configure_local_providers, @config)
 
-    refute_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234'), RubyLLM.config.openai_api_base
+    refute_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1'), RubyLLM.config.openai_api_base
   ensure
     RubyLLM.config.openai_api_base = original
   end
@@ -41,7 +41,7 @@ class RobotFactoryTest < Minitest::Test
 
     AIA::RobotFactory.send(:configure_local_providers, @config)
 
-    assert_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234'), RubyLLM.config.openai_api_base
+    assert_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1'), RubyLLM.config.openai_api_base
   ensure
     RubyLLM.config.openai_api_base = original
   end

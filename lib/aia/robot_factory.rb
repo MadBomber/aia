@@ -277,8 +277,13 @@ module AIA
           # LM Studio exposes an OpenAI-compatible API and reuses the OpenAI
           # provider, so only override the OpenAI base when an `lms/` model is
           # actually in use — otherwise it would hijack real OpenAI requests.
+          # The OpenAI provider POSTs the relative `chat/completions`, so (like
+          # the real `https://api.openai.com/v1` default and the Ollama base) the
+          # LM Studio base must include the `/v1` suffix — otherwise requests hit
+          # `:1234/chat/completions`, LM Studio 404s, and ruby_llm's streaming
+          # error handler masks it as `delete_prefix for nil`.
           if providers_used.include?('lms')
-            c.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
+            c.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
           end
         end
       end
