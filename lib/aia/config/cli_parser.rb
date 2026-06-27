@@ -29,11 +29,6 @@ module AIA
           exit 1
         end
 
-        if options[:list_skills]
-          list_available_skills(options)
-          exit 0
-        end
-
         # Store remaining args for prompt_id and context files
         options[:remaining_args] = ARGV.dup
 
@@ -185,10 +180,6 @@ module AIA
           options[:skills_dir] = dir
         end
 
-        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
-          options[:skills_prefix] = prefix
-        end
-
         opts.on("-s", "--skill SKILL_IDS", "Append skill(s) to prompt; comma-separated IDs or paths") do |skill_ids|
           options[:skills] ||= []
           options[:skills] += skill_ids.split(',').map(&:strip).reject(&:empty?)
@@ -310,7 +301,7 @@ module AIA
 
         opts.on("--log-level LEVEL", "Set log level (debug|info|warn|error|fatal)") do |level|
           level = level.downcase
-          unless %w[debug info $stderr.puts error fatal].include?(level)
+          unless %w[debug info warn error fatal].include?(level)
             $stderr.puts "ERROR: Invalid log level '#{level}'. Must be one of: debug, info, warn, error, fatal"
             exit 1
           end
@@ -558,64 +549,6 @@ module AIA
            .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
            .sort
       end
-
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      def list_available_skills(options = {})
-        skills_prefix = options[:skills_prefix] || ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', nil)
-        skills_dir = if options[:skills_dir]
-                       base = options[:skills_dir]
-                       skills_prefix && !skills_prefix.strip.empty? ? File.join(base, skills_prefix) : base
-                     elsif skills_prefix && !skills_prefix.strip.empty?
-                       prompts_dir = options[:prompts_dir] || ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
-                       File.join(prompts_dir, skills_prefix)
-                     else
-                       ENV.fetch('AIA_SKILLS__DIR', File.join(Dir.home, '.prompts', 'skills'))
-                     end
-
-        unless Dir.exist?(skills_dir)
-          puts "No skills directory found at #{skills_dir}"
-          puts "Create this directory and add skill subdirectories to use skills."
-          return
-        end
-
-        skill_ids = Dir.entries(skills_dir)
-                       .reject { |e| e.start_with?('.') }
-                       .select do |e|
-                         subdir = File.join(skills_dir, e)
-                         File.directory?(subdir) && File.exist?(File.join(subdir, 'SKILL.md'))
-                       end
-          .sort
-
-        if skill_ids.empty?
-          puts "No skill files found in #{skills_dir}"
-          puts "Create subdirectories with a SKILL.md file to define skills."
-          return
-        end
-
-        lines = []
-        skill_ids.each do |skill_id|
-          front_matter = AIA::SkillUtils.parse_front_matter(File.join(skills_dir, skill_id, 'SKILL.md'))
-
-          lines << "## #{skill_id}"
-          lines << ""
-
-          if front_matter.empty?
-            lines << "_No front matter found in SKILL.md_"
-          else
-            lines << "| Key | Value |"
-            lines << "|-----|-------|"
-            front_matter.each do |key, value|
-              safe_value = value.to_s.gsub('|', '\\|')
-              lines << "| #{key} | #{safe_value} |"
-            end
-          end
-
-          lines << ""
-        end
-
-        puts lines.join("\n")
-      end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       # rubocop:disable Metrics/AbcSize
       def list_available_models(query)

@@ -410,15 +410,12 @@ module AIA
       run_config = RobotFactory.build_run_config(config)
       model_spec = config.models.first
 
-      opts = {
+      RobotFactory.build_robot(
+        model_spec,
         name:          name,
-        model:         model_spec.name,
         system_prompt: nil,
         config:        run_config
-      }
-      opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
-
-      RobotLab.build(**opts)
+      )
     end
 
     # Write an artifact to the build directory.

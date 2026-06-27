@@ -14,6 +14,7 @@
 
 require 'classifier'
 require 'fast-stemmer'
+require_relative '../tfidf_math'
 
 module AIA
   class ToolFilter
@@ -54,7 +55,7 @@ module AIA
         query_vector = @tfidf.transform(normalize(prompt))
 
         scored = @tool_entries.each_with_index.map do |entry, i|
-          score = cosine_similarity(query_vector, @tool_vectors[i])
+          score = AIA::TFIDFMath.cosine_similarity(query_vector, @tool_vectors[i])
           { name: entry[:name], score: score }
         end
 
@@ -109,20 +110,6 @@ module AIA
             .scan(/[a-z]+/)
             .map(&:stem)
             .join(" ")
-      end
-
-      # Cosine similarity between two TF-IDF hash vectors.
-      #
-      # @param a [Hash{Symbol => Float}]
-      # @param b [Hash{Symbol => Float}]
-      # @return [Float] 0.0..1.0
-      def cosine_similarity(a, b)
-        all_keys = a.keys | b.keys
-        dot   = all_keys.sum { |k| (a[k] || 0.0) * (b[k] || 0.0) }
-        mag_a = Math.sqrt(a.values.sum { |v| v**2 })
-        mag_b = Math.sqrt(b.values.sum { |v| v**2 })
-        return 0.0 if mag_a.zero? || mag_b.zero?
-        (dot / (mag_a * mag_b)).clamp(0.0, 1.0)
       end
     end
   end

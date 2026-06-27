@@ -195,6 +195,7 @@ module AIA
       end
       @mutex.synchronize do
         @connected_clients  = {}
+        @connected_tools    = []
         @server_tool_counts = {}
         @connected          = false
       end

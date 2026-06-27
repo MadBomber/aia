@@ -345,35 +345,13 @@ module AIA
         end
       end
 
+      # Canonical --list-skills handler. Runs after config is built (so a -c
+      # config file's skills.dir is honored) and resolves skills the same way
+      # loading does, so what is listed is always loadable.
       def handle_list_skills(config)
         return unless config.respond_to?(:list_skills) && config.list_skills
 
-        skills_dir = AIA::SkillUtils.skills_base_dir(config) || config.skills&.dir
-
-        unless Dir.exist?(skills_dir.to_s)
-          $stderr.puts "No skills directory found at #{skills_dir}"
-          return :early_exit
-        end
-
-        skill_dirs = Dir.glob("*/SKILL.md", base: skills_dir).map { |f| File.dirname(f) }.sort
-
-        if skill_dirs.empty?
-          $stderr.puts "No skills found in #{skills_dir}"
-          return :early_exit
-        end
-
-        skill_dirs.each do |skill_name|
-          skill_md = File.join(skills_dir, skill_name, 'SKILL.md')
-          fm = AIA::SkillUtils.parse_front_matter(skill_md)
-
-          puts "## #{skill_name}"
-          puts
-          puts "| Key | Value |"
-          puts "|-----|-------|"
-          fm.each { |key, value| puts "| #{key} | #{value} |" }
-          puts
-        end
-
+        puts AIA::SkillUtils.list_skills_markdown(config)
         :early_exit
       end
 

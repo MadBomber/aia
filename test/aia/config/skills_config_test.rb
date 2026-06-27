@@ -10,10 +10,6 @@ class SkillsConfigTest < Minitest::Test
     assert_equal expected, @config.skills.dir
   end
 
-  def test_skills_prefix_defaults_to_nil
-    assert_nil @config.prompts.skills_prefix
-  end
-
   def test_skills_array_defaults_to_empty
     assert_equal [], @config.prompts.skills
   end
@@ -26,11 +22,6 @@ class SkillsConfigTest < Minitest::Test
   def test_skills_dir_cli_override
     config = AIA::Config.new(overrides: { skills_dir: '/custom/skills' })
     assert_equal '/custom/skills', config.skills.dir
-  end
-
-  def test_skills_prefix_cli_override
-    config = AIA::Config.new(overrides: { skills_prefix: 'my_skills' })
-    assert_equal 'my_skills', config.prompts.skills_prefix
   end
 
   def test_roles_section_exists

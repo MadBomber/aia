@@ -74,7 +74,7 @@ module AIA
         end
       end
 
-      puts '\n' + ('=' * 80)
+      puts "\n" + ('=' * 80)
       puts "\nComparison complete!"
 
       ''

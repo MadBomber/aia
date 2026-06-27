@@ -128,9 +128,7 @@ module AIA
         return AIA.config.skills.dir
       end
 
-      prompts_dir   = ENV.fetch('AIA_PROMPTS__DIR', File.expand_path('~/.prompts'))
-      skills_prefix = ENV.fetch('AIA_PROMPTS__SKILLS_PREFIX', 'skills')
-      File.join(prompts_dir, skills_prefix)
+      ENV.fetch('AIA_SKILLS__DIR', File.expand_path('~/.prompts/skills'))
     end
 
     def terminal_width

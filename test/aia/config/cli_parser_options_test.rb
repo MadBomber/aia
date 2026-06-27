@@ -273,13 +273,6 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     assert_equal 'architect', options[:role]
   end
 
-  def test_parses_skills_prefix
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-    parser.parse!(['--skills-prefix', 'behaviours'])
-    assert_equal 'behaviours', options[:skills_prefix]
-  end
-
   def test_parses_skill_single
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)

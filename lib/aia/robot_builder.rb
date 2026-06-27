@@ -21,18 +21,15 @@ module AIA
         base_prompt = SystemPromptAssembler.resolve_system_prompt(config, model_spec)
         system_prompt = [identity, base_prompt].compact.join("\n\n")
 
-        build_opts = {
+        RobotFactory.build_robot(
+          model_spec,
           name:          robot_name,
           system_prompt: system_prompt,
-          model:         model_spec.name,
           local_tools:   ToolLoader.filtered_tools(config),
           mcp_servers:   RobotFactory.mcp_server_configs(config),
           on_content:    nil,
           config:        RobotFactory.build_run_config(config)
-        }
-        build_opts[:provider] = RobotFactory.send(:resolve_provider, model_spec) if model_spec.provider
-
-        RobotLab.build(**build_opts)
+        )
       end
     end
   end

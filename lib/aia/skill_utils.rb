@@ -52,21 +52,58 @@ module AIA
     end
 
     # Resolve the effective skills base directory from config.
-    # When skills_prefix is nil/empty, skills.dir is used as-is.
-    # When skills_prefix is set, it is appended as a subdirectory.
+    # Skills live in config.skills.dir (set via --skills-dir, the -c config file,
+    # or the ~/.prompts/skills default). This is the single resolver used by both
+    # skill loading and `--list-skills`, so what is listed is always loadable.
     #
     # @param config [AIA::Config] the AIA configuration
     # @return [String, nil] resolved base directory, or nil if not configured
     def skills_base_dir(config)
-      base = config.skills&.dir
-      return nil unless base
+      config.skills&.dir
+    end
 
-      prefix = config.prompts&.skills_prefix
-      if prefix && !prefix.strip.empty?
-        File.join(base, prefix)
-      else
-        base
+    # Render the available skills as a markdown report — the body of --list-skills.
+    # Resolves the directory via skills_base_dir (same as loading) and respects a
+    # -c config file because it runs after config is built.
+    #
+    # @param config [AIA::Config]
+    # @return [String] markdown listing, or a "no skills" message
+    def list_skills_markdown(config)
+      dir = skills_base_dir(config)
+
+      unless dir && Dir.exist?(dir)
+        return "No skills directory found at #{dir}\n" \
+               "Create this directory and add skill subdirectories to use skills."
       end
+
+      skill_ids = Dir.glob("*/SKILL.md", base: dir).map { |f| File.dirname(f) }.sort
+      if skill_ids.empty?
+        return "No skills found in #{dir}\n" \
+               "Create subdirectories with a SKILL.md file to define skills."
+      end
+
+      skill_ids.flat_map { |id| skill_markdown_entry(dir, id) }.join("\n")
+    end
+
+    # Markdown lines for a single skill entry (heading + front-matter table).
+    # Escapes pipe characters so values can't break the table.
+    #
+    # @return [Array<String>]
+    def skill_markdown_entry(dir, skill_id)
+      front_matter = parse_front_matter(File.join(dir, skill_id, 'SKILL.md'))
+      lines = ["## #{skill_id}", ""]
+
+      if front_matter.empty?
+        lines << "_No front matter found in SKILL.md_"
+      else
+        lines << "| Key | Value |" << "|-----|-------|"
+        front_matter.each do |key, value|
+          lines << "| #{key} | #{value.to_s.gsub('|', '\\|')} |"
+        end
+      end
+
+      lines << ""
+      lines
     end
 
     # Load and concatenate content from multiple skills.

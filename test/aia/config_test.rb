@@ -81,17 +81,11 @@ class ConfigTest < Minitest::Test
     assert config.prompts.key?(:dir), "Prompts section should have dir key"
     assert config.prompts.key?(:roles_prefix), "Prompts section should have roles_prefix key"
     assert config.prompts.key?(:skills), "Prompts section should have skills key"
-    assert config.prompts.key?(:skills_prefix), "Prompts section should have skills_prefix key"
   end
 
   def test_prompts_skills_defaults_to_empty_array
     config = AIA::Config.new
     assert_equal [], config.prompts.skills
-  end
-
-  def test_prompts_skills_prefix_defaults_to_nil
-    config = AIA::Config.new
-    assert_nil config.prompts.skills_prefix
   end
 
   def test_skills_dir_defaults_to_prompts_skills_subdir
@@ -254,8 +248,10 @@ class ConfigTest < Minitest::Test
 
     config = AIA::Config.new(overrides: { extra_config_file: config_file })
     assert_equal 0.2, config.llm.temperature
-    # max_tokens should still have its bundled default
-    assert_equal 2048, config.llm.max_tokens
+    # max_tokens should still have its bundled default. Source the expected
+    # value from the schema (single source of truth) so a future default
+    # change doesn't silently rot this assertion.
+    assert_equal AIA::Config.schema.dig(:llm, :max_tokens), config.llm.max_tokens
   end
 
   def test_extra_config_file_resets_to_defaults_not_user_config

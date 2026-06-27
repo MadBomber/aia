@@ -326,14 +326,12 @@ class WebAndFileDirectivesTest < Minitest::Test
 
   def test_aia_skills_dir_falls_back_to_env_vars
     AIA.stubs(:config).returns(nil)
-    ENV['AIA_PROMPTS__DIR']           = '/env/prompts'
-    ENV['AIA_PROMPTS__SKILLS_PREFIX'] = 'my_skills'
+    ENV['AIA_SKILLS__DIR'] = '/env/skills'
 
-    assert_equal '/env/prompts/my_skills', @instance.send(:aia_skills_dir)
+    assert_equal '/env/skills', @instance.send(:aia_skills_dir)
   ensure
     AIA.unstub(:config)
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__SKILLS_PREFIX')
+    ENV.delete('AIA_SKILLS__DIR')
   end
 
   private

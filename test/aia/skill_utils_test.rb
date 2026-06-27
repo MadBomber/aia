@@ -253,32 +253,13 @@ class SkillUtilsTest < Minitest::Test
 
   # --- skills_base_dir ---
 
-  def test_skills_base_dir_no_prefix_returns_dir
-    config = OpenStruct.new(
-      skills: OpenStruct.new(dir: '/base/skills'),
-      prompts: OpenStruct.new(skills_prefix: nil)
-    )
-    assert_equal '/base/skills', AIA::SkillUtils.skills_base_dir(config)
-  end
-
-  def test_skills_base_dir_with_prefix_joins_path
-    config = OpenStruct.new(
-      skills: OpenStruct.new(dir: '/base'),
-      prompts: OpenStruct.new(skills_prefix: 'my-skills')
-    )
-    assert_equal '/base/my-skills', AIA::SkillUtils.skills_base_dir(config)
-  end
-
-  def test_skills_base_dir_empty_prefix_returns_dir
-    config = OpenStruct.new(
-      skills: OpenStruct.new(dir: '/base/skills'),
-      prompts: OpenStruct.new(skills_prefix: '')
-    )
+  def test_skills_base_dir_returns_skills_dir
+    config = OpenStruct.new(skills: OpenStruct.new(dir: '/base/skills'))
     assert_equal '/base/skills', AIA::SkillUtils.skills_base_dir(config)
   end
 
   def test_skills_base_dir_nil_skills_returns_nil
-    config = OpenStruct.new(skills: nil, prompts: OpenStruct.new(skills_prefix: nil))
+    config = OpenStruct.new(skills: nil)
     assert_nil AIA::SkillUtils.skills_base_dir(config)
   end
 

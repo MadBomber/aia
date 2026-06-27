@@ -185,7 +185,6 @@ module AIA
       roles_prefix: %i[prompts roles_prefix],
       role: %i[prompts role],
       skills_dir: %i[skills dir],
-      skills_prefix: %i[prompts skills_prefix],
       skills: %i[prompts skills],
       tools_prefix: %i[prompts tools_prefix],
       tool: %i[prompts tool],

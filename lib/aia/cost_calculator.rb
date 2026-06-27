@@ -16,8 +16,9 @@ module AIA
     def self.calculate(model_id:, input_tokens:, output_tokens:)
       return { available: false } unless model_id && defined?(RubyLLM::Models)
 
+      # RubyLLM::Models.find raises ModelNotFoundError on an unknown id (it never
+      # returns nil), so the unknown-model case is handled by the rescue below.
       model_info = RubyLLM::Models.find(model_id)
-      return { available: false } unless model_info
 
       input_price  = model_info.respond_to?(:input_price_per_million)  ? model_info.input_price_per_million  : nil
       output_price = model_info.respond_to?(:output_price_per_million) ? model_info.output_price_per_million : nil
@@ -27,6 +28,9 @@ module AIA
       output_cost = output_tokens * output_price / 1_000_000.0
 
       { available: true, total_cost: input_cost + output_cost, input_cost: input_cost, output_cost: output_cost }
+    rescue RubyLLM::ModelNotFoundError
+      # Expected when pricing for the model isn't in the registry — not an error.
+      { available: false }
     rescue StandardError => e
       { available: false, error: e.message }
     end

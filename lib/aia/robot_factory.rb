@@ -212,6 +212,20 @@ module AIA
         bus
       end
 
+      # Build a RobotLab::Robot for a model spec, applying provider resolution.
+      # Centralizes the "set provider if the spec has one, then build" tail that
+      # every robot/network builder needs, so local-provider routing (ollama/lms)
+      # can't be forgotten at a new build site.
+      #
+      # @param spec [AIA::Config::ModelSpec] the model spec (supplies model: and provider)
+      # @param opts [Hash] forwarded to RobotLab.build (name:, system_prompt:,
+      #   local_tools:, mcp_servers:, config:, on_content:, ...). Do NOT pass model:.
+      # @return [RobotLab::Robot]
+      def build_robot(spec, **opts)
+        opts[:provider] = resolve_provider(spec) if spec.provider
+        RobotLab.build(model: spec.name, **opts)
+      end
+
       # Map AIA provider aliases to RubyLLM provider slugs.
       def resolve_provider(model_spec)
         case model_spec.provider

@@ -34,7 +34,7 @@
   - `context_directives.rb`, `execution_directives.rb`, `navigation_directives.rb`, `special_mode_directives.rb`, `config_directives.rb`
 
 ### `/skill` and `/skills` Directives - `lib/aia/directives/web_and_file_directives.rb`
-- Skills directory resolves via `aia_skills_dir`: `AIA.config.skills.dir` → `$AIA_PROMPTS__DIR/$AIA_PROMPTS__SKILLS_PREFIX` → `~/.prompts/skills`.
+- Skills directory resolves via `aia_skills_dir`: `AIA.config.skills.dir` → `$AIA_SKILLS__DIR` → `~/.prompts/skills`.
 - A skill is a subdirectory containing a `SKILL.md` file with YAML front matter (`name`, `description`).
 - `/skill <id>` reads and returns the full `SKILL.md` content. On error, prints to stdout and returns `nil` (nothing injected into the AI prompt).
 - `/skills [terms...]` prints `skill_id: name\n  description\n\n` to stdout for each matching skill; returns `nil`. Supports AND logic for positive terms and AND NOT for `-`/`~`/`!`-prefixed terms.

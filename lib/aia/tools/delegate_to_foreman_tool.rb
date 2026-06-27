@@ -44,16 +44,13 @@ module AIA
         model_spec = AIA.config.models.first
         run_config = RobotFactory.build_run_config(AIA.config)
 
-        build_opts = {
+        RobotFactory.build_robot(
+          model_spec,
           name:          'Foreman',
-          model:         model_spec.name,
           system_prompt: foreman_system_prompt,
           local_tools:   [TaskBoardTool],
           config:        run_config
-        }
-        build_opts[:provider] = RobotFactory.resolve_provider(model_spec) if model_spec.provider
-
-        RobotLab.build(**build_opts)
+        )
       end
 
       def foreman_system_prompt

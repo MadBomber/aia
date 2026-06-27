@@ -18,7 +18,8 @@ class CostCalculatorTest < Minitest::Test
   end
 
   def test_returns_unavailable_when_model_not_found
-    RubyLLM::Models.stubs(:find).returns(nil)
+    # RubyLLM::Models.find raises (never returns nil) for an unknown model.
+    RubyLLM::Models.stubs(:find).raises(RubyLLM::ModelNotFoundError.new("unknown-model"))
     result = AIA::CostCalculator.calculate(model_id: "unknown-model", input_tokens: 100, output_tokens: 50)
     refute result[:available]
   end
