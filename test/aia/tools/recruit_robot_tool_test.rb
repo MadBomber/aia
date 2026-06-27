@@ -14,7 +14,7 @@ class RecruitRobotToolTest < Minitest::Test
     robot = stub_robot('researcher', 'ollama/qwen3.6:latest')
     AIA::Crew.expects(:recruit).with({
       name: 'researcher', model: 'qwen3.6:latest', provider: 'ollama',
-      system_prompt: 'You are careful'
+      skills: [], system_prompt: 'You are careful'
     }).returns(robot)
 
     out = @tool.execute(
@@ -25,10 +25,22 @@ class RecruitRobotToolTest < Minitest::Test
     assert_match(/@researcher/, out)
   end
 
+  def test_skills_are_split_and_passed_through
+    robot = stub_robot('reviewer', 'gpt-4o')
+    AIA::Crew.expects(:recruit).with({
+      name: 'reviewer', model: nil, provider: nil,
+      skills: %w[security ruby-style], system_prompt: nil
+    }).returns(robot)
+
+    out = @tool.execute(name: 'reviewer', skills: 'security, ruby-style')
+
+    assert_match(/Recruited 'reviewer'/, out)
+  end
+
   def test_omitting_model_inherits_the_chiefs_model
     robot = stub_robot('helper', nil)
     AIA::Crew.expects(:recruit).with({
-      name: 'helper', model: nil, provider: nil, system_prompt: nil
+      name: 'helper', model: nil, provider: nil, skills: [], system_prompt: nil
     }).returns(robot)
 
     out = @tool.execute(name: 'helper')
@@ -39,7 +51,7 @@ class RecruitRobotToolTest < Minitest::Test
   def test_dash_model_inherits_and_blank_prompt_becomes_nil
     robot = stub_robot('helper', nil)
     AIA::Crew.expects(:recruit).with({
-      name: 'helper', model: nil, provider: nil, system_prompt: nil
+      name: 'helper', model: nil, provider: nil, skills: [], system_prompt: nil
     }).returns(robot)
 
     @tool.execute(name: 'helper', model: '-', system_prompt: '   ')

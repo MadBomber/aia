@@ -119,6 +119,17 @@ concurrently:
 
 Because `crew` is reserved for broadcast, you cannot name a member `crew`.
 
+> **Local models and concurrency.** A leading-address or `@crew` broadcast runs
+> its members **concurrently** — several HTTP requests at once. When every member
+> shares one local model server (e.g. all on `ollama/qwen3.6:latest`), those
+> requests compete for the same instance: the server processes only
+> `OLLAMA_NUM_PARALLEL` at a time and the rest queue, so a big task can blow past
+> the per-request timeout and you'll see `Net::ReadTimeout` for several members.
+> If you hit this, raise Ollama's parallelism (`OLLAMA_NUM_PARALLEL=4`,
+> `OLLAMA_MAX_LOADED_MODELS=1`), give each member a smaller scoped task (see
+> [skills](#giving-a-recruit-a-role-with-skills)), or address members one at a
+> time (a body mention runs them sequentially) instead of broadcasting.
+
 ## Building a crew at runtime
 
 ### Recruiting a member
@@ -154,6 +165,50 @@ Syntax:
 Recruits inherit the chief's local tools and any connected MCP servers, so a new
 member can do the same file/shell/MCP work the chief can without reopening
 connections.
+
+### Giving a recruit a role with skills
+
+A bare crew of identical robots all do the same undifferentiated work. To divide
+labor, assign each member a **skill** — a named, reusable system prompt (the same
+skills used by `--skill` and `/skill`; list them with `/skills`). A skill becomes
+the recruit's role:
+
+```text
+# One skill as the recruit's role
+/add_recruit reviewer skill:security-review
+
+# Skill + explicit model, then an extra instruction appended after the skill
+/add_recruit reviewer ollama/qwen3.6:latest skill:security-review focus on the auth module
+
+# Several skills at once (repeat the token or comma-separate)
+/add_recruit reviewer - skill:security-review,ruby-style
+```
+
+The `skill:<id>` token may appear anywhere after the name; everything else is
+parsed as the model (position 1) and an optional trailing system prompt. The
+final role is the skill bodies joined, followed by any explicit prompt. An
+unknown skill id is reported rather than silently ignored, so the recruit always
+gets the role you intended.
+
+This is how you turn a `@crew` broadcast from four identical answers into a real
+division of labor — e.g. a security reviewer, a performance reviewer, a test
+reviewer, and a style reviewer, each with its own skill.
+
+### Re-skilling a member
+
+`/reskill` resets a member to a **clean slate** (a fresh conversation) and gives
+it a new role. The member keeps its `@name` and model:
+
+```text
+# Repurpose larry for the next phase
+/reskill larry skill:test-writing
+
+# Or hand it a freeform role
+/reskill larry - you now summarize the other members' findings
+```
+
+Use it to recover a member that drifted off task, or to move the crew through
+phases (review → fix → summarize) without re-creating robots.
 
 ### Dropping a member
 

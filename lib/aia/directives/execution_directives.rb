@@ -8,7 +8,7 @@ module AIA
   class ExecutionDirectives < Directive
     state_setting! :concurrent, :conc, :verify, :decompose, :debate,
                    :delegate, :del, :spawn, :orchestrate, :orch,
-                   :add_recruit, :add, :drop_recruit, :drop
+                   :add_recruit, :add, :drop_recruit, :drop, :reskill
 
     desc "Execute Ruby code (requires allow_ruby_eval: true in config)"
     def ruby(args, context_manager = nil)
@@ -95,14 +95,14 @@ module AIA
       end
     end
 
-    desc "Recruit a robot into the crew (persists, @mention-able). " \
-         "Usage: /add_recruit <name> [provider/model] [system prompt]  (alias: /add)"
+    desc "Recruit a robot into the crew (persists, @mention-able). Usage: " \
+         "/add_recruit <name> [provider/model] [skill:<id>...] [system prompt]  (alias: /add)"
     def add_recruit(args, context_manager = nil)
-      return "Usage: /add_recruit <name> [provider/model] [system prompt]" if args.empty?
+      return "Usage: /add_recruit <name> [provider/model] [skill:<id> ...] [system prompt]" if args.empty?
 
       spec = args.size >= 2 ? AIA::SpawnSpecParser.parse(args) : { name: args[0] }
       robot = AIA::Crew.recruit(spec)
-      "Recruited '#{robot.name}' into the crew (#{spawn_model_summary(spec)})."
+      "Recruited '#{robot.name}' into the crew (#{recruit_summary(spec)})."
     rescue AIA::CrewError => e
       "Recruit failed: #{e.message}"
     end
@@ -119,6 +119,20 @@ module AIA
     end
     alias drop drop_recruit
 
+    desc "Reset a crew member to a clean slate and re-skill it. " \
+         "Usage: /reskill <name> [skill:<id>...] [system prompt]"
+    def reskill(args, context_manager = nil)
+      return "Usage: /reskill <name> [skill:<id> ...] [system prompt]" if args.empty?
+
+      skills, rest = AIA::SpawnSpecParser.extract_skills(args[1..].to_a)
+      prompt = rest.join(' ').strip
+      robot = AIA::Crew.reskill(args.first, skills: skills, system_prompt: (prompt.empty? ? nil : prompt))
+      suffix = skills.empty? ? '' : " with #{skills.join(', ')}"
+      "Reskilled '#{robot.name}'#{suffix} (clean slate)."
+    rescue AIA::CrewError => e
+      "Reskill failed: #{e.message}"
+    end
+
     desc "3-tier layered orchestration: orchestrator → lead agents → specialists"
     def orchestrate(args, context_manager = nil)
       AIA.turn_state.force_orchestrate = true
@@ -133,6 +147,14 @@ module AIA
       return 'inherited model' unless spec[:model]
 
       spec[:provider] ? "#{spec[:provider]}/#{spec[:model]}" : spec[:model]
+    end
+
+    # Model plus any assigned skills, for the /add_recruit confirmation message.
+    def recruit_summary(spec)
+      parts  = [spawn_model_summary(spec)]
+      skills = Array(spec[:skills])
+      parts << "skills: #{skills.join(', ')}" unless skills.empty?
+      parts.join('; ')
     end
   end
 end

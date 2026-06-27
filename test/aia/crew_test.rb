@@ -59,6 +59,54 @@ class CrewTest < Minitest::Test
     AIA::Crew.recruit(name: 'helper')
   end
 
+  def test_recruit_with_skills_uses_skill_content_as_system_prompt
+    AIA.stubs(:config).returns(Object.new)
+    AIA::SkillUtils.stubs(:skills_base_dir).returns('/skills')
+    AIA::SkillUtils.stubs(:find_skill_dir).with('security', '/skills').returns('/skills/security')
+    AIA::SkillUtils.stubs(:load_skills_content).with(%w[security], '/skills').returns('Audit for vulns.')
+
+    reviewer = stub_robot('reviewer')
+    @chief.expects(:spawn).with(name: 'reviewer', system_prompt: 'Audit for vulns.', local_tools: []).returns(reviewer)
+    @crew.expects(:add_robot).with(reviewer)
+
+    AIA::Crew.recruit(name: 'reviewer', skills: %w[security])
+  end
+
+  def test_recruit_with_unknown_skill_raises
+    AIA.stubs(:config).returns(Object.new)
+    AIA::SkillUtils.stubs(:skills_base_dir).returns('/skills')
+    AIA::SkillUtils.stubs(:find_skill_dir).with('ghost', '/skills').returns(nil)
+
+    error = assert_raises(AIA::CrewError) { AIA::Crew.recruit(name: 'x', skills: %w[ghost]) }
+    assert_match(/Skill\(s\) not found: ghost/, error.message)
+  end
+
+  def test_reskill_drops_then_recruits_preserving_model
+    larry = stub_robot('larry')
+    larry.stubs(:model).returns('qwen3.6:latest')
+    larry.stubs(:provider).returns('ollama')
+    @crew.stubs(:crew).returns([@chief, larry])
+    @crew.expects(:remove_robot).with('larry')
+
+    new_larry = stub_robot('larry')
+    AIA::Crew.expects(:recruit).with(
+      name: 'larry', model: 'qwen3.6:latest', provider: 'ollama',
+      skills: %w[testing], system_prompt: nil
+    ).returns(new_larry)
+
+    assert_equal new_larry, AIA::Crew.reskill('larry', skills: %w[testing])
+  end
+
+  def test_reskill_rejects_the_chief
+    error = assert_raises(AIA::CrewError) { AIA::Crew.reskill('Tobor') }
+    assert_match(/chief/, error.message)
+  end
+
+  def test_reskill_rejects_unknown_member
+    error = assert_raises(AIA::CrewError) { AIA::Crew.reskill('ghost') }
+    assert_match(/No crewmate/, error.message)
+  end
+
   def test_recruit_rejects_duplicate_name
     @crew.stubs(:crew).returns([@chief, stub_robot('joker')])
 

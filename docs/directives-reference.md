@@ -28,6 +28,7 @@
     - [`/spawn`](#spawn)
     - [`/add_recruit`](#add_recruit)
     - [`/drop_recruit`](#drop_recruit)
+    - [`/reskill`](#reskill)
   - [Utility Directives](#utility-directives)
     - [`/tools`](#tools)
     - [`/next`](#next)
@@ -95,8 +96,9 @@ Use `/help` at any time to see all available directives.
 | `/debate` | | Multi-round debate between robots |
 | `/delegate` | `/del` | Delegate subtasks via TrakFlow plan |
 | `/spawn` | | Spawn a one-shot specialist robot for the next prompt |
-| `/add_recruit` | `/add` | Recruit a persistent, `@mention`-able robot into the crew |
+| `/add_recruit` | `/add` | Recruit a persistent, `@mention`-able robot (optionally skilled) into the crew |
 | `/drop_recruit` | `/drop` | Remove a robot from the crew |
+| `/reskill` | | Reset a crew member to a clean slate and give it a new skill/role |
 | `/tools` | | List available tools |
 | `/mcp` | | MCP server connection status |
 | `/robots` | | Show active robot configuration |
@@ -520,7 +522,7 @@ the rest of the session, appears in [`/robots`](#robots), and answers to
 
 **Aliases**: `/add`
 
-**Syntax**: `/add_recruit <name> [provider/model] [system prompt...]`
+**Syntax**: `/add_recruit <name> [provider/model] [skill:<id>...] [system prompt...]`
 
 **Examples**:
 ```markdown
@@ -532,13 +534,37 @@ the rest of the session, appears in [`/robots`](#robots), and answers to
 
 # A local-model member
 /add_recruit local ollama/qwen3.6:latest You are concise and fast.
+
+# Assign a skill as the member's role (divides labor across the crew)
+/add_recruit reviewer skill:security-review
+/add_recruit reviewer - skill:security-review,ruby-style focus on the auth module
 ```
 
 **Features**:
 - `<name>` is required and must be unique within the crew. `crew` is reserved (it is the broadcast handle, `@crew`).
-- Omit `provider/model` to inherit the chief's model and provider; use `-` or `inherit` to inherit explicitly while still supplying a system prompt.
-- Everything after the model becomes the member's system prompt.
+- Omit `provider/model` to inherit the chief's model and provider; use `-` or `inherit` to inherit explicitly while still supplying skills or a system prompt.
+- A `skill:<id>` token (anywhere after the name; comma-separate or repeat for several) assigns one or more [skills](guides/crew.md#giving-a-recruit-a-role-with-skills) as the member's role. The skill bodies become its system prompt; an unknown id is reported.
+- Everything else after the model becomes the member's system prompt, appended after any skills.
 - Address the recruit afterward with `@name`, or broadcast to the whole crew with `@crew`.
+
+### `/reskill`
+Reset a crew member to a clean slate (a fresh conversation) and give it a new
+role. The member keeps its `@name` and model. The chief cannot be reskilled.
+
+**Syntax**: `/reskill <name> [skill:<id>...] [system prompt...]`
+
+**Examples**:
+```markdown
+# Repurpose a member with a different skill
+/reskill larry skill:test-writing
+
+# Or hand it a freeform role
+/reskill larry you now summarize the other members' findings
+```
+
+**Features**:
+- Same `skill:<id>` and trailing-system-prompt handling as `/add_recruit` (there is no model token — the member's existing model is preserved).
+- Useful for recovering a member that drifted off task, or moving the crew through phases (review → fix → summarize) without re-creating robots.
 
 ### `/drop_recruit`
 Remove a robot from the crew by name. The chief (the session's lead robot)

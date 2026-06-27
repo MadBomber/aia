@@ -55,6 +55,37 @@ class ExecutionDirectivesTest < Minitest::Test
     assert_match(/Drop failed: nope/, @instance.drop_recruit(['ghost']))
   end
 
+  def test_add_recruit_with_skill_token_reports_skills
+    robot = mock('robot')
+    robot.stubs(:name).returns('reviewer')
+    AIA::Crew.expects(:recruit).returns(robot)
+
+    out = @instance.add_recruit(%w[reviewer - skill:security focus on auth])
+
+    assert_match(/Recruited 'reviewer'/, out)
+    assert_match(/skills: security/, out)
+  end
+
+  def test_reskill_resets_member_with_skills
+    robot = mock('robot')
+    robot.stubs(:name).returns('larry')
+    AIA::Crew.expects(:reskill).with('larry', skills: %w[testing], system_prompt: 'be terse').returns(robot)
+
+    out = @instance.reskill(%w[larry skill:testing be terse])
+
+    assert_match(/Reskilled 'larry' with testing/, out)
+  end
+
+  def test_reskill_usage_when_empty
+    assert_match(/Usage/, @instance.reskill([]))
+  end
+
+  def test_reskill_reports_crew_error
+    AIA::Crew.stubs(:reskill).raises(AIA::CrewError, 'nope')
+
+    assert_match(/Reskill failed: nope/, @instance.reskill(%w[ghost skill:x]))
+  end
+
   # ---------------------------------------------------------------------------
   # /ruby directive — guarded by allow_ruby_eval flag
   # ---------------------------------------------------------------------------

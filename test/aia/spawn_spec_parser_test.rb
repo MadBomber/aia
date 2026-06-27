@@ -42,4 +42,35 @@ class SpawnSpecParserTest < Minitest::Test
     assert_equal 'qwen3.6:latest', spec[:model]
     assert_nil spec[:system_prompt]
   end
+
+  def test_skill_tokens_are_extracted_from_the_spec
+    spec = AIA::SpawnSpecParser.parse(%w[reviewer ollama/qwen3.6:latest skill:security focus on auth])
+
+    assert_equal 'reviewer', spec[:name]
+    assert_equal 'qwen3.6:latest', spec[:model]
+    assert_equal %w[security], spec[:skills]
+    assert_equal 'focus on auth', spec[:system_prompt]
+  end
+
+  def test_skill_only_recruit_inherits_model_and_has_no_prompt
+    spec = AIA::SpawnSpecParser.parse(%w[reviewer skill:security-review])
+
+    assert_nil spec[:model]
+    assert_nil spec[:provider]
+    assert_nil spec[:system_prompt]
+    assert_equal %w[security-review], spec[:skills]
+  end
+
+  def test_comma_and_repeated_skill_tokens_collect_all_ids
+    spec = AIA::SpawnSpecParser.parse(%w[reviewer - skill:a,b skill:c go])
+
+    assert_equal %w[a b c], spec[:skills]
+    assert_equal 'go', spec[:system_prompt]
+  end
+
+  def test_no_skills_yields_empty_list
+    spec = AIA::SpawnSpecParser.parse(%w[helper gpt-4o hi])
+
+    assert_empty spec[:skills]
+  end
 end
