@@ -5,6 +5,7 @@
 - [AIA - AI Assistant](#aia---ai-assistant)
   - [Key Features](#key-features)
     - [🚀 Dynamic Prompt Management](#-dynamic-prompt-management)
+    - [🎭 Roles & 🎓 Skills](#-roles---skills)
     - [🔧 Powerful Integration](#-powerful-integration)
     - [💬 Interactive Chat Sessions](#-interactive-chat-sessions)
     - [🎯 Advanced Features](#-advanced-features)

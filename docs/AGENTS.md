@@ -1,3 +1,14 @@
+<!-- Tocer[start]: Auto-generated, don't remove. -->
+
+## Table of Contents
+
+    - [Local Agent Context: docs](#local-agent-context-docs)
+  - [Setup & Commands](#setup--commands)
+  - [Code Style & Patterns](#code-style--patterns)
+  - [Implementation Details](#implementation-details)
+
+<!-- Tocer[finish]: Auto-generated, don't remove. -->
+
 ### Local Agent Context: docs
 
 ## Setup & Commands

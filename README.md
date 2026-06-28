@@ -150,6 +150,14 @@ Implement a schema registry with event-driven synchronization...
     - [Complete Configuration Reference](#complete-configuration-reference)
   - [Advanced Features](#advanced-features)
     - [Prompt Directives](#prompt-directives)
+      - [Model & Configuration](#model--configuration)
+      - [Content & Data](#content--data)
+      - [Execution & Code](#execution--code)
+      - [Agent Orchestration](#agent-orchestration)
+      - [Prompt Workflows](#prompt-workflows)
+      - [Context & Checkpoints](#context--checkpoints)
+      - [Status & Info](#status--info)
+      - [TrakFlow](#trakflow)
       - [Configuration Directive Examples](#configuration-directive-examples)
       - [Dynamic Content Examples](#dynamic-content-examples)
       - [Context Management with Checkpoints](#context-management-with-checkpoints)
@@ -297,6 +305,7 @@ aia --fuzzy
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
 | `--tokens` | Display token usage in chat mode | `aia --chat --tokens` |
 | `--cost` | Include cost calculations with token usage | `aia --chat --cost` |
+| `--thinking` | Show raw reasoning blocks from local models (default: off) | `aia --chat --thinking -m ollama/qwen3:latest` |
 | `--mcp-list` | List configured MCP servers and exit | `aia --mcp-list` |
 | `--list-tools` | List available tools and exit | `aia --require shared_tools --list-tools` |
 | `--help` | Show complete help | `aia --help` |
@@ -385,6 +394,7 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `flags.verbose` | `-v`, `--verbose` | `false` | `AIA_FLAGS__VERBOSE` |
 | `flags.tokens` | `--tokens` | `false` | `AIA_FLAGS__TOKENS` |
 | `flags.cost` | `--cost` | `false` | `AIA_FLAGS__COST` |
+| `flags.thinking` | `--[no-]thinking` | `false` | `AIA_FLAGS__THINKING` |
 | `flags.consensus` | `--[no-]consensus` | `false` | `AIA_FLAGS__CONSENSUS` |
 | `flags.speak` | `--speak` | `false` | `AIA_FLAGS__SPEAK` |
 | `flags.shell` | | `true` | `AIA_FLAGS__SHELL` |
@@ -901,6 +911,14 @@ aia --model ollama/llama3.2,gpt-4o-mini --consensus my_prompt
 ```bash
 # Optional: Set custom Ollama API endpoint
 export OLLAMA_API_BASE=http://localhost:11434
+```
+
+**Reasoning models:** models such as `qwen3` stream their chain-of-thought
+wrapped in `<think>...</think>` tags. AIA hides these by default; pass
+`--thinking` to display the reasoning along with the answer:
+
+```bash
+aia --chat --thinking --model ollama/qwen3:latest
 ```
 
 #### LM Studio Integration

@@ -690,6 +690,21 @@ aia --model ollama/llama3.2 --chat
 aia --model ollama/llama3.2,gpt-4o-mini,claude-3-sonnet my_prompt
 ```
 
+#### Reasoning models and `--thinking`
+
+Reasoning models such as `qwen3` emit their chain-of-thought wrapped in
+`<think>...</think>` tags as part of the streamed response. By default AIA
+hides these blocks so you only see the final answer. Use `--thinking` to show
+the reasoning as well:
+
+```bash
+# Hide reasoning (default)
+aia --chat --model ollama/qwen3:latest
+
+# Show the model's reasoning
+aia --chat --thinking --model ollama/qwen3:latest
+```
+
 #### Configuration
 
 ```yaml

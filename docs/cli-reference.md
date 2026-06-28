@@ -20,6 +20,10 @@
   - [Model Options](#model-options)
     - [`-m MODEL, --model MODEL`](#-m-model---model-model)
     - [`--[no-]consensus`](#--no-consensus)
+    - [`-s, --skill SKILL_IDS`](#-s---skill-skill_ids)
+    - [`--list-skills`](#--list-skills)
+    - [`--skills-dir DIR`](#--skills-dir-dir)
+    - [`--skills-prefix PREFIX`](#--skills-prefix-prefix)
     - [`--sm, --speech-model MODEL`](#--sm---speech-model-model)
     - [`--tm, --transcription-model MODEL`](#--tm---transcription-model-model)
   - [File Options](#file-options)
@@ -33,9 +37,9 @@
     - [`--roles-prefix PREFIX`](#--roles-prefix-prefix)
     - [`-r, --role ROLE_ID`](#-r---role-role_id)
     - [`--list-roles`](#--list-roles)
-    - [`--skills-prefix PREFIX`](#--skills-prefix-prefix)
-    - [`-s, --skill SKILL_IDS`](#-s---skill-skill_ids)
-    - [`--list-skills`](#--list-skills)
+    - [`--skills-prefix PREFIX`](#--skills-prefix-prefix-1)
+    - [`-s, --skill SKILL_IDS`](#-s---skill-skill_ids-1)
+    - [`--list-skills`](#--list-skills-1)
     - [`-n, --next PROMPT_ID`](#-n---next-prompt_id)
     - [`-p PROMPTS, --pipeline PROMPTS`](#-p-prompts---pipeline-prompts)
     - [`--system-prompt PROMPT_ID`](#--system-prompt-prompt_id)
@@ -65,6 +69,7 @@
     - [`--log-level LEVEL`](#--log-level-level)
     - [`--log-to FILE`](#--log-to-file)
     - [`-v, --[no-]verbose`](#-v---no-verbose)
+    - [`--[no-]thinking`](#--no-thinking)
     - [`--refresh DAYS`](#--refresh-days)
     - [`--dump FILE`](#--dump-file)
     - [`--completion SHELL`](#--completion-shell)
@@ -1036,6 +1041,24 @@ aia -v my_prompt
 # Quiet mode
 aia --no-verbose my_prompt
 ```
+
+### `--[no-]thinking`
+Show or hide raw thinking/reasoning blocks in the output. Default: **off**.
+
+Some local reasoning models (e.g. `qwen3` on Ollama) emit their chain-of-thought
+wrapped in `<think>...</think>` tags as part of the streamed response. By default
+AIA filters these blocks out so you only see the final answer. Pass `--thinking`
+to display the reasoning as well.
+
+```bash
+# Show the model's reasoning
+aia --chat --thinking -m ollama/qwen3:latest
+
+# Explicitly hide it (the default)
+aia --chat --no-thinking -m ollama/qwen3:latest
+```
+
+Equivalent config key: `flags.thinking` (env: `AIA_FLAGS__THINKING`).
 
 ### `--refresh DAYS`
 Refresh models database interval in days.

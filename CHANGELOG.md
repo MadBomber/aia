@@ -6,6 +6,8 @@ This section captures all changes since v1.1.0.
 
 ### Added
 
+- **`--[no-]thinking` flag** (`lib/aia/config/cli_parser.rb`, `lib/aia/config/defaults.yml`, `lib/aia/config.rb`, `lib/aia/streaming_runner.rb`): Controls whether raw reasoning blocks from local models (e.g. `qwen3` on Ollama) are shown. Such models stream their chain-of-thought wrapped in `<think>...</think>` tags; AIA now filters these out by default so only the final answer is displayed. Pass `--thinking` to show the reasoning. The `StreamingRunner` strips the tags inline, tracking open spans across chunk boundaries. Config key: `flags.thinking` (env: `AIA_FLAGS__THINKING`); default `false`.
+
 - **Crews — every session is a team of robots** (`lib/aia/crew.rb`, `lib/aia/mention_router.rb`, `lib/aia/directives/execution_directives.rb`): Every chat session is now a crew (a `RobotLab::Network`), even with a single model; the lead robot is the **chief**.
   - **`/add_recruit <name> [provider/model] [system prompt]`** (alias `/add`): Adds a persistent member to the crew that survives the session, shows in `/robots`, and answers to `@name`. Omit the model to inherit the chief's; use `-`/`inherit` to inherit explicitly. Recruits inherit the chief's local tools and connected MCP servers.
   - **`/drop_recruit <name>`** (alias `/drop`): Removes a member; the chief cannot be dropped.

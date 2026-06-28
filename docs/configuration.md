@@ -170,6 +170,7 @@ flags:
   erb: true                   # Enable ERB processing
   clear: false                # Clear conversation history
   consensus: false            # Enable consensus mode for multi-model
+  thinking: false             # Show raw <think> reasoning blocks from local models
 
 # Logger Configuration
 # Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
@@ -327,6 +328,7 @@ export AIA_FLAGS__SHELL="true"
 export AIA_FLAGS__ERB="true"
 export AIA_FLAGS__CLEAR="false"
 export AIA_FLAGS__CONSENSUS="false"
+export AIA_FLAGS__THINKING="false"
 
 # Logger settings (nested under logger:)
 export AIA_LOGGER__AIA__FILE="~/.config/aia/aia.log"
