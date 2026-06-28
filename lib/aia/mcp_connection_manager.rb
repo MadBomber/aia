@@ -30,60 +30,28 @@ module AIA
     #
     # @param servers [Array<Hash>] MCP server configurations
     # @return [self]
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def connect_all(servers)
       return self unless servers.is_a?(Array) && servers.any?
 
-      @connected_clients = {}
-      @connected_tools   = []
-      @failed_servers    = []
-
+      reset_connection_state
       logger = AIA::LoggerManager.mcp_logger
       server_names = servers.map { |s| s.is_a?(Hash) ? s[:name] : s.to_s }.compact
       logger.info("MCP initialization: connecting #{servers.size} server(s): #{server_names.join(', ')}")
 
-      multi = TTY::Spinner::Multi.new(
-        "[:spinner] Connecting MCP servers",
-        format: :dots,
-        output: $stderr
-      )
-
-      threads = servers.map do |server_config|
-        name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
-
-        spinner = multi.register("[:spinner] #{name}")
-
-        Thread.new(server_config, name, spinner) do |cfg, srv_name, sp|
-          connect_one(cfg, srv_name, sp, logger)
-        end
-      end
+      multi = TTY::Spinner::Multi.new("[:spinner] Connecting MCP servers", format: :dots, output: $stderr)
+      threads = launch_server_threads(servers, multi, logger)
 
       # The global cap must never be smaller than the slowest single server's
       # timeout, or concurrent connections get killed before they can finish.
       global_limit = [global_connection_timeout, *servers.map { |s| server_timeout(s) }].max
-      Timeout.timeout(global_limit) do
-        threads.each(&:join)
-      end
+      Timeout.timeout(global_limit) { threads.each(&:join) }
 
       @connected = true
       logger.info("MCP initialization complete: #{@connected_clients.size} connected, #{@failed_servers.size} failed")
       self
     rescue Timeout::Error
-      logger = AIA::LoggerManager.mcp_logger
-      logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
-
-      connected_names = @mutex.synchronize { @connected_clients.keys.to_set }
-      failed_names    = @mutex.synchronize { @failed_servers.to_set { |f| f[:name] } }
-
-      servers.each do |server_config|
-        srv_name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
-        next if connected_names.include?(srv_name) || failed_names.include?(srv_name)
-        @mutex.synchronize do
-          @failed_servers << { name: srv_name, error: "global connection timeout (#{global_limit}s)" }
-        end
-      end
+      handle_global_timeout(servers, global_limit)
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     # Inject connected MCP clients and tools into robot(s).
     #
@@ -202,6 +170,34 @@ module AIA
     end
 
     private
+
+    def reset_connection_state
+      @connected_clients = {}
+      @connected_tools   = []
+      @failed_servers    = []
+    end
+
+    def launch_server_threads(servers, multi, logger)
+      servers.map do |server_config|
+        name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
+        spinner = multi.register("[:spinner] #{name}")
+        Thread.new(server_config, name, spinner) { |cfg, srv_name, sp| connect_one(cfg, srv_name, sp, logger) }
+      end
+    end
+
+    def handle_global_timeout(servers, global_limit)
+      logger = AIA::LoggerManager.mcp_logger
+      logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
+
+      connected_names = @mutex.synchronize { @connected_clients.keys.to_set }
+      failed_names    = @mutex.synchronize { @failed_servers.to_set { |f| f[:name] } }
+
+      servers.each do |server_config|
+        srv_name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
+        next if connected_names.include?(srv_name) || failed_names.include?(srv_name)
+        @mutex.synchronize { @failed_servers << { name: srv_name, error: "global connection timeout (#{global_limit}s)" } }
+      end
+    end
 
     # Read global MCP connection timeout from config.
     # Falls back to 120s if config is unavailable.

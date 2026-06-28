@@ -385,20 +385,25 @@ module AIA
       paths.plugins_dir = plugins_dir_env
     end
 
-    # rubocop:disable Metrics/AbcSize
     def expand_paths
-      paths.aia_dir = File.expand_path(paths.aia_dir) if paths.aia_dir
-      paths.config_file = File.expand_path(paths.config_file) if paths.config_file
-      paths.plugins_dir = File.expand_path(paths.plugins_dir) if paths.plugins_dir
-      prompts.dir = File.expand_path(prompts.dir) if prompts.dir
-      prompts.roles_dir = File.expand_path(prompts.roles_dir) if prompts.roles_dir
-      roles.dir = File.expand_path(roles.dir) if roles.respond_to?(:dir) && roles.dir
-      skills.dir = File.expand_path(skills.dir) if skills.respond_to?(:dir) && skills.dir
-      tools.dir  = File.expand_path(tools.dir)  if tools.respond_to?(:dir)  && tools.dir
-      output.history_file = File.expand_path(output.history_file) if output.history_file
-      rules.dir = File.expand_path(rules.dir) if rules.respond_to?(:dir) && rules.dir
+      expand_path_on(paths, :aia_dir)
+      expand_path_on(paths, :config_file)
+      expand_path_on(paths, :plugins_dir)
+      expand_path_on(prompts, :dir)
+      expand_path_on(prompts, :roles_dir)
+      expand_path_on(roles, :dir)
+      expand_path_on(skills, :dir)
+      expand_path_on(tools, :dir)
+      expand_path_on(output, :history_file)
+      expand_path_on(rules, :dir)
     end
-    # rubocop:enable Metrics/AbcSize
+
+    def expand_path_on(obj, method_name)
+      return unless obj.respond_to?(method_name)
+      val = obj.send(method_name)
+      return unless val
+      obj.send(:"#{method_name}=", File.expand_path(val))
+    end
 
     def ensure_arrays
       self.pipeline = [] if pipeline.nil?

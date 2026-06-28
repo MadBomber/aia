@@ -153,15 +153,13 @@ module AIA
           else
             break  # entire remaining chunk is thinking — discard
           end
+        elsif (idx = text.index('<think>'))
+          output << text[0...idx]
+          in_think_block = true
+          text = text[(idx + '<think>'.length)..]
         else
-          if (idx = text.index('<think>'))
-            output << text[0...idx]
-            in_think_block = true
-            text = text[(idx + '<think>'.length)..]
-          else
-            output << text
-            break
-          end
+          output << text
+          break
         end
       end
 

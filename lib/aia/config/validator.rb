@@ -32,11 +32,7 @@ module AIA
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
         handle_stdin_as_prompt(config)
-        return :early_exit if handle_dump_config(config) == :early_exit
-        return :early_exit if handle_mcp_list(config) == :early_exit
-        return :early_exit if handle_list_tools(config) == :early_exit
-        return :early_exit if handle_list_skills(config) == :early_exit
-        return :early_exit if handle_completion_script(config) == :early_exit
+        return :early_exit if handle_early_exits(config) == :early_exit
         validate_required_prompt_id(config)
         process_role_configuration(config)
         validate_plugins_dir(config)
@@ -47,6 +43,14 @@ module AIA
         validate_pipeline_prompts(config)
 
         config
+      end
+
+      def handle_early_exits(config)
+        return :early_exit if handle_dump_config(config)       == :early_exit
+        return :early_exit if handle_mcp_list(config)          == :early_exit
+        return :early_exit if handle_list_tools(config)        == :early_exit
+        return :early_exit if handle_list_skills(config)       == :early_exit
+        :early_exit if handle_completion_script(config) == :early_exit
       end
 
       def process_stdin_content

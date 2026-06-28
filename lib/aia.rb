@@ -143,54 +143,48 @@ module AIA
     end
 
     def run
-      # Parse CLI arguments
       cli_overrides = CLIParser.parse
-
-      # Create config with CLI overrides
       @config = Config.setup(cli_overrides)
-
-      # Validate and tailor configuration (handles --dump early exit)
       return if ConfigValidator.tailor(@config) == :early_exit
 
       PluginLoader.load!(@config)
-
-      # In interactive chat, watch the plugins directory and live-reload changes
-      # (new files loaded, edited files reloaded, deleted files removed).
-      if @config.flags.chat
-        @plugin_monitor = PluginMonitor.new(@config).start
-        at_exit { @plugin_monitor&.stop }
-      end
-
-      # Configure RobotLab loggers and providers once at startup
+      start_plugin_monitor
       RobotFactory.setup(@config)
-
-      # Load Fzf if fuzzy search is enabled and fzf is installed
-      if @config.flags.fuzzy
-        begin
-          if system('which fzf >/dev/null 2>&1')
-            require_relative 'aia/fzf'
-          else
-            $stderr.puts 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
-          end
-        rescue StandardError => e
-          $stderr.puts "Warning: Failed to load fzf: #{e.message}"
-        end
-      end
-
-      prompt_handler = PromptHandler.new
-
-      # In v2, robot is built by RobotFactory inside Session.start
-      # AIA.client is set there as well.
-
-      session = Session.new(prompt_handler)
-      at_exit { session.cleanup }
-      session.start
+      load_fzf_integration
+      start_session
     rescue AIA::ConfigurationError => e
       $stderr.puts e.message
       exit 1
     rescue AIA::Error => e
       $stderr.puts e.message
       exit 1
+    end
+
+    private
+
+    def start_plugin_monitor
+      return unless @config.flags.chat
+
+      @plugin_monitor = PluginMonitor.new(@config).start
+      at_exit { @plugin_monitor&.stop }
+    end
+
+    def load_fzf_integration
+      return unless @config.flags.fuzzy
+
+      if system('which fzf >/dev/null 2>&1')
+        require_relative 'aia/fzf'
+      else
+        $stderr.puts 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
+      end
+    rescue StandardError => e
+      $stderr.puts "Warning: Failed to load fzf: #{e.message}"
+    end
+
+    def start_session
+      session = Session.new(PromptHandler.new)
+      at_exit { session.cleanup }
+      session.start
     end
   end
 end

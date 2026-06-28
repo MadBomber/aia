@@ -76,100 +76,114 @@ module AIA
                      ui_presenter: @ui_presenter)
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
     def run_loop
-      # rubocop:disable Metrics/BlockLength
       loop do
         follow_up_prompt = @ui_presenter.ask_question
-
-        break if follow_up_prompt.nil? || follow_up_prompt.strip.downcase == "exit" || follow_up_prompt.strip.empty?
+        break if should_exit_chat?(follow_up_prompt)
 
         log_user_input(follow_up_prompt)
 
-        if follow_up_prompt.strip.start_with?('/')
-          if @directive_processor.directive?(follow_up_prompt)
-            follow_up_prompt = process_directive(follow_up_prompt)
-            # A directive (e.g. /model, /config) may have rebuilt AIA.client;
-            # re-bind the loop's robot so the next prompt uses the new model
-            # instead of the one the session started with.
-            rebind_robot_if_rebuilt
-            next if follow_up_prompt.nil?
-          else
-            name = follow_up_prompt.strip.split.first
-            @ui_presenter.display_info("Unknown directive: #{name}  (use /help to see available directives)")
-            next
-          end
-        end
+        processed_prompt = resolve_input(follow_up_prompt)
+        next if processed_prompt.nil?
 
-        begin
-          processed_prompt = PM.parse_string(follow_up_prompt).to_s
-          next if processed_prompt.nil?
-        rescue StandardError => e
-          @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
-          next
-        end
+        next if model_switch_handled?
+        next if special_routing_handled?(processed_prompt, @robot)
 
-        # Check for model switch intent (explicit user request takes priority)
-        if @model_switch_handler.handle(HandlerContext.new(config: AIA.config))
-          update_robot
-          next
-        end
-
-        active_robot = @robot
-
-        # Check for special execution modes (/verify, /decompose, /concurrent)
-        if @special_mode_handler.handle(processed_prompt)
-          clear_turn_mcp_filter
-          next
-        end
-
-        # @mention routing — send to specific robot(s) in the network
-        if @mention_router.handle(HandlerContext.new(robot: active_robot, prompt: processed_prompt))
-          clear_turn_mcp_filter
-          next
-        end
-
-        # Debug: show actual tools available to the LLM vs KBS-filtered list
-        log_robot_tools(active_robot)
-
-        # Resolve tool list via strategy (A=KBS, B=TF-IDF, or comparison)
-        resolved_tools = @tool_filter_strategy.resolve(processed_prompt)
-        if (AIA.debug? || AIA.verbose?) && resolved_tools
-          puts "\nFiltered tools (#{resolved_tools.size}): #{resolved_tools.join(', ')}"
-        end
-        # The session always holds a crew (Network). A plain turn runs the chief
-        # directly so token streaming is preserved; aggregation modes (consensus /
-        # parallel / pipeline) run the whole network.
-        turn_target = aggregation_mode? ? active_robot : active_robot.chief
-        begin
-          result, streamed_content, elapsed = @streaming_runner.run(
-            turn_target, processed_prompt, tools: resolved_tools
-          )
-        rescue StandardError => e
-          @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
-          clear_turn_mcp_filter
-          next
-        end
-
-        # Increment shared memory turn counter for multi-model networks
-        if @robot.respond_to?(:memory) && @robot.memory.respond_to?(:data)
-          data = @robot.memory.data
-          count = data.respond_to?(:turn_count) ? (data.turn_count || 0) : 0
-          data.turn_count = count + 1
-        end
-
-        present_result(result,
-                       streamed_content: streamed_content,
-                       prompt: processed_prompt,
-                       elapsed: elapsed,
-                       ui_presenter: @ui_presenter,
-                       tracker: @tracker)
-
-        # Clear per-turn MCP filter for next turn
+        execute_and_present(processed_prompt, @robot)
         clear_turn_mcp_filter
       end
-      # rubocop:enable Metrics/BlockLength
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
+    end
+
+    def should_exit_chat?(input)
+      input.nil? || input.strip.downcase == "exit" || input.strip.empty?
+    end
+
+    def resolve_input(follow_up_prompt)
+      if follow_up_prompt.strip.start_with?('/')
+        resolve_directive(follow_up_prompt)
+      else
+        parse_prompt_string(follow_up_prompt)
+      end
+    end
+
+    def resolve_directive(follow_up_prompt)
+      if @directive_processor.directive?(follow_up_prompt)
+        result = process_directive(follow_up_prompt)
+        # A directive (e.g. /model, /config) may have rebuilt AIA.client;
+        # re-bind so the next prompt uses the new model.
+        rebind_robot_if_rebuilt
+        result
+      else
+        name = follow_up_prompt.strip.split.first
+        @ui_presenter.display_info("Unknown directive: #{name}  (use /help to see available directives)")
+        nil
+      end
+    end
+
+    def parse_prompt_string(raw)
+      PM.parse_string(raw).to_s
+    rescue StandardError => e
+      @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
+      nil
+    end
+
+    def model_switch_handled?
+      return false unless @model_switch_handler.handle(HandlerContext.new(config: AIA.config))
+
+      update_robot
+      true
+    end
+
+    def special_routing_handled?(processed_prompt, active_robot)
+      if @special_mode_handler.handle(processed_prompt)
+        clear_turn_mcp_filter
+        return true
+      end
+
+      if @mention_router.handle(HandlerContext.new(robot: active_robot, prompt: processed_prompt))
+        clear_turn_mcp_filter
+        return true
+      end
+
+      false
+    end
+
+    def execute_and_present(processed_prompt, active_robot)
+      log_robot_tools(active_robot)
+
+      resolved_tools = @tool_filter_strategy.resolve(processed_prompt)
+      if (AIA.debug? || AIA.verbose?) && resolved_tools
+        puts "\nFiltered tools (#{resolved_tools.size}): #{resolved_tools.join(', ')}"
+      end
+
+      # Plain turn runs the chief directly; aggregation modes run the whole network.
+      turn_target = aggregation_mode? ? active_robot : active_robot.chief
+      result, streamed_content, elapsed = run_streaming_turn(turn_target, processed_prompt, resolved_tools)
+      return unless result
+
+      increment_turn_counter
+      present_result(result,
+                     streamed_content: streamed_content,
+                     prompt: processed_prompt,
+                     elapsed: elapsed,
+                     ui_presenter: @ui_presenter,
+                     tracker: @tracker)
+    end
+
+    def run_streaming_turn(turn_target, processed_prompt, resolved_tools)
+      @streaming_runner.run(turn_target, processed_prompt, tools: resolved_tools)
+    rescue StandardError => e
+      @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
+      clear_turn_mcp_filter
+      nil
+    end
+
+    def increment_turn_counter
+      return unless @robot.respond_to?(:memory) && @robot.memory.respond_to?(:data)
+
+      data = @robot.memory.data
+      count = data.respond_to?(:turn_count) ? (data.turn_count || 0) : 0
+      data.turn_count = count + 1
     end
 
     # Clear per-turn MCP server filter so next turn sees all

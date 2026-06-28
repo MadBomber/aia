@@ -295,10 +295,15 @@ module AIA
         end
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def setup_utility_options(opts, options)
         opts.separator "\nUtility Options:"
+        setup_logging_options(opts, options)
+        setup_output_options(opts, options)
+        setup_mcp_options(opts, options)
+        setup_meta_options(opts, options)
+      end
 
+      def setup_logging_options(opts, options)
         opts.on("--log-level LEVEL", "Set log level (debug|info|warn|error|fatal)") do |level|
           level = level.downcase
           unless %w[debug info warn error fatal].include?(level)
@@ -330,9 +335,20 @@ module AIA
         opts.on("-v", "--[no-]verbose", "Enable verbose output") do |value|
           options[:verbose] = value
         end
+      end
 
+      def setup_output_options(opts, options)
         opts.on("--[no-]thinking", "Show raw thinking/reasoning blocks in output (default: off)") do |v|
           options[:thinking] = v
+        end
+
+        opts.on("--tokens", "Display token usage and elapsed response time after each turn") do
+          options[:tokens] = true
+        end
+
+        opts.on("--cost", "Display cost calculations and elapsed time (implies --tokens)") do
+          options[:cost] = true
+          options[:tokens] = true
         end
 
         opts.on("--refresh DAYS", Integer, "Set refresh interval (days) for cached models list (default: 7)") do |days|
@@ -346,16 +362,9 @@ module AIA
         opts.on("--completion SHELL", "Generate shell completion script (bash|zsh|fish) and exit") do |shell|
           options[:completion] = shell
         end
+      end
 
-        opts.on("--tokens", "Display token usage and elapsed response time after each turn") do
-          options[:tokens] = true
-        end
-
-        opts.on("--cost", "Display cost calculations and elapsed time (implies --tokens)") do
-          options[:cost] = true
-          options[:tokens] = true  # --cost implies --tokens
-        end
-
+      def setup_mcp_options(opts, options)
         opts.on("--mcp FILE", "Load MCP server(s) from JSON file (repeatable)") do |file|
           options[:mcp_files] ||= []
           options[:mcp_files] << file
@@ -378,52 +387,54 @@ module AIA
           options[:mcp_skip] ||= []
           options[:mcp_skip] += names.split(',').map(&:strip)
         end
+      end
 
+      def setup_meta_options(opts, _options)
         opts.on("--version", "Show version and exit") do
           puts AIA::VERSION
           exit
         end
 
-        # rubocop:disable Metrics/BlockLength
         opts.on("-h", "--help", "Show this help and exit") do
-          puts <<~HELP
-
-            AIA - Your AI Assistant (v#{AIA::VERSION})
-              - Manage AI prompts with embedded directives
-              - Integrate with shell and Ruby (ERB) processing
-              - Run batch processes and prompt pipelines
-              - Engage in interactive chat sessions
-              - Use custom tools and MCP servers
-              - Compare the same prompt across multiple models (--model m1,m2,m3 [--consensus])
-              - Measure response time and token usage with --tokens; add cost with --cost
-              - Benchmark concurrent vs. serial performance (/decompose reports speedup metrics)
-
-          HELP
-
-          puts opts
-
-          puts <<~EXTRA
-
-            Explore Further:
-            - AIA GitHub Repository: https://github.com/MadBomber/aia
-            - AIA Documentation:     https://madbomber.github.io/aia
-            - AIA Changelog:         https://github.com/MadBomber/aia/blob/main/CHANGELOG.md
-            - AIA Examples:          https://github.com/MadBomber/aia/tree/main/examples
-            - Report an Issue:       https://github.com/MadBomber/aia/issues
-            - RubyLLM Documentation: https://rubyllm.com
-            - RubyLLM Tool Docs:     https://rubyllm.com/guides/tools
-            - PromptManager Docs:    https://madbomber.github.io/prompt_manager
-            - ERB Documentation:     https://docs.ruby-lang.org/en/master/ERB.html
-            - MCP Specification:     https://modelcontextprotocol.io
-            - MCP Client Docs:       https://github.com/patvice/ruby_llm-mcp/blob/main/README.md
-
-          EXTRA
-
+          print_help(opts)
           exit
         end
-        # rubocop:enable Metrics/BlockLength
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+      def print_help(opts)
+        puts <<~HELP
+
+          AIA - Your AI Assistant (v#{AIA::VERSION})
+            - Manage AI prompts with embedded directives
+            - Integrate with shell and Ruby (ERB) processing
+            - Run batch processes and prompt pipelines
+            - Engage in interactive chat sessions
+            - Use custom tools and MCP servers
+            - Compare the same prompt across multiple models (--model m1,m2,m3 [--consensus])
+            - Measure response time and token usage with --tokens; add cost with --cost
+            - Benchmark concurrent vs. serial performance (/decompose reports speedup metrics)
+
+        HELP
+
+        puts opts
+
+        puts <<~EXTRA
+
+          Explore Further:
+          - AIA GitHub Repository: https://github.com/MadBomber/aia
+          - AIA Documentation:     https://madbomber.github.io/aia
+          - AIA Changelog:         https://github.com/MadBomber/aia/blob/main/CHANGELOG.md
+          - AIA Examples:          https://github.com/MadBomber/aia/tree/main/examples
+          - Report an Issue:       https://github.com/MadBomber/aia/issues
+          - RubyLLM Documentation: https://rubyllm.com
+          - RubyLLM Tool Docs:     https://rubyllm.com/guides/tools
+          - PromptManager Docs:    https://madbomber.github.io/prompt_manager
+          - ERB Documentation:     https://docs.ruby-lang.org/en/master/ERB.html
+          - MCP Specification:     https://modelcontextprotocol.io
+          - MCP Client Docs:       https://github.com/patvice/ruby_llm-mcp/blob/main/README.md
+
+        EXTRA
+      end
 
       # Parse model string into array of ModelSpec-compatible hashes
       #
