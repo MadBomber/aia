@@ -306,8 +306,11 @@ module AIA
     def log_robot_tools(robot)
       return unless AIA.debug?
 
-      local = Array(robot.local_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
-      mcp   = Array(robot.mcp_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
+      # active_robot is always a Network; resolve to the chief for tool inspection.
+      target = robot.respond_to?(:chief) ? robot.chief : robot
+
+      local = Array(target.local_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
+      mcp   = Array(target.mcp_tools).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
 
       $stderr.puts "[DEBUG] Tool filter strategy: #{@tool_filter_strategy.active_strategy_label}"
       $stderr.puts "[DEBUG] Robot local_tools (#{local.size}): #{local.join(', ')}"

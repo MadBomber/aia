@@ -34,11 +34,21 @@ module AIA
       @spinner.auto_spin
       streamed = []
       header_printed = false
+      in_think_block = false  # tracks position inside a <think>...</think> span across chunks
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       streaming_block = proc do |chunk|
         text = chunk.respond_to?(:content) ? chunk.content.to_s : chunk.to_s
         next if text.empty?
+
+        # qwen3 and similar local reasoning models embed thinking inline in the
+        # content stream wrapped in <think>...</think> tags. Filter them out
+        # unless --thinking is on. Tag boundaries may split across chunks, so
+        # in_think_block persists across calls via the closure.
+        unless show_thinking?
+          text, in_think_block = filter_thinking(text, in_think_block)
+          next if text.empty?
+        end
 
         unless header_printed
           @spinner.stop
@@ -120,6 +130,42 @@ module AIA
       local = robot.respond_to?(:local_tools) ? Array(robot.local_tools) : []
       mcp   = robot.respond_to?(:mcp_tools)   ? Array(robot.mcp_tools)   : []
       (local + mcp).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
+    end
+
+    def show_thinking?
+      AIA.config&.flags&.thinking
+    end
+
+    # Strip <think>...</think> spans from a streaming chunk, handling the case
+    # where tag boundaries fall between chunk deliveries.
+    #
+    # @param text [String] raw chunk text
+    # @param in_think_block [Boolean] whether a <think> tag is currently open
+    # @return [Array(String, Boolean)] [filtered_text, updated_in_think_block]
+    def filter_thinking(text, in_think_block)
+      output = +''
+
+      until text.empty?
+        if in_think_block
+          if (idx = text.index('</think>'))
+            in_think_block = false
+            text = text[(idx + '</think>'.length)..]
+          else
+            break  # entire remaining chunk is thinking — discard
+          end
+        else
+          if (idx = text.index('<think>'))
+            output << text[0...idx]
+            in_think_block = true
+            text = text[(idx + '<think>'.length)..]
+          else
+            output << text
+            break
+          end
+        end
+      end
+
+      [output, in_think_block]
     end
   end
 end

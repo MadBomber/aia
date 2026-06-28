@@ -172,6 +172,7 @@ module AIA
       tool_filter_load: %i[flags tool_filter_load],
       tool_filter_save: %i[flags tool_filter_save],
       allow_ruby_eval: %i[flags allow_ruby_eval],
+      thinking: %i[flags thinking],
       tool_filter_timeout_s: %i[tool_filter timeout_s],
       concurrent_auto: %i[concurrency auto],
       # llm section

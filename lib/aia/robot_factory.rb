@@ -15,6 +15,11 @@ require_relative 'history_transfer'
 
 module AIA
   class RobotFactory
+    # The max_tokens default from defaults.yml — optimised for cloud APIs that treat
+    # it as an output-only cap. Local providers (Ollama, LM Studio) bound input+output
+    # to a shared context window, so sending this value causes truncation on long turns.
+    DEFAULT_LOCAL_MAX_TOKENS = 32_767
+
     class << self
       # One-time startup configuration of RobotLab loggers and providers.
       # Must be called once before the first build (e.g., in AIA.run).
@@ -144,7 +149,14 @@ module AIA
         params[:temperature] = temp if temp && model_supports_temperature?(model_spec)
 
         max = config.llm.max_tokens
-        params[:max_tokens] = max if max
+        # Local providers (Ollama, LM Studio) have a small total context window
+        # (input + output combined, typically 32768 tokens for qwen3-class models).
+        # Sending the cloud default of 32767 as num_predict leaves almost no room
+        # once the input context grows across turns, causing mid-response truncation.
+        # Skip max_tokens for local providers when it's still at the cloud default;
+        # honour it when the user has explicitly set a smaller value.
+        local = model_spec&.local_provider?
+        params[:max_tokens] = max if max && !(local && max == DEFAULT_LOCAL_MAX_TOKENS)
 
         tp = config.llm.top_p
         params[:top_p] = tp if tp

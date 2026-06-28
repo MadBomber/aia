@@ -154,6 +154,7 @@ defaults:
     tool_filter_save: false
     allow_ruby_eval: false
     paint: false
+    thinking: false
 
   # ---------------------------------------------------------------------------
   # Tool Filter Configuration

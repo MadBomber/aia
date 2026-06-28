@@ -331,6 +331,10 @@ module AIA
           options[:verbose] = value
         end
 
+        opts.on("--[no-]thinking", "Show raw thinking/reasoning blocks in output (default: off)") do |v|
+          options[:thinking] = v
+        end
+
         opts.on("--refresh DAYS", Integer, "Set refresh interval (days) for cached models list (default: 7)") do |days|
           options[:refresh] = days || 0
         end
