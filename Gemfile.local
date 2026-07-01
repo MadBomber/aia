@@ -15,4 +15,4 @@ end
 gemspec
 
 gem 'robot_lab', path: '../robot_lab'
-gem 'ractor_queue', path: '../../ractor_queue'
+gem 'ractor_queue', path: '../../../ractor_queue'
