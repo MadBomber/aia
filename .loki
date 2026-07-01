@@ -50,22 +50,63 @@ class Tasks
   desc "Check for structural duplication with Flay"
   def flay = sh "bundle exec rake flay_check > flay_output.txt 2>&1"
 
+  desc "Check code smells with Reek (fails only on new or worsened files)"
+  def reek
+    current  = reek_scan
+    baseline = load_reek_baseline
+
+    new_files = current.reject { |f, _| baseline.key?(f) }
+    worsened  = current.select { |f, c| baseline.key?(f) && c > baseline[f] }
+    improved  = baseline.count { |f, c| current.key?(f) && current[f] < c }
+    cleaned   = baseline.keys - current.keys
+
+    total_current  = current.values.sum
+    total_baseline = baseline.values.sum
+
+    puts "\nReek: #{total_current} warning(s) across #{current.size} file(s) " \
+         "(#{total_baseline} grandfathered across #{baseline.size} file(s))."
+    puts "  #{cleaned.size} file(s) fully clean — run `asgard reek_baseline` to prune." unless cleaned.empty?
+    puts "  #{improved} file(s) improved — run `asgard reek_baseline` to ratchet down." unless improved.zero?
+
+    problems = new_files.map { |f, c| format("NEW      %3d warning(s): %s", c, f) } +
+               worsened.map  { |f, c| format("WORSENED %3d -> %3d: %s", baseline[f], c, f) }
+
+    if problems.empty?
+      puts "Reek quality gate passed (no new or worsened files)."
+    else
+      puts "\nReek quality gate FAILED:"
+      problems.each { |p| puts "  #{p}" }
+      abort "\nReek: #{problems.size} file(s) regressed. Fix smells, or `asgard reek_baseline` if intentional."
+    end
+  end
+
+  desc "Regenerate the Reek baseline (grandfathers current smell counts per file)"
+  def reek_baseline
+    require 'fileutils'
+    FileUtils.mkdir_p('.quality')
+    warnings = reek_scan
+    body = warnings.sort_by { |f, _| f }.map { |f, c| "#{c}\t#{f}" }.join("\n")
+    File.write('.quality/reek_baseline.txt', body.empty? ? '' : "#{body}\n")
+    puts "Wrote #{warnings.size} file(s) with smells to .quality/reek_baseline.txt"
+  end
+
   desc "Check code style with RuboCop"
   def rubocop = sh "bundle exec rubocop > rubocop_output.txt 2>&1"
 
   desc "Auto-correct RuboCop offenses"
   def rubocop_fix = sh "bundle exec rubocop -a"
 
-  desc "Run all quality gates with per-gate pass/fail summary"
+  desc "Run all quality gates: tests + Flog + Flay + Reek + RuboCop"
   def quality
     gates = {
-      test:    "bundle exec rake test",
-      flog:    "bundle exec rake flog_check > flog_output.txt 2>&1",
-      flay:    "bundle exec rake flay_check > flay_output.txt 2>&1",
-      rubocop: "bundle exec rubocop         > rubocop_output.txt 2>&1"
+      test:    -> { system("bundle exec rake test") },
+      flog:    -> { system("bundle exec rake flog_check   > flog_output.txt 2>&1") },
+      flay:    -> { system("bundle exec rake flay_check   > flay_output.txt 2>&1") },
+      reek:    -> { reek_gate },
+      rubocop: -> { system("bundle exec rubocop           > rubocop_output.txt 2>&1") }
     }
 
-    results = gates.transform_values { |cmd| system(cmd) }
+    results = gates.transform_values { |gate| gate.call }
 
     puts "\n  Quality Gate Summary"
     puts "  #{'─' * 32}"
@@ -147,4 +188,44 @@ class Tasks
 
   def backup_loki_files  = sh "backup_just.rb",  silent: true
   def backup_envrc_files = sh "backup_envrc.rb", silent: true
+
+  def reek_scan
+    require 'reek'
+    require 'reek/configuration/app_configuration'
+    config_path = Pathname.new('.reek.yml')
+    config = config_path.exist? ? Reek::Configuration::AppConfiguration.from_path(config_path) : nil
+    sources = Dir.glob('lib/**/*.rb') + Dir.glob('plugins/**/*.rb')
+    sources.each_with_object({}) do |f, acc|
+      examiner = Reek::Examiner.new(File.read(f), configuration: config)
+      count = examiner.smells.size
+      acc[f] = count if count > 0
+    end
+  end
+
+  def load_reek_baseline
+    path = File.join(@@rr, '.quality', 'reek_baseline.txt')
+    return {} unless File.exist?(path)
+
+    File.readlines(path).each_with_object({}) do |line, acc|
+      count, file = line.strip.split("\t", 2)
+      acc[file] = count.to_i if file && !file.empty?
+    end
+  end
+
+  def reek_gate
+    current  = reek_scan
+    baseline = load_reek_baseline
+    new_files = current.reject { |f, _| baseline.key?(f) }
+    worsened  = current.select { |f, c| baseline.key?(f) && c > baseline[f] }
+    (new_files.empty? && worsened.empty?).tap do |ok|
+      File.write('reek_output.txt', ok ? "Reek quality gate passed.\n" : reek_failure_report(new_files, worsened, current, baseline))
+    end
+  end
+
+  def reek_failure_report(new_files, worsened, current, baseline)
+    lines  = ["Reek quality gate FAILED:\n"]
+    lines += new_files.map { |f, c| format("  NEW      %3d warning(s): %s\n", c, f) }
+    lines += worsened.map  { |f, c| format("  WORSENED %3d -> %3d: %s\n", baseline[f], c, f) }
+    lines.join
+  end
 end
