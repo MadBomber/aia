@@ -28,7 +28,7 @@ class WordNetExpanderTest < Minitest::Test
   def test_synonyms_for_includes_wordnet_synonyms
     skip "wn not installed" unless AIA::ToolFilter::WordNetExpander.available?
     result = AIA::ToolFilter::WordNetExpander.synonyms_for("search")
-    assert(result.any? { |w| %w[seek hunt explore].include?(w) },
+    assert(result.intersect?(%w[seek hunt explore]),
            "Expected synonyms of 'search' to include seek, hunt, or explore. Got: #{result.inspect}")
   end
 

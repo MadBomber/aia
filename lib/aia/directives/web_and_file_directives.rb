@@ -49,8 +49,11 @@ module AIA
       entries = skill_dirs.select do |e|
         next true if positive_terms.empty? && negative_terms.empty?
         text = read_front_matter_text(File.join(dir, e, 'SKILL.md'))
+        # text is a String; Array#intersect? would raise TypeError
+        # rubocop:disable Style/ArrayIntersect
         positive_terms.all? { |t| text.include?(t) } &&
           negative_terms.none? { |t| text.include?(t) }
+        # rubocop:enable Style/ArrayIntersect
       end.sort
 
       if entries.empty?

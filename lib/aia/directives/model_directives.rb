@@ -141,8 +141,11 @@ module AIA
           entry = "- ollama/#{name} (size: #{size}, modified: #{modified})"
           entry_lc = entry.downcase
 
+          # entry_lc is a String; Array#intersect? would raise TypeError
+          # rubocop:disable Style/ArrayIntersect
           show_it = positive_terms.empty? || positive_terms.any? { |q| entry_lc.include?(q) }
           show_it &&= negative_terms.none? { |q| entry_lc.include?(q) }
+          # rubocop:enable Style/ArrayIntersect
 
           if show_it
             puts entry
@@ -192,8 +195,11 @@ module AIA
           entry = "- lms/#{name}"
           entry_lc = entry.downcase
 
+          # entry_lc is a String; Array#intersect? would raise TypeError
+          # rubocop:disable Style/ArrayIntersect
           show_it = positive_terms.empty? || positive_terms.any? { |q| entry_lc.include?(q) }
           show_it &&= negative_terms.none? { |q| entry_lc.include?(q) }
+          # rubocop:enable Style/ArrayIntersect
 
           if show_it
             puts entry
