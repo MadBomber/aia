@@ -104,9 +104,7 @@ module AIA
         tools = tools.select do |t|
           name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
           # name is a String; Array#intersect? would raise TypeError
-          # rubocop:disable Style/ArrayIntersect
           allowed_list.any? { |a| name.include?(a) }
-          # rubocop:enable Style/ArrayIntersect
         end
       end
 
@@ -115,9 +113,7 @@ module AIA
         tools = tools.reject do |t|
           name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
           # name is a String; Array#intersect? would raise TypeError
-          # rubocop:disable Style/ArrayIntersect
           rejected_list.any? { |r| name.include?(r) }
-          # rubocop:enable Style/ArrayIntersect
         end
       end
 
