@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-gem 'ractor_queue', path: '../../ractor_queue'
+# gem 'ractor_queue  # dependency of robot_lab
 
 group :development do
   gem 'aigcm'
