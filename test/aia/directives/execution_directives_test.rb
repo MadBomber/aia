@@ -90,11 +90,12 @@ class ExecutionDirectivesTest < Minitest::Test
   # /ruby directive — guarded by allow_ruby_eval flag
   # ---------------------------------------------------------------------------
 
-  def test_ruby_returns_error_when_allow_ruby_eval_not_set
+  def test_ruby_returns_empty_string_when_allow_ruby_eval_not_set
     @mock_flags.allow_ruby_eval = false
-    result = @instance.ruby(['1 + 1'])
-    assert_match(/allow_ruby_eval/, result)
-    refute_equal '2', result
+    result = nil
+    out, = capture_io { result = @instance.ruby(['1 + 1']) }
+    assert_equal '', result
+    assert_match(/allow_ruby_eval/, out)
   end
 
   def test_ruby_evaluates_code_when_allowed
