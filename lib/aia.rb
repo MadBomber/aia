@@ -147,6 +147,8 @@ module AIA
       @config = Config.setup(cli_overrides)
       return if ConfigValidator.tailor(@config) == :early_exit
 
+      log_startup
+
       PluginLoader.load!(@config)
       start_plugin_monitor
       RobotFactory.setup(@config)
@@ -161,6 +163,15 @@ module AIA
     end
 
     private
+
+    # Record startup in all three log files. Only aia.log gets the full
+    # configuration dump; llm.log and mcp.log just note that AIA started,
+    # since their configuration is already covered by the aia.log entry.
+    def log_startup
+      LoggerManager.aia_logger.debug('AIA started up.', @config.to_h)
+      LoggerManager.llm_logger.debug('AIA started up.')
+      LoggerManager.mcp_logger.debug('AIA started up.')
+    end
 
     def start_plugin_monitor
       return unless @config.flags.chat

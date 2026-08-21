@@ -49,4 +49,22 @@ class AIATest < Minitest::Test
     AIA.reset!  # second call should not raise
     assert_nil AIA.instance_variable_get(:@config)
   end
+
+  def test_log_startup_dumps_full_config_to_aia_log_only
+    AIA.instance_variable_set(:@config, AIA::Config.new)
+    AIA::LoggerManager.clear_test_logs!
+
+    AIA.send(:log_startup)
+
+    aia_entries = AIA::LoggerManager.test_entries(:aia)
+    llm_entries = AIA::LoggerManager.test_entries(:llm)
+    mcp_entries = AIA::LoggerManager.test_entries(:mcp)
+
+    startup_entry = aia_entries.find { |e| e.message == 'AIA started up.' }
+    refute_nil startup_entry
+    assert(startup_entry.attributes.keys.any? { |k| k.start_with?('flags.') })
+
+    assert(llm_entries.any? { |e| e.message == 'AIA started up.' })
+    assert(mcp_entries.any? { |e| e.message == 'AIA started up.' })
+  end
 end
