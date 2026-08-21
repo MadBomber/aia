@@ -31,7 +31,7 @@ module AIA
     desc "Compare responses from multiple models"
     # rubocop:disable Metrics/MethodLength
     def compare(args, context_manager = nil)
-      return 'Error: No prompt provided for comparison' if args.empty?
+      return report_error('Error: No prompt provided for comparison') if args.empty?
 
       prompt = nil
       models = []
@@ -47,8 +47,8 @@ module AIA
         end
       end
 
-      return 'Error: No prompt provided for comparison' unless prompt
-      return 'Error: No models specified. Use --models model1,model2,model3' if models.empty?
+      return report_error('Error: No prompt provided for comparison') unless prompt
+      return report_error('Error: No models specified. Use --models model1,model2,model3') if models.empty?
 
       puts "\nComparing responses for: #{prompt}\n"
       puts '=' * 80
@@ -83,6 +83,14 @@ module AIA
     alias cmp compare
 
     # --- helpers (no desc → not registered) ---
+
+    # Log and print a directive error, then return nil so the chat loop
+    # skips forwarding it to the robot (an error is not conversational output).
+    def report_error(msg)
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
+    end
 
     def show_local_models(current_models, positive_terms = nil, negative_terms = nil)
       require 'net/http'

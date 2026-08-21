@@ -440,13 +440,15 @@ class ModelsDirectiveTest < Minitest::Test
   def test_31_compare_returns_error_for_empty_args
     result = @instance.compare([])
 
-    assert_equal 'Error: No prompt provided for comparison', result
+    assert_nil result
+    assert_includes @captured_output.string, 'Error: No prompt provided for comparison'
   end
 
   def test_32_compare_returns_error_for_no_models
     result = @instance.compare(['test prompt'])
 
-    assert_equal 'Error: No models specified. Use --models model1,model2,model3', result
+    assert_nil result
+    assert_includes @captured_output.string, 'Error: No models specified. Use --models model1,model2,model3'
   end
 
   def test_33_compare_parses_models_argument

@@ -121,18 +121,21 @@ class ModelDirectivesTest < Minitest::Test
 
   def test_compare_returns_error_on_empty_args
     result = @instance.compare([])
-    assert_equal 'Error: No prompt provided for comparison', result
+    assert_nil result
+    assert_includes @captured.string, 'Error: No prompt provided for comparison'
   end
 
   def test_compare_returns_error_when_no_models_specified
     result = @instance.compare(['my prompt'])
-    assert_equal 'Error: No models specified. Use --models model1,model2,model3', result
+    assert_nil result
+    assert_includes @captured.string, 'Error: No models specified. Use --models model1,model2,model3'
   end
 
   def test_compare_returns_error_when_only_models_flag_given
     # --models provided but no prompt token
     result = @instance.compare(['--models', 'gpt-4'])
-    assert_equal 'Error: No prompt provided for comparison', result
+    assert_nil result
+    assert_includes @captured.string, 'Error: No prompt provided for comparison'
   end
 
   def test_compare_calls_rubyllm_for_each_model

@@ -12,21 +12,25 @@ module AIA
     desc "Fetch and include content from a webpage"
     def webpage(args, _context_manager = nil)
       if PUREMD_API_KEY.nil?
-        'ERROR: PUREMD_API_KEY is required in order to include a webpage'
-      else
-        url = args.shift.to_s.strip
-        puremd_url = "https://pure.md/#{url}"
-
-        response = Faraday.get(puremd_url) do |req|
-          req.headers['x-puremd-api-token'] = PUREMD_API_KEY
-        end
-
-        if response.status == 200
-          response.body
-        else
-          "Error: Status was #{response.status}\n#{ap response}"
-        end
+        msg = 'ERROR: PUREMD_API_KEY is required in order to include a webpage'
+        AIA::LoggerManager.aia_logger.error(msg)
+        puts msg
+        return nil
       end
+
+      url = args.shift.to_s.strip
+      puremd_url = "https://pure.md/#{url}"
+
+      response = Faraday.get(puremd_url) do |req|
+        req.headers['x-puremd-api-token'] = PUREMD_API_KEY
+      end
+
+      return response.body if response.status == 200
+
+      msg = "Error: Fetching #{url} returned status #{response.status}"
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
     end
     alias website webpage
     alias web webpage
@@ -117,7 +121,10 @@ module AIA
       content = Clipboard.paste
       content.to_s
     rescue StandardError => e
-      "Error: Unable to paste from clipboard - #{e.message}"
+      msg = "Error: Unable to paste from clipboard - #{e.message}"
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
     end
     alias clipboard paste
 

@@ -9,12 +9,12 @@ module AIA
     desc "Show TrakFlow ready tasks and project summary"
     def tasks(args, context_manager = nil)
       bridge = TrakFlowBridge.new
-      return "TrakFlow not available. Run 'tf init' to initialize a project." unless bridge.available?
+      return report_error("TrakFlow not available. Run 'tf init' to initialize a project.") unless bridge.available?
 
       if args.first == "summary"
-        bridge.project_summary || "No summary available."
+        bridge.project_summary || report_status("No summary available.")
       else
-        bridge.check_ready_tasks || "No ready tasks found."
+        bridge.check_ready_tasks || report_status("No ready tasks found.")
       end
     end
     alias tf tasks
@@ -22,23 +22,41 @@ module AIA
     desc "Create a TrakFlow plan from a description"
     def plan(args, context_manager = nil)
       bridge = TrakFlowBridge.new
-      return "TrakFlow not available. Run 'tf init' to initialize a project." unless bridge.available?
+      return report_error("TrakFlow not available. Run 'tf init' to initialize a project.") unless bridge.available?
 
       description = args.join(' ')
-      return "Usage: /plan <description>" if description.empty?
+      return report_error("Usage: /plan <description>") if description.empty?
 
-      bridge.create_task(description) || "Failed to create plan."
+      bridge.create_task(description) || report_error("Failed to create plan.")
     end
 
     desc "Create a TrakFlow task"
     def task(args, context_manager = nil)
       bridge = TrakFlowBridge.new
-      return "TrakFlow not available. Run 'tf init' to initialize a project." unless bridge.available?
+      return report_error("TrakFlow not available. Run 'tf init' to initialize a project.") unless bridge.available?
 
       title = args.join(' ')
-      return "Usage: /task <title>" if title.empty?
+      return report_error("Usage: /task <title>") if title.empty?
 
-      bridge.create_task(title) || "Failed to create task."
+      bridge.create_task(title) || report_error("Failed to create task.")
+    end
+
+    private
+
+    # Log and print a directive error, then return nil so the chat loop
+    # skips forwarding it to the robot (an error is not conversational output).
+    def report_error(msg)
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
+    end
+
+    # Same as report_error, but for a non-error empty-result status
+    # (e.g. "no ready tasks found") rather than a failure.
+    def report_status(msg)
+      AIA::LoggerManager.aia_logger.info(msg)
+      puts msg
+      nil
     end
   end
 end

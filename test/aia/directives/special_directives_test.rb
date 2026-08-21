@@ -3,6 +3,7 @@
 # test/aia/directives/special_directives_test.rb
 
 require_relative '../../test_helper'
+require_relative '../../../lib/aia/trakflow_bridge'
 
 class SpecialDirectivesTest < Minitest::Test
   def setup
@@ -17,6 +18,15 @@ class SpecialDirectivesTest < Minitest::Test
     AIA.stubs(:config).returns(@config)
     @turn_state = AIA::TurnState.new
     AIA.stubs(:turn_state).returns(@turn_state)
+
+    @original_stdout = $stdout
+    @captured_stdout = StringIO.new
+    $stdout = @captured_stdout
+  end
+
+  def teardown
+    $stdout = @original_stdout
+    super
   end
 
   # --- Execution Directives ---
@@ -56,44 +66,89 @@ class SpecialDirectivesTest < Minitest::Test
     assert defined?(AIA::TrakFlowDirectives)
   end
 
-  def test_tasks_returns_unavailable_when_not_initialized
+  def test_tasks_returns_nil_and_prints_unavailable_when_not_initialized
     TrakFlow.stubs(:initialized?).returns(false)
     directive = AIA::TrakFlowDirectives.new
     result = directive.tasks([], nil)
 
-    assert_includes result, "TrakFlow not available"
+    assert_nil result
+    assert_includes @captured_stdout.string, "TrakFlow not available"
   end
 
-  def test_plan_returns_unavailable_when_not_initialized
+  def test_tasks_returns_nil_and_prints_status_when_no_ready_tasks
+    stub_trakflow_available
+    AIA::TrakFlowBridge.any_instance.stubs(:check_ready_tasks).returns(nil)
+    directive = AIA::TrakFlowDirectives.new
+    result = directive.tasks([], nil)
+
+    assert_nil result
+    assert_includes @captured_stdout.string, "No ready tasks found"
+  end
+
+  def test_tasks_summary_returns_nil_and_prints_status_when_no_summary
+    stub_trakflow_available
+    AIA::TrakFlowBridge.any_instance.stubs(:project_summary).returns(nil)
+    directive = AIA::TrakFlowDirectives.new
+    result = directive.tasks(['summary'], nil)
+
+    assert_nil result
+    assert_includes @captured_stdout.string, "No summary available"
+  end
+
+  def test_plan_returns_nil_and_prints_unavailable_when_not_initialized
     TrakFlow.stubs(:initialized?).returns(false)
     directive = AIA::TrakFlowDirectives.new
     result = directive.plan([], nil)
 
-    assert_includes result, "TrakFlow not available"
+    assert_nil result
+    assert_includes @captured_stdout.string, "TrakFlow not available"
   end
 
-  def test_plan_returns_usage_when_no_args
+  def test_plan_returns_nil_and_prints_usage_when_no_args
     stub_trakflow_available
     directive = AIA::TrakFlowDirectives.new
     result = directive.plan([], nil)
 
-    assert_includes result, "Usage: /plan"
+    assert_nil result
+    assert_includes @captured_stdout.string, "Usage: /plan"
   end
 
-  def test_task_returns_unavailable_when_not_initialized
+  def test_plan_returns_nil_and_prints_error_when_create_task_fails
+    stub_trakflow_available
+    AIA::TrakFlowBridge.any_instance.stubs(:create_task).returns(nil)
+    directive = AIA::TrakFlowDirectives.new
+    result = directive.plan(%w[a new feature], nil)
+
+    assert_nil result
+    assert_includes @captured_stdout.string, "Failed to create plan"
+  end
+
+  def test_task_returns_nil_and_prints_unavailable_when_not_initialized
     TrakFlow.stubs(:initialized?).returns(false)
     directive = AIA::TrakFlowDirectives.new
     result = directive.task([], nil)
 
-    assert_includes result, "TrakFlow not available"
+    assert_nil result
+    assert_includes @captured_stdout.string, "TrakFlow not available"
   end
 
-  def test_task_returns_usage_when_no_args
+  def test_task_returns_nil_and_prints_usage_when_no_args
     stub_trakflow_available
     directive = AIA::TrakFlowDirectives.new
     result = directive.task([], nil)
 
-    assert_includes result, "Usage: /task"
+    assert_nil result
+    assert_includes @captured_stdout.string, "Usage: /task"
+  end
+
+  def test_task_returns_nil_and_prints_error_when_create_task_fails
+    stub_trakflow_available
+    AIA::TrakFlowBridge.any_instance.stubs(:create_task).returns(nil)
+    directive = AIA::TrakFlowDirectives.new
+    result = directive.task(%w[fix the bug], nil)
+
+    assert_nil result
+    assert_includes @captured_stdout.string, "Failed to create task"
   end
 
   def test_tf_is_alias_for_tasks

@@ -65,15 +65,16 @@ class WebAndFileDirectivesTest < Minitest::Test
   def test_paste_returns_error_string_when_clipboard_raises
     Clipboard.stubs(:paste).raises(StandardError, 'clipboard unavailable')
     result = @instance.paste
-    assert_match(/Error:.*Unable to paste/, result)
-    assert_match(/clipboard unavailable/, result)
+    assert_nil result
+    assert_match(/Error:.*Unable to paste/, @captured_stdout.string)
+    assert_match(/clipboard unavailable/, @captured_stdout.string)
   end
 
   def test_paste_does_not_raise_on_clipboard_error
     Clipboard.stubs(:paste).raises(RuntimeError, 'no display')
     result = @instance.paste
-    assert_kind_of String, result
-    assert_match(/Error/, result)
+    assert_nil result
+    assert_match(/Error/, @captured_stdout.string)
   end
 
   def test_clipboard_alias_exists
@@ -92,8 +93,9 @@ class WebAndFileDirectivesTest < Minitest::Test
   def test_webpage_returns_error_when_api_key_missing
     stub_const(AIA::WebAndFileDirectives, :PUREMD_API_KEY, nil) do
       result = @instance.webpage(['http://example.com'])
-      assert_match(/ERROR/, result)
-      assert_match(/PUREMD_API_KEY/, result)
+      assert_nil result
+      assert_match(/ERROR/, @captured_stdout.string)
+      assert_match(/PUREMD_API_KEY/, @captured_stdout.string)
     end
   end
 
@@ -109,11 +111,10 @@ class WebAndFileDirectivesTest < Minitest::Test
   def test_webpage_returns_error_on_non_200_status
     stub_const(AIA::WebAndFileDirectives, :PUREMD_API_KEY, 'test-key') do
       mock_response = stub('response', status: 404, body: 'Not Found')
-      # ap is called in the error branch; stub it to avoid output
-      @instance.stubs(:ap).returns(mock_response)
       Faraday.stubs(:get).returns(mock_response)
       result = @instance.webpage(['http://example.com'])
-      assert_match(/404/, result)
+      assert_nil result
+      assert_match(/404/, @captured_stdout.string)
     end
   end
 

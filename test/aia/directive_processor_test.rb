@@ -55,8 +55,10 @@ class DirectiveProcessorTest < Minitest::Test
     require 'clipboard'
     Clipboard.stubs(:paste).raises(StandardError.new("Clipboard access failed"))
 
-    result = processor.process("/paste", nil)
-    assert_match(/Error: Unable to paste from clipboard/, result)
+    result = nil
+    out, = capture_io { result = processor.process("/paste", nil) }
+    assert_nil result
+    assert_match(/Error: Unable to paste from clipboard/, out)
   end
 
   def test_directive_detection
