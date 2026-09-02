@@ -36,7 +36,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.prompt
     # @return [String, nil] formatted debate results, or nil if not applicable
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       prompt = context.prompt
       return nil unless @robot.network?
@@ -94,7 +94,6 @@ module AIA
 
       format_rounds(rounds)
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     private
 

@@ -41,7 +41,7 @@ module AIA
     alias cfg config
 
     desc "View or change the AI model"
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+    # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def model(args, context_manager = nil)
       if args.empty?
         puts
@@ -100,7 +100,6 @@ module AIA
 
       ''
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     desc "Set the temperature parameter for AI responses"
     def temperature(args, context_manager = nil)
@@ -115,7 +114,7 @@ module AIA
     alias topp top_p
 
     desc "Dump session cost/token metrics as CSV"
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+    # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
     def cost(args = [], context_manager = nil)
       tracker = AIA.session_tracker
       unless tracker
@@ -187,7 +186,6 @@ module AIA
 
       ''
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     private
 

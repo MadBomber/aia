@@ -93,7 +93,7 @@ module AIA
     end
 
     # Filter tools based on allowed/rejected lists and KBS decisions.
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def filtered_tools(config)
       tools = config.loaded_tools || []
       allowed = config.tools&.allowed
@@ -128,7 +128,6 @@ module AIA
         end
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     # Discover RubyLLM::Tool subclasses from ObjectSpace.
     # Skips tools that report themselves as unavailable via #available?.

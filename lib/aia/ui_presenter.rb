@@ -160,7 +160,7 @@ module AIA
       write_to_output_file(rendered)
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
     def display_multi_model_metrics(metrics_list)
       return unless metrics_list && !metrics_list.empty?
 
@@ -234,7 +234,6 @@ module AIA
       puts rendered
       write_to_output_file("Multi-Model Token Usage\n#{rendered}")
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
 
     private
 

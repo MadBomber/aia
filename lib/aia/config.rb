@@ -259,7 +259,7 @@ module AIA
     end
 
     # Convert config to hash (for dump, etc.)
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable-next Metrics/AbcSize
     def to_h
       {
         service: service.to_h,
@@ -287,7 +287,6 @@ module AIA
         context_files: context_files
       }
     end
-    # rubocop:enable Metrics/AbcSize
 
     private
 

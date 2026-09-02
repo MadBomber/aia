@@ -124,7 +124,7 @@ class PromptMigrator
 
   # --- Per-file orchestration ---
 
-  # rubocop:disable Metrics/AbcSize
+  # rubocop:disable-next Metrics/AbcSize
   def process_file(txt_path)
     md_path  = txt_path.sub_ext('.md')
     basename = txt_path.basename('.txt').to_s
@@ -159,7 +159,6 @@ class PromptMigrator
     parsed[:warnings].each { |w| @stats[:warnings] << "#{txt_path.basename}: #{w}" }
     @stats[:migrated] += 1
   end
-  # rubocop:enable Metrics/AbcSize
 
   # --- Reprocessing previously flagged files ---
   # rubocop:disable Metrics/AbcSize
@@ -204,7 +203,7 @@ class PromptMigrator
   def needs_review?(lines)
     in_erb_block = false
 
-    # rubocop:disable Metrics/BlockLength
+    # rubocop:disable-next Metrics/BlockLength
     lines.each do |line|
       # Files with code fences need manual review
       return true if line.match?(CODE_FENCE_RE)
@@ -246,7 +245,6 @@ class PromptMigrator
         return true if inner.match?(/\b[A-Z]{2,}\b/)
       end
     end
-    # rubocop:enable Metrics/BlockLength
 
     false
   end

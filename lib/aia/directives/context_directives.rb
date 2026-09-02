@@ -107,7 +107,7 @@ module AIA
     end
 
     desc "Display the current conversation context with checkpoint markers"
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable-next Metrics/AbcSize
     def review(args, _unused = nil)
       chats = get_chats
       return "Error: No active chat sessions found." if chats.nil? || chats.empty?
@@ -144,7 +144,6 @@ module AIA
       puts "=== End of Context ==="
       ""
     end
-    # rubocop:enable Metrics/AbcSize
     alias context review
 
     desc "List all available checkpoints"

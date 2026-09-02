@@ -7,6 +7,7 @@ group :development do
   gem 'debug_me'
   gem 'flay'
   gem 'flog'
+  gem 'reek'
   gem 'rubocop'
   gem 'simplecov_lcov_formatter'
   gem 'deep-cover', require: false

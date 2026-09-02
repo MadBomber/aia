@@ -36,7 +36,7 @@ module AIA
     alias web webpage
 
     desc "List available AIA skills"
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable-next Metrics/AbcSize
     def skills(args = [], _context_manager = nil)
       dir = aia_skills_dir
       unless Dir.exist?(dir)
@@ -77,7 +77,6 @@ module AIA
 
       nil
     end
-    # rubocop:enable Metrics/AbcSize
 
     desc "Include an AIA skill from the configured skills directory"
     def skill(args = [], _context_manager = nil)

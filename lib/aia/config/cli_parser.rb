@@ -444,7 +444,7 @@ module AIA
         models = []
         model_counts = Hash.new(0)
 
-        # rubocop:disable Metrics/BlockLength
+        # rubocop:disable-next Metrics/BlockLength
         model_string.split(',').each do |spec|
           spec.strip!
 
@@ -480,7 +480,6 @@ module AIA
             }
           end
         end
-        # rubocop:enable Metrics/BlockLength
 
         models
       end

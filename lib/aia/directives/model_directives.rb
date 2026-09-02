@@ -29,10 +29,29 @@ module AIA
     alias llms available_models
 
     desc "Compare responses from multiple models"
-    # rubocop:disable Metrics/MethodLength
     def compare(args, context_manager = nil)
-      return report_error('Error: No prompt provided for comparison') if args.empty?
+      prompt, models = parse_compare_args(args)
 
+      return report_error('Error: No prompt provided for comparison') unless prompt
+      return report_error('Error: No models specified. Use --models model1,model2,model3') if models.empty?
+
+      puts "\nComparing responses for: #{prompt}\n"
+      puts '=' * 80
+
+      models.each { |model_name| compare_with_model(model_name.strip, prompt) }
+
+      puts "\n" + ('=' * 80)
+      puts "\nComparison complete!"
+
+      ''
+    end
+    alias cmp compare
+
+    # --- helpers (no desc → not registered) ---
+
+    # Split a //compare arg list into [prompt, models]; the first non-flag
+    # token is the prompt, `--models a,b,c` supplies the model list.
+    def parse_compare_args(args)
       prompt = nil
       models = []
 
@@ -47,42 +66,18 @@ module AIA
         end
       end
 
-      return report_error('Error: No prompt provided for comparison') unless prompt
-      return report_error('Error: No models specified. Use --models model1,model2,model3') if models.empty?
-
-      puts "\nComparing responses for: #{prompt}\n"
-      puts '=' * 80
-
-      results = {}
-
-      models.each do |model_name|
-        model_name.strip!
-        puts "\n🤖 **#{model_name}:**"
-        puts '-' * 40
-
-        begin
-          chat = RubyLLM.chat(model: model_name)
-          response = chat.ask(prompt)
-          content = response.content
-
-          puts content
-          results[model_name] = content
-        rescue StandardError => e
-          error_msg = "Error with #{model_name}: #{e.message}"
-          puts error_msg
-          results[model_name] = error_msg
-        end
-      end
-
-      puts "\n" + ('=' * 80)
-      puts "\nComparison complete!"
-
-      ''
+      [prompt, models]
     end
-    # rubocop:enable Metrics/MethodLength
-    alias cmp compare
 
-    # --- helpers (no desc → not registered) ---
+    def compare_with_model(model_name, prompt)
+      puts "\n🤖 **#{model_name}:**"
+      puts '-' * 40
+
+      response = RubyLLM.chat(model: model_name).ask(prompt)
+      puts response.content
+    rescue StandardError => e
+      puts "Error with #{model_name}: #{e.message}"
+    end
 
     # Log and print a directive error, then return nil so the chat loop
     # skips forwarding it to the robot (an error is not conversational output).
@@ -113,7 +108,7 @@ module AIA
       end
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def show_ollama_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
@@ -165,9 +160,8 @@ module AIA
         puts "❌ Error fetching Ollama models: #{e.message}"
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def show_lms_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
@@ -216,7 +210,6 @@ module AIA
         puts "❌ Error fetching LM Studio models: #{e.message}"
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def format_bytes(bytes)
       units = %w[B KB MB GB TB]
@@ -228,7 +221,7 @@ module AIA
       "%.1f %s" % [bytes.to_f / (1024**exp), units[exp]]
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def show_rubyllm_models(positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
@@ -280,7 +273,6 @@ module AIA
       puts "#{counter} LLMs matching your query"
       puts
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def normalized_model_search_terms(positive_terms, negative_terms = nil)
       return parse_search_terms(Array(positive_terms)) if negative_terms.nil?

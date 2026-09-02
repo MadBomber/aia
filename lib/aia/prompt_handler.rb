@@ -171,7 +171,7 @@ module AIA
     end
 
     # Apply root-level shorthand keys to AIA.config
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable-next Metrics/AbcSize
     def apply_root_shorthands(meta_hash)
       # model → AIA.config.models (replace with single-model array)
       model_val = meta_hash['model'] || meta_hash[:model]
@@ -220,7 +220,6 @@ module AIA
       return if erb_val.nil?
       AIA.config.flags.erb = erb_val
     end
-    # rubocop:enable Metrics/AbcSize
 
     def logger
       @logger ||= LoggerManager.aia_logger

@@ -10,6 +10,7 @@ group :development do
   gem 'deep-cover', require: false
   gem 'flay'
   gem 'flog'
+  gem 'reek'
   gem 'rubocop'
   gem 'simplecov_lcov_formatter'
 end

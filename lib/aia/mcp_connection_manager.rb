@@ -208,13 +208,13 @@ module AIA
     end
 
     # Connect a single MCP server, updating the spinner on completion.
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable-next Metrics/MethodLength
     def connect_one(server_config, name, spinner, logger)
       timeout = server_timeout(server_config)
       spinner.auto_spin
 
       logger.info("MCP: connecting to '#{name}'...")
-      # rubocop:disable Metrics/BlockLength
+      # rubocop:disable-next Metrics/BlockLength
       Timeout.timeout(timeout) do
         client = RobotLab::MCP::Client.new(server_config)
         client.connect
@@ -248,7 +248,6 @@ module AIA
           spinner.error("(connection failed)")
         end
       end
-      # rubocop:enable Metrics/BlockLength
     rescue Timeout::Error
       @mutex.synchronize do
         @failed_servers << { name: name, error: "timed out after #{timeout}s" }
@@ -262,7 +261,6 @@ module AIA
       logger.warn("MCP: '#{name}' error: #{e.message}")
       spinner.error("(#{e.message})")
     end
-    # rubocop:enable Metrics/MethodLength
 
     # Add tools to @connected_tools, skipping any whose name is already present.
     # Logs a warning for each duplicate so the user knows which server wins.

@@ -124,7 +124,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.prompt as requirements text
     # @return [String, nil] final synthesis or nil on failure
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       requirements = context.prompt
       primary      = @robot.chief
@@ -185,7 +185,6 @@ module AIA
       e.backtrace&.first(5)&.each { |line| say("    #{line}") }
       nil
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     private
 

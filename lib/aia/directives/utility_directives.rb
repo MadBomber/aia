@@ -6,7 +6,7 @@ require 'word_wrapper'
 module AIA
   class UtilityDirectives < Directive
     desc "List available tools (optional filter by name or description substring)"
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable-next Metrics/AbcSize
     def tools(args = [], context_manager = nil)
       indent = 4
       spaces = " " * indent
@@ -48,7 +48,6 @@ module AIA
 
       ''
     end
-    # rubocop:enable Metrics/AbcSize
 
     desc "List loaded plugin basenames"
     def plugins(args = [], context_manager = nil)
@@ -68,7 +67,7 @@ module AIA
     end
 
     desc "Show MCP server connection status and available tools"
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def mcp(args = [], context_manager = nil)
       connected = AIA.config&.connected_mcp_servers || []
       failed    = AIA.config&.failed_mcp_servers || []
@@ -118,7 +117,6 @@ module AIA
 
       ''
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     desc "Show active robot configuration"
     def robots(args = [], context_manager = nil)
