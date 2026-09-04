@@ -33,6 +33,7 @@ module AIA
     # @param labels [Array<String>] labels like "robot:alice", "domain:code"
     # @param creator [String] name of the creating robot
     # @return [TrakFlow::Models::Task, nil]
+    # :reek:LongParameterList { max_params: 6 } -- one keyword per optional task attribute; callers set only what they need
     def create_task(title, assignee: nil, parent_id: nil,
                     blocked_by: [], labels: [], creator: "aia")
       return nil unless available?
@@ -40,27 +41,28 @@ module AIA
       task = TrakFlow::Models::Task.new(
         title: title, assignee: assignee, type: "task"
       )
-      task = @db.create_task(task)
+      task    = @db.create_task(task)
+      task_id = task.id
 
       @db.add_label(TrakFlow::Models::Label.new(
-                      task_id: task.id, name: "creator:#{creator}"
+                      task_id: task_id, name: "creator:#{creator}"
                     ))
 
       labels.each do |label|
         @db.add_label(TrakFlow::Models::Label.new(
-                        task_id: task.id, name: label
+                        task_id: task_id, name: label
                       ))
       end
 
       blocked_by.each do |blocker_id|
         @db.add_dependency(TrakFlow::Models::Dependency.new(
-                             source_id: blocker_id, target_id: task.id, type: "blocks"
+                             source_id: blocker_id, target_id: task_id, type: "blocks"
                            ))
       end
 
       if parent_id
         @db.add_dependency(TrakFlow::Models::Dependency.new(
-                             source_id: parent_id, target_id: task.id, type: "parent-child"
+                             source_id: parent_id, target_id: task_id, type: "parent-child"
                            ))
       end
 
@@ -74,6 +76,8 @@ module AIA
     # @param creator [String] creating robot name
     # @param ephemeral [Boolean] true for single-session plans (auto-gc)
     # @return [Hash, nil] { plan:, steps: }
+    # :reek:BooleanParameter -- ephemeral: tags a plan for auto-gc at session end; a second method would duplicate the whole build
+    # :reek:TooManyStatements -- plan build: create the plan task, then per step a child task, labels, and ordering dependency
     def create_plan(title, steps:, creator: "aia", ephemeral: false)
       return nil unless available?
 
@@ -177,6 +181,7 @@ module AIA
     # Summary of the current task board state.
     #
     # @return [String, nil]
+    # :reek:TooManyStatements -- one board report: totals line, per-assignee open/done counts, unassigned tail
     def status_summary
       return nil unless available?
 

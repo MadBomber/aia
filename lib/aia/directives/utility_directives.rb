@@ -6,12 +6,14 @@ require 'word_wrapper'
 module AIA
   class UtilityDirectives < Directive
     desc "List available tools (optional filter by name or description substring)"
+    # :reek:TooManyStatements -- sequential terminal report: filter, header, per-tool word-wrapped description
     # rubocop:disable-next Metrics/AbcSize
     def tools(args = [], context_manager = nil)
       indent = 4
       spaces = " " * indent
       width = TTY::Screen.width - indent - 2
-      filter = args.first&.downcase
+      raw_filter = args.first
+      filter = raw_filter&.downcase
 
       loaded_tools = Array(AIA.config.loaded_tools) + all_mcp_tools
 
@@ -29,10 +31,10 @@ module AIA
         end
 
         if tools_to_display.empty?
-          puts "No tools match the filter: #{args.first}"
+          puts "No tools match the filter: #{raw_filter}"
         else
           puts
-          header = filter ? "Available Tools (filtered by '#{args.first}')" : "Available Tools"
+          header = filter ? "Available Tools (filtered by '#{raw_filter}')" : "Available Tools"
           puts header
           puts "=" * header.length
 
@@ -67,6 +69,7 @@ module AIA
     end
 
     desc "Show MCP server connection status and available tools"
+    # :reek:TooManyStatements -- status report: summary counts, per-server tool grouping, connected and failed sections
     # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def mcp(args = [], context_manager = nil)
       connected = AIA.config&.connected_mcp_servers || []
@@ -150,13 +153,15 @@ module AIA
 
     private
 
+    # :reek:TooManyStatements -- mode classification plus sequential report of every crew member
     def show_network(network)
+      cfg = AIA.config
       robot_count = network.robot_count
-      mode = if AIA.config.flags.consensus
+      mode = if cfg.flags.consensus
                "Consensus"
-             elsif AIA.config.pipeline.length > 1
+             elsif cfg.pipeline.length > 1
                "Pipeline"
-             elsif AIA.config.models.length > 1
+             elsif cfg.models.length > 1
                "Parallel"
              else
                "Crew" # single-model session wrapped as a one-member crew
@@ -183,6 +188,7 @@ module AIA
       show_robot_detail(bot)
     end
 
+    # :reek:TooManyStatements -- one labeled line per robot attribute (model, wage, tool counts, role)
     def show_robot_detail(bot)
       puts "  #{bot.name}"
 

@@ -9,6 +9,7 @@
 require "json"
 
 module AIA
+  # :reek:DataClump -- each execute_<action> dispatch target receives the same LLM tool-call context
   class TaskBoardTool < RubyLLM::Tool
     description "Manage a shared task board. Create tasks for other robots, " \
                 "check what's ready, claim tasks, and report completion."

@@ -68,6 +68,7 @@ module AIA
       # Application-level concern: formats help text using DIRECTIVE_PREFIX
       # and all registered directive subclasses.
 
+      # :reek:TooManyStatements -- sequential terminal report: header, one section per directive category, footer
       def help
         puts
         puts "Available Directives"
@@ -84,14 +85,7 @@ module AIA
           puts "-" * cat.length
 
           klass.directive_descriptions.each do |method_name, description|
-            aliases    = klass.directive_aliases[method_name] || []
-            alias_text = if aliases.any?
-                           " (aliases: #{aliases.map { |a| "#{DIRECTIVE_PREFIX}#{a}" }.join(', ')})"
-                         else
-                           ""
-                         end
-
-            puts "  #{DIRECTIVE_PREFIX}#{method_name}#{alias_text}"
+            puts "  #{DIRECTIVE_PREFIX}#{method_name}#{alias_text_for(klass, method_name)}"
             puts "      #{description}"
             puts
 
@@ -101,6 +95,14 @@ module AIA
 
         puts "\nTotal: #{total} directives available"
         ""
+      end
+
+      # Format the "(aliases: ...)" suffix for a directive, or "" when it has none.
+      def alias_text_for(klass, method_name)
+        aliases = klass.directive_aliases[method_name] || []
+        return "" if aliases.empty?
+
+        " (aliases: #{aliases.map { |a| "#{DIRECTIVE_PREFIX}#{a}" }.join(', ')})"
       end
     end
 

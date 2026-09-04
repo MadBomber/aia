@@ -109,7 +109,9 @@ module AIA
       false
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # :reek:TooManyStatements -- benchmark-instrumented pipeline: decompose probe, concurrent fan-out, synthesis, reporting
+    # :reek:DuplicateMethodCall -- each clock_gettime must read the clock at a distinct instrumentation point of the benchmark
+    # rubocop:disable-next Metrics/AbcSize
     def handle_decomposition(prompt)
       require_relative 'prompt_decomposer'
       total_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -125,14 +127,43 @@ module AIA
         return false
       end
 
-      @ui_presenter.display_info("Decomposed into #{subtasks.size} sub-tasks:")
+      count = subtasks.size
+      @ui_presenter.display_info("Decomposed into #{count} sub-tasks:")
       subtasks.each_with_index { |t, i| @ui_presenter.display_info("  #{i + 1}. #{t}") }
 
-      timings         = Array.new(subtasks.size, 0.0)
-      raw_subtasks    = Array.new(subtasks.size)
-      wall_start      = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      timings       = Array.new(count, 0.0)
+      raw_subtasks  = Array.new(count)
+      wall_start    = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      results       = run_subtasks_concurrently(subtasks, timings, raw_subtasks)
+      parallel_wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - wall_start
 
-      results = Sync do
+      raise DecomposeError, "All sub-tasks failed" if results.all?(&:nil?)
+
+      @ui_presenter.display_info("Synthesizing results...")
+      synth_t0  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      final     = decomposer.synthesize(prompt, results.compact)
+      synth_dur = Process.clock_gettime(Process::CLOCK_MONOTONIC) - synth_t0
+
+      total_wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - total_start
+
+      display_decompose_benchmark(decompose_dur: decompose_dur, timings: timings,
+                                  synth_dur: synth_dur, parallel_wall: parallel_wall,
+                                  total_wall: total_wall)
+      display_decompose_token_metrics(raw_subtasks, final, total_wall)
+
+      present_result(final, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
+      true
+    rescue StandardError => e
+      @ui_presenter.display_info("Decomposition failed: #{e.message}. Falling back to normal mode.")
+      false
+    end
+
+    # Run all sub-tasks concurrently, recording per-task timing and raw results
+    # into the caller-supplied arrays. Returns extracted contents (nil per failure).
+    # :reek:DuplicateMethodCall -- clock_gettime is read at task start and again at each outcome; each read must be "now"
+    # :reek:TooManyStatements -- async fan-out with per-task timing capture on both success and failure paths
+    def run_subtasks_concurrently(subtasks, timings, raw_subtasks)
+      Sync do
         barrier = Async::Barrier.new
         tasks = subtasks.each_with_index.map do |task, i|
           barrier.async do
@@ -151,20 +182,12 @@ module AIA
         barrier.wait
         tasks.map(&:wait)
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+    end
 
-      parallel_wall    = Process.clock_gettime(Process::CLOCK_MONOTONIC) - wall_start
+    # Print the decomposition benchmark table.
+    def display_decompose_benchmark(decompose_dur:, timings:, synth_dur:, parallel_wall:, total_wall:)
       serial_est       = timings.sum
       parallel_speedup = serial_est / parallel_wall
-
-      raise DecomposeError, "All sub-tasks failed" if results.all?(&:nil?)
-
-      @ui_presenter.display_info("Synthesizing results...")
-      synth_t0  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      final     = decomposer.synthesize(prompt, results.compact)
-      synth_dur = Process.clock_gettime(Process::CLOCK_MONOTONIC) - synth_t0
-
-      total_wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - total_start
 
       lines = ["", "Benchmark:"]
       lines << "  Decompose probe : #{format('%.2f', decompose_dur)}s"
@@ -175,21 +198,15 @@ module AIA
       lines << "  Sub-tasks concurrent  : #{format('%.2f', parallel_wall)}s  (#{format('%.1f', parallel_speedup)}x parallel speedup)"
       lines << "  Total flow wall time  : #{format('%.2f', total_wall)}s  (compare against --tokens Time for a normal run)"
       @ui_presenter.display_info(lines.join("\n"))
-
-      display_decompose_token_metrics(raw_subtasks, final, total_wall)
-
-      present_result(final, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
-      true
-    rescue StandardError => e
-      @ui_presenter.display_info("Decomposition failed: #{e.message}. Falling back to normal mode.")
-      false
     end
 
+    # :reek:TooManyStatements -- ordered eligibility gates (server count, discovery, grouping) before the network run
     def handle_concurrent_mcp(prompt)
-      return false unless (AIA.config.mcp_servers || []).size > 1
+      cfg = AIA.config
+      return false unless (cfg.mcp_servers || []).size > 1
 
       discovery = MCPDiscovery.new
-      relevant = discovery.discover(AIA.config)
+      relevant = discovery.discover(cfg)
       return false if relevant.size <= 1
 
       grouper = MCPGrouper.new
@@ -198,7 +215,7 @@ module AIA
 
       @ui_presenter.display_info("Running concurrent MCP across #{groups.size} server groups...")
 
-      network = RobotFactory.build_concurrent_mcp_network(AIA.config, groups)
+      network = RobotFactory.build_concurrent_mcp_network(cfg, groups)
       result = @ui_presenter.with_spinner("Processing (concurrent)") { network.run(message: prompt) }
       extract_content(result)
 
@@ -270,6 +287,7 @@ module AIA
 
     # Aggregate token counts from all sub-task raw results plus the synthesis
     # result and display a combined metrics table. Only runs when --tokens is set.
+    # :reek:TooManyStatements -- sums token usage across sub-task results plus synthesis, then prints the metrics block
     def display_decompose_token_metrics(raw_subtasks, synthesis_result, total_elapsed)
       return unless AIA.config.flags.tokens
 

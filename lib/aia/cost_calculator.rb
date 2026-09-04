@@ -13,6 +13,7 @@ module AIA
     # @param output_tokens [Integer]
     # @return [Hash] { available: true, total_cost:, input_cost:, output_cost: }
     #             or { available: false } when pricing is unavailable
+    # :reek:TooManyStatements -- linear price lookup: guard, registry fetch, per-direction cost math, result hash
     def self.calculate(model_id:, input_tokens:, output_tokens:)
       return { available: false } unless model_id && defined?(RubyLLM::Models)
 

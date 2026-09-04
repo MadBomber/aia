@@ -97,6 +97,7 @@ module AIA
 
     # Expand a network SimpleFlow::Result into one turn entry per robot.
     # Computes TF-IDF similarity of each response against the first.
+    # :reek:TooManyStatements -- one pass collects per-robot tokens, cost, timing, and similarity texts; splitting hides the pairing
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def record_network_turn(input:, flow_result:, decisions: nil, elapsed: nil)
       @turn_count += 1

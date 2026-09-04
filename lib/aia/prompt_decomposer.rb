@@ -75,7 +75,9 @@ module AIA
     #
     # @param prompt [String] the user's prompt
     # @return [Array<String>] sub-task descriptions (empty if not decomposable)
+    # :reek:TooManyStatements -- schema vs JSON-fallback probe setup, run, extraction, and rescue reporting in one flow
     def decompose(prompt)
+      logger     = AIA.logger
       probe      = build_probe_robot
       use_schema = structured_output?
 
@@ -83,17 +85,17 @@ module AIA
         probe.with_schema(SUBTASKS_SCHEMA)
         full_prompt = DECOMPOSITION_PROMPT % { prompt: prompt }
       else
-        AIA.logger.warn("PromptDecomposer: configured model does not support structured output — using JSON prompt fallback")
+        logger.warn("PromptDecomposer: configured model does not support structured output — using JSON prompt fallback")
         full_prompt = (DECOMPOSITION_PROMPT + FALLBACK_JSON_INSTRUCTION) % { prompt: prompt }
       end
 
       result   = probe.run(full_prompt, mcp: :none, tools: :none)
       content  = extract_content(result)
-      AIA.logger.debug("PromptDecomposer#decompose content class=#{content.class}")
+      logger.debug("PromptDecomposer#decompose content class=#{content.class}")
       subtasks = extract_subtasks(content)
       subtasks.is_a?(Array) ? subtasks.select { |t| t.is_a?(String) && !t.empty? } : []
     rescue StandardError => e
-      AIA.logger.warn("PromptDecomposer#decompose failed: #{e.class}: #{e.message}")
+      logger.warn("PromptDecomposer#decompose failed: #{e.class}: #{e.message}")
       []
     end
 

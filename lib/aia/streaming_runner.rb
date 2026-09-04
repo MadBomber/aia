@@ -28,6 +28,8 @@ module AIA
     # @param spinner_message [String] spinner label
     # @param tools [Array<String>, nil] tool names to allow for this turn (nil = all)
     # @return [Array(Object, String, Float)] [result, streamed_content_or_nil, elapsed_seconds]
+    # :reek:TooManyStatements -- one streaming turn: spinner lifecycle, chunk-filter closure, robot run with cleanup, timing
+    # :reek:DuplicateMethodCall -- @spinner.stop guards three distinct control paths (first chunk, exception, completion)
     def run(robot, prompt, header: "\nAI:\n   ", spinner_message: "Processing...", tools: nil)
       @spinner.reset
       @spinner.update(title: spinner_message)
@@ -107,11 +109,12 @@ module AIA
 
       max   = max_tools
       names = tools_param == :inherit ? robot_tool_names(robot) : tools_param
-      return tools_param if names.size <= max
+      size  = names.size
+      return tools_param if size <= max
 
-      dropped = names.size - max
+      dropped = size - max
       $stderr.puts(
-        "⚠ Tool list (#{names.size}) exceeds the provider limit of #{max}; " \
+        "⚠ Tool list (#{size}) exceeds the provider limit of #{max}; " \
         "sending #{max}, dropping #{dropped}. Enable --auto-tool-filter or reduce " \
         "the available tools to control which ones are sent."
       )

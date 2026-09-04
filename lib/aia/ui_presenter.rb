@@ -25,6 +25,7 @@ module AIA
       format_chat_response(response)
     end
 
+    # :reek:TooManyStatements -- line-by-line rendering with a code-fence state machine; the states share locals
     def format_chat_response(response, output = $stdout)
       indent = '   '
 
@@ -121,6 +122,7 @@ module AIA
       result
     end
 
+    # :reek:TooManyStatements -- one metrics table with header/row/alignment variants for cost vs no-cost display
     def display_token_metrics(metrics)
       return unless metrics
 
@@ -160,6 +162,7 @@ module AIA
       write_to_output_file(rendered)
     end
 
+    # :reek:TooManyStatements -- one pass builds table rows while accumulating totals; header, row, and totals shapes must stay in sync
     # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
     def display_multi_model_metrics(metrics_list)
       return unless metrics_list && !metrics_list.empty?
@@ -193,9 +196,10 @@ module AIA
         if show_cost
           cost_data = calculate_cost(metrics)
           if cost_data[:available]
-            row << "$#{'%.5f' % cost_data[:total_cost]}"
-            row << "$#{'%.2f' % (cost_data[:total_cost] * 1000)}"
-            total_cost += cost_data[:total_cost]
+            cost = cost_data[:total_cost]
+            row << "$#{'%.5f' % cost}"
+            row << "$#{'%.2f' % (cost * 1000)}"
+            total_cost += cost
           else
             row += ["N/A", "N/A"]
           end
@@ -254,8 +258,9 @@ module AIA
         return nil if hf == false   # --no-history-file disables chat history
         return File.expand_path(hf) if hf
       end
-      if config.respond_to?(:paths) && config.paths.respond_to?(:aia_dir) && config.paths.aia_dir
-        return File.join(File.expand_path(config.paths.aia_dir), 'chat_history')
+      paths = config.respond_to?(:paths) ? config.paths : nil
+      if paths.respond_to?(:aia_dir) && paths.aia_dir
+        return File.join(File.expand_path(paths.aia_dir), 'chat_history')
       end
       HISTORY_FILE
     end

@@ -36,10 +36,11 @@ module AIA
     desc "Use text-to-speech to speak the text"
     def say(args, context_manager = nil)
       audio = AIA.config.audio
+      voice = audio.voice
       env   = {}
       env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
-      if audio.voice && !audio.voice.strip.empty?
-        system(env, 'say', '-v', audio.voice, *args)
+      if voice && !voice.strip.empty?
+        system(env, 'say', '-v', voice, *args)
       else
         system(env, 'say', *args)
       end
@@ -81,17 +82,19 @@ module AIA
     desc "Spawn a specialist robot for the next prompt. " \
          "Usage: /spawn  |  /spawn <type>  |  /spawn <name> <provider/model> <system prompt>"
     def spawn(args, context_manager = nil)
-      AIA.turn_state.force_spawn = true
+      state = AIA.turn_state
+      state.force_spawn = true
 
       if args.size >= 2
         spec = AIA::SpawnSpecParser.parse(args)
-        AIA.turn_state.spawn_spec = spec
-        AIA.turn_state.spawn_type = nil
+        state.spawn_spec = spec
+        state.spawn_type = nil
         "Spawn mode enabled: '#{spec[:name]}' (#{spawn_model_summary(spec)}) for next prompt."
       else
-        AIA.turn_state.spawn_spec = nil
-        AIA.turn_state.spawn_type = args.first
-        type_msg = args.first ? " (#{args.first})" : " (auto-detect)"
+        type = args.first
+        state.spawn_spec = nil
+        state.spawn_type = type
+        type_msg = type ? " (#{type})" : " (auto-detect)"
         "Spawn mode enabled#{type_msg} for next prompt."
       end
     end
@@ -145,9 +148,10 @@ module AIA
 
     # Human-readable model description for the /spawn confirmation message.
     def spawn_model_summary(spec)
-      return 'inherited model' unless spec[:model]
+      model = spec[:model]
+      return 'inherited model' unless model
 
-      spec[:provider] ? "#{spec[:provider]}/#{spec[:model]}" : spec[:model]
+      spec[:provider] ? "#{spec[:provider]}/#{model}" : model
     end
 
     # Model plus any assigned skills, for the /add_recruit confirmation message.

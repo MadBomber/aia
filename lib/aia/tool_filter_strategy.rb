@@ -88,22 +88,26 @@ module AIA
 
     # Display single-filter results via logger.
     def display_filter_results(key, scored)
-      meta = meta_for(key)
+      meta   = meta_for(key)
+      label  = meta[:label]
+      logger = AIA.logger
 
       if scored.empty?
-        AIA.logger.debug "[#{meta[:label]}] No tools matched (all tools available)"
+        logger.debug "[#{label}] No tools matched (all tools available)"
         return
       end
 
       names = scored.map { |e| e[:name] }.join(', ')
-      AIA.logger.debug "[#{meta[:label]}] Tools for this turn (#{scored.size}): #{names}"
+      logger.debug "[#{label}] Tools for this turn (#{scored.size}): #{names}"
 
       scored.each do |entry|
-        AIA.logger.debug "[#{meta[:label]}]   #{entry[:name]}  (#{meta[:score_label]}: #{format('%.4f', entry[:score])})"
+        logger.debug "[#{label}]   #{entry[:name]}  (#{meta[:score_label]}: #{format('%.4f', entry[:score])})"
       end
     end
 
     # Print the timing table via logger.
+    # :reek:TooManyStatements -- seven box-drawing rows built line by line; the table shape is the code
+    # :reek:DuplicateMethodCall -- every box-drawing row must iterate the columns with its own border/content pattern
     # rubocop:disable-next Metrics/AbcSize
     def display_timing_table(filter_ms_by_key)
       columns = @filters.map do |key, filter|

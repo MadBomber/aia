@@ -103,14 +103,8 @@ module AIA
     end
 
     def unique_name(base)
-      @used_names[base] ||= 0
-      @used_names[base] += 1
-
-      if @used_names[base] == 1
-        base
-      else
-        "#{base}#{@used_names[base]}"
-      end
+      count = @used_names[base] = (@used_names[base] || 0) + 1
+      count == 1 ? base : "#{base}#{count}"
     end
   end
 end

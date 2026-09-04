@@ -10,6 +10,7 @@ module AIA
     PUREMD_API_KEY = ENV.fetch('PUREMD_API_KEY', nil)
 
     desc "Fetch and include content from a webpage"
+    # :reek:TooManyStatements -- guard, fetch via pure.md, then success/error reporting in one flow
     def webpage(args, _context_manager = nil)
       if PUREMD_API_KEY.nil?
         msg = 'ERROR: PUREMD_API_KEY is required in order to include a webpage'
@@ -36,6 +37,7 @@ module AIA
     alias web webpage
 
     desc "List available AIA skills"
+    # :reek:TooManyStatements -- sequential listing: directory guard, term filtering, word-wrapped per-skill output
     # rubocop:disable-next Metrics/AbcSize
     def skills(args = [], _context_manager = nil)
       dir = aia_skills_dir
@@ -83,19 +85,13 @@ module AIA
       args = Array(args)
       skill_name = args.first&.strip
       if skill_name.nil? || skill_name.empty?
-        msg = "Error: /skill requires a skill name. Use /skills to list available skills."
-        AIA::LoggerManager.aia_logger.error(msg)
-        puts msg
-        return nil
+        return report_skill_error("Error: /skill requires a skill name. Use /skills to list available skills.")
       end
 
       dir = aia_skills_dir
       skill_dir = find_skill_dir(skill_name, dir)
       unless skill_dir
-        msg = "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
-        AIA::LoggerManager.aia_logger.error(msg)
-        puts msg
-        return nil
+        return report_skill_error("Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills.")
       end
 
       return File.read(skill_dir) if File.file?(skill_dir)
@@ -107,9 +103,7 @@ module AIA
               else
                 "Error: Skill '#{File.basename(skill_dir)}' has no SKILL.md in #{dir}."
               end
-        AIA::LoggerManager.aia_logger.error(msg)
-        puts msg
-        return nil
+        return report_skill_error(msg)
       end
 
       File.read(skill_path)
@@ -129,11 +123,18 @@ module AIA
 
     private
 
+    # Log and print a /skill error message; returns nil so callers can
+    # `return report_skill_error(msg)` from any guard.
+    def report_skill_error(msg)
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
+    end
+
     # Resolve the AIA skills directory from config, env vars, or defaults.
     def aia_skills_dir
-      if AIA.respond_to?(:config) && AIA.config&.skills.respond_to?(:dir) && AIA.config.skills.dir
-        return AIA.config.skills.dir
-      end
+      skills = AIA.respond_to?(:config) ? AIA.config&.skills : nil
+      return skills.dir if skills.respond_to?(:dir) && skills.dir
 
       ENV.fetch('AIA_SKILLS__DIR', File.expand_path('~/.prompts/skills'))
     end

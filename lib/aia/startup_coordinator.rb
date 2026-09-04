@@ -46,6 +46,7 @@ module AIA
     # --mcp-use, --mcp-skip, and KBS mcp_activate decisions), then normalizes
     # each server config via MCPConfigNormalizer before handing off to
     # MCPConnectionManager.
+    # :reek:TooManyStatements -- MCP wiring sequence: discovery, validation, normalize fallback, connect, absorb, inject
     def connect_mcp_servers(config)
       return if config.flags.no_mcp
 

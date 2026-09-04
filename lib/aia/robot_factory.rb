@@ -14,6 +14,7 @@ require_relative 'network_builder'
 require_relative 'history_transfer'
 
 module AIA
+  # :reek:TooManyMethods -- factory facade: every robot/network build variant plus its run-config helpers lives behind one entry point
   class RobotFactory
     # The max_tokens default from defaults.yml — optimised for cloud APIs that treat
     # it as an output-only cap. Local providers (Ollama, LM Studio) bound input+output
@@ -114,9 +115,10 @@ module AIA
 
       # Reuse the build-time tool cache when present, else load tools fresh.
       def apply_tool_cache(config)
-        if ToolLoader.cached_tools
-          config.loaded_tools = ToolLoader.cached_tools
-          config.tool_names = ToolLoader.cached_tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
+        cached = ToolLoader.cached_tools
+        if cached
+          config.loaded_tools = cached
+          config.tool_names = cached.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
         else
           ToolLoader.load_tools(config)
         end
@@ -141,14 +143,16 @@ module AIA
       # - max_tokens remains a RobotLab::RunConfig field; AIA normalizes it at
       #   the RubyLLM/OpenAI provider boundary for models that need
       #   max_completion_tokens
+      # :reek:TooManyStatements -- one guarded param per LLM tuning knob, with provider-specific max_tokens handling
       def build_run_config(config)
         model_spec = config.models.first
+        llm        = config.llm
         params     = {}
 
-        temp = config.llm.temperature
+        temp = llm.temperature
         params[:temperature] = temp if temp && model_supports_temperature?(model_spec)
 
-        max = config.llm.max_tokens
+        max = llm.max_tokens
         # Local providers (Ollama, LM Studio) have a small total context window
         # (input + output combined, typically 32768 tokens for qwen3-class models).
         # Sending the cloud default of 32767 as num_predict leaves almost no room
@@ -158,13 +162,13 @@ module AIA
         local = model_spec&.local_provider?
         params[:max_tokens] = max if max && !(local && max == DEFAULT_LOCAL_MAX_TOKENS)
 
-        tp = config.llm.top_p
+        tp = llm.top_p
         params[:top_p] = tp if tp
 
-        fp = config.llm.frequency_penalty
+        fp = llm.frequency_penalty
         params[:frequency_penalty] = fp if fp && fp != 0.0
 
-        pp = config.llm.presence_penalty
+        pp = llm.presence_penalty
         params[:presence_penalty] = pp if pp && pp != 0.0
 
         RobotLab::RunConfig.new(**params)

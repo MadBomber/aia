@@ -10,6 +10,7 @@ module AIA
   class MentionRouter
     include ContentExtractor
     include HandlerProtocol
+    include Speech
 
     # Reserved @mention that broadcasts the message to every crew member.
     BROADCAST_TOKEN = 'crew'
@@ -25,6 +26,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.robot and context.prompt
     # @return [Boolean]
+    # :reek:TooManyStatements -- mention routing: scan, resolve, report unknowns, dispatch; one decision chain
     def handle(context) # rubocop:disable Naming/PredicateMethod
       robot  = context.robot
       prompt = context.prompt
@@ -120,10 +122,11 @@ module AIA
 
     # A single addressed robot streams its reply token-by-token.
     def run_streamed(bot, prompt)
+      name = bot.name
       result, streamed_content, elapsed = @streaming_runner.run(
         bot, prompt,
-        header: "\nAI (#{bot.name}):\n   ",
-        spinner_message: "#{bot.name} processing..."
+        header: "\nAI (#{name}):\n   ",
+        spinner_message: "#{name} processing..."
       )
       content = streamed_content || extract_content(result)
 
@@ -137,7 +140,7 @@ module AIA
       finalize_reply(bot, prompt, result, content, elapsed)
       content
     rescue StandardError => e
-      @ui_presenter.display_info("Error from #{bot.name}: #{e.class}: #{e.message}")
+      @ui_presenter.display_info("Error from #{name}: #{e.class}: #{e.message}")
       nil
     end
 
@@ -156,6 +159,7 @@ module AIA
 
     # Run one crew member to completion (off the streaming path), in a worker
     # thread. Returns [bot, result, elapsed, error] — no shared state touched.
+    # :reek:DuplicateMethodCall -- each clock_gettime must read the clock at that moment (start, success end, failure end)
     def run_member(bot, prompt)
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       result  = bot.run(prompt, mcp: :inherit, tools: :inherit)
@@ -208,53 +212,6 @@ module AIA
       return message.model_id if message.respond_to?(:model_id) && message.model_id
       return message.model    if message.respond_to?(:model)    && message.model
       nil
-    end
-
-    def speak(content)
-      return unless AIA.speak?
-
-      audio   = AIA.config.audio
-      command = audio.speak_command || 'say'
-      env     = {}
-      env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
-
-      if command == 'say'
-        run_with_spinner("Speaking...") do
-          if audio.voice && !audio.voice.to_s.strip.empty?
-            system(env, command, '-v', audio.voice, content.to_s)
-          else
-            system(env, command, content.to_s)
-          end
-        end
-      else
-        require 'tempfile'
-        tmpfile = Tempfile.new(['aia-tts-', '.mp3'])
-        tmpfile.close
-        begin
-          run_with_spinner("Converting to audio...") do
-            system(env, command, content.to_s, tmpfile.path)
-          end
-          if File.size?(tmpfile.path)
-            run_with_spinner("Speaking...") do
-              system('afplay', tmpfile.path)
-            end
-          end
-        ensure
-          tmpfile.unlink
-        end
-      end
-    rescue StandardError => e
-      $stderr.puts "Warning: Speech failed: #{e.message}"
-    end
-
-    def run_with_spinner(message)
-      spinner = TTY::Spinner.new("[:spinner] #{message}", format: :bouncing_ball, output: $stderr)
-      spinner.auto_spin
-      begin
-        yield
-      ensure
-        spinner.stop
-      end
     end
   end
 end

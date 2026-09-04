@@ -16,6 +16,7 @@ module AIA
       #
       # @param config [AIA::Config] the configuration to validate
       # @return [AIA::Config] the validated configuration
+      # :reek:TooManyStatements -- top-level validation pipeline: one named step per line, executed in fixed order
       def tailor(config)
         remaining_args = config.remaining_args&.dup || []
         config.remaining_args = nil
@@ -101,24 +102,25 @@ module AIA
 
       def handle_executable_prompt(config)
         return unless config.prompt_id.nil?
-        return unless config.context_files && !config.context_files.empty?
 
-        candidate = config.context_files.first
+        files = config.context_files
+        return unless files && !files.empty?
+
+        candidate = files.first
         return unless File.exist?(candidate) && File.readable?(candidate)
 
         first_line = File.open(candidate, &:readline).strip rescue nil
         return unless first_line&.start_with?('#!')
 
-        config.context_files.shift
+        files.shift
         config.executable_prompt_content = File.read(candidate).lines[1..].join
         config.prompt_id = '__EXECUTABLE_PROMPT__'
       end
 
       def handle_stdin_as_prompt(config)
         return unless config.prompt_id.nil?
-        return unless config.stdin_content && !config.stdin_content.strip.empty?
-
         content = config.stdin_content
+        return unless content && !content.strip.empty?
 
         if content.lines.first&.strip&.start_with?('#!')
           content = content.lines[1..].join
@@ -137,24 +139,24 @@ module AIA
       end
 
       def process_role_configuration(config)
-        role = config.prompts.role
+        prompts = config.prompts
+        role    = prompts.role
         return if role.nil? || role.empty?
 
-        roles_prefix = config.prompts.roles_prefix
+        roles_prefix = prompts.roles_prefix
         unless AIA::SkillUtils.path_based_id?(role) || roles_prefix.nil? || roles_prefix.empty? || role.start_with?(roles_prefix)
-          config.prompts.role = "#{roles_prefix}/#{role}"
-          role = config.prompts.role
+          role = "#{roles_prefix}/#{role}"
+          prompts.role = role
         end
 
-        config.prompts.roles_dir ||= File.join(config.prompts.dir, roles_prefix.to_s)
+        prompts.roles_dir ||= File.join(prompts.dir, roles_prefix.to_s)
 
         return if config.flags&.chat == true
 
         return unless config.prompt_id.nil? || config.prompt_id.empty?
-        return if role.nil? || role.empty?
         config.prompt_id = role
-        config.pipeline.prepend(config.prompt_id)
-        config.prompts.role = ''
+        config.pipeline.prepend(role)
+        prompts.role = ''
       end
 
       def validate_plugins_dir(config)
@@ -172,9 +174,10 @@ module AIA
       end
 
       def normalize_boolean_flags(config)
-        normalize_boolean_flag(config.flags, :chat)
-        normalize_boolean_flag(config.flags, :fuzzy)
-        normalize_boolean_flag(config.flags, :consensus)
+        flags = config.flags
+        normalize_boolean_flag(flags, :chat)
+        normalize_boolean_flag(flags, :fuzzy)
+        normalize_boolean_flag(flags, :consensus)
       end
 
       def normalize_boolean_flag(flags_section, flag)
@@ -200,6 +203,7 @@ module AIA
         :early_exit
       end
 
+      # :reek:TooManyStatements -- terminal listing with per-server transport unpacking across symbol/string key fallbacks
       def handle_mcp_list(config)
         return unless config.mcp_list
         return if config.list_tools
@@ -278,6 +282,7 @@ module AIA
         puts
       end
 
+      # :reek:TooManyStatements -- sequential markdown report: header, local tools section, one section per MCP server
       def list_tools_markdown(local_tools, mcp_tool_groups)
         total = local_tools.size + mcp_tool_groups.values.sum(&:size)
         sources = 1 + mcp_tool_groups.size
@@ -359,6 +364,8 @@ module AIA
         :early_exit
       end
 
+      # :reek:TooManyStatements -- three load phases (require_libs, tool files, ObjectSpace scan) with own error handling
+      # :reek:DuplicateMethodCall -- each e.message belongs to a different rescue clause exception; nothing to hoist
       def load_local_tools(config)
         # Load required libraries
         Array(config.require_libs).each do |lib|
@@ -403,6 +410,7 @@ module AIA
       end
 
       # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+      # :reek:TooManyStatements -- per-server connect loop: transport unpacking, timeout normalization, API fallback
       def load_mcp_tools_grouped(config)
         servers = filter_mcp_servers(config)
         return {} if servers.empty?
@@ -420,8 +428,8 @@ module AIA
           args      = transport[:args] || transport['args'] || server[:args] || server['args'] || []
           env       = transport[:env] || transport['env'] || server[:env] || server['env'] || {}
 
-          raw_timeout = server[:timeout] || server['timeout'] || default_timeout
-          timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
+          raw_ms  = (server[:timeout] || server['timeout'] || default_timeout).to_i
+          timeout = raw_ms < 1000 ? (raw_ms * 1000) : raw_ms
           timeout = [timeout, 30_000].min
 
           mcp_config = { command: command, args: Array(args) }
@@ -500,9 +508,10 @@ module AIA
       end
 
       def prepare_pipeline(config)
-        return if config.prompt_id.nil? || config.prompt_id.empty? || config.prompt_id == config.pipeline.first
+        prompt_id = config.prompt_id
+        return if prompt_id.nil? || prompt_id.empty? || prompt_id == config.pipeline.first
 
-        config.pipeline.prepend(config.prompt_id)
+        config.pipeline.prepend(prompt_id)
       end
 
       def validate_pipeline_prompts(config)

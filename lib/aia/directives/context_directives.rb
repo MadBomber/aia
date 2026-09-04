@@ -21,6 +21,7 @@ module AIA
     end
 
     desc "Create a named checkpoint of the current context"
+    # :reek:TooManyStatements -- one snapshot build: name resolution, deep copy of every chat message list, store entry, feedback
     def checkpoint(args, _unused = nil)
       name = args.empty? ? nil : args.join(' ').strip
 
@@ -50,6 +51,7 @@ module AIA
     alias cp checkpoint
 
     desc "Restore context to a previous checkpoint"
+    # :reek:TooManyStatements -- restore flow: name resolution, validation, per-chat message replacement, user feedback
     def restore(args, _unused = nil)
       name = args.empty? ? nil : args.join(' ').strip
 
@@ -107,6 +109,7 @@ module AIA
     end
 
     desc "Display the current conversation context with checkpoint markers"
+    # :reek:TooManyStatements -- sequential transcript dump with checkpoint markers interleaved at their positions
     # rubocop:disable-next Metrics/AbcSize
     def review(args, _unused = nil)
       chats = get_chats
@@ -115,8 +118,9 @@ module AIA
       first_chat = chats.values.first
       messages = first_chat&.messages || []
 
+      total = messages.size
       puts "\n=== Chat Context (RubyLLM) ==="
-      puts "Total messages: #{messages.size}"
+      puts "Total messages: #{total}"
       puts "Models: #{chats.keys.join(', ')}"
       puts "Checkpoints: #{checkpoint_names.join(', ')}" if checkpoint_names.any?
       puts
@@ -136,8 +140,8 @@ module AIA
         puts
       end
 
-      if positions[messages.size]
-        puts "📍 [Checkpoint: #{positions[messages.size].join(', ')}]"
+      if positions[total]
+        puts "📍 [Checkpoint: #{positions[total].join(', ')}]"
         puts "-" * 40
       end
 
@@ -156,9 +160,10 @@ module AIA
       puts "\n=== Available Checkpoints ==="
       @checkpoint_store.each do |name, data|
         created = data[:created_at]&.strftime('%H:%M:%S') || 'unknown'
+        preview = data[:topic_preview]
         puts "  #{name}: position #{data[:position]}, created #{created}"
-        if data[:topic_preview] && !data[:topic_preview].empty?
-          puts "    → \"#{data[:topic_preview]}\""
+        if preview && !preview.empty?
+          puts "    → \"#{preview}\""
         end
       end
       puts "=== End of Checkpoints ==="

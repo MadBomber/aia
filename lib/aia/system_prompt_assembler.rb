@@ -18,9 +18,10 @@ module AIA
     # @param model_spec [ModelSpec, nil] optional model spec with role override
     # @return [String, nil] the assembled system prompt
     def resolve_system_prompt(config, model_spec = nil)
-      system_prompt = config.prompts.system_prompt
+      prompts_cfg   = config.prompts
+      system_prompt = prompts_cfg.system_prompt
 
-      role_id = model_spec&.role || config.prompts.role
+      role_id = model_spec&.role || prompts_cfg.role
       if role_id && !role_id.empty?
         role_content = load_role_content(config, role_id)
         if role_content
@@ -32,7 +33,7 @@ module AIA
       # Pipeline mode appends skills to each prompt text instead (pipeline_orchestrator).
       if config.flags&.chat == true
         skill_content = AIA::SkillUtils.load_skills_content(
-          Array(config.prompts&.skills),
+          Array(prompts_cfg&.skills),
           AIA::SkillUtils.skills_base_dir(config)
         )
         system_prompt = [system_prompt, skill_content].compact.join("\n\n") if skill_content
@@ -48,6 +49,7 @@ module AIA
     # @param spec [ModelSpec] this robot's model spec
     # @param roster [Array<Hash>] all robots: [{ name:, spec: }, ...]
     # @return [String]
+    # :reek:TooManyStatements -- builds the identity line plus a roster entry per teammate; one cohesive prompt fragment
     def build_identity_prompt(robot_name, spec, roster)
       provider_label = spec.provider ? " (#{spec.provider})" : ""
       lines = ["You are #{robot_name}, powered by #{spec.name}#{provider_label}."]
@@ -55,9 +57,10 @@ module AIA
       if roster.size > 1
         lines << "You are part of a team of AI robots:"
         roster.each do |entry|
-          p = entry[:spec].provider ? " (#{entry[:spec].provider})" : ""
+          entry_spec = entry[:spec]
+          p = entry_spec.provider ? " (#{entry_spec.provider})" : ""
           marker = entry[:name] == robot_name ? " ← you" : ""
-          lines << "  - #{entry[:name]}: #{entry[:spec].name}#{p}#{marker}"
+          lines << "  - #{entry[:name]}: #{entry_spec.name}#{p}#{marker}"
         end
         lines << "Users can address a specific robot with @name mentions."
       end
@@ -71,12 +74,13 @@ module AIA
     # @param role_id [String] the role identifier
     # @return [String, nil] the role file content or nil
     def load_role_content(config, role_id)
-      roles_prefix = config.prompts.roles_prefix
+      prompts_cfg  = config.prompts
+      roles_prefix = prompts_cfg.roles_prefix
       unless role_id.start_with?(roles_prefix)
         role_id = "#{roles_prefix}/#{role_id}"
       end
 
-      role_file = File.join(config.prompts.dir, "#{role_id}#{config.prompts.extname}")
+      role_file = File.join(prompts_cfg.dir, "#{role_id}#{prompts_cfg.extname}")
       return nil unless File.exist?(role_file)
 
       File.read(role_file)

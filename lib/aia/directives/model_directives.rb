@@ -108,6 +108,7 @@ module AIA
       end
     end
 
+    # :reek:TooManyStatements -- sequential terminal report: HTTP fetch, connection guards, filtered listing, summary
     # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def show_ollama_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
@@ -161,6 +162,7 @@ module AIA
       end
     end
 
+    # :reek:TooManyStatements -- sequential terminal report: HTTP fetch, connection guards, filtered listing, summary
     # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def show_lms_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
@@ -221,6 +223,7 @@ module AIA
       "%.1f %s" % [bytes.to_f / (1024**exp), units[exp]]
     end
 
+    # :reek:TooManyStatements -- sequential terminal report: header, per-model entry with modality/substring filters, summary
     # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def show_rubyllm_models(positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
@@ -246,8 +249,9 @@ module AIA
       RubyLLM.models.all.each do |llm|
         cw = llm.context_window
         caps = llm.capabilities.join(',')
-        inputs = llm.modalities.input.join(',')
-        outputs = llm.modalities.output.join(',')
+        modalities = llm.modalities
+        inputs = modalities.input.join(',')
+        outputs = modalities.output.join(',')
         mode = "#{inputs} to #{outputs}"
         in_1m = llm.pricing.text_tokens.standard.to_h[:input_per_million]
         entry = "- #{llm.id} (#{llm.provider}) in: $#{in_1m} cw: #{cw} mode: #{mode} caps: #{caps}"
@@ -259,7 +263,7 @@ module AIA
         end
 
         show_it = true
-        q1.each { |q| show_it &&= llm.modalities.send("#{q}?") }
+        q1.each { |q| show_it &&= modalities.send("#{q}?") }
         q2.each { |q| show_it &&= entry.include?(q) }
         negative_terms.each { |q| show_it &&= !entry.downcase.include?(q) }
 

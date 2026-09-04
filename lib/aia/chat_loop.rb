@@ -11,8 +11,11 @@ require "reline"
 require "pm"
 
 module AIA
+  # :reek:TooManyInstanceVariables -- interactive-loop hub wires robot, presenter, tracker, routers, and handlers together by design
+  # :reek:TooManyMethods -- one private helper per loop concern (context, metrics, speech, history)
   class ChatLoop
     include ContentExtractor
+    include Speech
 
     def initialize(robot, ui_presenter, directive_processor,
                    session_tracker: nil, alias_registry: nil, filters: {})
@@ -42,6 +45,7 @@ module AIA
     end
 
     # Start the interactive chat session
+    # :reek:BooleanParameter -- lets Session skip re-sending context files after a pipeline; two entry methods would duplicate rescue/ensure
     def start(skip_context_files: false)
       setup_session
       process_initial_context(skip_context_files)
@@ -62,9 +66,10 @@ module AIA
     end
 
     def process_initial_context(skip_context_files)
-      return if skip_context_files || !AIA.config.context_files || AIA.config.context_files.empty?
+      files = AIA.config.context_files
+      return if skip_context_files || !files || files.empty?
 
-      context = AIA.config.context_files.map do |file|
+      context = files.map do |file|
         File.read(file) rescue "Error reading file: #{file}"
       end.join("\n\n")
 
@@ -262,6 +267,7 @@ module AIA
     # Each robot_result.duration holds the elapsed seconds.
     # Similarity scores compare each model's response text against the
     # first model using TF-IDF cosine similarity.
+    # :reek:TooManyStatements -- one pass builds paired metric and similarity arrays; splitting hides the pairing
     def display_network_metrics(flow_result)
       metrics_list = []
       response_texts = []
@@ -336,56 +342,6 @@ module AIA
       return unless out_file
 
       File.open(out_file, "a") { |f| f.puts "\nYou: #{input}" }
-    end
-
-    def speak(content)
-      return unless AIA.speak?
-
-      audio   = AIA.config.audio
-      command = audio.speak_command || 'say'
-      env     = {}
-      env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
-
-      if command == 'say'
-        # Local TTS: say converts and plays in one step
-        run_with_spinner("Speaking...") do
-          if audio.voice && !audio.voice.to_s.strip.empty?
-            system(env, command, '-v', audio.voice, content.to_s)
-          else
-            system(env, command, content.to_s)
-          end
-        end
-      else
-        # Custom TTS script: stage 2 = convert text → audio file,
-        # stage 3 = play the file. AIA passes the output path as $2.
-        require 'tempfile'
-        tmpfile = Tempfile.new(['aia-tts-', '.mp3'])
-        tmpfile.close
-        begin
-          run_with_spinner("Converting to audio...") do
-            system(env, command, content.to_s, tmpfile.path)
-          end
-          if File.size?(tmpfile.path)
-            run_with_spinner("Speaking...") do
-              system('afplay', tmpfile.path)
-            end
-          end
-        ensure
-          tmpfile.unlink
-        end
-      end
-    rescue StandardError => e
-      $stderr.puts "Warning: Speech failed: #{e.message}"
-    end
-
-    def run_with_spinner(message)
-      spinner = TTY::Spinner.new("[:spinner] #{message}", format: :bouncing_ball, output: $stderr)
-      spinner.auto_spin
-      begin
-        yield
-      ensure
-        spinner.stop
-      end
     end
   end
 end

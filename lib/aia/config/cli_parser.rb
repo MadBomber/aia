@@ -56,6 +56,7 @@ module AIA
                       "aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*"
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_mode_options(opts, options)
         opts.separator "\nMode Options:"
 
@@ -96,6 +97,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_model_options(opts, options)
         opts.separator "\nModel Options:"
 
@@ -127,6 +129,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_file_options(opts, options)
         opts.separator "\nFile & Output Options:"
 
@@ -157,6 +160,8 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
+      # :reek:DuplicateMethodCall -- options[:pipeline] is appended inside two separate OptionParser closures
       def setup_prompt_options(opts, options)
         opts.separator "\nPrompt Options:"
 
@@ -228,6 +233,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_audio_image_options(opts, options)
         opts.separator "\nAudio & Image Options:"
 
@@ -264,6 +270,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_tool_options(opts, options)
         opts.separator "\nTool & Extension Options:"
 
@@ -303,6 +310,7 @@ module AIA
         setup_meta_options(opts, options)
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_logging_options(opts, options)
         opts.on("--log-level LEVEL", "Set log level (debug|info|warn|error|fatal)") do |level|
           level = level.downcase
@@ -337,6 +345,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_output_options(opts, options)
         opts.on("--[no-]thinking", "Show raw thinking/reasoning blocks in output (default: off)") do |v|
           options[:thinking] = v
@@ -364,6 +373,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_mcp_options(opts, options)
         opts.on("--mcp FILE", "Load MCP server(s) from JSON file (repeatable)") do |file|
           options[:mcp_files] ||= []
@@ -440,6 +450,7 @@ module AIA
       #
       # @param model_string [String] comma-separated models with optional roles
       # @return [Array<Hash>] array of model specs
+      # :reek:TooManyStatements -- one-pass parser over MODEL[=ROLE] specs sharing the instance counter
       def parse_models_with_roles(model_string)
         models = []
         model_counts = Hash.new(0)
@@ -484,6 +495,7 @@ module AIA
         models
       end
 
+      # :reek:TooManyStatements -- sequential validation that assembles a rich role-not-found error listing the available roles
       def validate_role_exists(role_id)
         if AIA::SkillUtils.path_based_id?(role_id)
           expanded = File.expand_path(role_id)
@@ -519,6 +531,7 @@ module AIA
         raise ArgumentError, error_msg
       end
 
+      # :reek:TooManyStatements -- sequential terminal report: guards, then a markdown table per role; exits after printing
       def list_available_roles
         prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
@@ -564,6 +577,7 @@ module AIA
            .sort
       end
 
+      # :reek:TooManyStatements -- sequential --available-models report: parse query, filter the model list, print, exit
       # rubocop:disable Metrics/AbcSize
       def list_available_models(query)
         require 'ruby_llm'
@@ -587,8 +601,9 @@ module AIA
         counter = 0
 
         RubyLLM.models.all.each do |llm|
-          inputs = llm.modalities.input.join(',')
-          outputs = llm.modalities.output.join(',')
+          modalities = llm.modalities
+          inputs = modalities.input.join(',')
+          outputs = modalities.output.join(',')
           entry = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
 
           if query.nil? || query.empty?
@@ -598,7 +613,7 @@ module AIA
           end
 
           show_it = true
-          q1.each { |q| show_it &&= llm.modalities.send("#{q}?") }
+          q1.each { |q| show_it &&= modalities.send("#{q}?") }
           q2.each { |q| show_it &&= entry.include?(q) }
 
           if show_it
@@ -615,6 +630,7 @@ module AIA
       end
       # rubocop:enable Metrics/ModuleLength
 
+      # :reek:DuplicateMethodCall -- each `exit 1` terminates a distinct validation failure; there is no value to hoist
       def process_tools_paths(path_list)
         paths = []
 

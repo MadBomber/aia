@@ -14,6 +14,7 @@ require_relative 'aia/patches/ruby_llm_streaming_error'
 require_relative 'aia/errors'
 require_relative 'aia/turn_state'
 require_relative 'aia/content_extractor'
+require_relative 'aia/speech'
 require_relative 'aia/utility'
 require_relative 'aia/skill_utils'
 require_relative 'aia/version'
@@ -142,6 +143,7 @@ module AIA
       @config&.output&.append == true
     end
 
+    # :reek:TooManyStatements -- application boot sequence: parse, validate, log, load plugins, build robots, start session
     def run
       cli_overrides = CLIParser.parse
       @config = Config.setup(cli_overrides)

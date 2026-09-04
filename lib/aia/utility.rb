@@ -132,12 +132,14 @@ module AIA
       # Post-connection: connected_mcp_servers is the authoritative name list;
       # mcp_server_tool_counts provides per-server tool counts.
       # Pre-connection fallback: read live from RubyLLM::MCP.clients (--require clients).
+      # :reek:TooManyStatements -- authoritative post-connection labels with a live RubyLLM::MCP fallback before connection
       def mcp_client_labels
-        return [] if AIA.config&.flags&.no_mcp
+        cfg = AIA.config
+        return [] if cfg&.flags&.no_mcp
 
-        connected = AIA.config&.connected_mcp_servers
+        connected = cfg&.connected_mcp_servers
         unless connected.nil?
-          counts = AIA.config&.mcp_server_tool_counts || {}
+          counts = cfg&.mcp_server_tool_counts || {}
           return connected.map do |name|
             count = counts[name]
             count ? "#{name}(#{count})" : name

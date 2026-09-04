@@ -45,6 +45,7 @@ module AIA
       #
       # @param file_paths [Array<String>] paths to JSON configuration files
       # @return [Array<Hash>] array of server configurations with nested transport
+      # :reek:TooManyStatements -- per-file loop with warn-and-continue handling for missing files, bad JSON, and read errors
       def parse_files(file_paths)
         return [] if file_paths.nil? || file_paths.empty?
 
@@ -91,6 +92,7 @@ module AIA
       #
       # @param mcp_servers [Hash] the mcpServers hash from JSON
       # @return [Array<Hash>] array of server configurations
+      # :reek:TooManyStatements -- one line per optional JSON key mapped into the transport/server hashes
       def convert_mcp_servers_format(mcp_servers)
         mcp_servers.map do |name, config|
           transport = { type: config['type'] || 'stdio' }
@@ -123,12 +125,13 @@ module AIA
 
         transport = { type: parsed['type'] || 'stdio' }
 
-        if parsed['command'].is_a?(Array)
+        command = parsed['command']
+        if command.is_a?(Array)
           # Command is an array: first element is command, rest are args
-          transport[:command] = parsed['command'].first
-          transport[:args] = parsed['command'][1..] || []
-        elsif parsed['command']
-          transport[:command] = parsed['command']
+          transport[:command] = command.first
+          transport[:args] = command[1..] || []
+        elsif command
+          transport[:command] = command
           transport[:args] = parsed['args'] || []
         end
 

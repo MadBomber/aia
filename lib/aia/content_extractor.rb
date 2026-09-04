@@ -34,6 +34,7 @@ module AIA
     #
     # @param flow_result [SimpleFlow::Result]
     # @return [String]
+    # :reek:TooManyStatements -- one pass duck-types reply/content/duration into labeled sections
     def extract_network_content(flow_result)
       parts = []
       flow_result.context.each do |task_name, robot_result|
@@ -97,6 +98,7 @@ module AIA
     # @param tracker [SessionTracker, nil] to record the turn
     # @param decisions [Hash, nil] routing decisions for tracker
     # @return [String] the extracted content
+    # :reek:LongParameterList { max_params: 7 } -- presentation seam: each keyword is an independent optional aspect
     def present_result(result, ui_presenter:, streamed_content: nil, prompt: nil, elapsed: nil, tracker: nil, decisions: nil)
       content = streamed_content || extract_content(result)
 

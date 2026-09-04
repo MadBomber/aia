@@ -27,6 +27,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.prompt
     # @return [String, nil] combined results, or nil if not applicable
+    # :reek:TooManyStatements -- three-step delegation pipeline (decompose, plan, execute) sharing intermediate results
     def handle(context)
       prompt = context.prompt
       return nil unless @robot.network?
@@ -71,6 +72,7 @@ module AIA
 
     private
 
+    # :reek:TooManyStatements -- per-step loop: resolve assignee, announce, execute, record to memory and results
     def execute_steps(executor, prompt, plan, steps, robots)
       results = []
 
@@ -78,13 +80,15 @@ module AIA
         step_def = steps[i]
         assignee = robots.values.find { |r| r.name == step_def[:assignee] }
         assignee ||= robots.values.first
+        name  = assignee.name
+        title = step_def[:title]
 
-        @ui_presenter.display_info("  #{assignee.name}: #{step_def[:title]}...")
+        @ui_presenter.display_info("  #{name}: #{title}...")
 
         content = executor.execute(task, assignee, step_def, prompt, results)
 
-        write_to_memory(i, assignee.name, step_def[:title], content)
-        results << { robot: assignee.name, task: step_def[:title], content: content }
+        write_to_memory(i, name, title, content)
+        results << { robot: name, task: title, content: content }
       end
 
       results

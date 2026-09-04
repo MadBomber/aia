@@ -124,6 +124,8 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.prompt as requirements text
     # @return [String, nil] final synthesis or nil on failure
+    # :reek:TooManyStatements -- single orchestration script (banner, tier 1-3 waves, synthesis, report); the narrative order is the value
+    # :reek:DuplicateMethodCall -- say("") prints deliberate blank separator lines between build phases; not a hoistable value
     # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       requirements = context.prompt
@@ -189,6 +191,7 @@ module AIA
     private
 
     # Tier 1: use a probe robot to decompose requirements into layer specs
+    # :reek:TooManyStatements -- probe run plus parse-failure diagnostics and rescue reporting
     def decompose_to_layers(robot, requirements)
       say("Tier 1 ▶ #{robot.name} decomposing requirements into layers...")
       probe  = build_probe(robot.name + "-layer-probe")
@@ -226,6 +229,7 @@ module AIA
     #
     # @param layers [Array<Hash>] layer specs from Tier 1
     # @return [Hash{ String => Array<Hash> }] layer_name => task list ([] on failure)
+    # :reek:TooManyStatements -- per-layer async fan-out with per-layer error capture; the barrier plumbing is inherent
     def run_leads_wave(layers)
       results = {}
 
@@ -233,19 +237,21 @@ module AIA
         barrier = Async::Barrier.new
         layers.each do |layer|
           barrier.async do
-            probe  = build_probe("#{layer['name']}-lead")
+            name   = layer['name']
+            title  = layer['title']
+            probe  = build_probe("#{name}-lead")
             prompt = TASK_DECOMPOSE_PROMPT % {
-              layer_title:  layer['title'],
+              layer_title:  title,
               requirements: layer['requirements'].to_s,
               max_tasks:    MAX_TASKS_PER_LAYER
             }
             result = probe.run(prompt, mcp: :none, tools: :none)
             tasks  = parse_json_array(extract_content(result)).first(MAX_TASKS_PER_LAYER)
-            say("  ✓ #{layer['title']} lead: #{tasks.size} task(s)")
-            results[layer['name']] = tasks
+            say("  ✓ #{title} lead: #{tasks.size} task(s)")
+            results[name] = tasks
           rescue => e
-            say("  ✗ #{layer['title']} lead failed: #{e.message}")
-            results[layer['name']] = []
+            say("  ✗ #{title} lead failed: #{e.message}")
+            results[name] = []
           end
         end
         barrier.wait
@@ -260,6 +266,7 @@ module AIA
     #
     # @param layer_task_map [Hash{ String => Array<Hash> }] output of run_leads_wave
     # @return [Hash{ String => Hash }] "layer_name|artifact_path" => result hash
+    # :reek:TooManyStatements -- per-task async fan-out with success/failure result recording; the barrier plumbing is inherent
     def run_specialists_wave(layer_task_map)
       jobs = layer_task_map.flat_map do |layer_name, tasks|
         tasks.map { |task| { layer_name: layer_name, task: task } }
@@ -272,31 +279,32 @@ module AIA
         barrier = Async::Barrier.new
         jobs.each do |job|
           barrier.async do
-            task  = job[:task]
-            key   = "#{job[:layer_name]}|#{task['artifact']}"
-            probe = build_probe("#{task['specialist']}-specialist")
+            task       = job[:task]
+            artifact   = task['artifact']
+            title      = task['title']
+            specialist = task['specialist']
+            key        = "#{job[:layer_name]}|#{artifact}"
+            probe      = build_probe("#{specialist}-specialist")
 
-            full_prompt = "Artifact to produce: #{task['artifact']}\n\n#{task['prompt']}"
+            full_prompt = "Artifact to produce: #{artifact}\n\n#{task['prompt']}"
             result      = probe.run(full_prompt, mcp: :none, tools: :none)
             output      = extract_content(result)
 
-            save_artifact(task['artifact'], output)
-            say("    ✓ #{task['artifact']}")
+            save_artifact(artifact, output)
+            say("    ✓ #{artifact}")
 
             results[key] = {
-              task:       task['title'],
-              specialist: task['specialist'],
-              artifact:   task['artifact'],
+              task:       title,
+              specialist: specialist,
+              artifact:   artifact,
               output:     output
             }
           rescue => e
-            task = job[:task]
-            key  = "#{job[:layer_name]}|#{task['artifact']}"
-            say("    ✗ #{task['artifact']} failed: #{e.message}")
+            say("    ✗ #{artifact} failed: #{e.message}")
             results[key] = {
-              task:       task['title'],
-              specialist: task['specialist'],
-              artifact:   task['artifact'],
+              task:       title,
+              specialist: specialist,
+              artifact:   artifact,
               output:     "[FAILED: #{e.message}]"
             }
           end
@@ -316,9 +324,11 @@ module AIA
     # @return [Array<Hash>]
     def build_layer_results(layers, layer_task_map, specialist_results)
       layers.map do |layer|
-        tasks_for_layer = layer_task_map[layer['name']] || []
+        name  = layer['name']
+        title = layer['title']
+        tasks_for_layer = layer_task_map[name] || []
         task_results = tasks_for_layer.map do |task|
-          key = "#{layer['name']}|#{task['artifact']}"
+          key = "#{name}|#{task['artifact']}"
           specialist_results[key] || {
             task:       task['title'],
             specialist: task['specialist'],
@@ -327,9 +337,9 @@ module AIA
           }
         end
 
-        summary = synthesize_layer_from_results(layer['title'], task_results)
-        say("  ✓ #{layer['title']} synthesis complete")
-        { layer: layer['title'], tasks: task_results, summary: summary }
+        summary = synthesize_layer_from_results(title, task_results)
+        say("  ✓ #{title} synthesis complete")
+        { layer: title, tasks: task_results, summary: summary }
       end
     end
 

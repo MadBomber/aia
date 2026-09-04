@@ -291,6 +291,8 @@ module AIA
     private
 
     # Load a config file that REPLACES the user's personal config.
+    # :reek:TooManyStatements -- single case dispatch mapping YAML keys to typed config setters; one branch per key family
+    # :reek:DuplicateMethodCall -- Array(value) sits in mutually exclusive case branches; hoisting it would coerce hash-section values too
     def load_extra_config(path)
       path = File.expand_path(path)
 

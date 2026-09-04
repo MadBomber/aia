@@ -30,6 +30,7 @@ module AIA
     #
     # @param servers [Array<Hash>] MCP server configurations
     # @return [self]
+    # :reek:TooManyStatements -- connection ceremony: spinner setup, thread launch, global timeout guard, summary logging
     def connect_all(servers)
       return self unless servers.is_a?(Array) && servers.any?
 
@@ -76,9 +77,10 @@ module AIA
       connected_keys, tool_counts, failed = @mutex.synchronize do
         [@connected_clients.keys.dup, @server_tool_counts.dup, @failed_servers.dup]
       end
-      AIA.config.connected_mcp_servers  = connected_keys
-      AIA.config.mcp_server_tool_counts = tool_counts
-      AIA.config.failed_mcp_servers     = failed
+      cfg = AIA.config
+      cfg.connected_mcp_servers  = connected_keys
+      cfg.mcp_server_tool_counts = tool_counts
+      cfg.failed_mcp_servers     = failed
       self
     end
 
@@ -98,6 +100,7 @@ module AIA
     # the connected state so inject_into will include them in the robot.
     #
     # @return [self]
+    # :reek:TooManyStatements -- per-client absorb loop: start if needed, extract tools, merge into connected state with error capture
     def absorb_ruby_llm_mcp_clients
       return self unless defined?(RubyLLM::MCP)
 
@@ -189,14 +192,17 @@ module AIA
       logger = AIA::LoggerManager.mcp_logger
       logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
 
-      connected_names = @mutex.synchronize { @connected_clients.keys.to_set }
-      failed_names    = @mutex.synchronize { @failed_servers.to_set { |f| f[:name] } }
+      connected_names, failed_names = @mutex.synchronize do
+        [@connected_clients.keys.to_set, @failed_servers.to_set { |f| f[:name] }]
+      end
 
-      servers.each do |server_config|
+      stragglers = servers.filter_map do |server_config|
         srv_name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
         next if connected_names.include?(srv_name) || failed_names.include?(srv_name)
-        @mutex.synchronize { @failed_servers << { name: srv_name, error: "global connection timeout (#{global_limit}s)" } }
+
+        { name: srv_name, error: "global connection timeout (#{global_limit}s)" }
       end
+      @mutex.synchronize { @failed_servers.concat(stragglers) }
     end
 
     # Read global MCP connection timeout from config.
@@ -208,6 +214,8 @@ module AIA
     end
 
     # Connect a single MCP server, updating the spinner on completion.
+    # :reek:TooManyStatements -- one connection attempt: connect, wrap each remote tool, record outcome under the lock, report
+    # :reek:DuplicateMethodCall -- each @mutex.synchronize is a distinct critical section per outcome path
     # rubocop:disable-next Metrics/MethodLength
     def connect_one(server_config, name, spinner, logger)
       timeout = server_timeout(server_config)
@@ -221,6 +229,7 @@ module AIA
 
         if client.connected?
           tools = client.list_tools
+          tool_count = tools.size
           built_tools = tools.map do |tool_def|
             tool_name  = tool_def[:name]
             mcp_client = client
@@ -234,12 +243,12 @@ module AIA
 
           @mutex.synchronize do
             @connected_clients[name]  = client
-            @server_tool_counts[name] = tools.size
+            @server_tool_counts[name] = tool_count
             add_tools_deduped(built_tools, name, logger)
           end
 
-          logger.info("MCP: '#{name}' connected (#{tools.size} tools)")
-          spinner.success("(#{tools.size} tools)")
+          logger.info("MCP: '#{name}' connected (#{tool_count} tools)")
+          spinner.success("(#{tool_count} tools)")
         else
           @mutex.synchronize do
             @failed_servers << { name: name, error: "connection failed" }
@@ -255,11 +264,12 @@ module AIA
       logger.warn("MCP: '#{name}' timed out after #{timeout}s")
       spinner.error("(timed out)")
     rescue StandardError => e
+      msg = e.message
       @mutex.synchronize do
-        @failed_servers << { name: name, error: e.message }
+        @failed_servers << { name: name, error: msg }
       end
-      logger.warn("MCP: '#{name}' error: #{e.message}")
-      spinner.error("(#{e.message})")
+      logger.warn("MCP: '#{name}' error: #{msg}")
+      spinner.error("(#{msg})")
     end
 
     # Add tools to @connected_tools, skipping any whose name is already present.

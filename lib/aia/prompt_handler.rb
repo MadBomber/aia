@@ -4,6 +4,7 @@ require 'pm'
 require 'erb'
 
 module AIA
+  # :reek:TooManyMethods -- prompt/role fetching, front-matter merging, and fzf search form one lookup pipeline of small named steps
   class PromptHandler
     include AIA::SkillUtils
 
@@ -65,11 +66,12 @@ module AIA
       return handle_missing_role("roles/") if role_id.nil?
       return fetch_role_from_path(role_id) if path_based_id?(role_id)
 
-      unless role_id.start_with?(AIA.config.prompts.roles_prefix)
-        role_id = "#{AIA.config.prompts.roles_prefix}/#{role_id}"
+      prompts_cfg = AIA.config.prompts
+      unless role_id.start_with?(prompts_cfg.roles_prefix)
+        role_id = "#{prompts_cfg.roles_prefix}/#{role_id}"
       end
 
-      role_file_path = File.join(@prompts_dir, "#{role_id}#{AIA.config.prompts.extname}")
+      role_file_path = File.join(@prompts_dir, "#{role_id}#{prompts_cfg.extname}")
 
       parsed = if File.exist?(role_file_path)
                  # PM.parse(role_id) cannot resolve subdirectory IDs like "roles/jersey_mike"
@@ -171,54 +173,57 @@ module AIA
     end
 
     # Apply root-level shorthand keys to AIA.config
+    # :reek:TooManyStatements -- one guarded assignment per supported front-matter shorthand key
+    # :reek:DuplicateMethodCall -- cfg.pipeline is re-read because the next: branch may replace it mid-method
     # rubocop:disable-next Metrics/AbcSize
     def apply_root_shorthands(meta_hash)
-      # model → AIA.config.models (replace with single-model array)
+      cfg = AIA.config
+      # model → cfg.models (replace with single-model array)
       model_val = meta_hash['model'] || meta_hash[:model]
       if model_val
-        AIA.config.models = [model_val]
+        cfg.models = [model_val]
       end
 
-      # temperature → AIA.config.llm.temperature
+      # temperature → cfg.llm.temperature
       temp_val = meta_hash['temperature'] || meta_hash[:temperature]
       if temp_val
-        AIA.config.llm.temperature = temp_val
+        cfg.llm.temperature = temp_val
       end
 
-      # top_p → AIA.config.llm.top_p
+      # top_p → cfg.llm.top_p
       top_p_val = meta_hash['top_p'] || meta_hash[:top_p]
       if top_p_val
-        AIA.config.llm.top_p = top_p_val
+        cfg.llm.top_p = top_p_val
       end
 
-      # next → AIA.config.pipeline (replace)
+      # next → cfg.pipeline (replace)
       next_val = meta_hash['next'] || meta_hash[:next]
       if next_val
-        if AIA.config.pipeline.any?
-          logger.info "Prompt metadata 'next: #{next_val}' overrides remaining pipeline #{AIA.config.pipeline.inspect}"
+        if cfg.pipeline.any?
+          logger.info "Prompt metadata 'next: #{next_val}' overrides remaining pipeline #{cfg.pipeline.inspect}"
         end
-        AIA.config.pipeline = [next_val]
+        cfg.pipeline = [next_val]
       end
 
-      # pipeline → AIA.config.pipeline (replace)
+      # pipeline → cfg.pipeline (replace)
       pipeline_val = meta_hash['pipeline'] || meta_hash[:pipeline]
       if pipeline_val
-        if AIA.config.pipeline.any?
-          logger.info "Prompt metadata 'pipeline' overrides remaining pipeline #{AIA.config.pipeline.inspect}"
+        if cfg.pipeline.any?
+          logger.info "Prompt metadata 'pipeline' overrides remaining pipeline #{cfg.pipeline.inspect}"
         end
-        AIA.config.pipeline = Array(pipeline_val)
+        cfg.pipeline = Array(pipeline_val)
       end
 
-      # shell → AIA.config.flags.shell (and PM's shell via metadata)
+      # shell → cfg.flags.shell (and PM's shell via metadata)
       shell_val = meta_hash['shell'] || meta_hash[:shell]
       unless shell_val.nil?
-        AIA.config.flags.shell = shell_val
+        cfg.flags.shell = shell_val
       end
 
-      # erb → AIA.config.flags.erb (and PM's erb via metadata)
+      # erb → cfg.flags.erb (and PM's erb via metadata)
       erb_val = meta_hash['erb'] || meta_hash[:erb]
       return if erb_val.nil?
-      AIA.config.flags.erb = erb_val
+      cfg.flags.erb = erb_val
     end
 
     def logger
@@ -352,8 +357,9 @@ module AIA
     end
 
     def search_role_id_with_fzf(initial_query)
-      role_files = Dir.glob(File.join(@roles_dir, "*#{AIA.config.prompts.extname}"))
-                      .map { |file| File.basename(file, AIA.config.prompts.extname) }
+      prompts_cfg = AIA.config.prompts
+      role_files = Dir.glob(File.join(@roles_dir, "*#{prompts_cfg.extname}"))
+                      .map { |file| File.basename(file, prompts_cfg.extname) }
       fzf = AIA::Fzf.new(
         list: role_files,
         directory: @prompts_dir,
@@ -368,8 +374,8 @@ module AIA
         raise "No role ID selected"
       end
 
-      unless role.start_with?(AIA.config.prompts.roles_prefix)
-        role = AIA.config.prompts.roles_prefix + '/' + role
+      unless role.start_with?(prompts_cfg.roles_prefix)
+        role = prompts_cfg.roles_prefix + '/' + role
       end
 
       role

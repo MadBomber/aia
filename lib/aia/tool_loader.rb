@@ -53,6 +53,7 @@ module AIA
 
     # Load tools from require_libs and tool paths, then cache the result.
     # Subsequent calls to RobotFactory.build skip this entirely if cache exists.
+    # :reek:TooManyStatements -- sequential phases: require_libs with activation retry, tool files, eager loads, discovery cache
     def load_tools(config)
       Array(config.require_libs).each do |lib|
         require lib
@@ -89,11 +90,17 @@ module AIA
       tools = discover_tools
       @tool_cache = tools
       config.loaded_tools = tools
-      config.tool_names = tools.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
+      config.tool_names = tools.map { |t| tool_name(t) }.join(', ')
+    end
+
+    # A tool's display name: instances expose #name; bare classes fall back to the class name.
+    def tool_name(tool)
+      tool.respond_to?(:name) ? tool.name : tool.class.name
     end
 
     # Filter tools based on allowed/rejected lists and KBS decisions.
-    # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    # :reek:TooManyStatements -- allowed filter, rejected filter, then a name-dedup pass over the tool list
+    # :reek:DuplicateMethodCall -- tool_name(t) is applied per element inside three separate filter blocks; no shared scope to hoist into
     def filtered_tools(config)
       tools = config.loaded_tools || []
       allowed = config.tools&.allowed
@@ -102,7 +109,7 @@ module AIA
       if allowed && !allowed.empty?
         allowed_list = Array(allowed).map(&:strip).map(&:downcase)
         tools = tools.select do |t|
-          name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
+          name = tool_name(t).downcase
           # name is a String; Array#intersect? would raise TypeError
           allowed_list.any? { |a| name.include?(a) }
         end
@@ -111,7 +118,7 @@ module AIA
       if rejected && !rejected.empty?
         rejected_list = Array(rejected).map(&:strip).map(&:downcase)
         tools = tools.reject do |t|
-          name = (t.respond_to?(:name) ? t.name : t.class.name).downcase
+          name = tool_name(t).downcase
           # name is a String; Array#intersect? would raise TypeError
           rejected_list.any? { |r| name.include?(r) }
         end
@@ -119,7 +126,7 @@ module AIA
 
       seen = {}
       tools.select do |t|
-        name = t.respond_to?(:name) ? t.name : t.class.name
+        name = tool_name(t)
         if seen[name]
           false
         else

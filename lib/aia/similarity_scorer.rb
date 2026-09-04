@@ -15,11 +15,13 @@ module AIA
     #
     # @param responses [Array<String>] ordered response texts (first is reference)
     # @return [Array<Float, nil>] similarity scores (nil for first, 0.0..1.0 for rest)
+    # :reek:TooManyStatements -- guarded scoring: two early-out shapes, TF-IDF fit/transform, pairwise map, rescue fallback
     def self.score(responses)
-      return Array.new(responses.size) if responses.size < 2
+      count = responses.size
+      return Array.new(count) if count < 2
 
       texts = responses.map { |r| r.to_s.strip }
-      return Array.new(responses.size) if texts.first.empty?
+      return Array.new(count) if texts.first.empty?
 
       tfidf = Classifier::TFIDF.new
       tfidf.fit(texts)
@@ -33,7 +35,7 @@ module AIA
         end
       end
     rescue StandardError
-      Array.new(responses.size)
+      Array.new(count)
     end
   end
 end

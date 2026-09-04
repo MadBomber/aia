@@ -15,6 +15,7 @@ module AIA
     # @param config [AIA::Config]
     # @param namer [RobotNamer]
     # @return [RobotLab::Network]
+    # :reek:TooManyStatements -- gathers shared robot inputs then declares one network task per pipeline step
     def build_pipeline_network(config, namer)
       prompts = config.pipeline
       run_config = RobotFactory.build_run_config(config)
@@ -66,13 +67,15 @@ module AIA
     # @param config [AIA::Config]
     # @param namer [RobotNamer]
     # @return [RobotLab::Network]
+    # :reek:TooManyStatements -- gathers shared robot inputs, declares one task per roster member plus the synthesizer
     def build_consensus_network(config, namer)
       run_config = RobotFactory.build_run_config(config)
-      tools = ToolLoader.filtered_tools(config)
-      mcp = RobotFactory.mcp_server_configs(config)
-      primary = config.models.first
+      tools  = ToolLoader.filtered_tools(config)
+      mcp    = RobotFactory.mcp_server_configs(config)
+      models = config.models
+      primary = models.first
       aia_config = config
-      roster = config.models.map { |spec| { name: namer.name_for(spec.name), spec: spec } }
+      roster = models.map { |spec| { name: namer.name_for(spec.name), spec: spec } }
       build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, run_config, aia_config) }
 
       RobotLab.create_network(name: "aia-consensus") do
@@ -89,11 +92,12 @@ module AIA
           config:        run_config
         )
         task :consensus, synthesizer,
-             depends_on: config.models.map { |s| s.internal_id.to_sym }
+             depends_on: models.map { |s| s.internal_id.to_sym }
       end
     end
 
     # Shared helper: builds a single roster robot (used by parallel and consensus networks).
+    # :reek:LongParameterList { max_params: 6 } -- pass-through of the shared per-network build inputs
     def build_roster_robot(entry, roster, tools, mcp, run_config, aia_config)
       spec = entry[:spec]
       identity = SystemPromptAssembler.build_identity_prompt(entry[:name], spec, roster)
@@ -116,6 +120,7 @@ module AIA
     # @param namer [RobotNamer]
     # @param server_groups [Array<Array<Hash>>]
     # @return [RobotLab::Network]
+    # :reek:TooManyStatements -- gathers shared robot inputs, declares one task per server group plus the synthesizer
     def build_concurrent_mcp_network(config, namer, server_groups)
       run_config = RobotFactory.build_run_config(config)
       tools = ToolLoader.filtered_tools(config)

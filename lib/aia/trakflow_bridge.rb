@@ -26,6 +26,7 @@ module AIA
     #
     # @param pipeline [Array<String>] prompt IDs in pipeline order
     # @return [String, nil] summary of created plan
+    # :reek:TooManyStatements -- plan build: one child task per pipeline step, chained by blocking dependencies
     def create_plan_from_pipeline(pipeline)
       return nil unless available?
 
@@ -71,15 +72,16 @@ module AIA
       case status
       when :started
         task.status = "in_progress"
-        @db.update_task(task)
       when :completed
         task.close!(reason: reason || "Completed")
-        @db.update_task(task)
       when :failed
         task.status = "blocked"
         task.append_trace("blocked", reason) if reason
-        @db.update_task(task)
+      else
+        return
       end
+
+      @db.update_task(task)
     rescue StandardError => e
       $stderr.puts "Warning: TrakFlow status update failed: #{e.message}"
     end

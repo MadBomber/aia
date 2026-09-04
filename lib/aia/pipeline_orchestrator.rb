@@ -25,6 +25,8 @@ module AIA
     # Process all prompts in the pipeline.
     #
     # @param config [AIA::Config]
+    # :reek:TooManyStatements -- shift-based loop so front-matter pipeline edits take effect; tracking interleaved
+    # :reek:DuplicateMethodCall -- config.pipeline is deliberately re-read each iteration because prompt front matter mutates it mid-loop
     def process(config)
       bridge   = TrakFlowBridge.new
       tracking = bridge.available? && config.flags.track_pipeline
@@ -82,11 +84,14 @@ module AIA
       end
     end
 
+    # :reek:TooManyStatements -- image request assembly, spinner-wrapped generation, then save/display of the result
     def generate_image(prompt_text, config)
       img_cfg = config.image
+      quality = img_cfg.quality
+      style   = img_cfg.style
       params  = {}
-      params[:quality] = img_cfg.quality if img_cfg.quality && !img_cfg.quality.to_s.strip.empty?
-      params[:style]   = img_cfg.style   if img_cfg.style   && !img_cfg.style.to_s.strip.empty?
+      params[:quality] = quality if quality && !quality.to_s.strip.empty?
+      params[:style]   = style   if style   && !style.to_s.strip.empty?
 
       image = @ui.with_spinner("Generating image") do
         RubyLLM.paint(
@@ -124,14 +129,16 @@ module AIA
     end
 
     # Check if concurrent MCP mode should be used
+    # :reek:TooManyStatements -- ordered eligibility gates (server count, auto/forced, discovery, grouping threshold) before the build
     def maybe_use_concurrent_mcp(prompt_text, config)
       return nil unless (config.mcp_servers || []).size > 1
 
+      turn_state  = AIA.turn_state
       concurrency = config.respond_to?(:concurrency) ? config.concurrency : nil
-      return nil unless concurrency&.auto || AIA.turn_state.force_concurrent_mcp
+      return nil unless concurrency&.auto || turn_state.force_concurrent_mcp
 
-      if AIA.turn_state.force_concurrent_mcp
-        AIA.turn_state.force_concurrent_mcp = false
+      if turn_state.force_concurrent_mcp
+        turn_state.force_concurrent_mcp = false
       end
 
       discovery         = MCPDiscovery.new
@@ -151,13 +158,15 @@ module AIA
     end
 
     # Build prompt text from a prompt_id
+    # :reek:TooManyStatements -- layered prompt assembly: parameters, role prefix, skills, stdin, context files, in a fixed order
     def build_prompt_text(prompt_id, config)
       parsed = @prompt_handler.fetch_prompt(prompt_id)
       return nil unless parsed
 
-      if parsed.respond_to?(:parameters) && parsed.parameters && !parsed.parameters.empty?
-        values = @input_collector.collect(parsed.parameters)
-        values.each { |k, v| parsed.parameters[k] = v }
+      parameters = parsed.respond_to?(:parameters) ? parsed.parameters : nil
+      if parameters && !parameters.empty?
+        values = @input_collector.collect(parameters)
+        values.each { |k, v| parameters[k] = v }
       end
 
       prompt_text = parsed.to_s
@@ -180,8 +189,9 @@ module AIA
         prompt_text = "#{prompt_text}\n\n#{skill_content}" if skill_content
       end
 
-      if config.stdin_content && !config.stdin_content.strip.empty?
-        prompt_text = "#{prompt_text}\n\n#{config.stdin_content}"
+      stdin_content = config.stdin_content
+      if stdin_content && !stdin_content.strip.empty?
+        prompt_text = "#{prompt_text}\n\n#{stdin_content}"
         config.stdin_content = nil
       end
 

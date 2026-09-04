@@ -16,12 +16,12 @@ module AIA
       def initialize_memory(network, config)
         return network unless network.respond_to?(:memory)
 
-        memory = network.memory
-        memory.data.session_id  = SecureRandom.hex(8)
-        memory.data.model_count = config.models.size
-        memory.data.model_names = config.models.map(&:name)
-        memory.data.mode        = config.flags.consensus ? :consensus : :parallel
-        memory.data.turn_count  = 0
+        data = network.memory.data
+        data.session_id  = SecureRandom.hex(8)
+        data.model_count = config.models.size
+        data.model_names = config.models.map(&:name)
+        data.mode        = config.flags.consensus ? :consensus : :parallel
+        data.turn_count  = 0
 
         network
       end

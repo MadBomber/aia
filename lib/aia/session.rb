@@ -23,6 +23,7 @@ require_relative "tool_filter_registry"
 require_relative "chat_loop"
 
 module AIA
+  # :reek:TooManyInstanceVariables -- session hub wires presenter, trackers, handlers, and robot; each collaborator is a named field
   class Session
     include ContentExtractor
 
@@ -35,14 +36,17 @@ module AIA
 
     # Starts the session, processing all prompts in the pipeline and then
     # optionally starting an interactive chat session.
+    # :reek:TooManyStatements -- session boot script: build robot, startup coordination, optional immediate chat, pipeline run, chat handoff
     def start
+      cfg = AIA.config
+
       # Build robot or network
-      @robot = RobotFactory.build(AIA.config)
+      @robot = RobotFactory.build(cfg)
       AIA.client = @robot
 
       # Run all startup coordination: MCP, tools, filters, task board, bus
       coordinator = StartupCoordinator.new(robot: @robot, ui_presenter: @ui_presenter)
-      coordinator.run(AIA.config)
+      coordinator.run(cfg)
       @filters     = coordinator.filters
       @mcp_manager = coordinator.mcp_manager
 
@@ -63,7 +67,7 @@ module AIA
         input_collector: @input_collector,
         ui_presenter:    @ui_presenter,
         session_tracker: @session_tracker
-      ).process(AIA.config)
+      ).process(cfg)
 
       # Start chat mode after all prompts are processed
       return unless AIA.chat?

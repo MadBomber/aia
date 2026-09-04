@@ -12,6 +12,7 @@
 # and direct test assertions).
 
 module AIA
+  # :reek:TooManyInstanceVariables -- one boolean flag per exclusive mode plus spawn/mcp details; a Hash would lose the attr_accessor API
   class TurnState
     # Exclusive mode flags — only one may be active at a time via #request.
     EXCLUSIVE_MODES = %i[

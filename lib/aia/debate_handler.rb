@@ -36,7 +36,7 @@ module AIA
     #
     # @param context [HandlerContext] — reads context.prompt
     # @return [String, nil] formatted debate results, or nil if not applicable
-    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
+    # :reek:TooManyStatements -- debate orchestration: per-round async fan-out, convergence check, tracking; stages share round state
     def handle(context)
       prompt = context.prompt
       return nil unless @robot.network?
@@ -55,33 +55,19 @@ module AIA
       rounds = []
 
       MAX_ROUNDS.times do |round|
+        round_no      = round + 1
         round_context = build_round_context(prompt, rounds)
 
-        round_results = Sync do
-          barrier = Async::Barrier.new
-          tasks = robots.map do |robot|
-            barrier.async do
-              @ui_presenter.display_info("  Round #{round + 1}: #{robot.name}...")
-              result  = robot.run(round_context, mcp: :inherit, tools: :inherit)
-              content = extract_content(result)
-              write_to_memory(round, robot.name, content)
-              { robot: robot.name, content: content }
-            rescue => e
-              FailedResponse.new(robot_name: robot.name, error_message: e.message)
-            end
-          end
-          barrier.wait
-          tasks.map(&:wait)
-        end
+        round_results = run_debate_round(robots, round_context, round, round_no)
 
-        raise DebateError, "All robots failed in round #{round + 1}" if
+        raise DebateError, "All robots failed in round #{round_no}" if
           round_results.all?(FailedResponse)
 
         previous = rounds.last
         rounds << round_results
 
         if converged?(round, round_results, previous)
-          @ui_presenter.display_info("  Converged in round #{round + 1}.")
+          @ui_presenter.display_info("  Converged in round #{round_no}.")
           break
         end
       end
@@ -96,6 +82,29 @@ module AIA
     end
 
     private
+
+    # Run every robot once against the round context, concurrently.
+    # Returns one entry per robot: a result hash, or FailedResponse on error.
+    # :reek:TooManyStatements -- async fan-out with per-robot progress, memory write, and failure capture
+    def run_debate_round(robots, round_context, round, round_no)
+      Sync do
+        barrier = Async::Barrier.new
+        tasks = robots.map do |robot|
+          barrier.async do
+            name = robot.name
+            @ui_presenter.display_info("  Round #{round_no}: #{name}...")
+            result  = robot.run(round_context, mcp: :inherit, tools: :inherit)
+            content = extract_content(result)
+            write_to_memory(round, name, content)
+            { robot: name, content: content }
+          rescue => e
+            FailedResponse.new(robot_name: name, error_message: e.message)
+          end
+        end
+        barrier.wait
+        tasks.map(&:wait)
+      end
+    end
 
     def build_round_context(prompt, rounds)
       return prompt if rounds.empty?

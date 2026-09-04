@@ -13,6 +13,7 @@ module AIA
   # CPU). If `listen` cannot be loaded, it falls back to a background thread that
   # polls file signatures ([mtime, size]). Either way the same #react logic drives
   # {PluginLoader}, so behavior is identical — only latency differs.
+  # :reek:TooManyInstanceVariables -- holds both backends' state (listener vs polling thread) plus watch config and callbacks
   class PluginMonitor
     DEFAULT_INTERVAL = 1.0 # seconds (polling fallback only)
 
@@ -83,9 +84,11 @@ module AIA
     #
     # @return [Array<Array(Symbol, String)>] e.g. [[:added, "/p/foo.rb"], ...]
     def detect_changes(old_snapshot, new_snapshot)
-      added   = (new_snapshot.keys - old_snapshot.keys).map { |path| [:added, path] }
-      removed = (old_snapshot.keys - new_snapshot.keys).map { |path| [:removed, path] }
-      modified = (old_snapshot.keys & new_snapshot.keys)
+      old_keys = old_snapshot.keys
+      new_keys = new_snapshot.keys
+      added   = (new_keys - old_keys).map { |path| [:added, path] }
+      removed = (old_keys - new_keys).map { |path| [:removed, path] }
+      modified = (old_keys & new_keys)
                  .reject { |path| new_snapshot[path] == old_snapshot[path] }
                  .map { |path| [:modified, path] }
       added + removed + modified
@@ -115,9 +118,9 @@ module AIA
     # Map a listen callback into per-file reactions, ignoring anything that is
     # not a top-level file of the plugins directory (listen watches recursively).
     def handle_listen_events(modified, added, removed)
-      Array(added).each    { |path| react(:added, path)    if top_level?(path) }
-      Array(modified).each { |path| react(:modified, path) if top_level?(path) }
-      Array(removed).each  { |path| react(:removed, path)  if top_level?(path) }
+      { added: added, modified: modified, removed: removed }.each do |event, paths|
+        Array(paths).each { |path| react(event, path) if top_level?(path) }
+      end
     end
 
     # listen reports resolved (symlink-free) paths, and on macOS the plugins

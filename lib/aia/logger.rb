@@ -76,22 +76,23 @@ module AIA
       def configure_llm_logger
         return unless defined?(RubyLLM)
 
-        logger = llm_logger
+        logger     = llm_logger
+        llm_config = RubyLLM.config
 
         # Set our logger on the RubyLLM config object
-        if RubyLLM.config.respond_to?(:logger=)
-          RubyLLM.config.logger = logger
+        if llm_config.respond_to?(:logger=)
+          llm_config.logger = logger
         end
 
         # Also set log_file and log_level in case the logger gets recreated
-        if RubyLLM.config.respond_to?(:log_file=)
+        if llm_config.respond_to?(:log_file=)
           file = effective_log_file(logger_config_for(:llm))
-          RubyLLM.config.log_file = resolve_log_file_io(file)
+          llm_config.log_file = resolve_log_file_io(file)
         end
 
-        if RubyLLM.config.respond_to?(:log_level=)
+        if llm_config.respond_to?(:log_level=)
           level = effective_log_level(logger_config_for(:llm))
-          RubyLLM.config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+          llm_config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
         end
 
         # Reset the memoized @logger on RubyLLM module so next call uses our config
@@ -307,6 +308,7 @@ module AIA
       # @param file [String] The file config value
       # @param flush [Boolean] If true, flush immediately (no buffering)
       # @return [Lumberjack::Device] The device instance
+      # :reek:BooleanParameter -- flush: maps directly onto Lumberjack's buffer_size; two constructors would obscure that single toggle
       def create_device(file, flush: true)
         # buffer_size: 0 means immediate flush (no buffering)
         buffer_size = flush ? 0 : 8192
@@ -333,12 +335,13 @@ module AIA
       # @param system [Symbol] The system (:aia, :llm, :mcp)
       # @return [ConfigSection, nil] The configuration section
       def logger_config_for(system)
-        return nil unless AIA.config&.logger
+        logger_cfg = AIA.config&.logger
+        return nil unless logger_cfg
 
         case system
-        when :aia then AIA.config.logger.aia
-        when :llm then AIA.config.logger.llm
-        when :mcp then AIA.config.logger.mcp
+        when :aia then logger_cfg.aia
+        when :llm then logger_cfg.llm
+        when :mcp then logger_cfg.mcp
         end
       rescue NoMethodError
         nil

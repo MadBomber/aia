@@ -9,6 +9,7 @@ module AIA
       # No prompt dependency — just handles user input for parameter collection
     end
 
+    # :reek:TooManyStatements -- one Reline round-trip: question build, readline, Ctrl+D/empty fallbacks, prompt_proc restore
     def request_variable_value(variable_name:, default_value: nil)
       Reline::HISTORY.clear
 
