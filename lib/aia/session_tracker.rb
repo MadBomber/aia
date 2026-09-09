@@ -97,68 +97,65 @@ module AIA
 
     # Expand a network SimpleFlow::Result into one turn entry per robot.
     # Computes TF-IDF similarity of each response against the first.
-    # :reek:TooManyStatements -- one pass collects per-robot tokens, cost, timing, and similarity texts; splitting hides the pairing
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # :reek:TooManyStatements -- collect entries and texts in one pass, then score and accumulate; splitting hides the pairing
     def record_network_turn(input:, flow_result:, decisions: nil, elapsed: nil)
       @turn_count += 1
       now = Time.now
 
       # Collect robot data in order for similarity scoring
-      robot_entries = []
+      robot_entries  = []
       response_texts = []
 
-      # rubocop:disable Metrics/BlockLength
       flow_result.context.each do |task_name, robot_result|
         next if task_name == :run_params
         next unless robot_result.respond_to?(:raw)
 
-        raw = robot_result.raw
-        input_tokens  = (raw.respond_to?(:input_tokens) && raw.input_tokens) || 0
-        output_tokens = (raw.respond_to?(:output_tokens) && raw.output_tokens) || 0
-        tokens = input_tokens + output_tokens
-
-        model_id = extract_model_id_from_raw(raw)
-        model_id ||= robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
-
-        cost = tokens.positive? ? compute_cost_for_model(model_id, input_tokens, output_tokens) : 0.0
-        robot_elapsed = robot_result.respond_to?(:duration) ? (robot_result.duration || 0) : 0
-
-        text = if robot_result.respond_to?(:reply)
-                 robot_result.reply.to_s
-               elsif robot_result.respond_to?(:content)
-                 robot_result.content.to_s
-               else
-                 ""
-               end
-        # rubocop:enable Metrics/BlockLength
-        response_texts << text
-
-        robot_entries << {
-          model: model_id,
-          input_length: input.to_s.length,
-          input_tokens: input_tokens,
-          output_tokens: output_tokens,
-          tokens: tokens,
-          cost: cost,
-          elapsed: robot_elapsed,
-          decisions: decisions&.to_h,
-          timestamp: now
-        }
+        response_texts << extract_response_text(robot_result)
+        robot_entries  << network_robot_entry(task_name, robot_result,
+                                              input: input, decisions: decisions, now: now)
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       # Compute similarity scores (first model is reference)
-      scores = if robot_entries.size > 1
-                 SimilarityScorer.score(response_texts)
-               else
-                 Array.new(robot_entries.size)
-               end
+      scores = robot_entries.size > 1 ? SimilarityScorer.score(response_texts) : Array.new(robot_entries.size)
 
       robot_entries.each_with_index do |entry, i|
         entry[:similarity] = scores[i]
         @total_cost += entry[:cost]
         @total_tokens += entry[:tokens]
         @turns << entry
+      end
+    end
+
+    # One turn entry for a single robot's result within a network flow.
+    def network_robot_entry(task_name, robot_result, input:, decisions:, now:)
+      raw = robot_result.raw
+      input_tokens  = (raw.respond_to?(:input_tokens) && raw.input_tokens) || 0
+      output_tokens = (raw.respond_to?(:output_tokens) && raw.output_tokens) || 0
+      tokens = input_tokens + output_tokens
+
+      model_id = extract_model_id_from_raw(raw)
+      model_id ||= robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
+
+      {
+        model: model_id,
+        input_length: input.to_s.length,
+        input_tokens: input_tokens,
+        output_tokens: output_tokens,
+        tokens: tokens,
+        cost: tokens.positive? ? compute_cost_for_model(model_id, input_tokens, output_tokens) : 0.0,
+        elapsed: robot_result.respond_to?(:duration) ? (robot_result.duration || 0) : 0,
+        decisions: decisions&.to_h,
+        timestamp: now
+      }
+    end
+
+    def extract_response_text(robot_result)
+      if robot_result.respond_to?(:reply)
+        robot_result.reply.to_s
+      elsif robot_result.respond_to?(:content)
+        robot_result.content.to_s
+      else
+        ""
       end
     end
 

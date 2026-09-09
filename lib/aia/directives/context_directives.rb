@@ -109,41 +109,19 @@ module AIA
     end
 
     desc "Display the current conversation context with checkpoint markers"
-    # :reek:TooManyStatements -- sequential transcript dump with checkpoint markers interleaved at their positions
-    # rubocop:disable-next Metrics/AbcSize
     def review(args, _unused = nil)
       chats = get_chats
       return "Error: No active chat sessions found." if chats.nil? || chats.empty?
 
-      first_chat = chats.values.first
-      messages = first_chat&.messages || []
-
-      total = messages.size
-      puts "\n=== Chat Context (RubyLLM) ==="
-      puts "Total messages: #{total}"
-      puts "Models: #{chats.keys.join(', ')}"
-      puts "Checkpoints: #{checkpoint_names.join(', ')}" if checkpoint_names.any?
-      puts
+      messages = chats.values.first&.messages || []
+      print_review_header(chats, messages.size)
 
       positions = checkpoint_positions
-
       messages.each_with_index do |msg, index|
-        if positions[index]
-          puts "📍 [Checkpoint: #{positions[index].join(', ')}]"
-          puts "-" * 40
-        end
-
-        role = msg.role.to_s.capitalize
-        content = format_message_content(msg)
-
-        puts "#{index + 1}. [#{role}]: #{content}"
-        puts
+        print_checkpoint_marker(positions[index])
+        print_review_message(msg, index)
       end
-
-      if positions[total]
-        puts "📍 [Checkpoint: #{positions[total].join(', ')}]"
-        puts "-" * 40
-      end
+      print_checkpoint_marker(positions[messages.size])
 
       puts "=== End of Context ==="
       ""
@@ -175,6 +153,27 @@ module AIA
 
     def checkpoint_names
       @checkpoint_store.keys
+    end
+
+    def print_review_header(chats, total)
+      puts "\n=== Chat Context (RubyLLM) ==="
+      puts "Total messages: #{total}"
+      puts "Models: #{chats.keys.join(', ')}"
+      puts "Checkpoints: #{checkpoint_names.join(', ')}" if checkpoint_names.any?
+      puts
+    end
+
+    # Print the marker block when checkpoint names exist at this position.
+    def print_checkpoint_marker(names)
+      return unless names
+
+      puts "📍 [Checkpoint: #{names.join(', ')}]"
+      puts "-" * 40
+    end
+
+    def print_review_message(msg, index)
+      puts "#{index + 1}. [#{msg.role.to_s.capitalize}]: #{format_message_content(msg)}"
+      puts
     end
 
     def checkpoint_positions

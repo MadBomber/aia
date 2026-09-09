@@ -495,40 +495,38 @@ module AIA
         models
       end
 
-      # :reek:TooManyStatements -- sequential validation that assembles a rich role-not-found error listing the available roles
       def validate_role_exists(role_id)
-        if AIA::SkillUtils.path_based_id?(role_id)
-          expanded = File.expand_path(role_id)
-          expanded += '.md' if File.extname(expanded).empty?
-          raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
+        return validate_role_path!(role_id) if AIA::SkillUtils.path_based_id?(role_id)
 
-          return
-        end
-
-        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
+        prompts_dir  = ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
-
-        unless role_id.start_with?(roles_prefix)
-          role_id = "#{roles_prefix}/#{role_id}"
-        end
+        role_id      = "#{roles_prefix}/#{role_id}" unless role_id.start_with?(roles_prefix)
 
         role_file_path = File.join(prompts_dir, "#{role_id}.md")
-
         return if File.exist?(role_file_path)
-        available_roles = list_available_role_names(prompts_dir, roles_prefix)
 
-        error_msg = "Role file not found: #{role_file_path}\n\n"
+        raise ArgumentError, role_not_found_message(role_file_path, prompts_dir, roles_prefix)
+      end
+
+      # A path-based role id must resolve to an existing file.
+      def validate_role_path!(role_id)
+        expanded = File.expand_path(role_id)
+        expanded += '.md' if File.extname(expanded).empty?
+        raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
+      end
+
+      def role_not_found_message(role_file_path, prompts_dir, roles_prefix)
+        available_roles = list_available_role_names(prompts_dir, roles_prefix)
+        message = "Role file not found: #{role_file_path}\n\n"
 
         if available_roles.empty?
-          error_msg += "No roles directory found at #{File.join(prompts_dir, roles_prefix)}\n"
-          error_msg += "Create the directory and add role files to use this feature."
+          message + "No roles directory found at #{File.join(prompts_dir, roles_prefix)}\n" \
+                    "Create the directory and add role files to use this feature."
         else
-          error_msg += "Available roles:\n"
-          error_msg += available_roles.map { |r| "  - #{r}" }.join("\n")
-          error_msg += "\n\nCreate the role file or use an existing role."
+          message + "Available roles:\n" +
+            available_roles.map { |r| "  - #{r}" }.join("\n") +
+            "\n\nCreate the role file or use an existing role."
         end
-
-        raise ArgumentError, error_msg
       end
 
       # :reek:TooManyStatements -- sequential terminal report: guards, then a markdown table per role; exits after printing
@@ -577,56 +575,52 @@ module AIA
            .sort
       end
 
-      # :reek:TooManyStatements -- sequential --available-models report: parse query, filter the model list, print, exit
-      # rubocop:disable Metrics/AbcSize
+      # :reek:TooManyStatements -- sequential --available-models report: parse query, print matches, summary, exit
       def list_available_models(query)
         require 'ruby_llm'
 
-        query = if query.nil?
-                  []
-                else
-                  query.split(',')
-                end
-        # rubocop:enable Metrics/AbcSize
+        query = query.nil? ? [] : query.split(',')
+        modality_terms, substring_terms = parse_model_query(query)
 
         header = "\nAvailable LLMs"
         header += " for #{query.join(' and ')}" if query.any?
-
         puts header + ':'
         puts
 
-        q1 = query.select { |q| q.include?('_to_') }.map { |q| q[0] == ':' ? q[1..] : q }
-        q2 = query.reject { |q| q.include?('_to_') }
-
-        counter = 0
-
-        RubyLLM.models.all.each do |llm|
-          modalities = llm.modalities
-          inputs = modalities.input.join(',')
-          outputs = modalities.output.join(',')
-          entry = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
-
-          if query.nil? || query.empty?
-            counter += 1
-            puts entry
-            next
-          end
-
-          show_it = true
-          q1.each { |q| show_it &&= modalities.send("#{q}?") }
-          q2.each { |q| show_it &&= entry.include?(q) }
-
-          if show_it
-            counter += 1
-            puts entry
-          end
-        end
+        counter = print_matching_models(modality_terms, substring_terms)
 
         puts if counter.positive?
         puts "#{counter} LLMs matching your query"
         puts
 
         exit
+      end
+
+      # Print each matching model entry; returns the number printed.
+      def print_matching_models(modality_terms, substring_terms)
+        RubyLLM.models.all.count do |llm|
+          entry = format_model_entry(llm)
+          visible = model_entry_visible?(llm, entry, modality_terms, substring_terms)
+          puts entry if visible
+          visible
+        end
+      end
+
+      # Split a query into modality terms (e.g. "text_to_text", leading ':'
+      # stripped) and plain substring terms.
+      def parse_model_query(query)
+        modality, substrings = query.partition { |q| q.include?('_to_') }
+        [modality.map { |q| q.delete_prefix(':') }, substrings]
+      end
+
+      def format_model_entry(llm)
+        modalities = llm.modalities
+        "- #{llm.id} (#{llm.provider}) #{modalities.input.join(',')} to #{modalities.output.join(',')}"
+      end
+
+      def model_entry_visible?(llm, entry, modality_terms, substring_terms)
+        modality_terms.all? { |q| llm.modalities.send("#{q}?") } &&
+          substring_terms.all? { |q| entry.include?(q) }
       end
       # rubocop:enable Metrics/ModuleLength
 

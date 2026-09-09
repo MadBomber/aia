@@ -8,6 +8,8 @@
 # After each resolve(), prints a timing table showing
 # prep and filter times for the active filter.
 
+require 'tty-table'
+
 module AIA
   class ToolFilterStrategy
     # Maps filter keys to display info.
@@ -106,12 +108,27 @@ module AIA
     end
 
     # Print the timing table via logger.
-    # :reek:TooManyStatements -- seven box-drawing rows built line by line; the table shape is the code
-    # :reek:DuplicateMethodCall -- every box-drawing row must iterate the columns with its own border/content pattern
-    # rubocop:disable-next Metrics/AbcSize
+    # :reek:DuplicateMethodCall -- header and each data row map the same columns into different cells
     def display_timing_table(filter_ms_by_key)
-      columns = @filters.map do |key, filter|
-        meta = meta_for(key)
+      columns = build_timing_columns(filter_ms_by_key)
+      return if columns.empty?
+
+      header = ["Process"] + columns.map { |col| "#{col[:header]}\n#{col[:sub]}" }
+      rows   = [
+        ["prep"]   + columns.map { |col| col[:prep] },
+        ["filter"] + columns.map { |col| col[:filter] }
+      ]
+
+      alignments = [:left] + Array.new(columns.size, :right)
+      rendered   = TTY::Table.new(header, rows)
+                             .render(:unicode, multiline: true, alignments: alignments, padding: [0, 1])
+      rendered.each_line { |line| AIA.logger.debug(line.chomp) }
+    end
+
+    # Column data (header, sub-label, prep/filter cells) for each configured filter.
+    def build_timing_columns(filter_ms_by_key)
+      @filters.map do |key, filter|
+        meta   = meta_for(key)
         active = filter_ms_by_key.key?(key)
         {
           header: "Option #{meta[:letter]}",
@@ -120,23 +137,6 @@ module AIA
           filter: active ? fmt_ms(filter_ms_by_key[key]) : "--"
         }
       end
-
-      return if columns.empty?
-
-      pw = 7  # "Process" column width
-      widths = columns.map do |col|
-        [10, col[:header].length, col[:sub].length, col[:prep].length, col[:filter].length].max
-      end
-
-      lines = []
-      lines << ("┌─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┬─#{'─' * widths[i]}─" }.join + "┐")
-      lines << ("│ #{'Process'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:header].ljust(widths[i])} " }.join + "│")
-      lines << ("│ #{' ' * pw} " + columns.each_with_index.map { |col, i| "│ #{col[:sub].ljust(widths[i])} " }.join + "│")
-      lines << ("├─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┼─#{'─' * widths[i]}─" }.join + "┤")
-      lines << ("│ #{'prep'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:prep].rjust(widths[i])} " }.join + "│")
-      lines << ("│ #{'filter'.ljust(pw)} " + columns.each_with_index.map { |col, i| "│ #{col[:filter].rjust(widths[i])} " }.join + "│")
-      lines << ("└─#{'─' * pw}─" + columns.each_with_index.map { |_, i| "┴─#{'─' * widths[i]}─" }.join + "┘")
-      lines.each { |line| AIA.logger.debug line }
     end
 
     def fmt_ms(ms)

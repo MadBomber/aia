@@ -34,6 +34,12 @@ module AIA
     MAX_LAYERS = 5
     MAX_TASKS_PER_LAYER = 4
 
+    BUILD_BANNER = <<~BANNER
+      ╔══════════════════════════════════════════════════════════╗
+      ║           LAYERED ORCHESTRATION — 3-TIER BUILD           ║
+      ╚══════════════════════════════════════════════════════════╝
+    BANNER
+
     # Tier 1 prompt: decompose requirements into layers
     # Deliberately short and directive to minimise qwen3 think-block noise.
     LAYER_DECOMPOSE_PROMPT = <<~PROMPT
@@ -126,19 +132,12 @@ module AIA
     # @return [String, nil] final synthesis or nil on failure
     # :reek:TooManyStatements -- single orchestration script (banner, tier 1-3 waves, synthesis, report); the narrative order is the value
     # :reek:DuplicateMethodCall -- say("") prints deliberate blank separator lines between build phases; not a hoistable value
-    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def handle(context)
       requirements = context.prompt
       primary      = @robot.chief
 
       FileUtils.mkdir_p(@build_dir)
-      say("")
-      say("╔══════════════════════════════════════════════════════════╗")
-      say("║           LAYERED ORCHESTRATION — 3-TIER BUILD           ║")
-      say("╚══════════════════════════════════════════════════════════╝")
-      say("Requirements: #{requirements.lines.first.strip}")
-      say("Build output: #{@build_dir}")
-      say("")
+      print_build_banner(requirements)
 
       # Tier 1: Tobor decomposes requirements into layers
       layers = decompose_to_layers(primary, requirements)
@@ -175,20 +174,35 @@ module AIA
       save_final_report(final_text)
       say("Build complete: #{@build_dir}")
 
+      record_final_turn(requirements, final_text)
+      final_text
+    rescue StandardError => e
+      report_orchestration_error(e)
+      nil
+    end
+
+    private
+
+    def print_build_banner(requirements)
+      say("")
+      BUILD_BANNER.each_line { |line| say(line.chomp) }
+      say("Requirements: #{requirements.lines.first.strip}")
+      say("Build output: #{@build_dir}")
+      say("")
+    end
+
+    def record_final_turn(requirements, final_text)
       @tracker.record_turn(
         model:  AIA.config.models.first.name,
         input:  requirements,
         result: final_text
       )
-
-      final_text
-    rescue StandardError => e
-      say("✗ Orchestration error: #{e.class}: #{e.message}")
-      e.backtrace&.first(5)&.each { |line| say("    #{line}") }
-      nil
     end
 
-    private
+    def report_orchestration_error(error)
+      say("✗ Orchestration error: #{error.class}: #{error.message}")
+      error.backtrace&.first(5)&.each { |line| say("    #{line}") }
+    end
 
     # Tier 1: use a probe robot to decompose requirements into layer specs
     # :reek:TooManyStatements -- probe run plus parse-failure diagnostics and rescue reporting

@@ -109,42 +109,30 @@ module AIA
       false
     end
 
-    # :reek:TooManyStatements -- benchmark-instrumented pipeline: decompose probe, concurrent fan-out, synthesis, reporting
-    # :reek:DuplicateMethodCall -- each clock_gettime must read the clock at a distinct instrumentation point of the benchmark
-    # rubocop:disable-next Metrics/AbcSize
+    # :reek:TooManyStatements -- benchmark-instrumented pipeline: decompose, concurrent fan-out, synthesis, reporting
     def handle_decomposition(prompt)
       require_relative 'prompt_decomposer'
-      total_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      total_t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       @ui_presenter.display_info("Decomposing prompt into sub-tasks...")
-      decomposer    = PromptDecomposer.new(@robot)
-      decompose_t0  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      subtasks      = decomposer.decompose(prompt)
-      decompose_dur = Process.clock_gettime(Process::CLOCK_MONOTONIC) - decompose_t0
+      decomposer = PromptDecomposer.new(@robot)
+      subtasks, decompose_dur = Timing.timed { decomposer.decompose(prompt) }
 
       if subtasks.empty?
         @ui_presenter.display_info("Prompt cannot be meaningfully decomposed. Running normally.")
         return false
       end
 
-      count = subtasks.size
-      @ui_presenter.display_info("Decomposed into #{count} sub-tasks:")
-      subtasks.each_with_index { |t, i| @ui_presenter.display_info("  #{i + 1}. #{t}") }
+      announce_subtasks(subtasks)
 
-      timings       = Array.new(count, 0.0)
-      raw_subtasks  = Array.new(count)
-      wall_start    = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      results       = run_subtasks_concurrently(subtasks, timings, raw_subtasks)
-      parallel_wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - wall_start
+      results, timings, raw_subtasks, parallel_wall = run_and_time_subtasks(subtasks)
 
       raise DecomposeError, "All sub-tasks failed" if results.all?(&:nil?)
 
       @ui_presenter.display_info("Synthesizing results...")
-      synth_t0  = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      final     = decomposer.synthesize(prompt, results.compact)
-      synth_dur = Process.clock_gettime(Process::CLOCK_MONOTONIC) - synth_t0
+      final, synth_dur = Timing.timed { decomposer.synthesize(prompt, results.compact) }
 
-      total_wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - total_start
+      total_wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - total_t0
 
       display_decompose_benchmark(decompose_dur: decompose_dur, timings: timings,
                                   synth_dur: synth_dur, parallel_wall: parallel_wall,
@@ -156,6 +144,20 @@ module AIA
     rescue StandardError => e
       @ui_presenter.display_info("Decomposition failed: #{e.message}. Falling back to normal mode.")
       false
+    end
+
+    def announce_subtasks(subtasks)
+      @ui_presenter.display_info("Decomposed into #{subtasks.size} sub-tasks:")
+      subtasks.each_with_index { |t, i| @ui_presenter.display_info("  #{i + 1}. #{t}") }
+    end
+
+    # Fan out sub-tasks concurrently, capturing per-task and wall-clock timing.
+    # Returns [results, timings, raw_subtasks, parallel_wall].
+    def run_and_time_subtasks(subtasks)
+      timings      = Array.new(subtasks.size, 0.0)
+      raw_subtasks = Array.new(subtasks.size)
+      results, parallel_wall = Timing.timed { run_subtasks_concurrently(subtasks, timings, raw_subtasks) }
+      [results, timings, raw_subtasks, parallel_wall]
     end
 
     # Run all sub-tasks concurrently, recording per-task timing and raw results

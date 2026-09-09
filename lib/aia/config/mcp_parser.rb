@@ -92,26 +92,31 @@ module AIA
       #
       # @param mcp_servers [Hash] the mcpServers hash from JSON
       # @return [Array<Hash>] array of server configurations
-      # :reek:TooManyStatements -- one line per optional JSON key mapped into the transport/server hashes
       def convert_mcp_servers_format(mcp_servers)
         mcp_servers.map do |name, config|
-          transport = { type: config['type'] || 'stdio' }
-          transport[:command] = config['command'] if config['command']
-          transport[:args]    = Array(config['args']) if config['args']
-          transport[:env]     = config['env'] if config['env']
-          transport[:url]     = config['url'] if config['url']
-          transport[:headers] = config['headers'] if config['headers']
-
-          server = { name: name, transport: transport }
+          server = { name: name, transport: build_transport(config) }
           server[:timeout] = config['timeout'].to_i if config['timeout']
-
-          # Preserve routing metadata for KBS/AIA
-          server[:topics]      = Array(config['topics']) if config['topics']
-          server[:independent] = config['independent'] unless config['independent'].nil?
-          server[:group]       = config['group'] if config['group']
-
-          server
+          server.merge!(routing_metadata(config))
         end
+      end
+
+      def build_transport(config)
+        transport = { type: config['type'] || 'stdio' }
+        transport[:command] = config['command'] if config['command']
+        transport[:args]    = Array(config['args']) if config['args']
+        transport[:env]     = config['env'] if config['env']
+        transport[:url]     = config['url'] if config['url']
+        transport[:headers] = config['headers'] if config['headers']
+        transport
+      end
+
+      # Routing metadata preserved for KBS/AIA
+      def routing_metadata(config)
+        meta = {}
+        meta[:topics]      = Array(config['topics']) if config['topics']
+        meta[:independent] = config['independent'] unless config['independent'].nil?
+        meta[:group]       = config['group'] if config['group']
+        meta
       end
 
       # Convert simple format to robot_lab nested transport format

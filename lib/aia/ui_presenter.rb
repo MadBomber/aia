@@ -7,6 +7,7 @@ require 'reline'
 require 'fileutils'
 
 module AIA
+  # :reek:TooManyMethods -- one small builder per table/report section keeps each display testable in isolation
   class UIPresenter
     USER_PROMPT = "Follow up (cntl-D or 'exit' to end) #=> ".freeze
     HISTORY_FILE = File.join(Dir.home, '.config', 'aia', 'chat_history')
@@ -162,77 +163,22 @@ module AIA
       write_to_output_file(rendered)
     end
 
-    # :reek:TooManyStatements -- one pass builds table rows while accumulating totals; header, row, and totals shapes must stay in sync
-    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+    # :reek:TooManyStatements -- table assembly: rows, totals, render, output; each piece delegated to a builder
     def display_multi_model_metrics(metrics_list)
       return unless metrics_list && !metrics_list.empty?
 
       show_cost       = AIA.config.flags.cost
       show_similarity = metrics_list.any? { |m| m.key?(:similarity) }
-      total_input     = 0
-      total_output    = 0
-      total_cost      = 0.0
-      max_elapsed     = 0.0
+      totals          = MultiModelTotals.new(0, 0, 0.0, 0.0)
 
-      header = %w[Model Input Output Total]
-      header += %w[Cost x1000] if show_cost
-      header << "Time"
-      header << "Sim" if show_similarity
-
-      rows = metrics_list.map do |metrics|
-        model_name    = (metrics[:model_id] || metrics[:display_name]).to_s
-        input_tokens  = metrics[:input_tokens] || 0
-        output_tokens = metrics[:output_tokens] || 0
-        total_tokens  = input_tokens + output_tokens
-        elapsed       = metrics[:elapsed]
-        time_str      = format_elapsed(elapsed)
-
-        total_input  += input_tokens
-        total_output += output_tokens
-        max_elapsed   = [max_elapsed, elapsed || 0].max
-
-        row = [model_name, input_tokens, output_tokens, total_tokens]
-
-        if show_cost
-          cost_data = calculate_cost(metrics)
-          if cost_data[:available]
-            cost = cost_data[:total_cost]
-            row << "$#{'%.5f' % cost}"
-            row << "$#{'%.2f' % (cost * 1000)}"
-            total_cost += cost
-          else
-            row += ["N/A", "N/A"]
-          end
-        end
-
-        row << time_str
-        row << format_similarity(metrics[:similarity]) if show_similarity
-        row
-      end
-
-      # Totals row
-      all_tokens = total_input + total_output
-      total_time = format_elapsed(max_elapsed)
+      rows = metrics_list.map { |metrics| multi_model_row(metrics, totals, show_cost, show_similarity) }
       rows << :separator
+      rows << multi_model_totals_row(totals, show_cost, show_similarity)
 
-      totals = ["TOTAL", total_input, total_output, all_tokens]
-      if show_cost && total_cost.positive?
-        totals << "$#{'%.5f' % total_cost}"
-        totals << "$#{'%.2f' % (total_cost * 1000)}"
-      elsif show_cost
-        totals += ["", ""]
-      end
-      totals << total_time
-      totals << "" if show_similarity
-      rows << totals
-
-      alignments = %i[left right right right]
-      alignments += %i[right right] if show_cost
-      alignments << :right
-      alignments << :right if show_similarity
-
-      table = TTY::Table.new(header, rows)
-      rendered = table.render(:unicode, resize: true, alignments: alignments, padding: [0, 1])
+      table = TTY::Table.new(multi_model_header(show_cost, show_similarity), rows)
+      rendered = table.render(:unicode, resize: true,
+                                        alignments: multi_model_alignments(show_cost, show_similarity),
+                                        padding: [0, 1])
 
       puts "\nMulti-Model Token Usage"
       puts rendered
@@ -240,6 +186,64 @@ module AIA
     end
 
     private
+
+    # Running totals accumulated while building multi-model table rows.
+    MultiModelTotals = Struct.new(:input, :output, :cost, :max_elapsed)
+
+    def multi_model_header(show_cost, show_similarity)
+      header = %w[Model Input Output Total]
+      header += %w[Cost x1000] if show_cost
+      header << "Time"
+      header << "Sim" if show_similarity
+      header
+    end
+
+    def multi_model_row(metrics, totals, show_cost, show_similarity)
+      input_tokens  = metrics[:input_tokens] || 0
+      output_tokens = metrics[:output_tokens] || 0
+      elapsed       = metrics[:elapsed]
+
+      totals.input       += input_tokens
+      totals.output      += output_tokens
+      totals.max_elapsed  = [totals.max_elapsed, elapsed || 0].max
+
+      row = [(metrics[:model_id] || metrics[:display_name]).to_s,
+             input_tokens, output_tokens, input_tokens + output_tokens]
+      row += multi_model_cost_cells(metrics, totals) if show_cost
+      row << format_elapsed(elapsed)
+      row << format_similarity(metrics[:similarity]) if show_similarity
+      row
+    end
+
+    # Cost cells for one row; adds to totals only when pricing is available.
+    def multi_model_cost_cells(metrics, totals)
+      cost_data = calculate_cost(metrics)
+      return %w[N/A N/A] unless cost_data[:available]
+
+      cost = cost_data[:total_cost]
+      totals.cost += cost
+      format_cost_cells(cost)
+    end
+
+    def format_cost_cells(cost)
+      ["$#{'%.5f' % cost}", "$#{'%.2f' % (cost * 1000)}"]
+    end
+
+    def multi_model_totals_row(totals, show_cost, show_similarity)
+      row = ["TOTAL", totals.input, totals.output, totals.input + totals.output]
+      row += totals.cost.positive? ? format_cost_cells(totals.cost) : ["", ""] if show_cost
+      row << format_elapsed(totals.max_elapsed)
+      row << "" if show_similarity
+      row
+    end
+
+    def multi_model_alignments(show_cost, show_similarity)
+      alignments = %i[left right right right]
+      alignments += %i[right right] if show_cost
+      alignments << :right
+      alignments << :right if show_similarity
+      alignments
+    end
 
     def save_chat_history
       history_file = chat_history_file

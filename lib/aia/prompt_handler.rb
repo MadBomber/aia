@@ -174,56 +174,45 @@ module AIA
 
     # Apply root-level shorthand keys to AIA.config
     # :reek:TooManyStatements -- one guarded assignment per supported front-matter shorthand key
-    # :reek:DuplicateMethodCall -- cfg.pipeline is re-read because the next: branch may replace it mid-method
-    # rubocop:disable-next Metrics/AbcSize
     def apply_root_shorthands(meta_hash)
       cfg = AIA.config
+
       # model → cfg.models (replace with single-model array)
-      model_val = meta_hash['model'] || meta_hash[:model]
-      if model_val
-        cfg.models = [model_val]
-      end
+      model_val = shorthand(meta_hash, :model)
+      cfg.models = [model_val] if model_val
 
-      # temperature → cfg.llm.temperature
-      temp_val = meta_hash['temperature'] || meta_hash[:temperature]
-      if temp_val
-        cfg.llm.temperature = temp_val
-      end
+      temp_val = shorthand(meta_hash, :temperature)
+      cfg.llm.temperature = temp_val if temp_val
 
-      # top_p → cfg.llm.top_p
-      top_p_val = meta_hash['top_p'] || meta_hash[:top_p]
-      if top_p_val
-        cfg.llm.top_p = top_p_val
-      end
+      top_p_val = shorthand(meta_hash, :top_p)
+      cfg.llm.top_p = top_p_val if top_p_val
 
-      # next → cfg.pipeline (replace)
-      next_val = meta_hash['next'] || meta_hash[:next]
-      if next_val
-        if cfg.pipeline.any?
-          logger.info "Prompt metadata 'next: #{next_val}' overrides remaining pipeline #{cfg.pipeline.inspect}"
-        end
-        cfg.pipeline = [next_val]
-      end
+      # next / pipeline → cfg.pipeline (replace)
+      next_val = shorthand(meta_hash, :next)
+      apply_pipeline_shorthand(cfg, [next_val], "next: #{next_val}") if next_val
 
-      # pipeline → cfg.pipeline (replace)
-      pipeline_val = meta_hash['pipeline'] || meta_hash[:pipeline]
-      if pipeline_val
-        if cfg.pipeline.any?
-          logger.info "Prompt metadata 'pipeline' overrides remaining pipeline #{cfg.pipeline.inspect}"
-        end
-        cfg.pipeline = Array(pipeline_val)
-      end
+      pipeline_val = shorthand(meta_hash, :pipeline)
+      apply_pipeline_shorthand(cfg, Array(pipeline_val), "pipeline") if pipeline_val
 
-      # shell → cfg.flags.shell (and PM's shell via metadata)
-      shell_val = meta_hash['shell'] || meta_hash[:shell]
-      unless shell_val.nil?
-        cfg.flags.shell = shell_val
-      end
+      # shell / erb → cfg.flags (and PM's shell/erb via metadata)
+      shell_val = shorthand(meta_hash, :shell)
+      cfg.flags.shell = shell_val unless shell_val.nil?
 
-      # erb → cfg.flags.erb (and PM's erb via metadata)
-      erb_val = meta_hash['erb'] || meta_hash[:erb]
-      return if erb_val.nil?
-      cfg.flags.erb = erb_val
+      erb_val = shorthand(meta_hash, :erb)
+      cfg.flags.erb = erb_val unless erb_val.nil?
+    end
+
+    # Fetch a front-matter shorthand value by string or symbol key.
+    def shorthand(meta_hash, key)
+      meta_hash[key.to_s] || meta_hash[key]
+    end
+
+    # Replace cfg.pipeline, logging when a remaining pipeline is overridden.
+    def apply_pipeline_shorthand(cfg, new_pipeline, label)
+      if cfg.pipeline.any?
+        logger.info "Prompt metadata '#{label}' overrides remaining pipeline #{cfg.pipeline.inspect}"
+      end
+      cfg.pipeline = new_pipeline
     end
 
     def logger

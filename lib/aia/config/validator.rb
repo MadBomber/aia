@@ -203,7 +203,6 @@ module AIA
         :early_exit
       end
 
-      # :reek:TooManyStatements -- terminal listing with per-server transport unpacking across symbol/string key fallbacks
       def handle_mcp_list(config)
         return unless config.mcp_list
         return if config.list_tools
@@ -215,19 +214,17 @@ module AIA
         else
           label = mcp_filter_active?(config) ? "Active" : "Configured"
           puts "#{label} MCP servers:\n\n"
-          servers.each do |server|
-            name      = AIA::Utility.server_name(server) || '(unnamed)'
-            transport = server[:transport] || server['transport'] || {}
-            command   = transport[:command] || transport['command'] || server[:command] || server['command'] || '(no command)'
-            args      = transport[:args] || transport['args'] || server[:args] || server['args'] || []
-            args_str  = args.empty? ? '' : " #{args.join(' ')}"
-            puts "  #{name}"
-            puts "    command: #{command}#{args_str}"
-            puts
-          end
+          servers.each { |server| print_mcp_server(McpServerConfig.from_hash(server)) }
         end
 
         :early_exit
+      end
+
+      def print_mcp_server(server_config)
+        args_str = server_config.args.empty? ? '' : " #{server_config.args.join(' ')}"
+        puts "  #{server_config.name || '(unnamed)'}"
+        puts "    command: #{server_config.command || '(no command)'}#{args_str}"
+        puts
       end
 
       def handle_list_tools(config)
@@ -270,8 +267,8 @@ module AIA
       end
 
       def print_tool_terminal(tool, width, indent)
-        name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        desc = tool.respond_to?(:description) ? tool.description.to_s.strip : ''
+        name = ToolIntrospection.tool_name(tool)
+        desc = ToolIntrospection.tool_description(tool).strip
 
         puts "  #{name}"
         unless desc.empty?
@@ -306,8 +303,8 @@ module AIA
       end
 
       def print_tool_markdown(tool)
-        name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        desc = tool.respond_to?(:description) ? tool.description.to_s.strip : ''
+        name = ToolIntrospection.tool_name(tool)
+        desc = ToolIntrospection.tool_description(tool).strip
 
         puts "### `#{name}`"
         puts
@@ -364,10 +361,14 @@ module AIA
         :early_exit
       end
 
-      # :reek:TooManyStatements -- three load phases (require_libs, tool files, ObjectSpace scan) with own error handling
-      # :reek:DuplicateMethodCall -- each e.message belongs to a different rescue clause exception; nothing to hoist
       def load_local_tools(config)
-        # Load required libraries
+        require_configured_libs(config)
+        require_tool_files(config)
+        instantiable_tool_classes
+      end
+
+      # :reek:DuplicateMethodCall -- each e.message belongs to a different rescue clause exception; nothing to hoist
+      def require_configured_libs(config)
         Array(config.require_libs).each do |lib|
           require lib
         rescue LoadError => e
@@ -376,20 +377,10 @@ module AIA
         rescue StandardError => e
           $stderr.puts "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
         end
+      end
 
-        # Load tool files
-        Array(config.tools&.paths).each do |path|
-          expanded = File.expand_path(path)
-          if File.exist?(expanded)
-            require expanded
-          else
-            $stderr.puts "Warning: Tool file not found: #{path}"
-          end
-        rescue LoadError, StandardError => e
-          $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
-        end
-
-        # Scan ObjectSpace for RubyLLM::Tool subclasses
+      # Scan ObjectSpace for RubyLLM::Tool subclasses that can be instantiated.
+      def instantiable_tool_classes
         ObjectSpace.each_object(Class).select do |klass|
           next false unless defined?(RubyLLM::Tool) && klass < RubyLLM::Tool
 
@@ -409,66 +400,55 @@ module AIA
         result.empty? ? normalized : result
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
-      # :reek:TooManyStatements -- per-server connect loop: transport unpacking, timeout normalization, API fallback
+      # :reek:TooManyStatements -- per-server connect loop with progress prints on each outcome path
       def load_mcp_tools_grouped(config)
         servers = filter_mcp_servers(config)
         return {} if servers.empty?
 
         quiet_mcp_logger
 
-        groups = {}
-        default_timeout = 8_000
+        servers.each_with_object({}) do |server, groups|
+          server_config = McpServerConfig.from_hash(server)
+          $stderr.print "MCP: Connecting to #{server_config.name}..."
+          $stderr.flush
 
-        # rubocop:disable Metrics/BlockLength
-        servers.each do |server|
-          name      = AIA::Utility.server_name(server)
-          transport = server[:transport] || server['transport'] || {}
-          command   = transport[:command] || transport['command'] || server[:command] || server['command']
-          args      = transport[:args] || transport['args'] || server[:args] || server['args'] || []
-          env       = transport[:env] || transport['env'] || server[:env] || server['env'] || {}
-
-          raw_ms  = (server[:timeout] || server['timeout'] || default_timeout).to_i
-          timeout = raw_ms < 1000 ? (raw_ms * 1000) : raw_ms
-          timeout = [timeout, 30_000].min
-
-          mcp_config = { command: command, args: Array(args) }
-          mcp_config[:env] = env unless env.empty?
-
-          begin
-            $stderr.print "MCP: Connecting to #{name}..."
-            $stderr.flush
-
-            client = begin
-              RubyLLM::MCP.add_client(
-                name: name, transport_type: :stdio,
-                config: mcp_config, request_timeout: timeout, start: false
-              )
-            rescue ArgumentError
-              RubyLLM::MCP.add_client(
-                name: name, transport_type: :stdio,
-                config: mcp_config, start: false
-              )
-            end
-
-            client = RubyLLM::MCP.clients[name]
-            client.start
-
-            if client.alive?
-              server_tools = client.tools rescue []
-              groups[name] = server_tools
-              $stderr.puts " #{server_tools.size} tools"
-            else
-              $stderr.puts " failed"
-            end
-          rescue StandardError => e
-            $stderr.puts " error: #{e.message}"
+          tools = collect_server_tools(server_config)
+          if tools
+            groups[server_config.name] = tools
+            $stderr.puts " #{tools.size} tools"
+          else
+            $stderr.puts " failed"
           end
-          # rubocop:enable Metrics/BlockLength
+        rescue StandardError => e
+          $stderr.puts " error: #{e.message}"
         end
-        # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+      end
 
-        groups
+      # Connect to one server and return its tools, or nil when the client
+      # never comes alive.
+      def collect_server_tools(server_config)
+        mcp_add_client(server_config)
+        client = RubyLLM::MCP.clients[server_config.name]
+        client.start
+        return nil unless client.alive?
+
+        client.tools rescue []
+      end
+
+      def mcp_add_client(server_config)
+        mcp_config = { command: server_config.command, args: server_config.args }
+        mcp_config[:env] = server_config.env unless server_config.env.empty?
+
+        RubyLLM::MCP.add_client(
+          name: server_config.name, transport_type: :stdio,
+          config: mcp_config, request_timeout: server_config.timeout_ms, start: false
+        )
+      rescue ArgumentError
+        # Older ruby_llm-mcp versions do not accept request_timeout
+        RubyLLM::MCP.add_client(
+          name: server_config.name, transport_type: :stdio,
+          config: mcp_config, start: false
+        )
       end
       # rubocop:enable Metrics/ModuleLength
 

@@ -1533,7 +1533,7 @@ Create executable prompts:
 #!/usr/bin/env aia --no-output
 # Get current storm activity for the east and south coast of the US
 
-Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.
+Summarize the tropical storm outlook for the Atlantic, Caribbean Sea and Gulf of America.
 
 /webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
 ```

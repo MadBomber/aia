@@ -108,109 +108,92 @@ module AIA
       end
     end
 
-    # :reek:TooManyStatements -- sequential terminal report: HTTP fetch, connection guards, filtered listing, summary
-    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
+    # :reek:TooManyStatements -- sequential terminal report: fetch, connection guards, filtered listing
     def show_ollama_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
-      begin
-        uri = URI("#{api_base}/api/tags")
-        http = Net::HTTP.new(uri.host, uri.port)
-        http.open_timeout = 5
-        http.read_timeout = 5
-        response = http.request(Net::HTTP::Get.new(uri))
-
-        unless response.is_a?(Net::HTTPSuccess)
-          puts "❌ Cannot connect to Ollama at #{api_base}"
-          return
-        end
-
-        data = JSON.parse(response.body)
-        models = data['models'] || []
-
-        if models.empty?
-          puts "No Ollama models found"
-          return
-        end
-
-        puts "Ollama Models (#{api_base}):"
-        puts "-" * 60
-
-        counter = 0
-        models.each do |model|
-          name = model['name']
-          size = model['size'] ? format_bytes(model['size']) : 'unknown'
-          modified = model['modified_at'] ? Time.parse(model['modified_at']).strftime('%Y-%m-%d') : 'unknown'
-
-          entry = "- ollama/#{name} (size: #{size}, modified: #{modified})"
-          entry_lc = entry.downcase
-
-          # entry_lc is a String; Array#intersect? would raise TypeError
-          show_it = positive_terms.empty? || positive_terms.any? { |q| entry_lc.include?(q) }
-          show_it &&= negative_terms.none? { |q| entry_lc.include?(q) }
-          if show_it
-            puts entry
-            counter += 1
-          end
-        end
-
-        puts
-        puts "#{counter} Ollama model(s) available"
-        puts
-      rescue StandardError => e
-        puts "❌ Error fetching Ollama models: #{e.message}"
+      data = fetch_json("#{api_base}/api/tags")
+      if data.nil?
+        puts "❌ Cannot connect to Ollama at #{api_base}"
+        return
       end
+
+      models = data['models'] || []
+      if models.empty?
+        puts "No Ollama models found"
+        return
+      end
+
+      puts "Ollama Models (#{api_base}):"
+      puts "-" * 60
+
+      entries = models.map { |model| format_ollama_entry(model) }
+      print_filtered_entries(entries, positive_terms, negative_terms, "Ollama model(s) available")
+    rescue StandardError => e
+      puts "❌ Error fetching Ollama models: #{e.message}"
     end
 
-    # :reek:TooManyStatements -- sequential terminal report: HTTP fetch, connection guards, filtered listing, summary
-    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
+    def format_ollama_entry(model)
+      size     = model['size'] ? format_bytes(model['size']) : 'unknown'
+      modified = model['modified_at'] ? Time.parse(model['modified_at']).strftime('%Y-%m-%d') : 'unknown'
+      "- ollama/#{model['name']} (size: #{size}, modified: #{modified})"
+    end
+
+    # Fetch and parse JSON from a local model server; nil unless HTTP success.
+    def fetch_json(uri_string)
+      uri  = URI(uri_string)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.open_timeout = 5
+      http.read_timeout = 5
+      response = http.request(Net::HTTP::Get.new(uri))
+      return nil unless response.is_a?(Net::HTTPSuccess)
+
+      JSON.parse(response.body)
+    end
+
+    # The entry is a String; Array#intersect? would raise TypeError
+    def entry_matches?(entry_lc, positive_terms, negative_terms)
+      (positive_terms.empty? || positive_terms.any? { |q| entry_lc.include?(q) }) &&
+        negative_terms.none? { |q| entry_lc.include?(q) }
+    end
+
+    def print_filtered_entries(entries, positive_terms, negative_terms, summary_label)
+      counter = 0
+      entries.each do |entry|
+        next unless entry_matches?(entry.downcase, positive_terms, negative_terms)
+
+        puts entry
+        counter += 1
+      end
+
+      puts
+      puts "#{counter} #{summary_label}"
+      puts
+    end
+
+    # :reek:TooManyStatements -- sequential terminal report: fetch, connection guards, filtered listing
     def show_lms_models(api_base, positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
-      begin
-        uri = URI("#{api_base.gsub(%r{/v1/?$}, '')}/v1/models")
-        http = Net::HTTP.new(uri.host, uri.port)
-        http.open_timeout = 5
-        http.read_timeout = 5
-        response = http.request(Net::HTTP::Get.new(uri))
-
-        unless response.is_a?(Net::HTTPSuccess)
-          puts "❌ Cannot connect to LM Studio at #{api_base}"
-          return
-        end
-
-        data = JSON.parse(response.body)
-        models = data['data'] || []
-
-        if models.empty?
-          puts "No LM Studio models found"
-          return
-        end
-
-        puts "LM Studio Models (#{api_base}):"
-        puts "-" * 60
-
-        counter = 0
-        models.each do |model|
-          name = model['id']
-          entry = "- lms/#{name}"
-          entry_lc = entry.downcase
-
-          # entry_lc is a String; Array#intersect? would raise TypeError
-          show_it = positive_terms.empty? || positive_terms.any? { |q| entry_lc.include?(q) }
-          show_it &&= negative_terms.none? { |q| entry_lc.include?(q) }
-          if show_it
-            puts entry
-            counter += 1
-          end
-        end
-
-        puts
-        puts "#{counter} LM Studio model(s) available"
-        puts
-      rescue StandardError => e
-        puts "❌ Error fetching LM Studio models: #{e.message}"
+      data = fetch_json("#{api_base.gsub(%r{/v1/?$}, '')}/v1/models")
+      if data.nil?
+        puts "❌ Cannot connect to LM Studio at #{api_base}"
+        return
       end
+
+      models = data['data'] || []
+      if models.empty?
+        puts "No LM Studio models found"
+        return
+      end
+
+      puts "LM Studio Models (#{api_base}):"
+      puts "-" * 60
+
+      entries = models.map { |model| "- lms/#{model['id']}" }
+      print_filtered_entries(entries, positive_terms, negative_terms, "LM Studio model(s) available")
+    rescue StandardError => e
+      puts "❌ Error fetching LM Studio models: #{e.message}"
     end
 
     def format_bytes(bytes)
@@ -223,59 +206,52 @@ module AIA
       "%.1f %s" % [bytes.to_f / (1024**exp), units[exp]]
     end
 
-    # :reek:TooManyStatements -- sequential terminal report: header, per-model entry with modality/substring filters, summary
-    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
+    # :reek:TooManyStatements -- sequential terminal report: header, filtered model listing, summary
     def show_rubyllm_models(positive_terms = nil, negative_terms = nil)
       positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
       # expand comma-separated terms passed as a single token
-      if positive_terms.size == 1
-        positive_terms = positive_terms.first.split(',')
-      end
+      positive_terms = positive_terms.first.split(',') if positive_terms.size == 1
 
-      header = "\nAvailable LLMs"
-      header += " for #{positive_terms.join(' and ')}" if positive_terms.any?
-      header += " (excluding: #{negative_terms.join(', ')})" if negative_terms.any?
-
-      puts header + ':'
+      puts rubyllm_header(positive_terms, negative_terms)
       puts
 
       # modality terms (e.g. "text_to_text") trigger capability checks; the rest
       # are plain substring filters applied to the formatted entry string
-      q1, q2 = positive_terms.partition { |q| q.include?('_to_') }
+      modality_terms, substring_terms = positive_terms.partition { |q| q.include?('_to_') }
 
       counter = 0
-
       RubyLLM.models.all.each do |llm|
-        cw = llm.context_window
-        caps = llm.capabilities.join(',')
-        modalities = llm.modalities
-        inputs = modalities.input.join(',')
-        outputs = modalities.output.join(',')
-        mode = "#{inputs} to #{outputs}"
-        in_1m = llm.pricing.text_tokens.standard.to_h[:input_per_million]
-        entry = "- #{llm.id} (#{llm.provider}) in: $#{in_1m} cw: #{cw} mode: #{mode} caps: #{caps}"
+        entry = format_rubyllm_entry(llm)
+        next unless rubyllm_entry_visible?(llm, entry, modality_terms, substring_terms, negative_terms)
 
-        if positive_terms.empty? && negative_terms.empty?
-          counter += 1
-          puts entry
-          next
-        end
-
-        show_it = true
-        q1.each { |q| show_it &&= modalities.send("#{q}?") }
-        q2.each { |q| show_it &&= entry.include?(q) }
-        negative_terms.each { |q| show_it &&= !entry.downcase.include?(q) }
-
-        if show_it
-          counter += 1
-          puts entry
-        end
+        counter += 1
+        puts entry
       end
 
       puts if counter.positive?
       puts "#{counter} LLMs matching your query"
       puts
+    end
+
+    def rubyllm_header(positive_terms, negative_terms)
+      header = "\nAvailable LLMs"
+      header += " for #{positive_terms.join(' and ')}" if positive_terms.any?
+      header += " (excluding: #{negative_terms.join(', ')})" if negative_terms.any?
+      header + ':'
+    end
+
+    def format_rubyllm_entry(llm)
+      modalities = llm.modalities
+      mode  = "#{modalities.input.join(',')} to #{modalities.output.join(',')}"
+      in_1m = llm.pricing.text_tokens.standard.to_h[:input_per_million]
+      "- #{llm.id} (#{llm.provider}) in: $#{in_1m} cw: #{llm.context_window} mode: #{mode} caps: #{llm.capabilities.join(',')}"
+    end
+
+    def rubyllm_entry_visible?(llm, entry, modality_terms, substring_terms, negative_terms)
+      modality_terms.all? { |q| llm.modalities.send("#{q}?") } &&
+        substring_terms.all? { |q| entry.include?(q) } &&
+        negative_terms.none? { |q| entry.downcase.include?(q) }
     end
 
     def normalized_model_search_terms(positive_terms, negative_terms = nil)

@@ -6,44 +6,18 @@ require 'word_wrapper'
 module AIA
   class UtilityDirectives < Directive
     desc "List available tools (optional filter by name or description substring)"
-    # :reek:TooManyStatements -- sequential terminal report: filter, header, per-tool word-wrapped description
-    # rubocop:disable-next Metrics/AbcSize
     def tools(args = [], context_manager = nil)
-      indent = 4
-      spaces = " " * indent
-      width = TTY::Screen.width - indent - 2
-      raw_filter = args.first
-      filter = raw_filter&.downcase
-
+      raw_filter   = args.first
       loaded_tools = Array(AIA.config.loaded_tools) + all_mcp_tools
 
       if loaded_tools.empty?
         puts "No tools are available"
       else
-        tools_to_display = loaded_tools
-
-        if filter
-          tools_to_display = tools_to_display.select do |tool|
-            name = tool.respond_to?(:name) ? tool.name : tool.class.name
-            desc = tool.respond_to?(:description) ? tool.description.to_s : ""
-            "#{name} #{desc}".downcase.include?(filter)
-          end
-        end
-
+        tools_to_display = filter_tools(loaded_tools, raw_filter&.downcase)
         if tools_to_display.empty?
           puts "No tools match the filter: #{raw_filter}"
         else
-          puts
-          header = filter ? "Available Tools (filtered by '#{raw_filter}')" : "Available Tools"
-          puts header
-          puts "=" * header.length
-
-          tools_to_display.each do |tool|
-            name = tool.respond_to?(:name) ? tool.name : tool.class.name
-            puts "\n#{name}"
-            puts "-" * name.size
-            puts WordWrapper::MinimumRaggedness.new(width, tool.description).wrap.split("\n").map { |s| spaces + s + "\n" }.join
-          end
+          print_tools_report(tools_to_display, raw_filter)
         end
       end
       puts
@@ -69,54 +43,19 @@ module AIA
     end
 
     desc "Show MCP server connection status and available tools"
-    # :reek:TooManyStatements -- status report: summary counts, per-server tool grouping, connected and failed sections
-    # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
     def mcp(args = [], context_manager = nil)
       connected = AIA.config&.connected_mcp_servers || []
       failed    = AIA.config&.failed_mcp_servers || []
-      defined_count = AIA::Utility.effective_mcp_server_names.size
 
       puts
       puts "MCP Server Status"
       puts "================="
-      puts "Defined: #{defined_count}  Connected: #{connected.size}  Failed: #{failed.size}"
+      puts "Defined: #{AIA::Utility.effective_mcp_server_names.size}  " \
+           "Connected: #{connected.size}  Failed: #{failed.size}"
       puts
 
-      if connected.any?
-        mcp_tools = all_mcp_tools
-
-        # Group tools by their MCP server name
-        tools_by_server = {}
-        connected.each { |name| tools_by_server[name] = [] }
-
-        mcp_tools.each do |tool|
-          server_name = tool.respond_to?(:mcp) ? tool.mcp : nil
-          if server_name && tools_by_server.key?(server_name)
-            tools_by_server[server_name] << tool
-          end
-        end
-
-        puts "Connected Servers:"
-        connected.each do |name|
-          tools = tools_by_server[name] || []
-          puts "  #{name} (#{tools.size} tools)"
-          tools.each do |tool|
-            tool_name = tool.respond_to?(:name) ? tool.name : tool.class.name
-            puts "    - #{tool_name}"
-          end
-        end
-        puts
-      end
-
-      if failed.any?
-        puts "Failed Servers:"
-        failed.each do |f|
-          name  = f[:name] || f['name']
-          error = f[:error] || f['error']
-          puts "  #{name}: #{error}"
-        end
-        puts
-      end
+      print_connected_servers(connected) if connected.any?
+      print_failed_servers(failed) if failed.any?
 
       ''
     end
@@ -152,6 +91,63 @@ module AIA
     end
 
     private
+
+    def filter_tools(tools, filter)
+      return tools unless filter
+
+      tools.select do |tool|
+        "#{ToolIntrospection.tool_name(tool)} #{ToolIntrospection.tool_description(tool)}"
+          .downcase.include?(filter)
+      end
+    end
+
+    def print_tools_report(tools_to_display, raw_filter)
+      puts
+      header = raw_filter ? "Available Tools (filtered by '#{raw_filter}')" : "Available Tools"
+      puts header
+      puts "=" * header.length
+
+      indent = 4
+      width  = TTY::Screen.width - indent - 2
+      tools_to_display.each { |tool| print_tool_entry(tool, width, " " * indent) }
+    end
+
+    def print_tool_entry(tool, width, spaces)
+      name = ToolIntrospection.tool_name(tool)
+      puts "\n#{name}"
+      puts "-" * name.size
+      puts WordWrapper::MinimumRaggedness.new(width, tool.description).wrap.split("\n").map { |s| spaces + s + "\n" }.join
+    end
+
+    def print_connected_servers(connected)
+      grouped = tools_by_server(connected, all_mcp_tools)
+
+      puts "Connected Servers:"
+      connected.each do |name|
+        tools = grouped[name] || []
+        puts "  #{name} (#{tools.size} tools)"
+        tools.each { |tool| puts "    - #{ToolIntrospection.tool_name(tool)}" }
+      end
+      puts
+    end
+
+    # Group MCP tools under the connected server each one came from.
+    def tools_by_server(connected, mcp_tools)
+      grouped = connected.to_h { |name| [name, []] }
+      mcp_tools.each do |tool|
+        server_name = tool.respond_to?(:mcp) ? tool.mcp : nil
+        grouped[server_name] << tool if server_name && grouped.key?(server_name)
+      end
+      grouped
+    end
+
+    def print_failed_servers(failed)
+      puts "Failed Servers:"
+      failed.each do |f|
+        puts "  #{f[:name] || f['name']}: #{f[:error] || f['error']}"
+      end
+      puts
+    end
 
     # :reek:TooManyStatements -- mode classification plus sequential report of every crew member
     def show_network(network)

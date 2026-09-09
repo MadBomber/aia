@@ -10,6 +10,7 @@ require 'timeout'
 require 'tty-spinner'
 
 module AIA
+  # :reek:TooManyMethods -- one small helper per connection-lifecycle concern (connect, wrap tools, record outcomes)
   class MCPConnectionManager
     # Maximum seconds to wait for a single MCP server to connect.
     DEFAULT_TIMEOUT = 30
@@ -214,62 +215,63 @@ module AIA
     end
 
     # Connect a single MCP server, updating the spinner on completion.
-    # :reek:TooManyStatements -- one connection attempt: connect, wrap each remote tool, record outcome under the lock, report
-    # :reek:DuplicateMethodCall -- each @mutex.synchronize is a distinct critical section per outcome path
-    # rubocop:disable-next Metrics/MethodLength
+    # :reek:TooManyStatements -- one connect attempt with per-outcome reporting (success, refused, timeout, error)
     def connect_one(server_config, name, spinner, logger)
       timeout = server_timeout(server_config)
       spinner.auto_spin
 
       logger.info("MCP: connecting to '#{name}'...")
-      # rubocop:disable-next Metrics/BlockLength
       Timeout.timeout(timeout) do
         client = RobotLab::MCP::Client.new(server_config)
         client.connect
 
         if client.connected?
-          tools = client.list_tools
-          tool_count = tools.size
-          built_tools = tools.map do |tool_def|
-            tool_name  = tool_def[:name]
-            mcp_client = client
-            RobotLab::Tool.create(
-              name:        tool_name,
-              description: tool_def[:description],
-              parameters:  tool_def[:inputSchema],
-              mcp:         name
-            ) { |args| mcp_client.call_tool(tool_name, args) }
-          end
-
-          @mutex.synchronize do
-            @connected_clients[name]  = client
-            @server_tool_counts[name] = tool_count
-            add_tools_deduped(built_tools, name, logger)
-          end
-
-          logger.info("MCP: '#{name}' connected (#{tool_count} tools)")
-          spinner.success("(#{tool_count} tools)")
+          record_connected(name, client, build_mcp_tools(client, name), spinner, logger)
         else
-          @mutex.synchronize do
-            @failed_servers << { name: name, error: "connection failed" }
-          end
+          record_failed_server(name, "connection failed")
           logger.warn("MCP: '#{name}' failed to connect")
           spinner.error("(connection failed)")
         end
       end
     rescue Timeout::Error
-      @mutex.synchronize do
-        @failed_servers << { name: name, error: "timed out after #{timeout}s" }
-      end
+      record_failed_server(name, "timed out after #{timeout}s")
       logger.warn("MCP: '#{name}' timed out after #{timeout}s")
       spinner.error("(timed out)")
     rescue StandardError => e
       msg = e.message
-      @mutex.synchronize do
-        @failed_servers << { name: name, error: msg }
-      end
+      record_failed_server(name, msg)
       logger.warn("MCP: '#{name}' error: #{msg}")
       spinner.error("(#{msg})")
+    end
+
+    # Wrap each remote tool definition in a RobotLab::Tool proxying to the client.
+    def build_mcp_tools(client, server_name)
+      client.list_tools.map do |tool_def|
+        tool_name = tool_def[:name]
+        RobotLab::Tool.create(
+          name:        tool_name,
+          description: tool_def[:description],
+          parameters:  tool_def[:inputSchema],
+          mcp:         server_name
+        ) { |args| client.call_tool(tool_name, args) }
+      end
+    end
+
+    def record_connected(name, client, tools, spinner, logger)
+      tool_count = tools.size
+
+      @mutex.synchronize do
+        @connected_clients[name]  = client
+        @server_tool_counts[name] = tool_count
+        add_tools_deduped(tools, name, logger)
+      end
+
+      logger.info("MCP: '#{name}' connected (#{tool_count} tools)")
+      spinner.success("(#{tool_count} tools)")
+    end
+
+    def record_failed_server(name, error)
+      @mutex.synchronize { @failed_servers << { name: name, error: error } }
     end
 
     # Add tools to @connected_tools, skipping any whose name is already present.

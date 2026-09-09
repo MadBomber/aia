@@ -37,8 +37,7 @@ module AIA
     alias web webpage
 
     desc "List available AIA skills"
-    # :reek:TooManyStatements -- sequential listing: directory guard, term filtering, word-wrapped per-skill output
-    # rubocop:disable-next Metrics/AbcSize
+    # :reek:TooManyStatements -- sequential listing: directory guard, term filtering, per-skill output
     def skills(args = [], _context_manager = nil)
       dir = aia_skills_dir
       unless Dir.exist?(dir)
@@ -47,18 +46,7 @@ module AIA
       end
 
       positive_terms, negative_terms = parse_search_terms(Array(args))
-
-      skill_dirs = Dir.children(dir).select do |e|
-        File.directory?(File.join(dir, e)) &&
-          File.exist?(File.join(dir, e, 'SKILL.md'))
-      end
-      entries = skill_dirs.select do |e|
-        next true if positive_terms.empty? && negative_terms.empty?
-        text = read_front_matter_text(File.join(dir, e, 'SKILL.md'))
-        # text is a String; Array#intersect? would raise TypeError
-        positive_terms.all? { |t| text.include?(t) } &&
-          negative_terms.none? { |t| text.include?(t) }
-      end.sort
+      entries = matching_skill_ids(dir, positive_terms, negative_terms)
 
       if entries.empty?
         all_terms = positive_terms + negative_terms
@@ -67,15 +55,7 @@ module AIA
       end
 
       wrap_width = terminal_width - 2
-
-      entries.each do |skill_id|
-        fm = parse_skill_front_matter(File.join(dir, skill_id, 'SKILL.md'))
-        name        = fm['name']        || ''
-        description = fm['description'] || '(no description)'
-        puts "#{skill_id}: #{name}"
-        puts word_wrap(description, width: wrap_width, indent: '  ')
-        puts
-      end
+      entries.each { |skill_id| print_skill_entry(dir, skill_id, wrap_width) }
 
       nil
     end
@@ -122,6 +102,32 @@ module AIA
     alias clipboard paste
 
     private
+
+    # Skill directories under dir with a SKILL.md whose front matter passes
+    # the positive/negative term filters, sorted.
+    def matching_skill_ids(dir, positive_terms, negative_terms)
+      skill_dirs = Dir.children(dir).select do |e|
+        File.directory?(File.join(dir, e)) &&
+          File.exist?(File.join(dir, e, 'SKILL.md'))
+      end
+
+      skill_dirs.select do |e|
+        next true if positive_terms.empty? && negative_terms.empty?
+        text = read_front_matter_text(File.join(dir, e, 'SKILL.md'))
+        # text is a String; Array#intersect? would raise TypeError
+        positive_terms.all? { |t| text.include?(t) } &&
+          negative_terms.none? { |t| text.include?(t) }
+      end.sort
+    end
+
+    def print_skill_entry(dir, skill_id, wrap_width)
+      fm = parse_skill_front_matter(File.join(dir, skill_id, 'SKILL.md'))
+      name        = fm['name']        || ''
+      description = fm['description'] || '(no description)'
+      puts "#{skill_id}: #{name}"
+      puts word_wrap(description, width: wrap_width, indent: '  ')
+      puts
+    end
 
     # Log and print a /skill error message; returns nil so callers can
     # `return report_skill_error(msg)` from any guard.

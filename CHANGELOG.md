@@ -987,7 +987,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - fixed a problem with a priming prompt in a chat loop
 
 ## [0.9.0] 2025-05-13
-- Adding experimental MCP Client suppot
+- Adding experimental MCP Client support
 - removed the CLI options --erb and --shell but kept them in the config file with a default of true for both
 
 ## [0.8.6] 2025-04-23
@@ -1059,7 +1059,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - Added --image_size and --image_quality (--is --iq)
 
 ## [0.5.15] 2024-03-30
-- Added the ability to accept piped in text to be appeded to the end of the prompt text: curl $URL | aia ad_hoc
+- Added the ability to accept piped in text to be appended to the end of the prompt text: curl $URL | aia ad_hoc
 - Fixed bugs with entering directives as follow-up prompts during a chat session
 
 ## [0.5.14] 2024-03-09
@@ -1131,7 +1131,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 
 ## [0.3.20] 2023-12-28
 - added work around to issue with multiple context files going to the `mods` backend
-- added shellwords gem to santize prompt text on the command line
+- added shellwords gem to sanitize prompt text on the command line
 
 ## [0.3.19] 2023-12-26
 - major code refactoring.
@@ -1139,7 +1139,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - usage implemented as a man page. --help will display the man page/
 - added "--dump <yml|yaml|toml>" to send current configuration to STDOUT
 - added "--completion <bash|fish|zsh>" to send a a completion function for the indicated shell to STDOUT
-- added system environment variable (envar) over-rides of default config values uppercase environment variables prefixed with "AIA_" + config item name for example AIA_PROMPTS_DIR and AIA_MODEL.  All config items can be over-ridden by their cooresponding envars.
+- added system environment variable (envar) over-rides of default config values uppercase environment variables prefixed with "AIA_" + config item name for example AIA_PROMPTS_DIR and AIA_MODEL.  All config items can be over-ridden by their corresponding envars.
 - config value hierarchy is:
     1. values from config file  over-rides ...
     2. command line values      over-rides ...
@@ -1148,7 +1148,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 
 ## [0.3.0] = 2023-11-23
 
-- Matching version to [prompt_manager](https://github.com/prompt_manager) This version allows for the user of history in the entery of values to prompt keywords.  KW_HISTORY_MAX is set at 5.  Changed CLI enteraction to use historical selection and editing of prior keyword values.
+- Matching version to [prompt_manager](https://github.com/prompt_manager) This version allows for the user of history in the entry of values to prompt keywords.  KW_HISTORY_MAX is set at 5.  Changed CLI interaction to use historical selection and editing of prior keyword values.
 
 ## [0.1.0] - 2023-11-23
 

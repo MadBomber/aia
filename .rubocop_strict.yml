@@ -1,0 +1,15 @@
+# Cops that must always fire, regardless of .rubocop_todo.yml or inline directives.
+# Listed LAST in inherit_from to override any Exclude entries from todo files.
+
+Lint/Debugger:
+  Enabled: true
+  Exclude: []
+
+Security/Eval:
+  Enabled: true
+  Exclude: []
+
+Lint/SuppressedException:
+  Enabled: true
+  Exclude: []
+

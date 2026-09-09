@@ -105,7 +105,7 @@ class PromptDecomposerTest < Minitest::Test
     assert_equal [], @decomposer.decompose("Some prompt")
   end
 
-  def test_decompose_returns_empty_when_reply_is_unparseable
+  def test_decompose_returns_empty_when_reply_is_unparsable
     @decomposer.stubs(:structured_output?).returns(false)
     mock_result = OpenStruct.new(reply: "this is not json at all")
     @mock_robot.stubs(:run).returns(mock_result)
