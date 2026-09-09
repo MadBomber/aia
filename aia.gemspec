@@ -46,7 +46,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'robot_lab',    '~> 0.2'                # Execution engine: robots, networks, tools, MCP, memory
   spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
   spec.add_dependency 'prompt_manager', '~> 1.0.2' # Prompt parsing/directive DSL
-  spec.add_dependency 'lumberjack', '~> 2.1'       # Structured logging with 3 loggers (aia, llm, mcp); 2.x API (LogFile shift_age/autoflush)
+  spec.add_dependency 'lumberjack', '~> 2.1'       # Structured logging, 3 loggers (aia, llm, mcp); 2.x API (LogFile shift_age/autoflush)
   spec.add_dependency 'activesupport'              # Required by robot_lab (missing from its gemspec)
   spec.add_dependency 'simple_flow'
   spec.add_dependency 'trak_flow'
