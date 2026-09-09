@@ -8,26 +8,4 @@ class Tasks
 
   header "aia — AI Assistant CLI gem"
   footer "Run `asgard help TASK` for details on any task"
-
-  # aia keeps baseline-aware flay/flog gates in its Rakefile (legacy scores
-  # are grandfathered; see `rake flog_baseline` / `rake flay_baseline`).
-  # Override the shared gates so asgard honors those baselines instead of
-  # failing on grandfathered methods.
-  desc "Check structural duplication with Flay (baseline-aware, via rake)"
-  def flay_check
-    delegate_rake_gate("flay_check", "flay_output.txt")
-  end
-
-  desc "Check code complexity with Flog (baseline-aware, via rake)"
-  def flog_check
-    delegate_rake_gate("flog_check", "flog_output.txt")
-  end
-
-  helper(:delegate_rake_gate) do |task, output_file|
-    output = `bundle exec rake #{task} 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write(output_file, output)
-    puts output.lines.map(&:strip).reject(&:empty?).last || result.to_s
-    result
-  end
 end
