@@ -308,24 +308,21 @@ module AIA
       # @param file [String] The file config value
       # @param flush [Boolean] If true, flush immediately (no buffering)
       # @return [Lumberjack::Device] The device instance
-      # :reek:BooleanParameter -- flush: maps directly onto Lumberjack's buffer_size; two constructors would obscure that single toggle
+      # :reek:BooleanParameter -- flush: maps directly onto Lumberjack's autoflush; two constructors would obscure that single toggle
       def create_device(file, flush: true)
-        # buffer_size: 0 means immediate flush (no buffering)
-        buffer_size = flush ? 0 : 8192
-
         case file.to_s.upcase
         when 'STDOUT'
-          Lumberjack::Device::Writer.new($stdout, buffer_size: buffer_size)
+          Lumberjack::Device::Writer.new($stdout, autoflush: flush)
         when 'STDERR'
-          Lumberjack::Device::Writer.new($stderr, buffer_size: buffer_size)
+          Lumberjack::Device::Writer.new($stderr, autoflush: flush)
         else
           path = File.expand_path(file)
-          # Use date rolling for file-based logs
-          # Multiple loggers can safely write to the same file
-          Lumberjack::Device::DateRollingLogFile.new(
+          # Daily date rolling via Logger::LogDevice, which also makes the
+          # file safe for multiple loggers to write to
+          Lumberjack::Device::LogFile.new(
             path,
-            roll: :daily,
-            buffer_size: buffer_size
+            shift_age: 'daily',
+            autoflush: flush
           )
         end
       end

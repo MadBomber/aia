@@ -4,6 +4,11 @@
 
 This section captures all changes since v1.1.0.
 
+## [2.0.0.pre.beta2] 2026-09-09
+
+Using robot_lab v0.2.5
+Using lumberjack v2.1.0
+
 ### Added
 
 - **`--[no-]thinking` flag** (`lib/aia/config/cli_parser.rb`, `lib/aia/config/defaults.yml`, `lib/aia/config.rb`, `lib/aia/streaming_runner.rb`): Controls whether raw reasoning blocks from local models (e.g. `qwen3` on Ollama) are shown. Such models stream their chain-of-thought wrapped in `<think>...</think>` tags; AIA now filters these out by default so only the final answer is displayed. Pass `--thinking` to show the reasoning. The `StreamingRunner` strips the tags inline, tracking open spans across chunk boundaries. Config key: `flags.thinking` (env: `AIA_FLAGS__THINKING`); default `false`.
