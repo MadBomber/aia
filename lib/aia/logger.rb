@@ -92,7 +92,7 @@ module AIA
 
         if llm_config.respond_to?(:log_level=)
           level = effective_log_level(logger_config_for(:llm))
-          llm_config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+          llm_config.log_level = LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN }
         end
 
         # Reset the memoized @logger on RubyLLM module so next call uses our config
@@ -127,7 +127,7 @@ module AIA
 
         return unless config.respond_to?(:log_level=)
         level = effective_log_level(logger_config_for(:mcp))
-        config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+        config.log_level = LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN }
       end
 
       # Convert log file specification to IO object or file path
@@ -172,7 +172,7 @@ module AIA
 
           config  = logger_config_for(system)
           level   = effective_log_level(config, system)
-          numeric = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+          numeric = LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN }
           logger.level = numeric
         end
 
@@ -194,7 +194,7 @@ module AIA
       def test_mode!(level: :debug)
         reset!
         @test_mode = true
-        @test_level = LOG_LEVELS.fetch(level.to_s, Lumberjack::Severity::DEBUG)
+        @test_level = LOG_LEVELS.fetch(level.to_s) { Lumberjack::Severity::DEBUG }
 
         # Pre-create loggers with test devices
         @aia_logger = create_test_logger(:aia)
@@ -274,7 +274,7 @@ module AIA
         device = create_device(file, flush: flush)
         Lumberjack::Logger.new(
           device,
-          level:    LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN),
+          level:    LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN },
           progname: system.to_s.upcase
         )
       end
@@ -334,14 +334,9 @@ module AIA
       def logger_config_for(system)
         logger_cfg = AIA.config&.logger
         return nil unless logger_cfg
+        return nil unless %i[aia llm mcp].include?(system)
 
-        case system
-        when :aia then logger_cfg.aia
-        when :llm then logger_cfg.llm
-        when :mcp then logger_cfg.mcp
-        end
-      rescue NoMethodError
-        nil
+        logger_cfg.public_send(system) if logger_cfg.respond_to?(system)
       end
     end
   end

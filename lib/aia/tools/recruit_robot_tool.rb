@@ -14,18 +14,18 @@ module AIA
                 "skills that define its role, and/or a system prompt. The " \
                 "newcomer joins the crew right away and can be addressed with @name."
 
-    param :name, type: :string, required: true,
-          desc: "Unique name for the new robot, e.g. 'researcher'. Reserved: 'crew'."
-    param :model, type: :string,
-          desc: "Optional provider/model, e.g. 'ollama/qwen3.6:latest' or 'gpt-4o'. " \
-                "Omit (or pass '-') to inherit the chief's model and provider."
-    param :skills, type: :string,
-          desc: "Optional comma-separated skill ids to assign as the robot's role " \
-                "(e.g. 'security-review,ruby-style'). Each skill's content becomes " \
-                "part of its system prompt. Use this to give crew members distinct jobs."
-    param :system_prompt, type: :string,
-          desc: "Optional extra system prompt, appended after any skills — its role, " \
-                "persona, and instructions."
+    parameter :name, type: :string, required: true,
+              description: "Unique name for the new robot, e.g. 'researcher'. Reserved: 'crew'."
+    parameter :model, type: :string,
+              description: "Optional provider/model, e.g. 'ollama/qwen3.6:latest' or 'gpt-4o'. " \
+                           "Omit (or pass '-') to inherit the chief's model and provider."
+    parameter :skills, type: :string,
+              description: "Optional comma-separated skill ids to assign as the robot's role " \
+                           "(e.g. 'security-review,ruby-style'). Each skill's content becomes " \
+                           "part of its system prompt. Use this to give crew members distinct jobs."
+    parameter :system_prompt, type: :string,
+              description: "Optional extra system prompt, appended after any skills — its role, " \
+                           "persona, and instructions."
 
     def execute(name:, model: nil, skills: nil, system_prompt: nil)
       robot = AIA::Crew.recruit(build_spec(name, model, skills, system_prompt))

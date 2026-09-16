@@ -1,12 +1,32 @@
 # frozen_string_literal: true
 
 # test/aia/patches/ruby_llm_streaming_error_test.rb
+#
+# The patch targets ruby_llm 1.x's RubyLLM::Streaming; ruby_llm >= 2.0 moved
+# the module to RubyLLM::Protocol::Streaming and fixed the bug upstream, so
+# the patch never applies there. The behavioral tests below run only when the
+# patch is actually loaded AND applied (it is currently disabled in aia.rb),
+# so they skip rather than fail while it is turned off.
 
 require_relative '../../test_helper'
 require_relative '../../../lib/aia'
 
 class RubyLLMStreamingErrorPatchTest < Minitest::Test
+  # Resolve via reference (Zeitwerk autoload) rather than defined?.
+  LEGACY_STREAMING =
+    begin
+      RubyLLM::Streaming
+    rescue NameError
+      nil
+    end
+
   def setup
+    skip 'ruby_llm >= 2.0: patch not applicable' if LEGACY_STREAMING.nil?
+    unless defined?(AIA::RubyLLMStreamingError) &&
+           LEGACY_STREAMING.ancestors.include?(AIA::RubyLLMStreamingError)
+      skip 'streaming-error patch is disabled (not prepended)'
+    end
+
     # A bare object carrying the patched Streaming instance methods, the way a
     # provider does via `include Streaming`.
     @provider = Class.new { include RubyLLM::Streaming }.new

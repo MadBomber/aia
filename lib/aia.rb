@@ -8,8 +8,12 @@ require 'bigdecimal'
 require 'robot_lab'
 require 'pm'
 
-require_relative 'aia/patches/ruby_llm_tool_error'
-require_relative 'aia/patches/ruby_llm_streaming_error'
+# Patches disabled 2026-09-16 (per DVH) — re-enable by uncommenting.
+# NOTE: with ruby_llm_tool_param_compat disabled, the 2.0-style tool DSL
+# (`parameter`/`description:`) in lib/aia/tools/ requires ruby_llm >= 2.0.
+# require_relative 'aia/patches/ruby_llm_tool_error'
+# require_relative 'aia/patches/ruby_llm_streaming_error'
+# require_relative 'aia/patches/ruby_llm_tool_param_compat'
 
 require_relative 'aia/errors'
 require_relative 'aia/timing'
@@ -21,6 +25,7 @@ require_relative 'aia/utility'
 require_relative 'aia/mcp_server_config'
 require_relative 'aia/skill_utils'
 require_relative 'aia/version'
+require_relative 'aia/provider_registry'
 require_relative 'aia/config'
 require_relative 'aia/logger'
 

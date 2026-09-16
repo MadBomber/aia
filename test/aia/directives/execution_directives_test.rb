@@ -167,4 +167,15 @@ class ExecutionDirectivesTest < Minitest::Test
     result = @instance.say(['hello'])
     assert_equal '', result
   end
+
+  # Bare `say` reads stdin and speaks every subsequent input line, hijacking
+  # the chat session — /say without text must never spawn it.
+  def test_say_without_text_returns_usage_instead_of_spawning_say
+    @instance.expects(:system).never
+
+    assert_equal 'Usage: /say TEXT', @instance.say([])
+    assert_equal 'Usage: /say TEXT', @instance.say([''])
+    assert_equal 'Usage: /say TEXT', @instance.say(['   '])
+    assert_equal 'Usage: /say TEXT', @instance.say(nil)
+  end
 end

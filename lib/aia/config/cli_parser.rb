@@ -29,6 +29,11 @@ module AIA
           exit 1
         end
 
+        # Post-parse so these work regardless of flag order (and after any
+        # --require libs have been noted).
+        handle_list_providers(options)
+        handle_list_models(options)
+
         # Store remaining args for prompt_id and context files
         options[:remaining_args] = ARGV.dup
 
@@ -103,6 +108,20 @@ module AIA
 
         opts.on('--available-models [QUERY]', 'List available models matching optional query and exit') do |query|
           list_available_models(query)
+        end
+
+        opts.on('--provider SLUG',
+                'Default provider for models given without a provider/ prefix; ' \
+                'also scopes --list-models (any RubyLLM-registered provider)') do |slug|
+          options[:provider] = slug
+        end
+
+        opts.on('--list-models', 'List the live models served by the --provider and exit') do
+          options[:list_models] = true
+        end
+
+        opts.on('--list-providers', 'List the registered RubyLLM providers and exit') do
+          options[:list_providers] = true
         end
 
         opts.on("-m MODEL", "--model MODEL",
@@ -498,7 +517,7 @@ module AIA
       def validate_role_exists(role_id)
         return validate_role_path!(role_id) if AIA::SkillUtils.path_based_id?(role_id)
 
-        prompts_dir  = ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
+        prompts_dir  = ENV.fetch('AIA_PROMPTS__DIR') { File.join(Dir.home, '.prompts') }
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
         role_id      = "#{roles_prefix}/#{role_id}" unless role_id.start_with?(roles_prefix)
 
@@ -531,7 +550,7 @@ module AIA
 
       # :reek:TooManyStatements -- sequential terminal report: guards, then a markdown table per role; exits after printing
       def list_available_roles
-        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(Dir.home, '.prompts'))
+        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR') { File.join(Dir.home, '.prompts') }
         roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
         roles_dir = File.join(prompts_dir, roles_prefix)
 
@@ -573,6 +592,103 @@ module AIA
            .map { |f| f.chomp('.md') }
            .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
            .sort
+      end
+
+      # Post-parse handler for `--list-providers`. Lists every provider
+      # registered with RubyLLM (built-ins plus any --require'd gems) and exits.
+      def handle_list_providers(options)
+        return unless options[:list_providers]
+
+        require_listed_libs(options)
+        list_available_providers
+      end
+
+      def list_available_providers
+        AIA::ProviderRegistry.load_installed_gems
+
+        entries = AIA::ProviderRegistry.providers.sort.map { |slug, klass| provider_entry(slug, klass) }
+
+        puts <<~OUTPUT
+
+          Registered RubyLLM providers:
+          #{'-' * 60}
+          #{entries.join("\n")}
+
+          #{entries.size} provider(s) registered
+        OUTPUT
+
+        exit
+      end
+
+      # One listing line per provider, annotated with what the provider
+      # declares about itself: " (local)" and/or " (has API key)".
+      def provider_entry(slug, klass)
+        entry = "- #{slug}"
+        entry += ' (local)' if klass.respond_to?(:local?) && klass.local?
+        entry += ' (has API key)' if provider_api_key?(slug)
+        entry
+      end
+
+      # Generic API-key detection: RubyLLM.config's <slug>_api_key (set by
+      # robot_lab or the user), or the conventional <SLUG>_API_KEY env var
+      # that robot_lab maps into it at session start.
+      def provider_api_key?(slug)
+        key_attr = :"#{slug}_api_key"
+        config = RubyLLM.config
+        return true if config.respond_to?(key_attr) && !config.public_send(key_attr).to_s.empty?
+
+        !ENV.fetch("#{slug.upcase}_API_KEY", '').empty?
+      end
+
+      # Post-parse handler for `--provider SLUG --list-models`. Lists the
+      # provider's live models (via RubyLLM's Provider#list_models) and exits.
+      def handle_list_models(options)
+        return unless options[:list_models]
+
+        slug = options[:provider]
+        if slug
+          require_listed_libs(options)
+          list_provider_models(slug)
+        else
+          $stderr.puts "ERROR: --list-models requires --provider SLUG " \
+                       "(use --available-models to search the full model registry)"
+          exit 1
+        end
+      end
+
+      # `--require` libs may register additional RubyLLM providers, so load
+      # them before resolving the provider slug.
+      def require_listed_libs(options)
+        Array(options[:require_libs]).each do |lib|
+          require lib
+        rescue LoadError => e
+          $stderr.puts "Warning: Failed to require '#{lib}': #{e.message}"
+        end
+      end
+
+      # :reek:TooManyStatements -- sequential --list-models report: resolve provider, list, summary, exit
+      def list_provider_models(slug)
+        if AIA::ProviderRegistry.available?(slug)
+          entries = AIA::ProviderRegistry.instantiate(slug).list_models.map { |model| "- #{slug}/#{model.id}" }
+
+          puts <<~OUTPUT
+
+            #{slug} models:
+            #{'-' * 60}
+            #{entries.join("\n")}
+
+            #{entries.size} #{slug} model(s) available
+          OUTPUT
+
+          exit
+        else
+          $stderr.puts "ERROR: unknown provider '#{slug}'. Registered providers: " \
+                       "#{AIA::ProviderRegistry.slugs.sort.join(', ')}"
+          exit 1
+        end
+      rescue StandardError => e
+        $stderr.puts "ERROR: cannot list models for provider '#{slug}': #{e.message}"
+        exit 1
       end
 
       # :reek:TooManyStatements -- sequential --available-models report: parse query, print matches, summary, exit

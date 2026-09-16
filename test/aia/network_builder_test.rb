@@ -104,7 +104,7 @@ class NetworkBuilderTest < Minitest::Test
     # Use real model names known to RubyLLM to avoid ModelNotFoundError.
     @config.models = [
       OpenStruct.new(name: 'gpt-4o',                    role: nil, provider: nil, internal_id: 'gpt-4o',                    instance: 1),
-      OpenStruct.new(name: 'claude-sonnet-4-20250514',  role: nil, provider: nil, internal_id: 'claude-sonnet-4-20250514',  instance: 1)
+      OpenStruct.new(name: 'claude-sonnet-4-5',  role: nil, provider: nil, internal_id: 'claude-sonnet-4-5',  instance: 1)
     ]
 
     network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
@@ -118,7 +118,7 @@ class NetworkBuilderTest < Minitest::Test
   # =========================================================================
 
   def test_build_parallel_network_uses_namer_for_each_model_name
-    model_names = ['gpt-4o', 'claude-sonnet-4-20250514']
+    model_names = ['gpt-4o', 'claude-sonnet-4-5']
     @config.models = model_names.map do |n|
       OpenStruct.new(name: n, role: nil, provider: nil, internal_id: n, instance: 1)
     end

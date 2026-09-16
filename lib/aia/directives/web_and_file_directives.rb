@@ -142,7 +142,7 @@ module AIA
       skills = AIA.respond_to?(:config) ? AIA.config&.skills : nil
       return skills.dir if skills.respond_to?(:dir) && skills.dir
 
-      ENV.fetch('AIA_SKILLS__DIR', File.expand_path('~/.prompts/skills'))
+      ENV.fetch('AIA_SKILLS__DIR') { File.expand_path('~/.prompts/skills') }
     end
 
     def terminal_width

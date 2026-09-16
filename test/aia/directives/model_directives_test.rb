@@ -29,44 +29,7 @@ class ModelDirectivesTest < Minitest::Test
   end
 
   # ---------------------------------------------------------------------------
-  # format_bytes — private helper accessible via public method
-  # ---------------------------------------------------------------------------
-
-  def test_format_bytes_zero
-    assert_equal '0 B', @instance.format_bytes(0)
-  end
-
-  def test_format_bytes_bytes_range
-    assert_equal '512.0 B', @instance.format_bytes(512)
-  end
-
-  def test_format_bytes_kilobytes
-    assert_equal '1.0 KB', @instance.format_bytes(1024)
-    assert_equal '2.5 KB', @instance.format_bytes(2560)
-  end
-
-  def test_format_bytes_megabytes
-    assert_equal '1.0 MB', @instance.format_bytes(1024 * 1024)
-    assert_equal '5.0 MB', @instance.format_bytes(5 * 1024 * 1024)
-  end
-
-  def test_format_bytes_gigabytes
-    assert_equal '1.0 GB', @instance.format_bytes(1024**3)
-    assert_equal '3.5 GB', @instance.format_bytes((3.5 * (1024**3)).to_i)
-  end
-
-  def test_format_bytes_terabytes
-    assert_equal '1.0 TB', @instance.format_bytes(1024**4)
-  end
-
-  def test_format_bytes_caps_at_terabytes_for_huge_values
-    huge = 5 * (1024**5)
-    result = @instance.format_bytes(huge)
-    assert_match(/\d+\.\d+ TB/, result)
-  end
-
-  # ---------------------------------------------------------------------------
-  # available_models — routing based on model name prefix
+  # available_models — routing based on the configured models' providers
   # ---------------------------------------------------------------------------
 
   def test_available_models_returns_empty_string
@@ -80,15 +43,15 @@ class ModelDirectivesTest < Minitest::Test
     @instance.available_models
   end
 
-  def test_available_models_calls_show_local_models_for_ollama
-    @mock_config.models = [OpenStruct.new(name: 'ollama/llama2')]
-    @instance.expects(:show_local_models).with(['ollama/llama2'], [], []).once
+  def test_available_models_calls_show_provider_models_for_spec_with_provider
+    @mock_config.models = [OpenStruct.new(name: 'llama2', provider: 'ollama')]
+    @instance.expects(:show_provider_models).with(['ollama'], [], []).once
     @instance.available_models
   end
 
-  def test_available_models_calls_show_local_models_for_lms
-    @mock_config.models = [OpenStruct.new(name: 'lms/some-model')]
-    @instance.expects(:show_local_models).with(['lms/some-model'], [], []).once
+  def test_available_models_detects_registered_prefix_in_raw_names
+    @mock_config.models = [OpenStruct.new(name: 'ollama/llama2', provider: nil)]
+    @instance.expects(:show_provider_models).with(['ollama'], [], []).once
     @instance.available_models
   end
 

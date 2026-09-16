@@ -9,28 +9,28 @@ module AIA
   class ModelAliasRegistry
     DEFAULT_ALIASES = {
       # Short names
-      "claude"     => "claude-sonnet-4-20250514",
-      "sonnet"     => "claude-sonnet-4-20250514",
-      "opus"       => "claude-opus-4-20250514",
+      "claude"     => "claude-sonnet-4-5",
+      "sonnet"     => "claude-sonnet-4-5",
+      "opus"       => "claude-opus-5",
       "haiku"      => "claude-haiku-4-5-20251001",
       "gpt4"       => "gpt-4o",
       "gpt4o"      => "gpt-4o",
       "gpt4mini"   => "gpt-4o-mini",
-      "gemini"     => "gemini-2.0-flash",
-      "flash"      => "gemini-2.0-flash",
-      "llama"      => "llama-3.1-70b",
+      "gemini"     => "gemini-3.8-flash",
+      "flash"      => "gemini-3.8-flash",
+      "llama"      => "meta-llama/llama-4-maverick",
 
       # Provider names (resolve to default model for provider)
-      "anthropic"  => "claude-sonnet-4-20250514",
+      "anthropic"  => "claude-sonnet-4-5",
       "openai"     => "gpt-4o",
-      "google"     => "gemini-2.0-flash",
-      "meta"       => "llama-3.1-70b",
+      "google"     => "gemini-3.8-flash",
+      "meta"       => "meta-llama/llama-4-maverick",
 
       # Capability descriptors
       "fast"       => "claude-haiku-4-5-20251001",
       "cheap"      => "gpt-4o-mini",
-      "best"       => "claude-opus-4-20250514",
-      "coding"     => "claude-sonnet-4-20250514",
+      "best"       => "claude-opus-5",
+      "coding"     => "claude-sonnet-4-5",
       "vision"     => "gpt-4o"
     }.freeze
 

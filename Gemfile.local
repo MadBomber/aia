@@ -5,6 +5,7 @@ source "https://rubygems.org"
 group :development do
   gem 'aigcm'
   gem 'debug_me'
+  gem 'fasterer'
   gem 'flay'
   gem 'flog'
   gem 'reek'

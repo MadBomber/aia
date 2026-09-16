@@ -21,11 +21,11 @@ class SpawnSpecParserTest < Minitest::Test
     assert_equal 'write tests', spec[:system_prompt]
   end
 
-  def test_lms_prefix_maps_to_openai_provider
+  def test_lms_prefix_resolves_to_native_lms_provider
     spec = AIA::SpawnSpecParser.parse(%w[local lms/my-model hello])
 
     assert_equal 'my-model', spec[:model]
-    assert_equal 'openai', spec[:provider]
+    assert_equal 'lms', spec[:provider]
   end
 
   def test_inherit_token_keeps_parent_model_and_provider

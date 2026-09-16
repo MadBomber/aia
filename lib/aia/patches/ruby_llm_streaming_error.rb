@@ -20,8 +20,9 @@
 # ruby_llm's own private parse_error_from_json. Guarded against API drift: if
 # parse_error_from_json is renamed/removed the patch is skipped with a warning.
 #
-# NOTE: This fixes a genuine upstream bug — it should be contributed to
-# crmne/ruby_llm so this patch can eventually be retired.
+# ruby_llm >= 2.0 moved the module to RubyLLM::Protocol::Streaming and fixed
+# the bug upstream (nil-safe data-line access plus SSE event buffering), so on
+# 2.0+ this patch deliberately does not apply. It stays for the 1.x line only.
 
 module AIA
   module RubyLLMStreamingError
@@ -35,8 +36,24 @@ module AIA
   end
 end
 
-if RubyLLM::Streaming.private_method_defined?(:parse_error_from_json)
-  RubyLLM::Streaming.prepend(AIA::RubyLLMStreamingError)
+# ruby_llm is Zeitwerk-managed, so the constants must be referenced (not
+# defined?-probed) to trigger their autoload; NameError means "not this version".
+streaming =
+  begin
+    RubyLLM::Streaming # ruby_llm 1.x
+  rescue NameError
+    nil
+  end
+
+if streaming.nil?
+  begin
+    RubyLLM::Protocol::Streaming # ruby_llm >= 2.0: fixed upstream, no patch needed
+  rescue NameError
+    $stderr.puts "WARNING: [AIA] ruby_llm patch skipped: no streaming module found " \
+                 "(ruby_llm #{RubyLLM::VERSION}). Streaming error messages may be cryptic."
+  end
+elsif streaming.private_method_defined?(:parse_error_from_json)
+  streaming.prepend(AIA::RubyLLMStreamingError)
 else
   $stderr.puts "WARNING: [AIA] ruby_llm patch skipped: RubyLLM::Streaming#parse_error_from_json " \
                "not found (ruby_llm #{RubyLLM::VERSION}). Streaming error messages may be cryptic."

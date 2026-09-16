@@ -14,13 +14,13 @@ module AIA
                 "role from the given skills and/or system prompt. Use this to " \
                 "repurpose a member or recover one that went off task."
 
-    param :name, type: :string, required: true,
-          desc: "Name of the existing crew member to reset (cannot be the chief)."
-    param :skills, type: :string,
-          desc: "Optional comma-separated skill ids to assign as the new role " \
-                "(e.g. 'testing,performance')."
-    param :system_prompt, type: :string,
-          desc: "Optional extra system prompt, appended after any skills."
+    parameter :name, type: :string, required: true,
+              description: "Name of the existing crew member to reset (cannot be the chief)."
+    parameter :skills, type: :string,
+              description: "Optional comma-separated skill ids to assign as the new role " \
+                           "(e.g. 'testing,performance')."
+    parameter :system_prompt, type: :string,
+              description: "Optional extra system prompt, appended after any skills."
 
     def execute(name:, skills: nil, system_prompt: nil)
       prompt = system_prompt.to_s.strip

@@ -8,6 +8,7 @@ group :development do
   gem 'aigcm'
   gem 'debug_me'
   gem 'deep-cover', require: false
+  gem 'fasterer'
   gem 'flay'
   gem 'flog'
   gem 'reek'

@@ -15,14 +15,6 @@ module AIA
   class ModelSpec
     attr_accessor :name, :role, :instance, :internal_id, :provider
 
-    # Provider prefixes that map to RubyLLM provider slugs.
-    # 'lms' is stored as-is; RobotFactory maps it to the openai provider
-    # with a custom API base so it doesn't conflict with real OpenAI models.
-    PROVIDER_ALIASES = {
-      'ollama' => 'ollama',
-      'lms'    => 'lms'
-    }.freeze
-
     def initialize(hash = {})
       hash = hash.transform_keys(&:to_sym) if hash.respond_to?(:transform_keys)
 
@@ -32,7 +24,7 @@ module AIA
       @internal_id = hash[:internal_id] || @name
       @provider = hash[:provider]
 
-      # Extract provider from name if prefixed (e.g., "ollama/llama3" or "lms/my-model")
+      # Extract provider from name if prefixed (e.g., "<provider>/<model-id>")
       extract_provider_from_name! unless @provider
     end
 
@@ -84,15 +76,17 @@ module AIA
 
     private
 
-    # Extract provider prefix from model name.
-    # "ollama/llama3:latest" => provider: "ollama", name: "llama3:latest"
-    # "lms/my-model" => provider: "openai", name: "my-model"
+    # Extract a provider prefix from the model name. The prefix is a provider
+    # exactly when RubyLLM knows it (registered already, or loadable as a
+    # conventional ruby_llm-providers-<prefix> gem) — no provider names are
+    # hardcoded here. Names whose first segment is not a provider (registry
+    # ids like "meta-llama/llama-4-maverick") pass through untouched.
     def extract_provider_from_name!
       return unless @name&.include?('/')
 
       prefix, rest = @name.split('/', 2)
-      return unless PROVIDER_ALIASES.key?(prefix)
-      @provider = PROVIDER_ALIASES[prefix]
+      return unless ProviderRegistry.available?(prefix)
+      @provider = prefix
       @name = rest
     end
   end

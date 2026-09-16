@@ -14,15 +14,15 @@ class ModelAliasRegistryTest < Minitest::Test
   # =========================================================================
 
   def test_resolve_claude_returns_sonnet
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("claude")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("claude")
   end
 
   def test_resolve_sonnet_returns_sonnet
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("sonnet")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("sonnet")
   end
 
   def test_resolve_opus_returns_opus
-    assert_equal "claude-opus-4-20250514", @registry.resolve("opus")
+    assert_equal "claude-opus-5", @registry.resolve("opus")
   end
 
   def test_resolve_haiku_returns_haiku
@@ -42,15 +42,15 @@ class ModelAliasRegistryTest < Minitest::Test
   end
 
   def test_resolve_gemini_returns_gemini_flash
-    assert_equal "gemini-2.0-flash", @registry.resolve("gemini")
+    assert_equal "gemini-3.8-flash", @registry.resolve("gemini")
   end
 
   def test_resolve_flash_returns_gemini_flash
-    assert_equal "gemini-2.0-flash", @registry.resolve("flash")
+    assert_equal "gemini-3.8-flash", @registry.resolve("flash")
   end
 
   def test_resolve_llama_returns_llama
-    assert_equal "llama-3.1-70b", @registry.resolve("llama")
+    assert_equal "meta-llama/llama-4-maverick", @registry.resolve("llama")
   end
 
   # =========================================================================
@@ -70,13 +70,13 @@ class ModelAliasRegistryTest < Minitest::Test
   # =========================================================================
 
   def test_resolve_normalizes_case
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("Claude")
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("CLAUDE")
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("cLaUdE")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("Claude")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("CLAUDE")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("cLaUdE")
   end
 
   def test_resolve_normalizes_leading_trailing_whitespace
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("  claude  ")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("  claude  ")
     assert_equal "gpt-4o", @registry.resolve(" gpt4 ")
   end
 
@@ -92,7 +92,7 @@ class ModelAliasRegistryTest < Minitest::Test
   # =========================================================================
 
   def test_resolve_anthropic_returns_claude_sonnet
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("anthropic")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("anthropic")
   end
 
   def test_resolve_openai_returns_gpt4o
@@ -100,11 +100,11 @@ class ModelAliasRegistryTest < Minitest::Test
   end
 
   def test_resolve_google_returns_gemini_flash
-    assert_equal "gemini-2.0-flash", @registry.resolve("google")
+    assert_equal "gemini-3.8-flash", @registry.resolve("google")
   end
 
   def test_resolve_meta_returns_llama
-    assert_equal "llama-3.1-70b", @registry.resolve("meta")
+    assert_equal "meta-llama/llama-4-maverick", @registry.resolve("meta")
   end
 
   # =========================================================================
@@ -120,11 +120,11 @@ class ModelAliasRegistryTest < Minitest::Test
   end
 
   def test_resolve_best_returns_opus
-    assert_equal "claude-opus-4-20250514", @registry.resolve("best")
+    assert_equal "claude-opus-5", @registry.resolve("best")
   end
 
   def test_resolve_coding_returns_sonnet
-    assert_equal "claude-sonnet-4-20250514", @registry.resolve("coding")
+    assert_equal "claude-sonnet-4-5", @registry.resolve("coding")
   end
 
   def test_resolve_vision_returns_gpt4o
@@ -139,23 +139,23 @@ class ModelAliasRegistryTest < Minitest::Test
     result = @registry.resolve_multiple("claude, gemini")
 
     assert_equal 2, result.size
-    assert_includes result, "claude-sonnet-4-20250514"
-    assert_includes result, "gemini-2.0-flash"
+    assert_includes result, "claude-sonnet-4-5"
+    assert_includes result, "gemini-3.8-flash"
   end
 
   def test_resolve_multiple_with_and_separated_names
     result = @registry.resolve_multiple("claude and gemini")
 
     assert_equal 2, result.size
-    assert_includes result, "claude-sonnet-4-20250514"
-    assert_includes result, "gemini-2.0-flash"
+    assert_includes result, "claude-sonnet-4-5"
+    assert_includes result, "gemini-3.8-flash"
   end
 
   def test_resolve_multiple_with_ampersand_separated_names
     result = @registry.resolve_multiple("opus & haiku")
 
     assert_equal 2, result.size
-    assert_includes result, "claude-opus-4-20250514"
+    assert_includes result, "claude-opus-5"
     assert_includes result, "claude-haiku-4-5-20251001"
   end
 
@@ -164,7 +164,7 @@ class ModelAliasRegistryTest < Minitest::Test
 
     assert_equal 2, result.size
     assert_includes result, "gpt-4o"
-    assert_includes result, "llama-3.1-70b"
+    assert_includes result, "meta-llama/llama-4-maverick"
   end
 
   def test_resolve_multiple_deduplicates
@@ -172,21 +172,21 @@ class ModelAliasRegistryTest < Minitest::Test
     result = @registry.resolve_multiple("claude, sonnet")
 
     assert_equal 1, result.size
-    assert_equal "claude-sonnet-4-20250514", result.first
+    assert_equal "claude-sonnet-4-5", result.first
   end
 
   def test_resolve_multiple_with_single_name
     result = @registry.resolve_multiple("claude")
 
     assert_equal 1, result.size
-    assert_equal "claude-sonnet-4-20250514", result.first
+    assert_equal "claude-sonnet-4-5", result.first
   end
 
   def test_resolve_multiple_with_mixed_known_and_unknown
     result = @registry.resolve_multiple("claude, my-custom-model")
 
     assert_equal 2, result.size
-    assert_includes result, "claude-sonnet-4-20250514"
+    assert_includes result, "claude-sonnet-4-5"
     assert_includes result, "my-custom-model"
   end
 
@@ -194,8 +194,8 @@ class ModelAliasRegistryTest < Minitest::Test
     result = @registry.resolve_multiple("claude, gemini, gpt4")
 
     assert_equal 3, result.size
-    assert_includes result, "claude-sonnet-4-20250514"
-    assert_includes result, "gemini-2.0-flash"
+    assert_includes result, "claude-sonnet-4-5"
+    assert_includes result, "gemini-3.8-flash"
     assert_includes result, "gpt-4o"
   end
 
@@ -253,7 +253,7 @@ class ModelAliasRegistryTest < Minitest::Test
     custom_registry = AIA::ModelAliasRegistry.new("mymodel" => "custom/mymodel-v2")
 
     # Default aliases should still work
-    assert_equal "claude-sonnet-4-20250514", custom_registry.resolve("claude")
+    assert_equal "claude-sonnet-4-5", custom_registry.resolve("claude")
     assert_equal "gpt-4o", custom_registry.resolve("gpt4")
   end
 

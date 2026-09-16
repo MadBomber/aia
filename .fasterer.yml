@@ -1,0 +1,17 @@
+# Fasterer configuration for aia.
+#
+# each_with_index_vs_while is deliberately ignored: rewriting the ~19 flagged
+# orchestration/display loops as while loops with manual index counters would
+# hurt readability for a negligible gain — none of them are hot paths.
+#
+# fetch_with_argument_vs_block is ignored because it
+# conflicts with RuboCop's Style/RedundantFetchBlock for literal defaults
+# (fetch(:k, nil)), where the block defers nothing. Fetches whose default IS
+# computed (File.join, File.expand_path, constant lookups) already use the
+# block form in the code — that part of the suggestion is implemented.
+#
+# The remaining suggestion (respond_to? instead of rescuing NoMethodError in
+# logger.rb) is implemented.
+speedups:
+  each_with_index_vs_while: false
+  fetch_with_argument_vs_block: false

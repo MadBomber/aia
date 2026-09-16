@@ -61,7 +61,7 @@ class RobotFactoryNetworkTest < Minitest::Test
 
     models = network.robots.values.map(&:model)
     assert_includes models, 'gpt-4o'
-    assert_includes models, 'claude-sonnet-4-20250514'
+    assert_includes models, 'claude-sonnet-4-5'
   end
 
   def test_parallel_network_robots_have_identity_prompts
@@ -306,7 +306,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     config = create_pipeline_config
     config.models = [
       OpenStruct.new(name: 'gpt-4o', role: nil, instance: 1, internal_id: 'gpt-4o', provider: nil),
-      OpenStruct.new(name: 'claude-sonnet-4-20250514', role: nil, instance: 1, internal_id: 'claude-sonnet-4-20250514', provider: nil)
+      OpenStruct.new(name: 'claude-sonnet-4-5', role: nil, instance: 1, internal_id: 'claude-sonnet-4-5', provider: nil)
     ]
     AIA.stubs(:config).returns(config)
 
@@ -328,7 +328,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     memory = network.memory
     refute_nil memory.data.session_id
     assert_equal 2, memory.data.model_count
-    assert_equal %w[gpt-4o claude-sonnet-4-20250514], memory.data.model_names
+    assert_equal %w[gpt-4o claude-sonnet-4-5], memory.data.model_names
     assert_equal 0, memory.data.turn_count
   end
 
@@ -376,7 +376,7 @@ class RobotFactoryNetworkTest < Minitest::Test
 
   def test_identity_prompt_multi_robot_shows_roster
     spec1 = OpenStruct.new(name: 'gpt-4o', provider: nil)
-    spec2 = OpenStruct.new(name: 'claude-sonnet-4-20250514', provider: nil)
+    spec2 = OpenStruct.new(name: 'claude-sonnet-4-5', provider: nil)
     roster = [
       { name: 'Tobor', spec: spec1 },
       { name: 'Spark', spec: spec2 }
@@ -405,7 +405,7 @@ class RobotFactoryNetworkTest < Minitest::Test
     OpenStruct.new(
       models: [
         OpenStruct.new(name: 'gpt-4o', role: nil, instance: 1, internal_id: 'gpt-4o', provider: nil),
-        OpenStruct.new(name: 'claude-sonnet-4-20250514', role: nil, instance: 1, internal_id: 'claude-sonnet-4-20250514', provider: nil)
+        OpenStruct.new(name: 'claude-sonnet-4-5', role: nil, instance: 1, internal_id: 'claude-sonnet-4-5', provider: nil)
       ],
       pipeline: [],
       context_files: [],

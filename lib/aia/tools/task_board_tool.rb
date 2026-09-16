@@ -14,22 +14,22 @@ module AIA
     description "Manage a shared task board. Create tasks for other robots, " \
                 "check what's ready, claim tasks, and report completion."
 
-    param :action, type: :string, required: true,
-          desc: "One of: create, plan, ready, claim, complete, block, status"
-    param :title, type: :string,
-          desc: "Task title (for create/plan actions)"
-    param :assignee, type: :string,
-          desc: "Robot name to assign to (for create/claim/ready)"
-    param :labels, type: :string,
-          desc: "Comma-separated labels (for create)"
-    param :blocked_by, type: :string,
-          desc: "Comma-separated blocker task IDs (for create)"
-    param :steps, type: :string,
-          desc: "JSON array of step objects [{title:, assignee:}] (for plan)"
-    param :task_id, type: :string,
-          desc: "Task ID (for claim/complete/block)"
-    param :result, type: :string,
-          desc: "Result summary (for complete) or reason (for block)"
+    parameter :action, type: :string, required: true,
+              description: "One of: create, plan, ready, claim, complete, block, status"
+    parameter :title, type: :string,
+              description: "Task title (for create/plan actions)"
+    parameter :assignee, type: :string,
+              description: "Robot name to assign to (for create/claim/ready)"
+    parameter :labels, type: :string,
+              description: "Comma-separated labels (for create)"
+    parameter :blocked_by, type: :string,
+              description: "Comma-separated blocker task IDs (for create)"
+    parameter :steps, type: :string,
+              description: "JSON array of step objects [{title:, assignee:}] (for plan)"
+    parameter :task_id, type: :string,
+              description: "Task ID (for claim/complete/block)"
+    parameter :result, type: :string,
+              description: "Result summary (for complete) or reason (for block)"
 
     # Never auto-discovered onto primary robots. Only Foreman
     # (built by DelegateToForemanTool) receives this tool explicitly.

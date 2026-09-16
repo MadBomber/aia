@@ -43,7 +43,7 @@ class SessionTrackerTest < Minitest::Test
     @tracker.record_turn(model: "gpt-4o-mini", input: "world", result: result)
     assert_equal 2, @tracker.turn_count
 
-    @tracker.record_turn(model: "claude-sonnet-4-20250514", input: "test", result: result)
+    @tracker.record_turn(model: "claude-sonnet-4-5", input: "test", result: result)
     assert_equal 3, @tracker.turn_count
   end
 
@@ -164,14 +164,14 @@ class SessionTrackerTest < Minitest::Test
   # =========================================================================
 
   def test_record_model_switch_records_event
-    @tracker.record_model_switch(from: "gpt-4o-mini", to: "claude-sonnet-4-20250514")
+    @tracker.record_model_switch(from: "gpt-4o-mini", to: "claude-sonnet-4-5")
 
     assert_equal 1, @tracker.turns.length
     event = @tracker.turns.first
 
     assert_equal :model_switch, event[:type]
     assert_equal "gpt-4o-mini", event[:from]
-    assert_equal "claude-sonnet-4-20250514", event[:to]
+    assert_equal "claude-sonnet-4-5", event[:to]
     assert_equal "user_request", event[:reason]
     assert_instance_of Time, event[:timestamp]
   end

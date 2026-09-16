@@ -11,39 +11,88 @@ class RobotFactoryTest < Minitest::Test
     AIA.stubs(:config).returns(@config)
   end
 
-  def test_configure_local_providers_always_sets_ollama_base
-    # Cloud-only session (no ollama model) must still configure the Ollama base
-    # so a later `/model ollama/...` switch can reach the local server.
+  # Endpoint overrides are generic: <SLUG>_API_BASE reaches
+  # RubyLLM.config.<slug>_api_base for any registered provider.
+  def test_configure_local_providers_applies_env_base_for_any_provider
     @config.models = [OpenStruct.new(provider: nil)]
     original = RubyLLM.config.ollama_api_base
+    original_env = ENV.fetch('OLLAMA_API_BASE', nil)
+    ENV['OLLAMA_API_BASE'] = 'http://ollama.test:11434/v1'
 
     AIA::RobotFactory.send(:configure_local_providers, @config)
 
-    assert_equal ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434/v1'), RubyLLM.config.ollama_api_base
+    assert_equal 'http://ollama.test:11434/v1', RubyLLM.config.ollama_api_base
   ensure
+    ENV['OLLAMA_API_BASE'] = original_env
     RubyLLM.config.ollama_api_base = original
   end
 
-  def test_configure_local_providers_does_not_hijack_openai_base_without_lms
+  def test_configure_local_providers_leaves_bases_alone_without_env_override
     @config.models = [OpenStruct.new(provider: nil)]
-    original = RubyLLM.config.openai_api_base
+    original = RubyLLM.config.ollama_api_base
+    original_env = ENV.fetch('OLLAMA_API_BASE', nil)
+    ENV.delete('OLLAMA_API_BASE')
 
     AIA::RobotFactory.send(:configure_local_providers, @config)
 
-    refute_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1'), RubyLLM.config.openai_api_base
+    if original.nil?
+      assert_nil RubyLLM.config.ollama_api_base
+    else
+      assert_equal original, RubyLLM.config.ollama_api_base
+    end
   ensure
-    RubyLLM.config.openai_api_base = original
+    ENV['OLLAMA_API_BASE'] = original_env
+    RubyLLM.config.ollama_api_base = original
   end
 
-  def test_configure_local_providers_sets_openai_base_for_lms
+  # lms is a native RubyLLM provider now — the openai base must never be
+  # touched on its behalf (the old behavior hijacked it).
+  def test_configure_local_providers_does_not_hijack_openai_base_for_lms
     @config.models = [OpenStruct.new(provider: 'lms')]
     original = RubyLLM.config.openai_api_base
 
     AIA::RobotFactory.send(:configure_local_providers, @config)
 
-    assert_equal ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1'), RubyLLM.config.openai_api_base
+    if original.nil?
+      assert_nil RubyLLM.config.openai_api_base
+    else
+      assert_equal original, RubyLLM.config.openai_api_base
+    end
   ensure
     RubyLLM.config.openai_api_base = original
+  end
+
+  def test_configure_local_providers_registers_native_lms_provider
+    @config.models = [OpenStruct.new(provider: 'lms')]
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    assert RubyLLM::Provider.providers.key?(:lms)
+  end
+
+  def test_configure_local_providers_sets_lms_base_from_env
+    @config.models = [OpenStruct.new(provider: 'lms')]
+    original_env = ENV.fetch('LMS_API_BASE', nil)
+    ENV['LMS_API_BASE'] = 'http://lms.test:9999/v1'
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    assert_equal 'http://lms.test:9999/v1', RubyLLM.config.lms_api_base
+  ensure
+    ENV['LMS_API_BASE'] = original_env
+    RubyLLM.config.lms_api_base = nil if RubyLLM.config.respond_to?(:lms_api_base=)
+  end
+
+  def test_resolve_provider_passes_lms_through
+    spec = OpenStruct.new(provider: 'lms')
+
+    assert_equal 'lms', AIA::RobotFactory.resolve_provider(spec)
+  end
+
+  def test_ensure_provider_loaded_warns_but_does_not_raise_for_unknown_provider
+    AIA::RobotFactory.ensure_provider_loaded('no_such_provider_xyz')
+
+    refute RubyLLM::Provider.providers.key?(:no_such_provider_xyz)
   end
 
   def test_mcp_server_configs_returns_empty_when_no_mcp

@@ -35,6 +35,10 @@ module AIA
 
     desc "Use text-to-speech to speak the text"
     def say(args, context_manager = nil)
+      # Without text, `say` reads stdin and speaks every line the user types
+      # next — hijacking the chat session — so never invoke it bare.
+      return "Usage: /say TEXT" if Array(args).join(' ').strip.empty?
+
       audio = AIA.config.audio
       voice = audio.voice
       env   = {}

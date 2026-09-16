@@ -8,10 +8,10 @@ module AIA
   #
   #   <name> <provider/model> <system prompt...>
   #
-  # The second token is parsed as a model via {ModelSpec}, so
-  # "ollama/qwen3.6:latest" yields model "qwen3.6:latest" + provider "ollama"
-  # (and "lms/..." maps to the openai provider). Use "-" or "inherit" as the
-  # model token to keep the parent robot's model and provider.
+  # The second token is parsed as a model via {ModelSpec}, so a
+  # "<provider>/<model>" spec yields the model plus its RubyLLM provider for
+  # any provider RubyLLM knows (see {ProviderRegistry}). Use "-" or "inherit"
+  # as the model token to keep the parent robot's model and provider.
   #
   # Any token of the form "skill:<id>" (anywhere after the name) is pulled out
   # as a skill assignment and returned in :skills; "skill:a,b" lists several.
@@ -57,9 +57,8 @@ module AIA
     def self.parse_model(token)
       return [nil, nil] if token.nil? || INHERIT_TOKENS.include?(token.downcase)
 
-      spec     = ModelSpec.new(name: token)
-      provider = spec.provider == 'lms' ? 'openai' : spec.provider
-      [spec.name, provider]
+      spec = ModelSpec.new(name: token)
+      [spec.name, RobotFactory.resolve_provider(spec)]
     end
   end
 end

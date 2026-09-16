@@ -388,3 +388,33 @@ class ConfigTest < Minitest::Test
     file.path
   end
 end
+
+class ConfigDefaultProviderTest < Minitest::Test
+  def test_provider_override_becomes_default_for_prefixless_models
+    config = AIA::Config.new(overrides: { provider: 'lms', models: ['my-model'] })
+
+    assert_equal 'lms', config.provider
+    assert_equal 'lms', config.models.first.provider
+    assert_equal 'my-model', config.models.first.name
+  end
+
+  def test_explicit_model_prefix_wins_over_default_provider
+    config = AIA::Config.new(overrides: { provider: 'lms', models: ['ollama/llama3'] })
+
+    assert_equal 'ollama', config.models.first.provider
+    assert_equal 'llama3', config.models.first.name
+  end
+
+  def test_default_provider_applies_to_every_prefixless_model
+    config = AIA::Config.new(overrides: { provider: 'lms', models: ['model-a', 'ollama/llama3', 'model-b'] })
+
+    assert_equal %w[lms ollama lms], config.models.map(&:provider)
+  end
+
+  def test_models_keep_nil_provider_without_the_override
+    config = AIA::Config.new(overrides: { models: ['my-model'] })
+
+    assert_nil config.provider
+    assert_nil config.models.first.provider
+  end
+end

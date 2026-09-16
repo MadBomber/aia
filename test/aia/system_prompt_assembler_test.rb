@@ -63,7 +63,7 @@ class SystemPromptAssemblerTest < Minitest::Test
 
   def test_build_identity_prompt_multi_robot
     spec1 = OpenStruct.new(name: 'gpt-4o', provider: nil)
-    spec2 = OpenStruct.new(name: 'claude-sonnet-4-20250514', provider: nil)
+    spec2 = OpenStruct.new(name: 'claude-sonnet-4-5', provider: nil)
     roster = [
       { name: 'Tobor', spec: spec1 },
       { name: 'Spark', spec: spec2 }

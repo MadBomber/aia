@@ -33,19 +33,15 @@ class ModelDirectivesHelpersTest < Minitest::Test
   end
 
   # =========================================================================
-  # format_ollama_entry
+  # provider_model_entries
   # =========================================================================
 
-  def test_format_ollama_entry_full
-    entry = @instance.send(:format_ollama_entry,
-                           'name' => 'llama3', 'size' => 4 * (1024**3),
-                           'modified_at' => '2026-01-15T10:00:00Z')
-    assert_equal '- ollama/llama3 (size: 4.0 GB, modified: 2026-01-15)', entry
-  end
+  def test_provider_model_entries_prefixes_ids_with_slug
+    provider = mock('provider')
+    provider.stubs(:list_models).returns([OpenStruct.new(id: 'llama3')])
+    AIA::ProviderRegistry.stubs(:instantiate).with('ollama').returns(provider)
 
-  def test_format_ollama_entry_missing_fields
-    entry = @instance.send(:format_ollama_entry, 'name' => 'tiny')
-    assert_equal '- ollama/tiny (size: unknown, modified: unknown)', entry
+    assert_equal ['- ollama/llama3'], @instance.send(:provider_model_entries, 'ollama')
   end
 
   # =========================================================================

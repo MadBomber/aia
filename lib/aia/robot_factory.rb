@@ -230,8 +230,8 @@ module AIA
 
       # Build a RobotLab::Robot for a model spec, applying provider resolution.
       # Centralizes the "set provider if the spec has one, then build" tail that
-      # every robot/network builder needs, so local-provider routing (ollama/lms)
-      # can't be forgotten at a new build site.
+      # every robot/network builder needs, so provider routing can't be
+      # forgotten at a new build site.
       #
       # @param spec [AIA::Config::ModelSpec] the model spec (supplies model: and provider)
       # @param opts [Hash] forwarded to RobotLab.build (name:, system_prompt:,
@@ -242,12 +242,27 @@ module AIA
         RobotLab.build(model: spec.name, **opts)
       end
 
-      # Map AIA provider aliases to RubyLLM provider slugs.
+      # Resolve a spec's provider to a RubyLLM provider slug. Slugs pass
+      # through unchanged — RubyLLM's registry is the single source of truth —
+      # but the method stays as the seam where optional provider gems get
+      # loaded on demand and where a future alias mapping would live.
       def resolve_provider(model_spec)
-        case model_spec.provider
-        when 'lms' then 'openai'
-        else model_spec.provider
-        end
+        provider = model_spec.provider
+        ensure_provider_loaded(provider)
+        provider
+      end
+
+      # Make sure a provider slug is registered with RubyLLM, loading its
+      # conventional gem on demand. An unknown provider only warns here —
+      # RubyLLM raises its own clear error later when the slug is truly
+      # unresolvable.
+      def ensure_provider_loaded(provider)
+        return if provider.nil? || ProviderRegistry.available?(provider)
+
+        AIA.debug_warn(
+          "provider '#{provider}' is not registered with RubyLLM and no " \
+          "ruby_llm/providers/#{provider} library could be loaded"
+        )
       end
 
       private
@@ -291,31 +306,14 @@ module AIA
         RubyLLM.configure { |c| c.default_transcription_model = transcription_model }
       end
 
-      # Set API base URLs for local providers (Ollama, LM Studio) so
-      # RubyLLM can reach them. Reads from standard env vars.
+      # Make every provider named by the configured models available, then
+      # apply generic env-var endpoint overrides: <SLUG>_API_BASE sets
+      # RubyLLM.config.<slug>_api_base for every registered provider that
+      # defines the option. Providers ship their own endpoint defaults, so
+      # nothing is set unless the user overrides it.
       def configure_local_providers(config)
-        providers_used = config.models.map(&:provider).compact.uniq
-
-        RubyLLM.configure do |c|
-          # Always configure Ollama's base so switching to an `ollama/` model
-          # mid-session works even when the session started on a cloud model.
-          # It only affects the Ollama provider, so it's harmless when unused.
-          # RubyLLM's Ollama provider subclasses OpenAI and appends
-          # `chat/completions`, so the base must include the `/v1` suffix.
-          c.ollama_api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434/v1')
-
-          # LM Studio exposes an OpenAI-compatible API and reuses the OpenAI
-          # provider, so only override the OpenAI base when an `lms/` model is
-          # actually in use — otherwise it would hijack real OpenAI requests.
-          # The OpenAI provider POSTs the relative `chat/completions`, so (like
-          # the real `https://api.openai.com/v1` default and the Ollama base) the
-          # LM Studio base must include the `/v1` suffix — otherwise requests hit
-          # `:1234/chat/completions`, LM Studio 404s, and ruby_llm's streaming
-          # error handler masks it as `delete_prefix for nil`.
-          if providers_used.include?('lms')
-            c.openai_api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234/v1')
-          end
-        end
+        config.models.map(&:provider).compact.uniq.each { |provider| ensure_provider_loaded(provider) }
+        ProviderRegistry.apply_env_endpoints
       end
 
       # Decide between consensus and parallel multi-model.

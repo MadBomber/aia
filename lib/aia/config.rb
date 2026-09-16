@@ -56,6 +56,7 @@ module AIA
     attr_config :models, :pipeline, :require_libs, :mcp_servers, :mcp_use, :mcp_skip, :context_files
 
     # Runtime attributes (not loaded from config files)
+    attr_accessor :provider # --provider: default provider for prefixless models; also scopes --list-models
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
                   :completion, :mcp_list, :list_tools, :list_skills,
                   :executable_prompt_content,
@@ -230,6 +231,7 @@ module AIA
       apply_models_env_var unless overrides[:models]
       apply_plugins_dir_env_var unless overrides[:plugins_dir]
       apply_overrides(overrides) if overrides && !overrides.empty?
+      apply_default_provider
       expand_paths
       process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
     end
@@ -367,6 +369,16 @@ module AIA
         else
           section[key.to_sym] = value
         end
+      end
+    end
+
+    # `--provider SLUG` gives prefixless models a default provider. A model
+    # named with an explicit "<provider>/" prefix keeps its own.
+    def apply_default_provider
+      return if provider.nil? || provider.to_s.empty?
+
+      Array(models).each do |spec|
+        spec.provider ||= provider if spec.respond_to?(:provider)
       end
     end
 

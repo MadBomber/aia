@@ -13,9 +13,9 @@ module AIA
                 "Use this when you need to create, assign, track, or manage tasks. " \
                 "Pass a natural language description of what you need done on the task board."
 
-    param :request, type: :string, required: true,
-          desc: "Natural language description of the task board operation " \
-                "(e.g., 'create a research task about recessions assigned to Tobor with labels research, economics')"
+    parameter :request, type: :string, required: true,
+              description: "Natural language description of the task board operation " \
+                           "(e.g., 'create a research task about recessions assigned to Tobor with labels research, economics')"
 
     def available?
       AIA.task_coordinator&.available? || false

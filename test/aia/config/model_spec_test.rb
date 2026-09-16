@@ -139,15 +139,37 @@ class ModelSpecTest < Minitest::Test
     assert spec.local_provider?
   end
 
+  def test_apfel_provider_extraction
+    spec = AIA::ModelSpec.new(name: 'apfel/some-model')
+    assert_equal 'some-model', spec.name
+    assert_equal 'apfel', spec.provider
+    assert spec.local_provider?
+  end
+
   def test_no_provider_for_regular_models
     spec = AIA::ModelSpec.new(name: 'gpt-4o')
     assert_nil spec.provider
     refute spec.local_provider?
   end
 
-  def test_unknown_prefix_not_extracted
+  # Any prefix RubyLLM has registered is a provider — nothing is hardcoded.
+  def test_registered_provider_prefix_extracted
     spec = AIA::ModelSpec.new(name: 'anthropic/claude-3')
-    assert_equal 'anthropic/claude-3', spec.name
+    assert_equal 'claude-3', spec.name
+    assert_equal 'anthropic', spec.provider
+  end
+
+  def test_unknown_prefix_not_extracted
+    spec = AIA::ModelSpec.new(name: 'notaprovider/some-model')
+    assert_equal 'notaprovider/some-model', spec.name
+    assert_nil spec.provider
+  end
+
+  # Registry ids whose first segment is not a provider slug pass through
+  # (dashes are not valid in provider slugs).
+  def test_registry_id_with_slash_not_extracted
+    spec = AIA::ModelSpec.new(name: 'meta-llama/llama-4-maverick')
+    assert_equal 'meta-llama/llama-4-maverick', spec.name
     assert_nil spec.provider
   end
 

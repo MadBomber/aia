@@ -32,6 +32,7 @@ class ContextDirectivesTest < Minitest::Test
 
     @mock_client = mock('client')
     @mock_client.stubs(:chat).returns(@mock_chat)
+    @mock_client.stubs(:respond_to?).with(:network?).returns(false)
     @mock_client.stubs(:respond_to?).with(:name).returns(true)
     @mock_client.stubs(:name).returns('gpt-4o')
     @mock_client.stubs(:messages).returns([@mock_system_msg, @mock_message, @mock_assistant_msg])
@@ -152,6 +153,33 @@ class ContextDirectivesTest < Minitest::Test
     AIA.stubs(:client).returns(nil)
     result = @instance.clear([])
     assert_includes result, "Error: No active chat sessions found."
+  end
+
+  # AIA.client is a RobotLab::Network in crew / multi-model sessions; the
+  # directive must act on every member robot, not on the network itself.
+  def test_clear_clears_every_robot_in_a_network
+    robot_a = mock('robot_a')
+    robot_b = mock('robot_b')
+    robot_a.expects(:clear_messages).with(keep_system: true)
+    robot_b.expects(:clear_messages).with(keep_system: true)
+
+    network = mock('network')
+    network.stubs(:respond_to?).with(:network?).returns(true)
+    network.stubs(:network?).returns(true)
+    network.stubs(:robots).returns({ 'tobor' => robot_a, 'scout' => robot_b })
+    AIA.stubs(:client).returns(network)
+
+    assert_equal "Chat context cleared.", @instance.clear([])
+  end
+
+  def test_get_robots_expands_a_network_into_member_robots
+    network = mock('network')
+    network.stubs(:respond_to?).with(:network?).returns(true)
+    network.stubs(:network?).returns(true)
+    network.stubs(:robots).returns({ 'tobor' => :robot })
+    AIA.stubs(:client).returns(network)
+
+    assert_equal({ 'tobor' => :robot }, @instance.send(:get_robots))
   end
 
   # --- /review ---

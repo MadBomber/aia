@@ -201,14 +201,18 @@ module AIA
 
     private
 
-    # In v2, AIA.client is a RobotLab::Robot which wraps a RubyLLM::Chat.
-    # Returns a hash of { name => Robot } for checkpoint operations.
+    # In v2, AIA.client is a RobotLab::Robot (single-model chat) or a
+    # RobotLab::Network (crew / multi-model session). Returns a hash of
+    # { name => Robot } either way, so clear/checkpoint/restore/review act
+    # on every member robot's chat.
     def get_robots
-      robot = AIA.client
-      return nil unless robot
+      client = AIA.client
+      return nil unless client
 
-      name = robot.respond_to?(:name) ? robot.name : "default"
-      { name => robot }
+      return client.robots if client.respond_to?(:network?) && client.network?
+
+      name = client.respond_to?(:name) ? client.name : "default"
+      { name => client }
     end
 
     # Return { name => RubyLLM::Chat } for operations that need direct chat access.
@@ -221,15 +225,23 @@ module AIA
     end
 
     def deep_copy_message(msg)
-      RubyLLM::Message.new(
+      attrs = {
         role: msg.role,
         content: msg.content,
         tool_calls: msg.tool_calls&.transform_values { |tc| tc.dup rescue tc },
-        tool_call_id: msg.tool_call_id,
-        input_tokens: msg.input_tokens,
-        output_tokens: msg.output_tokens,
-        model_id: msg.model_id
-      )
+        tool_call_id: msg.tool_call_id
+      }
+
+      if msg.respond_to?(:tokens) # ruby_llm >= 2.0 moved token counts into #tokens
+        attrs[:tokens] = msg.tokens
+        attrs[:model]  = msg.model
+      else # ruby_llm 1.x exposes them directly on the message
+        attrs[:input_tokens]  = msg.input_tokens
+        attrs[:output_tokens] = msg.output_tokens
+        attrs[:model_id]      = msg.model_id
+      end
+
+      RubyLLM::Message.new(**attrs)
     end
 
     def format_message_content(msg)
