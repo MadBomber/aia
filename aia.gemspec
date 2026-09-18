@@ -43,9 +43,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bigdecimal',   '>= 4.0'
 
   # Core dependencies
-  spec.add_dependency 'robot_lab',    '~> 0.2'                # Execution engine: robots, networks, tools, MCP, memory
+  spec.add_dependency 'robot_lab',    '~> 0.3'                # Execution engine: robots, networks, tools, MCP, memory
   spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
-  spec.add_dependency 'prompt_manager', '~> 1.0.2' # Prompt parsing/directive DSL
+  spec.add_dependency 'prompt_manager', '~> 1.0'   # Prompt parsing/directive DSL
   spec.add_dependency 'lumberjack', '~> 2.1'       # Structured logging, 3 loggers (aia, llm, mcp); 2.x API (LogFile shift_age/autoflush)
   spec.add_dependency 'activesupport'              # Required by robot_lab (missing from its gemspec)
   spec.add_dependency 'simple_flow'
@@ -55,8 +55,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'reline'                     # Interactive chat input with history
   spec.add_dependency 'tty-screen'                 # Terminal width detection
   spec.add_dependency 'tty-spinner'                # Loading animation and concurrent MCP connection spinners
-  spec.add_dependency 'tty-table',    '~> 0.12'   # Adaptive terminal-width table rendering for metrics
-  spec.add_dependency 'classifier',  '~> 2.3'     # TF-IDF similarity (Option A tool filtering)
+  spec.add_dependency 'tty-table',    '~> 0.12'    # Adaptive terminal-width table rendering for metrics
+  spec.add_dependency 'classifier',  '~> 2.3'      # TF-IDF similarity (Option A tool filtering)
   spec.add_dependency 'word_wrapper'               # Terminal text wrapping for tool listings
   spec.add_dependency 'amazing_print'              # Config dump formatting (--dump, /config)
   spec.add_dependency 'clipboard'                  # System clipboard access (/paste directive)
@@ -81,7 +81,7 @@ Gem::Specification.new do |spec|
     ╔══════════════════════════════════════════════════════════════╗
     ║               AIA — AI Assistant v2.0                        ║
     ║                                                              ║
-    ║  v2 is powered by robot_lab for robust orchestration          ║
+    ║  v2 is powered by robot_lab for robust orchestration         ║
     ║  Full CLI backward compatibility with v1                     ║
     ╚══════════════════════════════════════════════════════════════╝
 
