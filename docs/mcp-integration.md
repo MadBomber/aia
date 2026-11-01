@@ -110,6 +110,20 @@ aia --mcp-list --mcp-use github --list-tools
 aia --debug --mcp github.json github_analysis
 ```
 
+### Tool Approval
+
+List tools that must not run unasked under a server's `requires_approval:` key (or `requires_approval: true` for all of them):
+
+```yaml
+mcp_servers:
+  - name: github
+    command: github-mcp-server
+    args: [stdio]
+    requires_approval: [create_issue, merge_pull_request]
+```
+
+`tools.approval` (`--tool-approval`) then decides: `ask` (default) shows the call and asks `Allow it? [y/N]`, and refuses when there is no terminal; `approve` runs them all; `deny` refuses them all. The same setting covers MCP input requests, where a server asks you for values or to visit a page mid-call: `ask` and `approve` prompt for them, `deny` declines them. A refused call goes back to the model as denied.
+
 ## Available MCP Clients
 
 ### GitHub Integration

@@ -330,6 +330,9 @@ class CLIToNestedMapCompletenessTest < Minitest::Test
     mcp_list
     list_tools
     list_skills
+    list_models
+    list_providers
+    provider
     log_level_override
     log_file_override
     executable_prompt_content

@@ -74,13 +74,13 @@ For more information on AIA visit these locations:
 
 ```plain
 
-       ,      ,        AIA v2.0.0.alpha is Online
+       ,      ,        AIA v2.0.0 is Online
        (\____/)
         (_oo_)         Models: gpt-4o-mini
          (O)               DB: refreshed 2026-03-19 at 10:56
-       __|||__    \)     Libs: ruby_llm v1.14.0, ruby_llm-mcp v1.0.0, robot_lab v0.0.9,
-     [/ Tobor \]  /            simple_flow v0.3.0, trak_flow v0.1.3, typed_bus v0.0.1
-    / \_______/ \/      Tools: 0 tools loaded
+       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.5.0, simple_flow v0.4.0,
+     [/ Tobor \]  /            trak_flow v0.2.0, typed_bus v0.0.1
+    / \_______/ \/      Tools: none loaded
    /    /___\             MCP: (none configured)
   (\   /_____\           Crew: @tobor
      :::     :::
@@ -1263,7 +1263,7 @@ Use `/delegate` to hand off a subtask to a specialist robot — AIA spawns the r
 
 ### MCP Server Configuration
 
-AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time. When multiple MCP servers are configured, AIA connects to them **in parallel** using fiber-based concurrency (via the `simple_flow` gem) for faster startup.
+AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time. When multiple MCP servers are configured, AIA connects to them **in parallel** (one thread per server) before the first robot is built, and every robot in the session shares those connections.
 
 #### Configuration Format
 
@@ -1274,7 +1274,7 @@ mcp_servers:
   - name: "server-name"
     command: "server_command"
     args: ["arg1", "arg2"]
-    timeout: 30000  # milliseconds (default: 8000)
+    timeout: 30000  # milliseconds (default: 30 seconds)
     env:
       ENV_VAR: "value"
 ```
@@ -1284,10 +1284,34 @@ mcp_servers:
 | Option | Required | Default | Description |
 |--------|----------|---------|-------------|
 | `name` | Yes | - | Unique identifier for the MCP server |
-| `command` | Yes | - | Executable command (absolute path or found in PATH) |
+| `command` | Unless `url` | - | Executable command (absolute path or found in PATH) |
 | `args` | No | `[]` | Array of command-line arguments |
-| `timeout` | No | `8000` | Connection timeout in milliseconds |
+| `timeout` | No | 30 seconds | Connection timeout; values of 1000 or more are milliseconds, smaller values are seconds |
 | `env` | No | `{}` | Environment variables for the server process |
+| `url` | No | - | Streamable HTTP endpoint, used instead of `command` (`headers:` and `bearer_token:` apply) |
+| `prefix` | No | - | Prefix for the server's tool names, e.g. `github` turns `search` into `github_search`; needed when two servers offer a tool with the same name |
+| `only` / `except` | No | - | Offer only these tools, or hide these tools |
+| `requires_approval` | No | - | Tool names (or `true` for all) that need your approval before they run; see below |
+
+#### Tool Approval and Input Requests
+
+Tools listed in `requires_approval` pause before they run. MCP servers can also ask for input mid-call, such as a value to fill in or a page to visit to connect an account. The `tools.approval` setting (`--tool-approval`, `AIA_TOOLS__APPROVAL`) decides what happens:
+
+| Mode | Behavior |
+|------|----------|
+| `ask` (default) | AIA shows the tool name and its arguments and asks `Allow it? [y/N]`, and asks for each value a server requests. With no terminal (piped or scripted runs) the call is refused. |
+| `approve` | Every tool call that requires approval runs. Input requests are still asked on the terminal. |
+| `deny` | Every such tool call is refused and every input request is declined. |
+
+```yaml
+mcp_servers:
+  - name: "github"
+    command: "github-mcp-server"
+    args: ["stdio"]
+    requires_approval: ["create_issue", "merge_pull_request"]
+```
+
+A refused call is reported back to the model as denied, so it can explain or try something else.
 
 #### Example: GitHub MCP Server
 
@@ -1373,12 +1397,12 @@ mcp_servers:
 When MCP servers are configured, AIA displays them in the startup robot:
 
 ```
-       ,      ,        AIA v2.0.0.alpha is Online
+       ,      ,        AIA v2.0.0 is Online
        (\____/)
         (_oo_)         Models: gpt-4o-mini
          (O)               DB: refreshed 2026-03-19 at 10:56
-       __|||__    \)     Libs: ruby_llm v1.14.0, ruby_llm-mcp v1.0.0, robot_lab v0.0.9,
-     [/ Tobor \]  /            simple_flow v0.3.0, trak_flow v0.1.3, typed_bus v0.0.1
+       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.5.0, simple_flow v0.4.0,
+     [/ Tobor \]  /            trak_flow v0.2.0, typed_bus v0.0.1
     / \_______/ \/      Tools: 24 tools loaded
    /    /___\             MCP: github, htm
   (\   /_____\           Crew: @tobor

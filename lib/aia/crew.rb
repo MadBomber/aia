@@ -32,6 +32,7 @@ module AIA
         system_prompt: compose_system_prompt(spec),
         local_tools:   chief_local_tools(chief),
         **chief_mcp(chief),
+        **ToolApprover.options(AIA.config),
         **model_opts(spec)
       )
       crew.add_robot(robot)

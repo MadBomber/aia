@@ -42,6 +42,7 @@ require_relative 'aia/tools/reskill_robot_tool'
 require_relative 'aia/system_prompt_assembler'
 require_relative 'aia/mcp_config_normalizer'
 require_relative 'aia/network_memory_manager'
+require_relative 'aia/tool_approver'
 require_relative 'aia/robot_factory'
 require_relative 'aia/robot_builder'
 require_relative 'aia/directive_processor'
@@ -79,9 +80,7 @@ module AIA
   $DEBUG_ME = false
   DebugMeDefaultOptions[:skip1] = true
 
-  at_exit do
-    $stderr.puts 'Exiting AIA application...'
-  end
+  at_exit { AIA.announce_exit }
 
   @config = nil
   @client = nil
@@ -90,6 +89,14 @@ module AIA
 
   class << self
     attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator, :mcp_manager
+
+    # Say goodbye when an interactive chat session ends. One-shot commands
+    # (--version, --help, --mcp-list, piped prompts) exit silently.
+    #
+    # @param io [IO]
+    def announce_exit(io = $stderr)
+      io.puts 'Exiting AIA application...' if chat?
+    end
 
     def logger
       AIA::LoggerManager.aia_logger

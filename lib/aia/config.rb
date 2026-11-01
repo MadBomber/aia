@@ -212,6 +212,7 @@ module AIA
       tool_paths: %i[tools paths],
       allowed_tools: %i[tools allowed],
       rejected_tools: %i[tools rejected],
+      tool_approval: %i[tools approval],
       # registry section
       refresh: %i[registry refresh],
       # paths section

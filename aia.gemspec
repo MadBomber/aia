@@ -20,17 +20,17 @@ Gem::Specification.new do |spec|
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 
-  spec.metadata['homepage_uri']     = spec.homepage
+  spec.metadata['documentation_uri'] = 'https://madbomber.github.io/aia'
   spec.metadata['source_code_uri']  = spec.homepage
-  spec.metadata['changelog_uri']    = spec.homepage
+  spec.metadata['changelog_uri']    = "#{spec.homepage}/blob/main/CHANGELOG.md"
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  # Specify which files should be added to the gem when it is released.
-  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
+  # Ship only what an installed gem runs: the library, the executable, the
+  # .version file VERSION reads, and the top-level docs. Dev tooling, docs/,
+  # examples/ and planning notes stay in the repository.
   spec.files = Dir.chdir(__dir__) do
-    `git ls-files -z`.split("\x0").reject do |f|
-      (File.expand_path(f) == __FILE__) ||
-        f.start_with?(*%w[bin/ test/ spec/ features/ .git Gemfile])
+    `git ls-files -z`.split("\x0").select do |f|
+      (f.start_with?('lib/') && !f.end_with?('AGENTS.md')) || %w[bin/aia README.md CHANGELOG.md LICENSE].include?(f)
     end + ['.version']
   end
 

@@ -171,6 +171,8 @@ module AIA
         pp = llm.presence_penalty
         params[:presence_penalty] = pp if pp && pp != 0.0
 
+        params.merge!(ToolApprover.options(config))
+
         RobotLab::RunConfig.new(**params)
       end
 

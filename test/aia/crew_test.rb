@@ -17,6 +17,17 @@ class CrewTest < Minitest::Test
     @crew.stubs(:crew).returns([@chief])
     @crew.stubs(:respond_to?).with(:add_robot).returns(true)
     AIA.stubs(:client).returns(@crew)
+    AIA::ToolApprover.stubs(:options).returns({}) # covered by test_recruit_passes_tool_approval_options
+  end
+
+  def test_recruit_passes_tool_approval_options
+    approval = { tool_approval: :deny, on_tool_approval: -> { true } }
+    AIA::ToolApprover.stubs(:options).returns(approval)
+    helper = stub_robot('helper')
+    @chief.expects(:spawn).with(name: 'helper', system_prompt: 'You are helper.', local_tools: [], **approval).returns(helper)
+    @crew.expects(:add_robot).with(helper)
+
+    AIA::Crew.recruit(name: 'helper')
   end
 
   def test_recruit_spawns_from_chief_with_model_and_adds_to_crew

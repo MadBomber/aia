@@ -316,6 +316,11 @@ module AIA
           options[:rejected_tools] += tools_list.split(',').map(&:strip)
         end
 
+        opts.on("--tool-approval MODE", %w[ask approve deny],
+                "Tool calls that require approval: ask (default), approve, or deny") do |mode|
+          options[:tool_approval] = mode
+        end
+
         opts.on("--list-tools", "List available tools and exit (combine with --mcp-list for MCP tools)") do
           options[:list_tools] = true
         end
@@ -460,7 +465,7 @@ module AIA
           - PromptManager Docs:    https://madbomber.github.io/prompt_manager
           - ERB Documentation:     https://docs.ruby-lang.org/en/master/ERB.html
           - MCP Specification:     https://modelcontextprotocol.io
-          - MCP Client Docs:       https://github.com/patvice/ruby_llm-mcp/blob/main/README.md
+          - RobotLab Docs:         https://github.com/MadBomber/robot_lab
 
         EXTRA
       end

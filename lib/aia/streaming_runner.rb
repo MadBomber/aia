@@ -65,7 +65,7 @@ module AIA
       tools_param = resolve_tools_param(tools, robot)
 
       begin
-        result = robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block)
+        result = with_approval_spinner { robot.run(prompt, mcp: :inherit, tools: tools_param, &streaming_block) }
       rescue Exception # rubocop:disable Lint/RescueException
         @spinner.stop unless header_printed
         raise
@@ -78,6 +78,14 @@ module AIA
     end
 
     private
+
+    # Let ToolApprover pause this turn's spinner while an approval prompt is on screen.
+    def with_approval_spinner
+      ToolApprover.spinner = @spinner
+      yield
+    ensure
+      ToolApprover.spinner = nil
+    end
 
     # Translate the resolved tool list into robot_lab's ToolConfig vocabulary,
     # then clamp it to the provider's limit:

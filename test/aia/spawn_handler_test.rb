@@ -24,6 +24,21 @@ class SpawnHandlerTest < Minitest::Test
 
     @tracker = mock('session_tracker')
     @tracker.stubs(:record_turn)
+    AIA::ToolApprover.stubs(:options).returns({}) # covered by test_spawn_passes_tool_approval_options
+  end
+
+  def test_spawn_passes_tool_approval_options
+    approval = { tool_approval: :approve }
+    AIA::ToolApprover.stubs(:options).returns(approval)
+    specialist = mock('specialist')
+    specialist.stubs(:run).returns(OpenStruct.new(reply: "answer"))
+    primary = build_primary
+    primary.expects(:spawn).with(name: "helper", system_prompt: "You are helper.", **approval).returns(specialist)
+
+    handler = AIA::SpawnHandler.new(robot: primary, ui_presenter: @ui, tracker: @tracker)
+    spec = { name: "helper", model: nil, provider: nil, system_prompt: nil }
+
+    assert_equal "answer", handler.handle(AIA::HandlerContext.new(prompt: "help me", spawn_spec: spec))
   end
 
   def test_spawn_with_explicit_type

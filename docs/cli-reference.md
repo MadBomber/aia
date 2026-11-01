@@ -61,6 +61,7 @@
     - [`--tools PATH_LIST`](#--tools-path_list)
     - [`--at, --allowed-tools TOOLS_LIST`](#--at---allowed-tools-tools_list)
     - [`--rt, --rejected-tools TOOLS_LIST`](#--rt---rejected-tools-tools_list)
+    - [`--tool-approval MODE`](#--tool-approval-mode)
     - [`--list-tools`](#--list-tools)
   - [Utility Options](#utility-options)
     - [Log Level Options](#log-level-options)
@@ -901,6 +902,17 @@ Reject/block these tools from being used.
 # Block dangerous tools
 aia --rejected-tools "file_writer,system_command" my_prompt
 aia --rt "network_access" secure_prompt
+```
+
+### `--tool-approval MODE`
+What to do with tool calls that require approval (an MCP server's `requires_approval:`) and with MCP servers' requests for input. `MODE` is `ask` (default: prompt on the terminal, refuse when there is none), `approve` (allow them all) or `deny` (refuse them all). Config: `tools.approval`; env: `AIA_TOOLS__APPROVAL`.
+
+```bash
+# Unattended run that may use approval-gated tools
+aia --tool-approval approve --mcp-use github triage_prompt
+
+# Never run them
+aia --tool-approval deny my_prompt
 ```
 
 ### `--list-tools`

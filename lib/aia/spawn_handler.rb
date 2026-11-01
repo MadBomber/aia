@@ -43,7 +43,7 @@ module AIA
       # Spawn or reuse specialist (evict oldest when cache is full)
       specialist = @spawned[role] ||= begin
         evict_oldest! if @spawned.size >= MAX_CACHE_SIZE
-        primary.spawn(name: role, system_prompt: instruction, **spawn_opts)
+        primary.spawn(name: role, system_prompt: instruction, **ToolApprover.options(AIA.config), **spawn_opts)
       end
 
       @ui_presenter.display_info("Specialist '#{role}' responding...")

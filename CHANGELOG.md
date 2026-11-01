@@ -1,11 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.0] 2026-11-01
 
 This section captures all changes since v1.1.0.
 
+### Added
+
+- **Tool approval and MCP input requests** (`lib/aia/tool_approver.rb`). Tool calls that require approval (an MCP server's `requires_approval:`) were always denied, and servers' requests for input (elicitation) were always declined, because AIA never told robot_lab how to settle them. The new `tools.approval` setting (`--tool-approval MODE`, `AIA_TOOLS__APPROVAL`) does: `ask` (default) shows the tool and its arguments and asks `Allow it? [y/N]`, and asks for each value a server requests, typed by its schema; with no terminal it refuses. `approve` runs every such call, `deny` refuses them all. Prompts go to stderr and pause the spinner. It applies to every robot AIA builds, including crew recruits and spawned specialists.
+
 ### Changed
 
+- **The gem ships only what it runs.** `spec.files` is now `lib/` (without `AGENTS.md`), `bin/aia`, `.version`, `README.md`, `CHANGELOG.md` and `LICENSE`: 97 files instead of 292. `docs/`, `examples/`, `mcp_servers/`, dev configs and planning notes stay in the repository.
 - **Minimum Ruby raised to 4.0.9.** `required_ruby_version` is now `>= 4.0.9` (was `>= 4.0.0`), and a `.ruby-version` file pins development to 4.0.9.
 - **robot_lab 0.5 / ruby_llm 2.1 MCP.** `robot_lab` is now `~> 0.5`, whose MCP servers are ruby_llm 2.1's built-in `RubyLLM::MCP` objects. AIA builds one server per configured MCP server with `RobotLab::MCP.build`, connects them all (concurrently, with spinners) *before* the first robot is built, and passes the same live instances to every robot via `RobotLab.build(mcp:)` — so each server process starts once per session however many robots, crewmates or network workers use it. Servers that fail to connect are left out, so robots do not retry them every turn. `AIA.mcp_manager` holds the connections; `RobotFactory.mcp_servers(config, group = nil)` replaces `mcp_server_configs` / `normalize_mcp_config`.
 - **Two MCP servers offering a tool with the same name.** robot_lab refuses to offer duplicate tool names, so the later server is now reported as failed with a message to set `prefix:` on one of them (previously the duplicate tool was silently dropped).
@@ -20,6 +25,9 @@ This section captures all changes since v1.1.0.
 
 ### Fixed
 
+- **"Exiting AIA application..." on every exit.** It printed after `--version`, `--help` and piped one-shot runs; it now appears only when a chat session ends.
+- **Leftover `require 'ruby_llm/mcp'`** in `lib/aia/utility.rb`, written for the retired ruby_llm-mcp gem, is gone; ruby_llm 2.1 provides `RubyLLM::MCP` itself. The `--help` link to ruby_llm-mcp now points to robot_lab.
+- **README MCP section** gave an 8-second default timeout (it is 30 seconds), described simple_flow fibers (connections use one thread per server), and showed banners listing ruby_llm-mcp. It now documents `url`, `prefix`, `only`/`except` and `requires_approval`.
 - **MCP no longer breaks on ruby_llm 2.1+.** AIA's `defined?(RubyLLM::MCP)` guards were written for the retired `ruby_llm-mcp` gem and raised `NoMethodError` at startup, in `//tools`, and in the banner on ruby_llm 2.1. The banner, tool counts and `//tools` now read what `MCPConnectionManager` connected. A fresh `gem install aia` resolves ruby_llm 2.1.1, so this affected every new install.
 - **`--list-tools` with `--mcp-list`** builds each server with `RobotLab::MCP.build` — the same path the robots use — lists its tools and closes it.
 - **Model-switch history was empty for crews.** `HistoryTransfer` read `messages` from the old runnable, which a crew Network does not have, so nothing transferred. It now reads the old crew's chief and delivers to each robot in the new crew.

@@ -4,12 +4,6 @@ require 'word_wrapper'
 require 'simple_flow'
 require 'trak_flow'
 require 'tty-table'
-begin
-  require 'ruby_llm/mcp'
-rescue LoadError, StandardError
-  # ruby_llm-mcp may not be installed
-end
-
 require_relative 'mcp_utility'
 require_relative 'tool_utility'
 

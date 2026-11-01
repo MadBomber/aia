@@ -67,4 +67,24 @@ class AIATest < Minitest::Test
     assert(llm_entries.any? { |e| e.message == 'AIA started up.' })
     assert(mcp_entries.any? { |e| e.message == 'AIA started up.' })
   end
+
+  def test_announce_exit_is_silent_outside_chat
+    AIA.config = Struct.new(:flags).new(Struct.new(:chat).new(false))
+    io = StringIO.new
+    AIA.announce_exit(io)
+    assert_empty io.string
+  end
+
+  def test_announce_exit_is_silent_without_config
+    io = StringIO.new
+    AIA.announce_exit(io)
+    assert_empty io.string
+  end
+
+  def test_announce_exit_says_goodbye_after_chat
+    AIA.config = Struct.new(:flags).new(Struct.new(:chat).new(true))
+    io = StringIO.new
+    AIA.announce_exit(io)
+    assert_equal "Exiting AIA application...\n", io.string
+  end
 end
