@@ -153,8 +153,8 @@ class MCPConnectionManagerTest < Minitest::Test
     second = FakeServer.new('second', tools: [FakeTool.new('search'), FakeTool.new('other')])
     stub_build(first, second)
     # Connect sequentially (no threads) so 'first' wins deterministically.
-    def @manager.launch_server_threads(configs, multi, logger)
-      configs.each { |cfg| connect_one(cfg, cfg[:name], multi.register(cfg[:name]), logger) }
+    def @manager.launch_server_threads(configs, multi)
+      configs.each { |cfg| connect_one(cfg, cfg[:name], multi.register(cfg[:name])) }
       []
     end
 

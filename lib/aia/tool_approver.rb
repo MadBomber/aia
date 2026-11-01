@@ -178,7 +178,8 @@ module AIA
 
     # @return [Object, nil] nil when +raw+ does not fit the field
     def cast(raw, field)
-      return (field.choices.map(&:to_s).include?(raw) ? field.choices.find { it.to_s == raw } : nil) if field.choices
+      choices = field.choices
+      return choices.find { it.to_s == raw } if choices
 
       case field.type
       when 'integer' then Integer(raw, exception: false)

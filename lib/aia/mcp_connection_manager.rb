@@ -74,11 +74,10 @@ module AIA
       return self unless configs.is_a?(Array) && configs.any?
 
       reset_connection_state
-      logger = AIA::LoggerManager.mcp_logger
       logger.info("MCP initialization: connecting #{configs.size} server(s): #{configs.map { config_name(it) }.join(', ')}")
 
       multi   = TTY::Spinner::Multi.new("[:spinner] Connecting MCP servers", format: :dots, output: $stderr)
-      threads = launch_server_threads(configs, multi, logger)
+      threads = launch_server_threads(configs, multi)
 
       # The global cap must never be smaller than the slowest single server's
       # timeout, or concurrent connections get killed before they can finish.
@@ -190,16 +189,21 @@ module AIA
       AIA::Utility.server_name(spec).to_s
     end
 
-    def launch_server_threads(configs, multi, logger)
+    # The shared MCP log (memoized by LoggerManager, safe across the connect threads).
+    def logger
+      AIA::LoggerManager.mcp_logger
+    end
+
+    def launch_server_threads(configs, multi)
       configs.map do |server_config|
         name    = config_name(server_config)
         spinner = multi.register("[:spinner] #{name}")
-        Thread.new(server_config, name, spinner) { |cfg, srv_name, sp| connect_one(cfg, srv_name, sp, logger) }
+        Thread.new(server_config, name, spinner) { |cfg, srv_name, sp| connect_one(cfg, srv_name, sp) }
       end
     end
 
     def handle_global_timeout(configs, global_limit)
-      AIA::LoggerManager.mcp_logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
+      logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
 
       @mutex.synchronize do
         settled    = @servers.keys + @failed_servers.map { it[:name] }
@@ -221,26 +225,26 @@ module AIA
     # Build and connect a single MCP server, updating the spinner on completion.
     # Listing the server's tools is what makes RubyLLM::MCP connect.
     # :reek:TooManyStatements -- one connect attempt with per-outcome reporting (success, timeout, error)
-    def connect_one(server_config, name, spinner, logger)
+    def connect_one(server_config, name, spinner)
       timeout = server_timeout(server_config)
       spinner.auto_spin
       logger.info("MCP: connecting to '#{name}'...")
 
       server = RobotLab::MCP.build(MCPConfigNormalizer.normalize(server_config))
       tools  = Timeout.timeout(timeout) { server.tools }
-      record_connected(name, server, tools, spinner, logger)
+      record_connected(name, server, tools, spinner)
     rescue Timeout::Error
       close_quietly(server)
-      report_failure(name, "timed out after #{timeout}s", "(timed out)", spinner, logger)
+      report_failure(name, "timed out after #{timeout}s", "(timed out)", spinner)
     rescue StandardError => e
       close_quietly(server)
-      report_failure(name, e.message, "(#{e.message})", spinner, logger)
+      report_failure(name, e.message, "(#{e.message})", spinner)
     end
 
     # Record a connected server. robot_lab refuses to offer two tools with one
     # name, so a server whose tool names clash with an already-connected
     # server's is recorded as failed with the fix (prefix:) spelled out.
-    def record_connected(name, server, tools, spinner, logger)
+    def record_connected(name, server, tools, spinner)
       clash = @mutex.synchronize do
         found = tool_name_clash(tools)
         unless found
@@ -249,7 +253,7 @@ module AIA
         end
         found
       end
-      return report_clash(name, server, clash, spinner, logger) if clash
+      return report_clash(name, server, clash, spinner) if clash
 
       logger.info("MCP: '#{name}' connected (#{tools.size} tools)")
       spinner.success("(#{tools.size} tools)")
@@ -266,14 +270,14 @@ module AIA
       nil
     end
 
-    def report_clash(name, server, clash, spinner, logger)
+    def report_clash(name, server, clash, spinner)
       close_quietly(server)
       tool, owner = clash
       report_failure(name, "tool '#{tool}' is also offered by '#{owner}'; give one server a prefix:",
-                     "(duplicate tool '#{tool}')", spinner, logger)
+                     "(duplicate tool '#{tool}')", spinner)
     end
 
-    def report_failure(name, error, spinner_note, spinner, logger)
+    def report_failure(name, error, spinner_note, spinner)
       @mutex.synchronize { @failed_servers << { name: name, error: error } }
       logger.warn("MCP: '#{name}' error: #{error}")
       spinner.error(spinner_note)

@@ -8,14 +8,16 @@
 module AIA
   module ToolUtility
     def tools?
-      return true if AIA.config&.tool_names && !AIA.config.tool_names.empty?
+      names = AIA.config&.tool_names
+      return true if names && !names.empty?
       total_tool_count.positive?
     end
 
     def total_tool_count
-      local = Array(AIA.config&.loaded_tools).size
-      return local if AIA.config&.flags&.no_mcp
-      local + (AIA.config&.mcp_server_tool_counts || {}).values.sum
+      config = AIA.config
+      local  = Array(config&.loaded_tools).size
+      return local if config&.flags&.no_mcp
+      local + (config&.mcp_server_tool_counts || {}).values.sum
     end
 
     def user_tools?
