@@ -12,16 +12,16 @@
 #   synthesizes a unified response from all answers.
 #
 # Multiple models are specified as a comma-separated list with -m.
-# This demo uses two OpenAI models (gpt-4.1 and gpt-4.1-mini).
+# This demo uses two Anthropic models (claude-sonnet-4-6 and claude-haiku-4-5).
 #
-# Prerequisites: Run 00_setup_aia.sh first (OPENAI_API_KEY must be set).
+# Prerequisites: Run 00_setup_aia.sh first (ANTHROPIC_API_KEY must be set).
 # Usage: cd examples && bash 11_multi_model.sh
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-MODEL_A="gpt-4.1"
-MODEL_B="gpt-4.1-mini"
+MODEL_A="claude-sonnet-4-6"
+MODEL_B="claude-haiku-4-5"
 
 echo "=== Demo 11: Multiple Models ==="
 echo

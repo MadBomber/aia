@@ -54,7 +54,9 @@ module AIA
       else
         model_names = args.join(' ').split(',').map(&:strip).reject(&:empty?)
         cfg.models = AIA::Config::TO_MODEL_SPECS.call(model_names)
-        AIA.client = RobotFactory.rebuild(cfg)
+        mode = HistoryTransfer.mode_for(cfg)
+        puts "Switching to #{model_names.join(', ')} (conversation: #{mode})..." unless mode == :clean
+        AIA.client = RobotFactory.rebuild(cfg, history_mode: mode)
       end
 
       ''

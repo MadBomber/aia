@@ -7,11 +7,25 @@ This section captures all changes since v1.1.0.
 ### Changed
 
 - **Minimum Ruby raised to 4.0.9.** `required_ruby_version` is now `>= 4.0.9` (was `>= 4.0.0`), and a `.ruby-version` file pins development to 4.0.9.
+- **robot_lab 0.5 / ruby_llm 2.1 MCP.** `robot_lab` is now `~> 0.5`, whose MCP servers are ruby_llm 2.1's built-in `RubyLLM::MCP` objects. AIA builds one server per configured MCP server with `RobotLab::MCP.build`, connects them all (concurrently, with spinners) *before* the first robot is built, and passes the same live instances to every robot via `RobotLab.build(mcp:)` — so each server process starts once per session however many robots, crewmates or network workers use it. Servers that fail to connect are left out, so robots do not retry them every turn. `AIA.mcp_manager` holds the connections; `RobotFactory.mcp_servers(config, group = nil)` replaces `mcp_server_configs` / `normalize_mcp_config`.
+- **Two MCP servers offering a tool with the same name.** robot_lab refuses to offer duplicate tool names, so the later server is now reported as failed with a message to set `prefix:` on one of them (previously the duplicate tool was silently dropped).
+- **MCP config keys pass through to robot_lab.** `MCPConfigNormalizer` keeps `url`/`headers`/`bearer_token` (Streamable HTTP servers lost their `url` before) and robot_lab settings such as `prefix`, `only`, `except`, `requires_approval` and `description`. `type: sse` / `ws` servers are reported as failed at startup — point them at their Streamable HTTP endpoint.
+
+- **`/model` carries the conversation over by default.** Switching models now reads `model_switch_history` (it was ignored, so every switch started fresh) and its default changes from `clean` to `summarize`: the old model summarizes the conversation and the summary is handed to every robot in the new crew. Set `model_switch_history: clean` to start fresh, or `replay` to re-run each user turn on the new model. Model switches made by the intent-routing handler follow the same setting.
+- **Examples run on Anthropic.** The demo scripts and configs use `claude-haiku-4-5` / `claude-sonnet-4-6` and need only `ANTHROPIC_API_KEY`.
+
+### Removed
+
+- The `ruby_llm-mcp` integration: `AIA::Utility.legacy_ruby_llm_mcp?`, `MCPConnectionManager#absorb_ruby_llm_mcp_clients`, `#inject_into`, `#client`, `#connected_clients`, and `LoggerManager.configure_mcp_logger`. ruby_llm 2.1 (required by robot_lab 0.5) owns the `RubyLLM::MCP` constant, so that gem cannot be loaded alongside it. MCP servers loaded with `--require` must now be `RubyLLM::MCP` subclasses to be usable, and they are not picked up automatically.
 
 ### Fixed
 
-- **MCP no longer breaks on ruby_llm 2.1+.** ruby_llm 2.1 ships its own `RubyLLM::MCP` class (one client per instance, no `.clients` registry), so AIA's `defined?(RubyLLM::MCP)` guards — written for the retired `ruby_llm-mcp` gem — passed and then raised `NoMethodError` at startup, in `//tools`, and in the banner. Those guards now require the legacy registry (`AIA::Utility.legacy_ruby_llm_mcp?`). A fresh `gem install aia` resolves ruby_llm 2.1.1, so this affected every new install.
-- **`--list-tools` with `--mcp-list` connects through robot_lab's MCP client** instead of `RubyLLM::MCP.add_client`, which does not exist on any ruby_llm 2.x. Each server's tools are wrapped exactly as the startup path wraps them, and the connection is closed after listing.
+- **MCP no longer breaks on ruby_llm 2.1+.** AIA's `defined?(RubyLLM::MCP)` guards were written for the retired `ruby_llm-mcp` gem and raised `NoMethodError` at startup, in `//tools`, and in the banner on ruby_llm 2.1. The banner, tool counts and `//tools` now read what `MCPConnectionManager` connected. A fresh `gem install aia` resolves ruby_llm 2.1.1, so this affected every new install.
+- **`--list-tools` with `--mcp-list`** builds each server with `RobotLab::MCP.build` — the same path the robots use — lists its tools and closes it.
+- **Model-switch history was empty for crews.** `HistoryTransfer` read `messages` from the old runnable, which a crew Network does not have, so nothing transferred. It now reads the old crew's chief and delivers to each robot in the new crew.
+- **Prompt decomposition always took the JSON fallback.** The structured-output check called a capability method ruby_llm 2.1 no longer has; it now uses `RubyLLM::Model#supports?(:structured_output)`.
+- **`bin/aia` with a relative `BUNDLE_GEMFILE`.** A relative path (as exported by the workspace `.envrc`) is resolved against the repo root, so `bin/aia` works when run from another directory such as `examples/`.
+- **`examples/tools/word_count_tool.rb`** declared its parameter with the pre-2.1 DSL and was offered to the model with no `text` argument.
 
 ## [2.0.0.pre.beta2] 2026-09-09
 

@@ -23,20 +23,6 @@ require "minitest/reporters"
 require "mocha/minitest"
 require "lumberjack"
 
-# Yields with a `RubyLLM::MCP` constant that has no `.clients` registry, as
-# ruby_llm 2.1+ provides. On ruby_llm 2.0 (no MCP constant) a bare stand-in
-# class is defined for the block and removed afterwards.
-def with_registry_less_ruby_llm_mcp
-  require "ruby_llm"
-  defined_here = !defined?(RubyLLM::MCP)
-  RubyLLM.const_set(:MCP, Class.new) if defined_here
-  raise "RubyLLM::MCP unexpectedly has a client registry" if RubyLLM::MCP.respond_to?(:clients)
-
-  yield
-ensure
-  RubyLLM.send(:remove_const, :MCP) if defined_here
-end
-
 # rubocop:disable Style/FileOpen, Style/GlobalStdStream, Layout/LineLength
 $stdout = File.open("test_output.txt", "w").tap { |f| f.sync = true }
 

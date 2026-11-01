@@ -9,8 +9,8 @@ class CrewTest < Minitest::Test
     # The chief exposes its tools/MCP so recruits can inherit them.
     @chief.stubs(:respond_to?).with(:local_tools).returns(true)
     @chief.stubs(:local_tools).returns([])
-    @chief.stubs(:respond_to?).with(:mcp_clients).returns(true)
-    @chief.stubs(:mcp_clients).returns({})
+    @chief.stubs(:respond_to?).with(:mcp_config).returns(true)
+    @chief.stubs(:mcp_config).returns(:none)
 
     @crew  = mock('crew') # the Network behind AIA.client
     @crew.stubs(:chief).returns(@chief)
@@ -43,17 +43,15 @@ class CrewTest < Minitest::Test
   end
 
   def test_recruit_inherits_chief_tools_and_mcp
-    tool        = mock('file_tool')
-    mcp_clients = { 'github' => mock('client') }
-    mcp_tools   = [mock('mcp_tool')]
+    tool    = mock('file_tool')
+    servers = [mock('github_server')]
     @chief.stubs(:local_tools).returns([tool])
-    @chief.stubs(:mcp_clients).returns(mcp_clients)
-    @chief.stubs(:mcp_tools).returns(mcp_tools)
+    @chief.stubs(:mcp_config).returns(servers)
 
     recruit = stub_robot('helper')
-    recruit.stubs(:respond_to?).with(:inject_mcp!).returns(true)
-    recruit.expects(:inject_mcp!).with(clients: mcp_clients, tools: mcp_tools)
-    @chief.expects(:spawn).with(name: 'helper', system_prompt: 'You are helper.', local_tools: [tool]).returns(recruit)
+    @chief.expects(:spawn)
+          .with(name: 'helper', system_prompt: 'You are helper.', local_tools: [tool], mcp: servers)
+          .returns(recruit)
     @crew.expects(:add_robot).with(recruit)
 
     AIA::Crew.recruit(name: 'helper')

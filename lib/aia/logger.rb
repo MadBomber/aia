@@ -6,7 +6,8 @@
 # Provides loggers for three systems:
 #   - aia: Used within the AIA codebase for application-level logging
 #   - llm: Passed to RubyLLM gem's configuration (RubyLLM.logger)
-#   - mcp: Passed to RubyLLM::MCP process (RubyLLM::MCP.logger)
+#   - mcp: MCP connection logging (MCPConnectionManager) and RobotLab.config.logger;
+#          ruby_llm's own MCP client logs through RubyLLM.logger (llm)
 #
 # Configuration is read from AIA.config.logger section:
 #   logger:
@@ -100,38 +101,8 @@ module AIA
         RubyLLM.instance_variable_set(:@logger, nil) if RubyLLM.instance_variable_defined?(:@logger)
       end
 
-      # Configure RubyLLM::MCP's logger
-      # RubyLLM::MCP.config has attr_writer :logger and a memoized getter.
-      # We need to set both the config.logger and reset any memoization.
-      def configure_mcp_logger
-        return unless AIA::Utility.legacy_ruby_llm_mcp? && RubyLLM::MCP.respond_to?(:config)
-
-        logger = mcp_logger
-
-        # First reset the memoized @logger so our settings take effect
-        # RubyLLM::MCP.config.logger does: @logger ||= Logger.new(...)
-        config = RubyLLM::MCP.config
-        config.instance_variable_set(:@logger, nil) if config.instance_variable_defined?(:@logger)
-
-        # Set our logger on the MCP config object
-        # RubyLLM::MCP.config has attr_writer :logger (which sets @logger directly)
-        if config.respond_to?(:logger=)
-          config.logger = logger
-        end
-
-        # Also set log_file and log_level in case the logger gets recreated
-        if config.respond_to?(:log_file=)
-          file = effective_log_file(logger_config_for(:mcp))
-          config.log_file = resolve_log_file_io(file)
-        end
-
-        return unless config.respond_to?(:log_level=)
-        level = effective_log_level(logger_config_for(:mcp))
-        config.log_level = LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN }
-      end
-
       # Convert log file specification to IO object or file path
-      # RubyLLM::MCP expects an IO object or file path for log_file config
+      # RubyLLM expects an IO object or file path for log_file config
       def resolve_log_file_io(file)
         case file.to_s.upcase
         when 'STDOUT'
@@ -176,9 +147,8 @@ module AIA
           logger.level = numeric
         end
 
-        # Keep RubyLLM / MCP configs in sync so they don't override us
+        # Keep the RubyLLM config in sync so it doesn't override us
         configure_llm_logger
-        configure_mcp_logger
       end
 
       # =======================================================================

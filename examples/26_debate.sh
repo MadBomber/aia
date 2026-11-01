@@ -21,8 +21,8 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="gpt-4.1"
-MODEL_B="gpt-4.1-mini"
+MODEL_A="claude-sonnet-4-6"
+MODEL_B="claude-haiku-4-5"
 
 echo "=== Demo 26: Debate Mode (DebateHandler) ==="
 echo
@@ -32,7 +32,7 @@ echo "other said in the previous round and responds. The debate"
 echo "ends when a robot says CONVERGED or after 5 rounds."
 echo
 echo "Using models: ${MODEL_A} vs ${MODEL_B}"
-echo "Robot names:  Tobor (gpt-4.1) and Vanguard (gpt-4.1-mini)"
+echo "Robot names:  Tobor (claude-sonnet-4-6) and Zen (claude-haiku-4-5)"
 echo
 
 # --- Part 1: A technical debate ---

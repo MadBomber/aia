@@ -95,18 +95,53 @@ class RobotFactoryTest < Minitest::Test
     refute RubyLLM::Provider.providers.key?(:no_such_provider_xyz)
   end
 
-  def test_mcp_server_configs_returns_empty_when_no_mcp
+  def test_mcp_servers_returns_empty_when_no_mcp
     @config.flags.no_mcp = true
-    result = AIA::RobotFactory.send(:mcp_server_configs, @config)
-    assert_equal [], result
+    assert_equal [], AIA::RobotFactory.mcp_servers(@config)
   end
 
-  def test_mcp_server_configs_returns_all_when_no_filters
+  def test_mcp_servers_without_manager_returns_normalized_configs
+    @config.flags.no_mcp = false
+    @config.mcp_servers = [{ name: 'server1', command: 's1' }, { name: 'server2', url: 'https://x.test/mcp' }]
+    AIA.stubs(:mcp_manager).returns(nil)
+
+    result = AIA::RobotFactory.mcp_servers(@config)
+
+    assert_equal [{ name: 'server1', transport: { command: 's1', type: 'stdio' } },
+                  { name: 'server2', transport: { url: 'https://x.test/mcp', type: 'streamable-http' } }], result
+  end
+
+  def test_mcp_servers_applies_mcp_skip
+    @config.flags.no_mcp = false
+    @config.mcp_servers = [{ name: 'server1', command: 's1' }, { name: 'server2', command: 's2' }]
+    @config.mcp_skip = ['server2']
+    AIA.stubs(:mcp_manager).returns(nil)
+
+    assert_equal(['server1'], AIA::RobotFactory.mcp_servers(@config).map { it[:name] })
+  end
+
+  def test_mcp_servers_returns_live_servers_from_connected_manager
     @config.flags.no_mcp = false
     @config.mcp_servers = [{ name: 'server1' }, { name: 'server2' }]
+    live    = mock('live_server1')
+    manager = mock('mcp_manager')
+    manager.stubs(:connected?).returns(true)
+    manager.expects(:servers_for).with(@config.mcp_servers).returns([live])
+    AIA.stubs(:mcp_manager).returns(manager)
 
-    result = AIA::RobotFactory.send(:mcp_server_configs, @config)
-    assert_equal 2, result.length
+    assert_equal [live], AIA::RobotFactory.mcp_servers(@config)
+  end
+
+  def test_mcp_servers_for_group_uses_only_that_group
+    @config.flags.no_mcp = false
+    @config.mcp_servers = [{ name: 'server1' }, { name: 'server2' }]
+    group   = [{ name: 'server2' }]
+    manager = mock('mcp_manager')
+    manager.stubs(:connected?).returns(true)
+    manager.expects(:servers_for).with(group).returns([:server2])
+    AIA.stubs(:mcp_manager).returns(manager)
+
+    assert_equal [:server2], AIA::RobotFactory.mcp_servers(@config, group)
   end
 
   def test_build_run_config_creates_config

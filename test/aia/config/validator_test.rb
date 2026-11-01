@@ -807,41 +807,38 @@ class ValidatorListToolsTest < Minitest::Test
     assert_match(/No tools available/, err)
   end
 
-  # --list-tools connects through robot_lab's MCP client (ruby_llm 2.x has no
-  # ruby_llm-mcp registry), wrapping each remote tool like the startup path
-  def test_load_mcp_tools_grouped_uses_robot_lab_client
-    client = mock('mcp_client')
-    client.expects(:connect).returns(client)
-    client.stubs(:connected?).returns(true)
-    client.stubs(:list_tools).returns([{ name: 'lookup', description: 'Find things', inputSchema: {} }])
-    client.expects(:disconnect).once
-    RobotLab::MCP::Client.expects(:new).with(has_entry(name: 'svc')).returns(client)
+  # --list-tools builds servers the way MCPConnectionManager does
+  # (RobotLab::MCP.build), so it lists the RubyLLM::MCP::Tools a robot gets
+  def test_load_mcp_tools_grouped_uses_robot_lab_mcp_build
+    tool   = Struct.new(:name, :description).new('lookup', 'Find things')
+    server = mock('mcp_server')
+    server.stubs(:tools).returns([tool])
+    server.expects(:close).once
+    RobotLab::MCP.expects(:build).with(has_entry(name: 'svc')).returns(server)
 
     groups = nil
     _, err = capture_io { groups = AIA::ConfigValidator.send(:load_mcp_tools_grouped, list_tools_config) }
 
     assert_equal ['svc'], groups.keys
-    assert_equal ['lookup'], groups['svc'].map(&:name)
-    assert_equal 'Find things', groups['svc'].first.description
+    assert_equal [tool], groups['svc']
     assert_match(/svc... 1 tools/, err)
   end
 
   def test_load_mcp_tools_grouped_reports_failed_server
-    client = mock('mcp_client')
-    client.stubs(:connect).returns(client)
-    client.stubs(:connected?).returns(false)
-    client.expects(:disconnect).once
-    RobotLab::MCP::Client.stubs(:new).returns(client)
+    server = mock('mcp_server')
+    server.stubs(:tools).raises(RubyLLM::Error.new('spawn failed'))
+    server.expects(:close).once
+    RobotLab::MCP.stubs(:build).returns(server)
 
     groups = nil
     _, err = capture_io { groups = AIA::ConfigValidator.send(:load_mcp_tools_grouped, list_tools_config) }
 
     assert_empty groups
-    assert_match(/svc... failed/, err)
+    assert_match(/svc... error: spawn failed/, err)
   end
 
   def test_load_mcp_tools_grouped_reports_connection_error
-    RobotLab::MCP::Client.stubs(:new).raises(StandardError.new('boom'))
+    RobotLab::MCP.stubs(:build).raises(StandardError.new('boom'))
 
     groups = nil
     _, err = capture_io { groups = AIA::ConfigValidator.send(:load_mcp_tools_grouped, list_tools_config) }

@@ -11,9 +11,7 @@ class WordCountTool < RubyLLM::Tool
     Useful for text analysis and content length checks.
   DESC
 
-  params do
-    string :text, description: 'The text to analyze', required: true
-  end
+  parameter :text, type: :string, description: 'The text to analyze', required: true
 
   def execute(text:)
     words      = text.split(/\s+/).reject(&:empty?)

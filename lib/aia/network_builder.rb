@@ -20,7 +20,7 @@ module AIA
       prompts = config.pipeline
       run_config = RobotFactory.build_run_config(config)
       tools = ToolLoader.filtered_tools(config)
-      mcp = RobotFactory.mcp_server_configs(config)
+      mcp = RobotFactory.mcp_servers(config)
       model_spec = config.models.first
 
       RobotLab.create_network(name: "aia-pipeline") do
@@ -32,7 +32,7 @@ module AIA
             name:          "#{namer.name_for(model_spec.name)}-s#{i}",
             system_prompt: nil,
             local_tools:   tools,
-            mcp_servers:   mcp,
+            mcp:           mcp,
             config:        run_config
           )
           task task_name, robot, depends_on: prev ? [prev] : :none
@@ -49,7 +49,7 @@ module AIA
     def build_parallel_network(config, namer)
       run_config = RobotFactory.build_run_config(config)
       tools = ToolLoader.filtered_tools(config)
-      mcp = RobotFactory.mcp_server_configs(config)
+      mcp = RobotFactory.mcp_servers(config)
       aia_config = config
       roster = config.models.map { |spec| { name: namer.name_for(spec.name), spec: spec } }
       build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, run_config, aia_config) }
@@ -71,7 +71,7 @@ module AIA
     def build_consensus_network(config, namer)
       run_config = RobotFactory.build_run_config(config)
       tools  = ToolLoader.filtered_tools(config)
-      mcp    = RobotFactory.mcp_server_configs(config)
+      mcp    = RobotFactory.mcp_servers(config)
       models = config.models
       primary = models.first
       aia_config = config
@@ -108,7 +108,7 @@ module AIA
         name:          entry[:name],
         system_prompt: system_prompt,
         local_tools:   tools,
-        mcp_servers:   mcp,
+        mcp:           mcp,
         config:        run_config
       )
     end
@@ -126,15 +126,16 @@ module AIA
       tools = ToolLoader.filtered_tools(config)
       model_spec = config.models.first
       system_prompt = SystemPromptAssembler.resolve_system_prompt(config, model_spec)
+      group_servers = server_groups.map { RobotFactory.mcp_servers(config, it) }
 
       network = RobotLab.create_network(name: "aia-concurrent-mcp") do
-        server_groups.each_with_index do |group, i|
+        group_servers.each_with_index do |servers, i|
           robot = RobotFactory.build_robot(
             model_spec,
             name:          "#{namer.name_for(model_spec.name)}-w#{i}",
             system_prompt: system_prompt,
             local_tools:   tools,
-            mcp_servers:   group.map { |s| RobotFactory.normalize_mcp_config(s) },
+            mcp:           servers,
             config:        run_config
           )
           task :"mcp_worker_#{i}", robot, depends_on: :none

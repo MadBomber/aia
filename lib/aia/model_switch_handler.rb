@@ -90,10 +90,7 @@ module AIA
     def apply_model_change(config, model_names)
       config.models = model_names.map { |name| AIA::ModelSpec.new(name: name) }
 
-      history_mode = config.respond_to?(:model_switch_history) ?
-        config.model_switch_history&.to_sym : :clean
-
-      AIA.client = RobotFactory.rebuild(config, history_mode: history_mode)
+      AIA.client = RobotFactory.rebuild(config, history_mode: HistoryTransfer.mode_for(config))
       @ui.display_info("Model switched to: #{model_names.join(', ')}")
     end
   end

@@ -5,244 +5,193 @@
 require_relative '../test_helper'
 
 class HistoryTransferTest < Minitest::Test
-  include AIA::HistoryTransfer
+  Message = Struct.new(:role, :content)
+  Reply   = Struct.new(:reply)
 
-  def setup
-    @old_robot = mock('old_robot')
-    @new_robot = mock('new_robot')
-  end
+  # A robot double: records every run and answers with a fixed reply.
+  class FakeRobot
+    attr_reader :runs
+    attr_accessor :messages
 
-  def teardown
-    Mocha::Mockery.instance.teardown
-  end
-
-  # ---------------------------------------------------------------------------
-  # Helpers
-  # ---------------------------------------------------------------------------
-
-  def make_message(role, content)
-    msg = mock("msg_#{role}")
-    msg.stubs(:respond_to?).with(:role).returns(true)
-    msg.stubs(:respond_to?).with(:content).returns(true)
-    msg.stubs(:role).returns(role)
-    msg.stubs(:content).returns(content)
-    msg
-  end
-
-  # ---------------------------------------------------------------------------
-  # replay_history — basic routing
-  # ---------------------------------------------------------------------------
-
-  def test_replay_history_replays_only_user_messages
-    user_msg      = make_message(:user,      "hello from user")
-    assistant_msg = make_message(:assistant, "reply from bot")
-
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([user_msg, assistant_msg])
-
-    @new_robot.expects(:run).once.with("hello from user", mcp: :none, tools: :none)
-
-    AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
-  end
-
-  def test_replay_history_noop_when_messages_empty
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([])
-
-    @new_robot.expects(:run).never
-
-    AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
-  end
-
-  def test_replay_history_noop_when_old_robot_lacks_messages
-    @old_robot.stubs(:respond_to?).with(:messages).returns(false)
-
-    @new_robot.expects(:run).never
-
-    AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
-  end
-
-  def test_replay_history_passes_correct_mcp_and_tools_options
-    user_msg = make_message(:user, "test content")
-
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([user_msg])
-
-    @new_robot.expects(:run).with("test content", mcp: :none, tools: :none)
-
-    AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
-  end
-
-  def test_replay_history_handles_standard_error_gracefully
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).raises(StandardError, "something broke")
-
-    # Should not raise — rescue block emits a warning to $stderr and returns normally
-    _, err = capture_io do
-      AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
+    def initialize(messages = [], reply: "summary text")
+      @messages = messages
+      @reply    = reply
+      @runs     = []
     end
-    assert_includes err, "Warning: History replay failed"
+
+    def run(prompt, **opts)
+      @runs << [prompt, opts]
+      Reply.new(@reply)
+    end
   end
 
-  def test_replay_history_skips_messages_without_role_method
-    no_role_msg = mock('no_role_msg')
-    no_role_msg.stubs(:respond_to?).with(:role).returns(false)
+  # A network double exposing the RobotLab::Runnable crew/chief interface.
+  class FakeNetwork
+    attr_reader :crew
 
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([no_role_msg])
-
-    @new_robot.expects(:run).never
-
-    AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
+    def initialize(*robots) = @crew = robots
+    def chief = @crew.first
   end
 
-  def test_replay_history_replays_multiple_user_messages
-    msg1 = make_message(:user, "first")
-    msg2 = make_message(:user, "second")
+  NO_TOOLS = { mcp: :none, tools: :none }.freeze
 
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([msg1, msg2])
+  def msg(role, content) = Message.new(role, content)
 
-    @new_robot.expects(:run).with("first",  mcp: :none, tools: :none)
-    @new_robot.expects(:run).with("second", mcp: :none, tools: :none)
+  # ---------------------------------------------------------------------------
+  # mode_for
+  # ---------------------------------------------------------------------------
 
-    AIA::HistoryTransfer.replay_history(@old_robot, @new_robot)
+  def test_mode_for_defaults_to_summarize_when_unset
+    assert_equal :summarize, AIA::HistoryTransfer.mode_for(OpenStruct.new(model_switch_history: nil))
+  end
+
+  def test_mode_for_defaults_to_summarize_without_config
+    assert_equal :summarize, AIA::HistoryTransfer.mode_for(nil)
+  end
+
+  def test_mode_for_reads_configured_mode
+    assert_equal :clean,  AIA::HistoryTransfer.mode_for(OpenStruct.new(model_switch_history: "clean"))
+    assert_equal :replay, AIA::HistoryTransfer.mode_for(OpenStruct.new(model_switch_history: " Replay "))
+  end
+
+  def test_mode_for_falls_back_on_unknown_mode
+    assert_equal :summarize, AIA::HistoryTransfer.mode_for(OpenStruct.new(model_switch_history: "bogus"))
   end
 
   # ---------------------------------------------------------------------------
-  # summarize_history — basic routing
+  # conversation / recipients
   # ---------------------------------------------------------------------------
 
-  def test_summarize_history_noop_when_old_robot_has_no_messages
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([])
+  def test_conversation_keeps_only_non_empty_user_and_assistant_turns
+    robot = FakeRobot.new([msg(:system, "sys"), msg(:user, "hi"), msg(:tool, "x"),
+                           msg(:assistant, "  "), msg(:assistant, "hello")])
 
-    @new_robot.expects(:run).never
-
-    AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
+    assert_equal %w[hi hello], AIA::HistoryTransfer.conversation(robot).map(&:content)
   end
 
-  def test_summarize_history_noop_when_old_robot_lacks_messages_method
-    @old_robot.stubs(:respond_to?).with(:messages).returns(false)
+  def test_conversation_reads_the_network_chief
+    chief = FakeRobot.new([msg(:user, "from chief")])
+    other = FakeRobot.new([msg(:user, "from other")])
 
-    @new_robot.expects(:run).never
-
-    AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
+    assert_equal ["from chief"], AIA::HistoryTransfer.conversation(FakeNetwork.new(chief, other)).map(&:content)
   end
 
-  def test_summarize_history_calls_old_robot_run_for_summary
-    msg = make_message(:user, "hello")
-
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([msg])
-
-    summary_result = mock('summary_result')
-    summary_result.stubs(:respond_to?).with(:reply).returns(true)
-    summary_result.stubs(:reply).returns("summary text")
-
-    @old_robot.expects(:run).with(
-      regexp_matches(/Summarize this conversation/),
-      mcp: :none,
-      tools: :none
-    ).returns(summary_result)
-
-    @new_robot.expects(:run).with(
-      regexp_matches(/Context from previous conversation/),
-      mcp: :none,
-      tools: :none
-    )
-
-    AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
+  def test_conversation_empty_without_messages
+    assert_empty AIA::HistoryTransfer.conversation(Object.new)
+    assert_empty AIA::HistoryTransfer.conversation(nil)
   end
 
-  def test_summarize_history_uses_reply_when_summary_responds_to_reply
-    msg = make_message(:user, "hello")
+  def test_recipients_is_the_crew_for_a_network
+    a = FakeRobot.new
+    b = FakeRobot.new
 
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([msg])
+    assert_equal [a, b], AIA::HistoryTransfer.recipients(FakeNetwork.new(a, b))
+  end
 
-    summary_result = mock('summary_result')
-    summary_result.stubs(:respond_to?).with(:reply).returns(true)
-    summary_result.stubs(:reply).returns("reply method result")
+  def test_recipients_is_the_robot_itself
+    robot = FakeRobot.new
 
-    @old_robot.expects(:run).returns(summary_result)
-    @new_robot.expects(:run).with(
-      "Context from previous conversation: reply method result",
-      mcp: :none,
-      tools: :none
-    )
+    assert_equal [robot], AIA::HistoryTransfer.recipients(robot)
+  end
 
-    AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
+  # ---------------------------------------------------------------------------
+  # replay_history
+  # ---------------------------------------------------------------------------
+
+  def test_replay_history_replays_user_turns_in_order
+    old = FakeRobot.new([msg(:user, "first"), msg(:assistant, "reply"), msg(:user, "second")])
+    new_robot = FakeRobot.new
+
+    AIA::HistoryTransfer.replay_history(old, new_robot)
+
+    assert_equal [["first", NO_TOOLS], ["second", NO_TOOLS]], new_robot.runs
+  end
+
+  def test_replay_history_replays_to_every_crew_member
+    old = FakeNetwork.new(FakeRobot.new([msg(:user, "hello")]))
+    a = FakeRobot.new
+    b = FakeRobot.new
+
+    AIA::HistoryTransfer.replay_history(old, FakeNetwork.new(a, b))
+
+    assert_equal [["hello", NO_TOOLS]], a.runs
+    assert_equal [["hello", NO_TOOLS]], b.runs
+  end
+
+  def test_replay_history_noop_without_history
+    new_robot = FakeRobot.new
+
+    AIA::HistoryTransfer.replay_history(FakeRobot.new, new_robot)
+    AIA::HistoryTransfer.replay_history(Object.new, new_robot)
+
+    assert_empty new_robot.runs
+  end
+
+  def test_replay_history_warns_instead_of_raising
+    old = FakeRobot.new([msg(:user, "hi")])
+    broken = FakeRobot.new
+    def broken.run(*, **) = raise(StandardError, "something broke")
+
+    _, err = capture_io { AIA::HistoryTransfer.replay_history(old, broken) }
+
+    assert_includes err, "Warning: History replay failed: something broke"
+  end
+
+  # ---------------------------------------------------------------------------
+  # summarize_history
+  # ---------------------------------------------------------------------------
+
+  def test_summarize_history_asks_the_old_chief_for_a_summary
+    old = FakeRobot.new([msg(:user, "user turn"), msg(:assistant, "assistant reply")])
+
+    AIA::HistoryTransfer.summarize_history(old, FakeRobot.new)
+
+    prompt, opts = old.runs.first
+    assert_match(/Summarize this conversation/, prompt)
+    assert_match(/user: user turn/, prompt)
+    assert_match(/assistant: assistant reply/, prompt)
+    assert_equal NO_TOOLS, opts
+  end
+
+  def test_summarize_history_injects_the_summary_into_every_crew_member
+    old = FakeNetwork.new(FakeRobot.new([msg(:user, "hi")], reply: "the gist"))
+    a = FakeRobot.new
+    b = FakeRobot.new
+
+    AIA::HistoryTransfer.summarize_history(old, FakeNetwork.new(a, b))
+
+    expected = [["Context from previous conversation: the gist", NO_TOOLS]]
+    assert_equal expected, a.runs
+    assert_equal expected, b.runs
   end
 
   def test_summarize_history_uses_to_s_when_summary_lacks_reply
-    msg = make_message(:user, "hello")
+    old = FakeRobot.new([msg(:user, "hi")])
+    def old.run(*, **) = "plain string"
+    new_robot = FakeRobot.new
 
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([msg])
+    AIA::HistoryTransfer.summarize_history(old, new_robot)
 
-    summary_result = mock('summary_result')
-    summary_result.stubs(:respond_to?).with(:reply).returns(false)
-    summary_result.stubs(:to_s).returns("to_s result")
-
-    @old_robot.expects(:run).returns(summary_result)
-    @new_robot.expects(:run).with(
-      "Context from previous conversation: to_s result",
-      mcp: :none,
-      tools: :none
-    )
-
-    AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
+    assert_equal "Context from previous conversation: plain string", new_robot.runs.first.first
   end
 
-  def test_summarize_history_handles_standard_error_gracefully
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).raises(StandardError, "summarize broke")
+  def test_summarize_history_noop_without_history
+    old = FakeRobot.new([msg(:system, "sys only")])
+    new_robot = FakeRobot.new
 
-    # Should not raise — rescue block emits a warning to $stderr and returns normally
-    _, err = capture_io do
-      AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
-    end
-    assert_includes err, "Warning: History summarization failed"
+    AIA::HistoryTransfer.summarize_history(old, new_robot)
+    AIA::HistoryTransfer.summarize_history(Object.new, new_robot)
+
+    assert_empty old.runs
+    assert_empty new_robot.runs
   end
 
-  def test_summarize_history_includes_all_messages_in_prompt
-    msg1 = make_message(:user,      "user turn 1")
-    msg2 = make_message(:assistant, "assistant reply")
-    msg3 = make_message(:user,      "user turn 2")
+  def test_summarize_history_warns_instead_of_raising
+    old = FakeRobot.new([msg(:user, "hi")])
+    def old.run(*, **) = raise(StandardError, "summarize broke")
 
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([msg1, msg2, msg3])
+    _, err = capture_io { AIA::HistoryTransfer.summarize_history(old, FakeRobot.new) }
 
-    captured_prompt = nil
-    summary_result = mock('summary_result')
-    summary_result.stubs(:respond_to?).with(:reply).returns(true)
-    summary_result.stubs(:reply).returns("ok")
-
-    @old_robot.expects(:run).with do |prompt, **_opts|
-      captured_prompt = prompt
-      true
-    end.returns(summary_result)
-
-    @new_robot.stubs(:run)
-
-    AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
-
-    assert_match(/user turn 1/,      captured_prompt)
-    assert_match(/assistant reply/,  captured_prompt)
-    assert_match(/user turn 2/,      captured_prompt)
-  end
-
-  def test_summarize_history_noop_when_all_messages_lack_role_method
-    no_role_msg = mock('no_role_msg')
-    no_role_msg.stubs(:respond_to?).with(:role).returns(false)
-
-    @old_robot.stubs(:respond_to?).with(:messages).returns(true)
-    @old_robot.stubs(:messages).returns([no_role_msg])
-
-    @old_robot.expects(:run).never
-    @new_robot.expects(:run).never
-
-    AIA::HistoryTransfer.summarize_history(@old_robot, @new_robot)
+    assert_includes err, "Warning: History summarization failed: summarize broke"
   end
 end

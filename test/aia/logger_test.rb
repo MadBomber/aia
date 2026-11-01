@@ -139,12 +139,4 @@ class LoggerManagerTest < Minitest::Test
     # Restore default
     AIA::LoggerManager.test_mode!(level: :debug)
   end
-
-  # ruby_llm 2.1+ defines RubyLLM::MCP without the legacy gem's `.config`;
-  # configure_mcp_logger must treat that as "nothing to configure"
-  def test_configure_mcp_logger_is_noop_without_legacy_registry
-    with_registry_less_ruby_llm_mcp do
-      assert_nil AIA::LoggerManager.configure_mcp_logger
-    end
-  end
 end

@@ -2,73 +2,132 @@
 
 # lib/aia/mcp_connection_manager.rb
 #
-# Single owner for MCP connection state. Handles connecting to configured
-# MCP servers concurrently, tracking successes/failures, and injecting
-# results into robots.
+# Single owner for MCP connection state. Builds one RubyLLM::MCP server per
+# configured MCP server (via RobotLab::MCP.build), connects them concurrently
+# at startup, and hands the live server instances to every robot aia builds.
+#
+# Robots share these instances: robot_lab's per-robot MCP::Registry returns
+# an already-registered instance unchanged, so each server process (or HTTP
+# session) is started once per aia process no matter how many robots use it.
+# Servers that fail to connect are left out, so robots never retry them on
+# every turn.
 
 require 'timeout'
 require 'tty-spinner'
 
 module AIA
-  # :reek:TooManyMethods -- one small helper per connection-lifecycle concern (connect, wrap tools, record outcomes)
+  # :reek:TooManyMethods -- one small helper per connection-lifecycle concern (connect, record outcomes, query, close)
   class MCPConnectionManager
     # Maximum seconds to wait for a single MCP server to connect.
     DEFAULT_TIMEOUT = 30
 
-    attr_reader :connected_clients, :connected_tools, :failed_servers
+    attr_reader :failed_servers
+
+    class << self
+      # Select the servers for this session (MCPDiscovery: --mcp-use,
+      # --mcp-skip, --no-mcp), connect them, and publish the results to
+      # AIA.config and AIA.mcp_manager.
+      #
+      # @param config [AIA::Config]
+      # @return [MCPConnectionManager]
+      def start(config)
+        manager = new
+        unless config.flags&.no_mcp
+          discovered = MCPDiscovery.new.discover(config)
+          warn_unknown_mcp_use_names(config, discovered)
+          manager.connect_all(discovered)
+          manager.update_config if manager.connected?
+        end
+        AIA.mcp_manager = manager
+      end
+
+      # Warn when --mcp-use names don't match any configured server.
+      # Helps users catch typos before a silent empty-tools session.
+      def warn_unknown_mcp_use_names(config, discovered)
+        requested = Array(config.mcp_use)
+        return if requested.empty?
+
+        missing = requested - discovered.map { AIA::Utility.server_name(it) }
+        return if missing.empty?
+
+        available = Array(config.mcp_servers).map { AIA::Utility.server_name(it) }
+        $stderr.puts "WARNING: --mcp-use specified server(s) not found in config: #{missing.join(', ')}"
+        $stderr.puts "         Available servers: #{available.join(', ')}" if available.any?
+      end
+    end
 
     def initialize
-      @connected_clients    = {}
-      @connected_tools      = []
-      @failed_servers       = []
-      @server_tool_counts   = {}
-      @connected            = false
-      @mutex                = Mutex.new
+      @servers        = {} # name => RubyLLM::MCP (connected)
+      @server_tools   = {} # name => Array<RubyLLM::MCP::Tool>
+      @failed_servers = []
+      @connected      = false
+      @mutex          = Mutex.new
     end
 
     # Connect all configured MCP servers concurrently.
     # Each server gets its own spinner line and thread.
     #
-    # @param servers [Array<Hash>] MCP server configurations
+    # @param configs [Array<Hash>] MCP server configurations
     # @return [self]
     # :reek:TooManyStatements -- connection ceremony: spinner setup, thread launch, global timeout guard, summary logging
-    def connect_all(servers)
-      return self unless servers.is_a?(Array) && servers.any?
+    def connect_all(configs)
+      return self unless configs.is_a?(Array) && configs.any?
 
       reset_connection_state
       logger = AIA::LoggerManager.mcp_logger
-      server_names = servers.map { |s| s.is_a?(Hash) ? s[:name] : s.to_s }.compact
-      logger.info("MCP initialization: connecting #{servers.size} server(s): #{server_names.join(', ')}")
+      logger.info("MCP initialization: connecting #{configs.size} server(s): #{configs.map { config_name(it) }.join(', ')}")
 
-      multi = TTY::Spinner::Multi.new("[:spinner] Connecting MCP servers", format: :dots, output: $stderr)
-      threads = launch_server_threads(servers, multi, logger)
+      multi   = TTY::Spinner::Multi.new("[:spinner] Connecting MCP servers", format: :dots, output: $stderr)
+      threads = launch_server_threads(configs, multi, logger)
 
       # The global cap must never be smaller than the slowest single server's
       # timeout, or concurrent connections get killed before they can finish.
-      global_limit = [global_connection_timeout, *servers.map { |s| server_timeout(s) }].max
+      global_limit = [global_connection_timeout, *configs.map { server_timeout(it) }].max
       Timeout.timeout(global_limit) { threads.each(&:join) }
 
       @connected = true
-      logger.info("MCP initialization complete: #{@connected_clients.size} connected, #{@failed_servers.size} failed")
+      logger.info("MCP initialization complete: #{@servers.size} connected, #{@failed_servers.size} failed")
       self
     rescue Timeout::Error
-      handle_global_timeout(servers, global_limit)
+      handle_global_timeout(configs, global_limit)
     end
 
-    # Inject connected MCP clients and tools into robot(s).
+    # The connected servers, in connection order.
     #
-    # @param robot [RobotLab::Robot, RobotLab::Network] the robot or network
-    # @return [self]
-    def inject_into(robot)
-      clients, tools = @mutex.synchronize { [@connected_clients.dup, @connected_tools.dup] }
+    # @return [Array<RubyLLM::MCP>]
+    def servers
+      @mutex.synchronize { @servers.values }
+    end
 
-      targets = robot.crew
+    # The connected servers named by +configs+ (Hashes, names, or servers),
+    # skipping any that are not connected.
+    #
+    # @param configs [Array<Hash, String, RubyLLM::MCP>]
+    # @return [Array<RubyLLM::MCP>]
+    def servers_for(configs)
+      @mutex.synchronize { Array(configs).filter_map { @servers[config_name(it)] } }
+    end
 
-      targets.each do |target|
-        target.inject_mcp!(clients: clients, tools: tools)
-      end
+    # Find a connected server by name.
+    #
+    # @param name [String]
+    # @return [RubyLLM::MCP, nil]
+    def server(name)
+      @mutex.synchronize { @servers[name.to_s] }
+    end
 
-      self
+    # Every connected server's tools.
+    #
+    # @return [Array<RubyLLM::MCP::Tool>]
+    def connected_tools
+      @mutex.synchronize { @server_tools.values.flatten }
+    end
+
+    # Tools grouped by the name of the server that offers them.
+    #
+    # @return [Hash{String => Array<RubyLLM::MCP::Tool>}]
+    def tools_by_server
+      @mutex.synchronize { @server_tools.transform_values(&:dup) }
     end
 
     # Update AIA config with connection results.
@@ -76,7 +135,7 @@ module AIA
     # @return [self]
     def update_config
       connected_keys, tool_counts, failed = @mutex.synchronize do
-        [@connected_clients.keys.dup, @server_tool_counts.dup, @failed_servers.dup]
+        [@servers.keys, @server_tools.transform_values(&:size), @failed_servers.dup]
       end
       cfg = AIA.config
       cfg.connected_mcp_servers  = connected_keys
@@ -85,222 +144,152 @@ module AIA
       self
     end
 
-    # Whether connect_all has been called.
+    # Whether connect_all has run to completion (or hit the global timeout).
     def connected?
       @connected
     end
 
-    # Whether any tools were collected (from config servers or Ruby require).
+    # Whether any MCP tools were collected.
     def any_tools?
-      @mutex.synchronize { @connected_tools.any? }
-    end
-
-    # Absorb MCP clients registered in RubyLLM::MCP (e.g., via --require loading
-    # shared_tools/mcp/* files) that are not already tracked by this manager.
-    # Starts any unstarted clients, extracts their tools, and merges them into
-    # the connected state so inject_into will include them in the robot.
-    #
-    # @return [self]
-    # :reek:TooManyStatements -- per-client absorb loop: start if needed, extract tools, merge into connected state with error capture
-    def absorb_ruby_llm_mcp_clients
-      return self unless AIA::Utility.legacy_ruby_llm_mcp?
-
-      logger = AIA::LoggerManager.mcp_logger
-
-      RubyLLM::MCP.clients.each do |name, client|
-        next if @connected_clients.key?(name)
-
-        begin
-          client.start unless client.alive?
-
-          if client.alive?
-            tools = client.tools rescue []
-            @mutex.synchronize do
-              @connected_clients[name]  = client
-              @server_tool_counts[name] = tools.size
-              @connected_tools.concat(tools)
-            end
-            logger.info("MCP: absorbed RubyLLM::MCP client '#{name}' (#{tools.size} tools)")
-          else
-            logger.warn("MCP: RubyLLM::MCP client '#{name}' not alive, skipping")
-          end
-        rescue StandardError => e
-          logger.warn("MCP: error absorbing RubyLLM::MCP client '#{name}': #{e.message}")
-        end
-      end
-
-      @connected = true unless RubyLLM::MCP.clients.empty?
-      self
-    end
-
-    # Find an MCP client by server name.
-    #
-    # @param name [String] server name
-    # @return [RobotLab::MCP::Client, nil]
-    def client(name)
-      @connected_clients[name]
+      @mutex.synchronize { @server_tools.values.any?(&:any?) }
     end
 
     # Connected server names.
     #
     # @return [Array<String>]
     def connected_server_names
-      @mutex.synchronize { @connected_clients.keys.dup }
+      @mutex.synchronize { @servers.keys }
     end
 
     # Failed server names.
     #
     # @return [Array<String>]
     def failed_server_names
-      @mutex.synchronize { @failed_servers.map { |f| f[:name] } }
+      @mutex.synchronize { @failed_servers.map { it[:name] } }
     end
 
-    # Close all connected MCP clients and reset connection state.
-    # Errors from individual client closes are silently rescued —
-    # best-effort cleanup on process exit.
+    # Close all connected servers (stopping stdio processes) and reset state.
     def close_all
-      clients = @mutex.synchronize { @connected_clients.dup }
-      clients.each_value do |client|
-        client.close
-      rescue StandardError
-        # best-effort — client may already be closed
-      end
+      servers.each { close_quietly(it) }
       @mutex.synchronize do
-        @connected_clients  = {}
-        @connected_tools    = []
-        @server_tool_counts = {}
-        @connected          = false
+        @servers      = {}
+        @server_tools = {}
+        @connected    = false
       end
     end
 
     private
 
     def reset_connection_state
-      @connected_clients = {}
-      @connected_tools   = []
-      @failed_servers    = []
+      @servers        = {}
+      @server_tools   = {}
+      @failed_servers = []
     end
 
-    def launch_server_threads(servers, multi, logger)
-      servers.map do |server_config|
-        name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
+    def config_name(spec)
+      AIA::Utility.server_name(spec).to_s
+    end
+
+    def launch_server_threads(configs, multi, logger)
+      configs.map do |server_config|
+        name    = config_name(server_config)
         spinner = multi.register("[:spinner] #{name}")
         Thread.new(server_config, name, spinner) { |cfg, srv_name, sp| connect_one(cfg, srv_name, sp, logger) }
       end
     end
 
-    def handle_global_timeout(servers, global_limit)
-      logger = AIA::LoggerManager.mcp_logger
-      logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
+    def handle_global_timeout(configs, global_limit)
+      AIA::LoggerManager.mcp_logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
 
-      connected_names, failed_names = @mutex.synchronize do
-        [@connected_clients.keys.to_set, @failed_servers.to_set { |f| f[:name] }]
+      @mutex.synchronize do
+        settled    = @servers.keys + @failed_servers.map { it[:name] }
+        stragglers = configs.map { config_name(it) } - settled
+        @failed_servers.concat(stragglers.map { { name: it, error: "global connection timeout (#{global_limit}s)" } })
+        @connected = true
       end
-
-      stragglers = servers.filter_map do |server_config|
-        srv_name = server_config.is_a?(Hash) ? (server_config[:name] || server_config['name']) : server_config.to_s
-        next if connected_names.include?(srv_name) || failed_names.include?(srv_name)
-
-        { name: srv_name, error: "global connection timeout (#{global_limit}s)" }
-      end
-      @mutex.synchronize { @failed_servers.concat(stragglers) }
+      self
     end
 
     # Read global MCP connection timeout from config.
     # Falls back to 120s if config is unavailable.
     def global_connection_timeout
-      AIA.config&.concurrency&.mcp_timeout.to_i.then { |v| v.positive? ? v : 120 }
+      AIA.config&.concurrency&.mcp_timeout.to_i.then { it.positive? ? it : 120 }
     rescue StandardError
       120
     end
 
-    # Connect a single MCP server, updating the spinner on completion.
-    # :reek:TooManyStatements -- one connect attempt with per-outcome reporting (success, refused, timeout, error)
+    # Build and connect a single MCP server, updating the spinner on completion.
+    # Listing the server's tools is what makes RubyLLM::MCP connect.
+    # :reek:TooManyStatements -- one connect attempt with per-outcome reporting (success, timeout, error)
     def connect_one(server_config, name, spinner, logger)
       timeout = server_timeout(server_config)
       spinner.auto_spin
-
       logger.info("MCP: connecting to '#{name}'...")
-      Timeout.timeout(timeout) do
-        client = RobotLab::MCP::Client.new(server_config)
-        client.connect
 
-        if client.connected?
-          record_connected(name, client, build_mcp_tools(client, name), spinner, logger)
-        else
-          record_failed_server(name, "connection failed")
-          logger.warn("MCP: '#{name}' failed to connect")
-          spinner.error("(connection failed)")
-        end
-      end
+      server = RobotLab::MCP.build(MCPConfigNormalizer.normalize(server_config))
+      tools  = Timeout.timeout(timeout) { server.tools }
+      record_connected(name, server, tools, spinner, logger)
     rescue Timeout::Error
-      record_failed_server(name, "timed out after #{timeout}s")
-      logger.warn("MCP: '#{name}' timed out after #{timeout}s")
-      spinner.error("(timed out)")
+      close_quietly(server)
+      report_failure(name, "timed out after #{timeout}s", "(timed out)", spinner, logger)
     rescue StandardError => e
-      msg = e.message
-      record_failed_server(name, msg)
-      logger.warn("MCP: '#{name}' error: #{msg}")
-      spinner.error("(#{msg})")
+      close_quietly(server)
+      report_failure(name, e.message, "(#{e.message})", spinner, logger)
     end
 
-    # Wrap each remote tool definition in a RobotLab::Tool proxying to the client.
-    def build_mcp_tools(client, server_name)
-      client.list_tools.map do |tool_def|
-        tool_name = tool_def[:name]
-        RobotLab::Tool.create(
-          name:        tool_name,
-          description: tool_def[:description],
-          parameters:  tool_def[:inputSchema],
-          mcp:         server_name
-        ) { |args| client.call_tool(tool_name, args) }
+    # Record a connected server. robot_lab refuses to offer two tools with one
+    # name, so a server whose tool names clash with an already-connected
+    # server's is recorded as failed with the fix (prefix:) spelled out.
+    def record_connected(name, server, tools, spinner, logger)
+      clash = @mutex.synchronize do
+        found = tool_name_clash(tools)
+        unless found
+          @servers[name]      = server
+          @server_tools[name] = tools
+        end
+        found
       end
+      return report_clash(name, server, clash, spinner, logger) if clash
+
+      logger.info("MCP: '#{name}' connected (#{tools.size} tools)")
+      spinner.success("(#{tools.size} tools)")
     end
 
-    def record_connected(name, client, tools, spinner, logger)
-      tool_count = tools.size
-
-      @mutex.synchronize do
-        @connected_clients[name]  = client
-        @server_tool_counts[name] = tool_count
-        add_tools_deduped(tools, name, logger)
-      end
-
-      logger.info("MCP: '#{name}' connected (#{tool_count} tools)")
-      spinner.success("(#{tool_count} tools)")
-    end
-
-    def record_failed_server(name, error)
-      @mutex.synchronize { @failed_servers << { name: name, error: error } }
-    end
-
-    # Add tools to @connected_tools, skipping any whose name is already present.
-    # Logs a warning for each duplicate so the user knows which server wins.
     # MUST be called inside @mutex.synchronize.
-    #
-    # @param new_tools [Array] tools to add
-    # @param server_name [String] name of the server providing these tools (for warning)
-    # @param logger [Logger] MCP logger
-    def add_tools_deduped(new_tools, server_name, logger)
-      new_tools.each do |tool|
-        tool_name = tool.respond_to?(:name) ? tool.name : tool.to_s
-        existing = @connected_tools.find do |t|
-          (t.respond_to?(:name) ? t.name : t.to_s) == tool_name
-        end
-
-        if existing
-          logger.warn("MCP: Tool '#{tool_name}' already registered from another server. " \
-                      "Skipping duplicate from '#{server_name}'.")
-        else
-          @connected_tools << tool
-        end
+    # @return [Array(String, String), nil] [tool name, owning server] of the first clash
+    def tool_name_clash(tools)
+      names = tools.map { it.name.to_s }
+      @server_tools.each do |owner, owned|
+        dup = owned.map { it.name.to_s }.find { names.include?(it) }
+        return [dup, owner] if dup
       end
+      nil
+    end
+
+    def report_clash(name, server, clash, spinner, logger)
+      close_quietly(server)
+      tool, owner = clash
+      report_failure(name, "tool '#{tool}' is also offered by '#{owner}'; give one server a prefix:",
+                     "(duplicate tool '#{tool}')", spinner, logger)
+    end
+
+    def report_failure(name, error, spinner_note, spinner, logger)
+      @mutex.synchronize { @failed_servers << { name: name, error: error } }
+      logger.warn("MCP: '#{name}' error: #{error}")
+      spinner.error(spinner_note)
+    end
+
+    # Best-effort close; a server that never connected may raise.
+    def close_quietly(server)
+      server&.close
+    rescue StandardError
+      nil # nothing to clean up on a server that never started
     end
 
     # Extract timeout in seconds from server config.
     # Config values >= 1000 are treated as milliseconds.
     def server_timeout(server_config)
-      raw = server_config.is_a?(Hash) ? server_config[:timeout] : nil
+      raw = server_config.is_a?(Hash) ? (server_config[:timeout] || server_config['timeout']) : nil
       return DEFAULT_TIMEOUT if raw.nil?
 
       seconds = raw.to_f

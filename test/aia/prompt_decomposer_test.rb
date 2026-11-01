@@ -142,4 +142,15 @@ class PromptDecomposerTest < Minitest::Test
 
     @decomposer.synthesize("My complex question", ['Result 1'])
   end
+
+  # structured_output? reads the real ruby_llm registry (not stubbed): it must
+  # use ruby_llm 2.x's Model#supports?, or every model is treated as unsupported.
+  def test_structured_output_reads_ruby_llm_capabilities
+    decomposer = AIA::PromptDecomposer.new(mock('robot'))
+    AIA.stubs(:config).returns(OpenStruct.new(models: [OpenStruct.new(internal_id: 'claude-haiku-4-5')]))
+    assert decomposer.send(:structured_output?), 'claude-haiku-4-5 supports structured output'
+
+    AIA.stubs(:config).returns(OpenStruct.new(models: [OpenStruct.new(internal_id: 'no-such-model-xyz')]))
+    refute decomposer.send(:structured_output?), 'an unknown model falls back to the JSON prompt path'
+  end
 end

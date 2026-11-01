@@ -252,14 +252,14 @@ class McpParserTest < Minitest::Test
   end
 
   def test_normalize_is_pass_through_for_transport_format
-    # Verify that normalize_mcp_config is a no-op for already-normalized configs
+    # MCPConfigNormalizer is a no-op for already-normalized configs
     server = {
       name: "test",
       transport: { type: "stdio", command: "node", args: ["server.js"] },
       timeout: 5000
     }
 
-    result = AIA::RobotFactory.normalize_mcp_config(server)
+    result = AIA::MCPConfigNormalizer.normalize(server)
     assert_equal server, result
   end
 

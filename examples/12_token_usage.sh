@@ -5,14 +5,14 @@
 # after each response. When used with multiple models this lets
 # you compare how verbose each model is.
 #
-# Prerequisites: Run 00_setup_aia.sh first (OPENAI_API_KEY must be set).
+# Prerequisites: Run 00_setup_aia.sh first (ANTHROPIC_API_KEY must be set).
 # Usage: cd examples && bash 12_token_usage.sh
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-MODEL_A="gpt-4.1"
-MODEL_B="gpt-4.1-mini"
+MODEL_A="claude-sonnet-4-6"
+MODEL_B="claude-haiku-4-5"
 
 echo "=== Demo 12: Token Usage ==="
 echo

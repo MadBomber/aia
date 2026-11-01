@@ -102,7 +102,6 @@ module AIA
 
       def banner_libs
         parts = ["ruby_llm v#{RubyLLM::VERSION}"]
-        parts << "ruby_llm-mcp v#{RubyLLM::MCP::VERSION}" if defined?(RubyLLM::MCP::VERSION)
         parts << "robot_lab v#{RobotLab::VERSION}"         if defined?(RobotLab::VERSION)
         parts << "simple_flow v#{SimpleFlow::VERSION}"     if defined?(SimpleFlow::VERSION)
         parts << "trak_flow v#{TrakFlow::VERSION}"         if defined?(TrakFlow::VERSION)
@@ -129,27 +128,16 @@ module AIA
         parts.join(' | ')
       end
 
-      # Post-connection: connected_mcp_servers is the authoritative name list;
-      # mcp_server_tool_counts provides per-server tool counts.
-      # Pre-connection fallback: read live from RubyLLM::MCP.clients (--require clients).
-      # :reek:TooManyStatements -- authoritative post-connection labels with a live RubyLLM::MCP fallback before connection
+      # connected_mcp_servers (set by MCPConnectionManager) is the authoritative
+      # name list; mcp_server_tool_counts provides per-server tool counts.
       def mcp_client_labels
         cfg = AIA.config
         return [] if cfg&.flags&.no_mcp
 
-        connected = cfg&.connected_mcp_servers
-        unless connected.nil?
-          counts = cfg&.mcp_server_tool_counts || {}
-          return connected.map do |name|
-            count = counts[name]
-            count ? "#{name}(#{count})" : name
-          end
-        end
-
-        return [] unless legacy_ruby_llm_mcp?
-        RubyLLM::MCP.clients.filter_map do |name, client|
-          count = client.tools.count rescue nil
-          "#{name}(#{count})" if count
+        counts = cfg&.mcp_server_tool_counts || {}
+        Array(cfg&.connected_mcp_servers).map do |name|
+          count = counts[name]
+          count ? "#{name}(#{count})" : name
         end
       end
 

@@ -231,10 +231,12 @@ defaults:
   # ---------------------------------------------------------------------------
   # Model Switch History Mode
   # Controls conversation history transfer when switching models mid-chat.
-  # Values: clean (fresh start), replay (replay messages), summarize (summary)
+  # Values: clean (fresh start), replay (re-send every user message to the
+  # new model), summarize (old model summarizes; the new model gets the summary)
+  # Used by the /model directive.
   # Access: AIA.config.model_switch_history
   # ---------------------------------------------------------------------------
-  model_switch_history: clean
+  model_switch_history: summarize
 
   # ---------------------------------------------------------------------------
   # Concurrency Configuration

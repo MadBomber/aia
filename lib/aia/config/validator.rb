@@ -412,42 +412,22 @@ module AIA
           $stderr.flush
 
           tools = collect_server_tools(server, server_config)
-          if tools
-            groups[server_config.name] = tools
-            $stderr.puts " #{tools.size} tools"
-          else
-            $stderr.puts " failed"
-          end
+          groups[server_config.name] = tools
+          $stderr.puts " #{tools.size} tools"
         rescue StandardError => e
           $stderr.puts " error: #{e.message}"
         end
       end
 
-      # Connect to one server with robot_lab's MCP client (the same client the
-      # robot uses at startup) and return its tools, or nil when the client
-      # never connects. The connection is closed before returning.
+      # Build the server the way MCPConnectionManager does (RobotLab::MCP.build,
+      # so --list-tools shows exactly the RubyLLM::MCP::Tools a robot would be
+      # handed) and return its tools. Connection failures raise. The server is
+      # closed before returning.
       def collect_server_tools(server, server_config)
-        client = RobotLab::MCP::Client.new(MCPConfigNormalizer.normalize(server))
-        Timeout.timeout(server_config.timeout_ms / 1000.0) do
-          client.connect
-          client.connected? ? mcp_tools_for(client, server_config.name) : nil
-        end
+        mcp = RobotLab::MCP.build(MCPConfigNormalizer.normalize(server))
+        Timeout.timeout(server_config.timeout_ms / 1000.0) { mcp.tools }
       ensure
-        client&.disconnect
-      end
-
-      # Wrap each remote tool definition the way MCPConnectionManager does, so
-      # --list-tools shows exactly what a robot would be handed.
-      def mcp_tools_for(client, server_name)
-        client.list_tools.map do |tool_def|
-          tool_name = tool_def[:name]
-          RobotLab::Tool.create(
-            name:        tool_name,
-            description: tool_def[:description],
-            parameters:  tool_def[:inputSchema],
-            mcp:         server_name
-          ) { |args| client.call_tool(tool_name, args) }
-        end
+        mcp&.close
       end
       # rubocop:enable Metrics/ModuleLength
 

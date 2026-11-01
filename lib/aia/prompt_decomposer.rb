@@ -118,7 +118,7 @@ module AIA
     private
 
     def structured_output?
-      RubyLLM.models.find(AIA.config.models.first.internal_id).structured_output?
+      RubyLLM.models.find(AIA.config.models.first.internal_id).supports?(:structured_output)
     rescue StandardError
       false
     end

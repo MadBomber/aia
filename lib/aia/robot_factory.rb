@@ -184,17 +184,26 @@ module AIA
         true
       end
 
-      # Normalize all configured MCP server configs for robot_lab.
-      # Filtering/selection is MCPDiscovery's responsibility — this just normalizes shape.
-      def mcp_server_configs(config)
+      # The MCP servers to hand a robot as RobotLab.build(mcp:).
+      #
+      # Once MCPConnectionManager.start has run, these are the live
+      # RubyLLM::MCP instances it connected, shared by every robot so each
+      # server is started once; servers that failed to connect are left out.
+      # Before that (or without a manager) they are normalized config Hashes,
+      # which robot_lab connects lazily on the robot's first run.
+      #
+      # @param config [AIA::Config]
+      # @param group [Array<Hash>, nil] a subset of server configs (concurrent MCP
+      #   networks); defaults to MCPDiscovery's selection (--mcp-use/--mcp-skip)
+      # @return [Array<RubyLLM::MCP, Hash>]
+      def mcp_servers(config, group = nil)
         return [] if config.flags.no_mcp
-        Array(config.mcp_servers).map { |s| MCPConfigNormalizer.normalize(s) }
-      end
 
-      # Normalize a single MCP server config to robot_lab's nested transport format.
-      # Delegates to MCPConfigNormalizer.
-      def normalize_mcp_config(server)
-        MCPConfigNormalizer.normalize(server)
+        configs = group || MCPDiscovery.new.discover(config)
+        manager = AIA.mcp_manager
+        return manager.servers_for(configs) if manager&.connected?
+
+        configs.map { |s| MCPConfigNormalizer.normalize(s) }
       end
 
       # Initialize shared memory for a network with session context.
@@ -235,7 +244,7 @@ module AIA
       #
       # @param spec [AIA::Config::ModelSpec] the model spec (supplies model: and provider)
       # @param opts [Hash] forwarded to RobotLab.build (name:, system_prompt:,
-      #   local_tools:, mcp_servers:, config:, on_content:, ...). Do NOT pass model:.
+      #   local_tools:, mcp:, config:, on_content:, ...). Do NOT pass model:.
       # @return [RobotLab::Robot]
       def build_robot(spec, **opts)
         opts[:provider] = resolve_provider(spec) if spec.provider
@@ -271,7 +280,6 @@ module AIA
       def configure_robot_lab(config)
         # Configure loggers before any API calls
         AIA::LoggerManager.configure_llm_logger
-        AIA::LoggerManager.configure_mcp_logger
 
         # Route RobotLab's internal logging through AIA's MCP logger
         # so entries go to the configured log files instead of STDOUT.

@@ -45,7 +45,7 @@ cat prompts_dir/use_tools.md
 echo "==="
 echo
 echo "shared_tools ships with 35+ tools. Passing all of them in one API"
-echo "call causes gpt-4.1 to skip tool use entirely. We use --allowed-tools"
+echo "call can cause the model to skip tool use. We use --allowed-tools"
 echo "to expose only the three tools this prompt actually needs."
 echo
 echo "Running: aia -c ${CONFIG} --no-output --rq shared_tools \\"

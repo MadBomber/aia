@@ -27,7 +27,7 @@ module AIA
           name:          robot_name,
           system_prompt: system_prompt,
           local_tools:   ToolLoader.filtered_tools(config),
-          mcp_servers:   RobotFactory.mcp_server_configs(config),
+          mcp:           RobotFactory.mcp_servers(config),
           on_content:    nil,
           config:        RobotFactory.build_run_config(config)
         )

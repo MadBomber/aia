@@ -2,9 +2,11 @@
 
 # lib/aia/startup_coordinator.rb
 #
-# Handles all session startup tasks: MCP connection, tool loading,
-# filter initialization, task coordination, and bus attachment.
-# Extracted from Session to give Session a single responsibility.
+# Handles the session startup tasks that need the built robot: tool loading,
+# filter initialization, task coordination, and bus attachment. MCP servers
+# are connected before the robot is built (MCPConnectionManager.start) so
+# every robot is handed the live servers. Extracted from Session to give
+# Session a single responsibility.
 
 require "fileutils"
 require "tty-spinner"
@@ -13,19 +15,17 @@ module AIA
   class StartupCoordinator
     attr_reader :filters, :mcp_manager
 
-    def initialize(robot:, ui_presenter:)
+    def initialize(robot:, ui_presenter:, mcp_manager: nil)
       @robot       = robot
       @ui          = ui_presenter
       @filters     = {}
-      @mcp_manager = nil
+      @mcp_manager = mcp_manager
     end
 
     # Run all startup coordination tasks.
     #
     # @param config [AIA::Config]
     def run(config)
-      connect_mcp_servers(config)
-
       tools = all_available_tools(config)
 
       spinner = TTY::Spinner.new("  [:spinner] Initializing tool filters...", format: :dots)
@@ -39,38 +39,6 @@ module AIA
     end
 
     private
-
-    # Connect ALL configured MCP servers eagerly at startup, then absorb any
-    # MCP clients registered via --require (e.g., shared_tools/mcp/* files).
-    # Uses MCPDiscovery to determine which servers to connect (respects
-    # --mcp-use, --mcp-skip, and KBS mcp_activate decisions), then normalizes
-    # each server config via MCPConfigNormalizer before handing off to
-    # MCPConnectionManager.
-    # :reek:TooManyStatements -- MCP wiring sequence: discovery, validation, normalize fallback, connect, absorb, inject
-    def connect_mcp_servers(config)
-      return if config.flags.no_mcp
-
-      discovered = MCPDiscovery.new.discover(config)
-      validate_mcp_use_names(config, discovered) if Array(config.mcp_use).any?
-
-      # Prefer the robot's pre-built mcp_config (already normalized) when
-      # present, but always apply --mcp-skip so that flag is honoured.
-      # Fall back to the MCPDiscovery result (which includes both filters).
-      servers = if @robot.respond_to?(:mcp_config) && @robot.mcp_config.is_a?(Array)
-                  skip_list = Array(config.mcp_skip)
-                  @robot.mcp_config.reject { |s| skip_list.include?(AIA::Utility.server_name(s)) }
-                else
-                  discovered.map { |s| MCPConfigNormalizer.normalize(s) }
-                end
-
-      @mcp_manager = MCPConnectionManager.new
-      @mcp_manager.connect_all(servers) if servers.is_a?(Array) && servers.any?
-      @mcp_manager.absorb_ruby_llm_mcp_clients
-      return unless @mcp_manager.connected?
-
-      @mcp_manager.update_config
-      @mcp_manager.inject_into(@robot) if @mcp_manager.any_tools?
-    end
 
     # Initialize TaskCoordinator, auto-creating the TrakFlow project if needed.
     def initialize_task_coordinator
@@ -117,20 +85,6 @@ module AIA
       AIA.debug_warn("Bus attachment failed (non-fatal): #{e.message}", exc: e)
     end
 
-    # Warn when --mcp-use names don't match any configured server.
-    # Helps users catch typos before a silent empty-tools session.
-    def validate_mcp_use_names(config, discovered_servers)
-      requested  = Array(config.mcp_use)
-      available  = Array(config.mcp_servers).map { |s| AIA::Utility.server_name(s) }
-      found      = discovered_servers.map { |s| AIA::Utility.server_name(s) }
-      missing    = requested - found
-
-      return if missing.empty?
-
-      $stderr.puts "WARNING: --mcp-use specified server(s) not found in config: #{missing.join(', ')}"
-      $stderr.puts "         Available servers: #{available.join(', ')}" if available.any?
-    end
-
     # Collect all tools available to the robot: local + MCP.
     def all_available_tools(config)
       local = Array(config.loaded_tools)
@@ -138,13 +92,11 @@ module AIA
       local + mcp
     end
 
-    # Retrieve MCP tools from the connection manager.
-    # MCPConnectionManager builds RobotLab::Tool instances via connect_one and
-    # absorb_ruby_llm_mcp_clients — those are what get injected into the robot
-    # and what robot_lab filters by name. RubyLLM::MCP.clients is a different
-    # registry and does not contain the tools connected here.
+    # MCP tools (RubyLLM::MCP::Tool) from the connection manager — the
+    # servers every robot is built with.
     def collect_mcp_tools
       return [] unless @mcp_manager
+
       @mcp_manager.connected_tools
     end
   end

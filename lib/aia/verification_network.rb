@@ -15,7 +15,7 @@ module AIA
       model = config.models.first
       run_config = RobotFactory.build_run_config(config)
       tools = ToolLoader.filtered_tools(config)
-      mcp = RobotFactory.mcp_server_configs(config)
+      mcp = RobotFactory.mcp_servers(config)
       model_id = model.internal_id
 
       # rubocop:disable-next Metrics/BlockLength
@@ -25,7 +25,7 @@ module AIA
           model:         model_id,
           system_prompt: "Answer the following question. Be thorough and precise.",
           local_tools:   tools,
-          mcp_servers:   mcp,
+          mcp:           mcp,
           config:        run_config
         )
         task :verify_a, worker_a, depends_on: :none
@@ -36,7 +36,7 @@ module AIA
           system_prompt: "Answer the following question independently. " \
                          "Focus on correctness and completeness.",
           local_tools:   tools,
-          mcp_servers:   mcp,
+          mcp:           mcp,
           config:        run_config
         )
         task :verify_b, worker_b, depends_on: :none

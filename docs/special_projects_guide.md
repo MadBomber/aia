@@ -118,9 +118,9 @@ model_aliases:
 Control what happens to conversation history when switching models:
 
 ```yaml
-model_switch_history: clean      # fresh start (default)
+model_switch_history: summarize  # summarize and inject context (default)
 model_switch_history: replay     # replay all messages to new model
-model_switch_history: summarize  # summarize and inject context
+model_switch_history: clean      # fresh start
 ```
 
 ---
@@ -360,7 +360,7 @@ model_aliases:
   mymodel: my-custom-model-id
 
 # History mode on model switch
-model_switch_history: clean  # clean | replay | summarize
+model_switch_history: summarize  # clean | replay | summarize
 
 # MCP concurrency
 concurrency:

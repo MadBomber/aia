@@ -44,15 +44,18 @@ module AIA
     def start
       cfg = AIA.config
 
+      # Connect MCP servers first: every robot built from here on is handed
+      # the same live server instances (see RobotFactory.mcp_servers).
+      @mcp_manager = MCPConnectionManager.start(cfg)
+
       # Build robot or network
       @robot = RobotFactory.build(cfg)
       AIA.client = @robot
 
-      # Run all startup coordination: MCP, tools, filters, task board, bus
-      coordinator = StartupCoordinator.new(robot: @robot, ui_presenter: @ui_presenter)
+      # Run the remaining startup coordination: tools, filters, task board, bus
+      coordinator = StartupCoordinator.new(robot: @robot, ui_presenter: @ui_presenter, mcp_manager: @mcp_manager)
       coordinator.run(cfg)
-      @filters     = coordinator.filters
-      @mcp_manager = coordinator.mcp_manager
+      @filters = coordinator.filters
 
       # Store session tracker globally for KBS access
       AIA.session_tracker = @session_tracker

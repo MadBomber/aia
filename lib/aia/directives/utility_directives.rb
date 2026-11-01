@@ -135,7 +135,7 @@ module AIA
     def tools_by_server(connected, mcp_tools)
       grouped = connected.to_h { |name| [name, []] }
       mcp_tools.each do |tool|
-        server_name = tool.respond_to?(:mcp) ? tool.mcp : nil
+        server_name = mcp_server_name_for(tool)
         grouped[server_name] << tool if server_name && grouped.key?(server_name)
       end
       grouped
@@ -237,26 +237,25 @@ module AIA
       end
     end
 
-    # Retrieve MCP tools from robot or first robot in a Network.
-    # Falls back to RubyLLM::MCP.clients for tools registered by shared_tools
-    # or other gems that use RubyLLM::MCP.add_client directly.
+    # The MCP tools aia connected at startup (shared by every robot), or the
+    # robot's own when no connection manager ran.
     def all_mcp_tools
+      manager = AIA.mcp_manager
+      return manager.connected_tools if manager&.connected?
+
       robot = AIA.client
-      if robot
-        if robot.respond_to?(:mcp_tools) && robot.mcp_tools&.any?
-          return Array(robot.mcp_tools)
-        end
+      robot = robot.chief if robot && !robot.respond_to?(:mcp_tools) && robot.respond_to?(:chief)
+      robot.respond_to?(:mcp_tools) ? Array(robot.mcp_tools) : []
+    end
 
-        first_robot = robot.chief
-        if first_robot.respond_to?(:mcp_tools) && first_robot.mcp_tools&.any?
-          return Array(first_robot.mcp_tools)
-        end
-      end
+    # Name of the MCP server that offers +tool+, or nil for a local tool.
+    def mcp_server_name_for(tool)
+      by_server = AIA.mcp_manager&.tools_by_server || {}
+      owner, = by_server.find { |_, tools| tools.any? { it.equal?(tool) } }
+      return owner if owner
 
-      # Fall back to RubyLLM::MCP clients (shared_tools and other gems
-      # that register MCP servers via RubyLLM::MCP.add_client)
-      return [] unless AIA::Utility.legacy_ruby_llm_mcp?
-      RubyLLM::MCP.clients.values.flat_map(&:tools)
+      robot = AIA.client
+      robot.respond_to?(:mcp_server_for) ? robot.mcp_server_for(tool)&.name : nil
     end
   end
 end

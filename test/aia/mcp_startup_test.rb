@@ -70,32 +70,32 @@ class MCPStartupTest < Minitest::Test
 
   def teardown
     $stdout = @original_stdout
+    AIA.mcp_manager = nil
     super
   end
 
-  # Helper: create a StartupCoordinator with a given robot for connect_mcp_servers testing.
-  def build_coordinator(robot)
-    AIA::StartupCoordinator.new(robot: robot, ui_presenter: mock('ui_presenter'))
+  # Stands in for a RubyLLM::MCP server built by RobotLab::MCP.build.
+  FakeServer = Struct.new(:name, :tool_list, :error) do
+    def tools
+      raise error if error
+
+      tool_list
+    end
+
+    def close; end
   end
 
-  # Helper: create a mock robot with mcp_config that returns server configs
-  def build_mock_robot(server_configs:)
-    mock_robot = mock('robot')
-    mock_robot.stubs(:respond_to?).with(:mcp_config).returns(true)
-    mock_robot.stubs(:respond_to?).with(:robots).returns(false)
-    mock_robot.stubs(:mcp_config).returns(server_configs)
-    mock_robot.stubs(:inject_mcp!)
-    mock_robot.stubs(:crew).returns([mock_robot])
-    mock_robot
+  def stub_server(name, tools: [], error: nil)
+    RobotLab::MCP.stubs(:build).with { it[:name] == name }.returns(FakeServer.new(name, tools, error))
   end
 
-  # Helper: create a mock MCP client
-  def build_mock_client(connected:, tools: [])
-    client = mock('mcp_client')
-    client.stubs(:connect)
-    client.stubs(:connected?).returns(connected)
-    client.stubs(:list_tools).returns(tools) if connected
-    client
+  def connect(servers)
+    @config.mcp_servers = servers
+    AIA::MCPConnectionManager.start(@config)
+  end
+
+  def mcp_log_messages
+    AIA::LoggerManager.test_entries(:mcp).map(&:message)
   end
 
   # =========================================================================
@@ -103,25 +103,10 @@ class MCPStartupTest < Minitest::Test
   # =========================================================================
 
   def test_mcp_connection_sets_connected_servers
-    server_configs = [
-      { name: 'serverA', transport: { type: 'stdio', command: 'echo' } },
-      { name: 'serverB', transport: { type: 'stdio', command: 'echo' } }
-    ]
-    mock_robot = build_mock_robot(server_configs: server_configs)
+    stub_server('serverA')
+    stub_server('serverB', error: RubyLLM::Error.new('spawn failed'))
 
-    # serverA connects, serverB fails
-    client_a = build_mock_client(connected: true, tools: [])
-    client_b = build_mock_client(connected: false)
-
-    RobotLab::MCP::Client.stubs(:new).with(server_configs[0]).returns(client_a)
-    RobotLab::MCP::Client.stubs(:new).with(server_configs[1]).returns(client_b)
-
-    # Mock server name for connected client
-    server_obj = mock('server')
-    server_obj.stubs(:name).returns('serverA')
-    client_a.stubs(:server).returns(server_obj)
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
+    connect([{ name: 'serverA', command: 'echo' }, { name: 'serverB', command: 'echo' }])
 
     assert_equal ['serverA'], @config.connected_mcp_servers
     assert_equal 1, @config.failed_mcp_servers.size
@@ -214,97 +199,35 @@ class MCPStartupTest < Minitest::Test
   # =========================================================================
 
   def test_mcp_connection_logs_initialization_start
-    mock_robot = build_mock_robot(server_configs: [
-                                    { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
-                                  ])
+    stub_server('serverA')
+    connect([{ name: 'serverA', command: 'echo' }])
 
-    client = build_mock_client(connected: true, tools: [])
-    server_obj = mock('server')
-    server_obj.stubs(:name).returns('serverA')
-    client.stubs(:server).returns(server_obj)
-    RobotLab::MCP::Client.stubs(:new).returns(client)
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
-
-    entries = AIA::LoggerManager.test_entries(:mcp)
-    messages = entries.map(&:message)
-
-    assert messages.any? { |m| m.include?('MCP initialization') && m.include?('connecting') },
-           "Expected MCP initialization log. Got: #{messages.inspect}"
+    assert mcp_log_messages.any? { |m| m.include?('MCP initialization') && m.include?('connecting') },
+           "Expected MCP initialization log. Got: #{mcp_log_messages.inspect}"
   end
 
   def test_mcp_connection_logs_connected_servers
-    mock_robot = build_mock_robot(server_configs: [
-                                    { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
-                                  ])
+    stub_server('serverA', tools: [Struct.new(:name).new('tool1')])
+    connect([{ name: 'serverA', command: 'echo' }])
 
-    client = build_mock_client(connected: true, tools: [{ name: 'tool1', description: 'desc', inputSchema: {} }])
-    server_obj = mock('server')
-    server_obj.stubs(:name).returns('serverA')
-    client.stubs(:server).returns(server_obj)
-    RobotLab::MCP::Client.stubs(:new).returns(client)
-    RobotLab::Tool.stubs(:create).returns(mock('tool'))
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
-
-    entries = AIA::LoggerManager.test_entries(:mcp)
-    messages = entries.map(&:message)
-
-    assert messages.any? { |m| m.include?("'serverA' connected") },
-           "Expected connected server log. Got: #{messages.inspect}"
-  end
-
-  def test_mcp_connection_logs_failed_servers
-    mock_robot = build_mock_robot(server_configs: [
-                                    { name: 'serverB', transport: { type: 'stdio', command: 'bad_cmd' } }
-                                  ])
-
-    client = build_mock_client(connected: false)
-    RobotLab::MCP::Client.stubs(:new).returns(client)
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
-
-    entries = AIA::LoggerManager.test_entries(:mcp)
-    messages = entries.map(&:message)
-
-    assert messages.any? { |m| m.include?("'serverB' failed") },
-           "Expected failed server log. Got: #{messages.inspect}"
+    assert mcp_log_messages.any? { |m| m.include?("'serverA' connected (1 tools)") },
+           "Expected connected server log. Got: #{mcp_log_messages.inspect}"
   end
 
   def test_mcp_connection_logs_completion
-    mock_robot = build_mock_robot(server_configs: [
-                                    { name: 'serverA', transport: { type: 'stdio', command: 'echo' } }
-                                  ])
+    stub_server('serverA')
+    connect([{ name: 'serverA', command: 'echo' }])
 
-    client = build_mock_client(connected: true, tools: [])
-    server_obj = mock('server')
-    server_obj.stubs(:name).returns('serverA')
-    client.stubs(:server).returns(server_obj)
-    RobotLab::MCP::Client.stubs(:new).returns(client)
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
-
-    entries = AIA::LoggerManager.test_entries(:mcp)
-    messages = entries.map(&:message)
-
-    assert messages.any? { |m| m.include?('MCP initialization complete') },
-           "Expected completion log. Got: #{messages.inspect}"
+    assert mcp_log_messages.any? { |m| m.include?('MCP initialization complete') },
+           "Expected completion log. Got: #{mcp_log_messages.inspect}"
   end
 
   def test_mcp_connection_logs_error_on_exception
-    mock_robot = build_mock_robot(server_configs: [
-                                    { name: 'serverX', transport: { type: 'stdio', command: 'bad' } }
-                                  ])
+    RobotLab::MCP.stubs(:build).raises(StandardError.new("connection timeout"))
+    connect([{ name: 'serverX', command: 'bad' }])
 
-    RobotLab::MCP::Client.stubs(:new).raises(StandardError.new("connection timeout"))
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
-
-    entries = AIA::LoggerManager.test_entries(:mcp)
-    messages = entries.map(&:message)
-
-    assert messages.any? { |m| m.include?("'serverX' error") && m.include?('connection timeout') },
-           "Expected error log. Got: #{messages.inspect}"
+    assert mcp_log_messages.any? { |m| m.include?("'serverX' error") && m.include?('connection timeout') },
+           "Expected error log. Got: #{mcp_log_messages.inspect}"
   end
 
   # =========================================================================
@@ -312,15 +235,9 @@ class MCPStartupTest < Minitest::Test
   # =========================================================================
 
   def test_connected_mcp_servers_set_even_when_all_servers_fail
-    mock_robot = build_mock_robot(server_configs: [
-                                    { name: 'serverA', transport: { type: 'stdio', command: 'bad' } }
-                                  ])
+    RobotLab::MCP.stubs(:build).raises(StandardError.new("total failure"))
+    connect([{ name: 'serverA', command: 'bad' }])
 
-    RobotLab::MCP::Client.stubs(:new).raises(StandardError.new("total failure"))
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
-
-    refute_nil @config.connected_mcp_servers
     assert_equal [], @config.connected_mcp_servers
     assert_equal 1, @config.failed_mcp_servers.size
   end
@@ -346,28 +263,20 @@ class MCPStartupTest < Minitest::Test
   end
 
   # =========================================================================
-  # connect_mcp_servers skips when robot has no MCP config
+  # No servers selected → nothing connected, config left untouched
   # =========================================================================
 
-  def test_connect_mcp_servers_skips_when_no_mcp_config
-    mock_robot = mock('robot')
-    mock_robot.stubs(:respond_to?).with(:mcp_config).returns(false)
-
-    # Also clear AIA config servers so the fallback path finds nothing
-    @config.mcp_servers = []
-    @config.flags.no_mcp = false
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
+  def test_start_skips_when_no_servers_configured
+    RobotLab::MCP.expects(:build).never
+    connect([])
 
     assert_nil @config.connected_mcp_servers
   end
 
-  def test_connect_mcp_servers_skips_when_mcp_config_empty
-    mock_robot = mock('robot')
-    mock_robot.stubs(:respond_to?).with(:mcp_config).returns(true)
-    mock_robot.stubs(:mcp_config).returns([])
-
-    build_coordinator(mock_robot).send(:connect_mcp_servers, @config)
+  def test_start_skips_when_no_mcp_flag_set
+    @config.flags.no_mcp = true
+    RobotLab::MCP.expects(:build).never
+    connect([{ name: 'serverA', command: 'echo' }])
 
     assert_nil @config.connected_mcp_servers
   end

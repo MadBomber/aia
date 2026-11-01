@@ -4,24 +4,68 @@
 #
 # Stateless module for transferring conversation history between robots.
 # Extracted from RobotFactory to isolate the history transfer concern.
+#
+# Both arguments may be a single RobotLab::Robot or a RobotLab::Network (the
+# interactive session always runs a crew). History is read from the old
+# runnable's chief — the robot the user has been talking to — and carried to
+# every member of the new crew.
 
 module AIA
   module HistoryTransfer
+    MODES        = %i[clean replay summarize].freeze
+    DEFAULT_MODE = :summarize
+
     module_function
+
+    # The history mode configured for model switches (config.model_switch_history),
+    # falling back to DEFAULT_MODE when it is unset or not a known mode.
+    #
+    # @param config [AIA::Config, nil]
+    # @return [Symbol] one of MODES
+    def mode_for(config)
+      value = config.respond_to?(:model_switch_history) ? config.model_switch_history : nil
+      mode  = value.to_s.strip.downcase.to_sym
+      MODES.include?(mode) ? mode : DEFAULT_MODE
+    end
+
+    # The user/assistant turns of +runnable+'s chief, oldest first. System
+    # prompts and tool traffic are left out: they belong to the old robot.
+    #
+    # @param runnable [RobotLab::Robot, RobotLab::Network, nil]
+    # @return [Array<RubyLLM::Message>]
+    def conversation(runnable)
+      chief = chief_of(runnable)
+      return [] unless chief.respond_to?(:messages)
+
+      Array(chief.messages).select do |msg|
+        msg.respond_to?(:role) && %i[user assistant].include?(msg.role) && !msg.content.to_s.strip.empty?
+      end
+    end
+
+    # The robot whose conversation the user sees: a network's chief, or the robot itself.
+    def chief_of(runnable)
+      runnable.respond_to?(:chief) ? runnable.chief : runnable
+    end
+
+    # The robots that should receive the transferred history.
+    #
+    # @param runnable [RobotLab::Robot, RobotLab::Network]
+    # @return [Array<RobotLab::Robot>]
+    def recipients(runnable)
+      runnable.respond_to?(:crew) ? Array(runnable.crew) : [runnable]
+    end
 
     # Replay conversation history from an old robot to a new one.
     #
-    # Performance: O(N) API calls where N = number of user messages.
-    # Each user message triggers a full LLM round-trip on the new model.
-    # For a 10-turn conversation with a local model (~1s/turn), expect ~10s.
-    # For a cloud model (~2-5s/turn), expect 20-50s. MCP/tools are disabled
-    # during replay to avoid side effects.
+    # Performance: O(N) API calls per recipient, where N = number of user
+    # messages. Each user message triggers a full LLM round-trip on the new
+    # model. MCP/tools are disabled during replay to avoid side effects.
     def replay_history(old_robot, new_robot)
-      return unless old_robot.respond_to?(:messages)
+      user_turns = conversation(old_robot).select { it.role == :user }
+      return if user_turns.empty?
 
-      old_robot.messages.each do |msg|
-        next unless msg.respond_to?(:role) && msg.role == :user
-        new_robot.run(msg.content, mcp: :none, tools: :none)
+      recipients(new_robot).each do |robot|
+        user_turns.each { robot.run(it.content.to_s, mcp: :none, tools: :none) }
       end
     rescue StandardError => e
       $stderr.puts "Warning: History replay failed: #{e.message}"
@@ -29,25 +73,21 @@ module AIA
 
     # Summarize conversation history and inject into new robot.
     #
-    # Performance: Exactly 2 API calls regardless of conversation length.
-    # 1) Summarize on old model (input tokens proportional to conversation)
-    # 2) Inject summary into new model (small fixed-size prompt)
-    # Faster than :replay for conversations with >2 turns, but loses
-    # per-turn context fidelity. Total latency ~4-10s for cloud models.
+    # Performance: one summary call on the old model, plus one injection call
+    # per recipient, regardless of conversation length. Faster than :replay
+    # for conversations with >2 turns, but loses per-turn context fidelity.
     def summarize_history(old_robot, new_robot)
-      return unless old_robot.respond_to?(:messages) && old_robot.messages.any?
+      turns = conversation(old_robot)
+      return if turns.empty?
 
-      summary_lines = old_robot.messages.map do |msg|
-        "#{msg.role}: #{msg.content}" if msg.respond_to?(:role)
-      end.compact
-
-      return if summary_lines.empty?
-
-      summary_prompt = "Summarize this conversation concisely for context transfer:\n#{summary_lines.join("\n")}"
-      summary = old_robot.run(summary_prompt, mcp: :none, tools: :none)
+      transcript = turns.map { "#{it.role}: #{it.content}" }.join("\n")
+      summary    = chief_of(old_robot).run("Summarize this conversation concisely for context transfer:\n#{transcript}",
+                                           mcp: :none, tools: :none)
       content = summary.respond_to?(:reply) ? summary.reply : summary.to_s
 
-      new_robot.run("Context from previous conversation: #{content}", mcp: :none, tools: :none)
+      recipients(new_robot).each do |robot|
+        robot.run("Context from previous conversation: #{content}", mcp: :none, tools: :none)
+      end
     rescue StandardError => e
       $stderr.puts "Warning: History summarization failed: #{e.message}"
     end

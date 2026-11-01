@@ -27,7 +27,7 @@
 # management web app using Ruby, Sinatra, Sequel (SQLite), and ERB templates.
 # Full requirements: examples/requirements/sinatra_taskflow_app.md
 #
-# Prerequisites: Run 00_setup_aia.sh first (OPENAI_API_KEY must be set)
+# Prerequisites: Run 00_setup_aia.sh first (ANTHROPIC_API_KEY must be set)
 # Requires: expect (brew install expect)
 # Usage: cd examples && bash 29_agent_harness.sh
 
@@ -40,8 +40,8 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="gpt-4.1"
-MODEL_B="gpt-4.1-mini"
+MODEL_A="claude-sonnet-4-6"
+MODEL_B="claude-haiku-4-5"
 ORCH_CONFIG="aia_config_orchestrator.yml"
 REQUIREMENTS="requirements/sinatra_taskflow_app.md"
 
@@ -80,7 +80,7 @@ echo "Running: aia -c ${ORCH_CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo
 echo "Note: This demonstration runs 3+ tiers of agents in sequence."
 echo "      Each layer spawns 2-4 specialists. Allow 10-20 minutes"
-echo "      depending on OpenAI API response times."
+echo "      depending on Anthropic API response times."
 echo
 
 REQUIREMENTS_CONTENT=$(cat "${REQUIREMENTS}")
@@ -89,7 +89,7 @@ expect <<EXPECT_SCRIPT
 set timeout 1800
 log_user 1
 
-spawn aia -c aia_config_orchestrator.yml -m gpt-4.1,gpt-4.1-mini --chat
+spawn aia -c aia_config_orchestrator.yml -m claude-sonnet-4-6,claude-haiku-4-5 --chat
 
 expect {
   "#=> " {}
@@ -165,7 +165,7 @@ echo "  /orchestrate   run 3-tier orchestration on any requirements prompt"
 echo "  /spawn <type>  create a specialist lead agent for a focused task"
 echo "  /decompose     parallel workstreams for multi-part questions"
 echo "  @Tobor         address the orchestrator directly"
-echo "  @Quark         address the specialist network robot directly"
+echo "  @Zen           address the specialist network robot directly"
 echo
 echo "Running: aia -c ${ORCH_CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo

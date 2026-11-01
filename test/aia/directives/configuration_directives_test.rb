@@ -36,6 +36,25 @@ class ConfigurationDirectivesTest < Minitest::Test
     super
   end
 
+  # --- /model switching ---
+
+  def test_model_switch_summarizes_history_by_default
+    AIA::RobotFactory.expects(:rebuild).with(@test_config, history_mode: :summarize).returns(:new_client)
+    AIA.expects(:client=).with(:new_client)
+
+    assert_equal '', @instance.model(['claude-haiku-4-5'])
+    assert_match(/Switching to claude-haiku-4-5 \(conversation: summarize\)/, @captured_output.string)
+  end
+
+  def test_model_switch_honors_model_switch_history_setting
+    @test_config.model_switch_history = 'clean'
+    AIA::RobotFactory.expects(:rebuild).with(@test_config, history_mode: :clean).returns(:new_client)
+    AIA.expects(:client=).with(:new_client)
+
+    @instance.model(['claude-haiku-4-5'])
+    refute_match(/Switching to/, @captured_output.string)
+  end
+
   # --- /config with no args ---
 
   def test_config_no_args_lists_all_config

@@ -6,7 +6,7 @@
 #
 # What it does:
 #   1. Verifies aia is installed
-#   2. Verifies OPENAI_API_KEY is set
+#   2. Verifies ANTHROPIC_API_KEY is set
 #   3. Verifies examples/prompts_dir exists
 #   4. Writes examples/aia_config.yml for use with -c flag
 #
@@ -30,9 +30,9 @@ if [ -f "${REPO_BIN}/aia" ]; then
   export PATH="${REPO_BIN}:${PATH}"
 fi
 
-# The model to use for demos. gpt-4.1 is OpenAI's flagship model with
-# strong instruction-following and tool-calling support.
-DEMO_MODEL="gpt-4.1"
+# The model to use for demos. claude-haiku-4-5 is Anthropic's fast,
+# low-cost model with solid instruction-following and tool-calling support.
+DEMO_MODEL="claude-haiku-4-5"
 
 echo "=== AIA Examples Setup ==="
 echo
@@ -49,17 +49,17 @@ fi
 AIA_VERSION=$(aia --version 2>/dev/null || echo "unknown")
 echo "[ok] aia is installed (v${AIA_VERSION})"
 
-# --- Step 2: Check that OPENAI_API_KEY is set ---
+# --- Step 2: Check that ANTHROPIC_API_KEY is set ---
 
-if [ -z "${OPENAI_API_KEY:-}" ]; then
-  echo "ERROR: OPENAI_API_KEY is not set."
+if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+  echo "ERROR: ANTHROPIC_API_KEY is not set."
   echo "       Export your key before running demos:"
-  echo "         export OPENAI_API_KEY=sk-..."
-  echo "       Get a key at: https://platform.openai.com/api-keys"
+  echo "         export ANTHROPIC_API_KEY=sk-ant-..."
+  echo "       Get a key at: https://console.anthropic.com/settings/keys"
   exit 1
 fi
 
-echo "[ok] OPENAI_API_KEY is set"
+echo "[ok] ANTHROPIC_API_KEY is set"
 
 # --- Step 3: Verify prompts directory ---
 

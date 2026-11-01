@@ -31,9 +31,9 @@ module AIA
         name:          name,
         system_prompt: compose_system_prompt(spec),
         local_tools:   chief_local_tools(chief),
+        **chief_mcp(chief),
         **model_opts(spec)
       )
-      inherit_mcp(robot, chief)
       crew.add_robot(robot)
       robot
     end
@@ -148,17 +148,14 @@ module AIA
       chief.respond_to?(:local_tools) ? Array(chief.local_tools) : []
     end
 
-    # Hand the recruit the chief's already-connected MCP clients and tools rather
-    # than opening fresh connections.
+    # Hand the recruit the chief's MCP servers. When they are the live
+    # RubyLLM::MCP instances aia connected at startup, the recruit shares the
+    # chief's connections rather than opening fresh ones.
     #
-    # @return [void]
-    def inherit_mcp(robot, chief)
-      return unless robot.respond_to?(:inject_mcp!) && chief.respond_to?(:mcp_clients)
-
-      clients = chief.mcp_clients
-      return if clients.nil? || clients.empty?
-
-      robot.inject_mcp!(clients: clients, tools: Array(chief.mcp_tools))
+    # @return [Hash] {mcp: [...]} or {}
+    def chief_mcp(chief)
+      servers = chief.respond_to?(:mcp_config) ? chief.mcp_config : nil
+      servers.is_a?(Array) && servers.any? ? { mcp: servers } : {}
     end
   end
 end

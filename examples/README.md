@@ -5,7 +5,7 @@ These demo scripts progressively illustrate AIA's batch mode capabilities. Each 
 ## Prerequisites
 
 - AIA installed (`gem install aia`)
-- Ollama installed and running (`ollama serve`)
+- `ANTHROPIC_API_KEY` set in your environment
 - Run the setup script first:
 
 ```bash
@@ -13,13 +13,11 @@ cd examples
 bash 00_setup_aia.sh
 ```
 
-The setup script pulls the `qwen3` model and writes `aia_config.yml`, which all demos use via the `-c` flag for isolated, reproducible runs.
+The setup script checks that `ANTHROPIC_API_KEY` is set and writes `aia_config.yml` (model `claude-haiku-4-5`), which all demos use via the `-c` flag for isolated, reproducible runs.
 
 ### Using Your Own API Keys and Models
 
-These demos default to Ollama with the `qwen3` model so they run locally with no API keys required. However, local models can be slow depending on your hardware — some demos may take a while to complete.
-
-For a faster experience, consider using a cloud provider's least expensive tool-capable model. Both `gpt-4o-mini` (OpenAI) and `claude-haiku-4-5` (Anthropic) are inexpensive, fast, support tool use, and will run these demos for pennies. You can easily change the setup to use any provider and model available through the [ruby_llm](https://rubyllm.com) gem. AIA supports OpenAI, Anthropic, Google Gemini, DeepSeek, Mistral, Perplexity, OpenRouter, AWS Bedrock, and local providers like Ollama and LM Studio.
+These demos default to Anthropic's `claude-haiku-4-5`: inexpensive, fast, tool-capable, and able to run all of them for pennies. Multi-model demos (11, 12, 13, 26–29) pair it with `claude-sonnet-4-6`, so `ANTHROPIC_API_KEY` is the only key required. You can easily change the setup to use any provider and model available through the [ruby_llm](https://rubyllm.com) gem. AIA supports OpenAI, Anthropic, Google Gemini, DeepSeek, Mistral, Perplexity, OpenRouter, AWS Bedrock, and local providers like Ollama and LM Studio.
 
 To switch providers, edit `aia_config.yml` and change the model name:
 
@@ -37,7 +35,7 @@ Set the corresponding API key as an environment variable (e.g., `OPENAI_API_KEY`
 
 ### 00 — Setup
 
-`00_setup_aia.sh` — Verifies that `aia` and `ollama` are installed, pulls the `qwen3` model, creates the `prompts_dir/` directory, and writes `aia_config.yml`. Run this once before any other demo.
+`00_setup_aia.sh` — Verifies that `aia` is installed and `ANTHROPIC_API_KEY` is set, creates the `prompts_dir/` directory, and writes `aia_config.yml` (model `claude-haiku-4-5`). Run this once before any other demo.
 
 Docs: [Getting Started](https://madbomber.github.io/aia/guides/getting-started/), [Installation](https://madbomber.github.io/aia/installation/), [Local Models](https://madbomber.github.io/aia/guides/local-models/)
 
@@ -107,7 +105,7 @@ Docs: [Executable Prompts — Piping and Redirection](https://madbomber.github.i
 
 `11_multi_model.sh` — Sends the same prompt to two models simultaneously using `-m model1,model2`. Part 1 shows **comparison mode** (default) where both responses are displayed side by side. Part 2 shows **cooperative mode** (`--consensus`) where the first model synthesizes a unified answer from both responses.
 
-**Requires:** A second Ollama model (`phi4-mini`), auto-pulled if missing.
+**Requires:** `ANTHROPIC_API_KEY` (uses `claude-sonnet-4-6` and `claude-haiku-4-5`).
 
 Docs: [Working with Models — Multi-Model Operations](https://madbomber.github.io/aia/guides/models/#multi-model-operations), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
 
@@ -119,9 +117,9 @@ Docs: [Working with Models — Token Usage and Cost Tracking](https://madbomber.
 
 ### 13 — Cost Tracking
 
-`13_cost_tracking.sh` — Demonstrates the `--cost` flag, which adds per-model cost estimates to the token usage table. Uses `gpt-4o-mini` (OpenAI) and `claude-haiku-4-5` (Anthropic) for a cross-provider cost comparison. `--cost` implies `--tokens`.
+`13_cost_tracking.sh` — Demonstrates the `--cost` flag, which adds per-model cost estimates to the token usage table. Uses `claude-haiku-4-5` and `claude-sonnet-4-6` (Anthropic) to compare cost across price tiers. `--cost` implies `--tokens`.
 
-**Requires:** `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables.
+**Requires:** `ANTHROPIC_API_KEY` environment variable.
 
 Docs: [Working with Models — Token Usage and Cost Tracking](https://madbomber.github.io/aia/guides/models/#token-usage-and-cost-tracking), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
 
@@ -211,35 +209,35 @@ Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/),
 
 ### 26 — Debate Mode
 
-`26_debate.sh` — Demonstrates `/debate` mode via `DebateHandler`. Two robots debate a topic across multiple rounds. Each round, every robot sees what the other said and responds. The debate ends when a robot says CONVERGED or after 5 rounds. `SimilarityScorer` also detects convergence by comparing round-to-round similarity. Uses `qwen3` (Tobor) vs `phi4-mini` (Quark) debating REST vs GraphQL.
+`26_debate.sh` — Demonstrates `/debate` mode via `DebateHandler`. Two robots debate a topic across multiple rounds. Each round, every robot sees what the other said and responds. The debate ends when a robot says CONVERGED or after 5 rounds. `SimilarityScorer` also detects convergence by comparing round-to-round similarity. Uses `claude-sonnet-4-6` (Tobor) vs `claude-haiku-4-5` (Zen) debating REST vs GraphQL.
 
-**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+**Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
 Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
 
 ### 27 — @mention Routing
 
-`27_mention_routing.sh` — Demonstrates `@mention` routing in a multi-model network. Prefixing a message with `@RobotName` directs it to a specific robot; only that robot responds. Robot names are assigned by AIA: `qwen3` becomes `Tobor`, `phi4-mini` becomes `Quark`. Part 1 routes to `@Tobor`; Part 2 routes to `@Quark`; Part 3 shows how an unknown `@mention` triggers a listing of available robot names. Part 4 opens interactive chat to mix directed and undirected turns freely.
+`27_mention_routing.sh` — Demonstrates `@mention` routing in a multi-model network. Prefixing a message with `@RobotName` directs it to a specific robot; only that robot responds. Robot names are assigned by AIA: the first robot (`claude-sonnet-4-6`) is always `Tobor`, and `claude-haiku-4-5` becomes `Zen`. Part 1 routes to `@Tobor`; Part 2 routes to `@Zen`; Part 3 shows how an unknown `@mention` triggers a listing of available robot names. Part 4 opens interactive chat to mix directed and undirected turns freely.
 
-**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+**Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
 Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
 
 ### 28 — Model Switching
 
-`28_model_switching.sh` — Demonstrates the `/model` directive for switching models mid-conversation. Conversation history is transferred to the new model so it has full context of everything discussed before the switch. Part 1 asks a question with `qwen3` (Tobor), switches to `phi4-mini` (Quark) via `/model ollama/phi4-mini`, then asks a follow-up that requires the previous exchange for context.
+`28_model_switching.sh` — Demonstrates the `/model` directive for switching models mid-conversation. The old model summarizes the conversation and the summary is handed to the new model (set `model_switch_history: clean` or `replay` to change this). Part 1 asks a question with `claude-sonnet-4-6`, switches to `claude-haiku-4-5` via `/model claude-haiku-4-5`, then asks a follow-up that requires the previous exchange for context.
 
-**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+**Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
 Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
 
 ### 29 — Agent Harness
 
-`29_agent_harness.sh` — Demonstrates AIA as a full agent harness using a three-tier orchestration model. Tobor starts with an `orchestrator` role loaded via `--role orchestrator`, making it the primary coordinator. Part 1 shows Tobor describing its coordination strategy for a complex request. Part 2 uses `/spawn security-expert` to create a specialist lead agent on demand and route a task to it. Part 3 uses `/decompose` with a multi-dimension design review — Tobor and Quark run parallel workstreams as task runners, then Tobor synthesizes the result. Part 4 opens a free orchestration session where any combination of `/spawn`, `/decompose`, `/delegate`, `/debate`, and `@mention` routing can be tried.
+`29_agent_harness.sh` — Demonstrates AIA as a full agent harness using a three-tier orchestration model. Tobor starts with an `orchestrator` role loaded via `--role orchestrator`, making it the primary coordinator. Part 1 shows Tobor describing its coordination strategy for a complex request. Part 2 uses `/spawn security-expert` to create a specialist lead agent on demand and route a task to it. Part 3 uses `/decompose` with a multi-dimension design review — Tobor and Zen run parallel workstreams as task runners, then Tobor synthesizes the result. Part 4 opens a free orchestration session where any combination of `/spawn`, `/decompose`, `/delegate`, `/debate`, and `@mention` routing can be tried.
 
 The orchestrator role file lives at `examples/prompts_dir/roles/orchestrator.md` and can be customized to tune Tobor's coordination behavior.
 
-**Requires:** `expect` (pre-installed on macOS), `phi4-mini` model (auto-pulled if missing).
+**Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
 Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Roles](https://madbomber.github.io/aia/guides/roles/)
 
@@ -311,8 +309,7 @@ examples/
 
 - All demos use `-c aia_config.yml` to isolate from your personal AIA configuration. The `-c` flag replaces your user config with bundled defaults plus the specified file.
 - `common.sh` clears all `AIA_*` environment variables to prevent leakage from your shell.
-- Demos 11-12 require a second Ollama model (`phi4-mini`), which is auto-pulled.
-- Demo 13 requires cloud API keys for OpenAI and Anthropic.
+- All demos run on Anthropic models and need only `ANTHROPIC_API_KEY`.
 - Demo 18 requires the `shared_tools` gem.
 - Demo 20 requires Node.js for the MCP filesystem server.
 

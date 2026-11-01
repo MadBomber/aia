@@ -6,14 +6,14 @@
 # In a 2-model chat session, prefix any message with @RobotName
 # to direct it to a specific robot. Only that robot responds.
 # Robot names are assigned by AIA based on the model:
-#   gpt-4.1      → Tobor    (first robot always gets the name "Tobor")
-#   gpt-4.1-mini → Vanguard
+#   claude-sonnet-4-6 → Tobor    (first robot always gets the name "Tobor")
+#   claude-haiku-4-5  → Zen
 #
 # If the @name is not recognized, AIA lists available robot names.
 #
 # Requires a 2-model network (-m MODEL_A,MODEL_B).
 #
-# Prerequisites: Run 00_setup_aia.sh first (OPENAI_API_KEY must be set).
+# Prerequisites: Run 00_setup_aia.sh first (ANTHROPIC_API_KEY must be set).
 # Usage: cd examples && bash 27_mention_routing.sh
 
 set -euo pipefail
@@ -25,8 +25,8 @@ if ! command -v expect &>/dev/null; then
     exit 1
 fi
 
-MODEL_A="gpt-4.1"
-MODEL_B="gpt-4.1-mini"
+MODEL_A="claude-sonnet-4-6"
+MODEL_B="claude-haiku-4-5"
 
 echo "=== Demo 27: @mention Routing ==="
 echo
@@ -34,10 +34,10 @@ echo "In a multi-model network, prefix your message with @RobotName"
 echo "to direct it to a specific robot. Only that robot responds."
 echo
 echo "Using models: ${MODEL_A} vs ${MODEL_B}"
-echo "Robot names:  Tobor (gpt-4.1) and Vanguard (gpt-4.1-mini)"
+echo "Robot names:  Tobor (claude-sonnet-4-6) and Zen (claude-haiku-4-5)"
 echo
 
-# --- Part 1: Route to Tobor (gpt-4.1) ---
+# --- Part 1: Route to Tobor (claude-sonnet-4-6) ---
 
 echo "--- Part 1: Direct a question to @Tobor ---"
 echo
@@ -48,7 +48,7 @@ expect <<'EXPECT_SCRIPT'
 set timeout 180
 log_user 1
 
-spawn aia -c aia_config.yml -m gpt-4.1,gpt-4.1-mini --chat
+spawn aia -c aia_config.yml -m claude-sonnet-4-6,claude-haiku-4-5 --chat
 
 expect {
   "#=> " {}
@@ -70,9 +70,9 @@ drain_terminal
 echo
 echo
 
-# --- Part 2: Route to Vanguard (gpt-4.1-mini) ---
+# --- Part 2: Route to Zen (claude-haiku-4-5) ---
 
-echo "--- Part 2: Direct a question to @Vanguard ---"
+echo "--- Part 2: Direct a question to @Zen ---"
 echo
 echo "Running: aia -c ${CONFIG} -m ${MODEL_A},${MODEL_B} --chat"
 echo
@@ -81,14 +81,14 @@ expect <<'EXPECT_SCRIPT'
 set timeout 180
 log_user 1
 
-spawn aia -c aia_config.yml -m gpt-4.1,gpt-4.1-mini --chat
+spawn aia -c aia_config.yml -m claude-sonnet-4-6,claude-haiku-4-5 --chat
 
 expect {
   "#=> " {}
   timeout { puts "\n*** Timed out waiting for chat prompt ***"; exit 1 }
 }
 
-send "@Vanguard Describe the CAP theorem in one sentence.\r"
+send "@Zen Describe the CAP theorem in one sentence.\r"
 
 expect {
   "#=> " {}
@@ -117,7 +117,7 @@ expect <<'EXPECT_SCRIPT'
 set timeout 60
 log_user 1
 
-spawn aia -c aia_config.yml -m gpt-4.1,gpt-4.1-mini --chat
+spawn aia -c aia_config.yml -m claude-sonnet-4-6,claude-haiku-4-5 --chat
 
 expect {
   "#=> " {}

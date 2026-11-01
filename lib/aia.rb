@@ -89,7 +89,7 @@ module AIA
   @turn_state = TurnState.new
 
   class << self
-    attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator
+    attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator, :mcp_manager
 
     def logger
       AIA::LoggerManager.aia_logger
@@ -97,7 +97,7 @@ module AIA
 
     def reset!
       @config = @client = @session_tracker = @turn_state =
-                            @task_coordinator = nil
+                            @task_coordinator = @mcp_manager = nil
       ToolLoader.reset_instance!
     end
 

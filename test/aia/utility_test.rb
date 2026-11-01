@@ -311,41 +311,37 @@ class UtilityTest < Minitest::Test
     assert_includes output, "2 tools loaded"
   end
   # ---------------------------------------------------------------------
-  # legacy_ruby_llm_mcp? — only the ruby_llm-mcp gem provides a `.clients`
-  # registry; ruby_llm 2.1+ ships a RubyLLM::MCP class without one
+  # MCP counts and labels come from what MCPConnectionManager published
   # ---------------------------------------------------------------------
 
-  def test_legacy_ruby_llm_mcp_false_without_client_registry
-    with_registry_less_ruby_llm_mcp do
-      refute AIA::Utility.legacy_ruby_llm_mcp?
-    end
-  end
-
-  def test_legacy_ruby_llm_mcp_true_with_client_registry
-    with_registry_less_ruby_llm_mcp do
-      RubyLLM::MCP.stubs(:clients).returns({})
-      assert AIA::Utility.legacy_ruby_llm_mcp?
-    end
-  end
-
-  def test_total_tool_count_ignores_registry_less_ruby_llm_mcp
+  def test_total_tool_count_adds_connected_mcp_tool_counts
     AIA.config.loaded_tools = %w[a b c]
-    with_registry_less_ruby_llm_mcp do
-      assert_equal 3, AIA::Utility.total_tool_count
-    end
+    AIA.config.mcp_server_tool_counts = { 'fs' => 14, 'gh' => 2 }
+    assert_equal 19, AIA::Utility.total_tool_count
   end
 
-  def test_mcp_server_names_ignores_registry_less_ruby_llm_mcp
+  def test_total_tool_count_without_mcp_counts_is_local_only
+    AIA.config.loaded_tools = %w[a b c]
+    AIA.config.mcp_server_tool_counts = nil
+    assert_equal 3, AIA::Utility.total_tool_count
+  end
+
+  def test_mcp_server_names_falls_back_to_configured_names_before_connection
+    AIA.config.connected_mcp_servers = nil
     AIA::Utility.stubs(:effective_mcp_server_names).returns(%w[cfgA])
-    with_registry_less_ruby_llm_mcp do
-      assert_equal %w[cfgA], AIA::Utility.mcp_server_names
-    end
+    assert_equal %w[cfgA], AIA::Utility.mcp_server_names
   end
 
-  def test_mcp_client_labels_empty_before_connection_without_registry
+  def test_mcp_client_labels_empty_before_connection
     AIA.config.flags = OpenStruct.new(no_mcp: false)
-    with_registry_less_ruby_llm_mcp do
-      assert_equal [], AIA::Utility.send(:mcp_client_labels)
-    end
+    AIA.config.connected_mcp_servers = nil
+    assert_equal [], AIA::Utility.send(:mcp_client_labels)
+  end
+
+  def test_mcp_client_labels_include_tool_counts
+    AIA.config.flags = OpenStruct.new(no_mcp: false)
+    AIA.config.connected_mcp_servers = %w[fs gh]
+    AIA.config.mcp_server_tool_counts = { 'fs' => 14 }
+    assert_equal %w[fs(14) gh], AIA::Utility.send(:mcp_client_labels)
   end
 end

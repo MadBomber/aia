@@ -19,7 +19,7 @@ class VerificationNetworkTest < Minitest::Test
       RobotLab::RunConfig.new(temperature: 0.7, max_tokens: 2048, top_p: 1.0)
     )
     AIA::RobotFactory.stubs(:filtered_tools).returns([])
-    AIA::RobotFactory.stubs(:mcp_server_configs).returns([])
+    AIA::RobotFactory.stubs(:mcp_servers).returns([])
 
     RobotLab.stubs(:build).returns(mock_robot)
     RobotLab.stubs(:create_network).returns(mock_network)
@@ -40,7 +40,7 @@ class VerificationNetworkTest < Minitest::Test
       RobotLab::RunConfig.new(temperature: 0.7, max_tokens: 2048, top_p: 1.0)
     )
     AIA::RobotFactory.stubs(:filtered_tools).returns([])
-    AIA::RobotFactory.stubs(:mcp_server_configs).returns([])
+    AIA::RobotFactory.stubs(:mcp_servers).returns([])
 
     RobotLab.stubs(:build).returns(mock('robot'))
     RobotLab.stubs(:create_network).returns(mock_network)
