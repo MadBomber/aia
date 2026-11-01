@@ -138,6 +138,31 @@ class MCPConnectionManagerTest < Minitest::Test
     assert_same @manager, result
   end
 
+  # absorb_ruby_llm_mcp_clients — ruby_llm 2.1+ defines RubyLLM::MCP as a
+  # per-instance client class with no `.clients` registry; must not raise
+  def test_absorb_returns_self_when_ruby_llm_mcp_has_no_client_registry
+    with_registry_less_ruby_llm_mcp do
+      result = @manager.absorb_ruby_llm_mcp_clients
+      assert_same @manager, result
+      assert_empty @manager.connected_clients
+    end
+  end
+
+  def test_absorb_merges_clients_from_legacy_registry
+    client = mock('legacy_client')
+    client.stubs(:alive?).returns(true)
+    client.stubs(:tools).returns(%i[tool_a tool_b])
+
+    with_registry_less_ruby_llm_mcp do
+      RubyLLM::MCP.stubs(:clients).returns({ 'legacy' => client })
+
+      @manager.absorb_ruby_llm_mcp_clients
+
+      assert_same client, @manager.client('legacy')
+      assert_equal 2, @manager.connected_tools.size
+    end
+  end
+
   # ===================================================================
   # close_all
   # ===================================================================

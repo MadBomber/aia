@@ -146,7 +146,7 @@ module AIA
           end
         end
 
-        return [] unless defined?(RubyLLM::MCP)
+        return [] unless legacy_ruby_llm_mcp?
         RubyLLM::MCP.clients.filter_map do |name, client|
           count = client.tools.count rescue nil
           "#{name}(#{count})" if count

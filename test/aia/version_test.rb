@@ -55,16 +55,16 @@ class VersionTest < Minitest::Test
     assert_equal AIA::VERSION, AIA::VERSION, "Version should be self-consistent"
   end
 
-  def test_gemspec_requires_robot_lab_0_2
+  def test_gemspec_requires_robot_lab_0_3
     gemspec_path = File.expand_path('../../aia.gemspec', __dir__)
     spec = Gem::Specification.load(gemspec_path)
     dependency = spec.runtime_dependencies.find { |dep| dep.name == 'robot_lab' }
 
     refute_nil dependency, "robot_lab should be a runtime dependency"
-    assert dependency.requirement.satisfied_by?(Gem::Version.new('0.2.0')),
-           "robot_lab dependency should allow v0.2.0"
-    refute dependency.requirement.satisfied_by?(Gem::Version.new('0.1.9')),
-           "robot_lab dependency should exclude v0.1.9"
+    assert dependency.requirement.satisfied_by?(Gem::Version.new('0.3.1')),
+           "robot_lab dependency should allow v0.3.1"
+    refute dependency.requirement.satisfied_by?(Gem::Version.new('0.2.9')),
+           "robot_lab dependency should exclude v0.2.9"
   end
 
   def test_version_follows_semantic_versioning

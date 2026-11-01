@@ -310,4 +310,42 @@ class UtilityTest < Minitest::Test
     # v2 format: "Tools: 2 tools loaded"
     assert_includes output, "2 tools loaded"
   end
+  # ---------------------------------------------------------------------
+  # legacy_ruby_llm_mcp? — only the ruby_llm-mcp gem provides a `.clients`
+  # registry; ruby_llm 2.1+ ships a RubyLLM::MCP class without one
+  # ---------------------------------------------------------------------
+
+  def test_legacy_ruby_llm_mcp_false_without_client_registry
+    with_registry_less_ruby_llm_mcp do
+      refute AIA::Utility.legacy_ruby_llm_mcp?
+    end
+  end
+
+  def test_legacy_ruby_llm_mcp_true_with_client_registry
+    with_registry_less_ruby_llm_mcp do
+      RubyLLM::MCP.stubs(:clients).returns({})
+      assert AIA::Utility.legacy_ruby_llm_mcp?
+    end
+  end
+
+  def test_total_tool_count_ignores_registry_less_ruby_llm_mcp
+    AIA.config.loaded_tools = %w[a b c]
+    with_registry_less_ruby_llm_mcp do
+      assert_equal 3, AIA::Utility.total_tool_count
+    end
+  end
+
+  def test_mcp_server_names_ignores_registry_less_ruby_llm_mcp
+    AIA::Utility.stubs(:effective_mcp_server_names).returns(%w[cfgA])
+    with_registry_less_ruby_llm_mcp do
+      assert_equal %w[cfgA], AIA::Utility.mcp_server_names
+    end
+  end
+
+  def test_mcp_client_labels_empty_before_connection_without_registry
+    AIA.config.flags = OpenStruct.new(no_mcp: false)
+    with_registry_less_ruby_llm_mcp do
+      assert_equal [], AIA::Utility.send(:mcp_client_labels)
+    end
+  end
 end

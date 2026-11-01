@@ -7,6 +7,16 @@
 
 module AIA
   module MCPUtility
+    # True only when the legacy ruby_llm-mcp gem's client registry is loaded
+    # (e.g. via --require shared_tools/mcp/*). ruby_llm 2.1+ ships its own
+    # RubyLLM::MCP class — one client per instance, no `.clients` registry —
+    # so `defined?(RubyLLM::MCP)` alone no longer means the registry exists.
+    def legacy_ruby_llm_mcp?
+      return false unless defined?(RubyLLM::MCP)
+
+      RubyLLM::MCP.respond_to?(:clients)
+    end
+
     def mcp_servers?
       effective_mcp_server_names.any?
     end
@@ -14,7 +24,7 @@ module AIA
     def mcp_server_names
       connected = AIA.config&.connected_mcp_servers
       return connected unless connected.nil?
-      return RubyLLM::MCP.clients.keys if defined?(RubyLLM::MCP) && RubyLLM::MCP.clients.any?
+      return RubyLLM::MCP.clients.keys if legacy_ruby_llm_mcp? && RubyLLM::MCP.clients.any?
       effective_mcp_server_names
     end
 

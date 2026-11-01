@@ -15,7 +15,7 @@ module AIA
     def total_tool_count
       local = Array(AIA.config&.loaded_tools).size
       return local if AIA.config&.flags&.no_mcp
-      mcp = defined?(RubyLLM::MCP) ? RubyLLM::MCP.clients.sum { |_, c| c.tools.count } : 0
+      mcp = legacy_ruby_llm_mcp? ? RubyLLM::MCP.clients.sum { |_, c| c.tools.count } : 0
       local + mcp
     end
 

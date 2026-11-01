@@ -4,6 +4,15 @@
 
 This section captures all changes since v1.1.0.
 
+### Changed
+
+- **Minimum Ruby raised to 4.0.9.** `required_ruby_version` is now `>= 4.0.9` (was `>= 4.0.0`), and a `.ruby-version` file pins development to 4.0.9.
+
+### Fixed
+
+- **MCP no longer breaks on ruby_llm 2.1+.** ruby_llm 2.1 ships its own `RubyLLM::MCP` class (one client per instance, no `.clients` registry), so AIA's `defined?(RubyLLM::MCP)` guards — written for the retired `ruby_llm-mcp` gem — passed and then raised `NoMethodError` at startup, in `//tools`, and in the banner. Those guards now require the legacy registry (`AIA::Utility.legacy_ruby_llm_mcp?`). A fresh `gem install aia` resolves ruby_llm 2.1.1, so this affected every new install.
+- **`--list-tools` with `--mcp-list` connects through robot_lab's MCP client** instead of `RubyLLM::MCP.add_client`, which does not exist on any ruby_llm 2.x. Each server's tools are wrapped exactly as the startup path wraps them, and the connection is closed after listing.
+
 ## [2.0.0.pre.beta2] 2026-09-09
 
 Using robot_lab v0.2.5

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'timeout'
 require 'word_wrapper'
 require_relative '../skill_utils'
 
@@ -405,14 +406,12 @@ module AIA
         servers = filter_mcp_servers(config)
         return {} if servers.empty?
 
-        quiet_mcp_logger
-
         servers.each_with_object({}) do |server, groups|
           server_config = McpServerConfig.from_hash(server)
           $stderr.print "MCP: Connecting to #{server_config.name}..."
           $stderr.flush
 
-          tools = collect_server_tools(server_config)
+          tools = collect_server_tools(server, server_config)
           if tools
             groups[server_config.name] = tools
             $stderr.puts " #{tools.size} tools"
@@ -424,41 +423,33 @@ module AIA
         end
       end
 
-      # Connect to one server and return its tools, or nil when the client
-      # never comes alive.
-      def collect_server_tools(server_config)
-        mcp_add_client(server_config)
-        client = RubyLLM::MCP.clients[server_config.name]
-        client.start
-        return nil unless client.alive?
-
-        client.tools rescue []
+      # Connect to one server with robot_lab's MCP client (the same client the
+      # robot uses at startup) and return its tools, or nil when the client
+      # never connects. The connection is closed before returning.
+      def collect_server_tools(server, server_config)
+        client = RobotLab::MCP::Client.new(MCPConfigNormalizer.normalize(server))
+        Timeout.timeout(server_config.timeout_ms / 1000.0) do
+          client.connect
+          client.connected? ? mcp_tools_for(client, server_config.name) : nil
+        end
+      ensure
+        client&.disconnect
       end
 
-      def mcp_add_client(server_config)
-        mcp_config = { command: server_config.command, args: server_config.args }
-        mcp_config[:env] = server_config.env unless server_config.env.empty?
-
-        RubyLLM::MCP.add_client(
-          name: server_config.name, transport_type: :stdio,
-          config: mcp_config, request_timeout: server_config.timeout_ms, start: false
-        )
-      rescue ArgumentError
-        # Older ruby_llm-mcp versions do not accept request_timeout
-        RubyLLM::MCP.add_client(
-          name: server_config.name, transport_type: :stdio,
-          config: mcp_config, start: false
-        )
+      # Wrap each remote tool definition the way MCPConnectionManager does, so
+      # --list-tools shows exactly what a robot would be handed.
+      def mcp_tools_for(client, server_name)
+        client.list_tools.map do |tool_def|
+          tool_name = tool_def[:name]
+          RobotLab::Tool.create(
+            name:        tool_name,
+            description: tool_def[:description],
+            parameters:  tool_def[:inputSchema],
+            mcp:         server_name
+          ) { |args| client.call_tool(tool_name, args) }
+        end
       end
       # rubocop:enable Metrics/ModuleLength
-
-      def quiet_mcp_logger
-        return unless defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:config)
-        mcp_config = RubyLLM::MCP.config
-        return unless mcp_config.respond_to?(:logger=)
-        quiet = Logger.new(File::NULL)
-        mcp_config.logger = quiet
-      end
 
       def handle_completion_script(config)
         return unless config.completion

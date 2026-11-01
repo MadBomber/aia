@@ -81,7 +81,7 @@ Common questions and answers about using AIA.
 ## Installation and Setup
 
 ### Q: What Ruby version is required for AIA?
-**A:** AIA requires Ruby 3.2 or higher. You can check your Ruby version with `ruby --version`.
+**A:** AIA requires Ruby 4.0.9 or higher. You can check your Ruby version with `ruby --version`.
 
 ### Q: How do I install AIA?
 **A:** The easiest way is through RubyGems:

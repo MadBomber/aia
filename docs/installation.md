@@ -48,7 +48,7 @@ This guide will help you install AIA and get it running on your system.
 ## Prerequisites
 
 ### Required
-- **Ruby**: Version >= 4.0.0
+- **Ruby**: Version >= 4.0.9
 - **RubyGems**: Usually comes with Ruby
 
 ### Recommended

@@ -255,7 +255,7 @@ module AIA
 
       # Fall back to RubyLLM::MCP clients (shared_tools and other gems
       # that register MCP servers via RubyLLM::MCP.add_client)
-      return [] unless defined?(RubyLLM::MCP)
+      return [] unless AIA::Utility.legacy_ruby_llm_mcp?
       RubyLLM::MCP.clients.values.flat_map(&:tools)
     end
   end

@@ -11,6 +11,10 @@ require "reline"
 require "pm"
 require "json"
 require "fileutils"
+# amazing_print 3.0's ActiveSupport extension assumes a fully loaded
+# ActiveSupport (Object#try, LogSubscriber) and raises at require time otherwise
+require "active_support"
+require "active_support/core_ext/object/try"
 require "amazing_print"
 require_relative "directive_processor"
 require_relative "variable_input_collector"

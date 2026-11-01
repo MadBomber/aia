@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.homepage     = 'https://github.com/MadBomber/aia'
   spec.license      = 'MIT'
 
-  spec.required_ruby_version = '>= 4.0.0'
+  spec.required_ruby_version = '>= 4.0.9'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 

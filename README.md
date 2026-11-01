@@ -231,7 +231,7 @@ Implement a schema registry with event-driven synchronization...
 
 ### Requirements
 
-- **Ruby**: >= 4.0.0
+- **Ruby**: >= 4.0.9
 - **External Tools**:
   - [fzf](https://github.com/junegunn/fzf) - Command-line fuzzy finder
 

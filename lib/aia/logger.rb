@@ -104,7 +104,7 @@ module AIA
       # RubyLLM::MCP.config has attr_writer :logger and a memoized getter.
       # We need to set both the config.logger and reset any memoization.
       def configure_mcp_logger
-        return unless defined?(RubyLLM::MCP)
+        return unless AIA::Utility.legacy_ruby_llm_mcp? && RubyLLM::MCP.respond_to?(:config)
 
         logger = mcp_logger
 

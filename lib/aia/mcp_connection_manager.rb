@@ -103,7 +103,7 @@ module AIA
     # @return [self]
     # :reek:TooManyStatements -- per-client absorb loop: start if needed, extract tools, merge into connected state with error capture
     def absorb_ruby_llm_mcp_clients
-      return self unless defined?(RubyLLM::MCP)
+      return self unless AIA::Utility.legacy_ruby_llm_mcp?
 
       logger = AIA::LoggerManager.mcp_logger
 
