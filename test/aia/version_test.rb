@@ -84,12 +84,13 @@ class VersionTest < Minitest::Test
     assert_match(/^\d+/, parts[2], "patch version part should start with digits")
   end
 
-  def test_version_file_consistency
-    version_file_path = File.join(File.dirname(__FILE__), '..', '..', '.version')
+  # Release tooling (asgard's gem_version) reads the VERSION string literal
+  # straight from version.rb without loading it, so it must stay a literal.
+  def test_version_is_a_string_literal_in_version_rb
+    source  = File.read(File.expand_path('../../lib/aia/version.rb', __dir__))
+    literal = source[/VERSION\s*=\s*['"]([^'"]+)['"]/, 1]
 
-    return unless File.exist?(version_file_path)
-    file_version = File.read(version_file_path).strip
-    assert_equal file_version, AIA::VERSION, "Version in .version file should match AIA::VERSION constant"
+    assert_equal AIA::VERSION, literal, "lib/aia/version.rb should define VERSION as a string literal"
   end
 
   def test_version_immutability

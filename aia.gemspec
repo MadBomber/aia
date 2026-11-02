@@ -25,13 +25,13 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri']    = "#{spec.homepage}/blob/main/CHANGELOG.md"
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  # Ship only what an installed gem runs: the library, the executable, the
-  # .version file VERSION reads, and the top-level docs. Dev tooling, docs/,
-  # examples/ and planning notes stay in the repository.
+  # Ship only what an installed gem runs: the library, the executable, and
+  # the top-level docs. Dev tooling, docs/, examples/ and planning notes
+  # stay in the repository.
   spec.files = Dir.chdir(__dir__) do
     `git ls-files -z`.split("\x0").select do |f|
       (f.start_with?('lib/') && !f.end_with?('AGENTS.md')) || %w[bin/aia README.md CHANGELOG.md LICENSE].include?(f)
-    end + ['.version']
+    end
   end
 
   spec.bindir         = 'bin'
