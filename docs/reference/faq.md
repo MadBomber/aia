@@ -56,7 +56,7 @@ In `~/.prompts`, unless you've set `--prompts-dir`, `prompts.dir` or `AIA_PROMPT
 
 ### `A prompt ID is required unless using --chat, --fuzzy, or providing context files.`
 
-You ran `aia` with nothing to do. Give a prompt ID (`aia my_prompt`), start a chat (`aia --chat`), pick a prompt with `aia --fuzzy`, or pipe in some text.
+You ran `aia` with no prompt ID. Context files, `-p` or `-r` on their own don't count, whatever the message says. Give a prompt ID (`aia my_prompt`), start a chat (`aia --chat`), pick a prompt with `aia --fuzzy`, or pipe in some text.
 
 ### `The following files do not exist: my_prompt`
 
@@ -121,7 +121,7 @@ The tool is written for aia 1.x. Change `param :x, desc: "…"` to `parameter :x
 
 ### `ERROR: /ruby is disabled. …`
 
-`/ruby` is off by default. Start aia with `--allow-ruby-eval`, or set `flags.allow_ruby_eval: true` in `~/.config/aia/aia.yml` (the message mentions an older path, `~/.aia/config.yml`; the config file is `~/.config/aia/aia.yml`). Read [Security](../configuration/security.md) first.
+`/ruby` is off by default. Start aia with `--allow-ruby-eval`, or set `flags.allow_ruby_eval: true` in `~/.config/aia/aia.yml`. Read [Security](../configuration/security.md) first.
 
 ### `ERROR: PUREMD_API_KEY is required in order to include a webpage`
 

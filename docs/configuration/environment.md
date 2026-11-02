@@ -36,7 +36,7 @@ Environment variables override your config file and are overridden by command-li
         - `AIA_FLAGS__DEBUG`, `AIA_FLAGS__VERBOSE`, `AIA_FLAGS__SPEAK`, `AIA_FLAGS__PAINT` and `AIA_OUTPUT__APPEND` have no reliable effect whatever their value. Use `-d`, `-v`, `--speak`, `--paint`, `-a` or the config file.
         - Every other on/off variable switches the setting **on for any value, including `false`**. To turn one off, `unset` it.
     - **Numbers stay text.** `AIA_LLM__TEMPERATURE=0.2` reaches the model request as the string `"0.2"`, which a provider may reject. Set numbers in the config file or with `-t`, `--max-tokens` and friends.
-    - **One value per variable for `tools.allowed` and `tools.rejected`.** `AIA_TOOLS__ALLOWED=read,write` is matched as the one string `read,write`. Put lists in the config file or use `--at` / `--rt`.
+    - **One value per variable for `tools.allowed`, `tools.rejected` and `tools.paths`.** `AIA_TOOLS__ALLOWED=read,write` is matched as the one string `read,write`. Put lists in the config file or use `--at` / `--rt` / `--tools`.
 
     The top-level lists `pipeline`, `require_libs`, `mcp_use`, `mcp_skip` and `context_files` *are* split on commas: `AIA_REQUIRE_LIBS=shared_tools,json`.
 

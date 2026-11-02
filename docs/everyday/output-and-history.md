@@ -24,7 +24,7 @@ AI: Section 4, the vendor migration...
 | You want… | Do this |
 |-----------|---------|
 | A specific file | `--output notes/answer.md` (`-o`). Relative paths are relative to where you run AIA. |
-| The default `temp.md` | `-o` with no file name |
+| The default `temp.md` | `-o` with no file name. Put it last or before another option: `aia -o summarize notes.txt` takes `summarize` as the output file name |
 | No output file at all | `--no-output` |
 | To add to the file instead of replacing it | `--append` (`-a`); `--no-append` to switch it back off |
 | No output file, ever | `output.file: ~` in your config file |

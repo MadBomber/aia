@@ -88,7 +88,7 @@ A line that starts with `/` is a **directive**, a command for AIA rather than a 
 Unknown directive: /modle  (use /help to see available directives)
 ```
 
-When a directive produces output (a file, a web page, your clipboard), AIA shows it and then sends it to the model with a short note saying which directive it came from, so the model can use it. Directives that only change settings (`/model`, `/config`, `/checkpoint`) just print a confirmation.
+When a directive produces output (a file, a web page, your clipboard), AIA shows it and then sends it to the model with a short note saying which directive it came from, so the model can use it. Directives that change settings or only display information (`/model`, `/config`, `/checkpoint`, `/help`, `/cost`) are not sent to the model.
 
 The directives you'll use most in chat:
 
@@ -107,7 +107,7 @@ The directives you'll use most in chat:
 | `/checkpoint`, `/restore`, `/clear`, `/review`, `/checkpoints` | Manage the conversation (see below) |
 | `/tools [FILTER]`, `/mcp`, `/robots`, `/plugins` | Show loaded tools, MCP servers, the active robots, loaded plugins |
 | `/cost` | Print this session's token and cost figures as CSV |
-| `/say TEXT` | Speak text aloud with your system's speech command |
+| `/say TEXT` | Speak text aloud with the macOS `say` command (it doesn't use `--speak-command`) |
 | `/ruby CODE` (alias `/rb`) | Run Ruby code (only when started with `--allow-ruby-eval`) |
 
 Every directive, with all arguments and aliases, is in the [Directives reference](../reference/directives.md). Directives can also be used inside prompt files; see [Directives](../prompts/directives.md).
@@ -152,8 +152,8 @@ Context restored to checkpoint 'before_refactor' (position 6).
 | `/restore [NAME]` | Go back to a checkpoint. Without a name, goes back to the second most recent checkpoint (you need at least two). Checkpoints made after that point are discarded. |
 | `/checkpoints` (alias `/checkpoints_list`) | List your checkpoints |
 | `/review` (alias `/context`) | Show the conversation so far, with checkpoint markers |
-| `/clear` | Forget the conversation but keep the system prompt (role, skills) |
-| `/clear --all` | Forget everything, including the system prompt |
+| `/clear` | Forget the conversation but keep the system prompt (role, skills). Also deletes all checkpoints |
+| `/clear --all` | Forget everything, including the system prompt and checkpoints |
 
 Checkpoints live in memory only. They disappear when the chat ends.
 

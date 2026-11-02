@@ -138,7 +138,9 @@ Inside a chat, `/tools` lists every loaded tool, local and MCP. Give it a word t
 > /tools dns
 ```
 
-Your AIA crew-management tools (`RecruitRobotTool` and `ReskillRobotTool`) always show up in these lists. They let the model add crewmates on its own; see [Crews](crews.md#letting-the-chief-recruit).
+Your AIA crew-management tools (`AIA::RecruitRobotTool` and `AIA::ReskillRobotTool`) always show up in these lists. They let the model add crewmates on its own; see [Crews](crews.md#letting-the-chief-recruit).
+
+`--list-tools` lists every loaded tool and ignores `--allowed-tools` and `--rejected-tools` (below). `/tools` likewise shows everything that's loaded, not only what the model is allowed to use.
 
 ## Limiting which tools the model sees
 
@@ -159,6 +161,7 @@ The short forms are `--at` and `--rt`. A few details:
 - Matching is a **case-insensitive substring** match on the tool name, so `--allowed-tools date` keeps `current_date_time_tool`.
 - Both options take comma-separated lists and can be repeated.
 - If you use both, `--allowed-tools` is applied first and `--rejected-tools` then removes from what's left.
+- The crew-management tools are filtered like any other tool. `--allowed-tools` drops them unless one of your terms matches their names (for example `recruit` or `reskill`), and then the chief can't [recruit crewmates](crews.md#letting-the-chief-recruit) on its own.
 
 The config file equivalents are `tools.allowed` and `tools.rejected`.
 
@@ -185,7 +188,7 @@ In a chat session AIA picks the tools that fit each turn. It compares your messa
 
 ## Tools that need your approval
 
-Some tool calls must be approved before they run. That happens when an MCP server is configured with `requires_approval` (see [MCP Servers](mcp.md#requiring-approval)), or when a tool declares that it needs approval. MCP servers can also ask you for input mid-task.
+Some tool calls must be approved before they run. That happens when an MCP server is configured with `requires_approval` (see [MCP Servers](mcp.md#requiring-approval)), or when a tool declares that it needs approval (with RubyLLM's `requires_approval`). MCP servers can also ask you for input mid-task.
 
 `--tool-approval` decides what happens:
 

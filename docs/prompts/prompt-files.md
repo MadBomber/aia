@@ -10,16 +10,16 @@ The **prompt ID** is the file name without its `.md` extension. A file named `~/
 aia code_review
 ```
 
-AIA looks for `<prompts dir>/<prompt ID>.md`. If the file is missing, AIA stops:
+AIA looks for `<prompts dir>/<prompt ID>.md`. If the file is missing, AIA treats the word as a context file name instead, and stops because no such file exists:
 
 ```text
-Error: Could not find prompt with ID: code_reveiw
+The following files do not exist: code_reveiw
 ```
 
 !!! warning "Use letters, digits and underscores in prompt IDs"
     Name prompt files with letters, digits and underscores only, such as `code_review.md` or `summarize2.md`. In AIA 2.0, IDs that contain a hyphen (`code-review`) or a subdirectory (`dev/review`) are not loaded from the file. The ID itself is sent to the model as the prompt text. Rename those files with underscores and keep them at the top level of the prompts directory.
 
-If the first argument names a file that exists in your current directory, AIA treats it as a context file rather than a prompt ID. See [Context Files & Piping](../everyday/context-and-piping.md).
+If the first argument names a file that exists in your current directory, AIA treats it as a context file rather than a prompt ID. Context files alone aren't enough to run: unless you add `--chat` (or the file is an [executable prompt](executable-prompts.md)), AIA stops with `A prompt ID is required…`. See [Context Files & Piping](../everyday/context-and-piping.md).
 
 ## The prompts directory
 
@@ -88,7 +88,7 @@ When you run it, AIA does the following:
 2. Reads the front matter and applies its settings.
 3. Expands shell references such as `$(date +%A)` and `$HOME`.
 4. Renders ERB tags such as `<%= language %>`, and asks you for any required parameter values first.
-5. Adds the role in front, then adds skills, piped input and context files after the text.
+5. Adds the role in front, then adds skills, piped input and context files after the text. (In a chat session, skills go into the system prompt instead.)
 
 ![How AIA processes a prompt file](../assets/images/prompt-processing.svg)
 
@@ -159,7 +159,7 @@ aia -f --model gpt-4o          # pick a prompt, run it with gpt-4o
 aia -f --chat                  # pick a prompt, then keep chatting
 ```
 
-If fzf isn't installed, `aia --fuzzy` stops with `Error: 'fzf' is not installed.`
+If fzf isn't installed, `aia --fuzzy` stops with `Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option.`
 
 ## Writing a prompt step by step
 

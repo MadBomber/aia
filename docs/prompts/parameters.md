@@ -20,7 +20,7 @@ Use a <%= tone %> tone. Keep it to two sentences.
 In the body, `<%= name %>` is replaced by the parameter's value. Parameters use ERB syntax. The `[NAME]` placeholders from AIA 1.x are not supported. See [Migrating Prompts](../appendix/migrating-prompts.md) to convert older prompts.
 
 !!! tip "Naming"
-    Use lowercase `snake_case` names such as `file_name` or `target_audience`. A name that starts with a capital letter is read by ERB as a Ruby constant, and the prompt fails to render.
+    Use lowercase `snake_case` names such as `file_name` or `target_audience`. A name that starts with a capital letter is read by ERB as a Ruby constant, and the prompt fails to render. Also avoid names of Ruby's built-in methods, such as `format`, `test`, `select`, `open` or `print`: `<%= format %>` calls Ruby's method instead of reading your parameter, and the prompt fails with an `ArgumentError`.
 
 ## Answering the questions
 
@@ -97,7 +97,9 @@ Review this file for bugs:
 
 ## Parameters and included files
 
-When a prompt pulls in another file with `<%= include 'path/to/file.md' %>`, the included file sees the same parameter values as the file that includes it. You answer each question once, and both files use the answer. See [Directives](directives.md#composing-prompts-from-other-files).
+When a prompt pulls in another file with `<%= include 'path/to/file.md' %>`, the included file sees the same parameter values as the file that includes it. You answer each question once, and both files use the answer.
+
+AIA only asks about the parameters declared in the file you run. A parameter declared only in an included file uses its default from that file. If it has no default, the run stops with `Missing required parameters: name`, so declare it in the including file too. See [Directives](directives.md#composing-prompts-from-other-files).
 
 ## Parameters in pipelines
 

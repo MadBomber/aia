@@ -123,7 +123,7 @@ Turning image generation on is a flag: `flags.paint` (`--paint`). See [Images & 
 | `tools.dir` | path | `~/.prompts/tools` | `AIA_TOOLS__DIR` | — | **No effect.** Use `tools.paths` or `--tools`. |
 
 !!! note
-    An environment variable holds one string. `AIA_TOOLS__ALLOWED=read,write` is matched as the single string `read,write`, not as two names. Use the config file or `--at read,write` for a list.
+    An environment variable holds one string. `AIA_TOOLS__ALLOWED=read,write` is matched as the single string `read,write`, not as two names, and `AIA_TOOLS__PATHS` likewise names one file. Use the config file, `--at read,write` or `--tools` for a list.
 
 ## `flags` — on/off switches
 
@@ -245,7 +245,7 @@ Each server has a `name` and either a `command` (with `args`, `env`) for a local
 | `concurrency.auto` | boolean | `false` | `AIA_CONCURRENCY__AUTO` | `--concurrent-auto` | Run independent MCP servers in parallel on every turn. |
 | `concurrency.threshold` | integer | `2` | `AIA_CONCURRENCY__THRESHOLD` | — | Minimum number of independent server groups before running them in parallel. |
 | `concurrency.mcp_timeout` | integer (seconds) | `120` | `AIA_CONCURRENCY__MCP_TIMEOUT` | — | Overall time allowed for connecting to all MCP servers at startup. Servers not connected by then are reported as failed and left out. |
-| `concurrency.independent_servers` | list | `[]` | `AIA_CONCURRENCY__INDEPENDENT_SERVERS` | — | **No effect.** Mark a server independent with `independent: true` in its MCP definition instead. |
+| `concurrency.independent_servers` | list | `[]` | `AIA_CONCURRENCY__INDEPENDENT_SERVERS` | — | **No effect.** Every MCP server is treated as independent unless it shares a `group:` value with other servers in its definition. |
 
 ## `context_files`
 

@@ -36,7 +36,7 @@ The terms this manual uses, in alphabetical order, with a pointer to where each 
 : A prompt file whose first line is a `#!` line that runs `aia`, so you can run the file directly like a script. See [Executable Prompts](../prompts/executable-prompts.md).
 
 **Front matter**
-: The YAML block between `---` lines at the top of a prompt file. It holds the description, parameters and settings such as `model` or `temperature`. See [Prompt Files](../prompts/prompt-files.md).
+: The YAML block between `---` lines at the top of a prompt file. It holds the description, parameters, `next:` / `pipeline:` and other settings. See [Prompt Files](../prompts/prompt-files.md).
 
 **History file**
 : The file that keeps the lines you type at the chat prompt, for up-arrow recall. Default `~/.prompts/_prompts.log`. See [Output & History](../everyday/output-and-history.md).
@@ -72,7 +72,7 @@ The terms this manual uses, in alphabetical order, with a pointer to where each 
 : A Markdown file (`.md`) in your prompts directory that contains a prompt, optionally with front matter, parameters, ERB and shell expansion. See [Prompt Files](../prompts/prompt-files.md).
 
 **Prompt ID**
-: A prompt file's path relative to the prompts directory, without `.md`. `aia dev/review` runs `~/.prompts/dev/review.md`.
+: A prompt file's name without `.md`. `aia code_review` runs `~/.prompts/code_review.md`. In 2.0.0, use only letters, digits and underscores, and keep prompt files at the top level of the prompts directory. See [Prompt Files](../prompts/prompt-files.md#prompt-ids).
 
 **Prompts directory**
 : Where aia looks for prompt files. Default `~/.prompts`; change it with `--prompts-dir` or `AIA_PROMPTS__DIR`.

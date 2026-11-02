@@ -15,17 +15,20 @@ aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*
 
 ## Running a saved prompt
 
-A prompt ID is a path inside your prompts directory without the `.md` extension:
+A prompt ID is the name of a prompt file in your prompts directory without the `.md` extension:
 
 | File | Prompt ID |
 |------|-----------|
 | `~/.prompts/summarize.md` | `summarize` |
-| `~/.prompts/dev/code_review.md` | `dev/code_review` |
+| `~/.prompts/code_review.md` | `code_review` |
 
 ```bash
 aia summarize report.txt
-aia dev/code_review lib/*.rb
+aia code_review lib/*.rb
 ```
+
+!!! warning "Keep prompt files at the top level, named with underscores"
+    In AIA 2.0.0, prompt IDs that contain a subdirectory (`dev/code_review`) or a hyphen (`code-review`) are not loaded from the file; the ID itself is sent as the prompt text. See [Prompt Files](../prompts/prompt-files.md).
 
 Use a different prompts directory for one run with `--prompts-dir DIR`, or permanently with `AIA_PROMPTS__DIR` or `prompts.dir` in the config file.
 
@@ -36,7 +39,7 @@ AIA treats the first argument as a prompt ID only when **both** of these are tru
 1. It is *not* the name of an existing file in the current directory, and
 2. `<prompts dir>/<argument>.md` exists.
 
-Otherwise the first argument is treated as a context file like the rest. So if you have a file called `summarize` in your working directory, `aia summarize notes.txt` will treat both as context files. Rename the file or run from another directory.
+Otherwise the first argument is treated as a context file like the rest. So if you have a file called `summarize` in your working directory, `aia summarize notes.txt` will treat both as context files (and, with no prompt ID, stop with `A prompt ID is required…`). Rename the file or run from another directory.
 
 Every remaining argument must be an existing file. If one isn't, AIA stops before calling the model:
 
@@ -98,10 +101,10 @@ See [Chat Sessions](chat.md).
 
 ## Running several prompts in a row
 
-Use `--pipeline` (`-p`) or `--next` (`-n`) to run more than one prompt, each building on the last:
+Use `--pipeline` (`-p`) or `--next` (`-n`) to run more than one prompt, each building on the last. Give the first prompt ID on the command line as usual; outside `--chat`, `--pipeline` on its own stops with `A prompt ID is required…`:
 
 ```bash
-aia --pipeline extract,summarize,translate report.txt
+aia extract --pipeline summarize,translate report.txt
 aia extract --next summarize report.txt
 ```
 
@@ -117,10 +120,10 @@ For each prompt, AIA assembles the text in this order:
 4. Anything piped in on **stdin**
 5. The contents of each **context file**, in the order you listed them
 
-Each part is separated by a blank line. In chat mode the role and skills go into the system prompt instead, so they apply to every turn.
+Each part is separated by a blank line. In chat mode the skills go into the system prompt instead, so they apply to every turn. A role from your roles folder also goes into the system prompt, in every mode (see [Roles and Skills](roles-and-skills.md)).
 
 !!! note "A role on its own"
-    `aia --role editor` with no prompt ID and no `--chat` runs the role file itself as the prompt.
+    `aia --role editor` with no prompt ID and no `--chat` stops with `A prompt ID is required…`. Pipe something in (`echo "Tighten this paragraph: ..." | aia --role editor`) or give a prompt ID.
 
 ## Changing settings for one run
 
@@ -134,7 +137,7 @@ Most configuration can be overridden with an option. The ones you'll reach for m
 | `-r`, `--role ROLE` | Prepend a role |
 | `-s`, `--skill IDS` | Append skills |
 | `-o`, `--output [FILE]` / `--no-output` | Where to save the answer ([Output, History and Usage](output-and-history.md)) |
-| `-c`, `--config-file FILE` | Layer an extra config file on top of your normal settings |
+| `-c`, `--config-file FILE` | Use FILE instead of `~/.config/aia/aia.yml`; it also replaces your `AIA_*` environment variables (except `AIA_MODEL` and `AIA_PLUGINS_DIR`) |
 | `--tokens` / `--cost` | Show usage after each answer |
 
 The complete list is in the [CLI reference](../reference/cli.md); how options, environment variables and config files combine is explained in [Precedence](../configuration/precedence.md).
@@ -165,7 +168,7 @@ Press ++ctrl+c++ to interrupt AIA at any time. It prints `Interrupted. Exiting..
 
 | Message | Meaning |
 |---------|---------|
-| `A prompt ID is required unless using --chat, --fuzzy, or providing context files.` | You ran `aia` with nothing to send. |
+| `A prompt ID is required unless using --chat, --fuzzy, or providing context files.` | You ran `aia` with nothing to send. Despite the wording, context files alone aren't enough: without `--chat` you also need a prompt ID or piped text. |
 | `Error: Prompt ID 'x' does not exist at …` | A prompt named in `--pipeline`/`--next` isn't in your prompts directory. |
 | `The following files do not exist: …` | A context file name is wrong, or a prompt ID wasn't recognized (see the rules above). |
 | `Unknown argument(s): _x … Did you mean: -x?` | You typed `_` instead of `-` in front of an option. |

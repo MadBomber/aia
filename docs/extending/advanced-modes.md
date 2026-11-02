@@ -15,7 +15,7 @@ Verification mode enabled for next prompt.
 - Each mode applies to **one** message and then switches off.
 - Only one mode can be set at a time. A second mode directive replaces the first.
 - These modes work only in chat sessions (`--chat`).
-- If a mode can't run, AIA says so and handles the message normally. For example, `/debate` needs at least two robots. If a mode fails part-way, AIA prints `... failed: <reason>. Falling back to normal mode.`
+- If a mode can't run, AIA handles the message normally. Some modes say so first; others, such as `/debate` with fewer than two robots or `/concurrent` with fewer than two server groups, just answer normally. If a mode fails part-way, AIA prints `... failed: <reason>. Falling back to normal mode.`
 
 | Directive | Alias | What happens to the next message |
 |-----------|-------|-------------------------------|
@@ -123,7 +123,7 @@ Specialist 'tax_attorney' responding...
 - With a type, the specialist is told it's a `<type>` specialist.
 - The full form chooses the name, the model and the instructions. Use `-` or `inherit` as the model to keep the chief's model. The model can be on a different provider from the chief, for example a hosted expert in a local-model chat.
 
-AIA keeps up to five specialists per session and reuses one when you ask for the same role again. Specialists can use your tools and MCP servers.
+AIA keeps up to five specialists per session and reuses one when you ask for the same role again. Specialists don't get your tools or MCP servers. If the job needs them, [recruit a crewmate](crews.md#recruiting-crewmates) instead.
 
 ## `/delegate`: plan and hand off
 
@@ -184,7 +184,7 @@ A system prompt that tells the chief when to use `/spawn`, `/decompose` and `/de
 
 ## Task tracking with TrakFlow
 
-AIA uses [TrakFlow](https://github.com/madbomber/trak_flow), a small local task tracker, to record plans and tasks. TrakFlow keeps its data in a `.trak_flow` directory. At startup AIA looks for one in the current directory and its parents, and **creates one in the current directory** if it finds none.
+AIA uses [TrakFlow](https://github.com/madbomber/trak_flow), a small local task tracker, to record plans and tasks. A TrakFlow project is marked by a `.trak_flow` directory. At startup AIA looks for one in the current directory and its parents, and **creates one in the current directory** if it finds none. The tasks themselves go in TrakFlow's database, which by default is `~/.config/trak_flow/tf.db`, shared by every project.
 
 ### Directives
 
@@ -210,7 +210,7 @@ Ready tasks (1):
 `--track-pipeline` records a [pipeline](../prompts/pipelines.md) run as a TrakFlow plan, with one step per prompt. Each step is marked in progress, completed or blocked (with the error) as AIA works through it:
 
 ```bash
-aia --track-pipeline --pipeline research,outline,draft
+aia --track-pipeline research --pipeline outline,draft
 ```
 
 ## Options that have no effect yet

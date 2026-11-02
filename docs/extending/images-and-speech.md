@@ -79,13 +79,13 @@ By default AIA speaks with the macOS `say` command. `--voice` picks one of its v
 
 ### Using your own text-to-speech command
 
-On other systems, or to use a cloud voice, point `--speak-command` at your own script:
+To use a cloud voice or another text-to-speech engine, point `--speak-command` at your own script:
 
 ```bash
 aia --chat --speak --speak-command ~/bin/tts.sh
 ```
 
-AIA runs the command with two arguments: the text to speak, and the path of an `.mp3` file to write. When the command has written that file, AIA plays it with `afplay` (a macOS command). For example:
+AIA runs the command with two arguments: the text to speak, and the path of an `.mp3` file to write. When the command has written that file, AIA plays it with `afplay`. `afplay` comes with macOS, so on other systems the file is written but not played. For example:
 
 ```bash
 #!/usr/bin/env bash

@@ -25,7 +25,7 @@ Start a message with `@name` to send it to that crewmate instead of the chief. N
 > @critic Does this API design have any obvious flaws?
 ```
 
-Only the named robot replies. AIA removes the leading `@critic` before passing the message on. Unknown names are reported rather than ignored:
+Only the named robot replies. AIA removes the leading `@critic` before passing the message on. Unknown names are reported rather than ignored. If no `@name` in the message matches a crew member, the message isn't sent to any robot, and that includes any `@word`, such as the domain in an email address:
 
 ```text
 Unknown robot: @critc  (available: Tobor, researcher, critic)
@@ -93,6 +93,8 @@ Recruited 'critic' into the crew (anthropic/claude-sonnet-4-5).
 
 Recruits get the chief's tools and share its [MCP server](mcp.md) connections, so they can do the same work as the chief. Tool approvals follow your `--tool-approval` setting.
 
+Switching models with `/model` rebuilds the crew from the new model list, so recruits don't survive the switch. Recruit them again afterwards.
+
 ### Giving a crewmate a role with skills
 
 A crew of identical robots gives you identical answers. Give each crewmate a **skill**, a reusable set of instructions from your skills directory (list them with `/skills`; see [Roles and Skills](../everyday/roles-and-skills.md)):
@@ -141,7 +143,7 @@ The chief has two built-in tools for managing the crew: one to **recruit** a rob
   each using the matching skill, then have them review lib/payment.rb.
 ```
 
-The chief may recruit the members itself. Run `/robots` to see what it created. These tools show up in `/tools` as `RecruitRobotTool` and `ReskillRobotTool`.
+The chief may recruit the members itself. Run `/robots` to see what it created. These tools show up in `/tools` as `AIA::RecruitRobotTool` and `AIA::ReskillRobotTool`. If you limit tools with `--allowed-tools`, include `recruit` and `reskill` in the list or the chief loses them.
 
 ## Recruits versus spawned specialists
 
@@ -151,6 +153,7 @@ The chief may recruit the members itself. Run `/robots` to see what it created. 
 |---|---|---|
 | Handles | Every message you send it with `@name` | Only your **next** message |
 | Joins the crew | Yes: listed in `/robots`, reachable with `@name` | No |
+| Tools and MCP servers | The chief's | None |
 | Good for | A standing teammate | A one-off expert answer |
 
 Both accept the same `name provider/model instructions` form. If you keep spawning the same specialist, recruit it instead.

@@ -142,7 +142,7 @@ aia -t 0.2 extract_fields invoice.txt         # precise
 aia -t 1.0 brainstorm                         # loose
 ```
 
-AIA leaves out settings a model doesn't accept. For example, temperature isn't sent to models that don't support it, and for local providers the default `max_tokens` isn't sent at all, because their context windows are small.
+AIA leaves out settings a model doesn't accept. For example, temperature isn't sent to models that don't support it, and the default `max_tokens` isn't sent at all when the model is named with a provider (`ollama/llama3.2`, or `--provider`), because local servers' context windows are small. That applies to gateway prefixes such as `openrouter/…` too; give `--max-tokens` a value other than `32767` if you want a cap sent.
 
 ## Using more than one model
 

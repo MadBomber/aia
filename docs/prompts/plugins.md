@@ -29,7 +29,7 @@ AIA has no default plugins directory. Plugins load only after you set one. You c
 `~` is expanded. If the directory you name doesn't exist, AIA prints `Warning: configured plugins directory does not exist: ...` and runs without plugins.
 
 !!! note "The environment variable name"
-    The variable is `AIA_PLUGINS_DIR`, not the `AIA_PATHS__PLUGINS_DIR` form you might expect from the other `AIA_*` settings.
+    Besides `AIA_PATHS__PLUGINS_DIR`, the form used by the other `AIA_*` settings, AIA also reads the shorter `AIA_PLUGINS_DIR`. If both are set, `AIA_PLUGINS_DIR` wins.
 
 ## What counts as a plugin
 

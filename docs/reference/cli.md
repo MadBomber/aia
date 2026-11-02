@@ -14,7 +14,7 @@ aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*
 - If the first argument is not a prompt ID, aia treats it as a context file. If that file starts with a `#!` line, aia runs it as an [executable prompt](../prompts/executable-prompts.md).
 - Text piped on standard input is added to the prompt. With no prompt ID, piped text *is* the prompt.
 
-You need a prompt ID unless you use `--chat`, `--fuzzy`, or give context files:
+You need a prompt ID unless you use `--chat` or `--fuzzy`, pipe the prompt in, or run an executable prompt. Despite what the message says, context files on their own are not enough:
 
 ```console
 $ aia
@@ -79,7 +79,7 @@ Record each step of a pipeline as a task in [TrakFlow](../extending/advanced-mod
 | off | `flags.track_pipeline` | `AIA_FLAGS__TRACK_PIPELINE` |
 
 ```bash
-aia --track-pipeline -p research,outline,draft
+aia --track-pipeline research -p outline,draft
 ```
 
 ### `--concurrent-auto`
@@ -187,7 +187,7 @@ The model, or models, to use. Format: `MODEL[=ROLE][,MODEL[=ROLE]]...`
 - One model: `-m claude-haiku-4-5`
 - With an explicit provider: `-m ollama/llama3.2`
 - Several models run the same prompt in parallel: `-m gpt-4o,claude-sonnet-4-6`. See [Multi-Model & Consensus](../extending/multi-model.md).
-- `=ROLE` gives that model its own [role](../everyday/roles-and-skills.md): `-m gpt-4o=architect,claude-sonnet-4-6=reviewer`. The role file must exist, or aia stops with `Role file not found`.
+- `=ROLE` gives that model its own [role](../everyday/roles-and-skills.md): `-m gpt-4o=architect,claude-sonnet-4-6=reviewer`. The role file must exist, or aia stops with a Ruby error report containing `Role file not found`.
 - The same model can appear more than once, with different roles.
 
 | Default | Config key | Env |
@@ -342,7 +342,7 @@ The subdirectory of the prompts directory that holds role files.
 
 ### `-r`, `--role ROLE_ID`
 
-Put a role in front of the prompt. `ROLE_ID` is a file in the roles directory (`-r ruby_expert` reads `~/.prompts/roles/ruby_expert.md`) or a path to a file (`-r ./roles/reviewer.md`). With `--chat`, the role becomes part of the session's system prompt. Without a prompt ID, the role itself is run as the prompt. See [Roles & Skills](../everyday/roles-and-skills.md).
+Put a role in front of the prompt. `ROLE_ID` is a file in the roles directory (`-r ruby_expert` reads `~/.prompts/roles/ruby_expert.md`) or a path to a file (`-r ./roles/reviewer.md`). With `--chat`, the role becomes part of the session's system prompt. Outside chat you still need a prompt ID: `aia -r tutor` on its own stops with `A prompt ID is required …`. See [Roles & Skills](../everyday/roles-and-skills.md).
 
 | Default | Config key | Env |
 |---|---|---|
@@ -389,7 +389,7 @@ Run `PROMPT_ID` after the current prompt. Pipeline prompts share one conversatio
 
 | Default | Config key | Env |
 |---|---|---|
-| none | `pipeline` | — |
+| none | `pipeline` | `AIA_PIPELINE` (comma-separated) |
 
 ```bash
 aia extract_facts report.pdf -n summarize -n translate_es
@@ -397,25 +397,29 @@ aia extract_facts report.pdf -n summarize -n translate_es
 
 ### `-p`, `--pipeline PROMPTS`
 
-Run a comma-separated list of prompts in order. The prompt ID you give on the command line (if any) runs first. Every prompt in the list must exist before anything runs:
+Run a comma-separated list of prompts in order. The prompt ID you give on the command line runs first; you need one unless you also use `--chat`. Every prompt in the list must exist before anything runs:
 
 ```console
-$ aia -p outline,draftt
+$ aia research -p outline,draftt
 Error: Prompt ID 'draftt' does not exist at /home/you/.prompts/draftt.md
 One or more prompt IDs do not exist.
 ```
 
 | Default | Config key | Env |
 |---|---|---|
-| `[]` | `pipeline` | — |
+| `[]` | `pipeline` | `AIA_PIPELINE` (comma-separated) |
 
 ```bash
-aia -p research,outline,draft topic_notes.md
+aia research -p outline,draft topic_notes.md
 ```
 
-### `--system-prompt PROMPT_ID`
+### `--system-prompt TEXT`
 
-Use the prompt file `PROMPT_ID` as the system prompt for chat sessions.
+Use `TEXT` as the system prompt, in chat and in one-shot runs. `--help` calls the argument `PROMPT_ID`, but aia uses the value as literal text; it doesn't look up a prompt file. A role (`--role`) is added after it.
+
+```bash
+aia --system-prompt "Answer in one short paragraph." my_prompt
+```
 
 | Default | Config key | Env |
 |---|---|---|
@@ -485,7 +489,7 @@ See [Images & Speech](../extending/images-and-speech.md) for walkthroughs.
 
 ### `--speak`
 
-Speak each response aloud after it is shown.
+In a chat session, speak each response aloud after it is shown. Prompts run without `--chat` aren't spoken. See [Images & Speech](../extending/images-and-speech.md).
 
 | Default | Config key | Env |
 |---|---|---|
@@ -577,7 +581,7 @@ Ruby libraries (gems) to load at startup, comma-separated. Use it to load tool g
 
 | Default | Config key | Env |
 |---|---|---|
-| `[]` | `require_libs` | — |
+| `[]` | `require_libs` | `AIA_REQUIRE_LIBS` (comma-separated) |
 
 ```bash
 aia --rq shared_tools --chat
@@ -812,7 +816,7 @@ Use only these MCP servers (comma-separated names). aia warns about names that a
 
 | Default | Config key | Env |
 |---|---|---|
-| all | `mcp_use` | — |
+| all | `mcp_use` | `AIA_MCP_USE` (comma-separated) |
 
 ### `--ms`, `--mcp-skip NAMES`
 
@@ -820,7 +824,7 @@ Use every configured MCP server except these. Ignored when `--mcp-use` is given.
 
 | Default | Config key | Env |
 |---|---|---|
-| none | `mcp_skip` | — |
+| none | `mcp_skip` | `AIA_MCP_SKIP` (comma-separated) |
 
 ```bash
 aia --chat --mu github
@@ -844,7 +848,7 @@ Print the option summary and exit.
 
 ## Exit status
 
-aia exits with status `1` for an unknown option, a missing required value, a configuration error (such as a missing prompt or config file), or a failed `--list-models`. An option given an invalid value (`-t hot`, `--tool-approval maybe`) stops aia with a Ruby error report rather than a one-line message.
+aia exits with status `1` for an unknown option, a missing required value, a configuration error (such as a missing prompt or config file), or a failed `--list-models`. An option given an invalid value (`-t hot`, `--tool-approval maybe`, or a `-m MODEL=ROLE` whose role file is missing) stops aia with a Ruby error report rather than a one-line message.
 
 ## See also
 

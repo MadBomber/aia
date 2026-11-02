@@ -97,7 +97,7 @@ tools:
   approval: ask
 ```
 
-Approval applies to every robot aia builds, including crew members and spawned specialists. It covers only MCP servers marked `requires_approval:`; tools you load with `--tools` or `--require` are never gated, so restrict those with `--at` / `--rt`.
+Approval applies to every robot aia builds, including crew members and spawned specialists. It covers MCP servers marked `requires_approval:` and any tool whose author declared `requires_approval` in the tool itself. Other tools you load with `--tools` or `--require` run without asking, so restrict those with `--at` / `--rt`.
 
 ## MCP servers
 

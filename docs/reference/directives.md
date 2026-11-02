@@ -199,7 +199,7 @@ Compare the open GitHub issues with the TODOs in the local repository.
 - An option name, such as `temperature`, `max_tokens`, `debug`, `verbose`, `consensus` or `tokens`
 - A dotted path, such as `llm.max_tokens` or `output.file`
 
-The change lasts for the rest of the session only. AIA warns `Unknown config option 'x'` if it doesn't recognize the key.
+The change lasts for the rest of the session only. Model settings such as `temperature`, `top_p` and `llm.*` don't retune the robot that is already running. They take effect once a robot is rebuilt, for example after `/model`. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect). AIA warns `Unknown config option 'x'` if it doesn't recognize the key.
 
 ```text
 /config llm
@@ -555,7 +555,7 @@ Shows TrakFlow tasks that are ready to work on, or a summary of the project.
 /temperature VALUE
 ```
 
-Sets the sampling temperature for the rest of the session. Lower values give more focused answers, and higher values give more varied ones. This is the same as `/config temperature VALUE`.
+Sets the sampling temperature for the rest of the session. Lower values give more focused answers, and higher values give more varied ones. This is the same as `/config temperature VALUE`. In 2.0.0 the robot that is already running keeps its old temperature. The new value applies after you switch with `/model`, and to robots built later in the session.
 
 ```text
 /temp 0.2
@@ -583,7 +583,7 @@ Lists the tools the model can call, both local and MCP, with their descriptions.
 /top_p VALUE
 ```
 
-Sets top-p (nucleus) sampling for the rest of the session. This is the same as `/config top_p VALUE`. Some providers reject requests that set both temperature and top-p.
+Sets top-p (nucleus) sampling for the rest of the session. This is the same as `/config top_p VALUE`. Like `/temperature`, it doesn't change the robot that is already running until you switch with `/model`. Some providers reject requests that set both temperature and top-p.
 
 ## /verify
 

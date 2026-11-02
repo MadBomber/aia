@@ -37,9 +37,11 @@ What happens to the role depends on the mode:
 
 | Mode | Where the role goes |
 |------|---------------------|
-| Running a prompt or [pipeline](../prompts/pipelines.md) | Placed in front of **each** prompt's text |
-| `--chat` | Added to the **system prompt**, so it applies to every turn |
-| `--role` with no prompt ID and no `--chat` | The role file itself is run as the prompt |
+| Running a prompt or [pipeline](../prompts/pipelines.md) | Placed in front of **each** prompt's text, and also added to the **system prompt** |
+| `--chat` | Added to the **system prompt**, so it applies to every turn (if you start the chat with a prompt ID, it is also placed in front of that prompt) |
+| `--role` with no prompt ID and no `--chat` | Nothing runs: AIA stops with `A prompt ID is required…` unless you pipe text in |
+
+The copy placed in front of a prompt is processed like a prompt file. The copy in the system prompt is the file's raw text: its front matter, ERB and `$(...)` are sent as written. A role given as a path never reaches the system prompt.
 
 ### Listing roles
 
@@ -121,6 +123,9 @@ aia -s ~/notes/house_style.md summarize report.txt
 
 If a skill can't be found, AIA prints a warning (`Warning: Skill 'x' not found in …`) and carries on without it.
 
+!!! note "Path skills still need a skills directory"
+    `--skill` loads nothing, not even a path such as `./skills/release-checklist`, unless your skills directory (see [Where skills live](#where-skills-live)) exists. If it doesn't, the skills are skipped without a warning.
+
 | Mode | Where skills go |
 |------|-----------------|
 | Running a prompt or pipeline | Appended after **each** prompt's text |
@@ -128,7 +133,7 @@ If a skill can't be found, AIA prints a warning (`Warning: Skill 'x' not found i
 
 ### Where skills live
 
-AIA looks for skills in `~/.prompts/skills` by default. To use another folder:
+AIA looks for skills in `~/.prompts/skills` by default. That location doesn't follow `--prompts-dir` or `AIA_PROMPTS__DIR`. To use another folder:
 
 ```bash
 aia --skills-dir ~/.claude/skills -s pdf --chat      # for one run
