@@ -108,7 +108,7 @@ aia -s changelog -s house-style summarize notes.md      # repeatable
 
 You don't have to type the whole name. If there's no folder with exactly that name, AIA uses the first folder (alphabetically) whose name **starts with** what you typed, so `-s rails` finds `rails-migrations`.
 
-A path works too, either to a skill folder or straight to a Markdown file:
+A path works too, either to a skill folder (AIA reads its `SKILL.md`) or straight to a Markdown file. A file must end in `.md` or `.markdown`; any other file is refused with `Warning: Skill '…' is not a markdown file`:
 
 ```bash
 aia -s ./skills/release-checklist --chat

@@ -68,6 +68,10 @@ module AIA
         return report_skill_error("Error: /skill requires a skill name. Use /skills to list available skills.")
       end
 
+      if path_based_id?(skill_name) && non_markdown_skill_file?(File.expand_path(skill_name))
+        return report_skill_error("Error: #{non_markdown_skill_message(skill_name)}.")
+      end
+
       dir = aia_skills_dir
       skill_dir = find_skill_dir(skill_name, dir)
       unless skill_dir

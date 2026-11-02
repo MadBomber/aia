@@ -40,7 +40,7 @@ Check shell aliases, scripts, cron jobs and executable prompts' `#!` lines for t
 
 ### Removed keys
 
-These are ignored if they are still in your config file, as are their `AIA_*` environment variables:
+These are ignored if they are still in your config file, as are their `AIA_*` environment variables. They don't appear in `aia --dump` either:
 
 | Removed key | Notes |
 |---|---|

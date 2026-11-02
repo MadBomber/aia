@@ -220,6 +220,9 @@ module AIA
       extra_config_path = overrides.delete(:extra_config_file)
       load_extra_config(extra_config_path) if extra_config_path
 
+      drop_unknown_keys
+      # Not a schema key, so it is set after unknown keys are dropped
+      paths[:extra_config_file] = File.expand_path(extra_config_path) if extra_config_path && File.exist?(extra_config_path)
       cast_string_values
       apply_models_env_var unless overrides[:models]
       apply_plugins_dir_env_var unless overrides[:plugins_dir]
@@ -253,6 +256,23 @@ module AIA
       end
     end
 
+    # +hash+ without the keys +schema+ doesn't define, at every level. A
+    # schema value that is an empty Hash accepts any keys.
+    #
+    # @param hash [Hash] section values (from defaults, config files and env)
+    # @param schema [Hash] the section's defaults from defaults.yml
+    # @return [Hash]
+    def self.schema_keys_only(hash, schema)
+      return hash if schema.empty?
+
+      hash.each_with_object({}) do |(key, value), kept|
+        next unless schema.key?(key)
+
+        sub = schema[key]
+        kept[key] = sub.is_a?(Hash) && value.is_a?(Hash) ? schema_keys_only(value, sub) : value
+      end
+    end
+
     # Convert config to hash (for dump, etc.)
     def to_h
       SECTIONS.to_h { [it, send(it).to_h] }.merge(
@@ -263,6 +283,17 @@ module AIA
     end
 
     private
+
+    # Keys that defaults.yml doesn't define — removed settings in an old
+    # config file, or AIA_* variables for them — are ignored, so they
+    # don't linger in the config or in --dump.
+    def drop_unknown_keys
+      SECTIONS.each do |name|
+        section = send(name)
+        kept = self.class.schema_keys_only(section.to_h, self.class.schema[name] || {})
+        send(:"#{name}=", MywayConfig::ConfigSection.new(kept)) unless kept == section.to_h
+      end
+    end
 
     # Environment variables arrive as strings; give each section value the
     # type of its default (booleans, numbers, comma-separated lists).
@@ -291,8 +322,6 @@ module AIA
         aliases: true) || {}
 
       config_hash = raw.key?(:defaults) ? (raw[:defaults] || {}) : raw
-
-      paths[:extra_config_file] = path
 
       config_hash.each do |key, value|
         case key

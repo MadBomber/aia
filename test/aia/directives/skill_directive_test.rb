@@ -81,6 +81,21 @@ class SkillDirectiveTest < Minitest::Test
     assert_match(/No skill matching 'nonexistent'/, @captured_stdout.string)
   end
 
+  def test_skill_path_to_a_markdown_file_is_included
+    path = File.join(@test_skills_dir, 'notes.md')
+    File.write(path, 'Be brief.')
+
+    assert_equal 'Be brief.', @instance.skill([path])
+  end
+
+  def test_skill_path_to_a_non_markdown_file_is_refused
+    path = File.join(@test_skills_dir, 'secrets.env')
+    File.write(path, 'TOKEN=abc')
+
+    assert_nil @instance.skill([path])
+    assert_match(/not a markdown file/, @captured_stdout.string)
+  end
+
   def test_skill_directory_without_skill_md_returns_nil
     result = @instance.skill(['empty-skill'])
     assert_nil result

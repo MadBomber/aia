@@ -484,7 +484,7 @@ Speaks the text with your speak command (`--speak-command` or `audio.speak_comma
 <%= skill 'ID' %>
 ```
 
-Inserts the `SKILL.md` text of a skill from your skills directory (default `~/.prompts/skills`). `ID` can be the start of a skill's directory name, or a path that begins with `/`, `./`, `../` or `~/`. See [Roles & Skills](../everyday/roles-and-skills.md).
+Inserts the `SKILL.md` text of a skill from your skills directory (default `~/.prompts/skills`). `ID` can be the start of a skill's directory name, or a path that begins with `/`, `./`, `../` or `~/`, to a skill folder or to a `.md` / `.markdown` file. See [Roles & Skills](../everyday/roles-and-skills.md).
 
 ```text
 /skill changelog

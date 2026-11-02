@@ -190,7 +190,7 @@ aia --dump /tmp/now.yml
 aia -m gpt-4o -t 0.1 --dump /tmp/with_flags.yml   # include command-line options
 ```
 
-The file must end in `.yml` or `.yaml`. In the output, keys inside each section are written with a leading colon (`:temperature: 0.7`); that is how YAML writes Ruby symbols and doesn't affect reading it.
+The file must end in `.yml` or `.yaml`. Keys aia doesn't know (a typo, or a setting removed in 2.0) are dropped when the configuration loads, so they don't appear; if a setting you wrote is missing from the dump, check its spelling. In the output, keys inside each section are written with a leading colon (`:temperature: 0.7`); that is how YAML writes Ruby symbols and doesn't affect reading it.
 
 Use `--dump` to debug settings, not to create your config file: it records every value, including paths already expanded and defaults you never chose, which then stop following future changes to aia's defaults.
 

@@ -276,4 +276,31 @@ class SkillUtilsTest < Minitest::Test
     assert_respond_to obj, :load_single_skill_content
     assert_respond_to obj, :skills_base_dir
   end
+
+  # --- path skills must be markdown ---
+
+  def test_path_skill_file_must_be_markdown
+    Dir.mktmpdir do |dir|
+      md  = File.join(dir, 'rules.MD')
+      txt = File.join(dir, 'rules.txt')
+      File.write(md, "---\nname: Rules\n---\nFollow the rules.")
+      File.write(txt, 'not a skill')
+
+      assert_equal 'Follow the rules.', AIA::SkillUtils.load_single_skill_content(md, nil).strip
+      _, err = capture_io { assert_nil AIA::SkillUtils.load_single_skill_content(txt, nil) }
+      assert_includes err, 'not a markdown file'
+      assert_nil AIA::SkillUtils.find_skill_dir(txt, dir)
+    end
+  end
+
+  def test_non_markdown_skill_file
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'a.markdown'), '')
+      File.write(File.join(dir, 'a.rb'), '')
+
+      refute AIA::SkillUtils.non_markdown_skill_file?(File.join(dir, 'a.markdown'))
+      assert AIA::SkillUtils.non_markdown_skill_file?(File.join(dir, 'a.rb'))
+      refute AIA::SkillUtils.non_markdown_skill_file?(dir)
+    end
+  end
 end

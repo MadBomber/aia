@@ -33,11 +33,26 @@ module AIA
       {}
     end
 
+    # File extensions a skill given as a file path may have.
+    SKILL_EXTENSIONS = %w[.md .markdown].freeze
+
+    # Whether +path+ names a file that can't be a skill (not markdown).
+    def non_markdown_skill_file?(path)
+      File.file?(path) && !SKILL_EXTENSIONS.include?(File.extname(path).downcase)
+    end
+
+    # The warning for a skill path that names a non-markdown file.
+    def non_markdown_skill_message(skill_id)
+      "Skill '#{skill_id}' is not a markdown file (#{SKILL_EXTENSIONS.join(' or ')})"
+    end
+
+    # A skill directory or markdown file. Path IDs may name either; a file
+    # must be markdown. Named skills are looked up in +base_dir+ only.
     def find_skill_dir(skill_name, base_dir)
       if path_based_id?(skill_name)
         expanded = File.expand_path(skill_name)
         return expanded if Dir.exist?(expanded)
-        return expanded if File.file?(expanded)
+        return expanded if File.file?(expanded) && !non_markdown_skill_file?(expanded)
         return nil
       end
 
@@ -141,6 +156,11 @@ module AIA
     def load_single_skill_content(skill_id, skills_base_dir)
       unless path_based_id?(skill_id) || (skills_base_dir && Dir.exist?(skills_base_dir))
         $stderr.puts "Warning: Skill '#{skill_id}' not loaded: skills directory #{skills_base_dir.inspect} does not exist"
+        return nil
+      end
+
+      if path_based_id?(skill_id) && non_markdown_skill_file?(File.expand_path(skill_id))
+        $stderr.puts "Warning: #{non_markdown_skill_message(skill_id)}; not loaded"
         return nil
       end
 

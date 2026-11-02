@@ -146,6 +146,8 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - The report prints even when `RUBYOPT=-W0` silences Ruby warnings.
 - **The fuzzy role picker** (`--fuzzy` with a role that isn't found) lists roles from `prompts.dir`/`prompts.roles_prefix`, including subdirectories, the same roles `--list-roles` shows.
 - **Examples:** `16_directives.sh` lists the real directives, `15_parameters.sh` says AIA asks for every parameter, `21_executable_prompts.sh` notes that a piped file's shebang options are not applied, and `aia_config_orchestrator.yml` no longer claims to extend the base config.
+- **Skill paths must be markdown.** A skill given as a file path (`--skill ./x.md`, `/skill ./x.md`) must end in `.md` or `.markdown`; any other file is refused with a warning instead of being sent to the model. Skill folders and skills by name are unchanged.
+- **Unknown config keys are dropped at load.** Keys `defaults.yml` doesn't define, from a config file or an `AIA_*` variable, no longer linger in the configuration or show up in `--dump`.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.
@@ -158,10 +160,6 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - `/say` with no text no longer captures stdin.
   - Skill paths are confined to the skills directory.
   - `bin/aia` works with a relative `BUNDLE_GEMFILE`.
-
-### Known Issues
-
-- **Skill paths can load non-markdown files.** A skill given as a path (`--skill ./x`, `/skill ./x`) loads any readable file, not just markdown. Skills given by name are limited to the skills directory.
 
 ### Details: changes after 2.0.0.pre.beta2
 

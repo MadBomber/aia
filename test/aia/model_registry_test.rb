@@ -133,6 +133,29 @@ class RemovedConfigKeysTest < Minitest::Test
 
       assert_in_delta 0.3, config.llm.temperature
       refute_respond_to config, :embedding
+      refute config.flags.to_h.key?(:clear)
+      refute config.output.to_h.key?(:markdown)
+      refute config.prompts.to_h.key?(:tools_prefix)
     end
+  end
+
+  def test_environment_variables_for_removed_keys_are_dropped
+    ENV['AIA_FLAGS__CLEAR'] = 'true'
+    ENV['AIA_FLAGS__EXPERT_ROUTING'] = 'true'
+    config = AIA::Config.new
+
+    refute config.flags.to_h.key?(:clear)
+    refute config.flags.to_h.key?(:expert_routing)
+    refute_includes config.to_h[:flags].keys, :clear
+  ensure
+    ENV.delete('AIA_FLAGS__CLEAR')
+    ENV.delete('AIA_FLAGS__EXPERT_ROUTING')
+  end
+
+  def test_schema_keys_only
+    schema = { a: 1, nested: { x: 1 }, open: {} }
+    hash   = { a: 2, gone: 3, nested: { x: 2, y: 3 }, open: { anything: 1 } }
+
+    assert_equal({ a: 2, nested: { x: 2 }, open: { anything: 1 } }, AIA::Config.schema_keys_only(hash, schema))
   end
 end
