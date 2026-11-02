@@ -125,10 +125,26 @@ shows what you're talking to. To switch:
 /model gpt-4o,gemini-2.5-pro        # switch to several models at once
 ```
 
-AIA rebuilds the session with the new model. The conversation so far comes with you: the old model writes a summary of the conversation, and the new model starts from that summary. This costs one extra request.
+AIA rebuilds the session with the new model, and by default the conversation comes with you. How the conversation is carried over is set by `model_switch_history` in your config file (or `AIA_MODEL_SWITCH_HISTORY`):
 
-!!! note "`model_switch_history` has no effect in 2.0.0"
-    `defaults.yml` and the 2.0.0 changelog describe a `model_switch_history` setting (`summarize`, `replay`, `clean`), but aia 2.0.0 never loads it, so every switch summarizes. For a fresh start, run `/clear` after `/model`.
+| Value | What the new model gets |
+|-------|-------------------------|
+| `summarize` (default) | The old model writes a summary of the conversation, and the new model starts from that summary. This costs one request for the summary, plus one request per new model to hand it over. |
+| `replay` | Every message you sent is re-sent to the new model, one at a time. The most faithful option, but one request per message you typed, per new model. |
+| `clean` | Nothing. The new model starts fresh. |
+
+```yaml
+model_switch_history: replay
+```
+
+`/model` also accepts short aliases such as `sonnet`, `haiku`, `gpt4o`, `cheap` or `fast`, and any you define under `model_aliases` in your config file:
+
+```yaml
+model_aliases:
+  writer: claude-sonnet-4-5
+```
+
+Only an exact alias is replaced, so a full model name is never changed.
 
 When a switch carries history over, AIA tells you: `Switching to claude-sonnet-4-5 (conversation: summarize)...`
 

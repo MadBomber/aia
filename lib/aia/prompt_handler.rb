@@ -32,11 +32,26 @@ module AIA
       @prompts_dir = AIA.config.prompts.dir
       @roles_dir   = AIA.config.prompts.roles_dir
 
+      flags = AIA.config.flags
       PM.configure do |c|
         c.prompts_dir = @prompts_dir
+        # flags.shell / flags.erb are the defaults; a file's front matter can still override them
+        c.shell = self.class.flag_enabled?(flags, :shell)
+        c.erb   = self.class.flag_enabled?(flags, :erb)
       end
 
       register_pm_directives
+    end
+
+    # A shell/erb flag is on unless it is explicitly false.
+    #
+    # @param flags [#shell, #erb, nil]
+    # @param name [Symbol] :shell or :erb
+    # @return [Boolean]
+    def self.flag_enabled?(flags, name)
+      return true unless flags.respond_to?(name)
+
+      flags.public_send(name) != false
     end
 
     def fetch_prompt(prompt_id)

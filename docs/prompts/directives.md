@@ -97,7 +97,7 @@ In a prompt file, paths are relative to the directory of the file that contains 
 /cost                      # tokens and cost so far, as CSV
 ```
 
-When you switch models with `/model`, the new model is given a summary of the conversation so far. In 2.0.0 this can't be changed (the `model_switch_history` setting isn't loaded); run `/clear` afterwards for a fresh start. See [Choosing Models](../everyday/models.md).
+When you switch models with `/model`, the new model is given a summary of the conversation so far. Set `model_switch_history` to `replay` or `clean` to change that. See [Choosing Models](../everyday/models.md).
 
 ### Managing the conversation
 

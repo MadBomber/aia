@@ -51,6 +51,7 @@ module AIA
       # Build robot or network
       @robot = RobotFactory.build(cfg)
       AIA.client = @robot
+      @robot_sync = RobotSync.new(cfg, @robot)
 
       # Run the remaining startup coordination: tools, filters, task board, bus
       coordinator = StartupCoordinator.new(robot: @robot, ui_presenter: @ui_presenter, mcp_manager: @mcp_manager)
@@ -73,7 +74,8 @@ module AIA
         prompt_handler:  @prompt_handler,
         input_collector: @input_collector,
         ui_presenter:    @ui_presenter,
-        session_tracker: @session_tracker
+        session_tracker: @session_tracker,
+        robot_sync:      @robot_sync
       ).process(cfg)
 
       # Start chat mode after all prompts are processed
@@ -132,11 +134,13 @@ module AIA
     end
 
     def build_chat_loop
+      # A pipeline step may have rebuilt the client (front-matter model:)
       ChatLoop.new(
-        @robot, @ui_presenter, @directive_processor,
+        AIA.client || @robot, @ui_presenter, @directive_processor,
         session_tracker: @session_tracker,
         alias_registry: @alias_registry,
-        filters: @filters
+        filters: @filters,
+        robot_sync: @robot_sync
       )
     end
 

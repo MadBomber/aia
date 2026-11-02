@@ -116,3 +116,22 @@ class ToolFilterStrategyTest < Minitest::Test
     assert_nil strategy.resolve("some prompt")
   end
 end
+
+class ToolFilterStrategyTimeoutFromTest < Minitest::Test
+  def config_with(timeout)
+    OpenStruct.new(tool_filter: OpenStruct.new(timeout_s: timeout))
+  end
+
+  def test_uses_configured_positive_timeout
+    assert_equal 3, AIA::ToolFilterStrategy.timeout_from(config_with(3))
+    assert_in_delta 0.5, AIA::ToolFilterStrategy.timeout_from(config_with(0.5))
+  end
+
+  def test_falls_back_to_default_for_missing_or_invalid_values
+    default = AIA::ToolFilterStrategy::DEFAULT_TIMEOUT_S
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(config_with(nil))
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(config_with(0))
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(config_with('5'))
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(OpenStruct.new)
+  end
+end

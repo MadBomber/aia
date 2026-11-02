@@ -28,7 +28,7 @@ To see the value of every key as aia will actually use it, run `aia --dump curre
 | `llm.frequency_penalty` | float | `0.0` | `AIA_LLM__FREQUENCY_PENALTY` | `--frequency-penalty` | Penalizes repeated tokens. |
 | `llm.presence_penalty` | float | `0.0` | `AIA_LLM__PRESENCE_PENALTY` | `--presence-penalty` | Encourages new topics. |
 
-A prompt's front matter accepts `temperature` and `top_p`, but in 2.0.0 they don't reach the model. See [Prompt Files](../prompts/prompt-files.md#front-matter-keys).
+A prompt's front matter can set `temperature` and `top_p` for that prompt. See [Prompt Files](../prompts/prompt-files.md#front-matter-keys).
 
 ## `models` — which model(s) to use
 
@@ -123,7 +123,7 @@ Turning image generation on is a flag: `flags.paint` (`--paint`). See [Images & 
 | `tools.dir` | path | `~/.prompts/tools` | `AIA_TOOLS__DIR` | — | **No effect.** Use `tools.paths` or `--tools`. |
 
 !!! note
-    An environment variable holds one string. `AIA_TOOLS__ALLOWED=read,write` is matched as the single string `read,write`, not as two names, and `AIA_TOOLS__PATHS` likewise names one file. Use the config file, `--at read,write` or `--tools` for a list.
+    In an environment variable, separate list items with commas: `AIA_TOOLS__ALLOWED=read,write`, `AIA_TOOLS__PATHS=~/tools/a.rb,~/tools/b.rb`.
 
 ## `flags` — on/off switches
 
@@ -137,8 +137,8 @@ Turning image generation on is a flag: `flags.paint` (`--paint`). See [Images & 
 | `flags.tokens` | `false` | `AIA_FLAGS__TOKENS` | `--tokens` | Show tokens and elapsed time per turn. |
 | `flags.no_mcp` | `false` | `AIA_FLAGS__NO_MCP` | `--no-mcp` | Don't connect to MCP servers. |
 | `flags.speak` | `false` | `AIA_FLAGS__SPEAK` | `--speak` | Speak responses. |
-| `flags.shell` | `true` | `AIA_FLAGS__SHELL` | — | **No effect** as a config setting. To turn off `$(...)` / `$VAR` expansion, put `shell: false` in a prompt's front matter. |
-| `flags.erb` | `true` | `AIA_FLAGS__ERB` | — | **No effect** as a config setting. To turn off ERB, put `erb: false` in a prompt's front matter. |
+| `flags.shell` | `true` | `AIA_FLAGS__SHELL` | — | Expand `$(...)` and `$VAR` in prompts. A prompt's `shell:` front matter overrides it. |
+| `flags.erb` | `true` | `AIA_FLAGS__ERB` | — | Render ERB (`<%= %>`) in prompts. A prompt's `erb:` front matter overrides it. |
 | `flags.clear` | `false` | `AIA_FLAGS__CLEAR` | — | **No effect.** Use the `/clear` directive. |
 | `flags.consensus` | `false` | `AIA_FLAGS__CONSENSUS` | `--consensus` | Merge multi-model answers into one. |
 | `flags.track_pipeline` | `false` | `AIA_FLAGS__TRACK_PIPELINE` | `--track-pipeline` | Track pipelines in TrakFlow. |
@@ -154,7 +154,7 @@ Turning image generation on is a flag: `flags.paint` (`--paint`). See [Images & 
 
 | Key | Type | Default | Env | Meaning |
 |---|---|---|---|---|
-| `tool_filter.timeout_s` | number | `10` | `AIA_TOOL_FILTER__TIMEOUT_S` | **No effect.** The tool filter always uses a 10-second limit. |
+| `tool_filter.timeout_s` | number | `10` | `AIA_TOOL_FILTER__TIMEOUT_S` | Seconds the chat tool filter may take per turn before it is skipped. |
 
 ## `logger` — log destinations and levels {#logger}
 
@@ -235,8 +235,8 @@ Each server has a `name` and either a `command` (with `args`, `env`) for a local
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `model_aliases` | map | `{}` | **No effect.** |
-| `model_switch_history` | `clean` \| `replay` \| `summarize` | `summarize` | **No effect** in 2.0.0 — the setting is not loaded, so switching models with `/model` always hands the new model a summary of the conversation (`summarize`). |
+| `model_aliases` | map | `{}` | Extra short names for `/model`, e.g. `writer: claude-sonnet-4-5`. Added to the built-in aliases (`sonnet`, `haiku`, `gpt4o`, `cheap`, `fast` …). |
+| `model_switch_history` | `clean` \| `replay` \| `summarize` | `summarize` | What the new model gets when you switch models: a summary, every message re-sent, or nothing. Env: `AIA_MODEL_SWITCH_HISTORY`. |
 
 ## `concurrency` — parallel MCP servers
 
@@ -267,7 +267,6 @@ The context files for the run. aia fills it from the file names on the command l
 
 A prompt's YAML front matter can change configuration for the run. The short forms `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell` and `erb` sit at the top level; anything else goes under a `config:` section using the same section names as this page:
 
-In 2.0.0, `model`, `temperature`, `top_p` and `llm.*` keys in front matter don't take effect; see [Prompt Files](../prompts/prompt-files.md#front-matter-keys). The other keys do:
 
 ```yaml
 ---

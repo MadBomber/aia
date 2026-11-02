@@ -18,8 +18,9 @@ module AIA
     include Speech
 
     def initialize(robot, ui_presenter, directive_processor,
-                   session_tracker: nil, alias_registry: nil, filters: {})
+                   session_tracker: nil, alias_registry: nil, filters: {}, robot_sync: nil)
       @robot               = robot
+      @robot_sync          = robot_sync
       @ui_presenter        = ui_presenter
       @directive_processor = directive_processor
       @tracker             = session_tracker || SessionTracker.new
@@ -40,7 +41,8 @@ module AIA
       )
       @tool_filter_strategy = ToolFilterStrategy.new(
         filters: filters,
-        ui_presenter: @ui_presenter
+        ui_presenter: @ui_presenter,
+        timeout_s: ToolFilterStrategy.timeout_from(AIA.config)
       )
     end
 
@@ -92,6 +94,8 @@ module AIA
         next if processed_prompt.nil?
 
         next if model_switch_handled?
+
+        sync_robot_settings
         next if special_routing_handled?(processed_prompt, @robot)
 
         execute_and_present(processed_prompt, @robot)
@@ -200,6 +204,15 @@ module AIA
     def update_robot
       @robot = AIA.client
       @special_mode_handler.robot = @robot
+    end
+
+    # Bring the robot in line with settings changed since the last turn
+    # (/temperature, /top_p, /config llm.*). See RobotSync.
+    def sync_robot_settings
+      return unless @robot_sync
+
+      @robot_sync.call(@robot)
+      rebind_robot_if_rebuilt
     end
 
     # Re-bind @robot when a directive rebuilt AIA.client into a different robot

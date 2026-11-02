@@ -92,6 +92,15 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
 - **Command-line errors:** an invalid option value (`-t hot`, `--tool-approval maybe`), a malformed `-m` spec or a missing `-m MODEL=ROLE` role file now prints a one-line `ERROR:` message and exits 1 instead of a Ruby backtrace.
 - **Model search:** `--available-models` and `/available_models` capability terms such as `text_to_image` work again under ruby_llm 2.1 instead of crashing with `NoMethodError`.
 - **Front-matter `model:`** no longer crashes the run after the model replies.
+- **Settings changed while aia runs now reach the model:**
+  - A prompt's front-matter `model:` switches models before that prompt runs; `temperature:`, `top_p:` and `config: llm:` retune the running robot.
+  - `/temperature`, `/top_p` and `/config llm.*` apply from the next chat turn, to every crewmate, without losing the conversation.
+  - `/config` converts values to the setting's type (numbers, true/false, lists) for every key, not just seven switches.
+- **`model_switch_history` and `model_aliases` are loaded** from the config file, `-c` files and the environment. `/model` accepts aliases such as `sonnet` or `cheap`.
+- **Environment variables are typed:** `AIA_FLAGS__X=false` turns a switch off, numbers such as `AIA_LLM__TEMPERATURE=0.2` become numbers, and `AIA_TOOLS__ALLOWED`, `AIA_TOOLS__REJECTED` and `AIA_TOOLS__PATHS` are split on commas.
+- **`flags.shell` and `flags.erb`** set the default for every prompt; front matter still overrides them.
+- **`tool_filter.timeout_s`** sets the chat tool filter's time limit.
+- **`--dump`** includes `tool_filter`, `model_switch_history` and `model_aliases`, and `-c` files can set `tool_filter`.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

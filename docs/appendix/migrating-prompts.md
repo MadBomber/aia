@@ -49,8 +49,7 @@ Settings move into YAML front matter, placeholders become ERB, and each paramete
 
 The script writes every `//config` setting as a top-level key. aia only reads a few top-level keys (`next`, `pipeline`, `shell`, `erb`, plus the model settings below) and ignores the rest. So move any other migrated setting, such as `tokens: true` or an `llm:` block, under a `config:` key. See [Prompt Files](../prompts/prompt-files.md) and [Parameters](../prompts/parameters.md).
 
-!!! warning "Remove migrated model settings"
-    The script turns `//config model …` into a front-matter `model:`, and `//temperature` / `//top_p` into `temperature:` / `top_p:`. In 2.0.0 these front-matter keys have no effect, so delete those lines after migrating and pass `-m` / `-t` on the command line instead. See [Prompt Files](../prompts/prompt-files.md#front-matter-keys).
+The script turns `//config model …` into a front-matter `model:`, and `//temperature` / `//top_p` into `temperature:` / `top_p:`. These keep working in 2.0. See [Prompt Files](../prompts/prompt-files.md#front-matter-keys).
 
 ## Get the script
 

@@ -19,6 +19,17 @@ module AIA
 
     DEFAULT_TIMEOUT_S = 10
 
+    # The per-filter timeout from config (tool_filter.timeout_s), or the default
+    # when it is unset or not a positive number.
+    #
+    # @param config [#tool_filter]
+    # @return [Numeric]
+    def self.timeout_from(config)
+      section = config.respond_to?(:tool_filter) ? config.tool_filter : nil
+      value   = section.respond_to?(:timeout_s) ? section.timeout_s : nil
+      value.is_a?(Numeric) && value.positive? ? value : DEFAULT_TIMEOUT_S
+    end
+
     # @param filters [Hash{Symbol => ToolFilter}] e.g. {tfidf: tfidf_filter}
     # @param ui_presenter [UIPresenter, nil] for display (unused currently, reserved)
     # @param timeout_s [Numeric] per-filter wall-clock timeout in seconds

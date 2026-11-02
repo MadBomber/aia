@@ -25,6 +25,26 @@ class PromptHandlerTest < Minitest::Test
     @handler = AIA::PromptHandler.new
   end
 
+  # PM's shell/erb settings are global; restore its defaults for other tests.
+  def teardown
+    PM.configure do |c|
+      c.shell = true
+      c.erb   = true
+    end
+  end
+
+  def test_config_flags_become_prompt_manager_defaults
+    refute PM.config.shell
+    refute PM.config.erb
+  end
+
+  def test_flag_enabled_unless_explicitly_false
+    assert AIA::PromptHandler.flag_enabled?(OpenStruct.new(shell: true), :shell)
+    assert AIA::PromptHandler.flag_enabled?(OpenStruct.new(shell: nil), :shell)
+    refute AIA::PromptHandler.flag_enabled?(OpenStruct.new(erb: false), :erb)
+    assert AIA::PromptHandler.flag_enabled?(nil, :erb)
+  end
+
   def test_initialization
     # Test basic initialization
     assert_instance_of AIA::PromptHandler, @handler

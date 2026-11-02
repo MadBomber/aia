@@ -73,10 +73,7 @@ llm:
 
 - **`/terse` is gone.**
 - **`/ruby` is off by default.** It runs any Ruby with aia's full privileges. Start aia with `--allow-ruby-eval` to use it. See [Security](../configuration/security.md).
-- **`/model` keeps the conversation.** Switching models now hands the new model a summary of the conversation so far; in 1.x the new model started fresh.
-
-    !!! note
-        The `model_switch_history` setting (`clean`, `replay`, `summarize`) described in the 2.0.0 changelog is not loaded from the config file in 2.0.0, so model switches always summarize. Use `/clear` after `/model` if you want a fresh start.
+- **`/model` keeps the conversation.** Switching models now hands the new model a summary of the conversation so far; in 1.x the new model started fresh. Set `model_switch_history: clean` to start fresh as 1.x did, or `replay` to re-send your messages. See [Chat Sessions](../everyday/chat.md#switching-models-mid-conversation).
 
 Every other 1.x directive and alias still works.
 

@@ -53,7 +53,7 @@ erb: false
 ---
 ```
 
-The `flags.shell` and `flags.erb` keys in your config file don't switch this off globally in 2.0.0; set it per prompt. See [ERB & Shell](../prompts/erb-and-shell.md).
+To switch it off for every prompt, set `flags.shell: false` and `flags.erb: false` in your config file; a prompt's own `shell:` / `erb:` front matter still wins. See [ERB & Shell](../prompts/erb-and-shell.md).
 
 !!! warning "Piped text with no prompt ID is a prompt"
     `some_command | aia` (with no prompt ID) runs the piped text as a prompt, so `$(...)` and ERB in it are executed. Don't pipe untrusted content — a web page, an email, a downloaded file — into `aia` without a prompt ID. With a prompt ID (`some_command | aia summarize`), piped text and context files are appended as plain text and nothing in them runs.

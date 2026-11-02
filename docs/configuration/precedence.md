@@ -48,9 +48,9 @@ List every date mentioned in the text, one per line, in ISO 8601.
 | `AIA_LLM__TEMPERATURE=0.9 aia --chat` | `0.9`* | The environment overrides both files. |
 | `aia -t 0.2 --chat` | `0.2` | The command line overrides the environment. |
 
-\* Environment values reach aia as text; see the caution on [Environment Variables](environment.md). The order is the same for every key.
+\* aia converts the text `0.9` to a number; see [Environment Variables](environment.md). The order is the same for every key.
 
-If you then run `aia -t 0.2 extract_dates contract.txt`, the prompt's `temperature: 0.0` replaces `0.2` in the configuration when the prompt is loaded, but the model still runs at `0.2`. The next section explains why.
+If you then run `aia -t 0.2 extract_dates contract.txt`, the prompt's `temperature: 0.0` replaces `0.2` when the prompt is loaded, so that prompt runs at `0.0`.
 
 Check any combination without calling a model by adding `--dump`:
 
@@ -64,9 +64,10 @@ Config successfully dumped to /tmp/c.yml
 
 ## When layers 6 and 7 take effect
 
-aia builds the model connection (the *robot*) once, at startup, from layers 1–5. Front matter and directives are applied later, while aia runs, and they update the configuration from that point on. Two things follow:
+aia builds the model connection (the *robot*) once, at startup, from layers 1–5. Front matter and directives are applied later, while aia runs, and they update the configuration from that point on:
 
-- **Model settings in front matter or chat don't retune the robot that is already running.** In 2.0.0, `temperature:` and `top_p:` in a prompt's front matter, and `/temperature`, `/top_p` or `/config llm.…` in chat, change the configuration, but the running robot keeps the parameters it was built with. A front-matter `model:` is ignored the same way. `/model` is the exception: it rebuilds the robot, and the new one picks up the current configuration, including any temperature you changed. To be sure a prompt runs with particular model settings, give them on the command line (or put them in a `-c` config file).
+- **Model settings apply before the next prompt or chat turn.** `temperature:`, `top_p:` and `config: llm:` in a prompt's front matter, and `/temperature`, `/top_p` or `/config llm.…` in chat, retune the running robot (and every crewmate) in place, so the conversation is kept.
+- **A different model rebuilds the robot.** A front-matter `model:` switches models before that prompt runs, the same way `/model` does in chat, and carries the conversation over as `model_switch_history` says (see [Chat Sessions](../everyday/chat.md#switching-models-mid-conversation)).
 - **Other settings apply right away** — for example the output file, the pipeline (`next:` / `pipeline:`), or flags such as `tokens`.
 
 ### Front matter lasts for the rest of the run
@@ -96,7 +97,7 @@ Some command-line options add to what came before them on the same command line:
 1. Run `aia --dump /tmp/c.yml` with the same options and from the same directory. If the value is wrong there, it comes from layers 1–5.
 2. Run `env | grep '^AIA_'` to spot a forgotten `export`.
 3. Look for `config/aia.yml` in the current directory.
-4. If `--dump` looks right but the run doesn't, check the prompt's front matter, and remember that model settings in front matter don't retune the running robot (see above).
+4. If `--dump` looks right but the run doesn't, check the prompt's front matter: it is applied after `--dump` reads the configuration.
 5. In chat, `/config` shows the live values.
 
 ## See also

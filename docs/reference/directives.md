@@ -199,7 +199,7 @@ Compare the open GitHub issues with the TODOs in the local repository.
 - An option name, such as `temperature`, `max_tokens`, `debug`, `verbose`, `consensus` or `tokens`
 - A dotted path, such as `llm.max_tokens` or `output.file`
 
-The change lasts for the rest of the session only. Model settings such as `temperature`, `top_p` and `llm.*` don't retune the robot that is already running. They take effect once a robot is rebuilt, for example after `/model`. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect). AIA warns `Unknown config option 'x'` if it doesn't recognize the key.
+The change lasts for the rest of the session only. Model settings such as `temperature`, `top_p` and `llm.*` apply from your next message: AIA retunes the running robot, and every crewmate, without losing the conversation. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect). AIA warns `Unknown config option 'x'` if it doesn't recognize the key.
 
 ```text
 /config llm
@@ -207,8 +207,8 @@ The change lasts for the rest of the session only. Model settings such as `tempe
 /config llm.max_tokens 4000
 ```
 
-!!! note "Booleans"
-    The words `true`, `yes`, `on`, `1` and similar are turned into true/false for `chat`, `debug`, `verbose`, `fuzzy`, `speak`, `paint` and `append`. Other keys store the value exactly as you typed it.
+!!! note "Value types"
+    AIA converts the value to the setting's type: numbers for `temperature` or `llm.max_tokens`, true/false for on/off settings (`true`, `yes`, `on`, `1` / `false`, `no`, `off`, `0`), and comma-separated lists for list settings. A value that doesn't fit is stored as you typed it.
 
 ## /cost
 
@@ -342,7 +342,7 @@ Failed Servers:
 
 With no argument, AIA shows the current model's details. With several models, it shows each one's provider, context window, prices and capabilities.
 
-Switching keeps your conversation: the old model summarizes it for the new one. The `model_switch_history` setting that would choose `replay` or `clean` instead isn't loaded in 2.0.0; run `/clear` after `/model` for a fresh start.
+Switching keeps your conversation: by default the old model summarizes it for the new one. Set `model_switch_history` to `replay` (re-send your messages) or `clean` (start fresh). `MODEL` can also be an alias such as `sonnet` or `cheap`, or one you define under `model_aliases`.
 
 See [Choosing Models](../everyday/models.md).
 

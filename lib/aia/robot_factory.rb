@@ -125,8 +125,21 @@ module AIA
       # - max_tokens remains a RobotLab::RunConfig field; AIA normalizes it at
       #   the RubyLLM/OpenAI provider boundary for models that need
       #   max_completion_tokens
-      # :reek:TooManyStatements -- one guarded param per LLM tuning knob, with provider-specific max_tokens handling
       def build_run_config(config)
+        params = llm_params(config)
+        params.merge!(ToolApprover.options(config))
+
+        RobotLab::RunConfig.new(**params)
+      end
+
+      # The LLM tuning parameters (temperature, max_tokens, top_p, penalties)
+      # for the current config, with unsupported or default-only values left out.
+      # Shared by build_run_config and RobotSync, which retunes a running robot.
+      #
+      # @param config [AIA::Config]
+      # @return [Hash{Symbol => Numeric}]
+      # :reek:TooManyStatements -- one guarded param per LLM tuning knob, with provider-specific max_tokens handling
+      def llm_params(config)
         model_spec = config.models.first
         llm        = config.llm
         params     = {}
@@ -153,9 +166,7 @@ module AIA
         pp = llm.presence_penalty
         params[:presence_penalty] = pp if pp && pp != 0.0
 
-        params.merge!(ToolApprover.options(config))
-
-        RobotLab::RunConfig.new(**params)
+        params
       end
 
       # Returns false for models that explicitly declare temperature: false in the

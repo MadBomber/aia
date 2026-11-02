@@ -27,9 +27,11 @@ module AIA
         leaf_key = config_item.to_s.split('.').last
 
         boolean = AIA.respond_to?("#{leaf_key}?")
-        if boolean
-          new_value = %w[true t yes y on 1 yea yeah yep yup].include?(new_value.downcase)
-        end
+        new_value = if boolean
+                      %w[true t yes y on 1 yea yeah yep yup].include?(new_value.downcase)
+                    else
+                      typed_config_value(config_item, new_value)
+                    end
 
         if write_config_value(config_item, new_value)
           AIA::LoggerManager.reconfigure_levels!
@@ -53,6 +55,7 @@ module AIA
         puts
       else
         model_names = args.join(' ').split(',').map(&:strip).reject(&:empty?)
+        model_names = resolve_model_aliases(model_names, cfg.model_aliases)
         cfg.models = AIA::Config::TO_MODEL_SPECS.call(model_names)
         mode = HistoryTransfer.mode_for(cfg)
         puts "Switching to #{model_names.join(', ')} (conversation: #{mode})..." unless mode == :clean
@@ -201,6 +204,36 @@ module AIA
       end
     rescue StandardError => e
       puts "   Details: Unable to fetch (#{e.class.name}: #{e.message})"
+    end
+
+    # Convert a typed /config value to the type of the key's default
+    # (numbers, booleans, lists). Unknown keys keep the string.
+    def typed_config_value(config_item, raw)
+      path = config_key_path(config_item)
+      return raw unless path
+
+      schema_default = AIA::Config.schema.dig(*path)
+      AIA::ValueCaster.cast(raw, AIA::ValueCaster.default_for(path.join('.'), schema_default))
+    end
+
+    # The defaults.yml path for a /config key: "llm.temperature", a flat CLI
+    # key such as "temperature", or a top-level key. nil when unknown.
+    def config_key_path(config_item)
+      key = config_item.to_s
+      return key.split('.').map(&:to_sym) if key.include?('.')
+
+      AIA::Config::CLI_TO_NESTED_MAP[key.to_sym] || (AIA::Config.schema.key?(key.to_sym) ? [key.to_sym] : nil)
+    end
+
+    # Replace names that exactly match a model alias (built in, or from the
+    # model_aliases config key), keeping any =ROLE suffix.
+    def resolve_model_aliases(model_names, custom_aliases)
+      registry = AIA::ModelAliasRegistry.new(custom_aliases || {})
+      model_names.map do |spec|
+        name, role = spec.split('=', 2)
+        name = registry.resolve(name) if registry.known?(name)
+        role ? "#{name}=#{role}" : name
+      end
     end
 
     # Apply a config value by key, supporting three forms:

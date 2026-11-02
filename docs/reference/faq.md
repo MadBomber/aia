@@ -185,13 +185,9 @@ Work through [Troubleshooting a setting](../configuration/precedence.md#troubles
 
 `aia --dump /tmp/c.yml` shows the configuration aia ends up with.
 
-### I set `AIA_FLAGS__TOKENS=false` but token counts still show
+### An `AIA_*` variable doesn't seem to work
 
-Environment values are plain text, and aia treats the text `false` as *on* for most switches. `unset AIA_FLAGS__TOKENS` instead. See [Environment Variables](../configuration/environment.md).
-
-### A temperature or model in my prompt's front matter is ignored
-
-In 2.0.0, the model connection is built once at startup from your config files, environment and command line. `model:`, `temperature:` and `top_p:` in front matter update the configuration but don't retune the robot that is already running. Give them on the command line instead (`-m`, `-t`), or use `/model` in chat, which rebuilds the robot with the current settings. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
+aia converts each value to the setting's type (on/off words, numbers, comma-separated lists). A value that doesn't fit, such as `AIA_LLM__MAX_TOKENS=lots`, is kept as text and may not work. `aia --dump /tmp/c.yml` shows what aia made of it. See [Environment Variables](../configuration/environment.md).
 
 ### Can I have per-project settings?
 

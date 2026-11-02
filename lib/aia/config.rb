@@ -26,6 +26,7 @@ require 'date'
 
 require_relative 'config/model_spec'
 require_relative 'config/mcp_parser'
+require_relative 'config/value_caster'
 
 module AIA
   class Config < MywayConfig::Base
@@ -45,12 +46,16 @@ module AIA
     # ==========================================================================
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
-    attr_config :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
-                :tools, :flags, :registry, :paths, :logger, :concurrency,
-                :tool_filter
+    SECTIONS = %i[service llm prompts roles skills output audio image embedding
+                  tools flags registry paths logger concurrency tool_filter].freeze
+
+    attr_config(*SECTIONS)
 
     # Array/collection attributes
     attr_config :models, :pipeline, :require_libs, :mcp_servers, :mcp_use, :mcp_skip, :context_files
+
+    # Model switching: /model history transfer mode and model-name aliases
+    attr_config :model_switch_history, :model_aliases
 
     # Runtime attributes (not loaded from config files)
     attr_accessor :provider # --provider: default provider for prefixless models; also scopes --list-models
@@ -223,6 +228,7 @@ module AIA
       extra_config_path = overrides.delete(:extra_config_file)
       load_extra_config(extra_config_path) if extra_config_path
 
+      cast_string_values
       apply_models_env_var unless overrides[:models]
       apply_plugins_dir_env_var unless overrides[:plugins_dir]
       apply_overrides(overrides) if overrides && !overrides.empty?
@@ -257,33 +263,22 @@ module AIA
 
     # Convert config to hash (for dump, etc.)
     def to_h
-      {
-        service: service.to_h,
-        llm: llm.to_h,
+      SECTIONS.to_h { [it, send(it).to_h] }.merge(
         models: models.map(&:to_h),
-        prompts: prompts.to_h,
-        roles: roles.to_h,
-        skills: skills.to_h,
-        output: output.to_h,
-        audio: audio.to_h,
-        image: image.to_h,
-        embedding: embedding.to_h,
-        tools: tools.to_h,
-        flags: flags.to_h,
-        logger: logger.to_h,
-        registry: registry.to_h,
-        paths: paths.to_h,
-        concurrency: concurrency.to_h,
-        pipeline: pipeline,
-        require_libs: require_libs,
-        mcp_servers: mcp_servers,
-        mcp_use: mcp_use,
-        mcp_skip: mcp_skip,
-        context_files: context_files
-      }
+        model_switch_history:, model_aliases:,
+        pipeline:, require_libs:, mcp_servers:, mcp_use:, mcp_skip:, context_files:
+      )
     end
 
     private
+
+    # Environment variables arrive as strings; give each section value the
+    # type of its default (booleans, numbers, comma-separated lists).
+    def cast_string_values
+      SECTIONS.each do |name|
+        ValueCaster.cast_section!(send(name), self.class.schema[name] || {}, name.to_s)
+      end
+    end
 
     # Load a config file that REPLACES the user's personal config.
     # :reek:TooManyStatements -- single case dispatch mapping YAML keys to typed config setters; one branch per key family
@@ -315,8 +310,9 @@ module AIA
           send("#{key}=", Array(value)) if respond_to?("#{key}=")
         when :mcp_servers
           self.mcp_servers = Array(value)
-        when :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
-             :tools, :flags, :registry, :paths, :logger, :concurrency
+        when :model_switch_history, :model_aliases
+          send("#{key}=", value)
+        when *SECTIONS
           section = send(key)
           if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
             merge_into_section(section, value)

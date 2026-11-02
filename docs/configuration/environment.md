@@ -28,19 +28,14 @@ export AIA_SKILLS__DIR=~/work/prompts/skills
 
 Environment variables override your config file and are overridden by command-line options. See [Configuration Precedence](precedence.md).
 
-!!! warning "Values arrive as plain text"
-    aia does not convert environment values to numbers or true/false. Two consequences:
+!!! note "How values are read"
+    Environment values are text, so aia converts each one to the type of the setting it controls:
 
-    - **On/off settings are unreliable as environment variables.** Prefer the config file or a command-line option for them. If you do use one:
-        - `AIA_FLAGS__CHAT`, `AIA_FLAGS__FUZZY` and `AIA_FLAGS__CONSENSUS` understand `true` and `false`.
-        - `AIA_FLAGS__DEBUG`, `AIA_FLAGS__VERBOSE`, `AIA_FLAGS__SPEAK`, `AIA_FLAGS__PAINT` and `AIA_OUTPUT__APPEND` have no reliable effect whatever their value. Use `-d`, `-v`, `--speak`, `--paint`, `-a` or the config file.
-        - Every other on/off variable switches the setting **on for any value, including `false`**. To turn one off, `unset` it.
-    - **Numbers stay text.** `AIA_LLM__TEMPERATURE=0.2` reaches the model request as the string `"0.2"`, which a provider may reject. Set numbers in the config file or with `-t`, `--max-tokens` and friends.
-    - **One value per variable for `tools.allowed`, `tools.rejected` and `tools.paths`.** `AIA_TOOLS__ALLOWED=read,write` is matched as the one string `read,write`. Put lists in the config file or use `--at` / `--rt` / `--tools`.
+    - **On/off settings** accept `true`, `yes`, `on`, `1` and `false`, `no`, `off`, `0` (any case): `AIA_FLAGS__TOKENS=false`.
+    - **Numbers** are converted: `AIA_LLM__TEMPERATURE=0.2`, `AIA_LLM__MAX_TOKENS=800`.
+    - **Lists** are split on commas: `AIA_TOOLS__ALLOWED=read,write`, `AIA_TOOLS__PATHS=~/tools/a.rb,~/tools/b.rb`, `AIA_REQUIRE_LIBS=shared_tools,json`.
 
-    The top-level lists `pipeline`, `require_libs`, `mcp_use`, `mcp_skip` and `context_files` *are* split on commas: `AIA_REQUIRE_LIBS=shared_tools,json`.
-
-    Run `aia --dump check.yml` to see exactly what aia made of your variables.
+    A value that doesn't fit (for example `AIA_LLM__MAX_TOKENS=lots`) is kept as text, and the setting may then not work. Run `aia --dump check.yml` to see exactly what aia made of your variables.
 
 ## Variables with special handling
 

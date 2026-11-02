@@ -14,8 +14,10 @@ module AIA
     include ContentExtractor
     include SkillUtils
 
-    def initialize(robot:, prompt_handler:, input_collector:, ui_presenter:, session_tracker:)
+    # :reek:LongParameterList -- collaborators injected for isolated testing
+    def initialize(robot:, prompt_handler:, input_collector:, ui_presenter:, session_tracker:, robot_sync: nil)
       @robot           = robot
+      @robot_sync      = robot_sync
       @prompt_handler  = prompt_handler
       @input_collector = input_collector
       @ui              = ui_presenter
@@ -45,6 +47,9 @@ module AIA
 
           prompt_text = build_prompt_text(prompt_id, config)
           next if prompt_text.nil? || prompt_text.strip.empty?
+
+          # Front matter may have changed the model or its settings
+          @robot = @robot_sync.call(@robot) if @robot_sync
 
           result, content = compute_result(prompt_text, config)
 
