@@ -1,4 +1,5 @@
 require_relative '../test_helper'
+require 'tmpdir'
 
 class LoggerManagerTest < Minitest::Test
   def setup
@@ -138,5 +139,15 @@ class LoggerManagerTest < Minitest::Test
     assert AIA::LoggerManager.test_mode?
     # Restore default
     AIA::LoggerManager.test_mode!(level: :debug)
+  end
+
+  def test_create_device_makes_missing_log_directory
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'logs', 'deep', 'mcp.log')
+      device = AIA::LoggerManager.send(:create_device, path)
+
+      assert File.directory?(File.dirname(path))
+      device.close
+    end
   end
 end

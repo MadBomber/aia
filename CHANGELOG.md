@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.1] 2026-11-02
+
+### Fixed
+
+- **`--chat` startup output is readable again.** ruby_llm 2.1 starts stdio MCP servers with their stderr connected to aia's, so server banners, npm notices, stack traces and validation dumps were printed over the "Connecting MCP servers" spinner and garbled it. That stderr now goes to `~/.config/aia/logs/mcp_servers.log`. Set `logger.mcp.server_stderr` to another path, `STDERR` (the 2.0.0 behavior) or `null` to discard it.
+
+### Changed
+
+- `logger.mcp.file` defaults to `~/.config/aia/logs/mcp.log` (was `STDOUT`), so MCP connection warnings no longer print over the spinner. Failed servers are still listed in the startup banner. A config file that sets `file: STDOUT` keeps the old behavior.
+- Log directories are created when they don't exist.
+
 ## [2.0.0] 2026-11-02
 
 AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab): every session is a crew of robots, MCP servers come from ruby_llm 2.1's built-in client, and any provider RubyLLM registers can be used. This entry summarizes everything since 1.1.1, the last 1.x release, including the `2.0.0.pre.alpha` and `2.0.0.pre.beta2` pre-releases.

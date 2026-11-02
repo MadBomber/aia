@@ -148,9 +148,10 @@ aia keeps three logs: `aia` (aia itself), `llm` (requests to the model) and `mcp
 | `logger.llm.file` | as above | `STDOUT` | `AIA_LOGGER__LLM__FILE` |
 | `logger.llm.level` | as above | `warn` | `AIA_LOGGER__LLM__LEVEL` |
 | `logger.llm.flush` | boolean | `true` | `AIA_LOGGER__LLM__FLUSH` |
-| `logger.mcp.file` | as above | `STDOUT` | `AIA_LOGGER__MCP__FILE` |
+| `logger.mcp.file` | as above | `~/.config/aia/logs/mcp.log` | `AIA_LOGGER__MCP__FILE` |
 | `logger.mcp.level` | as above | `warn` | `AIA_LOGGER__MCP__LEVEL` |
 | `logger.mcp.flush` | boolean | `true` | `AIA_LOGGER__MCP__FLUSH` |
+| `logger.mcp.server_stderr` | file path, `STDERR`, or `null` | `~/.config/aia/logs/mcp_servers.log` | `AIA_LOGGER__MCP__SERVER_STDERR` |
 
 `--log-level` and `--log-to` override the level and file of all three at once. `flush: true` writes each entry immediately.
 

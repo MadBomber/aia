@@ -162,10 +162,15 @@ defaults:
       file: STDOUT
       level: warn
       flush: true
+    # MCP connection logging goes to a file so warnings never interleave
+    # with the "Connecting MCP servers" spinner; failures still appear in
+    # the startup banner's FAILED list.
     mcp:
-      file: STDOUT
+      file: ~/.config/aia/logs/mcp.log
       level: warn
       flush: true
+      # stderr of stdio MCP server processes: a file path, STDERR, or null
+      server_stderr: ~/.config/aia/logs/mcp_servers.log
 
   # ---------------------------------------------------------------------------
   # Pipeline/Workflow Configuration

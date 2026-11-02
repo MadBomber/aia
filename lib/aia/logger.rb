@@ -18,8 +18,9 @@
 #       file: STDOUT
 #       level: warn
 #     mcp:
-#       file: STDOUT
+#       file: ~/.config/aia/logs/mcp.log
 #       level: warn
+#       server_stderr: ~/.config/aia/logs/mcp_servers.log  # stdio server stderr
 #
 # Lumberjack provides structured logging, context isolation,
 # automatic log file rolling, and multi-process safe file writes.
@@ -30,6 +31,7 @@
 #   AIA::LoggerManager.clear_test_logs!  # between tests
 #   entries = AIA::LoggerManager.aia_logger.device.entries  # inspect logs
 
+require 'fileutils'
 require 'lumberjack'
 
 module AIA
@@ -287,6 +289,7 @@ module AIA
           Lumberjack::Device::Writer.new($stderr, autoflush: flush)
         else
           path = File.expand_path(file)
+          FileUtils.mkdir_p(File.dirname(path))
           # Daily date rolling via Logger::LogDevice, which also makes the
           # file safe for multiple loggers to write to
           Lumberjack::Device::LogFile.new(
