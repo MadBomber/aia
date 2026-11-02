@@ -1,0 +1,160 @@
+---
+detectors:
+
+  # Disabled: conflicts with project no-comment coding style.
+  IrresponsibleModule:
+    enabled: false
+
+  # Disabled: private helpers that don't reference self are fine where they are.
+  UtilityFunction:
+    enabled: false
+
+  # Disabled: respond_to? duck-typing is intentional in this codebase.
+  ManualDispatch:
+    enabled: false
+
+  # Disabled: attr_accessor is standard Ruby; public attributes are a design choice.
+  Attribute:
+    enabled: false
+
+  # Disabled: bang methods without non-bang counterparts are common in internal APIs.
+  MissingSafeMethod:
+    enabled: false
+
+  # Disabled: explicit nil checks are idiomatic Ruby (nil? / unless nil, etc.).
+  NilCheck:
+    enabled: false
+
+  # Disabled: handler/directive protocol methods must accept the full interface
+  # signature even when individual implementations don't use every parameter.
+  UnusedParameters:
+    enabled: false
+
+  # Disabled: same trade-off as UtilityFunction above — private formatting and
+  # extraction helpers deliberately operate on a passed-in value (result, tool,
+  # robot_result, raw metrics hash) next to their single caller; most of those
+  # values are Hashes or third-party objects we can't (and shouldn't) add
+  # methods to.
+  FeatureEnvy:
+    enabled: false
+
+  # Disabled: the detector fires on the codebase's configuration-cascade style —
+  # `arg || default` dependency-injection fallbacks in constructors and CLI
+  # override-precedence checks (e.g. LoggerManager#effective_log_file). Those
+  # conditionals ARE the method's purpose, not hidden polymorphism.
+  ControlParameter:
+    enabled: false
+
+  # Disabled: guard-clause style (see disabled IfUnlessModifier in rubocop) —
+  # cheap predicates like `available?`, `tracking`, `show_cost` guard each
+  # public method independently. Extracting a null-object/state machine for a
+  # CLI would be over-engineering; every flagged condition was a guard.
+  RepeatedConditional:
+    enabled: false
+
+  # Disabled: the detector doesn't follow initialize's delegation to reset
+  # helpers (Session#initialize_components, TurnState#clear!,
+  # ContextDirectives#reset!, Fzf#build_command) and flags `||=` memoization
+  # and class-level singleton caches. All 21 flagged ivars were audited
+  # (2026-09): every one is assigned before first read; zero nil-read risks.
+  InstanceVariableAssumption:
+    enabled: false
+
+  # 2-deep iteration (rendering a collection of collections, grouped output)
+  # is idiomatic Ruby; 30 of the 31 flagged sites were simple 2-deep
+  # each/map display or grouping loops.
+  NestedIterators:
+    max_allowed_nesting: 2
+
+  # Default is 1 — fires whenever a method is called even twice. Raise to 2.
+  DuplicateMethodCall:
+    max_calls: 2
+
+  # Default is 5; was 8. Raised to 12 with data (2026-09): 84 of the 166
+  # flagged methods sat at 9-12 statements — linear OptionParser registrations
+  # (CLIParser#setup_*), sequential display/formatting output, and step-wise
+  # orchestration with no added branching. Real complexity stays bounded by
+  # flog (warn >=20 / fail >=50) and rubocop Metrics (MethodLength 35, AbcSize
+  # 40). Methods above 12 are fixed or justified per site, not by threshold.
+  TooManyStatements:
+    max_statements: 12
+
+  # Default is 3 — extreme for this codebase.
+  LongParameterList:
+    max_params: 5
+    overrides:
+      initialize:
+        max_params: 7
+
+  # Default is 15; several AIA coordinator/handler classes legitimately exceed this.
+  TooManyMethods:
+    max_methods: 20
+
+  # Default is 4 — far too low for config and session classes with many fields.
+  TooManyInstanceVariables:
+    max_instance_variables: 8
+
+  # Default is 5; some modules carry more constants by design.
+  TooManyConstants:
+    max_constants: 8
+
+  # Raise min_clump_size so only truly repeated parameter groups are flagged.
+  DataClump:
+    max_copies: 2
+    min_clump_size: 3
+
+  # Accept standard Ruby short-name conventions for limited-scope variables.
+  UncommunicativeVariableName:
+    accept:
+      - _    # intentionally ignored
+      - a    # array / argument
+      - b    # body / block
+      - c    # char / count / config
+      - d    # data / dir
+      - e    # rescue => e
+      - f    # file / format / flag
+      - h    # hash
+      - i    # index
+      - k    # key
+      - l    # line / list
+      - m    # match / message
+      - n    # number / name
+      - p    # path / param
+      - q    # query
+      - r    # result / response
+      - s    # string / source
+      - t    # time / token / type
+      - v    # value
+      - w    # word / width
+
+  UncommunicativeParameterName:
+    accept:
+      - a    # vector math pairs (cosine_similarity(a, b))
+      - e
+      - i
+      - f
+      - k
+      - v
+      - t
+      - r
+      - s
+      - m
+      - n
+      - q
+      - b
+
+directories:
+  # plugins/ — standalone LLM tool wrappers; execute() keyword arg lists map
+  # directly to LLM-visible parameters and are intentionally wide.
+  "plugins":
+    LongParameterList:
+      max_params: 20
+    TooManyMethods:
+      max_methods: 25
+
+exclude_paths:
+  - test
+  - examples
+  - docs
+  - coverage
+  - pkg

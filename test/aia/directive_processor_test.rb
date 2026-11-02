@@ -6,13 +6,13 @@ class DirectiveProcessorTest < Minitest::Test
   def setup
     # Mock AIA module methods to prevent actual operations
     AIA.stubs(:config).returns(OpenStruct.new(
-      model: 'test-model',
-      temperature: 0.7,
-      max_tokens: 2048,
-      chat: false,
-      tools: [],
-      context_files: []
-    ))
+                                 model: 'test-model',
+                                 temperature: 0.7,
+                                 max_tokens: 2048,
+                                 chat: false,
+                                 tools: [],
+                                 context_files: []
+                               ))
 
     # PM::Directive.register_all is called at load time, registering
     # all AIA directive subclasses.  Ensure directives are available.
@@ -55,8 +55,10 @@ class DirectiveProcessorTest < Minitest::Test
     require 'clipboard'
     Clipboard.stubs(:paste).raises(StandardError.new("Clipboard access failed"))
 
-    result = processor.process("/paste", nil)
-    assert_match(/Error: Unable to paste from clipboard/, result)
+    result = nil
+    out, = capture_io { result = processor.process("/paste", nil) }
+    assert_nil result
+    assert_match(/Error: Unable to paste from clipboard/, out)
   end
 
   def test_directive_detection
@@ -74,6 +76,7 @@ class DirectiveProcessorTest < Minitest::Test
 
     # config is registered via register_test_directives
     assert processor.directive?("/config")
+    assert processor.directive?("/plugins")
 
     # unregistered names return false
     refute processor.directive?("/nonexistent_directive_xyz")
@@ -95,5 +98,4 @@ class DirectiveProcessorTest < Minitest::Test
     result = processor.process("/config model gpt-4", nil)
     assert_equal "", result
   end
-
 end

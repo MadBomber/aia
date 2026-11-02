@@ -18,7 +18,7 @@
 # 5. Embedded directives (/config)
 #
 # When -c / --config-file is used, it REPLACES sources 2 and 3:
-#   defaults → config file → CLI arguments → embedded directives
+#   defaults -> config file -> CLI arguments -> embedded directives
 
 require 'myway_config'
 require 'yaml'
@@ -26,17 +26,15 @@ require 'date'
 
 require_relative 'config/model_spec'
 require_relative 'config/mcp_parser'
+require_relative 'config/value_caster'
 
 module AIA
-  # Backward compatibility alias — existing code and tests reference AIA::ConfigSection
-  ConfigSection = MywayConfig::ConfigSection
-
   class Config < MywayConfig::Base
     config_name :aia
     env_prefix :aia
     defaults_path File.expand_path('config/defaults.yml', __dir__)
 
-    # AIA is a CLI tool, not a Rails app — no environment sections needed.
+    # AIA is a CLI tool, not a Rails app -- no environment sections needed.
     class << self
       def validate_environment!
         # no-op: AIA has no environment sections in defaults.yml
@@ -48,27 +46,34 @@ module AIA
     # ==========================================================================
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
-    attr_config :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
-                :tools, :flags, :registry, :paths, :logger
+    SECTIONS = %i[service llm prompts skills output audio image
+                  tools flags registry paths logger concurrency tool_filter].freeze
+
+    attr_config(*SECTIONS)
 
     # Array/collection attributes
     attr_config :models, :pipeline, :require_libs, :mcp_servers, :mcp_use, :mcp_skip, :context_files
 
+    # Model switching: /model history transfer mode and model-name aliases
+    attr_config :model_switch_history, :model_aliases
+
     # Runtime attributes (not loaded from config files)
+    attr_accessor :provider # --provider: default provider for prefixless models; also scopes --list-models
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :mcp_list, :list_tools, :list_skills,
+                  :completion, :mcp_list, :list_tools, :list_skills, :list_roles,
                   :executable_prompt_content,
-                  :tool_names, :loaded_tools,
+                  :tool_names, :loaded_tools, :loaded_plugins,
                   :log_level_override, :log_file_override,
-                  :connected_mcp_servers, # Array of successfully connected MCP server names
-                  :failed_mcp_servers     # Array of {name:, error:} hashes for failed MCP servers
+                  :connected_mcp_servers,  # Array of successfully connected MCP server names
+                  :mcp_server_tool_counts, # Hash of name => tool_count for connected MCP servers
+                  :failed_mcp_servers      # Array of {name:, error:} hashes for failed MCP servers
 
     # ==========================================================================
     # Type Coercion
     # ==========================================================================
 
     # Convert array of hashes to array of ModelSpec objects
-    TO_MODEL_SPECS = ->(v) {
+    TO_MODEL_SPECS = lambda { |v|
       return [] if v.nil?
       return v if v.is_a?(Array) && v.first.is_a?(ModelSpec)
 
@@ -105,16 +110,17 @@ module AIA
       service: config_section_coercion(:service),
       llm: config_section_coercion(:llm),
       prompts: config_section_coercion(:prompts),
-      roles: config_section_coercion(:roles),
       skills: config_section_coercion(:skills),
       output: config_section_coercion(:output),
       audio: config_section_coercion(:audio),
       image: config_section_coercion(:image),
-      embedding: config_section_coercion(:embedding),
       tools: config_section_coercion(:tools),
       flags: config_section_coercion(:flags),
+      logger: config_section_coercion(:logger),
       registry: config_section_coercion(:registry),
       paths: config_section_coercion(:paths),
+      concurrency: config_section_coercion(:concurrency),
+      tool_filter: config_section_coercion(:tool_filter),
 
       # Arrays
       models: TO_MODEL_SPECS,
@@ -152,50 +158,58 @@ module AIA
     # Mapping of flat CLI keys to their nested config locations
     CLI_TO_NESTED_MAP = {
       # flags section
-      chat: [:flags, :chat],
-      cost: [:flags, :cost],
-      fuzzy: [:flags, :fuzzy],
-      tokens: [:flags, :tokens],
-      no_mcp: [:flags, :no_mcp],
-      terse: [:flags, :terse],
-      debug: [:flags, :debug],
-      verbose: [:flags, :verbose],
-      consensus: [:flags, :consensus],
+      chat: %i[flags chat],
+      cost: %i[flags cost],
+      fuzzy: %i[flags fuzzy],
+      tokens: %i[flags tokens],
+      no_mcp: %i[flags no_mcp],
+      debug: %i[flags debug],
+      verbose: %i[flags verbose],
+      consensus: %i[flags consensus],
+      track_pipeline: %i[flags track_pipeline],
+      auto_tool_filter: %i[flags auto_tool_filter],
+      allow_ruby_eval: %i[flags allow_ruby_eval],
+      thinking: %i[flags thinking],
+      tool_filter_timeout_s: %i[tool_filter timeout_s],
+      concurrent_auto: %i[concurrency auto],
       # llm section
-      temperature: [:llm, :temperature],
-      max_tokens: [:llm, :max_tokens],
-      top_p: [:llm, :top_p],
-      frequency_penalty: [:llm, :frequency_penalty],
-      presence_penalty: [:llm, :presence_penalty],
+      temperature: %i[llm temperature],
+      max_tokens: %i[llm max_tokens],
+      top_p: %i[llm top_p],
+      frequency_penalty: %i[llm frequency_penalty],
+      presence_penalty: %i[llm presence_penalty],
       # prompts section
-      prompts_dir: [:prompts, :dir],
-      roles_prefix: [:prompts, :roles_prefix],
-      role: [:prompts, :role],
-      skills_dir: [:skills, :dir],
-      skills_prefix: [:prompts, :skills_prefix],
-      skills: [:prompts, :skills],
-      parameter_regex: [:prompts, :parameter_regex],
-      system_prompt: [:prompts, :system_prompt],
+      prompts_dir: %i[prompts dir],
+      roles_prefix: %i[prompts roles_prefix],
+      role: %i[prompts role],
+      skills_dir: %i[skills dir],
+      skills: %i[prompts skills],
+      system_prompt: %i[prompts system_prompt],
       # output section
-      output: [:output, :file],
-      history_file: [:output, :history_file],
-      append: [:output, :append],
-      markdown: [:output, :markdown],
-      # audio section
-      speak: [:audio, :speak],
-      voice: [:audio, :voice],
-      speech_model: [:audio, :speech_model],
-      transcription_model: [:audio, :transcription_model],
+      output: %i[output file],
+      history_file: %i[output history_file],
+      append: %i[output append],
+      # audio section (speak is a flag, not audio config)
+      speak: %i[flags speak],
+      voice: %i[audio voice],
+      speak_command: %i[audio speak_command],
+      speech_model: %i[audio speech_model],
+      transcription_model: %i[audio transcription_model],
       # image section
-      image_size: [:image, :size],
-      image_quality: [:image, :quality],
-      image_style: [:image, :style],
+      paint: %i[flags paint],
+      image_model: %i[image model],
+      image_size: %i[image size],
+      image_quality: %i[image quality],
+      image_style: %i[image style],
       # tools section
-      tool_paths: [:tools, :paths],
-      allowed_tools: [:tools, :allowed],
-      rejected_tools: [:tools, :rejected],
+      tool_paths: %i[tools paths],
+      allowed_tools: %i[tools allowed],
+      rejected_tools: %i[tools rejected],
+      tool_approval: %i[tools approval],
       # registry section
-      refresh: [:registry, :refresh],
+      refresh: %i[registry refresh],
+      # paths section
+      plugins_dir: %i[paths plugins_dir]
     }.freeze
 
     def initialize(overrides: {})
@@ -206,8 +220,15 @@ module AIA
       extra_config_path = overrides.delete(:extra_config_file)
       load_extra_config(extra_config_path) if extra_config_path
 
+      drop_unknown_keys
+      # Not a schema key, so it is set after unknown keys are dropped
+      paths[:extra_config_file] = File.expand_path(extra_config_path) if extra_config_path && File.exist?(extra_config_path)
+      cast_string_values
       apply_models_env_var unless overrides[:models]
+      apply_plugins_dir_env_var unless overrides[:plugins_dir]
       apply_overrides(overrides) if overrides && !overrides.empty?
+      apply_default_provider
+      expand_paths
       process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
     end
 
@@ -223,6 +244,8 @@ module AIA
           section, nested_key = CLI_TO_NESTED_MAP[key_sym]
           section_obj = send(section)
           section_obj.send("#{nested_key}=", value) if section_obj.respond_to?("#{nested_key}=")
+        elsif key_sym == :models
+          self.models = TO_MODEL_SPECS.call(Array(value))
         elsif respond_to?("#{key}=")
           send("#{key}=", value)
         elsif key.to_s.include?('__')
@@ -233,67 +256,72 @@ module AIA
       end
     end
 
+    # +hash+ without the keys +schema+ doesn't define, at every level. A
+    # schema value that is an empty Hash accepts any keys.
+    #
+    # @param hash [Hash] section values (from defaults, config files and env)
+    # @param schema [Hash] the section's defaults from defaults.yml
+    # @return [Hash]
+    def self.schema_keys_only(hash, schema)
+      return hash if schema.empty?
+
+      hash.each_with_object({}) do |(key, value), kept|
+        next unless schema.key?(key)
+
+        sub = schema[key]
+        kept[key] = sub.is_a?(Hash) && value.is_a?(Hash) ? schema_keys_only(value, sub) : value
+      end
+    end
+
     # Convert config to hash (for dump, etc.)
     def to_h
-      {
-        service: service.to_h,
-        llm: llm.to_h,
+      SECTIONS.to_h { [it, send(it).to_h] }.merge(
         models: models.map(&:to_h),
-        prompts: prompts.to_h,
-        roles: roles.to_h,
-        skills: skills.to_h,
-        output: output.to_h,
-        audio: audio.to_h,
-        image: image.to_h,
-        embedding: embedding.to_h,
-        tools: tools.to_h,
-        flags: flags.to_h,
-        registry: registry.to_h,
-        paths: paths.to_h,
-        pipeline: pipeline,
-        require_libs: require_libs,
-        mcp_servers: mcp_servers,
-        mcp_use: mcp_use,
-        mcp_skip: mcp_skip,
-        context_files: context_files
-      }
+        model_switch_history:, model_aliases:,
+        pipeline:, require_libs:, mcp_servers:, mcp_use:, mcp_skip:, context_files:
+      )
     end
 
     private
 
+    # Keys that defaults.yml doesn't define — removed settings in an old
+    # config file, or AIA_* variables for them — are ignored, so they
+    # don't linger in the config or in --dump.
+    def drop_unknown_keys
+      SECTIONS.each do |name|
+        section = send(name)
+        kept = self.class.schema_keys_only(section.to_h, self.class.schema[name] || {})
+        send(:"#{name}=", MywayConfig::ConfigSection.new(kept)) unless kept == section.to_h
+      end
+    end
+
+    # Environment variables arrive as strings; give each section value the
+    # type of its default (booleans, numbers, comma-separated lists).
+    def cast_string_values
+      SECTIONS.each do |name|
+        ValueCaster.cast_section!(send(name), self.class.schema[name] || {}, name.to_s)
+      end
+    end
+
     # Load a config file that REPLACES the user's personal config.
-    # Resets all values to bundled defaults first, then applies the
-    # file's values on top. This means -c gives you a clean slate
-    # based on defaults + the specified file only.
-    #
-    # Uses the same YAML structure as defaults.yml (nested sections).
-    # Supports both flat format and wrapped (defaults:) format.
-    #
-    # @param path [String] path to the YAML config file
+    # :reek:TooManyStatements -- single case dispatch mapping YAML keys to typed config setters; one branch per key family
+    # :reek:DuplicateMethodCall -- Array(value) sits in mutually exclusive case branches; hoisting it would coerce hash-section values too
     def load_extra_config(path)
       path = File.expand_path(path)
 
       unless File.exist?(path)
-        warn "ERROR: Config file not found: #{path}"
+        $stderr.puts "ERROR: Config file not found: #{path}"
         exit 1
-        return # guard for test environments that override exit
+        return # rubocop:disable Lint/UnreachableCode -- exit is mocked in tests
       end
 
-      # Reset everything to bundled defaults so the user's personal
-      # config (~/.config/aia/aia.yml) does not bleed through.
       reset_to_defaults
 
-      raw = YAML.safe_load(
-        File.read(path),
-        permitted_classes: [Symbol],
+      raw = YAML.safe_load_file(path, permitted_classes: [Symbol],
         symbolize_names: true,
-        aliases: true
-      ) || {}
+        aliases: true) || {}
 
       config_hash = raw.key?(:defaults) ? (raw[:defaults] || {}) : raw
-
-      # Store the path for reference (visible in --dump output)
-      paths[:extra_config_file] = path
 
       config_hash.each do |key, value|
         case key
@@ -303,8 +331,9 @@ module AIA
           send("#{key}=", Array(value)) if respond_to?("#{key}=")
         when :mcp_servers
           self.mcp_servers = Array(value)
-        when :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
-             :tools, :flags, :registry, :paths, :logger
+        when :model_switch_history, :model_aliases
+          send("#{key}=", value)
+        when *SECTIONS
           section = send(key)
           if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
             merge_into_section(section, value)
@@ -315,9 +344,6 @@ module AIA
       expand_paths
     end
 
-    # Reset all configuration values to the bundled defaults from
-    # defaults.yml, discarding anything set by the user's personal
-    # config file or environment variables.
     def reset_to_defaults
       defaults = self.class.schema
 
@@ -334,10 +360,6 @@ module AIA
       end
     end
 
-    # Recursively reset a ConfigSection to match the given defaults hash.
-    #
-    # @param section [MywayConfig::ConfigSection] target section
-    # @param defaults_hash [Hash] default values to restore
     def reset_section(section, defaults_hash)
       defaults_hash.each do |key, value|
         existing = section[key.to_sym]
@@ -349,11 +371,6 @@ module AIA
       end
     end
 
-    # Recursively merge a hash into a ConfigSection, preserving
-    # existing values for keys not present in the hash.
-    #
-    # @param section [MywayConfig::ConfigSection] target section
-    # @param hash [Hash] values to merge in
     def merge_into_section(section, hash)
       hash.each do |key, value|
         existing = section[key.to_sym]
@@ -365,76 +382,64 @@ module AIA
       end
     end
 
-    # Apply AIA_MODEL env var if set (supports comma-separated models with optional roles)
-    # Format: MODEL[=ROLE][,MODEL[=ROLE]]...
+    # `--provider SLUG` gives prefixless models a default provider. A model
+    # named with an explicit "<provider>/" prefix keeps its own.
+    def apply_default_provider
+      return if provider.nil? || provider.to_s.empty?
+
+      Array(models).each do |spec|
+        spec.provider ||= provider if spec.respond_to?(:provider)
+      end
+    end
+
     def apply_models_env_var
-      models_env = ENV['AIA_MODEL']
+      models_env = ENV.fetch('AIA_MODEL', nil)
       return if models_env.nil? || models_env.empty?
 
       self.models = TO_MODEL_SPECS.call(models_env.split(',').map(&:strip))
     end
 
+    # Backward-compatible top-level env var for plugin directory.
+    # Unlike most nested config values, this uses AIA_PLUGINS_DIR per requirements.
+    def apply_plugins_dir_env_var
+      plugins_dir_env = ENV.fetch('AIA_PLUGINS_DIR', nil)
+      return if plugins_dir_env.nil? || plugins_dir_env.empty?
+
+      paths.plugins_dir = plugins_dir_env
+    end
+
     def expand_paths
-      # Expand ~ in paths
-      if paths.aia_dir
-        paths.aia_dir = File.expand_path(paths.aia_dir)
-      end
+      expand_path_on(paths, :aia_dir)
+      expand_path_on(paths, :plugins_dir)
+      expand_path_on(prompts, :dir)
+      expand_path_on(skills, :dir)
+      expand_path_on(output, :history_file)
+    end
 
-      if paths.config_file
-        paths.config_file = File.expand_path(paths.config_file)
-      end
-
-      if prompts.dir
-        prompts.dir = File.expand_path(prompts.dir)
-      end
-
-      if prompts.roles_dir
-        prompts.roles_dir = File.expand_path(prompts.roles_dir)
-      end
-
-      if output.history_file
-        output.history_file = File.expand_path(output.history_file)
-      end
-
-      if roles.dir
-        roles.dir = File.expand_path(roles.dir)
-      end
-
-      if skills.dir
-        skills.dir = File.expand_path(skills.dir)
-      end
-
-      if tools.dir
-        tools.dir = File.expand_path(tools.dir)
-      end
+    def expand_path_on(obj, method_name)
+      return unless obj.respond_to?(method_name)
+      val = obj.send(method_name)
+      return unless val
+      obj.send(:"#{method_name}=", File.expand_path(val))
     end
 
     def ensure_arrays
-      # Ensure array fields are actually arrays
       self.pipeline = [] if pipeline.nil?
       self.require_libs = [] if require_libs.nil?
       self.context_files = [] if context_files.nil?
       self.mcp_servers = [] if mcp_servers.nil?
       self.mcp_use = [] if mcp_use.nil?
       self.mcp_skip = [] if mcp_skip.nil?
-
-      # Ensure tools.paths is an array
       tools.paths = [] if tools.paths.nil?
-
-      # Ensure prompts.skills is an array
       prompts.skills = [] if prompts.respond_to?(:skills) && prompts.skills.nil?
     end
 
-    # Process MCP JSON files and merge servers into mcp_servers
-    #
-    # @param mcp_files [Array<String>] paths to MCP JSON configuration files
     def process_mcp_files(mcp_files)
       return if mcp_files.nil? || mcp_files.empty?
 
       servers_from_files = McpParser.parse_files(mcp_files)
       return if servers_from_files.empty?
 
-      # Merge with existing mcp_servers (CLI files take precedence)
       self.mcp_servers = (mcp_servers || []) + servers_from_files
     end
 
@@ -442,32 +447,10 @@ module AIA
       section = parts[0].to_sym
       key = parts[1].to_sym
 
-      case section
-      when :llm
-        llm.send("#{key}=", value) if llm.respond_to?("#{key}=")
-      when :prompts
-        prompts.send("#{key}=", value) if prompts.respond_to?("#{key}=")
-      when :output
-        output.send("#{key}=", value) if output.respond_to?("#{key}=")
-      when :audio
-        audio.send("#{key}=", value) if audio.respond_to?("#{key}=")
-      when :image
-        image.send("#{key}=", value) if image.respond_to?("#{key}=")
-      when :embedding
-        embedding.send("#{key}=", value) if embedding.respond_to?("#{key}=")
-      when :tools
-        tools.send("#{key}=", value) if tools.respond_to?("#{key}=")
-      when :flags
-        flags.send("#{key}=", value) if flags.respond_to?("#{key}=")
-      when :registry
-        registry.send("#{key}=", value) if registry.respond_to?("#{key}=")
-      when :paths
-        paths.send("#{key}=", value) if paths.respond_to?("#{key}=")
-      when :roles
-        roles.send("#{key}=", value) if roles.respond_to?("#{key}=")
-      when :skills
-        skills.send("#{key}=", value) if skills.respond_to?("#{key}=")
-      end
+      target = respond_to?(section) ? send(section) : nil
+      return unless target.respond_to?("#{key}=")
+
+      target.send("#{key}=", value)
     end
   end
 end

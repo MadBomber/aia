@@ -89,7 +89,7 @@ echo
 echo "--- Part 2: YAML config in the AIA config file ---"
 echo
 echo "The same server can be defined directly in the config file."
-echo "The file mcp/aia_config_with_mcp.yml contains:"
+echo "The file aia_config_with_mcp.yml contains:"
 echo "==="
 cat "${MCP_YAML_CONFIG}"
 echo "==="

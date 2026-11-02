@@ -1,0 +1,181 @@
+# frozen_string_literal: true
+
+# lib/aia/trakflow_bridge.rb
+#
+# Bridge between AIA and TrakFlow task tracking.
+# Uses the trak_flow gem directly as a Ruby library —
+# no MCP server or LLM intermediation needed.
+
+require "trak_flow"
+
+module AIA
+  class TrakFlowBridge
+    def initialize
+      @db      = connect_database
+      @steps   = Hash.new { |hash, key| hash[key] = [] } # prompt ID => this plan's unstarted steps
+      @current = {}                                     # prompt ID => the step now running
+    end
+
+    # Whether a TrakFlow project is initialized and the database is accessible.
+    #
+    # @return [Boolean]
+    def available?
+      !@db.nil?
+    end
+
+    # Create a TrakFlow plan from a pipeline of prompt IDs.
+    # Each step blocks the next, enforcing sequential execution.
+    #
+    # @param pipeline [Array<String>] prompt IDs in pipeline order
+    # @return [String, nil] summary of created plan
+    # :reek:TooManyStatements -- plan build: one child task per pipeline step, chained by blocking dependencies
+    def create_plan_from_pipeline(pipeline)
+      return nil unless available?
+
+      plan_title = "Pipeline: #{pipeline.join(' → ')}"
+      plan = TrakFlow::Models::Task.new(title: plan_title, plan: true, type: "task")
+      plan = @db.create_task(plan)
+
+      prev_step = nil
+      pipeline.each_with_index do |prompt_id, i|
+        step = @db.create_child_task(plan.id, {
+          title: "Step #{i + 1}: #{prompt_id}",
+          type:  "task"
+        })
+        @steps[prompt_id] << step
+
+        if prev_step
+          @db.add_dependency(TrakFlow::Models::Dependency.new(
+                               source_id: prev_step.id,
+                               target_id: step.id,
+                               type:      "blocks"
+                             ))
+        end
+
+        prev_step = step
+      end
+
+      "Plan '#{plan_title}' created with #{pipeline.size} steps."
+    rescue StandardError => e
+      $stderr.puts "Warning: TrakFlow plan creation failed: #{e.message}"
+      nil
+    end
+
+    # Update a task's status in TrakFlow.
+    #
+    # @param step_name [String] the prompt ID of a step in the plan this bridge created
+    # @param status [Symbol] :started, :completed, or :failed
+    # @param reason [String, nil] reason for failure
+    def update_step_status(step_name, status, reason: nil)
+      return unless available?
+
+      task = step_for(step_name, status)
+      return unless task
+
+      case status
+      when :started
+        task.status = "in_progress"
+      when :completed
+        task.close!(reason: reason || "Completed")
+      when :failed
+        task.status = "blocked"
+        task.append_trace("blocked", reason) if reason
+      else
+        return
+      end
+
+      @db.update_task(task)
+    rescue StandardError => e
+      $stderr.puts "Warning: TrakFlow status update failed: #{e.message}"
+    end
+
+    # List ready tasks (tasks with no open blockers).
+    #
+    # @return [String, nil] formatted list of ready tasks
+    def check_ready_tasks
+      return nil unless available?
+
+      tasks = @db.ready_tasks
+      return nil if tasks.empty?
+
+      lines = tasks.map { |t| "  - [#{t.id}] #{t.title} (#{t.status})" }
+      "Ready tasks (#{tasks.size}):\n#{lines.join("\n")}"
+    rescue StandardError => e
+      $stderr.puts "Warning: TrakFlow ready tasks query failed: #{e.message}"
+      nil
+    end
+
+    # Get a summary of the current TrakFlow project state.
+    #
+    # @return [String, nil] project summary
+    def project_summary
+      return nil unless available?
+
+      all = @db.list_tasks({})
+      by_status = all.group_by(&:status)
+
+      lines = ["TrakFlow Project Summary (#{all.size} tasks):"]
+      by_status.sort.each do |status, tasks|
+        lines << "  #{status}: #{tasks.size}"
+      end
+
+      ready = @db.ready_tasks
+      lines << "  ready (unblocked): #{ready.size}" unless ready.empty?
+
+      lines.join("\n")
+    rescue StandardError => e
+      $stderr.puts "Warning: TrakFlow summary failed: #{e.message}"
+      nil
+    end
+
+    # Create a task in TrakFlow.
+    #
+    # @param title [String] task title
+    # @param description [String, nil] task description
+    # @param labels [Array<String>] labels to attach
+    # @return [String, nil] confirmation message
+    def create_task(title, description: nil, labels: [])
+      return nil unless available?
+
+      task = TrakFlow::Models::Task.new(
+        title:       title,
+        description: description,
+        type:        "task"
+      )
+      task = @db.create_task(task)
+
+      labels.each do |label_name|
+        @db.add_label(TrakFlow::Models::Label.new(task_id: task.id, name: label_name))
+      end
+
+      "Task created: [#{task.id}] #{title}"
+    rescue StandardError => e
+      $stderr.puts "Warning: TrakFlow task creation failed: #{e.message}"
+      nil
+    end
+
+    attr_reader :db
+
+    private
+
+    # Connect to the TrakFlow database if a project is initialized.
+    def connect_database
+      return nil unless TaskBoard.ensure_project!
+
+      db = TrakFlow::Storage::Database.new(TrakFlow.database_path)
+      db.connect
+      db
+    rescue StandardError
+      nil
+    end
+
+    # The step this bridge created for +prompt_id+. :started takes the next
+    # unstarted one (a prompt can appear twice); later updates reuse it.
+    # Steps are never looked up by title, so older plans can't collide.
+    def step_for(prompt_id, status)
+      return @current[prompt_id] unless status == :started
+
+      @current[prompt_id] = @steps[prompt_id].shift
+    end
+  end
+end

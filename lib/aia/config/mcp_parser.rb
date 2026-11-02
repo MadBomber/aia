@@ -3,9 +3,18 @@
 # lib/aia/config/mcp_parser.rb
 #
 # Parses MCP server JSON configuration files and converts them
-# to the format expected by AIA's config system.
+# to the nested transport format expected by robot_lab.
 #
-# Supports two JSON formats:
+# Output format (robot_lab native):
+#   {
+#     name: "server_name",
+#     transport: { type: "stdio", command: "npx", args: [...], env: {...} },
+#     timeout: 8000,
+#     topics: ["routing"],     # AIA routing metadata (optional)
+#     group: "services"        # AIA grouping metadata (optional)
+#   }
+#
+# Supports two JSON input formats:
 #
 # 1. Simple format (single server):
 #    {
@@ -29,11 +38,19 @@ require 'json'
 
 module AIA
   module McpParser
+    # Keys that describe how to reach the server; they go into :transport.
+    TRANSPORT_KEYS = %w[type command args env url headers bearer_token oauth cwd directory].freeze
+
+    # Server settings robot_lab understands, carried through as written.
+    SERVER_KEYS = %w[prefix only except requires_approval description].freeze
+
     class << self
       # Parse MCP server configuration files and return array of server configs
+      # in robot_lab's nested transport format.
       #
       # @param file_paths [Array<String>] paths to JSON configuration files
-      # @return [Array<Hash>] array of server configurations
+      # @return [Array<Hash>] array of server configurations with nested transport
+      # :reek:TooManyStatements -- per-file loop with warn-and-continue handling for missing files, bad JSON, and read errors
       def parse_files(file_paths)
         return [] if file_paths.nil? || file_paths.empty?
 
@@ -43,7 +60,7 @@ module AIA
           expanded_path = File.expand_path(file_path)
 
           unless File.exist?(expanded_path)
-            warn "Warning: MCP config file not found: #{file_path}"
+            $stderr.puts "Warning: MCP config file not found: #{file_path}"
             next
           end
 
@@ -52,9 +69,9 @@ module AIA
             parsed = JSON.parse(json_content)
             servers.concat(convert_to_config_format(parsed, file_path))
           rescue JSON::ParserError => e
-            warn "Warning: Invalid JSON in MCP config file '#{file_path}': #{e.message}"
+            $stderr.puts "Warning: Invalid JSON in MCP config file '#{file_path}': #{e.message}"
           rescue StandardError => e
-            warn "Warning: Error reading MCP config file '#{file_path}': #{e.message}"
+            $stderr.puts "Warning: Error reading MCP config file '#{file_path}': #{e.message}"
           end
         end
 
@@ -76,75 +93,53 @@ module AIA
         end
       end
 
-      # Convert mcpServers format to config format
+      # Convert mcpServers format to robot_lab nested transport format
       #
       # @param mcp_servers [Hash] the mcpServers hash from JSON
       # @return [Array<Hash>] array of server configurations
       def convert_mcp_servers_format(mcp_servers)
-        mcp_servers.map do |name, config|
-          server = { name: name }
-
-          if config['command']
-            server[:command] = config['command']
-          end
-
-          if config['args']
-            server[:args] = Array(config['args'])
-          end
-
-          if config['env']
-            server[:env] = config['env']
-          end
-
-          if config['timeout']
-            server[:timeout] = config['timeout'].to_i
-          end
-
-          if config['url']
-            server[:url] = config['url']
-          end
-
-          if config['headers']
-            server[:headers] = config['headers']
-          end
-
-          server
-        end
+        mcp_servers.map { |name, config| build_server(name, config) }
       end
 
-      # Convert simple format to config format
+      # One server in robot_lab's format. Both JSON forms accept the same keys.
+      def build_server(name, config)
+        server = { name: name, transport: build_transport(config) }
+        server[:timeout] = config['timeout'].to_i if config['timeout']
+        SERVER_KEYS.each { |key| server[key.to_sym] = config[key] if config.key?(key) }
+        server.merge!(routing_metadata(config))
+      end
+
+      # The transport hash. With no "type", a url means Streamable HTTP and
+      # anything else stdio. A "command" given as an array holds the command
+      # followed by its arguments.
+      def build_transport(config)
+        transport = config.slice(*TRANSPORT_KEYS).transform_keys(&:to_sym)
+        command = transport[:command]
+        if command.is_a?(Array)
+          transport[:command] = command.first
+          transport[:args]    = Array(command[1..]) + Array(transport[:args])
+        end
+        transport[:args] = Array(transport[:args]) if transport.key?(:args)
+        transport[:type] ||= transport[:url] && !transport[:command] ? 'streamable-http' : 'stdio'
+        transport
+      end
+
+      # Routing metadata preserved for KBS/AIA
+      def routing_metadata(config)
+        meta = {}
+        meta[:topics]      = Array(config['topics']) if config['topics']
+        meta[:group]       = config['group'] if config['group']
+        meta
+      end
+
+      # Convert simple format to robot_lab nested transport format. The
+      # server is named after the file ("filesystem.json" -> "filesystem").
       #
-      # @param parsed [Hash] parsed JSON with type and command
+      # @param parsed [Hash] one server's settings
       # @param file_path [String] file path for deriving server name
       # @return [Array<Hash>] array with single server configuration
       def convert_simple_format(parsed, file_path)
-        # Derive name from filename (e.g., "filesystem.json" -> "filesystem")
-        name = File.basename(file_path, '.*')
-
-        server = { name: name }
-
-        if parsed['command'].is_a?(Array)
-          # Command is an array: first element is command, rest are args
-          server[:command] = parsed['command'].first
-          server[:args] = parsed['command'][1..] || []
-        elsif parsed['command']
-          server[:command] = parsed['command']
-          server[:args] = parsed['args'] || []
-        end
-
-        if parsed['env']
-          server[:env] = parsed['env']
-        end
-
-        if parsed['timeout']
-          server[:timeout] = parsed['timeout'].to_i
-        end
-
-        if parsed['type']
-          server[:type] = parsed['type']
-        end
-
-        [server]
+        [build_server(File.basename(file_path, '.*'), parsed)]
       end
     end
   end

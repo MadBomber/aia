@@ -5,6 +5,8 @@
 
 module AIA
   class ContextDirectives < Directive
+    state_setting! :clear, :checkpoint, :ckp, :cp, :restore, :review, :context
+
     attr_accessor :checkpoint_store, :checkpoint_counter, :last_checkpoint_name
 
     def initialize
@@ -19,6 +21,7 @@ module AIA
     end
 
     desc "Create a named checkpoint of the current context"
+    # :reek:TooManyStatements -- one snapshot build: name resolution, deep copy of every chat message list, store entry, feedback
     def checkpoint(args, _unused = nil)
       name = args.empty? ? nil : args.join(' ').strip
 
@@ -32,9 +35,9 @@ module AIA
 
       first_chat_messages = chats.values.first&.messages || []
       @checkpoint_store[name] = {
-        messages: chats.transform_values { |chat|
+        messages: chats.transform_values do |chat|
           chat.messages.map { |msg| deep_copy_message(msg) }
-        },
+        end,
         position: first_chat_messages.size,
         created_at: Time.now,
         topic_preview: extract_last_user_message(first_chat_messages)
@@ -44,10 +47,11 @@ module AIA
       puts "Checkpoint '#{name}' created at position #{@checkpoint_store[name][:position]}."
       ""
     end
-    alias_method :ckp, :checkpoint
-    alias_method :cp,  :checkpoint
+    alias ckp checkpoint
+    alias cp checkpoint
 
     desc "Restore context to a previous checkpoint"
+    # :reek:TooManyStatements -- restore flow: name resolution, validation, per-chat message replacement, user feedback
     def restore(args, _unused = nil)
       name = args.empty? ? nil : args.join(' ').strip
 
@@ -64,16 +68,16 @@ module AIA
       end
 
       checkpoint_data = @checkpoint_store[name]
-      chats = get_chats
+      robots = get_robots
 
-      return "Error: No active chat sessions found." if chats.nil? || chats.empty?
+      return "Error: No active chat sessions found." if robots.nil? || robots.empty?
 
       checkpoint_data[:messages].each do |model_id, saved_messages|
-        chat = chats[model_id]
-        next unless chat
+        robot = robots[model_id]
+        next unless robot
 
         restored_messages = saved_messages.map { |msg| deep_copy_message(msg) }
-        chat.instance_variable_set(:@messages, restored_messages)
+        robot.replace_messages(restored_messages)
       end
 
       restored_position = checkpoint_data[:position]
@@ -82,7 +86,7 @@ module AIA
       @last_checkpoint_name = name
 
       msg = "Context restored to checkpoint '#{name}' (position #{restored_position})."
-      msg += " Removed #{removed_count} checkpoint(s) that were beyond this position." if removed_count > 0
+      msg += " Removed #{removed_count} checkpoint(s) that were beyond this position." if removed_count.positive?
       msg
     end
 
@@ -90,17 +94,11 @@ module AIA
     def clear(args, _unused = nil)
       keep_system = !args.include?('--all')
 
-      chats = get_chats
-      return "Error: No active chat sessions found." if chats.nil? || chats.empty?
+      robots = get_robots
+      return "Error: No active chat sessions found." if robots.nil? || robots.empty?
 
-      chats.each do |_model_id, chat|
-        if keep_system
-          system_msg = chat.messages.find { |m| m.role == :system }
-          chat.instance_variable_set(:@messages, [])
-          chat.add_message(system_msg) if system_msg
-        else
-          chat.instance_variable_set(:@messages, [])
-        end
+      robots.each_value do |robot|
+        robot.clear_messages(keep_system: keep_system)
       end
 
       @checkpoint_store.clear
@@ -115,39 +113,20 @@ module AIA
       chats = get_chats
       return "Error: No active chat sessions found." if chats.nil? || chats.empty?
 
-      first_chat = chats.values.first
-      messages = first_chat&.messages || []
-
-      puts "\n=== Chat Context (RubyLLM) ==="
-      puts "Total messages: #{messages.size}"
-      puts "Models: #{chats.keys.join(', ')}"
-      puts "Checkpoints: #{checkpoint_names.join(', ')}" if checkpoint_names.any?
-      puts
+      messages = chats.values.first&.messages || []
+      print_review_header(chats, messages.size)
 
       positions = checkpoint_positions
-
       messages.each_with_index do |msg, index|
-        if positions[index]
-          puts "📍 [Checkpoint: #{positions[index].join(', ')}]"
-          puts "-" * 40
-        end
-
-        role = msg.role.to_s.capitalize
-        content = format_message_content(msg)
-
-        puts "#{index + 1}. [#{role}]: #{content}"
-        puts
+        print_checkpoint_marker(positions[index])
+        print_review_message(msg, index)
       end
-
-      if positions[messages.size]
-        puts "📍 [Checkpoint: #{positions[messages.size].join(', ')}]"
-        puts "-" * 40
-      end
+      print_checkpoint_marker(positions[messages.size])
 
       puts "=== End of Context ==="
       ""
     end
-    alias_method :context, :review
+    alias context review
 
     desc "List all available checkpoints"
     def checkpoints_list(args, _unused = nil)
@@ -159,20 +138,42 @@ module AIA
       puts "\n=== Available Checkpoints ==="
       @checkpoint_store.each do |name, data|
         created = data[:created_at]&.strftime('%H:%M:%S') || 'unknown'
+        preview = data[:topic_preview]
         puts "  #{name}: position #{data[:position]}, created #{created}"
-        if data[:topic_preview] && !data[:topic_preview].empty?
-          puts "    → \"#{data[:topic_preview]}\""
+        if preview && !preview.empty?
+          puts "    → \"#{preview}\""
         end
       end
       puts "=== End of Checkpoints ==="
       ""
     end
-    alias_method :checkpoints, :checkpoints_list
+    alias checkpoints checkpoints_list
 
     # --- helpers (no desc → not registered as directives) ---
 
     def checkpoint_names
       @checkpoint_store.keys
+    end
+
+    def print_review_header(chats, total)
+      puts "\n=== Chat Context (RubyLLM) ==="
+      puts "Total messages: #{total}"
+      puts "Models: #{chats.keys.join(', ')}"
+      puts "Checkpoints: #{checkpoint_names.join(', ')}" if checkpoint_names.any?
+      puts
+    end
+
+    # Print the marker block when checkpoint names exist at this position.
+    def print_checkpoint_marker(names)
+      return unless names
+
+      puts "📍 [Checkpoint: #{names.join(', ')}]"
+      puts "-" * 40
+    end
+
+    def print_review_message(msg, index)
+      puts "#{index + 1}. [#{msg.role.to_s.capitalize}]: #{format_message_content(msg)}"
+      puts
     end
 
     def checkpoint_positions
@@ -200,21 +201,47 @@ module AIA
 
     private
 
+    # In v2, AIA.client is a RobotLab::Robot (single-model chat) or a
+    # RobotLab::Network (crew / multi-model session). Returns a hash of
+    # { name => Robot } either way, so clear/checkpoint/restore/review act
+    # on every member robot's chat.
+    def get_robots
+      client = AIA.client
+      return nil unless client
+
+      return client.robots if client.respond_to?(:network?) && client.network?
+
+      name = client.respond_to?(:name) ? client.name : "default"
+      { name => client }
+    end
+
+    # Return { name => RubyLLM::Chat } for operations that need direct chat access.
+    # Uses Robot#chat public API.
     def get_chats
-      return nil unless AIA.client.respond_to?(:chats)
-      AIA.client.chats
+      robots = get_robots
+      return nil unless robots
+
+      robots.transform_values(&:chat)
     end
 
     def deep_copy_message(msg)
-      RubyLLM::Message.new(
+      attrs = {
         role: msg.role,
         content: msg.content,
         tool_calls: msg.tool_calls&.transform_values { |tc| tc.dup rescue tc },
-        tool_call_id: msg.tool_call_id,
-        input_tokens: msg.input_tokens,
-        output_tokens: msg.output_tokens,
-        model_id: msg.model_id
-      )
+        tool_call_id: msg.tool_call_id
+      }
+
+      if msg.respond_to?(:tokens) # ruby_llm >= 2.0 moved token counts into #tokens
+        attrs[:tokens] = msg.tokens
+        attrs[:model]  = msg.model
+      else # ruby_llm 1.x exposes them directly on the message
+        attrs[:input_tokens]  = msg.input_tokens
+        attrs[:output_tokens] = msg.output_tokens
+        attrs[:model_id]      = msg.model_id
+      end
+
+      RubyLLM::Message.new(**attrs)
     end
 
     def format_message_content(msg)
@@ -233,12 +260,12 @@ module AIA
     def extract_last_user_message(messages, max_length: 70)
       return "" if messages.nil? || messages.empty?
 
-      last_user_msg = messages.reverse.find { |msg| msg.role == :user }
+      last_user_msg = messages.rfind { |msg| msg.role == :user }
       return "" unless last_user_msg
 
       content = last_user_msg.content.to_s.strip
       content = content.gsub(/\s+/, ' ')
-      content.length > max_length ? "#{content[0..max_length - 4]}..." : content
+      content.length > max_length ? "#{content[0..(max_length - 4)]}..." : content
     end
   end
 end

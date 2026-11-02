@@ -1,6 +1,10 @@
+
+*_output.txt
 .aider*
 .aigcm_msg
 *.gem
+Gemfile.lock
+Gemfile.local.lock
 *.rbc
 .DS_Store
 /.config
@@ -27,3 +31,18 @@ Gemfile.lock
 # Temporary files
 temp.md
 /.ruby-lsp/
+
+# Intentionally untracked files
+CLAUDE.md
+_notes.txt
+
+# Intentionally untracked directories
+/.architecture/
+/.bridgetown-cache/
+/.claude/
+/.serena/
+/notes/
+/site/
+
+# Page snapshots written by the Playwright MCP server (example 30)
+examples/.playwright-mcp/

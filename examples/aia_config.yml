@@ -13,7 +13,7 @@ prompts:
   dir: ./prompts_dir
 
 models:
-  - name: ollama/qwen3
+  - name: claude-haiku-4-5
 
 output:
   file: ~

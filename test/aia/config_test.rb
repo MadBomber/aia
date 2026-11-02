@@ -29,19 +29,29 @@ class ConfigTest < Minitest::Test
   def test_config_has_llm_section
     config = AIA::Config.new
     assert_respond_to config, :llm
-    assert_instance_of AIA::ConfigSection, config.llm
+    assert_instance_of MywayConfig::ConfigSection, config.llm
   end
 
   def test_config_has_prompts_section
     config = AIA::Config.new
     assert_respond_to config, :prompts
-    assert_instance_of AIA::ConfigSection, config.prompts
+    assert_instance_of MywayConfig::ConfigSection, config.prompts
   end
 
   def test_config_has_flags_section
     config = AIA::Config.new
     assert_respond_to config, :flags
-    assert_instance_of AIA::ConfigSection, config.flags
+    assert_instance_of MywayConfig::ConfigSection, config.flags
+  end
+
+  def test_config_has_tool_filter_section
+    config = AIA::Config.new
+    assert_respond_to config, :tool_filter
+  end
+
+  def test_tool_filter_timeout_s_default_is_10
+    config = AIA::Config.new
+    assert_equal 10, config.tool_filter.timeout_s
   end
 
   def test_config_has_default_temperature
@@ -70,6 +80,18 @@ class ConfigTest < Minitest::Test
     # Test prompts section has expected keys
     assert config.prompts.key?(:dir), "Prompts section should have dir key"
     assert config.prompts.key?(:roles_prefix), "Prompts section should have roles_prefix key"
+    assert config.prompts.key?(:skills), "Prompts section should have skills key"
+  end
+
+  def test_prompts_skills_defaults_to_empty_array
+    config = AIA::Config.new
+    assert_equal [], config.prompts.skills
+  end
+
+  def test_skills_dir_defaults_to_prompts_skills_subdir
+    config = AIA::Config.new
+    assert config.skills.respond_to?(:dir)
+    assert_match(%r{/\.prompts/skills$}, config.skills.dir)
   end
 
   def test_config_nested_flags_section
@@ -108,6 +130,32 @@ class ConfigTest < Minitest::Test
     config = AIA::Config.new
     assert_respond_to config, :context_files
     assert_kind_of Array, config.context_files
+  end
+
+  def test_plugins_dir_defaults_to_nil
+    config = AIA::Config.new
+    assert_nil config.paths.plugins_dir
+  end
+
+  def test_plugins_dir_override_sets_paths_plugins_dir
+    config = AIA::Config.new(overrides: { plugins_dir: '/tmp/aia_plugins' })
+    assert_equal '/tmp/aia_plugins', config.paths.plugins_dir
+  end
+
+  def test_plugins_dir_uses_aia_plugins_dir_env_var
+    ENV['AIA_PLUGINS_DIR'] = '/tmp/env_plugins'
+    config = AIA::Config.new
+    assert_equal '/tmp/env_plugins', config.paths.plugins_dir
+  ensure
+    ENV.delete('AIA_PLUGINS_DIR')
+  end
+
+  def test_plugins_dir_env_var_expands_tilde_path
+    ENV['AIA_PLUGINS_DIR'] = '~/env_plugins'
+    config = AIA::Config.new
+    assert_equal File.expand_path('~/env_plugins'), config.paths.plugins_dir
+  ensure
+    ENV.delete('AIA_PLUGINS_DIR')
   end
 
   def test_runtime_attributes
@@ -186,7 +234,8 @@ class ConfigTest < Minitest::Test
 
     config = AIA::Config.new(overrides: { extra_config_file: config_file })
     assert_equal 1, config.models.size
-    assert_equal 'ollama/qwen3', config.models.first.name
+    assert_equal 'qwen3', config.models.first.name
+    assert_equal 'ollama', config.models.first.provider
   ensure
     ENV['AIA_MODEL'] = original_model if original_model
   end
@@ -199,8 +248,10 @@ class ConfigTest < Minitest::Test
 
     config = AIA::Config.new(overrides: { extra_config_file: config_file })
     assert_equal 0.2, config.llm.temperature
-    # max_tokens should still have its bundled default
-    assert_equal 2048, config.llm.max_tokens
+    # max_tokens should still have its bundled default. Source the expected
+    # value from the schema (single source of truth) so a future default
+    # change doesn't silently rot this assertion.
+    assert_equal AIA::Config.schema.dig(:llm, :max_tokens), config.llm.max_tokens
   end
 
   def test_extra_config_file_resets_to_defaults_not_user_config
@@ -282,6 +333,39 @@ class ConfigTest < Minitest::Test
     $stderr = original_stderr
   end
 
+  def test_track_pipeline_override_sets_flag
+    config = AIA::Config.new(overrides: { track_pipeline: true })
+    assert_equal true, config.flags.track_pipeline
+  end
+
+  def test_concurrent_auto_override_sets_concurrency
+    config = AIA::Config.new(overrides: { concurrent_auto: true })
+    assert_equal true, config.concurrency.auto
+  end
+
+  def test_track_pipeline_defaults_to_false
+    config = AIA::Config.new
+    assert_equal false, config.flags.track_pipeline
+  end
+
+  def test_concurrent_auto_defaults_to_false
+    config = AIA::Config.new
+    assert_equal false, config.concurrency.auto
+  end
+
+  def test_concurrency_section_exists
+    config = AIA::Config.new
+    assert_respond_to config, :concurrency
+    assert_instance_of MywayConfig::ConfigSection, config.concurrency
+  end
+
+  def test_concurrency_in_to_h
+    config = AIA::Config.new
+    hash = config.to_h
+    assert hash.key?(:concurrency)
+    assert_equal false, hash[:concurrency][:auto]
+  end
+
   private
 
   def create_temp_config(yaml_content)
@@ -292,5 +376,35 @@ class ConfigTest < Minitest::Test
     @temp_files ||= []
     @temp_files << file
     file.path
+  end
+end
+
+class ConfigDefaultProviderTest < Minitest::Test
+  def test_provider_override_becomes_default_for_prefixless_models
+    config = AIA::Config.new(overrides: { provider: 'lms', models: ['my-model'] })
+
+    assert_equal 'lms', config.provider
+    assert_equal 'lms', config.models.first.provider
+    assert_equal 'my-model', config.models.first.name
+  end
+
+  def test_explicit_model_prefix_wins_over_default_provider
+    config = AIA::Config.new(overrides: { provider: 'lms', models: ['ollama/llama3'] })
+
+    assert_equal 'ollama', config.models.first.provider
+    assert_equal 'llama3', config.models.first.name
+  end
+
+  def test_default_provider_applies_to_every_prefixless_model
+    config = AIA::Config.new(overrides: { provider: 'lms', models: ['model-a', 'ollama/llama3', 'model-b'] })
+
+    assert_equal %w[lms ollama lms], config.models.map(&:provider)
+  end
+
+  def test_models_keep_nil_provider_without_the_override
+    config = AIA::Config.new(overrides: { models: ['my-model'] })
+
+    assert_nil config.provider
+    assert_nil config.models.first.provider
   end
 end

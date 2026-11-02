@@ -10,49 +10,61 @@ Gem::Specification.new do |spec|
 
   spec.summary      = 'Multi-model AI CLI with dynamic prompts, consensus responses, shell & Ruby integration, and seamless chat workflows.'
   spec.description  = <<~DESC
-    AIA is a revolutionary CLI console application that brings multi-model AI capabilities to your command line, supporting 20+ providers including OpenAI, Anthropic, and Google. Run multiple AI models simultaneously for comparison, get consensus responses from collaborative AI teams, or compare individual outputs side-by-side. With dynamic prompt management, embedded directives, shell and Ruby integration, interactive chats, and comprehensive history tracking, AIA transforms how you interact with AI. Perfect for developers and AI enthusiasts who want to harness the collective intelligence of multiple AI models from a single, powerful interface.
+    AIA is a powerful CLI console application that brings multi-model AI capabilities to your command line, supporting 20+ providers including OpenAI, Anthropic, and Google. Built on robot_lab for robust robot orchestration, AIA v2 provides a thin CLI shell over a rich execution engine. Run multiple AI models simultaneously for comparison, get consensus responses from collaborative AI teams, or compare individual outputs side-by-side. With dynamic prompt management, embedded directives, shell and Ruby integration, interactive chats, and comprehensive history tracking, AIA transforms how you interact with AI.
   DESC
 
   spec.homepage     = 'https://github.com/MadBomber/aia'
   spec.license      = 'MIT'
 
-  spec.required_ruby_version = '>= 3.2.0'
+  spec.required_ruby_version = '>= 4.0.9'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 
-  spec.metadata['homepage_uri']     = spec.homepage
+  spec.metadata['documentation_uri'] = 'https://madbomber.github.io/aia'
   spec.metadata['source_code_uri']  = spec.homepage
-  spec.metadata['changelog_uri']    = spec.homepage
+  spec.metadata['changelog_uri']    = "#{spec.homepage}/blob/main/CHANGELOG.md"
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
-  # Specify which files should be added to the gem when it is released.
-  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
+  # Ship only what an installed gem runs: the library, the executable, and
+  # the top-level docs. Dev tooling, docs/, examples/ and planning notes
+  # stay in the repository.
   spec.files = Dir.chdir(__dir__) do
-    `git ls-files -z`.split("\x0").reject do |f|
-      (File.expand_path(f) == __FILE__) ||
-        f.start_with?(*%w[bin/ test/ spec/ features/ .git Gemfile])
-    end + ['.version']
+    `git ls-files -z`.split("\x0").select do |f|
+      (f.start_with?('lib/') && !f.end_with?('AGENTS.md')) || %w[bin/aia README.md CHANGELOG.md LICENSE].include?(f)
+    end
   end
 
   spec.bindir         = 'bin'
   spec.executables    = %w[aia]
   spec.require_paths  = %w[lib]
 
-  # spec.add_dependency "activesupport"
-  spec.add_dependency 'amazing_print'
-  spec.add_dependency 'async'
-  spec.add_dependency 'clipboard'
-  spec.add_dependency 'faraday'
-  spec.add_dependency 'lumberjack'
-  spec.add_dependency 'myway_config'
-  spec.add_dependency 'prompt_manager', '~> 1.0.2'
-  spec.add_dependency 'reline'
-  spec.add_dependency 'ruby_llm',     '~> 1.12'
-  spec.add_dependency 'ruby_llm-mcp', '~> 0.8'
-  spec.add_dependency 'shellwords'
+  # Pin bigdecimal to 4.x — Ruby 4 ships it as a default gem, but some transitive
+  # deps declare >= 3.0 which can cause RubyGems to activate 3.x first.
+  spec.add_dependency 'bigdecimal',   '>= 4.0'
+
+  # Core dependencies
+  spec.add_dependency 'robot_lab',    '~> 0.6'     # Execution engine: robots, networks, tools, MCP, memory
+  spec.add_dependency 'myway_config'               # AIA-specific config (CLI settings, prompts, UI)
+  spec.add_dependency 'prompt_manager', '~> 1.2'   # Prompt parsing/directive DSL
+  spec.add_dependency 'lumberjack', '~> 2.1'       # Structured logging, 3 loggers (aia, llm, mcp); 2.x API (LogFile shift_age/autoflush)
+  spec.add_dependency 'activesupport'              # Required by robot_lab (missing from its gemspec)
   spec.add_dependency 'simple_flow'
-  spec.add_dependency 'tty-screen'
-  spec.add_dependency 'tty-spinner'
-  spec.add_dependency 'word_wrapper'
+  spec.add_dependency 'trak_flow'
+
+  # CLI & UI
+  spec.add_dependency 'reline'                     # Interactive chat input with history
+  spec.add_dependency 'tty-screen'                 # Terminal width detection
+  spec.add_dependency 'tty-spinner'                # Loading animation and concurrent MCP connection spinners
+  spec.add_dependency 'tty-table',    '~> 0.12'    # Adaptive terminal-width table rendering for metrics
+  spec.add_dependency 'classifier',  '~> 2.3'      # TF-IDF similarity (Option A tool filtering)
+  spec.add_dependency 'word_wrapper'               # Terminal text wrapping for tool listings
+  spec.add_dependency 'amazing_print'              # Config dump formatting (--dump, /config)
+  spec.add_dependency 'clipboard'                  # System clipboard access (/paste directive)
+
+  # Utilities
+  spec.add_dependency 'faraday'                    # HTTP client for /webpage directive
+  spec.add_dependency 'listen'                     # File-watch for live plugin reload (polling fallback if absent)
+  spec.add_dependency 'shellwords'                 # Shell escaping
 
   spec.add_development_dependency 'debug_me'
   spec.add_development_dependency 'minitest'
@@ -64,16 +76,16 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'tocer'
   spec.add_development_dependency 'webmock'
 
-
   spec.post_install_message = <<~MSG
 
     ╔══════════════════════════════════════════════════════════════╗
-    ║               AIA — AI Assistant v1.0                        ║
+    ║               AIA — AI Assistant v2.0                        ║
+    ║                                                              ║
+    ║  v2 is powered by robot_lab for robust orchestration         ║
     ╚══════════════════════════════════════════════════════════════╝
 
     Get started:  aia --help
     Full docs:    https://madbomber.github.io/aia
 
   MSG
-
 end

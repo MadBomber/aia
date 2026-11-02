@@ -1,25 +1,36 @@
-# lib/aia/session.rb
 # frozen_string_literal: true
 
-require "tty-spinner"
+# lib/aia/session.rb
+#
+# Simplified orchestrator for AIA v2.
+# Builds robot via RobotFactory, processes pipeline, enters chat.
+# Integrates TrakFlow for pipeline tracking and session continuity.
+
 require "tty-screen"
 require "reline"
 require "pm"
 require "json"
 require "fileutils"
+# amazing_print 3.0's ActiveSupport extension assumes a fully loaded
+# ActiveSupport (Object#try, LogSubscriber) and raises at require time otherwise
+require "active_support"
+require "active_support/core_ext/object/try"
 require "amazing_print"
 require_relative "directive_processor"
-require_relative "history_manager"
+require_relative "variable_input_collector"
 require_relative "ui_presenter"
-require_relative "chat_processor_service"
 require_relative "prompt_handler"
 require_relative "utility"
 require_relative "input_collector"
-require_relative "prompt_pipeline"
+require_relative "robot_factory"
+require_relative "tool_filter_registry"
 require_relative "chat_loop"
 
 module AIA
+  # :reek:TooManyInstanceVariables -- session hub wires presenter, trackers, handlers, and robot; each collaborator is a named field
   class Session
+    include ContentExtractor
+
     def initialize(prompt_handler)
       @prompt_handler = prompt_handler
 
@@ -29,7 +40,34 @@ module AIA
 
     # Starts the session, processing all prompts in the pipeline and then
     # optionally starting an interactive chat session.
+    # :reek:TooManyStatements -- session boot script: build robot, startup coordination, optional immediate chat, pipeline run, chat handoff
     def start
+      cfg = AIA.config
+
+      # --require libraries first, so mcp_servers: entries can name the
+      # RubyLLM::MCP subclasses they define (e.g. SharedTools::MCP::Memory).
+      ToolLoader.require_libs(cfg)
+
+      # Connect MCP servers next: every robot built from here on is handed
+      # the same live server instances (see RobotFactory.mcp_servers).
+      @mcp_manager = MCPConnectionManager.start(cfg)
+
+      coordinator = StartupCoordinator.new(robot: nil, ui_presenter: @ui_presenter, mcp_manager: @mcp_manager)
+      coordinator.prepare_task_board
+
+      # Build robot or network
+      @robot = RobotFactory.build(cfg)
+      AIA.client = @robot
+      @robot_sync = RobotSync.new(cfg, @robot)
+
+      # Run the remaining startup coordination: tool filters, bus
+      coordinator.robot = @robot
+      coordinator.run(cfg)
+      @filters = coordinator.filters
+
+      # Store session tracker globally for KBS access
+      AIA.session_tracker = @session_tracker
+
       # Handle special chat-only cases first
       if should_start_chat_immediately?
         AIA::Utility.robot
@@ -38,37 +76,83 @@ module AIA
       end
 
       # Process all prompts in the pipeline
-      @prompt_pipeline.process_all
+      PipelineOrchestrator.new(
+        robot:           @robot,
+        prompt_handler:  @prompt_handler,
+        input_collector: @input_collector,
+        ui_presenter:    @ui_presenter,
+        session_tracker: @session_tracker,
+        robot_sync:      @robot_sync
+      ).process(cfg)
 
       # Start chat mode after all prompts are processed
-      if AIA.chat?
-        AIA::Utility.robot
-        @ui_presenter.display_separator
-        @chat_loop.start(skip_context_files: true)
-      end
+      return unless AIA.chat?
+      @chat_loop = build_chat_loop
+      AIA::Utility.robot
+      @ui_presenter.display_separator
+      @chat_loop.start(skip_context_files: true)
     end
+
+    # Release all held resources: MCP connections and filter state.
+    # Called automatically via at_exit registered in #start.
+    # Safe to call multiple times.
+    def cleanup
+      @mcp_manager&.close_all
+      @filters&.each_value(&:cleanup)
+    end
+
+    MAX_HISTORY_BYTES = 10 * 1024 * 1024  # 10 MB
 
     private
 
     def initialize_components
       @ui_presenter        = UIPresenter.new
       @directive_processor = DirectiveProcessor.new
-      @chat_processor      = ChatProcessorService.new(@ui_presenter, @directive_processor)
       @input_collector     = InputCollector.new
-      @prompt_pipeline     = PromptPipeline.new(@prompt_handler, @chat_processor, @ui_presenter, @input_collector)
-      @chat_loop           = ChatLoop.new(@chat_processor, @ui_presenter, @directive_processor)
+
+      @session_tracker     = SessionTracker.new
+      @chat_loop           = nil  # created after robot is built
+
+      rotate_history_log_if_needed
+    end
+
+    # Rotate the prompt history log if it has grown too large.
+    # Renames <file> to <file>.1 so the next session starts fresh.
+    # Called once at session initialization.
+    def rotate_history_log_if_needed
+      history_file = AIA.config.output.history_file
+      return unless history_file && File.exist?(history_file)
+      return unless File.size(history_file) > MAX_HISTORY_BYTES
+
+      archive = "#{history_file}.1"
+      FileUtils.mv(history_file, archive)
+      $stderr.puts "History log rotated: #{File.basename(history_file)} → #{File.basename(archive)}"
+    rescue StandardError => e
+      $stderr.puts "Warning: Could not rotate history log: #{e.message}"
     end
 
     def setup_output_file
       out_file = AIA.config.output.file
-      if out_file && !out_file.nil? && !AIA.append? && File.exist?(out_file)
-        File.open(out_file, "w") { } # Truncate the file
-      end
+      return unless out_file && !out_file.nil? && !AIA.append? && File.exist?(out_file)
+      File.write(out_file, '')
+    end
+
+    def build_chat_loop
+      # A pipeline step may have rebuilt the client (front-matter model:)
+      ChatLoop.new(
+        AIA.client || @robot, @ui_presenter, @directive_processor,
+        session_tracker: @session_tracker,
+        filters: @filters,
+        robot_sync: @robot_sync
+      )
     end
 
     # Check if we should start chat immediately without processing any prompts
     def should_start_chat_immediately?
       return false unless AIA.chat?
+
+      # Create chat loop now that robot is available
+      @chat_loop = build_chat_loop
 
       AIA.config.pipeline.empty? || AIA.config.pipeline.all? { |id| id.nil? || id.empty? }
     end

@@ -8,9 +8,12 @@
 require 'optparse'
 require 'yaml'
 require_relative 'model_spec'
+require_relative '../errors'
 require_relative '../skill_utils'
+require_relative '../modality_query'
 
 module AIA
+  # rubocop:disable Metrics/ModuleLength
   module CLIParser
     class << self
       # Parse CLI arguments and return a hash of overrides
@@ -22,11 +25,14 @@ module AIA
         begin
           parser = create_option_parser(options)
           parser.parse!
-        rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
-          warn "ERROR: #{e.message}"
-          warn "       use --help for usage report"
-          exit 1
+        rescue OptionParser::ParseError, AIA::ConfigurationError => e
+          report_parse_error(e)
         end
+
+        # Post-parse so these work regardless of flag order (and after any
+        # --require libs have been noted).
+        handle_list_providers(options)
+        handle_list_models(options)
 
         # Store remaining args for prompt_id and context files
         options[:remaining_args] = ARGV.dup
@@ -51,10 +57,11 @@ module AIA
       end
 
       def setup_banner(opts)
-        opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n" +
-                      "       aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*"
+        opts.banner = "Usage: aia [options] [PROMPT_ID] [CONTEXT_FILE]*\n       " \
+                      "aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*"
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_mode_options(opts, options)
         opts.separator "\nMode Options:"
 
@@ -64,17 +71,26 @@ module AIA
 
         opts.on("-f", "--fuzzy", "Use fuzzy matching for prompt search") do
           unless system("which fzf > /dev/null 2>&1")
-            warn "Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option."
+            $stderr.puts "Error: 'fzf' is not installed. Please install 'fzf' to use the --fuzzy option."
             exit 1
           end
           options[:fuzzy] = true
         end
 
-        opts.on("--terse", "[DEPRECATED] No longer supported") do
-          warn "Warning: --terse is deprecated and has no effect."
+        opts.on("--track-pipeline", "Track pipeline execution in TrakFlow") do
+          options[:track_pipeline] = true
+        end
+
+        opts.on("--concurrent-auto", "Automatically parallelize independent MCP servers") do
+          options[:concurrent_auto] = true
+        end
+
+        opts.on("-A", "--[no-]auto-tool-filter", "Use TF-IDF similarity-based tool filtering (default: on)") do |v|
+          options[:auto_tool_filter] = v
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_model_options(opts, options)
         opts.separator "\nModel Options:"
 
@@ -82,8 +98,24 @@ module AIA
           list_available_models(query)
         end
 
-        opts.on("-m MODEL", "--model MODEL", "Set LLM model(s) to use. Format: MODEL[=ROLE][,MODEL[=ROLE]]...") do |model_string|
-          options[:models] = parse_models_with_roles(model_string)
+        opts.on('--provider SLUG',
+                'Default provider for models given without a provider/ prefix; ' \
+                'also scopes --list-models (any RubyLLM-registered provider)') do |slug|
+          options[:provider] = slug
+        end
+
+        opts.on('--list-models', 'List the live models served by the --provider and exit') do
+          options[:list_models] = true
+        end
+
+        opts.on('--list-providers', 'List the registered RubyLLM providers and exit') do
+          options[:list_providers] = true
+        end
+
+        opts.on("-m MODEL", "--model MODEL",
+                "Set LLM model(s). Format: MODEL[=ROLE][,MODEL[=ROLE]]... " \
+                "Multiple models run in parallel; use --consensus to synthesize results") do |model_string|
+          options[:models] = (options[:models] || []) + parse_models_with_roles(model_string)
         end
 
         opts.on("--[no-]consensus", "Enable/disable consensus mode for multi-model responses") do |consensus|
@@ -91,8 +123,7 @@ module AIA
         end
 
         opts.on("--list-roles", "List available roles and exit") do
-          list_available_roles
-          exit 0
+          options[:list_roles] = true
         end
 
         opts.on("--sm", "--speech-model MODEL", "Set speech model") do |model|
@@ -104,6 +135,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_file_options(opts, options)
         opts.separator "\nFile & Output Options:"
 
@@ -112,13 +144,13 @@ module AIA
         end
 
         opts.on("-o", "--[no-]output [FILE]", "Write response to FILE (default: temp.md; --no-output to disable)") do |file|
-          if file == false
-            options[:output] = nil
-          elsif file.nil?
-            options[:output] = 'temp.md'
-          else
-            options[:output] = File.expand_path(file, Dir.pwd)
-          end
+          options[:output] = if file == false
+                               nil
+                             elsif file.nil?
+                               'temp.md'
+                             else
+                               File.expand_path(file, Dir.pwd)
+                             end
         end
 
         opts.on("-a", "--[no-]append", "Append to output file instead of overwriting") do |append|
@@ -128,17 +160,19 @@ module AIA
         opts.on("--[no-]history-file [FILE]", "Set conversation history file path") do |file|
           options[:history_file] = file
         end
-
-        opts.on("--md", "--[no-]markdown", "Enable Markdown formatting") do |md|
-          options[:markdown] = md
-        end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
+      # :reek:DuplicateMethodCall -- options[:pipeline] is appended inside two separate OptionParser closures
       def setup_prompt_options(opts, options)
         opts.separator "\nPrompt Options:"
 
         opts.on("--prompts-dir DIR", "Set directory containing prompt files") do |dir|
           options[:prompts_dir] = dir
+        end
+
+        opts.on("--plugins-dir DIR", "Set directory containing AIA plugin files") do |dir|
+          options[:plugins_dir] = dir
         end
 
         opts.on("--roles-prefix PREFIX", "Set subdirectory name for role files (default: roles)") do |prefix|
@@ -147,6 +181,19 @@ module AIA
 
         opts.on("-r", "--role ROLE_ID", "Prepend role to prompt") do |role|
           options[:role] = role
+        end
+
+        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
+          options[:skills_dir] = dir
+        end
+
+        opts.on("-s", "--skill SKILL_IDS", "Append skill(s) to prompt; comma-separated IDs or paths") do |skill_ids|
+          options[:skills] ||= []
+          options[:skills] += skill_ids.split(',').map(&:strip).reject(&:empty?)
+        end
+
+        opts.on("--list-skills", "List available skills and exit") do
+          options[:list_skills] = true
         end
 
         opts.on("-n", "--next PROMPT_ID", "Set next prompt to process") do |next_prompt|
@@ -159,31 +206,8 @@ module AIA
           options[:pipeline] += pipeline.split(',').map(&:strip)
         end
 
-
-        opts.on("--system-prompt PROMPT_ID", "Set system prompt for chat sessions") do |prompt_id|
-          options[:system_prompt] = prompt_id
-        end
-
-        opts.on('--regex PATTERN', '[DEPRECATED] Parameter regex (PM v1.0.0 uses ERB parameters)') do |pattern|
-          warn "Warning: --regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
-          options[:parameter_regex] = pattern
-        end
-
-        opts.on("--skills-dir DIR", "Set directory containing skill subdirectories") do |dir|
-          options[:skills_dir] = dir
-        end
-
-        opts.on("--skills-prefix PREFIX", "Set subdirectory name for skill files (default: skills)") do |prefix|
-          options[:skills_prefix] = prefix
-        end
-
-        opts.on("-s", "--skill SKILL_IDS", "Prepend skill(s) to prompt (comma-separated IDs or paths)") do |ids|
-          options[:skills] ||= []
-          options[:skills] += ids.split(',').map(&:strip)
-        end
-
-        opts.on("--list-skills", "List available skills and exit") do
-          options[:list_skills] = true
+        opts.on("--system-prompt TEXT", "Set the system prompt (literal text)") do |text|
+          options[:system_prompt] = text
         end
       end
 
@@ -194,7 +218,7 @@ module AIA
           options[:temperature] = temp
         end
 
-        opts.on("--max-tokens TOKENS", Integer, "Set maximum tokens for text generation (default: 2048)") do |tokens|
+        opts.on("--max-tokens TOKENS", Integer, "Set maximum tokens for text generation (default: 32767)") do |tokens|
           options[:max_tokens] = tokens
         end
 
@@ -211,6 +235,7 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_audio_image_options(opts, options)
         opts.separator "\nAudio & Image Options:"
 
@@ -218,8 +243,20 @@ module AIA
           options[:speak] = true
         end
 
-        opts.on("--voice VOICE", "Set voice for speech output (default: alloy)") do |voice|
+        opts.on("--voice VOICE", "Set voice for speech output") do |voice|
           options[:voice] = voice
+        end
+
+        opts.on("--speak-command CMD", "Command used for TTS (default: say)") do |cmd|
+          options[:speak_command] = cmd
+        end
+
+        opts.on("--paint", "Generate an image from the prompt instead of a text response") do
+          options[:paint] = true
+        end
+
+        opts.on("--im", "--image-model MODEL", "Set image model for generation (default: gpt-image-1)") do |model|
+          options[:image_model] = model
         end
 
         opts.on("--is", "--image-size SIZE", "Set image size for generation (default: 1024x1024)") do |size|
@@ -235,8 +272,13 @@ module AIA
         end
       end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
       def setup_tool_options(opts, options)
         opts.separator "\nTool & Extension Options:"
+
+        opts.on('--allow-ruby-eval', 'Enable /ruby directive (executes arbitrary Ruby code with full process privileges)') do
+          options[:allow_ruby_eval] = true
+        end
 
         opts.on("--rq LIBS", "--require LIBS", "Require Ruby libraries for Ruby directive") do |libs|
           options[:require_libs] ||= []
@@ -257,6 +299,11 @@ module AIA
           options[:rejected_tools] += tools_list.split(',').map(&:strip)
         end
 
+        opts.on("--tool-approval MODE", %w[ask approve deny],
+                "Tool calls that require approval: ask (default), approve, or deny") do |mode|
+          options[:tool_approval] = mode
+        end
+
         opts.on("--list-tools", "List available tools and exit (combine with --mcp-list for MCP tools)") do
           options[:list_tools] = true
         end
@@ -264,11 +311,18 @@ module AIA
 
       def setup_utility_options(opts, options)
         opts.separator "\nUtility Options:"
+        setup_logging_options(opts, options)
+        setup_output_options(opts, options)
+        setup_mcp_options(opts, options)
+        setup_meta_options(opts, options)
+      end
 
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
+      def setup_logging_options(opts, options)
         opts.on("--log-level LEVEL", "Set log level (debug|info|warn|error|fatal)") do |level|
           level = level.downcase
           unless %w[debug info warn error fatal].include?(level)
-            warn "ERROR: Invalid log level '#{level}'. Must be one of: debug, info, warn, error, fatal"
+            $stderr.puts "ERROR: Invalid log level '#{level}'. Must be one of: debug, info, warn, error, fatal"
             exit 1
           end
           options[:log_level_override] = level
@@ -296,6 +350,22 @@ module AIA
         opts.on("-v", "--[no-]verbose", "Enable verbose output") do |value|
           options[:verbose] = value
         end
+      end
+
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
+      def setup_output_options(opts, options)
+        opts.on("--[no-]thinking", "Show raw thinking/reasoning blocks in output (default: off)") do |v|
+          options[:thinking] = v
+        end
+
+        opts.on("--tokens", "Display token usage and elapsed response time after each turn") do
+          options[:tokens] = true
+        end
+
+        opts.on("--cost", "Display cost calculations and elapsed time (implies --tokens)") do
+          options[:cost] = true
+          options[:tokens] = true
+        end
 
         opts.on("--refresh DAYS", Integer, "Set refresh interval (days) for cached models list (default: 7)") do |days|
           options[:refresh] = days || 0
@@ -308,16 +378,10 @@ module AIA
         opts.on("--completion SHELL", "Generate shell completion script (bash|zsh|fish) and exit") do |shell|
           options[:completion] = shell
         end
+      end
 
-        opts.on("--tokens", "Display token usage") do
-          options[:tokens] = true
-        end
-
-        opts.on("--cost", "Display cost calculations (implies --tokens)") do
-          options[:cost] = true
-          options[:tokens] = true  # --cost implies --tokens
-        end
-
+      # :reek:TooManyStatements -- one opts.on registration per CLI flag; splitting the group would scatter related flags
+      def setup_mcp_options(opts, options)
         opts.on("--mcp FILE", "Load MCP server(s) from JSON file (repeatable)") do |file|
           options[:mcp_files] ||= []
           options[:mcp_files] << file
@@ -340,68 +404,76 @@ module AIA
           options[:mcp_skip] ||= []
           options[:mcp_skip] += names.split(',').map(&:strip)
         end
+      end
 
+      def setup_meta_options(opts, _options)
         opts.on("--version", "Show version and exit") do
           puts AIA::VERSION
           exit
         end
 
         opts.on("-h", "--help", "Show this help and exit") do
-          puts <<~HELP
-
-            AIA - Your AI Assistant (v#{AIA::VERSION})
-              - Manage AI prompts with embedded directives
-              - Integrate with shell and Ruby (ERB) processing
-              - Run batch processes and prompt pipelines
-              - Engage in interactive chat sessions
-              - Use custom tools and MCP servers
-
-          HELP
-
-          puts opts
-
-          puts <<~EXTRA
-
-            Explore Further:
-            - AIA GitHub Repository: https://github.com/MadBomber/aia
-            - AIA Documentation:     https://madbomber.github.io/aia
-            - AIA Changelog:         https://github.com/MadBomber/aia/blob/main/CHANGELOG.md
-            - AIA Examples:          https://github.com/MadBomber/aia/tree/main/examples
-            - Report an Issue:       https://github.com/MadBomber/aia/issues
-            - RubyLLM Documentation: https://rubyllm.com
-            - RubyLLM Tool Docs:     https://rubyllm.com/guides/tools
-            - PromptManager Docs:    https://madbomber.github.io/prompt_manager
-            - ERB Documentation:     https://docs.ruby-lang.org/en/master/ERB.html
-            - MCP Specification:     https://modelcontextprotocol.io
-            - MCP Client Docs:       https://github.com/patvice/ruby_llm-mcp/blob/main/README.md
-
-          EXTRA
-
+          print_help(opts)
           exit
         end
+      end
+
+      def print_help(opts)
+        puts <<~HELP
+
+          AIA - Your AI Assistant (v#{AIA::VERSION})
+            - Manage AI prompts with embedded directives
+            - Integrate with shell and Ruby (ERB) processing
+            - Run batch processes and prompt pipelines
+            - Engage in interactive chat sessions
+            - Use custom tools and MCP servers
+            - Compare the same prompt across multiple models (--model m1,m2,m3 [--consensus])
+            - Measure response time and token usage with --tokens; add cost with --cost
+            - Benchmark concurrent vs. serial performance (/decompose reports speedup metrics)
+
+        HELP
+
+        puts opts
+
+        puts <<~EXTRA
+
+          Explore Further:
+          - AIA GitHub Repository: https://github.com/MadBomber/aia
+          - AIA Documentation:     https://madbomber.github.io/aia
+          - AIA Changelog:         https://github.com/MadBomber/aia/blob/main/CHANGELOG.md
+          - AIA Examples:          https://github.com/MadBomber/aia/tree/main/examples
+          - Report an Issue:       https://github.com/MadBomber/aia/issues
+          - RubyLLM Documentation: https://rubyllm.com
+          - RubyLLM Tool Docs:     https://rubyllm.com/guides/tools
+          - PromptManager Docs:    https://madbomber.github.io/prompt_manager
+          - ERB Documentation:     https://docs.ruby-lang.org/en/master/ERB.html
+          - MCP Specification:     https://modelcontextprotocol.io
+          - RobotLab Docs:         https://github.com/MadBomber/robot_lab
+
+        EXTRA
       end
 
       # Parse model string into array of ModelSpec-compatible hashes
       #
       # @param model_string [String] comma-separated models with optional roles
       # @return [Array<Hash>] array of model specs
+      # :reek:TooManyStatements -- one-pass parser over MODEL[=ROLE] specs sharing the instance counter
       def parse_models_with_roles(model_string)
         models = []
         model_counts = Hash.new(0)
 
+        # rubocop:disable-next Metrics/BlockLength
         model_string.split(',').each do |spec|
           spec.strip!
 
           if spec =~ /^=|=$/
-            raise ArgumentError, "Invalid model syntax: '#{spec}'. Expected format: MODEL[=ROLE]"
+            raise AIA::ConfigurationError, "Invalid model syntax: '#{spec}'. Expected format: MODEL[=ROLE]"
           end
 
           if spec.include?('=')
             model_name, role_name = spec.split('=', 2)
             model_name.strip!
             role_name.strip!
-
-            validate_role_exists(role_name)
 
             model_counts[model_name] += 1
             instance = model_counts[model_name]
@@ -428,146 +500,178 @@ module AIA
         models
       end
 
-      def validate_role_exists(role_id)
-        if AIA::SkillUtils.path_based_id?(role_id)
-          expanded = File.expand_path(role_id)
-          expanded += '.md' if File.extname(expanded).empty?
-          raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
-          return
-        end
+      # Print a command-line error without a backtrace and exit 1. Covers every
+      # OptionParser failure (unknown option, missing or invalid argument) and
+      # configuration errors raised while options are parsed (e.g. a missing role).
+      def report_parse_error(error)
+        $stderr.puts "ERROR: #{error.message}"
+        $stderr.puts '       use --help for usage report' if error.is_a?(OptionParser::ParseError)
+        exit 1
+      end
 
-        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
-        roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
+      # Post-parse handler for `--list-providers`. Lists every provider
+      # registered with RubyLLM (built-ins plus any --require'd gems) and exits.
+      def handle_list_providers(options)
+        return unless options[:list_providers]
 
-        unless role_id.start_with?(roles_prefix)
-          role_id = "#{roles_prefix}/#{role_id}"
-        end
+        require_listed_libs(options)
+        list_available_providers
+      end
 
-        role_file_path = File.join(prompts_dir, "#{role_id}.md")
+      def list_available_providers
+        AIA::ProviderRegistry.load_installed_gems
 
-        unless File.exist?(role_file_path)
-          available_roles = list_available_role_names(prompts_dir, roles_prefix)
+        entries = AIA::ProviderRegistry.providers.sort.map { |slug, klass| provider_entry(slug, klass) }
 
-          error_msg = "Role file not found: #{role_file_path}\n\n"
+        puts <<~OUTPUT
 
-          if available_roles.empty?
-            error_msg += "No roles directory found at #{File.join(prompts_dir, roles_prefix)}\n"
-            error_msg += "Create the directory and add role files to use this feature."
-          else
-            error_msg += "Available roles:\n"
-            error_msg += available_roles.map { |r| "  - #{r}" }.join("\n")
-            error_msg += "\n\nCreate the role file or use an existing role."
-          end
+          Registered RubyLLM providers:
+          #{'-' * 60}
+          #{entries.join("\n")}
 
-          raise ArgumentError, error_msg
+          #{entries.size} provider(s) registered
+        OUTPUT
+
+        exit
+      end
+
+      # One listing line per provider, annotated with what the provider
+      # declares about itself: " (local)" and/or " (has API key)".
+      def provider_entry(slug, klass)
+        entry = "- #{slug}"
+        entry += ' (local)' if klass.respond_to?(:local?) && klass.local?
+        entry += ' (has API key)' if provider_api_key?(slug)
+        entry
+      end
+
+      # Generic API-key detection: RubyLLM.config's <slug>_api_key (set by
+      # robot_lab or the user), or the conventional <SLUG>_API_KEY env var
+      # that robot_lab maps into it at session start.
+      def provider_api_key?(slug)
+        key_attr = :"#{slug}_api_key"
+        config = RubyLLM.config
+        return true if config.respond_to?(key_attr) && !config.public_send(key_attr).to_s.empty?
+
+        !ENV.fetch("#{slug.upcase}_API_KEY", '').empty?
+      end
+
+      # Post-parse handler for `--provider SLUG --list-models`. Lists the
+      # provider's live models (via RubyLLM's Provider#list_models) and exits.
+      def handle_list_models(options)
+        return unless options[:list_models]
+
+        slug = options[:provider]
+        if slug
+          require_listed_libs(options)
+          AIA::ProviderRegistry.apply_env_endpoints
+          list_provider_models(slug)
+        else
+          $stderr.puts "ERROR: --list-models requires --provider SLUG " \
+                       "(use --available-models to search the full model registry)"
+          exit 1
         end
       end
 
-      def list_available_roles
-        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR', File.join(ENV['HOME'], '.prompts'))
-        roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
-        roles_dir = File.join(prompts_dir, roles_prefix)
-
-        unless Dir.exist?(roles_dir)
-          puts "No roles directory found at #{roles_dir}"
-          puts "Create this directory and add role files to use roles."
-          return
-        end
-
-        roles = list_available_role_names(prompts_dir, roles_prefix)
-
-        if roles.empty?
-          puts "No role files found in #{roles_dir}"
-          puts "Create .md files in this directory to define roles."
-          return
-        end
-
-        roles.each do |role_id|
-          role_file = File.join(roles_dir, "#{role_id}.md")
-          fm = AIA::SkillUtils.parse_front_matter(role_file)
-
-          puts "## #{role_id}"
-          puts
-          puts "| Key | Value |"
-          puts "|-----|-------|"
-          fm.each { |key, value| puts "| #{key} | #{value} |" }
-          puts
+      # `--require` libs may register additional RubyLLM providers, so load
+      # them before resolving the provider slug.
+      def require_listed_libs(options)
+        Array(options[:require_libs]).each do |lib|
+          require lib
+        rescue LoadError => e
+          $stderr.puts "Warning: Failed to require '#{lib}': #{e.message}"
         end
       end
 
-      def list_available_role_names(prompts_dir, roles_prefix)
-        roles_dir = File.join(prompts_dir, roles_prefix)
-        return [] unless Dir.exist?(roles_dir)
+      # :reek:TooManyStatements -- sequential --list-models report: resolve provider, list, summary, exit
+      def list_provider_models(slug)
+        if AIA::ProviderRegistry.available?(slug)
+          entries = AIA::ProviderRegistry.instantiate(slug).list_models.map { |model| "- #{slug}/#{model.id}" }
 
-        Dir.glob("**/*.md", base: roles_dir)
-          .map { |f| f.chomp('.md') }
-          .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
-          .sort
+          puts <<~OUTPUT
+
+            #{slug} models:
+            #{'-' * 60}
+            #{entries.join("\n")}
+
+            #{entries.size} #{slug} model(s) available
+          OUTPUT
+
+          exit
+        else
+          $stderr.puts "ERROR: unknown provider '#{slug}'. Registered providers: " \
+                       "#{AIA::ProviderRegistry.slugs.sort.join(', ')}"
+          exit 1
+        end
+      rescue StandardError => e
+        $stderr.puts "ERROR: cannot list models for provider '#{slug}': #{e.message}"
+        exit 1
       end
 
+      # :reek:TooManyStatements -- sequential --available-models report: parse query, print matches, summary, exit
       def list_available_models(query)
         require 'ruby_llm'
 
-        if query.nil?
-          query = []
-        else
-          query = query.split(',')
-        end
+        query = query.nil? ? [] : query.split(',')
+        modality_terms, substring_terms = parse_model_query(query)
 
         header = "\nAvailable LLMs"
         header += " for #{query.join(' and ')}" if query.any?
-
         puts header + ':'
         puts
 
-        q1 = query.select { |q| q.include?('_to_') }.map { |q| q[0] == ':' ? q[1..] : q }
-        q2 = query.reject { |q| q.include?('_to_') }
+        counter = print_matching_models(modality_terms, substring_terms)
 
-        counter = 0
-
-        RubyLLM.models.all.each do |llm|
-          inputs = llm.modalities.input.join(',')
-          outputs = llm.modalities.output.join(',')
-          entry = "- #{llm.id} (#{llm.provider}) #{inputs} to #{outputs}"
-
-          if query.nil? || query.empty?
-            counter += 1
-            puts entry
-            next
-          end
-
-          show_it = true
-          q1.each { |q| show_it &&= llm.modalities.send("#{q}?") }
-          q2.each { |q| show_it &&= entry.include?(q) }
-
-          if show_it
-            counter += 1
-            puts entry
-          end
-        end
-
-        puts if counter > 0
+        puts if counter.positive?
         puts "#{counter} LLMs matching your query"
         puts
 
         exit
       end
 
+      # Print each matching model entry; returns the number printed.
+      def print_matching_models(modality_terms, substring_terms)
+        RubyLLM.models.all.count do |llm|
+          entry = format_model_entry(llm)
+          visible = model_entry_visible?(llm, entry, modality_terms, substring_terms)
+          puts entry if visible
+          visible
+        end
+      end
+
+      # Split a query into modality terms (e.g. "text_to_text", leading ':'
+      # stripped) and plain substring terms.
+      def parse_model_query(query)
+        modality, substrings = query.partition { |q| ModalityQuery.modality_term?(q) }
+        [modality.map { |q| q.delete_prefix(':') }, substrings]
+      end
+
+      def format_model_entry(llm)
+        modalities = llm.modalities
+        "- #{llm.id} (#{llm.provider}) #{modalities.input.join(',')} to #{modalities.output.join(',')}"
+      end
+
+      def model_entry_visible?(llm, entry, modality_terms, substring_terms)
+        modality_terms.all? { |q| ModalityQuery.matches?(llm.modalities, q) } &&
+          substring_terms.all? { |q| entry.include?(q) }
+      end
+      # rubocop:enable Metrics/ModuleLength
+
+      # :reek:DuplicateMethodCall -- each `exit 1` terminates a distinct validation failure; there is no value to hoist
       def process_tools_paths(path_list)
         paths = []
 
         if path_list.empty?
-          warn "No list of paths for --tools option"
+          $stderr.puts "No list of paths for --tools option"
           exit 1
         end
 
         path_list.split(',').map(&:strip).uniq.each do |a_path|
           if File.exist?(a_path)
             if File.file?(a_path)
-              if '.rb' == File.extname(a_path)
+              if File.extname(a_path) == '.rb'
                 paths << a_path
               else
-                warn "file should have *.rb extension: #{a_path}"
+                $stderr.puts "file should have *.rb extension: #{a_path}"
                 exit 1
               end
             elsif File.directory?(a_path)
@@ -575,7 +679,7 @@ module AIA
               paths += rb_files
             end
           else
-            warn "file/dir path is not valid: #{a_path}"
+            $stderr.puts "file/dir path is not valid: #{a_path}"
             exit 1
           end
         end

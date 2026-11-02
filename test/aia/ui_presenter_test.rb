@@ -2,30 +2,40 @@ require_relative '../test_helper'
 require 'ostruct'
 require 'stringio'
 require 'reline'
+require 'fileutils'
 require_relative '../../lib/aia'
 
 class UIPresenterTest < Minitest::Test
   def setup
+    @test_aia_dir = File.expand_path('../tmp/aia', __dir__)
+    FileUtils.rm_rf(@test_aia_dir)
+
     @presenter = AIA::UIPresenter.new
     @original_stdout = $stdout
+    @original_stderr = $stderr
     @captured_output = StringIO.new
+    @captured_errors = StringIO.new
     $stdout = @captured_output
-    
+    $stderr = @captured_errors
+
     # Mock AIA.config with nested structure
     AIA.stubs(:config).returns(OpenStruct.new(
-      output: OpenStruct.new(file: nil),
-      flags: OpenStruct.new(verbose: false)
-    ))
-    
+                                 output: OpenStruct.new(file: nil),
+                                 flags: OpenStruct.new(verbose: false),
+                                 paths: OpenStruct.new(aia_dir: @test_aia_dir)
+                               ))
+
     # Mock AIA.verbose? method
     AIA.stubs(:verbose?).returns(false)
-    
+
     # Mock TTY::Screen.width
     TTY::Screen.stubs(:width).returns(80)
   end
 
   def teardown
     $stdout = @original_stdout
+    $stderr = @original_stderr
+    FileUtils.rm_rf(@test_aia_dir)
     # Call super to ensure global Mocha cleanup runs
     super
   end
@@ -40,7 +50,7 @@ class UIPresenterTest < Minitest::Test
 
   def test_display_chat_header
     @presenter.display_chat_header
-    
+
     output = @captured_output.string
     assert_includes output, '═' * 80
     assert_includes output, "\n"
@@ -48,28 +58,28 @@ class UIPresenterTest < Minitest::Test
 
   def test_display_separator
     @presenter.display_separator
-    
+
     output = @captured_output.string
     assert_includes output, '─' * 80
   end
 
   def test_display_chat_end
     @presenter.display_chat_end
-    
+
     output = @captured_output.string
     assert_includes output, "Chat session ended."
   end
 
   def test_display_info
     @presenter.display_info("Test message")
-    
-    output = @captured_output.string
+
+    output = @captured_errors.string
     assert_includes output, "Test message"
   end
 
   def test_display_ai_response_with_string
     @presenter.display_ai_response("Hello, world!")
-    
+
     output = @captured_output.string
     assert_includes output, "AI:"
     assert_includes output, "   Hello, world!"
@@ -80,38 +90,52 @@ class UIPresenterTest < Minitest::Test
     mock_message = mock('message')
     mock_message.stubs(:is_a?).with(RubyLLM::Message).returns(true)
     mock_message.stubs(:content).returns("Message content")
-    
+
     @presenter.display_ai_response(mock_message)
-    
+
     output = @captured_output.string
     assert_includes output, "AI:"
     assert_includes output, "   Message content"
   end
 
-  def test_display_ai_response_with_out_file
+  def test_display_ai_response_writes_only_to_stdout_not_file
     temp_file = Tempfile.new('test_output')
     AIA.config.output.file = temp_file.path
-    
+
     @presenter.display_ai_response("Test output")
-    
-    # Check console output
+
+    # Console output should contain the response
     output = @captured_output.string
     assert_includes output, "AI:"
     assert_includes output, "   Test output"
-    
-    # Check file output
+
+    # File must NOT be written by display_ai_response — output_to_file owns that
     file_content = File.read(temp_file.path)
-    assert_includes file_content, "AI:"
-    assert_includes file_content, "   Test output"
-    
+    refute_includes file_content, "AI:"
+
     temp_file.close
     temp_file.unlink
+  end
+
+  def test_display_robot_turn_writes_heading_and_indented_response_in_one_write
+    output = StringIO.new
+    output.expects(:write).with("\nRound 1 · Tobor:\n   First line\n   Second line\n").once
+    output.expects(:flush)
+
+    @presenter.display_robot_turn("Round 1 · Tobor", "First line\nSecond line", output)
+  end
+
+  def test_display_robot_turn_accepts_a_reply_object
+    output = StringIO.new
+    @presenter.display_robot_turn("Round 2 · Zen", OpenStruct.new(reply: "CONVERGED"), output)
+
+    assert_equal "\nRound 2 · Zen:\n   CONVERGED\n", output.string
   end
 
   def test_format_chat_response_with_regular_text
     output_buffer = StringIO.new
     @presenter.format_chat_response("Simple text", output_buffer)
-    
+
     assert_equal "   Simple text\n", output_buffer.string
   end
 
@@ -119,7 +143,7 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     text = "Line 1\nLine 2\nLine 3"
     @presenter.format_chat_response(text, output_buffer)
-    
+
     expected = "   Line 1\n   Line 2\n   Line 3\n"
     assert_equal expected, output_buffer.string
   end
@@ -128,7 +152,7 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     text = "Here's some code:\n```ruby\ndef hello\n  puts 'world'\nend\n```\nThat's it!"
     @presenter.format_chat_response(text, output_buffer)
-    
+
     output = output_buffer.string
     assert_includes output, "   ```ruby"
     assert_includes output, "   def hello"
@@ -142,7 +166,7 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     text = "```\nsome code\n```"
     @presenter.format_chat_response(text, output_buffer)
-    
+
     output = output_buffer.string
     assert_includes output, "   ```"
     assert_includes output, "   some code"
@@ -153,9 +177,9 @@ class UIPresenterTest < Minitest::Test
     mock_message = mock('message')
     mock_message.stubs(:is_a?).with(RubyLLM::Message).returns(true)
     mock_message.stubs(:content).returns("Message content")
-    
+
     @presenter.format_chat_response(mock_message, output_buffer)
-    
+
     assert_equal "   Message content\n", output_buffer.string
   end
 
@@ -163,11 +187,13 @@ class UIPresenterTest < Minitest::Test
     output_buffer = StringIO.new
     mock_object = mock('object')
     mock_object.stubs(:is_a?).with(RubyLLM::Message).returns(false)
+    mock_object.stubs(:respond_to?).with(:reply).returns(false)
+    mock_object.stubs(:respond_to?).with(:content).returns(false)
     mock_object.stubs(:respond_to?).with(:to_s).returns(true)
     mock_object.stubs(:to_s).returns("Object as string")
-    
+
     @presenter.format_chat_response(mock_object, output_buffer)
-    
+
     assert_equal "   Object as string\n", output_buffer.string
   end
 
@@ -175,7 +201,9 @@ class UIPresenterTest < Minitest::Test
     # Stub Reline.readline to simulate user input
     Reline.stubs(:readline).returns("user input")
     result = @presenter.ask_question
+
     assert_equal 'user input', result
+    assert File.exist?(File.join(@test_aia_dir, 'chat_history'))
   end
 
   def test_ask_question_with_empty_input
@@ -238,7 +266,7 @@ class UIPresenterTest < Minitest::Test
 
     assert_raises(StandardError) do
       @presenter.with_spinner("Testing") do
-        raise StandardError.new("Test error")
+        raise StandardError, "Test error"
       end
     end
   end
@@ -246,11 +274,66 @@ class UIPresenterTest < Minitest::Test
   def test_terminal_width_initialization
     # Mock TTY::Screen.width to return a specific value
     TTY::Screen.stubs(:width).returns(120)
-    
+
     presenter = AIA::UIPresenter.new
     presenter.display_chat_header
-    
+
     output = @captured_output.string
     assert_includes output, '═' * 120
+  end
+
+  # --- chat_history_file ---
+
+  def test_chat_history_file_uses_config_output_history_file
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: '/custom/path/history'),
+      paths:  OpenStruct.new(aia_dir: @test_aia_dir)
+    ))
+    assert_equal '/custom/path/history', @presenter.send(:chat_history_file)
+  end
+
+  def test_chat_history_file_returns_nil_when_disabled
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: false),
+      paths:  OpenStruct.new(aia_dir: @test_aia_dir)
+    ))
+    assert_nil @presenter.send(:chat_history_file)
+  end
+
+  def test_chat_history_file_falls_through_to_aia_dir_when_no_history_file
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: nil),
+      paths:  OpenStruct.new(aia_dir: @test_aia_dir)
+    ))
+    assert_equal File.join(File.expand_path(@test_aia_dir), 'chat_history'),
+                 @presenter.send(:chat_history_file)
+  end
+
+  def test_chat_history_file_falls_through_to_constant_when_nothing_configured
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: nil),
+      paths:  OpenStruct.new(aia_dir: nil)
+    ))
+    assert_equal AIA::UIPresenter::HISTORY_FILE, @presenter.send(:chat_history_file)
+  end
+
+  def test_load_chat_history_no_ops_when_history_disabled
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: false),
+      paths:  OpenStruct.new(aia_dir: nil)
+    ))
+    Reline::HISTORY.clear
+    @presenter.send(:load_chat_history)
+    assert_equal 0, Reline::HISTORY.length
+  end
+
+  def test_save_chat_history_no_ops_when_history_disabled
+    AIA.stubs(:config).returns(OpenStruct.new(
+      output: OpenStruct.new(history_file: false),
+      paths:  OpenStruct.new(aia_dir: nil)
+    ))
+    File.expects(:write).never
+    Reline::HISTORY << "test entry"
+    @presenter.send(:save_chat_history)
   end
 end

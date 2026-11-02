@@ -12,18 +12,16 @@
 #   synthesizes a unified response from all answers.
 #
 # Multiple models are specified as a comma-separated list with -m.
-# This demo uses two Ollama models. If you only have one model
-# available, pull a second one first:
-#   ollama pull phi4-mini
+# This demo uses two Anthropic models (claude-sonnet-4-6 and claude-haiku-4-5).
 #
-# Prerequisites: Run 00_setup_aia.sh first, plus a second model.
+# Prerequisites: Run 00_setup_aia.sh first (ANTHROPIC_API_KEY must be set).
 # Usage: cd examples && bash 11_multi_model.sh
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-MODEL_A="ollama/qwen3"
-MODEL_B="ollama/phi4-mini"
+MODEL_A="claude-sonnet-4-6"
+MODEL_B="claude-haiku-4-5"
 
 echo "=== Demo 11: Multiple Models ==="
 echo
@@ -39,14 +37,6 @@ echo "==="
 cat prompts_dir/explain_recursion.md
 echo "==="
 echo
-
-# --- Check that the second model is available ---
-
-if ! ollama list 2>/dev/null | grep -q "^phi4-mini"; then
-  echo "Model phi4-mini is not available. Pulling it now ..."
-  ollama pull phi4-mini
-  echo
-fi
 
 # --- Part 1: Comparison mode ---
 

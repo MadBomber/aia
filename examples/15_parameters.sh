@@ -8,14 +8,14 @@
 # In the front matter:
 #   parameters:
 #     name: World       # has a default value
-#     language:          # null = required, user will be prompted
+#     language:          # null = required, no default
 #
 # In the prompt body, reference parameters with ERB:
 #   Hello <%= name %>, welcome to <%= language %>!
 #
-# When a parameter has a default, AIA uses it automatically.
-# When a parameter is null (no default), AIA prompts the user
-# to enter a value interactively.
+# AIA asks for every parameter when the prompt runs. A default is
+# shown in parentheses; press Enter to accept it. A null parameter
+# has no default, so you must type a value.
 #
 # Prerequisites: Run 00_setup_aia.sh first.
 # Usage: cd examples && bash 15_parameters.sh
@@ -39,8 +39,9 @@ echo "==="
 cat prompts_dir/greeting.md
 echo "==="
 echo
-echo "All three parameters (name, language, tone) have defaults,"
-echo "so AIA fills them in automatically with no user interaction."
+echo "All three parameters (name, language, tone) have defaults."
+echo "AIA still asks for each one, showing the default in"
+echo "parentheses. Press Enter to accept each default."
 echo
 echo "Running: aia -c ${CONFIG} --no-output greeting"
 echo
@@ -59,8 +60,8 @@ echo "==="
 cat prompts_dir/greeting_required.md
 echo "==="
 echo
-echo "The 'name' parameter has no default (null), so AIA will"
-echo "prompt you to enter a value. 'language' defaults to Spanish."
+echo "The 'name' parameter has no default (null), so you must"
+echo "type a value. 'language' offers Spanish; press Enter to keep it."
 echo
 echo "Running: aia -c ${CONFIG} --no-output greeting_required"
 echo

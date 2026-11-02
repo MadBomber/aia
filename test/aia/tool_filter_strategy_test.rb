@@ -1,0 +1,137 @@
+# frozen_string_literal: true
+
+# test/aia/tool_filter_strategy_test.rb
+
+require_relative '../test_helper'
+require_relative '../../lib/aia'
+require 'ostruct'
+
+class ToolFilterStrategyTest < Minitest::Test
+  # =========================================================================
+  # Test helpers
+  # =========================================================================
+
+  def make_turn_state(active_tools: nil)
+    ts = AIA::TurnState.new
+    ts.active_tools = active_tools
+    ts
+  end
+
+  # Build a mock ToolFilter with given scored results
+  def make_mock_filter(label:, scored: [], prep_ms: 1.0, tool_count: nil)
+    tool_count ||= scored.size
+    filter = Object.new
+    filter.define_singleton_method(:label) { label }
+    filter.define_singleton_method(:prep_ms) { prep_ms }
+    filter.define_singleton_method(:tool_count) { tool_count }
+    filter.define_singleton_method(:available?) { tool_count.positive? }
+    filter.define_singleton_method(:filter_with_scores) { |_prompt| scored }
+    filter.define_singleton_method(:filter) do |_prompt|
+      names = scored.map { |e| e[:name] }
+      names.empty? ? nil : names
+    end
+    filter
+  end
+
+  def build_strategy(filters: {})
+    ui = OpenStruct.new
+    AIA::ToolFilterStrategy.new(filters: filters, ui_presenter: ui)
+  end
+
+  def with_aia_state(turn_state: nil)
+    turn_state ||= make_turn_state
+    AIA.stubs(:turn_state).returns(turn_state)
+    turn_state
+  end
+
+  # =========================================================================
+  # Strategy selection (active_strategy_label)
+  # =========================================================================
+
+  def test_tfidf_only_label
+    tfidf = make_mock_filter(label: "TF-IDF", scored: [{ name: "t", score: 0.5 }])
+    strategy = build_strategy(filters: { tfidf: tfidf })
+    assert_equal "TF-IDF", strategy.active_strategy_label
+  end
+
+  def test_empty_filters_fallback_label
+    strategy = build_strategy(filters: {})
+    assert_equal "none", strategy.active_strategy_label
+  end
+
+  def test_unavailable_filter_excluded_from_label
+    tfidf = make_mock_filter(label: "TF-IDF", scored: [{ name: "t", score: 0.5 }])
+    empty_filter = make_mock_filter(label: "TF-IDF", scored: [], tool_count: 0)
+    strategy = build_strategy(filters: { tfidf: tfidf, extra: empty_filter })
+    assert_equal "TF-IDF", strategy.active_strategy_label
+  end
+
+  # =========================================================================
+  # TF-IDF resolution (single filter)
+  # =========================================================================
+
+  def test_tfidf_returns_filtered_tools
+    tfidf = make_mock_filter(
+      label: "TF-IDF",
+      scored: [{ name: "search_tool", score: 0.5 }, { name: "code_tool", score: 0.3 }]
+    )
+    strategy = build_strategy(filters: { tfidf: tfidf })
+
+    result = strategy.resolve("find files")
+    assert_equal %w[search_tool code_tool], result
+  end
+
+  def test_tfidf_returns_empty_when_no_matches
+    # An active filter that matches nothing returns [] (send no tools), NOT nil.
+    # nil is reserved for "no filter active" (use all tools); [] means the
+    # filter deliberately selected zero tools for this prompt. tool_count: 1
+    # marks the filter as available (it has indexed tools) even though this
+    # prompt scored no matches.
+    tfidf = make_mock_filter(label: "TF-IDF", scored: [], tool_count: 1)
+    strategy = build_strategy(filters: { tfidf: tfidf })
+
+    assert_equal [], strategy.resolve("something obscure")
+  end
+
+  # =========================================================================
+  # No filters
+  # =========================================================================
+
+  def test_no_filters_returns_nil
+    strategy = build_strategy(filters: {})
+    assert_nil strategy.resolve("some prompt")
+  end
+
+  # =========================================================================
+  # Error handling — single filter failure
+  # =========================================================================
+
+  def test_single_filter_raises_returns_nil
+    failing_filter = make_mock_filter(label: "TF-IDF", scored: [], tool_count: 1)
+    failing_filter.define_singleton_method(:filter_with_scores) do |_prompt|
+      raise "embedding model failed to load"
+    end
+
+    strategy = build_strategy(filters: { tfidf: failing_filter })
+    assert_nil strategy.resolve("some prompt")
+  end
+end
+
+class ToolFilterStrategyTimeoutFromTest < Minitest::Test
+  def config_with(timeout)
+    OpenStruct.new(tool_filter: OpenStruct.new(timeout_s: timeout))
+  end
+
+  def test_uses_configured_positive_timeout
+    assert_equal 3, AIA::ToolFilterStrategy.timeout_from(config_with(3))
+    assert_in_delta 0.5, AIA::ToolFilterStrategy.timeout_from(config_with(0.5))
+  end
+
+  def test_falls_back_to_default_for_missing_or_invalid_values
+    default = AIA::ToolFilterStrategy::DEFAULT_TIMEOUT_S
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(config_with(nil))
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(config_with(0))
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(config_with('5'))
+    assert_equal default, AIA::ToolFilterStrategy.timeout_from(OpenStruct.new)
+  end
+end

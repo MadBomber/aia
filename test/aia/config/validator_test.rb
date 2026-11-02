@@ -4,6 +4,35 @@ require_relative '../../test_helper'
 require 'ostruct'
 require 'tmpdir'
 
+# Helper to capture stdout when the block raises an exception (e.g. ConfigurationError)
+module ValidatorTestHelpers
+  def capture_stdout_through_exception
+    old_stdout = $stdout
+    $stdout = StringIO.new
+    begin
+      yield
+    rescue AIA::ConfigurationError
+      # expected
+    end
+    $stdout.string
+  ensure
+    $stdout = old_stdout
+  end
+
+  def capture_stderr_through_exception
+    old_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      yield
+    rescue AIA::ConfigurationError
+      # expected
+    end
+    $stderr.string
+  ensure
+    $stderr = old_stderr
+  end
+end
+
 class ValidatorProcessPromptIdTest < Minitest::Test
   def test_extracts_prompt_id_when_prompt_file_exists
     Dir.mktmpdir do |dir|
@@ -45,7 +74,6 @@ class ValidatorProcessPromptIdTest < Minitest::Test
   end
 end
 
-
 class ValidatorContextFilesTest < Minitest::Test
   def test_sets_context_files_from_remaining_args
     Dir.mktmpdir do |dir|
@@ -68,11 +96,21 @@ class ValidatorContextFilesTest < Minitest::Test
     config = OpenStruct.new(context_files: [])
     AIA.stubs(:good_file?).with('/nonexistent/file.rb').returns(false)
 
-    stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['/nonexistent/file.rb'])
+    end
+    assert_includes error.message, 'do not exist'
+  end
 
-    AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['/nonexistent/file.rb'])
-    assert stderr_messages.any? { |m| m.include?('do not exist') }
+  def test_flag_typo_detection
+    config = OpenStruct.new(context_files: [])
+    AIA.stubs(:good_file?).with('_B').returns(false)
+
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['_B'])
+    end
+    assert_includes error.message, 'Did you mean'
+    assert_includes error.message, '-B'
   end
 
   def test_does_nothing_with_empty_args
@@ -89,7 +127,6 @@ class ValidatorContextFilesTest < Minitest::Test
     assert_equal ['file.rb'], config.context_files
   end
 end
-
 
 class ValidatorExecutablePromptTest < Minitest::Test
   def test_detects_shebang_file_as_executable_prompt
@@ -145,7 +182,6 @@ class ValidatorExecutablePromptTest < Minitest::Test
     end
   end
 end
-
 
 class ValidatorStdinAsPromptTest < Minitest::Test
   def test_stdin_content_becomes_executable_prompt
@@ -203,7 +239,6 @@ class ValidatorStdinAsPromptTest < Minitest::Test
   end
 end
 
-
 class ValidatorRequiredPromptIdTest < Minitest::Test
   def test_exits_when_no_prompt_id_and_not_chat_or_fuzzy
     config = OpenStruct.new(
@@ -211,11 +246,10 @@ class ValidatorRequiredPromptIdTest < Minitest::Test
       flags: OpenStruct.new(chat: false, fuzzy: false)
     )
 
-    stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    AIA::ConfigValidator.send(:validate_required_prompt_id, config)
-    assert stderr_messages.any? { |m| m.include?('prompt ID is required') }
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_required_prompt_id, config)
+    end
+    assert_includes error.message, 'prompt ID is required'
   end
 
   def test_skips_when_prompt_id_present
@@ -248,7 +282,6 @@ class ValidatorRequiredPromptIdTest < Minitest::Test
     AIA::ConfigValidator.send(:validate_required_prompt_id, config)
   end
 end
-
 
 class ValidatorRoleConfigurationTest < Minitest::Test
   def test_prepends_roles_prefix
@@ -339,23 +372,6 @@ class ValidatorRoleConfigurationTest < Minitest::Test
     assert_empty config.pipeline
   end
 
-  def test_sets_roles_dir
-    config = OpenStruct.new(
-      prompts: OpenStruct.new(
-        role: 'architect',
-        roles_prefix: 'roles',
-        roles_dir: nil,
-        dir: '/tmp/prompts'
-      ),
-      flags: OpenStruct.new(chat: false),
-      prompt_id: 'existing',
-      pipeline: []
-    )
-
-    AIA::ConfigValidator.send(:process_role_configuration, config)
-    assert_equal '/tmp/prompts/roles', config.prompts.roles_dir
-  end
-
   def test_process_role_configuration_does_not_mangle_absolute_path_role
     config = OpenStruct.new(
       prompts: OpenStruct.new(
@@ -393,6 +409,39 @@ class ValidatorRoleConfigurationTest < Minitest::Test
   end
 end
 
+class ValidatorPluginsDirTest < Minitest::Test
+  def test_validate_plugins_dir_warns_when_missing
+    config = OpenStruct.new(paths: OpenStruct.new(plugins_dir: '/definitely/missing/plugins'))
+
+    _out, err = capture_io do
+      AIA::ConfigValidator.send(:validate_plugins_dir, config)
+    end
+
+    assert_match(/configured plugins directory does not exist/, err)
+  end
+
+  def test_validate_plugins_dir_is_silent_when_directory_exists
+    Dir.mktmpdir do |dir|
+      config = OpenStruct.new(paths: OpenStruct.new(plugins_dir: dir))
+
+      _out, err = capture_io do
+        AIA::ConfigValidator.send(:validate_plugins_dir, config)
+      end
+
+      assert_equal '', err
+    end
+  end
+
+  def test_validate_plugins_dir_is_silent_when_nil
+    config = OpenStruct.new(paths: OpenStruct.new(plugins_dir: nil))
+
+    _out, err = capture_io do
+      AIA::ConfigValidator.send(:validate_plugins_dir, config)
+    end
+
+    assert_equal '', err
+  end
+end
 
 class ValidatorFuzzySearchTest < Minitest::Test
   def test_sets_fuzzy_search_sentinel
@@ -426,7 +475,6 @@ class ValidatorFuzzySearchTest < Minitest::Test
   end
 end
 
-
 class ValidatorDumpConfigTest < Minitest::Test
   def test_handle_dump_config_triggers_dump_and_exit
     Dir.mktmpdir do |dir|
@@ -436,9 +484,9 @@ class ValidatorDumpConfigTest < Minitest::Test
         setting: 'value'
       )
 
-      _out, _err = capture_io do
-        AIA::ConfigValidator.send(:handle_dump_config, config)
-      end
+      result = nil
+      capture_io { result = AIA::ConfigValidator.send(:handle_dump_config, config) }
+      assert_equal :early_exit, result
       assert File.exist?(dump_path)
     end
   end
@@ -451,8 +499,9 @@ class ValidatorDumpConfigTest < Minitest::Test
   end
 end
 
-
 class ValidatorMcpListTest < Minitest::Test
+  include ValidatorTestHelpers
+
   def test_lists_mcp_servers
     config = OpenStruct.new(
       mcp_list: true,
@@ -465,7 +514,7 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/github/, out)
@@ -485,7 +534,7 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/Active MCP servers/, out)
@@ -501,7 +550,7 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/No MCP servers configured/, out)
@@ -538,14 +587,13 @@ class ValidatorMcpListTest < Minitest::Test
       mcp_skip: []
     )
 
-    out, _err = capture_io do
+    out = capture_stdout_through_exception do
       AIA::ConfigValidator.send(:handle_mcp_list, config)
     end
     assert_match(/test-server/, out)
     assert_match(/--flag/, out)
   end
 end
-
 
 class ValidatorCompletionScriptTest < Minitest::Test
   def test_handle_completion_script_skips_when_nil
@@ -555,11 +603,10 @@ class ValidatorCompletionScriptTest < Minitest::Test
   end
 
   def test_generate_completion_script_missing_shell
-    stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    AIA::ConfigValidator.send(:generate_completion_script, 'nonexistent_shell')
-    assert stderr_messages.any? { |m| m.include?('not supported') }
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:generate_completion_script, 'nonexistent_shell')
+    end
+    assert_includes error.message, 'not supported'
   end
 
   def test_generate_completion_script_existing_shell
@@ -578,67 +625,123 @@ class ValidatorCompletionScriptTest < Minitest::Test
   end
 end
 
-
-class ValidatorFinalPromptRequirementsTest < Minitest::Test
-  def test_exits_when_no_prompt_no_context_no_chat_no_fuzzy
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: false),
-      prompt_id: nil,
-      context_files: nil
+class ValidatorPromptSelectionTest < Minitest::Test
+  def config_with(**overrides)
+    OpenStruct.new(
+      {
+        flags: OpenStruct.new(chat: false, fuzzy: false),
+        prompts: OpenStruct.new(role: nil, roles_prefix: 'roles', roles_dir: nil, dir: '/tmp/prompts', extname: '.md'),
+        prompt_id: nil,
+        pipeline: [],
+        context_files: []
+      }.merge(overrides)
     )
-
-    stderr_messages = []
-    AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
-    assert stderr_messages.any? { |m| m.include?('prompt ID is required') }
   end
 
-  def test_passes_with_prompt_id
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: false),
-      prompt_id: 'my_prompt',
-      context_files: nil
-    )
-
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+  def test_pipeline_head_becomes_prompt_id
+    config = config_with(pipeline: %w[first second])
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    assert_equal 'first', config.prompt_id
   end
 
-  def test_passes_in_chat_mode
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: true, fuzzy: false),
-      prompt_id: nil,
-      context_files: nil
-    )
-
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+  def test_pipeline_head_does_not_replace_prompt_id
+    config = config_with(prompt_id: 'given', pipeline: %w[first])
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    assert_equal 'given', config.prompt_id
   end
 
-  def test_passes_in_fuzzy_mode
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: true),
-      prompt_id: nil,
-      context_files: nil
-    )
-
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+  def test_pipeline_head_ignores_empty_pipeline
+    config = config_with
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    assert_nil config.prompt_id
   end
 
-  def test_passes_with_context_files
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: false),
-      prompt_id: nil,
-      context_files: ['file.rb']
-    )
+  def test_role_alone_passes_required_prompt_check
+    config = config_with
+    config.prompts.role = 'tutor'
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+    AIA::ConfigValidator.send(:validate_required_prompt_id, config)
+    assert_equal 'roles/tutor', config.prompt_id
+  end
 
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+  def test_role_with_pipeline_stays_a_role
+    config = config_with(pipeline: %w[first])
+    config.prompts.role = 'tutor'
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+    assert_equal 'first', config.prompt_id
+    assert_equal 'roles/tutor', config.prompts.role
+    assert_equal %w[first], config.pipeline
+  end
+
+  def test_context_files_alone_still_need_a_prompt
+    config = config_with(context_files: ['file.rb'])
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_required_prompt_id, config)
+    end
+    assert_includes error.message, 'Context files alone are not a prompt'
+    refute_includes error.message, 'or providing context files'
+  end
+
+  def test_mistyped_prompt_id_names_the_prompt
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'code_review.md'), 'Review this')
+      config = config_with(prompts: OpenStruct.new(dir: dir, extname: '.md'))
+
+      error = assert_raises(AIA::ConfigurationError) do
+        AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['code-review'])
+      end
+      assert_includes error.message, "No prompt named 'code-review'"
+      assert_includes error.message, 'Did you mean: code_review?'
+    end
+  end
+
+  def test_mistyped_prompt_id_also_lists_missing_files
+    Dir.mktmpdir do |dir|
+      config = config_with(prompts: OpenStruct.new(dir: dir, extname: '.md'))
+
+      error = assert_raises(AIA::ConfigurationError) do
+        AIA::ConfigValidator.send(:validate_and_set_context_files, config, %w[nothing gone.rb])
+      end
+      assert_includes error.message, "No prompt named 'nothing'"
+      assert_includes error.message, 'The following files do not exist: gone.rb'
+      refute_includes error.message, 'Did you mean'
+    end
+  end
+
+  def test_missing_file_with_extension_is_still_a_missing_file
+    config = config_with
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['gone.rb'])
+    end
+    assert_equal 'The following files do not exist: gone.rb', error.message
+  end
+
+  def test_strip_shebang_from_piped_text
+    text = "\n#!/usr/bin/env aia\n---\nmodel: x\n---\nHello\n"
+    assert_equal "---\nmodel: x\n---\nHello\n", AIA::ConfigValidator.send(:strip_shebang, text)
+  end
+
+  def test_strip_shebang_drops_leading_newline_only
+    assert_equal "---\na: 1\n---\nHi", AIA::ConfigValidator.send(:strip_shebang, "\n---\na: 1\n---\nHi")
+  end
+
+  def test_piped_prompt_keeps_front_matter
+    config = config_with(stdin_content: "\n#!/usr/bin/env aia\n---\ntemperature: 0.2\n---\nHello")
+    AIA::ConfigValidator.send(:handle_stdin_as_prompt, config)
+    assert_equal '__EXECUTABLE_PROMPT__', config.prompt_id
+    assert_equal "---\ntemperature: 0.2\n---\nHello", config.executable_prompt_content
+  end
+
+  def test_pipeline_validation_accepts_path_based_ids
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'my-role.md')
+      File.write(path, 'You are kind.')
+      config = config_with(pipeline: [path.delete_suffix('.md')])
+      AIA::ConfigValidator.send(:validate_pipeline_prompts, config)
+    end
   end
 end
-
 
 class ValidatorPipelineTest < Minitest::Test
   def test_validate_pipeline_prompts_passes_for_existing_files
@@ -647,7 +750,7 @@ class ValidatorPipelineTest < Minitest::Test
       File.write(File.join(dir, 'prompt2.md'), '# prompt 2')
 
       config = OpenStruct.new(
-        pipeline: ['prompt1', 'prompt2'],
+        pipeline: %w[prompt1 prompt2],
         prompts: OpenStruct.new(dir: dir, extname: '.md')
       )
 
@@ -665,17 +768,18 @@ class ValidatorPipelineTest < Minitest::Test
         prompts: OpenStruct.new(dir: dir, extname: '.md')
       )
 
-      stderr_messages = []
-      AIA::ConfigValidator.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-      AIA::ConfigValidator.send(:validate_pipeline_prompts, config)
-      assert stderr_messages.any? { |m| m.include?('does not exist') }
+      error = assert_raises(AIA::ConfigurationError) do
+        capture_io do
+          AIA::ConfigValidator.send(:validate_pipeline_prompts, config)
+        end
+      end
+      assert_includes error.message, 'do not exist'
     end
   end
 
   def test_validate_pipeline_prompts_skips_sentinels
     config = OpenStruct.new(
-      pipeline: ['__FUZZY_SEARCH__', '__EXECUTABLE_PROMPT__'],
+      pipeline: %w[__FUZZY_SEARCH__ __EXECUTABLE_PROMPT__],
       prompts: OpenStruct.new(dir: '/tmp', extname: '.md')
     )
 
@@ -705,7 +809,6 @@ class ValidatorPipelineTest < Minitest::Test
   end
 end
 
-
 class ValidatorNormalizeBooleanFlagsTest < Minitest::Test
   def test_normalizes_all_flags
     config = OpenStruct.new(
@@ -719,8 +822,9 @@ class ValidatorNormalizeBooleanFlagsTest < Minitest::Test
   end
 end
 
-
 class ValidatorListToolsTest < Minitest::Test
+  include ValidatorTestHelpers
+
   def test_handle_list_tools_skips_when_not_set
     config = OpenStruct.new(list_tools: nil)
 
@@ -736,12 +840,78 @@ class ValidatorListToolsTest < Minitest::Test
       tools: OpenStruct.new(paths: nil)
     )
 
-    # Stub ObjectSpace to return no tool subclasses
-    ObjectSpace.stubs(:each_object).with(Class).returns([].each)
+    # The session tool loader finds nothing
+    AIA::ToolLoader.stubs(:load_tools)
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
 
-    _out, err = capture_io do
+    err = capture_stderr_through_exception do
       AIA::ConfigValidator.send(:handle_list_tools, config)
     end
     assert_match(/No tools available/, err)
+  end
+
+  # --list-tools builds servers the way MCPConnectionManager does
+  # (RobotLab::MCP.build), so it lists the RubyLLM::MCP::Tools a robot gets
+  def test_load_mcp_tools_grouped_uses_robot_lab_mcp_build
+    tool   = Struct.new(:name, :description).new('lookup', 'Find things')
+    server = mock('mcp_server')
+    server.stubs(:tools).returns([tool])
+    server.expects(:close).once
+    RobotLab::MCP.expects(:build).with(has_entry(name: 'svc')).returns(server)
+
+    groups = nil
+    _, err = capture_io { groups = AIA::ConfigValidator.send(:load_mcp_tools_grouped, list_tools_config) }
+
+    assert_equal ['svc'], groups.keys
+    assert_equal [tool], groups['svc']
+    assert_match(/svc... 1 tools/, err)
+  end
+
+  def test_load_mcp_tools_grouped_reports_failed_server
+    server = mock('mcp_server')
+    server.stubs(:tools).raises(RubyLLM::Error.new('spawn failed'))
+    server.expects(:close).once
+    RobotLab::MCP.stubs(:build).returns(server)
+
+    groups = nil
+    _, err = capture_io { groups = AIA::ConfigValidator.send(:load_mcp_tools_grouped, list_tools_config) }
+
+    assert_empty groups
+    assert_match(/svc... error: spawn failed/, err)
+  end
+
+  def test_load_mcp_tools_grouped_reports_connection_error
+    RobotLab::MCP.stubs(:build).raises(StandardError.new('boom'))
+
+    groups = nil
+    _, err = capture_io { groups = AIA::ConfigValidator.send(:load_mcp_tools_grouped, list_tools_config) }
+
+    assert_empty groups
+    assert_match(/svc... error: boom/, err)
+  end
+
+  private
+
+  def list_tools_config
+    OpenStruct.new(
+      list_tools: true, mcp_list: true,
+      mcp_servers: [{ name: 'svc', command: 'svc-bin', args: [] }],
+      mcp_use: [], mcp_skip: []
+    )
+  end
+end
+
+class ValidatorListToolsFilterTest < Minitest::Test
+  def test_list_tools_uses_the_session_loader_and_filters
+    config = OpenStruct.new(tools: OpenStruct.new(allowed: ['date'], rejected: []))
+    AIA::ToolLoader.expects(:load_tools).with(config)
+    AIA::ToolLoader.expects(:filtered_tools).with(config).returns([:date_tool])
+    assert_equal [:date_tool], AIA::ConfigValidator.send(:load_local_tools, config)
+  end
+
+  def test_mcp_list_applies_use_and_skip_together
+    servers = [{ name: 'a' }, { name: 'b' }, { name: 'c' }]
+    config = OpenStruct.new(mcp_servers: servers, mcp_use: %w[a b], mcp_skip: %w[b])
+    assert_equal [{ name: 'a' }], AIA::ConfigValidator.send(:filter_mcp_servers, config)
   end
 end

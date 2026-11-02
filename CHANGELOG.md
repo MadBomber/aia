@@ -1,69 +1,201 @@
 # Changelog
+
+## [2.0.0] 2026-11-02
+
+AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab): every session is a crew of robots, MCP servers come from ruby_llm 2.1's built-in client, and any provider RubyLLM registers can be used. This entry summarizes everything since 1.1.1, the last 1.x release, including the `2.0.0.pre.alpha` and `2.0.0.pre.beta2` pre-releases.
+
+**Requires** Ruby >= 4.0.9 · robot_lab `~> 0.6` · ruby_llm 2.1 (through robot_lab)
+
+### Upgrading from 1.x
+
+These changes can break an existing setup. [Upgrading to 2.0](docs/appendix/upgrading-2.0.md) has the details.
+
+- **Ruby 4.0.9 or newer.**
+- **Removed options:** `--terse`, `--regex`, `--skills-prefix` and `--md` / `--[no-]markdown`. Passing one now stops AIA with an invalid-option error. The config keys `flags.terse`, `prompts.parameter_regex`, `prompts.skills_prefix` and `output.markdown` are gone too, along with these keys nothing read: `flags.clear`, `embedding.model`, `tools.dir`, `roles.dir`, `prompts.roles_dir`, `prompts.tool`, `prompts.tools_prefix` and `paths.config_file`. Old config files that still set them load as before. Use `--skills-dir` in place of `--skills-prefix`.
+- **Changed defaults:** `llm.max_tokens` is `32767` (was `2048`) and `llm.top_p` is `nil` (was `1.0`). `audio.speak_command` is `say`; it was `afplay`, which plays audio files, not text. `audio.voice`, `audio.speech_model` and `audio.transcription_model` are `nil` (were `alloy`, `tts-1` and `whisper-1`).
+- **Custom tools must use the ruby_llm 2 DSL.** `param :text, desc: "..."` is now `parameter :text, description: "..."`. A tool still written the 1.x way raises `NoMethodError` when it loads.
+- **MCP runs on ruby_llm 2.1's own client.** The `ruby_llm-mcp` gem is no longer used and cannot be loaded alongside ruby_llm 2.1. Servers listed under `mcp_servers:` keep working. Also:
+  - Server classes loaded with `--require` must subclass `RubyLLM::MCP`.
+  - `sse` and `ws` transports are gone; use the server's Streamable HTTP `url:` or a stdio `command:`.
+  - When two servers offer a tool with the same name, the second now fails to connect. Give one of them a `prefix:`.
+- **`/terse` has been removed.**
+- **`/ruby` is off by default.** Enable it with `--allow-ruby-eval`.
+- **`/model` keeps the conversation.** Switching models hands the new model a summary of the conversation so far. Set `model_switch_history: clean` to start fresh, as 1.x did.
+- **Embedding AIA in Ruby code:** `AIA.client` is a `RobotLab::Robot` or `RobotLab::Network`. `RubyLLMAdapter` and `lib/aia/adapter/` are gone. `AIA::HistoryManager` is now `AIA::VariableInputCollector`, and `AIA::ConfigSection` is now `MywayConfig::ConfigSection`.
+- **The gem no longer ships `docs/`, `examples/` or `mcp_servers/`.** They are in the [repository](https://github.com/MadBomber/aia).
+
+If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule hooks and `--tool-filter-kbs` have been removed. Tool filtering is TF-IDF only and on by default, toggled with `-A` / `--[no-]auto-tool-filter`, which replaces `tool_filter_a`.
+
+### Added
+
+**Crews and multi-robot work**
+- Every chat session is a crew, even with one model; its lead robot is the chief.
+  - `/add_recruit` (`/add`) adds persistent members, `/drop_recruit` (`/drop`) removes them, and `/reskill` resets a member with a new role.
+  - `skill:<id>` assigns roles from skills, and the chief can recruit and reskill members itself.
+- `@crew` sends a prompt to every member. Leading `@a @b` addresses run concurrently, and a `@name` inside the body runs members as a pipeline.
+- `/spawn <name> <provider/model> <prompt>` creates a one-shot specialist.
+- Orchestration patterns:
+  - multi-model parallel, consensus and pipeline networks
+  - `/verify`: two independent answers plus a reconciler
+  - `/debate`, which ends when the robots' answers converge
+  - `/decompose` and `/delegate`
+  - `/orchestrate`: three-tier lead and specialist planning
+- Multi-model turns run their LLM calls concurrently.
+- TrakFlow task tracking: the `/plan`, `/task` and `/tasks` directives, plus the `TaskBoardTool` and `DelegateToForemanTool` tools.
+
+**MCP**
+- All configured servers connect in parallel before the first robot is built. Each server process starts once and is shared by every robot, crewmate and network worker.
+- Streamable HTTP servers can be configured with `url:`, `headers:` and `bearer_token:`.
+- Servers accept `prefix:`, `only:`, `except:`, `requires_approval:` and `description:`.
+- An `mcp_servers:` entry can name a `RubyLLM::MCP` subclass, such as `SharedTools::MCP::GitHub`. The class supplies its own command or URL, environment and timeout, and the server is known by the class's default name (`github`). A class whose `available?` returns false (a missing API key, say) is skipped with a note naming the missing variables. `--require` libraries load before servers connect, so the classes they define can be used.
+- `tools.approval` (`--tool-approval ask|approve|deny`) handles approval-gated tool calls and servers' requests for input. `ask`, the default, prompts on the terminal.
+
+**Providers and models**
+- `AIA::ProviderRegistry` takes its provider list from RubyLLM. It loads `ruby_llm-providers-<slug>` gems on demand, and a `<SLUG>_API_BASE` variable overrides a provider's endpoint.
+- `--provider` sets the default for model names without a provider prefix. `--list-providers` shows each provider, marked as local or as having an API key; `--list-models` lists a provider's live models.
+- `/model` switches models mid-session, with fuzzy name matching. `model_switch_history` decides how the conversation carries over: `summarize` (default), `replay` or `clean`.
+- `--[no-]thinking` hides or shows the `<think>` reasoning that local models stream.
+
+**Skills, audio and output**
+- `--skill` / `-s` injects skills into the system prompt in chat mode, and into each prompt in pipeline mode. The `SKILL.md` skills system itself arrived in 1.1.0.
+- Audio:
+  - `--speak-command` runs your own TTS script; `~/.config/aia/tts.sh` is a ready-made OpenAI one.
+  - `--speech-model`, `--transcription-model` and `--voice` now take effect.
+  - `--speak` shows a spinner for converting and for speaking.
+- `--history-file` and `--no-history-file` now work.
+- `tool_filter.timeout_s` sets the TF-IDF filter's timeout.
+
+### Changed
+
+- The example scripts and configs run on Anthropic (`claude-haiku-4-5`, `claude-sonnet-4-6`) and need only `ANTHROPIC_API_KEY`. The example tool plugins moved to `examples/plugins/`. New example 30 uses every shared_tools tool and MCP server.
+- `/debate` shows each robot's response as soon as it finishes, under a `Round N · Name` heading, with one progress line per round. The transcript is still written to `--output`.
+- Tool allowlists (`--allowed-tools`, `--rejected-tools`) and the chat tool filter match a tool class by the name the model calls it (`dns`), not its Ruby class name (`SharedTools::Tools::DnsTool`).
+- Heavy subsystems load only when used: verification, decomposition, TrakFlow and the special-mode handlers.
+- "Exiting AIA application..." now appears only when a chat session ends, not after `--version`, `--help` or a one-shot run.
+- **One special mode per turn is now enforced.** `/verify`, `/decompose`, `/concurrent`, `/debate`, `/delegate`, `/spawn` and `/orchestrate` go through `TurnState#request`, so a later directive replaces an earlier one instead of both staying set. The `TurnState` `force_*` flags are read-only; handlers take the active mode with `TurnState#consume!`.
+
+### Removed
+
+- KBS rule engine: `RuleRouter`, `ExpertRouter`, `DynamicRuleBuilder`, `DecisionApplier` and the rules DSL.
+- The zvec, sqlite-vec and LSI tool filters.
+- Dependencies: `kbs`, `ruby_llm-mcp`, `zvec`, `sqlite-vec`, `informers`, `ostruct`, `securerandom`.
+- The `--terse`, `--regex` and `--skills-prefix` options, the `/terse` directive, and their config keys.
+- The unused `rules:` config section (`AIA_RULES__*`).
+- Options and keys that had no effect: `--expert-routing`, `--load`, `--save`, `--md`, their `flags.*` / `output.markdown` keys, `concurrency.independent_servers`, the MCP server key `independent:`, and the config keys listed under Upgrading.
+- `ModelSwitchHandler`, the disabled plain-language model switcher ("switch to claude"). `/model` switches models.
+- Compatibility shims: the `AIA::HistoryManager` and `AIA::ConfigSection` aliases, and the `RobotFactory` forwarding methods `clear_tool_cache!`, `filtered_tools`, `resolve_system_prompt` and `build_identity_prompt` (call `ToolLoader` and `SystemPromptAssembler` directly).
+
+### Fixed
+
+- **MCP:**
+  - `--no-mcp` is honored.
+  - Streamable HTTP servers keep their `url`.
+  - `--mcp-list --list-tools` uses the same connection path as the robots.
+- **Model switching:** conversation history now carries over to crews. Prompt decomposition uses structured output again instead of always falling back to JSON parsing.
+- **Errors and warnings now reach the terminal** (aia now writes them with `$stderr.puts` instead of `warn`).
+- **Command-line errors:** an invalid option value (`-t hot`, `--tool-approval maybe`), a malformed `-m` spec or a missing `-m MODEL=ROLE` role file now prints a one-line `ERROR:` message and exits 1 instead of a Ruby backtrace.
+- **Model search:** `--available-models` and `/available_models` capability terms such as `text_to_image` work again under ruby_llm 2.1 instead of crashing with `NoMethodError`.
+- **Front-matter `model:`** no longer crashes the run after the model replies.
+- **Settings changed while aia runs now reach the model:**
+  - A prompt's front-matter `model:` switches models before that prompt runs; `temperature:`, `top_p:` and `config: llm:` retune the running robot.
+  - `/temperature`, `/top_p` and `/config llm.*` apply from the next chat turn, to every crewmate, without losing the conversation.
+  - `/config` converts values to the setting's type (numbers, true/false, lists) for every key, not just seven switches.
+- **`model_switch_history` and `model_aliases` are loaded** from the config file, `-c` files and the environment. `/model` accepts aliases such as `sonnet` or `cheap`.
+- **Environment variables are typed:** `AIA_FLAGS__X=false` turns a switch off, numbers such as `AIA_LLM__TEMPERATURE=0.2` become numbers, and `AIA_TOOLS__ALLOWED`, `AIA_TOOLS__REJECTED` and `AIA_TOOLS__PATHS` are split on commas.
+- **`flags.shell` and `flags.erb`** set the default for every prompt; front matter still overrides them.
+- **`tool_filter.timeout_s`** sets the chat tool filter's time limit.
+- **`--dump`** includes `tool_filter`, `model_switch_history` and `model_aliases`, and `-c` files can set `tool_filter`.
+- **Prompt loading:**
+  - Prompt IDs with hyphens or subfolders (`code-review`, `dev/review`) load their file instead of being sent to the model as text. A prompt ID can also be a path (`./drafts/idea`).
+  - `aia -p a,b` with no prompt ID runs `a` then `b`, and `aia -r role` alone runs the role file as the prompt.
+  - The "prompt ID is required" message no longer says context files are enough.
+  - A mistyped prompt ID reports `No prompt named 'x'` with spelling suggestions instead of `The following files do not exist`.
+  - Piped text drops a leading `#!` line and keeps its front matter, and piped text that is one word or ends in `.md` is no longer read as a file name.
+  - A required parameter declared only in an included file is asked for instead of stopping the run.
+  - Parameters named after Ruby built-ins such as `format` or `test` render their values instead of failing with `ArgumentError` (prompt_manager 1.2.0; aia now requires `prompt_manager ~> 1.2`).
+  - Front-matter `pipeline:` may be a comma-separated string.
+- **Roles and skills:**
+  - `--list-roles` and the `-m MODEL=ROLE` check use the configured prompts directory (`--prompts-dir`, config file), not only `AIA_PROMPTS__DIR`.
+  - A role given as a path reaches the system prompt, in chat too.
+  - The role in the system prompt is processed like a prompt: front matter removed, ERB and `$(...)` expanded.
+  - `--skill` warns when the skills directory doesn't exist, and path skills load without one.
+  - `--help` describes `--system-prompt` as literal text.
+- **Chat and crews:**
+  - `/compare` sends the whole argument string as the prompt, not just its first word.
+  - An `@word` that names no crew member (an email address, `@deprecated`) goes to the model; only a mistyped name at the start of a message is held back.
+  - `/spawn` specialists get the chief's tools and MCP servers, and `skill:<id>` in `/spawn` is applied.
+  - The task-board tool reaches the robots: TrakFlow starts before the robot collects its tools.
+  - `/verify` builds its robots with the model's provider, so `ollama/…` and other non-default providers work.
+  - `/drop_recruit`, `/reskill` and duplicate-name checks ignore case, as `@mentions` do.
+  - `/say` uses `--speak-command`, and its usage message is no longer sent to the model.
+- **Tools, MCP and providers:**
+  - `--list-tools` loads tools the way a session does (lazily loaded gems such as `shared_tools` included) and applies `--allowed-tools` / `--rejected-tools`.
+  - `--mcp-list` and the banner apply `--mcp-use` and `--mcp-skip` together, as a session does.
+  - `--mcp` JSON servers accept every YAML server key (`prefix`, `only`, `except`, `requires_approval`, `url`, `headers` …) in both JSON forms, and a `url` with no `type` is Streamable HTTP.
+  - Ollama works without `OLLAMA_API_BASE`: it defaults to `http://localhost:11434/v1`, and `--list-models` honors `<PROVIDER>_API_BASE`.
+  - The default image model is `gpt-image-1` (`dall-e-3` is no longer in RubyLLM's catalogue).
+- **Output, speech and side effects:**
+  - `--speak` speaks one-shot prompts and each pipeline step, not only chat replies.
+  - New `audio.player` (`AIA_AUDIO__PLAYER`) plays the file a custom speak command writes. Unset, AIA uses the first of `afplay`, `mpv`, `ffplay` and `mpg123` on the `PATH` instead of always calling `afplay`.
+  - TrakFlow starts on first use, so a session that records no tasks no longer creates `.trak_flow/` in the current directory. Pipelines touch TrakFlow only with `--track-pipeline`.
+  - `--paint` no longer writes "Image saved to: …" into the output file.
+  - `--completion` with an unsupported shell exits 1.
+  - The completion scripts fall back to `~/.prompts` when `AIA_PROMPTS__DIR` is unset.
+  - `--track-pipeline` updates the steps of the plan it created, in order, instead of matching any task whose title contains the prompt ID.
+- **`--refresh DAYS` works again.** AIA keeps its model list in `<paths.aia_dir>/models.json` and refreshes it from the providers every `registry.refresh` days (default 7, `0` = never), as 1.x did. A failed refresh warns and keeps the existing list.
+- **`bin/migrate_prompts`:**
+  - `//shell COMMAND` becomes ``<%= `COMMAND` %>``, which inserts the command's output; it used to become `<%= system(...) %>`, which inserted `true`.
+  - `//config` settings land where aia reads them: `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell` and `erb` at the top of the front matter, everything else under `config:` at its place in the configuration. Unknown keys are kept under `config:` with a warning.
+  - The report prints even when `RUBYOPT=-W0` silences Ruby warnings.
+- **The fuzzy role picker** (`--fuzzy` with a role that isn't found) lists roles from `prompts.dir`/`prompts.roles_prefix`, including subdirectories, the same roles `--list-roles` shows.
+- **Examples:** `16_directives.sh` lists the real directives, `15_parameters.sh` says AIA asks for every parameter, `21_executable_prompts.sh` notes that a piped file's shebang options are not applied, and `aia_config_orchestrator.yml` no longer claims to extend the base config.
+- **Skill paths must be markdown.** A skill given as a file path (`--skill ./x.md`, `/skill ./x.md`) must end in `.md` or `.markdown`; any other file is refused with a warning instead of being sent to the model. Skill folders and skills by name are unchanged.
+- **Unknown config keys are dropped at load.** Keys `defaults.yml` doesn't define, from a config file or an `AIA_*` variable, no longer linger in the configuration or show up in `--dump`.
+- **Smaller fixes:**
+  - The AI response is no longer written to the output file twice.
+  - An unknown `@mention` is reported instead of being broadcast to every robot.
+  - A pipeline's `next:` and `pipeline:` changes take effect mid-run.
+  - Directives supplied by `--tools` work inside ERB prompts.
+  - Ollama model tags resolve.
+  - GPT-5 and o-series models get the right token and temperature parameters.
+  - Pipeline metrics no longer crash.
+  - `/clear`, `/checkpoint`, `/restore` and `/review` work with crews.
+  - `/say` with no text no longer captures stdin.
+  - Skill paths are confined to the skills directory.
+  - `bin/aia` works with a relative `BUNDLE_GEMFILE`.
+
 ## [1.1.1] - 2026-05-01
 
 ### Bug Fixes
-- **Conversation context lost on Ollama model pipeline steps (Issue #152)**: `maybe_change_model` was unconditionally replacing the adapter whenever the configured model name (e.g. `ollama/qwen3`) did not literally appear in the resolved model ID (`qwen3`). Fixed by stripping the provider prefix before comparison and by never replacing the adapter when conversation messages exist in any chat instance — preserving all history across pipeline steps and role changes
-- **Role file front matter overwriting active model config**: `ChatLoop#process_role_context` was allowing `fetch_role` (which calls `apply_metadata_config`) to overwrite `AIA.config.models` with any `model:` key in the role file's YAML front matter. The active model is now saved before `fetch_role` and restored afterward, so a role's front matter cannot trigger a false mismatch in `maybe_change_model`
-- **Custom `--tools` directives not available in ERB prompts**: `AIA::Directive` subclasses defined in files loaded via `--tools` were required too late — after `PromptHandler.new` had already called `register_pm_directives`. Added `require_tool_files` as the first step in `ConfigValidator#tailor` so custom directive classes are defined and registered into `PM.directives` before `PromptHandler.new` runs; `<%= timestamp %>` and other custom ERB helpers now expand correctly
-- **Demo example path resolution**: `examples/prompts_dir/project_summary` referenced `../../*.gemspec` and `../../lib/aia/*.rb`, resolving two levels above the repo root from the `examples/` working directory; corrected to `../`
+
+- **Ollama model pipeline context preservation**: Mainline fixed adapter replacement when provider-prefixed model names (for example `ollama/qwen3`) did not match resolved local model IDs, preserving conversation history across pipeline steps.
+- **Role front matter model isolation**: Mainline restored the active model after role loading so a role file's `model:` metadata cannot unexpectedly replace the configured model.
+- **Custom directive loading for ERB prompts**: Mainline loads tool files before PromptManager directive registration so directive classes provided by `--tools` are available inside ERB prompts.
+- **Demo example path resolution** (`examples/prompts_dir/project_summary`): Corrected repository-relative paths used by the example prompt.
 
 ### Improvements
-- **Demo scripts use develop-branch binary**: `examples/common.sh` now prepends `../bin` to `PATH` when the local `bin/aia` is executable, ensuring all demo scripts exercise working-tree changes rather than the installed gem
 
-### Testing
-- Added `test/aia/chat_loop_test.rb` — 6 tests covering `process_role_context`: early-return when no role configured, system message injection into chats, skipping chats that already have a system message, and model restoration after `fetch_role` side effects (Issue #152 regression tests)
-- Expanded `test/aia/chat_processor_service_test.rb` with 7 additional tests: provider-prefix stripping before model comparison, full-ID alias resolution (e.g. `claude-sonnet-4` vs `claude-sonnet-4-20250514`), adapter preservation when any chat has history, adapter replacement allowed when no history exists, and the exact Issue #152 regression scenario (OpenAI model active, role front matter specifies a Claude model)
+- **Demo scripts prefer working-tree binary** (`examples/common.sh`): Mainline demo scripts prepend `../bin` to `PATH` when local `bin/aia` is executable.
 
 ## [1.1.0] - 2026-04-23
 
 ### New Features
-- **Skills system**: Skills are subdirectories under `~/.prompts/skills` (configurable), each containing a `SKILL.md` file with YAML front matter (`name`, `description`, and any custom fields)
-  - `/skills [query]` directive lists available skills; supports positive/negative search filtering (`-term`, `~term`, `!term`)
-  - `/skill <name>` directive includes the `SKILL.md` content into the conversation; resolves by exact match then prefix match
-  - `/skill <path>` directive accepts path-based IDs (absolute, `~/`, `./`, `../`) including direct `.md` files
-  - `--list-skills` CLI flag prints all skills as markdown tables (one `## skill` heading + `| Key | Value |` table per skill, showing all front matter fields)
-  - `--skill`/`-s SKILL_IDS` CLI option prepends one or more skills to the prompt (comma-separated, repeatable); accepts skill IDs or paths
-  - `--skills-dir DIR` and `--skills-prefix PREFIX` CLI options configure the skills directory
-- **Path-based skill resolution**: `--skill` and `/skill` now accept file-system paths in addition to named IDs
-  - Absolute paths: `--skill /path/to/skill-dir` or `--skill /path/to/skill.md`
-  - Home-relative: `--skill ~/skills/my-skill`
-  - Working-directory-relative: `--skill ./temp_skill.md`
-  - Direct `.md` files: the file content is used as-is (front matter stripped); no `SKILL.md` lookup needed
-- **Path-based role resolution**: `--role` now accepts file-system paths in addition to role IDs
-  - Absolute and home-relative paths bypass the `~/.prompts/roles/` prefix lookup
-  - Example: `aia --role ~/custom/expert.md my_prompt`
-- **Skills in chat-only mode**: `ChatLoop` now loads and sends configured skills to the AI at session start via `process_skill_context`, even when no pipeline prompt is specified; the AI's acknowledgment is displayed so the user can confirm the skill was applied
-- **`AIA::SkillUtils` module**: New shared utility module (`lib/aia/skill_utils.rb`) consolidating path and skill helpers previously duplicated across four classes
-  - `path_based_id?(id)` — detects `/`, `~/`, `./`, `../` prefixes
-  - `parse_front_matter(path)` — reads and parses YAML front matter from a `.md` file; returns `{}` on any failure
-  - `find_skill_dir(skill_name, base_dir)` — resolves a skill name or path to its directory (or direct `.md` file); enforces symlink/prefix-traversal checks for ID-based lookups
-  - `safe_skill_path(path, dir)` — verifies a resolved path is contained within `dir` using `File::SEPARATOR`-terminated prefix to prevent sibling-directory attacks
-  - `skill_body(content)` — strips YAML front matter from skill file content
-  - Included by `PromptPipeline`, `PromptHandler`, `WebAndFileDirectives`, `CLIParser`, `ConfigValidator`, and `ChatLoop`
-- **`roles` config section**: Top-level `roles.dir` config key (`~/.prompts/roles` default) alongside existing `prompts.roles_prefix`
-- **`parse_search_terms` helper**: New private method on `AIA::Directive` base class available to all directive subclasses; splits argument tokens into `[positive_terms, negative_terms]` arrays (negative prefixes: `-`, `~`, `!`; positive: `+` or bare; all downcased)
+
+- **Skills system** (`lib/aia/skill_utils.rb`, `lib/aia/directives/web_and_file_directives.rb`): Mainline added `SKILL.md`-based skills, `/skill`, `/skills`, `--skill`, `--list-skills`, `--skills-dir`, `--skills-prefix`, path-based skill IDs, and shared `AIA::SkillUtils` helpers.
+- **Path-based role resolution** (`lib/aia/prompt_handler.rb`, `lib/aia/config/cli_parser.rb`, `lib/aia/config/validator.rb`): `--role` and role loading now accept file-system paths in addition to configured role IDs.
+- **Top-level `roles` and `skills` config sections** (`lib/aia/config/defaults.yml`): Added dedicated directory configuration while preserving prompt prefix settings.
+- **Shared search-term parsing** (`lib/aia/directive.rb`): Directive filtering now uses common positive and negative term parsing.
 
 ### Bug Fixes
-- **Direct `.md` skill files silently ignored**: `--skill ./my-skill.md` previously returned `nil` because `find_skill_dir` only checked `Dir.exist?`. Now checks `File.file?` and returns the path directly; `load_skills` and `/skill` read and strip front matter from the file without requiring a `SKILL.md` sub-file
-- **Path-prefix collision in `safe_skill_path`**: A sibling directory named `skills-attack` could bypass the containment check against `skills` because `start_with?(realpath)` matched the shared prefix. Fixed by appending `File::SEPARATOR` to the base path before the `start_with?` comparison
-- **Path-based role IDs incorrectly prefixed**: `ConfigValidator#process_role_configuration` was unconditionally prepending the roles prefix (e.g., `roles/`) to role IDs, corrupting absolute and relative paths like `/custom/role.md` into `roles//custom/role.md`. Now guards with `AIA::SkillUtils.path_based_id?` before applying the prefix
+
+- **Direct skill file resolution**: Skill loading now accepts direct `.md` file paths as well as skill directories.
+- **Skill path-prefix containment**: Mainline added realpath boundary checks to block sibling-directory prefix attacks.
+- **Path-based role prefixing**: Config tailoring no longer prepends the roles prefix to path-based role IDs.
 
 ### Improvements
-- **`/available_models` filtering** now uses `parse_search_terms` for consistent positive/negative term filtering across local (Ollama, LM Studio) and cloud model listings
-- **Standardized warning output**: Replaced `$stderr.puts` with `warn` throughout `prompt_pipeline.rb` for idiomatic Ruby error reporting
-- **Skills CLI options moved to Prompt Options group**: `--skill`, `--skills-dir`, `--skills-prefix`, `--list-skills` now appear under `--help`'s Prompt Options section alongside `--role` and related options, rather than Model Options
 
-### Testing
-- Added `test/aia/skill_utils_test.rb` — 24 tests covering all `AIA::SkillUtils` methods including symlink traversal blocking, sibling-prefix collision, direct `.md` file resolution, and nonexistent path handling
-- Added `test/aia/config/cli_parser_skills_test.rb` — 8 tests covering all skills-related CLI options
-- Added `test/aia/config/skills_config_test.rb` — 8 tests covering skills config defaults and overrides
-- Added `test/aia/directive_search_terms_test.rb` — 10 tests covering all `parse_search_terms` token forms
-- Expanded `test/aia/directives/skill_directive_test.rb` with path-based, direct-file, security (path traversal, symlink), and edge-case coverage (36 tests total)
-- Added `test/aia/prompt_pipeline_skills_test.rb` — pipeline-level skill loading tests including absolute paths, direct `.md` files, warning capture via Mocha stubs, and mixed path+ID loading (6 tests)
-- Added `test/aia/session_test.rb` `ChatLoopTest` entries for `process_skill_context` — noop when no skills configured, sends skill content to processor when configured (2 tests)
-- Eliminated `Dir.chdir` side effects from 3 tests (`skill_directive_test.rb`, `prompt_pipeline_skills_test.rb`, `prompt_handler_role_path_test.rb`) that used it to simulate relative-path resolution; replaced with absolute-path construction
-- Updated 2 pipeline warning tests to use Mocha's `.stubs(:warn).with { }` argument-matcher pattern instead of `capture_io` (which cannot intercept `warn` when `$stderr` is reassigned in Ruby 4.0)
-- Full test suite: 925 runs, 0 failures, 0 errors, 0 skips
+- **Model and skill filtering consistency**: `/llms` and `/skills` use the shared positive/negative search term behavior.
+- **Skills CLI option placement**: Skill-related CLI flags now appear under Prompt Options.
 
 ## [1.0.0] - 2026-02-22
 
@@ -778,7 +910,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - fixed a problem with a priming prompt in a chat loop
 
 ## [0.9.0] 2025-05-13
-- Adding experimental MCP Client suppot
+- Adding experimental MCP Client support
 - removed the CLI options --erb and --shell but kept them in the config file with a default of true for both
 
 ## [0.8.6] 2025-04-23
@@ -850,7 +982,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - Added --image_size and --image_quality (--is --iq)
 
 ## [0.5.15] 2024-03-30
-- Added the ability to accept piped in text to be appeded to the end of the prompt text: curl $URL | aia ad_hoc
+- Added the ability to accept piped in text to be appended to the end of the prompt text: curl $URL | aia ad_hoc
 - Fixed bugs with entering directives as follow-up prompts during a chat session
 
 ## [0.5.14] 2024-03-09
@@ -922,7 +1054,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 
 ## [0.3.20] 2023-12-28
 - added work around to issue with multiple context files going to the `mods` backend
-- added shellwords gem to santize prompt text on the command line
+- added shellwords gem to sanitize prompt text on the command line
 
 ## [0.3.19] 2023-12-26
 - major code refactoring.
@@ -930,7 +1062,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - usage implemented as a man page. --help will display the man page/
 - added "--dump <yml|yaml|toml>" to send current configuration to STDOUT
 - added "--completion <bash|fish|zsh>" to send a a completion function for the indicated shell to STDOUT
-- added system environment variable (envar) over-rides of default config values uppercase environment variables prefixed with "AIA_" + config item name for example AIA_PROMPTS_DIR and AIA_MODEL.  All config items can be over-ridden by their cooresponding envars.
+- added system environment variable (envar) over-rides of default config values uppercase environment variables prefixed with "AIA_" + config item name for example AIA_PROMPTS_DIR and AIA_MODEL.  All config items can be over-ridden by their corresponding envars.
 - config value hierarchy is:
     1. values from config file  over-rides ...
     2. command line values      over-rides ...
@@ -939,7 +1071,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 
 ## [0.3.0] = 2023-11-23
 
-- Matching version to [prompt_manager](https://github.com/prompt_manager) This version allows for the user of history in the entery of values to prompt keywords.  KW_HISTORY_MAX is set at 5.  Changed CLI enteraction to use historical selection and editing of prior keyword values.
+- Matching version to [prompt_manager](https://github.com/prompt_manager) This version allows for the user of history in the entry of values to prompt keywords.  KW_HISTORY_MAX is set at 5.  Changed CLI interaction to use historical selection and editing of prior keyword values.
 
 ## [0.1.0] - 2023-11-23
 

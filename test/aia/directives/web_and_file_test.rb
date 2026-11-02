@@ -1,6 +1,5 @@
 require_relative '../../test_helper'
 require 'tempfile'
-require 'ostruct'
 
 class DirectivesWebAndFileTest < Minitest::Test
   def setup
@@ -8,11 +7,13 @@ class DirectivesWebAndFileTest < Minitest::Test
   end
 
   def test_webpage_returns_error_without_api_key
-    if AIA::WebAndFileDirectives::PUREMD_API_KEY.nil?
-      result = @instance.webpage(['http://example.com'])
-      assert_includes result, 'ERROR'
-      assert_includes result, 'PUREMD_API_KEY'
-    end
+    return unless AIA::WebAndFileDirectives::PUREMD_API_KEY.nil?
+
+    result = nil
+    out, = capture_io { result = @instance.webpage(['http://example.com']) }
+    assert_nil result
+    assert_includes out, 'ERROR'
+    assert_includes out, 'PUREMD_API_KEY'
   end
 
   def test_aliases_exist
@@ -21,9 +22,10 @@ class DirectivesWebAndFileTest < Minitest::Test
     assert_respond_to @instance, :clipboard
   end
 
-  def test_skills_dir_comes_from_config
-    skills_config = OpenStruct.new(dir: '/test/skills')
-    AIA.stubs(:config).returns(OpenStruct.new(skills: skills_config))
-    assert_equal '/test/skills', @instance.send(:aia_skills_dir)
+  def test_aia_skills_dir_returns_string
+    AIA.stubs(:config).returns(nil)
+    assert_kind_of String, @instance.send(:aia_skills_dir)
+  ensure
+    AIA.unstub(:config)
   end
 end

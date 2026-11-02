@@ -6,28 +6,43 @@ class PromptHandlerTest < Minitest::Test
   def setup
     # Mock AIA module methods to prevent actual operations
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: [OpenStruct.new(name: 'test-model')],
-      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
-      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
-      tools: OpenStruct.new(paths: []),
-      context_files: [],
-      prompts: OpenStruct.new(
-        dir: '/tmp/test_prompts',
-        extname: '.md',
-        roles_dir: '/tmp/test_prompts/roles',
-        roles_prefix: 'roles',
-        role: nil,
-        parameter_regex: '\\{\\{\\w+\\}\\}'
-      ),
-      prompt_id: 'test_prompt'
-    ))
+                                 models: [OpenStruct.new(name: 'test-model')],
+                                 llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+                                 flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+                                 tools: OpenStruct.new(paths: []),
+                                 context_files: [],
+                                 prompts: OpenStruct.new(
+                                   dir: '/tmp/test_prompts',
+                                   extname: '.md',
+                                   roles_dir: '/tmp/test_prompts/roles',
+                                   roles_prefix: 'roles',
+                                   role: nil,
+                                   parameter_regex: '\\{\\{\\w+\\}\\}'
+                                 ),
+                                 prompt_id: 'test_prompt'
+                               ))
 
     @handler = AIA::PromptHandler.new
   end
 
+  # PM's shell/erb settings are global; restore its defaults for other tests.
   def teardown
-    # Call super to ensure Mocha cleanup runs
-    super
+    PM.configure do |c|
+      c.shell = true
+      c.erb   = true
+    end
+  end
+
+  def test_config_flags_become_prompt_manager_defaults
+    refute PM.config.shell
+    refute PM.config.erb
+  end
+
+  def test_flag_enabled_unless_explicitly_false
+    assert AIA::PromptHandler.flag_enabled?(OpenStruct.new(shell: true), :shell)
+    assert AIA::PromptHandler.flag_enabled?(OpenStruct.new(shell: nil), :shell)
+    refute AIA::PromptHandler.flag_enabled?(OpenStruct.new(erb: false), :erb)
+    assert AIA::PromptHandler.flag_enabled?(nil, :erb)
   end
 
   def test_initialization
@@ -50,7 +65,7 @@ class PromptHandlerTest < Minitest::Test
   def test_handler_methods_exist
     # Test that core methods exist and are callable
     handler = AIA::PromptHandler.new
-    
+
     # These methods should exist
     assert handler.respond_to?(:fetch_prompt)
     assert handler.respond_to?(:fetch_role)

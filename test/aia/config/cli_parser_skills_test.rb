@@ -15,11 +15,6 @@ class CLIParserSkillsOptionsTest < Minitest::Test
     assert_equal '/custom/skills', options[:skills_dir]
   end
 
-  def test_skills_prefix_option
-    options = parse(['--skills-prefix', 'my_skills'])
-    assert_equal 'my_skills', options[:skills_prefix]
-  end
-
   def test_skill_short_option_single
     options = parse(['-s', 'summarizer'])
     assert_equal ['summarizer'], options[:skills]
@@ -32,12 +27,12 @@ class CLIParserSkillsOptionsTest < Minitest::Test
 
   def test_skill_option_comma_separated
     options = parse(['--skill', 'summarizer,formatter'])
-    assert_equal ['summarizer', 'formatter'], options[:skills]
+    assert_equal %w[summarizer formatter], options[:skills]
   end
 
   def test_skill_option_strips_whitespace
     options = parse(['--skill', ' summarizer , formatter '])
-    assert_equal ['summarizer', 'formatter'], options[:skills]
+    assert_equal %w[summarizer formatter], options[:skills]
   end
 
   def test_list_skills_option

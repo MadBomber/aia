@@ -1,4 +1,4 @@
-# AIA Configuration Schema and Defaults
+# AIA v2 Configuration Schema and Defaults
 #
 # This file is the SINGLE SOURCE OF TRUTH for AIA configuration.
 # All attributes must be declared here to be recognized.
@@ -28,8 +28,8 @@ defaults:
   # ---------------------------------------------------------------------------
   llm:
     temperature: 0.7
-    max_tokens: 2048
-    top_p: 1.0
+    max_tokens: 32767
+    top_p: ~ # nil by default — some models reject requests with both temperature AND top_p
     frequency_penalty: 0.0
     presence_penalty: 0.0
 
@@ -61,20 +61,11 @@ defaults:
     extname: .md
     #
     role: ~
-    roles_dir: ~/.prompts/roles
     roles_prefix: roles
     #
     skills: []
-    skills_prefix: skills
-    #
-    tool: ~
-    tools_prefix: tools
     #
     system_prompt: ~
-    parameter_regex: ~
-
-  roles:
-    dir: ~/.prompts/roles
 
   skills:
     dir: ~/.prompts/skills
@@ -87,7 +78,6 @@ defaults:
   output:
     file: temp.md
     append: false
-    markdown: true
     history_file: ~/.prompts/_prompts.log
 
   # ---------------------------------------------------------------------------
@@ -96,10 +86,11 @@ defaults:
   # Env: AIA_AUDIO__VOICE, AIA_AUDIO__SPEAK_COMMAND, etc.
   # ---------------------------------------------------------------------------
   audio:
-    voice: alloy
-    speak_command: afplay
-    speech_model: tts-1
-    transcription_model: whisper-1
+    voice: ~
+    speak_command: say
+    player: ~
+    speech_model: ~
+    transcription_model: ~
 
   # ---------------------------------------------------------------------------
   # Image Configuration
@@ -107,18 +98,10 @@ defaults:
   # Env: AIA_IMAGE__MODEL, AIA_IMAGE__SIZE, etc.
   # ---------------------------------------------------------------------------
   image:
-    model: dall-e-3
+    model: gpt-image-1
     size: 1024x1024
     quality: standard
     style: vivid
-
-  # ---------------------------------------------------------------------------
-  # Embedding Configuration
-  # Access: AIA.config.embedding.model
-  # Env: AIA_EMBEDDING__MODEL
-  # ---------------------------------------------------------------------------
-  embedding:
-    model: text-embedding-ada-002
 
   # ---------------------------------------------------------------------------
   # Tools Configuration
@@ -126,10 +109,13 @@ defaults:
   # Env: AIA_TOOLS__PATHS, AIA_TOOLS__ALLOWED, etc.
   # ---------------------------------------------------------------------------
   tools:
-    dir: ~/.prompts/tools
     paths: []
     allowed: ~
     rejected: ~
+    # Tool calls that require approval (an MCP server's requires_approval:)
+    # and MCP input requests: ask (prompt on the terminal; refuse when there
+    # is none), approve (allow them all), or deny (refuse them all).
+    approval: ask
 
   # ---------------------------------------------------------------------------
   # Flags (Boolean Options)
@@ -145,26 +131,27 @@ defaults:
     tokens: false
     no_mcp: false
     speak: false
-    terse: false  # DEPRECATED: no longer used
     shell: true
     erb: true
-    clear: false
     consensus: false
+    track_pipeline: false
+    auto_tool_filter: true
+    allow_ruby_eval: false
+    paint: false
+    thinking: false
+
+  # ---------------------------------------------------------------------------
+  # Tool Filter Configuration
+  # Access: AIA.config.tool_filter.timeout_s
+  # Env: AIA_TOOL_FILTER__TIMEOUT_S
+  # ---------------------------------------------------------------------------
+  tool_filter:
+    timeout_s: 10
 
   # ---------------------------------------------------------------------------
   # Logger Configuration
   # Access: AIA.config.logger.aia.file, AIA.config.logger.llm.level, etc.
   # Env: AIA_LOGGER__AIA__FILE, AIA_LOGGER__LLM__LEVEL, etc.
-  #
-  # Configures logging for three systems:
-  #   aia: AIA application logging
-  #   llm: RubyLLM gem logging
-  #   mcp: RubyLLM::MCP gem logging
-  #
-  # file: STDOUT, STDERR, or a file path (e.g., ~/.aia/aia.log)
-  #       All three loggers can write to the same file safely.
-  # level: debug, info, warn, error, fatal
-  # flush: true = immediate write (no buffering), false = buffered writes
   # ---------------------------------------------------------------------------
   logger:
     aia:
@@ -190,7 +177,6 @@ defaults:
   # Model Registry Configuration
   # Access: AIA.config.registry.refresh
   # Env: AIA_REGISTRY__REFRESH
-  # Note: last_refresh is derived from models.json file modification time
   # ---------------------------------------------------------------------------
   registry:
     refresh: 7 # days between refreshes (0 = disable periodic refresh)
@@ -204,14 +190,6 @@ defaults:
   # ---------------------------------------------------------------------------
   # MCP Servers Configuration
   # Access: AIA.config.mcp_servers (array of server configs)
-  #
-  # Example:
-  #   mcp_servers:
-  #     - name: my-server
-  #       command: /path/to/server
-  #       args: []
-  #       env: {}
-  #       timeout: 8000
   # ---------------------------------------------------------------------------
   mcp_servers: []
   mcp_use: ~
@@ -219,15 +197,39 @@ defaults:
 
   # ---------------------------------------------------------------------------
   # Paths Configuration
-  # Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file
-  # Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
-  #
-  # Note: MywayConfig uses XDG Base Directory Specification by default.
-  # User config is loaded from ~/.config/aia/aia.yml
+  # Access: AIA.config.paths.aia_dir, AIA.config.paths.plugins_dir
+  # Env: AIA_PATHS__AIA_DIR
+  # Special-case env: AIA_PLUGINS_DIR
   # ---------------------------------------------------------------------------
   paths:
     aia_dir: ~/.config/aia
-    config_file: ~/.config/aia/aia.yml
+    plugins_dir: ~
+
+  # ---------------------------------------------------------------------------
+  # Model Aliases (user-defined aliases override defaults)
+  # Access: AIA.config.model_aliases
+  # ---------------------------------------------------------------------------
+  model_aliases: {}
+
+  # ---------------------------------------------------------------------------
+  # Model Switch History Mode
+  # Controls conversation history transfer when switching models mid-chat.
+  # Values: clean (fresh start), replay (re-send every user message to the
+  # new model), summarize (old model summarizes; the new model gets the summary)
+  # Used by the /model directive.
+  # Access: AIA.config.model_switch_history
+  # ---------------------------------------------------------------------------
+  model_switch_history: summarize
+
+  # ---------------------------------------------------------------------------
+  # Concurrency Configuration
+  # Controls automatic MCP server parallelization.
+  # Access: AIA.config.concurrency.auto, etc.
+  # ---------------------------------------------------------------------------
+  concurrency:
+    auto: false
+    threshold: 2
+    mcp_timeout: 120
 
   # ---------------------------------------------------------------------------
   # Context Files (set at runtime)

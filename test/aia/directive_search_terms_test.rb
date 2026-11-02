@@ -50,25 +50,25 @@ class DirectiveParseSearchTermsTest < Minitest::Test
 
   def test_mixed_positive_and_negative
     pos, neg = parse(['ruby', '-java', 'python', '~cobol'])
-    assert_equal ['ruby', 'python'], pos
-    assert_equal ['java', 'cobol'], neg
+    assert_equal %w[ruby python], pos
+    assert_equal %w[java cobol], neg
   end
 
   def test_tokens_are_downcased
     pos, neg = parse(['Ruby', '-Java', '+PYTHON'])
-    assert_equal ['ruby', 'python'], pos
+    assert_equal %w[ruby python], pos
     assert_equal ['java'], neg
   end
 
   def test_single_arg_with_multiple_space_separated_tokens
     pos, neg = parse(['ruby -java python'])
-    assert_equal ['ruby', 'python'], pos
+    assert_equal %w[ruby python], pos
     assert_equal ['java'], neg
   end
 
   def test_multiple_args_each_with_multiple_tokens
     pos, neg = parse(['ruby python', '-java -cobol'])
-    assert_equal ['ruby', 'python'], pos
-    assert_equal ['java', 'cobol'], neg
+    assert_equal %w[ruby python], pos
+    assert_equal %w[java cobol], neg
   end
 end

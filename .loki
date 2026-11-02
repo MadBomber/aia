@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+# aia/.loki — asgard task runner for the aia gem
+
+import_up "repo_dev.loki"
+
+class Tasks
+  @@gem_name ||= "aia".freeze
+
+  header "aia — AI Assistant CLI gem"
+  footer "Run `asgard help TASK` for details on any task"
+end

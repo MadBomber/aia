@@ -2,6 +2,10 @@ require_relative '../test_helper'
 require_relative '../../lib/aia'
 
 class AIATest < Minitest::Test
+  def teardown
+    AIA.reset!
+  end
+
   def test_run_method_exists
     assert_respond_to AIA, :run, "AIA should respond to the 'run' method"
   end
@@ -20,5 +24,67 @@ class AIATest < Minitest::Test
 
   def test_bad_file_method_exists
     assert_respond_to AIA, :bad_file?, "AIA should respond to the 'bad_file?' method"
+  end
+
+  def test_reset_method_exists
+    assert_respond_to AIA, :reset!, "AIA should respond to the 'reset!' method"
+  end
+
+  def test_reset_nils_all_singletons
+    ivars = %i[@config @client @session_tracker @turn_state
+               @task_coordinator]
+
+    # Prime each ivar to a non-nil sentinel value
+    ivars.each { |iv| AIA.instance_variable_set(iv, :sentinel) }
+
+    AIA.reset!
+
+    ivars.each do |iv|
+      assert_nil AIA.instance_variable_get(iv), "#{iv} should be nil after reset!"
+    end
+  end
+
+  def test_reset_is_idempotent
+    AIA.reset!
+    AIA.reset!  # second call should not raise
+    assert_nil AIA.instance_variable_get(:@config)
+  end
+
+  def test_log_startup_dumps_full_config_to_aia_log_only
+    AIA.instance_variable_set(:@config, AIA::Config.new)
+    AIA::LoggerManager.clear_test_logs!
+
+    AIA.send(:log_startup)
+
+    aia_entries = AIA::LoggerManager.test_entries(:aia)
+    llm_entries = AIA::LoggerManager.test_entries(:llm)
+    mcp_entries = AIA::LoggerManager.test_entries(:mcp)
+
+    startup_entry = aia_entries.find { |e| e.message == 'AIA started up.' }
+    refute_nil startup_entry
+    assert(startup_entry.attributes.keys.any? { |k| k.start_with?('flags.') })
+
+    assert(llm_entries.any? { |e| e.message == 'AIA started up.' })
+    assert(mcp_entries.any? { |e| e.message == 'AIA started up.' })
+  end
+
+  def test_announce_exit_is_silent_outside_chat
+    AIA.config = Struct.new(:flags).new(Struct.new(:chat).new(false))
+    io = StringIO.new
+    AIA.announce_exit(io)
+    assert_empty io.string
+  end
+
+  def test_announce_exit_is_silent_without_config
+    io = StringIO.new
+    AIA.announce_exit(io)
+    assert_empty io.string
+  end
+
+  def test_announce_exit_says_goodbye_after_chat
+    AIA.config = Struct.new(:flags).new(Struct.new(:chat).new(true))
+    io = StringIO.new
+    AIA.announce_exit(io)
+    assert_equal "Exiting AIA application...\n", io.string
   end
 end

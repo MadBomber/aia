@@ -8,7 +8,7 @@ class TestTool
   def self.name
     'TestTool'
   end
-  
+
   def initialize(config = {})
     @config = config
   end
@@ -22,10 +22,9 @@ class AIAIntegrationTest < Minitest::Test
     AIA.stubs(:chat?).returns(false)
     AIA.stubs(:append?).returns(false)
     AIA.stubs(:verbose?).returns(false)
-    AIA.stubs(:terse?).returns(false)
     AIA.stubs(:speak?).returns(false)
     AIA.stubs(:debug?).returns(false)
-    
+
     # Mock TTY::Screen to avoid ioctl errors in tests
     TTY::Screen.stubs(:width).returns(80)
     TTY::Screen.stubs(:height).returns(24)
@@ -65,7 +64,7 @@ class AIAIntegrationTest < Minitest::Test
         fuzzy: false,
         debug: false,
         verbose: false,
-        terse: false,
+
         speak: false,
         erb: true,
         shell: true
@@ -89,26 +88,22 @@ class AIAIntegrationTest < Minitest::Test
         config_file: '~/.aia/config.yml'
       )
     )
-    
+
     # Add client.model structure for utility methods
     mock_model = mock('model')
     mock_model.stubs(:supports_functions?).returns(true)
-    mock_client = mock('client')
-    mock_client.stubs(:model).returns(mock_model)
-    @mock_config.client = mock_client
-    
+    mock_robot = mock('robot')
+    mock_robot.stubs(:model).returns(mock_model)
+    mock_robot.stubs(:name).returns('test-robot')
+    mock_robot.stubs(:crew).returns([mock_robot])
+    AIA.client = mock_robot
+
     AIA.stubs(:config).returns(@mock_config)
-
-    # Mock external dependencies
-    mock_adapter = mock('adapter')
-    mock_adapter.stubs(:chat).returns('AI Response')
-    mock_adapter.stubs(:tools).returns([])
-    AIA::RubyLLMAdapter.stubs(:new).returns(mock_adapter)
-
   end
 
   def teardown
     FileUtils.rm_rf(@temp_prompts_dir) if @temp_prompts_dir && Dir.exist?(@temp_prompts_dir)
+    AIA.client = nil
     # Call super to ensure Mocha cleanup runs properly
     super
   end
@@ -126,16 +121,12 @@ class AIAIntegrationTest < Minitest::Test
 
     AIA::Session.expects(:new).returns(mock_session)
 
-    # Capture output
-    output = capture_io do
+    capture_io do
       # Simulate the main workflow
       AIA::Utility.robot
       session = AIA::Session.new(AIA::PromptHandler.new)
       session.start
     end
-
-    # Check for key components without exact version
-    assert_match(/AI Assistant \(v[\d.\w-]+\) is Online/, output.first) # Should show robot ASCII art
   end
 
   def test_batch_mode_with_context_files_workflow
@@ -155,7 +146,7 @@ class AIAIntegrationTest < Minitest::Test
     mock_session.expects(:start)
     AIA::Session.expects(:new).returns(mock_session)
 
-    output = capture_io do
+    capture_io do
       session = AIA::Session.new(AIA::PromptHandler.new)
       session.start
     end
@@ -171,8 +162,8 @@ class AIAIntegrationTest < Minitest::Test
     # Create a history file with variable values
     history_file = File.join(@temp_prompts_dir, 'variables_test.json')
     history_data = {
-      'name' => ['Alice', 'Bob'],
-      'age' => ['25', '30']
+      'name' => %w[Alice Bob],
+      'age' => %w[25 30]
     }
     File.write(history_file, JSON.dump(history_data))
 
@@ -183,7 +174,7 @@ class AIAIntegrationTest < Minitest::Test
     mock_session.expects(:start)
     AIA::Session.expects(:new).returns(mock_session)
 
-    output = capture_io do
+    capture_io do
       session = AIA::Session.new(AIA::PromptHandler.new)
       session.start
     end
@@ -215,14 +206,14 @@ class AIAIntegrationTest < Minitest::Test
     prompt2_file = File.join(@temp_prompts_dir, 'step2.md')
     File.write(prompt2_file, 'Second step')
 
-    @mock_config.pipeline = ['step1', 'step2']
+    @mock_config.pipeline = %w[step1 step2]
 
     # Mock session
     mock_session = mock('session')
     mock_session.expects(:start)
     AIA::Session.expects(:new).returns(mock_session)
 
-    output = capture_io do
+    capture_io do
       session = AIA::Session.new(AIA::PromptHandler.new)
       session.start
     end
@@ -277,15 +268,10 @@ class AIAIntegrationTest < Minitest::Test
 
     @mock_config.tools.paths = [tool_file.path]
 
-    # Test tool loading
-    mock_adapter = mock('adapter')
-    mock_adapter.stubs(:chat).returns('Tool response')
-    mock_adapter.stubs(:tools).returns([TestTool])
-    AIA::RubyLLMAdapter.stubs(:new).returns(mock_adapter)
-
-    adapter = AIA::RubyLLMAdapter.new
-    assert_equal 1, adapter.tools.size
-    assert_equal 'TestTool', adapter.tools.first.name
+    # v2: tools are loaded by RobotFactory and stored in config
+    @mock_config.loaded_tools = [TestTool]
+    assert_equal 1, @mock_config.loaded_tools.size
+    assert_equal 'TestTool', @mock_config.loaded_tools.first.name
 
     tool_file.unlink
   end

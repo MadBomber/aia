@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="290" viewBox="0 0 660 290" role="img" aria-label="A chat crew: you send plain turns to the chief, and @name or @crew messages to recruited crewmates">
+  <style>
+    .lbl { font: 600 14px -apple-system, "Segoe UI", Helvetica, sans-serif; fill: #f0f3f6; }
+    .sub { font: 12px -apple-system, "Segoe UI", Helvetica, sans-serif; fill: #c9d1d9; }
+    .note { font: 12px -apple-system, "Segoe UI", Helvetica, sans-serif; fill: #8b949e; }
+    .you { fill: #6e40c9; stroke: #a371f7; }
+    .chief { fill: #1158c7; stroke: #58a6ff; }
+    .member { fill: #196c2e; stroke: #3fb950; }
+    .tool { fill: #9e6a03; stroke: #d29922; }
+    rect { stroke-width: 1.5; }
+    .edge { stroke: #8b949e; stroke-width: 1.6; fill: none; }
+    .mention { stroke: #3fb950; stroke-width: 1.6; fill: none; stroke-dasharray: 6 4; }
+  </style>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/>
+    </marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/>
+    </marker>
+  </defs>
+
+  <rect class="you" x="20" y="123" rx="10" width="110" height="46"/>
+  <text class="lbl" x="75" y="143" text-anchor="middle">You</text>
+  <text class="sub" x="75" y="160" text-anchor="middle">chat prompt</text>
+
+  <rect class="chief" x="235" y="123" rx="10" width="140" height="46"/>
+  <text class="lbl" x="305" y="143" text-anchor="middle">Tobor (chief)</text>
+  <text class="sub" x="305" y="160" text-anchor="middle">your first model</text>
+
+  <rect class="tool" x="235" y="225" rx="10" width="140" height="46"/>
+  <text class="lbl" x="305" y="245" text-anchor="middle">tools + MCP</text>
+  <text class="sub" x="305" y="262" text-anchor="middle">shared by the crew</text>
+
+  <rect class="member" x="500" y="25" rx="10" width="140" height="46"/>
+  <text class="lbl" x="570" y="45" text-anchor="middle">@researcher</text>
+  <text class="sub" x="570" y="62" text-anchor="middle">gpt-4o</text>
+  <rect class="member" x="500" y="123" rx="10" width="140" height="46"/>
+  <text class="lbl" x="570" y="143" text-anchor="middle">@critic</text>
+  <text class="sub" x="570" y="160" text-anchor="middle">claude-sonnet-4-5</text>
+  <rect class="member" x="500" y="221" rx="10" width="140" height="46"/>
+  <text class="lbl" x="570" y="241" text-anchor="middle">@quick</text>
+  <text class="sub" x="570" y="258" text-anchor="middle">ollama/llama3.2</text>
+
+  <path class="edge" d="M130 146 H233" marker-end="url(#arr)"/>
+  <text class="note" x="182" y="138" text-anchor="middle">plain turn</text>
+  <path class="edge" d="M305 169 V223" marker-end="url(#arr)"/>
+
+  <path class="mention" d="M130 135 C 190 40, 380 40, 498 48" marker-end="url(#arrg)"/>
+  <path class="mention" d="M375 150 H498" marker-end="url(#arrg)"/>
+  <path class="mention" d="M130 158 C 190 290, 380 290, 498 246" marker-end="url(#arrg)"/>
+  <text class="note" x="315" y="58" text-anchor="middle">@name / @crew</text>
+  <text class="note" x="437" y="142" text-anchor="middle">recruits</text>
+</svg>

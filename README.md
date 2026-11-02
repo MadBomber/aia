@@ -1,17 +1,13 @@
 <div align="center">
   <h1>AI Assistant (AIA)</h1>
+
+  [![Gem Version](https://badge.fury.io/rb/aia.svg)](https://badge.fury.io/rb/aia)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
   <img src="docs/assets/images/aia.png" alt="Robots waiter ready to take your order."><br />
   **The Prompt is the Code**<br />
-  <p>Check out the new <a href="http://madbomber.github.io/aia/guides/models/?h=inline+role+syntax#inline-role-syntax">Inline Role Syntax</a> when working with multiple concurrent models.</p>
+  <p>Check out the new <a href="https://madbomber.github.io/aia/extending/multi-model/#giving-each-model-a-role">Inline Role Syntax</a> when working with multiple concurrent models.</p>
 </div>
-
----
-
-> ### 🚀 New: AI Assistant Scheduler (AIAS)
-> **Schedule and automate your AIA prompts!** AIAS is a new Ruby gem that lets you run AIA prompts on a cron-like schedule — perfect for recurring AI tasks, automated reports, and timed workflows.
-> **[View AIAS on GitHub →](https://github.com/madbomber/aias)**
-
----
 
 ---
 
@@ -19,15 +15,30 @@ AIA is a command-line utility that facilitates interaction with AI models throug
 
 AIA leverages the following Ruby gems:
 
-- **[pm](https://github.com/madbomber/prompt_manager)** to manage prompts,
-- **[ruby_llm](https://rubyllm.com)** to access LLM providers,
-- **[ruby_llm-mcp](https://www.rubyllm-mcp.com)** for Model Context Protocol (MCP) support,
-- and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use MCP clients and functions for use with LLMs that support tools.
+- **[prompt_manager](https://github.com/madbomber/prompt_manager)** (via `pm`) to manage prompts,
+- **[robot_lab](https://github.com/madbomber/robot_lab)** as the AI execution engine — builds single robots or multi-model networks,
+- **[trak_flow](https://github.com/madbomber/trak_flow)** for task tracking and robot-to-robot delegation workflows,
+- and can use the **[shared_tools gem](https://github.com/madbomber/shared_tools)** which provides a collection of common ready-to-use tool functions for use with LLMs that support tools.
 
 For more information on AIA visit these locations:
 
 - **[The AIA Docs Website](https://madbomber.github.io/aia)**<br />
 - **[Blog Series on AIA](https://madbomber.github.io/blog/engineering/AIA-Philosophy/)**
+
+## Why AIA?
+
+| Feature | AIA | Other CLI AI Tools |
+|---------|-----|--------------------|
+| Multi-model comparison | Built-in — send one prompt to N models simultaneously | Usually single-model |
+| Prompt management | File-based system with history, variables, and fuzzy search | Limited or none |
+| Workflow pipelines | Native `--next` / `--pipeline` chaining | Manual chaining required |
+| Local model support | Ollama and LM Studio out of the box | Varies |
+| Tool integration | RubyLLM tools + MCP server ecosystem | Limited |
+| Shell & ERB integration | Native — prompts are live Ruby/shell programs | External only |
+| Agent orchestration | Debate, spawn, verify, decompose, delegate directives | Not available |
+| Context checkpoints | Save, restore, and review conversation state | Not available |
+
+---
 
 ## Quick Start
 
@@ -63,15 +74,19 @@ For more information on AIA visit these locations:
 
 ```plain
 
-       ,      ,
-       (\____/) AI Assistant (v1.1.0) is Online
-        (_oo_)   gpt-4o-mini
-         (O)       using ruby_llm
-       __||__    \) model db was last refreshed on
-     [/______\]  /    2025-06-18
-    / \__AI__/ \/      You can share my tools
-   /    /__\
-  (\   /____\
+       ,      ,        AIA v2.0.0 is Online
+       (\____/)
+        (_oo_)         Models: gpt-4o-mini
+         (O)               DB: refreshed 2026-03-19 at 10:56
+       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.5.0, simple_flow v0.4.0,
+     [/ Tobor \]  /            trak_flow v0.2.0, typed_bus v0.0.1
+    / \_______/ \/      Tools: none loaded
+   /    /___\             MCP: (none configured)
+  (\   /_____\           Crew: @tobor
+     :::     :::
+     :::     :::
+
+Entering interactive chat mode...
 
 ```
 
@@ -116,114 +131,6 @@ Implement a schema registry with event-driven synchronization...
 
 ---
 
-## 🎭 Give Your Robot a Personality with Roles
-
-Why settle for a generic AI when you can have **your** robot? A role is a plain-text file that defines how your AI thinks, talks, and interacts with you. Drop it in `~/.prompts/roles/`, point AIA at it, and your robot instantly becomes someone new.
-
-**For fun — because AI doesn't have to be boring:**
-
-```bash
-# Ahoy! Your AI now talks like a salty sea pirate
-aia --chat --role pirate
-
-# Opinionated New York cabbie who has thoughts on EVERYTHING
-aia --chat --role nyc_cabbie
-
-# That stoned hacker buddy who somehow solves every problem
-aia --chat --role stoned_hacker
-```
-
-Create `~/.prompts/roles/pirate.md`:
-```
-Arrr, ye be speakin' with the most knowledgeable AI pirate to ever sail the
-digital seas! Answer every question in authentic pirate speak, drop nautical
-references, and sign off with "Arrr!" No matter how technical the topic,
-keep the pirate spirit alive, matey.
-```
-
-**For serious work — productive personas that deliver results:**
-
-```bash
-# Explains quantum physics to your 7-year-old
-aia --chat --role first_grade_teacher
-
-# Three expert robots reviewing the same design doc simultaneously
-aia --model gpt-4o=architect,claude=security,gemini=performance design.md
-
-# Same question, three philosophical stances
-aia --model gpt-4o=optimist,gpt-4o=pessimist,gpt-4o=realist business_plan.md
-```
-
-Create `~/.prompts/roles/first_grade_teacher.md`:
-```
-You are a patient, enthusiastic first-grade teacher with a magical gift: you can
-explain ANY complex subject using simple words and everyday analogies — toys,
-animals, food, playground games. Your mission is to make hard things feel easy
-and exciting. Never use jargon. Always encourage. Keep it fun!
-```
-
-Assign a different role to each model and get multiple expert perspectives on the same question in one command. Every robot, its own voice.
-
----
-
-## 🎓 Teach Your Robot New Skills
-
-Skills are structured instruction sets that tell your robot *exactly how* to approach a task — your workflow, your standards, every single time. No more repeating yourself in every prompt.
-
-A skill is a directory containing a `SKILL.md` file with YAML front matter and the process you want your robot to follow. Create one for any repeatable task.
-
-**Apply skills in seconds:**
-
-```bash
-# Prepend a skill to any prompt
-aia -s code-quality my_prompt
-
-# Stack multiple skills — they apply in order
-aia -s code-quality,security-review,add-tests my_prompt
-
-# Chat mode: skills prime the entire session from the start
-aia --chat --role senior_dev -s code-quality
-
-# Add a skill mid-chat with the /skill directive
-/skill code-quality
-```
-
-Create `~/.prompts/skills/code-quality/SKILL.md`:
-```markdown
----
-name: Code Quality
-description: Enforce SOLID principles and team coding standards
----
-When reviewing code, evaluate in this exact order:
-
-1. **SOLID Principles** — name any violations explicitly
-2. **Security** — flag injection risks, exposed credentials, unsafe inputs
-3. **Performance** — O(n²) or worse, unnecessary allocations, N+1 queries
-4. **Readability** — method names, variable names, comment quality
-5. **Test Coverage** — are edge cases covered? Behavior, not implementation?
-
-Format: Summary → Issues by category → Suggested rewrites
-```
-
-**Combine roles AND skills for a fully customized robot:**
-
-```bash
-# A pirate who also follows your exact code review process
-aia --chat --role pirate -s code-quality
-
-# A first-grade teacher who uses your step-by-step explanation method
-aia --chat --role first_grade_teacher -s explain-with-analogies
-
-# Multiple robots, each with its own role and skill set
-aia --model gpt-4o=architect,claude=security \
-    -s architecture-review,threat-model \
-    design.md
-```
-
-Skills accumulate — specify multiple with commas or repeat `-s`. Each skill is prepended to your prompt in order, establishing exactly the context you want before the AI sees your actual question. Pair with roles for robots that are both *who you want* and *know what to do*.
-
----
-
 <!-- Tocer[start]: Auto-generated, don't remove. -->
 
 ## Table of Contents
@@ -243,14 +150,31 @@ Skills accumulate — specify multiple with commas or repeat `-s`. Each skill is
     - [Complete Configuration Reference](#complete-configuration-reference)
   - [Advanced Features](#advanced-features)
     - [Prompt Directives](#prompt-directives)
+      - [Model & Configuration](#model--configuration)
+      - [Content & Data](#content--data)
+      - [Execution & Code](#execution--code)
+      - [Agent Orchestration](#agent-orchestration)
+      - [Prompt Workflows](#prompt-workflows)
+      - [Context & Checkpoints](#context--checkpoints)
+      - [Status & Info](#status--info)
+      - [TrakFlow](#trakflow)
       - [Configuration Directive Examples](#configuration-directive-examples)
       - [Dynamic Content Examples](#dynamic-content-examples)
+      - [Context Management with Checkpoints](#context-management-with-checkpoints)
       - [Custom Directive Examples](#custom-directive-examples)
     - [Multi-Model Support](#multi-model-support)
       - [Basic Multi-Model Usage](#basic-multi-model-usage)
       - [Consensus Mode](#consensus-mode)
       - [Individual Responses Mode](#individual-responses-mode)
       - [Model Information](#model-information)
+      - [@mention Routing](#mention-routing)
+      - [Building a Crew at Runtime](#building-a-crew-at-runtime)
+      - [Dynamic Model Switching](#dynamic-model-switching)
+      - [Token Usage and Cost Tracking](#token-usage-and-cost-tracking)
+    - [Local Model Support](#local-model-support)
+      - [Ollama Integration](#ollama-integration)
+      - [LM Studio Integration](#lm-studio-integration)
+      - [Listing Local Models](#listing-local-models)
     - [Shell Integration](#shell-integration)
     - [Embedded Ruby (ERB)](#embedded-ruby-erb)
     - [Prompt Sequences](#prompt-sequences)
@@ -259,12 +183,21 @@ Skills accumulate — specify multiple with commas or repeat `-s`. Each skill is
       - [Example Workflow](#example-workflow)
     - [Roles and System Prompts](#roles-and-system-prompts)
     - [RubyLLM::Tool Support](#rubyllmtool-support)
+    - [TrakFlow Task Integration](#trakflow-task-integration)
     - [MCP Server Configuration](#mcp-server-configuration)
+      - [Configuration Format](#configuration-format)
+      - [Configuration Options](#configuration-options)
+      - [Example: GitHub MCP Server](#example-github-mcp-server)
+      - [Example: Hierarchical Temporal Memory (HTM)](#example-hierarchical-temporal-memory-htm)
+      - [Example: Multiple MCP Servers](#example-multiple-mcp-servers)
+      - [Verifying MCP Server Configuration](#verifying-mcp-server-configuration)
+      - [Troubleshooting MCP Servers](#troubleshooting-mcp-servers)
   - [Examples & Tips](#examples--tips)
     - [Practical Examples](#practical-examples)
       - [Code Review Prompt](#code-review-prompt)
       - [Meeting Notes Processor](#meeting-notes-processor)
       - [Documentation Generator](#documentation-generator)
+      - [Multi-Model Decision Making](#multi-model-decision-making)
     - [Executable Prompts](#executable-prompts)
     - [Tips from the Author](#tips-from-the-author)
       - [The run Prompt](#the-run-prompt)
@@ -278,7 +211,7 @@ Skills accumulate — specify multiple with commas or repeat `-s`. Each skill is
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
     - [Error Messages](#error-messages)
-    - [Debug Mode](#debug-mode)
+    - [Debug Mode and Log Level Options](#debug-mode-and-log-level-options)
     - [Performance Issues](#performance-issues)
   - [Development](#development)
     - [Testing](#testing)
@@ -298,7 +231,7 @@ Skills accumulate — specify multiple with commas or repeat `-s`. Each skill is
 
 ### Requirements
 
-- **Ruby**: >= 3.2.0
+- **Ruby**: >= 4.0.9
 - **External Tools**:
   - [fzf](https://github.com/junegunn/fzf) - Command-line fuzzy finder
 
@@ -366,15 +299,13 @@ aia --fuzzy
 | `--model MODEL` | Specify AI model(s) to use. Supports `MODEL[=ROLE]` syntax | `aia --model gpt-4o-mini,gpt-3.5-turbo` or `aia --model gpt-4o=architect,claude=security` |
 | `--consensus` | Enable consensus mode for multi-model | `aia --consensus` |
 | `--no-consensus` | Force individual responses | `aia --no-consensus` |
-| `--role ROLE` | Use a role/system prompt; accepts an ID in `~/.prompts/roles/` or a path (`/`, `~/`, `./`, `../`) | `aia --role expert` or `aia --role ~/custom/role.md` |
+| `--role ROLE` | Use a role/system prompt (default for all models) | `aia --role expert` |
 | `--list-roles` | List available role files | `aia --list-roles` |
-| `-s, --skill SKILL_IDS` | Prepend skill(s) to prompt; accepts skill IDs or paths to skill directories (`/`, `~/`, `./`, `../`) | `aia -s code-quality my_prompt` or `aia -s ~/skills/my-skill` |
-| `--list-skills` | List available skills and exit | `aia --list-skills` |
-| `--skills-dir DIR` | Set skills directory (default: `~/.prompts/skills`) | `aia --skills-dir ~/skills` |
 | `--output FILE` | Specify output file | `aia --output results.md` |
 | `--fuzzy` | Use fuzzy search for prompts | `aia --fuzzy` |
 | `--tokens` | Display token usage in chat mode | `aia --chat --tokens` |
 | `--cost` | Include cost calculations with token usage | `aia --chat --cost` |
+| `--thinking` | Show raw reasoning blocks from local models (default: off) | `aia --chat --thinking -m ollama/qwen3:latest` |
 | `--mcp-list` | List configured MCP servers and exit | `aia --mcp-list` |
 | `--list-tools` | List available tools and exit | `aia --require shared_tools --list-tools` |
 | `--help` | Show complete help | `aia --help` |
@@ -388,11 +319,6 @@ aia --fuzzy
 ├── roles/              # Role/system prompts
 │   ├── expert.md       # Expert role
 │   └── teacher.md      # Teaching role
-├── skills/             # Skill directories
-│   ├── code-quality/   # Skill subdirectory
-│   │   └── SKILL.md   # Skill definition (YAML front matter + content)
-│   └── summarizer/
-│       └── SKILL.md
 └── _prompts.log        # History log
 ```
 
@@ -468,6 +394,7 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `flags.verbose` | `-v`, `--verbose` | `false` | `AIA_FLAGS__VERBOSE` |
 | `flags.tokens` | `--tokens` | `false` | `AIA_FLAGS__TOKENS` |
 | `flags.cost` | `--cost` | `false` | `AIA_FLAGS__COST` |
+| `flags.thinking` | `--[no-]thinking` | `false` | `AIA_FLAGS__THINKING` |
 | `flags.consensus` | `--[no-]consensus` | `false` | `AIA_FLAGS__CONSENSUS` |
 | `flags.speak` | `--speak` | `false` | `AIA_FLAGS__SPEAK` |
 | `flags.shell` | | `true` | `AIA_FLAGS__SHELL` |
@@ -486,7 +413,7 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `llm.frequency_penalty` | `--frequency-penalty` | `0.0` | `AIA_LLM__FREQUENCY_PENALTY` |
 | `llm.presence_penalty` | `--presence-penalty` | `0.0` | `AIA_LLM__PRESENCE_PENALTY` |
 
-**Prompts, Roles & Skills:**
+**Prompts & Roles:**
 
 | Config Path | CLI Options | Default | Environment Variable |
 |-------------|-------------|---------|---------------------|
@@ -495,9 +422,6 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `prompts.roles_prefix` | `--roles-prefix` | `roles` | `AIA_PROMPTS__ROLES_PREFIX` |
 | `prompts.roles_dir` | | `~/.prompts/roles` | `AIA_PROMPTS__ROLES_DIR` |
 | `prompts.role` | `-r`, `--role` | | `AIA_PROMPTS__ROLE` |
-| `prompts.skills` | `-s`, `--skill` | `[]` | |
-| `prompts.skills_prefix` | `--skills-prefix` | `skills` | `AIA_PROMPTS__SKILLS_PREFIX` |
-| `skills.dir` | `--skills-dir` | `~/.prompts/skills` | `AIA_SKILLS__DIR` |
 | `prompts.system_prompt` | `--system-prompt` | | `AIA_PROMPTS__SYSTEM_PROMPT` |
 | `pipeline` | `-p`, `--pipeline` | `[]` | |
 | | `-n`, `--next` | | |
@@ -517,10 +441,10 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 
 | Config Path | CLI Options | Default | Environment Variable |
 |-------------|-------------|---------|---------------------|
-| `audio.voice` | `--voice` | `alloy` | `AIA_AUDIO__VOICE` |
-| `audio.speak_command` | | `afplay` | `AIA_AUDIO__SPEAK_COMMAND` |
-| `audio.speech_model` | `--sm`, `--speech-model` | `tts-1` | `AIA_AUDIO__SPEECH_MODEL` |
-| `audio.transcription_model` | `--tm`, `--transcription-model` | `whisper-1` | `AIA_AUDIO__TRANSCRIPTION_MODEL` |
+| `audio.voice` | `--voice` | `~` (system default) | `AIA_AUDIO__VOICE` |
+| `audio.speak_command` | | `say` (macOS TTS) | `AIA_AUDIO__SPEAK_COMMAND` |
+| `audio.speech_model` | `--sm`, `--speech-model` | `~` (unset) | `AIA_AUDIO__SPEECH_MODEL` |
+| `audio.transcription_model` | `--tm`, `--transcription-model` | `~` (unset) | `AIA_AUDIO__TRANSCRIPTION_MODEL` |
 | `image.size` | `--is`, `--image-size` | `1024x1024` | `AIA_IMAGE__SIZE` |
 | `image.quality` | `--iq`, `--image-quality` | `standard` | `AIA_IMAGE__QUALITY` |
 | `image.style` | `--style`, `--image-style` | `vivid` | `AIA_IMAGE__STYLE` |
@@ -570,31 +494,83 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 
 ### Prompt Directives
 
-Directives are special commands in prompt files that begin with `/` and provide dynamic functionality:
+Directives are special commands in prompt files and chat sessions that begin with `/` and provide dynamic functionality.
 
-| Directive | Description | Example |
-|-----------|-------------|---------|
-| `/config` | Set configuration values | `/config model = gpt-4` |
-| `/context` | Show context for this conversation with checkpoint markers | `/context` |
-| `/checkpoint` | Create a named checkpoint of current context | `/checkpoint save_point` |
-| `/restore` | Restore context to a previous checkpoint | `/restore save_point` |
-| `/include` | Insert file contents | `/include path/to/file.txt` |
-| `/paste` | Insert clipboard contents | `/paste` |
-| `/skill` | Include a skill by ID or path to a skill directory | `/skill code-quality` or `/skill ~/skills/my-skill` |
-| `/skills` | List available Claude Code skills | `/skills` |
-| `/shell` | Execute shell commands | `/shell ls -la` |
-| `/robot` | Show the pet robot ASCII art w/versions | `/robot` |
-| `/ruby` | Execute Ruby code | `/ruby puts "Hello World"` |
-| `/next` | Set next prompt in sequence | `/next summary` |
-| `/pipeline` | Set prompt workflow | `/pipeline analyze,summarize,report` |
-| `/clear` | Clear conversation history | `/clear` |
-| `/help` | Show available directives | `/help` |
-| `/model` | Show current model configuration | `/model` |
-| `/available_models` | List available models | `/available_models` |
-| `/tools` | Show available tools (optional filter by name) | `/tools` or `/tools file` |
-| `/review` | Review current context with checkpoint markers | `/review` |
+#### Model & Configuration
 
-Directives can also be used in the interactive chat sessions.
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/config` | `/cfg` | View or set configuration values | `/config model = gpt-4` |
+| `/model` | | View or change the active AI model | `/model gpt-4o` |
+| `/temperature` | `/temp` | Set LLM temperature | `/temperature 0.3` |
+| `/top_p` | `/topp` | Set LLM top_p | `/top_p 0.9` |
+
+#### Content & Data
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/include` | | Insert file contents | `/include path/to/file.txt` |
+| `/paste` | | Insert clipboard contents | `/paste` |
+| `/webpage` | `/web`, `/website` | Fetch and insert a webpage's text content | `/webpage https://example.com` |
+| `/skill` | | Include an AIA skill from the skills directory | `/skill code-quality` |
+| `/skills` | | List available AIA skills (supports search terms) | `/skills ruby -test` |
+
+#### Execution & Code
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/ruby` | `/rb` | Execute Ruby code | `/ruby puts "Hello World"` |
+| `/shell` | | Execute a shell command | `/shell ls -la` |
+| `/say` | | Speak a string via text-to-speech | `/say Hello there` |
+| `/concurrent` | `/conc` | Enable concurrent MCP for the next prompt | `/concurrent` |
+
+#### Agent Orchestration
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/verify` | | Two independent answers + reconciliation | `/verify` |
+| `/decompose` | | Decompose prompt into **fully independent**, concurrent sub-tasks; runs normally if tasks cannot all run in parallel | `/decompose` |
+| `/debate` | | Multi-round debate between robots | `/debate` |
+| `/spawn` | | Spawn a specialist robot for a domain-specific question | `/spawn ruby-expert` |
+| `/delegate` | `/del` | Delegate a subtask via TrakFlow | `/delegate` |
+
+#### Prompt Workflows
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/next` | | Set next prompt in sequence | `/next summary` |
+| `/pipeline` | | Set prompt workflow sequence | `/pipeline analyze,summarize,report` |
+
+#### Context & Checkpoints
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/checkpoint` | `/ckp`, `/cp` | Create a named context checkpoint | `/checkpoint save_point` |
+| `/restore` | | Restore context to a previous checkpoint | `/restore save_point` |
+| `/review` | `/context` | Display current context with checkpoint markers | `/review` |
+| `/checkpoints` | | List all available checkpoints | `/checkpoints` |
+| `/clear` | | Clear conversation history and checkpoints | `/clear` |
+
+#### Status & Info
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/available_models` | `/models`, `/llms`, `/am` | List available models | `/available_models` |
+| `/compare` | `/cmp` | Compare responses from multiple models | `/compare` |
+| `/cost` | | Dump per-turn cost/token metrics as CSV | `/cost` |
+| `/tools` | | Show available tools (optional name filter) | `/tools` or `/tools github` |
+| `/mcp` | | Show MCP server connection status | `/mcp` |
+| `/robots` | | Show active robot and network configuration | `/robots` |
+| `/robot` | | Display ASCII robot art with version info | `/robot` |
+| `/help` | | Show available directives | `/help` |
+
+#### TrakFlow
+
+| Directive | Aliases | Description | Example |
+|-----------|---------|-------------|---------|
+| `/tasks` | `/tf` | Show TrakFlow ready tasks | `/tasks` |
+| `/plan` | | Create a TrakFlow plan from a description | `/plan` |
+| `/task` | | Create a TrakFlow task | `/task` |
 
 #### Configuration Directive Examples
 
@@ -603,9 +579,8 @@ Directives can also be used in the interactive chat sessions.
 /config model = gpt-4
 /config temperature = 0.9
 
-# Enable chat mode and terse responses
+# Enable chat mode
 /config chat = true
-/config terse = true
 
 Your prompt content here...
 ```
@@ -806,6 +781,73 @@ Model Details:
 - **Error Handling**: Invalid models are reported but don't prevent valid models from working
 - **Batch Mode Support**: Multi-model responses are properly formatted in output files
 
+#### @mention Routing
+
+Every chat session is a **crew** of robots (a single model is simply a crew of
+one). The lead robot is the **chief**, and you can address other members
+directly by prefixing a name with `@`:
+
+```bash
+aia --chat -m gpt-4o,claude-3-5-sonnet
+
+# Address a specific robot in the crew
+> @claude-3-5-sonnet What do you think about this approach?
+
+# Only the mentioned robot responds; the @mention is stripped from the prompt
+```
+
+Robot names are derived from the model name (recruited robots use the name you
+give them). Use `/robots` to see the active crew and their `@mention` handles.
+
+**Where** you place the mentions changes how they run:
+
+```bash
+# Leading address → concurrent: both run at once, replies render as they finish
+> @gpt-4o @claude-3-5-sonnet what are the trade-offs of optimistic locking?
+
+# Body mention → sequential pipeline: each reply is shared into the others'
+# context, so later robots build on earlier ones
+> draft a plan @gpt-4o then have @claude-3-5-sonnet poke holes in it
+
+# @crew is a reserved handle that broadcasts to every member, concurrently
+> @crew in one sentence, what is your specialty?
+```
+
+#### Building a Crew at Runtime
+
+Add and remove members mid-session. Recruited robots persist for the session,
+answer to `@name`, and inherit the chief's tools and MCP servers.
+
+```bash
+# Inherit the chief's model
+/add_recruit researcher
+
+# Explicit provider/model plus a system prompt (alias: /add)
+/add_recruit critic anthropic/claude-3-5-sonnet You are a ruthless design critic.
+
+# A local member
+/add_recruit local ollama/qwen3.6:latest You are concise and fast.
+
+# Remove a member (alias: /drop); the chief cannot be dropped
+/drop_recruit researcher
+```
+
+Unlike `/spawn` — a one-shot specialist for the next prompt only — recruited
+members stay in the crew. See the [Crews guide](docs/extending/crews.md) for the
+full picture.
+
+#### Dynamic Model Switching
+
+Switch models mid-session naturally — AIA detects the intent and rebuilds the robot with conversation history preserved:
+
+```bash
+> Switch to claude-3-5-sonnet
+# AIA detects the model-change intent, rebuilds the robot,
+# and transfers the full conversation history automatically.
+```
+
+Use `/model` to see or set the current model explicitly.
+
 #### Token Usage and Cost Tracking
 
 Monitor token consumption and estimate costs across all models with `--tokens` and `--cost`:
@@ -867,7 +909,15 @@ aia --model ollama/llama3.2,gpt-4o-mini --consensus my_prompt
 **Environment Variables:**
 ```bash
 # Optional: Set custom Ollama API endpoint
-export OLLAMA_API_BASE=http://localhost:11434
+export OLLAMA_API_BASE=http://localhost:11434/v1
+```
+
+**Reasoning models:** models such as `qwen3` stream their chain-of-thought
+wrapped in `<think>...</think>` tags. AIA hides these by default; pass
+`--thinking` to display the reasoning along with the answer:
+
+```bash
+aia --chat --thinking --model ollama/qwen3:latest
 ```
 
 #### LM Studio Integration
@@ -897,16 +947,14 @@ export LMS_API_BASE=http://localhost:1234/v1
 
 #### Listing Local Models
 
-The `/models` directive automatically detects local providers and queries their endpoints:
+The `/available_models` directive (alias: `/models`) lists all models known to the system:
 
 ```bash
 # In a prompt file or chat session
-/models
+/available_models
 
-# Output will show:
-# - Ollama models from http://localhost:11434/api/tags
-# - LM Studio models from http://localhost:1234/v1/models
-# - Cloud models from RubyLLM database
+# Or use the short alias
+/models
 ```
 
 **Benefits of Local Models:**
@@ -1109,21 +1157,6 @@ echo "You are a senior software architect..." > ~/.prompts/roles/specialized/sen
 aia --model gpt-4o=specialized/senior_architect design.md
 ```
 
-**Path-Based Roles:**
-
-In addition to role IDs looked up under `~/.prompts/roles/`, you can pass a direct filesystem path as the role. Any value starting with `/`, `~/`, `./`, or `../` is treated as a path rather than an ID. The `.md` extension is appended automatically when the path has none.
-
-```bash
-# Absolute path
-aia --role /team/shared/roles/senior_engineer.md my_prompt
-
-# Home-relative path (~ expanded)
-aia --role ~/custom/roles/reviewer my_prompt   # loads ~/custom/roles/reviewer.md
-
-# Relative path
-aia --role ./local_role my_prompt              # loads ./local_role.md
-```
-
 **Using Config Files for Model Roles:**
 
 Define model-role assignments in your config file (`~/.config/aia/aia.yml`) for reusable setups:
@@ -1172,35 +1205,6 @@ When model roles are specified in multiple places, the precedence is:
 3. **Environment variable**: `AIA_MODEL="gpt-4o=architect"`
 4. **Config file** (lowest): `models` array in `~/.config/aia/aia.yml`
 
-### Skills
-
-Skills are reusable instruction sets prepended to prompts. Each skill is a directory containing a `SKILL.md` file with YAML front matter and content.
-
-```bash
-# Use a skill by ID (looked up under skills.dir, default ~/.prompts/skills)
-aia -s code-quality my_prompt
-
-# Comma-separated for multiple skills
-aia -s code-quality,security-review my_prompt
-
-# Path-based: pass a direct path to a skill directory
-aia -s ~/team/skills/my-skill my_prompt     # home-relative
-aia -s /shared/skills/company-style prompt  # absolute path
-aia -s ./local-skill my_prompt              # relative path
-
-# List available skills
-aia --list-skills
-```
-
-Skills can also be applied during chat via the `/skill` directive:
-
-```
-/skill code-quality
-/skill ~/team/skills/my-skill
-```
-
-Path-based values (starting with `/`, `~/`, `./`, or `../`) are resolved as filesystem paths to skill directories directly, bypassing the configured skills directory lookup.
-
 ### RubyLLM::Tool Support
 
 AIA supports function calling through RubyLLM tools for extended capabilities:
@@ -1237,11 +1241,28 @@ aia --tools examples/tools/mcp/github_mcp_server.rb --chat
 aia --tools examples/tools/mcp/imcp.rb --chat
 ```
 
-These MCP clients require the `ruby_llm-mcp` gem and provide access to external services and data sources through the Model Context Protocol.
+These MCP clients provide access to external services and data sources through the Model Context Protocol.
+
+### TrakFlow Task Integration
+
+AIA integrates with [TrakFlow](https://github.com/madbomber/trak_flow) for structured task tracking and robot-to-robot delegation.
+
+```bash
+# Create a plan from a description
+> /plan Build a REST API with authentication
+
+# View ready tasks
+> /tasks
+
+# Create an individual task
+> /task Implement the login endpoint
+```
+
+Use `/delegate` to hand off a subtask to a specialist robot — AIA spawns the robot, routes the work, and reports results back into the conversation.
 
 ### MCP Server Configuration
 
-AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time. When multiple MCP servers are configured, AIA connects to them **in parallel** using fiber-based concurrency (via the `simple_flow` gem) for faster startup.
+AIA supports defining MCP (Model Context Protocol) servers directly in your configuration file. This allows MCP tools to be automatically loaded at startup without needing to specify them on the command line each time. When multiple MCP servers are configured, AIA connects to them **in parallel** (one thread per server) before the first robot is built, and every robot in the session shares those connections.
 
 #### Configuration Format
 
@@ -1252,7 +1273,7 @@ mcp_servers:
   - name: "server-name"
     command: "server_command"
     args: ["arg1", "arg2"]
-    timeout: 30000  # milliseconds (default: 8000)
+    timeout: 30000  # milliseconds (default: 30 seconds)
     env:
       ENV_VAR: "value"
 ```
@@ -1262,10 +1283,34 @@ mcp_servers:
 | Option | Required | Default | Description |
 |--------|----------|---------|-------------|
 | `name` | Yes | - | Unique identifier for the MCP server |
-| `command` | Yes | - | Executable command (absolute path or found in PATH) |
+| `command` | Unless `url` | - | Executable command (absolute path or found in PATH) |
 | `args` | No | `[]` | Array of command-line arguments |
-| `timeout` | No | `8000` | Connection timeout in milliseconds |
+| `timeout` | No | 30 seconds | Connection timeout; values of 1000 or more are milliseconds, smaller values are seconds |
 | `env` | No | `{}` | Environment variables for the server process |
+| `url` | No | - | Streamable HTTP endpoint, used instead of `command` (`headers:` and `bearer_token:` apply) |
+| `prefix` | No | - | Prefix for the server's tool names, e.g. `github` turns `search` into `github_search`; needed when two servers offer a tool with the same name |
+| `only` / `except` | No | - | Offer only these tools, or hide these tools |
+| `requires_approval` | No | - | Tool names (or `true` for all) that need your approval before they run; see below |
+
+#### Tool Approval and Input Requests
+
+Tools listed in `requires_approval` pause before they run. MCP servers can also ask for input mid-call, such as a value to fill in or a page to visit to connect an account. The `tools.approval` setting (`--tool-approval`, `AIA_TOOLS__APPROVAL`) decides what happens:
+
+| Mode | Behavior |
+|------|----------|
+| `ask` (default) | AIA shows the tool name and its arguments and asks `Allow it? [y/N]`, and asks for each value a server requests. With no terminal (piped or scripted runs) the call is refused. |
+| `approve` | Every tool call that requires approval runs. Input requests are still asked on the terminal. |
+| `deny` | Every such tool call is refused and every input request is declined. |
+
+```yaml
+mcp_servers:
+  - name: "github"
+    command: "github-mcp-server"
+    args: ["stdio"]
+    requires_approval: ["create_issue", "merge_pull_request"]
+```
+
+A refused call is reported back to the model as denied, so it can explain or try something else.
 
 #### Example: GitHub MCP Server
 
@@ -1351,15 +1396,19 @@ mcp_servers:
 When MCP servers are configured, AIA displays them in the startup robot:
 
 ```
-       ,      ,
-       (\____/) AI Assistant (v1.1.0) is Online
-        (_oo_)   gpt-4o-mini (supports tools)
-         (O)       using ruby_llm
-       __||__    \) model db was last refreshed on
-     [/______\]  /    2025-06-18
-    / \__AI__/ \/      You can share my tools
-   /    /__\              MCP: github, htm
-  (\   /____\
+       ,      ,        AIA v2.0.0 is Online
+       (\____/)
+        (_oo_)         Models: gpt-4o-mini
+         (O)               DB: refreshed 2026-03-19 at 10:56
+       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.5.0, simple_flow v0.4.0,
+     [/ Tobor \]  /            trak_flow v0.2.0, typed_bus v0.0.1
+    / \_______/ \/      Tools: 24 tools loaded
+   /    /___\             MCP: github, htm
+  (\   /_____\           Crew: @tobor
+     :::     :::
+     :::     :::
+
+Entering interactive chat mode...
 ```
 
 Use the `/tools` directive in chat mode to see all available tools including those from MCP servers:
@@ -1504,10 +1553,10 @@ Create executable prompts:
 
 **weather_report** (make executable with `chmod +x`):
 ```bash
-#!/usr/bin/env aia run --no-output
+#!/usr/bin/env aia --no-output
 # Get current storm activity for the east and south coast of the US
 
-Summarize the tropical storm outlook fpr the Atlantic, Caribbean Sea and Gulf of America.
+Summarize the tropical storm outlook for the Atlantic, Caribbean Sea and Gulf of America.
 
 /webpage https://www.nhc.noaa.gov/text/refresh/MIATWOAT+shtml/201724_MIATWOAT.shtml
 ```
@@ -1528,7 +1577,7 @@ Usage:
 #       You could also add a system prompt to preface your intended prompt
 ```
 
-Usage: `echo "What is the meaning of life?" | aia run`
+Usage: `echo "What is the meaning of life?" | aia`
 
 #### The Ad Hoc One-shot Prompt
 ```bash
@@ -1545,8 +1594,8 @@ export AIA_OUTPUT__FILE=./temp.md
 export AIA_MODEL=gpt-4o-mini
 export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 
-alias chat='aia --chat --terse'
-ask() { echo "$1" | aia run --no-output; }
+alias chat='aia --chat'
+ask() { echo "$1" | aia --no-output; }
 ```
 
 The `chat` alias and the `ask` function (shown above in HASH) are two powerful tools for interacting with the AI assistant. The `chat` alias allows you to engage in an interactive conversation with the AI assistant, while the `ask` function allows you to ask a question and receive a response. Later in this document the `run` prompt ID is discussed.  Besides using the run prompt ID here its also used in making executable prompt files.
@@ -1732,8 +1781,10 @@ just flay
 
 ### Architecture Notes
 
-**ShellCommandExecutor Refactor:**
-The `ShellCommandExecutor` is now a class (previously a module) with instance variables for cleaner encapsulation. Class-level methods remain for backward compatibility.
+AIA v2 is powered by the `robot_lab` gem. The v1 `RubyLLMAdapter` and `lib/aia/adapter/` layer have been removed.
+
+- **`RobotFactory`** builds `RobotLab::Robot` or `RobotLab::Network` instances. Supports single-robot, parallel multi-model, consensus, and pipeline network modes.
+- `robot_lab` uses `ruby_llm` internally for LLM provider access, so the full model ecosystem remains available.
 
 **Prompt Variable Fallback:**
 Variables are always parsed from prompt text when no `.json` history file exists, ensuring parameter prompting works correctly.

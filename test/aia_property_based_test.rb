@@ -20,11 +20,6 @@ class AIAPropertyBasedTest < Minitest::Test
     AIA.stubs(:config).returns(@mock_config)
   end
 
-  def teardown
-    # Call super to ensure Mocha cleanup runs properly
-    super
-  end
-
   def test_basic_configuration_parsing
     # Test that config can be created and accessed with nested structure
     assert_equal 'test-model', AIA.config.models.first.name

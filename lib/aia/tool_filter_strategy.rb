@@ -1,0 +1,157 @@
+# frozen_string_literal: true
+
+# lib/aia/tool_filter_strategy.rb
+#
+# Strategy resolver for TF-IDF tool filtering (Option A).
+# Accepts a Hash of ToolFilter subclass instances keyed by symbol.
+#
+# After each resolve(), prints a timing table showing
+# prep and filter times for the active filter.
+
+require 'tty-table'
+
+module AIA
+  class ToolFilterStrategy
+    # Maps filter keys to display info.
+    FILTER_META = {
+      tfidf: { letter: "A", label: "TF-IDF", score_label: "score" }
+    }.freeze
+
+    DEFAULT_TIMEOUT_S = 10
+
+    # The per-filter timeout from config (tool_filter.timeout_s), or the default
+    # when it is unset or not a positive number.
+    #
+    # @param config [#tool_filter]
+    # @return [Numeric]
+    def self.timeout_from(config)
+      section = config.respond_to?(:tool_filter) ? config.tool_filter : nil
+      value   = section.respond_to?(:timeout_s) ? section.timeout_s : nil
+      value.is_a?(Numeric) && value.positive? ? value : DEFAULT_TIMEOUT_S
+    end
+
+    # @param filters [Hash{Symbol => ToolFilter}] e.g. {tfidf: tfidf_filter}
+    # @param ui_presenter [UIPresenter, nil] for display (unused currently, reserved)
+    # @param timeout_s [Numeric] per-filter wall-clock timeout in seconds
+    def initialize(filters: {}, ui_presenter: nil, timeout_s: DEFAULT_TIMEOUT_S)
+      @filters      = filters
+      @ui_presenter = ui_presenter
+      @timeout_s    = timeout_s
+    end
+
+    # Resolve the tool list for this turn based on the active strategy.
+    #
+    # @param prompt [String] the user's processed prompt
+    # @return [Array<String>, nil] tool names to allow, or nil for all tools
+    def resolve(prompt)
+      active = available_filters
+
+      return resolve_single(prompt, active.first) if active.size >= 1
+
+      # No filters — all tools available
+      nil
+    end
+
+    # @return [String] label for the active strategy (used in debug logging)
+    def active_strategy_label
+      labels = available_filters.map { |key, _| meta_for(key)[:label] }
+      labels = ["none"] if labels.empty?  # fallback
+      labels.first
+    end
+
+    private
+
+    # Filters that are actually available (have indexed tools).
+    def available_filters
+      @filters.select { |_key, filter| filter.available? }
+    end
+
+    # Meta info for a filter key, with fallback for unknown keys.
+    def meta_for(key)
+      FILTER_META[key] || { letter: key.to_s[0].upcase, label: key.to_s, score_label: "score" }
+    end
+
+    # Single filter path: run filter, display results and timing.
+    def resolve_single(prompt, (key, filter))
+      filter_ms = run_filter_timed(key, filter, prompt)
+      scored = filter_ms[:scored]
+
+      if AIA.debug?
+        display_filter_results(key, scored)
+        display_timing_table({ key => filter_ms[:ms] })
+      end
+
+      # Return the matched names. An EMPTY array is meaningful: the filter ran
+      # and judged no tool relevant to this prompt, so the caller should send NO
+      # tools (not the full set). Only a missing filter (see #resolve's no-filter
+      # path) or a filter error (the rescue below) yields nil = "use all tools".
+      scored.map { |e| e[:name] }
+    rescue => e
+      AIA.logger.debug "ToolFilterStrategy: #{meta_for(key)[:label]} filter failed: #{e.message}" if AIA.debug?
+      nil
+    end
+
+    # Run a filter and return {scored:, ms:}.
+    def run_filter_timed(_key, filter, prompt)
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      scored = filter.filter_with_scores(prompt)
+      ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000
+      { scored: scored, ms: ms }
+    end
+
+    # Display single-filter results via logger.
+    def display_filter_results(key, scored)
+      meta   = meta_for(key)
+      label  = meta[:label]
+      logger = AIA.logger
+
+      if scored.empty?
+        logger.debug "[#{label}] No tools matched (no tools sent this turn)"
+        return
+      end
+
+      names = scored.map { |e| e[:name] }.join(', ')
+      logger.debug "[#{label}] Tools for this turn (#{scored.size}): #{names}"
+
+      scored.each do |entry|
+        logger.debug "[#{label}]   #{entry[:name]}  (#{meta[:score_label]}: #{format('%.4f', entry[:score])})"
+      end
+    end
+
+    # Print the timing table via logger.
+    # :reek:DuplicateMethodCall -- header and each data row map the same columns into different cells
+    def display_timing_table(filter_ms_by_key)
+      columns = build_timing_columns(filter_ms_by_key)
+      return if columns.empty?
+
+      header = ["Process"] + columns.map { |col| "#{col[:header]}\n#{col[:sub]}" }
+      rows   = [
+        ["prep"]   + columns.map { |col| col[:prep] },
+        ["filter"] + columns.map { |col| col[:filter] }
+      ]
+
+      alignments = [:left] + Array.new(columns.size, :right)
+      rendered   = TTY::Table.new(header, rows)
+                             .render(:unicode, multiline: true, alignments: alignments, padding: [0, 1])
+      rendered.each_line { |line| AIA.logger.debug(line.chomp) }
+    end
+
+    # Column data (header, sub-label, prep/filter cells) for each configured filter.
+    def build_timing_columns(filter_ms_by_key)
+      @filters.map do |key, filter|
+        meta   = meta_for(key)
+        active = filter_ms_by_key.key?(key)
+        {
+          header: "Option #{meta[:letter]}",
+          sub:    "(#{meta[:label]})",
+          prep:   active ? fmt_ms(filter.prep_ms) : "--",
+          filter: active ? fmt_ms(filter_ms_by_key[key]) : "--"
+        }
+      end
+    end
+
+    def fmt_ms(ms)
+      "#{ms.round(1)}ms"
+    end
+  end
+end

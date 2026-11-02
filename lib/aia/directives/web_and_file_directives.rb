@@ -2,129 +2,83 @@
 
 require 'faraday'
 require 'clipboard'
-require 'yaml'
-require 'io/console'
-require 'word_wrapper'
 
 module AIA
   class WebAndFileDirectives < Directive
     include AIA::SkillUtils
+
     PUREMD_API_KEY = ENV.fetch('PUREMD_API_KEY', nil)
 
     desc "Fetch and include content from a webpage"
+    # :reek:TooManyStatements -- guard, fetch via pure.md, then success/error reporting in one flow
     def webpage(args, _context_manager = nil)
       if PUREMD_API_KEY.nil?
-        'ERROR: PUREMD_API_KEY is required in order to include a webpage'
-      else
-        url = args.shift.to_s.strip
-        puremd_url = "https://pure.md/#{url}"
-
-        response = Faraday.get(puremd_url) do |req|
-          req.headers['x-puremd-api-token'] = PUREMD_API_KEY
-        end
-
-        if 200 == response.status
-          response.body
-        else
-          "Error: Status was #{response.status}\n#{ap response}"
-        end
+        msg = 'ERROR: PUREMD_API_KEY is required in order to include a webpage'
+        AIA::LoggerManager.aia_logger.error(msg)
+        puts msg
+        return nil
       end
+
+      url = args.shift.to_s.strip
+      puremd_url = "https://pure.md/#{url}"
+
+      response = Faraday.get(puremd_url) do |req|
+        req.headers['x-puremd-api-token'] = PUREMD_API_KEY
+      end
+
+      return response.body if response.status == 200
+
+      msg = "Error: Fetching #{url} returned status #{response.status}"
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
     end
-    alias_method :website, :webpage
-    alias_method :web,     :webpage
+    alias website webpage
+    alias web webpage
 
     desc "List available AIA skills"
+    # :reek:TooManyStatements -- sequential listing: directory guard, term filtering, per-skill output
     def skills(args = [], _context_manager = nil)
       dir = aia_skills_dir
-
       unless Dir.exist?(dir)
         puts "No skills directory found at #{dir}"
         return nil
       end
 
       positive_terms, negative_terms = parse_search_terms(Array(args))
+      entries = matching_skill_ids(dir, positive_terms, negative_terms)
 
-      skill_dirs = Dir.children(dir)
-                      .select { |e| Dir.exist?(File.join(dir, e)) }
-                      .sort
-
-      if skill_dirs.empty?
-        puts "No skills found in #{dir}"
+      if entries.empty?
+        all_terms = positive_terms + negative_terms
+        puts all_terms.empty? ? "No skills found in #{dir}" : "No skills matched: #{Array(args).join(' ')}"
         return nil
       end
 
-      skill_data = skill_dirs.filter_map do |name|
-        fm = parse_front_matter(File.join(dir, name, 'SKILL.md'))
-        text = "#{name} #{fm.values.join(' ').downcase}"
-        pos_ok = positive_terms.empty? || positive_terms.all? { |t| text.include?(t) }
-        neg_ok = negative_terms.none? { |t| text.include?(t) }
-        [name, fm] if pos_ok && neg_ok
-      end
+      wrap_width = terminal_width - 2
+      entries.each { |skill_id| print_skill_entry(dir, skill_id, wrap_width) }
 
-      if skill_data.empty?
-        puts "No skills matching your query"
-        return nil
-      end
-
-      width = terminal_width
-      puts "\nAvailable Skills (#{dir}):"
-      puts "=" * [width, 60].min
-
-      skill_data.each do |name, fm|
-        display_name = fm['name'] || name
-        desc_text = fm['description'].to_s.strip
-        puts "\n  #{display_name}"
-        unless desc_text.empty?
-          puts WordWrapper::MinimumRaggedness.new(width - 4, desc_text).wrap
-            .split("\n").map { |l| "    #{l}" }.join("\n")
-        end
-      end
-
-      puts "\nTotal: #{skill_data.size} skill#{'s' if skill_data.size != 1}"
       nil
     end
 
-    desc "Include an AIA skill from the skills directory"
+    desc "Include an AIA skill from the configured skills directory"
     def skill(args = [], _context_manager = nil)
       args = Array(args)
       skill_name = args.first&.strip
-
       if skill_name.nil? || skill_name.empty?
-        warn "Error: /skill requires a skill name. Use /skills to list available skills."
-        AIA::LoggerManager.aia_logger.error("/skill requires a skill name")
-        return nil
+        return report_skill_error("Error: /skill requires a skill name. Use /skills to list available skills.")
+      end
+
+      if path_based_id?(skill_name) && non_markdown_skill_file?(File.expand_path(skill_name))
+        return report_skill_error("Error: #{non_markdown_skill_message(skill_name)}.")
       end
 
       dir = aia_skills_dir
-
-      unless Dir.exist?(dir)
-        warn "Error: Skills directory not found at #{dir}"
-        AIA::LoggerManager.aia_logger.error("Skills directory not found at #{dir}")
-        return nil
-      end
-
       skill_dir = find_skill_dir(skill_name, dir)
       unless skill_dir
-        if path_based_id?(skill_name)
-          warn "Error: No skill directory found at '#{File.expand_path(skill_name)}'. Use /skills to list available skills."
-          AIA::LoggerManager.aia_logger.error("No skill directory found at '#{File.expand_path(skill_name)}'")
-        else
-          warn "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
-          AIA::LoggerManager.aia_logger.error("No skill matching '#{skill_name}' found in #{dir}")
-        end
-        return nil
+        return report_skill_error("Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills.")
       end
 
-      return File.read(skill_dir) if File.file?(skill_dir)
-
-      skill_path = File.join(skill_dir, 'SKILL.md')
-      unless File.exist?(skill_path)
-        warn "Error: Skill directory '#{File.basename(skill_dir)}' has no SKILL.md. Use /skills to list available skills."
-        AIA::LoggerManager.aia_logger.error("Skill directory '#{File.basename(skill_dir)}' has no SKILL.md")
-        return nil
-      end
-
-      File.read(skill_path)
+      read_skill_text(skill_name, skill_dir, dir)
     end
 
     desc "Paste content from the system clipboard"
@@ -132,21 +86,123 @@ module AIA
       content = Clipboard.paste
       content.to_s
     rescue StandardError => e
-      "Error: Unable to paste from clipboard - #{e.message}"
+      msg = "Error: Unable to paste from clipboard - #{e.message}"
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
     end
-    alias_method :clipboard, :paste
+    alias clipboard paste
 
     private
 
+    # Skill directories under dir with a SKILL.md whose front matter passes
+    # the positive/negative term filters, sorted.
+    def matching_skill_ids(dir, positive_terms, negative_terms)
+      skill_dirs = Dir.children(dir).select do |e|
+        File.directory?(File.join(dir, e)) &&
+          File.exist?(File.join(dir, e, 'SKILL.md'))
+      end
+
+      skill_dirs.select do |e|
+        next true if positive_terms.empty? && negative_terms.empty?
+        text = read_front_matter_text(File.join(dir, e, 'SKILL.md'))
+        # text is a String; Array#intersect? would raise TypeError
+        positive_terms.all? { |t| text.include?(t) } &&
+          negative_terms.none? { |t| text.include?(t) }
+      end.sort
+    end
+
+    def print_skill_entry(dir, skill_id, wrap_width)
+      fm = parse_skill_front_matter(File.join(dir, skill_id, 'SKILL.md'))
+      name        = fm['name']        || ''
+      description = fm['description'] || '(no description)'
+      puts "#{skill_id}: #{name}"
+      puts word_wrap(description, width: wrap_width, indent: '  ')
+      puts
+    end
+
+    # Log and print a /skill error message; returns nil so callers can
+    # `return report_skill_error(msg)` from any guard.
+    # The text of a found skill: the file itself, or the folder's SKILL.md.
+    def read_skill_text(skill_name, skill_dir, dir)
+      return File.read(skill_dir) if File.file?(skill_dir)
+
+      skill_path = File.join(skill_dir, 'SKILL.md')
+      return File.read(skill_path) if File.exist?(skill_path)
+
+      msg = if path_based_id?(skill_name)
+              "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
+            else
+              "Error: Skill '#{File.basename(skill_dir)}' has no SKILL.md in #{dir}."
+            end
+      report_skill_error(msg)
+    end
+
+    def report_skill_error(msg)
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
+    end
+
+    # Resolve the AIA skills directory from config, env vars, or defaults.
     def aia_skills_dir
-      AIA.config.skills.dir
+      skills = AIA.respond_to?(:config) ? AIA.config&.skills : nil
+      return skills.dir if skills.respond_to?(:dir) && skills.dir
+
+      ENV.fetch('AIA_SKILLS__DIR') { File.expand_path('~/.prompts/skills') }
     end
 
     def terminal_width
+      require 'io/console'
       IO.console&.winsize&.last || 80
     rescue StandardError
       80
     end
 
+    # Word-wrap text to width, prefixing every line with indent.
+    def word_wrap(text, width:, indent: '')
+      return "#{indent}#{text}" if text.length <= width
+
+      words = text.split
+      lines = []
+      line  = +''
+
+      words.each do |word|
+        if line.empty?
+          line = word
+        elsif line.length + 1 + word.length <= width
+          line << ' ' << word
+        else
+          lines << line
+          line = word
+        end
+      end
+      lines << line unless line.empty?
+
+      lines.map { |l| "#{indent}#{l}" }.join("\n")
+    end
+
+    def read_front_matter_text(skill_md_path)
+      content = File.read(skill_md_path)
+      return '' unless content.start_with?("---")
+
+      end_pos = content.index("---", 3)
+      return '' unless end_pos
+
+      content[3...end_pos].downcase
+    end
+
+    def parse_skill_front_matter(skill_md_path)
+      require 'yaml'
+      content = File.read(skill_md_path)
+      return {} unless content.start_with?("---")
+
+      end_pos = content.index("---", 3)
+      return {} unless end_pos
+
+      yaml_text = content[3...end_pos].strip
+      parsed    = YAML.safe_load(yaml_text, symbolize_names: false) rescue {}
+      parsed.is_a?(Hash) ? parsed : {}
+    end
   end
 end

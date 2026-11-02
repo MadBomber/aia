@@ -1,0 +1,301 @@
+# frozen_string_literal: true
+
+# test/aia/robot_factory_test.rb
+
+require_relative '../test_helper'
+require_relative '../../lib/aia'
+
+class RobotFactoryTest < Minitest::Test
+  def setup
+    @config = create_test_config
+    AIA.stubs(:config).returns(@config)
+  end
+
+  # Endpoint overrides are generic: <SLUG>_API_BASE reaches
+  # RubyLLM.config.<slug>_api_base for any registered provider.
+  def test_configure_local_providers_applies_env_base_for_any_provider
+    @config.models = [OpenStruct.new(provider: nil)]
+    original = RubyLLM.config.ollama_api_base
+    original_env = ENV.fetch('OLLAMA_API_BASE', nil)
+    ENV['OLLAMA_API_BASE'] = 'http://ollama.test:11434/v1'
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    assert_equal 'http://ollama.test:11434/v1', RubyLLM.config.ollama_api_base
+  ensure
+    ENV['OLLAMA_API_BASE'] = original_env
+    RubyLLM.config.ollama_api_base = original
+  end
+
+  def test_configure_local_providers_defaults_ollama_without_env_override
+    @config.models = [OpenStruct.new(provider: nil)]
+    original = RubyLLM.config.ollama_api_base
+    original_env = ENV.fetch('OLLAMA_API_BASE', nil)
+    ENV.delete('OLLAMA_API_BASE')
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    if original.nil?
+      assert_equal "http://localhost:11434/v1", RubyLLM.config.ollama_api_base
+    else
+      assert_equal original, RubyLLM.config.ollama_api_base
+    end
+  ensure
+    ENV['OLLAMA_API_BASE'] = original_env
+    RubyLLM.config.ollama_api_base = original
+  end
+
+  # lms is a native RubyLLM provider now — the openai base must never be
+  # touched on its behalf (the old behavior hijacked it).
+  def test_configure_local_providers_does_not_hijack_openai_base_for_lms
+    @config.models = [OpenStruct.new(provider: 'lms')]
+    original = RubyLLM.config.openai_api_base
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    if original.nil?
+      assert_nil RubyLLM.config.openai_api_base
+    else
+      assert_equal original, RubyLLM.config.openai_api_base
+    end
+  ensure
+    RubyLLM.config.openai_api_base = original
+  end
+
+  def test_configure_local_providers_registers_native_lms_provider
+    @config.models = [OpenStruct.new(provider: 'lms')]
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    assert RubyLLM::Provider.providers.key?(:lms)
+  end
+
+  def test_configure_local_providers_sets_lms_base_from_env
+    @config.models = [OpenStruct.new(provider: 'lms')]
+    original_env = ENV.fetch('LMS_API_BASE', nil)
+    ENV['LMS_API_BASE'] = 'http://lms.test:9999/v1'
+
+    AIA::RobotFactory.send(:configure_local_providers, @config)
+
+    assert_equal 'http://lms.test:9999/v1', RubyLLM.config.lms_api_base
+  ensure
+    ENV['LMS_API_BASE'] = original_env
+    RubyLLM.config.lms_api_base = nil if RubyLLM.config.respond_to?(:lms_api_base=)
+  end
+
+  def test_resolve_provider_passes_lms_through
+    spec = OpenStruct.new(provider: 'lms')
+
+    assert_equal 'lms', AIA::RobotFactory.resolve_provider(spec)
+  end
+
+  def test_ensure_provider_loaded_warns_but_does_not_raise_for_unknown_provider
+    AIA::RobotFactory.ensure_provider_loaded('no_such_provider_xyz')
+
+    refute RubyLLM::Provider.providers.key?(:no_such_provider_xyz)
+  end
+
+  def test_mcp_servers_returns_empty_when_no_mcp
+    @config.flags.no_mcp = true
+    assert_equal [], AIA::RobotFactory.mcp_servers(@config)
+  end
+
+  def test_mcp_servers_without_manager_returns_normalized_configs
+    @config.flags.no_mcp = false
+    @config.mcp_servers = [{ name: 'server1', command: 's1' }, { name: 'server2', url: 'https://x.test/mcp' }]
+    AIA.stubs(:mcp_manager).returns(nil)
+
+    result = AIA::RobotFactory.mcp_servers(@config)
+
+    assert_equal [{ name: 'server1', transport: { command: 's1', type: 'stdio' } },
+                  { name: 'server2', transport: { url: 'https://x.test/mcp', type: 'streamable-http' } }], result
+  end
+
+  def test_mcp_servers_applies_mcp_skip
+    @config.flags.no_mcp = false
+    @config.mcp_servers = [{ name: 'server1', command: 's1' }, { name: 'server2', command: 's2' }]
+    @config.mcp_skip = ['server2']
+    AIA.stubs(:mcp_manager).returns(nil)
+
+    assert_equal(['server1'], AIA::RobotFactory.mcp_servers(@config).map { it[:name] })
+  end
+
+  def test_mcp_servers_returns_live_servers_from_connected_manager
+    @config.flags.no_mcp = false
+    @config.mcp_servers = [{ name: 'server1' }, { name: 'server2' }]
+    live    = mock('live_server1')
+    manager = mock('mcp_manager')
+    manager.stubs(:connected?).returns(true)
+    manager.expects(:servers_for).with(@config.mcp_servers).returns([live])
+    AIA.stubs(:mcp_manager).returns(manager)
+
+    assert_equal [live], AIA::RobotFactory.mcp_servers(@config)
+  end
+
+  def test_mcp_servers_for_group_uses_only_that_group
+    @config.flags.no_mcp = false
+    @config.mcp_servers = [{ name: 'server1' }, { name: 'server2' }]
+    group   = [{ name: 'server2' }]
+    manager = mock('mcp_manager')
+    manager.stubs(:connected?).returns(true)
+    manager.expects(:servers_for).with(group).returns([:server2])
+    AIA.stubs(:mcp_manager).returns(manager)
+
+    assert_equal [:server2], AIA::RobotFactory.mcp_servers(@config, group)
+  end
+
+  def test_build_run_config_creates_config
+    result = AIA::RobotFactory.send(:build_run_config, @config)
+    assert_instance_of RobotLab::RunConfig, result
+  end
+
+  def test_build_run_config_omits_temperature_for_models_that_do_not_support_it
+    @config.models = [OpenStruct.new(name: 'gpt-5.4', role: nil, instance: 1, internal_id: 'gpt-5.4', provider: nil)]
+    model_info = OpenStruct.new(provider: 'openai', metadata: { temperature: false })
+    RubyLLM.models.expects(:find).with('gpt-5.4').returns(model_info)
+
+    result = AIA::RobotFactory.send(:build_run_config, @config).to_h
+
+    refute_includes result, :temperature
+    assert_equal 2048, result[:max_tokens]
+  end
+
+  # Task 3: configure_robot_lab must NOT be called during build
+  def test_build_does_not_call_configure_robot_lab
+    AIA::RobotFactory.expects(:configure_robot_lab).never
+
+    AIA::ToolLoader.stubs(:cached_tools).returns(nil)
+    AIA::ToolLoader.stubs(:load_tools)
+    mock_robot = mock('robot')
+    AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+    AIA::RobotFactory.stubs(:build_crew).returns(mock_robot) # bypass crew wrapping in plumbing tests
+
+    AIA::RobotFactory.build(@config)
+  end
+
+  # Task 3: setup must call configure_robot_lab exactly once
+  def test_setup_calls_configure_robot_lab_once
+    AIA::RobotFactory.expects(:configure_robot_lab).with(@config).once
+    AIA::RobotFactory.setup(@config)
+  end
+
+  # I4/I5: Tool caching — build() uses ToolLoader
+  def test_build_skips_load_tools_when_cache_exists
+    tool = mock('cached_tool')
+    tool.stubs(:name).returns('CachedTool')
+    AIA::ToolLoader.instance.instance_variable_set(:@tool_cache, [tool])
+
+    # build() should assign cached tools to config without calling load_tools
+    AIA::RobotFactory.stubs(:configure_robot_lab)
+    AIA::ToolLoader.expects(:load_tools).never
+
+    # Stub the actual robot building
+    mock_robot = mock('robot')
+    AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+    AIA::RobotFactory.stubs(:build_crew).returns(mock_robot) # bypass crew wrapping in plumbing tests
+
+    AIA::RobotFactory.build(@config)
+
+    assert_equal [tool], @config.loaded_tools
+    assert_equal 'CachedTool', @config.tool_names
+  ensure
+    AIA::ToolLoader.clear_cache!
+  end
+
+  # Task 4: Each build must get a fresh RobotNamer to avoid used-name state leak.
+  # The bug: @namer is a class-level instance variable that persists between
+  # build() calls. After the fix, namer must be a local variable passed as a
+  # parameter to private helpers rather than stored in @namer.
+  def test_each_build_gets_fresh_namer
+    namer1 = mock('namer1')
+    namer2 = mock('namer2')
+    AIA::RobotNamer.expects(:new).with(first_name: 'Tobor').twice.returns(namer1, namer2)
+
+    AIA::ToolLoader.stubs(:cached_tools).returns(nil)
+    AIA::ToolLoader.stubs(:load_tools)
+    mock_robot = mock('robot')
+    AIA::RobotFactory.stubs(:configure_robot_lab)
+    AIA::RobotFactory.stubs(:build_single_robot).returns(mock_robot)
+    AIA::RobotFactory.stubs(:build_crew).returns(mock_robot) # bypass crew wrapping in plumbing tests
+
+    AIA::RobotFactory.build(@config)
+    AIA::RobotFactory.build(@config)
+
+    # After the fix, @namer must NOT be set as a class ivar (no leaked state)
+    assert_nil AIA::RobotFactory.instance_variable_get(:@namer),
+               '@namer should not be stored as a class-level instance variable after the fix'
+  end
+
+  # --- configure_audio ---
+
+  def test_configure_audio_sets_default_transcription_model
+    config = OpenStruct.new(audio: OpenStruct.new(transcription_model: 'whisper-large'))
+    RubyLLM.configure { |c| c.default_transcription_model = 'whisper-1' }
+
+    AIA::RobotFactory.send(:configure_audio, config)
+
+    assert_equal 'whisper-large', RubyLLM.config.default_transcription_model
+  ensure
+    RubyLLM.configure { |c| c.default_transcription_model = 'whisper-1' }
+  end
+
+  def test_configure_audio_skips_when_transcription_model_nil
+    config = OpenStruct.new(audio: OpenStruct.new(transcription_model: nil))
+    RubyLLM.configure { |c| c.default_transcription_model = 'whisper-1' }
+
+    AIA::RobotFactory.send(:configure_audio, config)
+
+    assert_equal 'whisper-1', RubyLLM.config.default_transcription_model
+  end
+
+  def test_configure_audio_skips_when_no_audio_config
+    config = OpenStruct.new(audio: nil)
+
+    assert_silent { AIA::RobotFactory.send(:configure_audio, config) }
+  end
+
+  private
+
+  def create_test_config
+    OpenStruct.new(
+      models: [OpenStruct.new(name: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini')],
+      pipeline: [],
+      context_files: [],
+      mcp_servers: [],
+      mcp_use: [],
+      mcp_skip: [],
+      require_libs: [],
+      loaded_tools: [],
+      tool_names: '',
+      prompts: OpenStruct.new(
+        dir: '/tmp/test_prompts',
+        extname: '.md',
+        roles_prefix: 'roles',
+        roles_dir: '/tmp/test_prompts/roles',
+        role: nil,
+        system_prompt: nil
+      ),
+      flags: OpenStruct.new(
+        chat: false,
+        no_mcp: false,
+        debug: false,
+        verbose: false,
+        consensus: false,
+        tokens: false
+      ),
+      llm: OpenStruct.new(
+        temperature: 0.7,
+        max_tokens: 2048,
+        top_p: 1.0,
+        frequency_penalty: 0.0,
+        presence_penalty: 0.0
+      ),
+      tools: OpenStruct.new(
+        paths: [],
+        allowed: nil,
+        rejected: nil
+      ),
+      output: OpenStruct.new(file: nil, append: false)
+    )
+  end
+end

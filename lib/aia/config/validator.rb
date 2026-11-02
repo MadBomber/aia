@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require 'timeout'
+require 'did_you_mean'
 require 'word_wrapper'
-require_relative '../adapter/gem_activator'
 require_relative '../skill_utils'
+require_relative '../role_catalog'
 
 # lib/aia/config/validator.rb
 #
@@ -10,12 +12,14 @@ require_relative '../skill_utils'
 # Handles prompt ID extraction, context file validation, role processing, etc.
 
 module AIA
+  # rubocop:disable Metrics/ModuleLength
   module ConfigValidator
     class << self
       # Tailor and validate the configuration
       #
       # @param config [AIA::Config] the configuration to validate
       # @return [AIA::Config] the validated configuration
+      # :reek:TooManyStatements -- top-level validation pipeline: one named step per line, executed in fixed order
       def tailor(config)
         remaining_args = config.remaining_args&.dup || []
         config.remaining_args = nil
@@ -24,8 +28,7 @@ module AIA
         stdin_content = process_stdin_content
         config.stdin_content = stdin_content if stdin_content && !stdin_content.strip.empty?
 
-        # Require tool files early so AIA::Directive subclasses defined in them
-        # are registered into PM.directives before PromptHandler.new is called.
+        # Tool files may define AIA::Directive subclasses used by PromptManager.
         require_tool_files(config)
 
         # Process arguments and validate
@@ -33,30 +36,36 @@ module AIA
         validate_and_set_context_files(config, remaining_args)
         handle_executable_prompt(config)
         handle_stdin_as_prompt(config)
-        handle_dump_config(config)
-        handle_mcp_list(config)
-        handle_list_tools(config)
-        handle_list_skills(config)
-        handle_completion_script(config)
-        validate_required_prompt_id(config)
+        return :early_exit if handle_early_exits(config) == :early_exit
+        adopt_pipeline_head(config)
         process_role_configuration(config)
+        validate_model_roles(config)
+        validate_required_prompt_id(config)
+        validate_plugins_dir(config)
         handle_fuzzy_search_prompt_id(config)
         normalize_boolean_flags(config)
-        validate_final_prompt_requirements(config)
-        configure_prompt_manager(config)
         prepare_pipeline(config)
         validate_pipeline_prompts(config)
 
         config
       end
 
+      def handle_early_exits(config)
+        return :early_exit if handle_dump_config(config)       == :early_exit
+        return :early_exit if handle_mcp_list(config)          == :early_exit
+        return :early_exit if handle_list_tools(config)        == :early_exit
+        return :early_exit if handle_list_skills(config)       == :early_exit
+        return :early_exit if handle_list_roles(config)        == :early_exit
+        :early_exit if handle_completion_script(config) == :early_exit
+      end
+
       def process_stdin_content
         stdin_content = String.new
 
-        if !STDIN.tty? && !STDIN.closed?
+        if !$stdin.tty? && !$stdin.closed?
           begin
-            stdin_content << "\n" + STDIN.read
-            STDIN.reopen('/dev/tty')
+            stdin_content << ("\n" + $stdin.read)
+            $stdin.reopen('/dev/tty')
           rescue => _
             # If we can't reopen, continue without error
           end
@@ -71,9 +80,8 @@ module AIA
         maybe_id = remaining_args.first
         maybe_id_plus = File.join(config.prompts.dir, maybe_id + config.prompts.extname)
 
-        if AIA.bad_file?(maybe_id) && AIA.good_file?(maybe_id_plus)
-          config.prompt_id = remaining_args.shift
-        end
+        return unless AIA.bad_file?(maybe_id) && AIA.good_file?(maybe_id_plus)
+        config.prompt_id = remaining_args.shift
       end
 
       def validate_and_set_context_files(config, remaining_args)
@@ -81,79 +89,125 @@ module AIA
 
         bad_files = remaining_args.reject { |filename| AIA.good_file?(filename) }
         if bad_files.any?
-          warn "Error: The following files do not exist: #{bad_files.join(', ')}"
-          exit 1
+          # Detect likely flag typos: "_B" instead of "-B", "_CD" instead of "-CD", etc.
+          flag_typos = bad_files.grep(/\A_[A-Za-z]/)
+          if flag_typos.any?
+            suggestions = flag_typos.map { |f| "-#{f[1..]}" }.join(', ')
+            raise AIA::ConfigurationError,
+                  "Unknown argument(s): #{flag_typos.join(', ')}\n" \
+                  "Did you mean: #{suggestions}?\n" \
+                  "Flags require a dash prefix (e.g., -B not _B)."
+          end
+          raise AIA::ConfigurationError, missing_prompt_message(config, bad_files) if missing_prompt_id?(config, remaining_args, bad_files)
+          raise AIA::ConfigurationError, "The following files do not exist: #{bad_files.join(', ')}"
         end
 
         config.context_files ||= []
         config.context_files += remaining_args
       end
 
-      def handle_executable_prompt(config)
-        # Auto-detect: no prompt_id, first context_file starts with shebang
-        return unless config.prompt_id.nil?
-        return unless config.context_files && !config.context_files.empty?
+      # The first argument looks like a prompt ID (no extension) but names
+      # neither a prompt nor a file.
+      def missing_prompt_id?(config, remaining_args, bad_files)
+        word = remaining_args.first
+        config.prompt_id.nil? && bad_files.first == word && File.extname(word).empty?
+      end
 
-        candidate = config.context_files.first
+      def missing_prompt_message(config, bad_files)
+        word, *others = bad_files
+        dir = config.prompts.dir
+        message = "No prompt named '#{word}' in #{dir} (and no file by that name)."
+        suggestions = prompt_suggestions(word, dir, config.prompts.extname)
+        message += "\nDid you mean: #{suggestions.join(', ')}?" if suggestions.any?
+        message += "\nThe following files do not exist: #{others.join(', ')}" if others.any?
+        message
+      end
+
+      # Prompt IDs under +dir+ that are close spellings of +word+.
+      def prompt_suggestions(word, dir, extname)
+        return [] unless dir && Dir.exist?(dir)
+
+        ids = Dir.glob("**/*#{extname}", base: dir).map { it.delete_suffix(extname) }
+        DidYouMean::SpellChecker.new(dictionary: ids).correct(word).first(3)
+      end
+
+      def handle_executable_prompt(config)
+        return unless config.prompt_id.nil?
+
+        files = config.context_files
+        return unless files && !files.empty?
+
+        candidate = files.first
         return unless File.exist?(candidate) && File.readable?(candidate)
 
         first_line = File.open(candidate, &:readline).strip rescue nil
         return unless first_line&.start_with?('#!')
 
-        # This is an executable prompt — the file content IS the prompt
-        config.context_files.shift
+        files.shift
         config.executable_prompt_content = File.read(candidate).lines[1..].join
         config.prompt_id = '__EXECUTABLE_PROMPT__'
       end
 
       def handle_stdin_as_prompt(config)
         return unless config.prompt_id.nil?
-        return unless config.stdin_content && !config.stdin_content.strip.empty?
-
         content = config.stdin_content
+        return unless content && !content.strip.empty?
 
-        # Strip shebang line if present (e.g., piped from an executable prompt)
-        if content.lines.first&.strip&.start_with?('#!')
-          content = content.lines[1..].join
-        end
-
-        config.executable_prompt_content = content
-        config.stdin_content = nil  # prevent double-processing in build_prompt_text
+        config.executable_prompt_content = strip_shebang(content)
+        config.stdin_content = nil
         config.prompt_id = '__EXECUTABLE_PROMPT__'
       end
 
-      def validate_required_prompt_id(config)
-        return unless config.prompt_id.nil? && !(config.flags.chat == true) && !(config.flags.fuzzy == true)
+      # Piped text arrives with a leading newline (see process_stdin_content).
+      # Drop it, and a "#!" line if the text starts with one, so the front
+      # matter that follows is recognized.
+      def strip_shebang(content)
+        text = content.delete_prefix("\n")
+        text.start_with?('#!') ? text.lines[1..].join : text
+      end
 
-        warn "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
-        exit 1
+      # With no prompt ID, --pipeline's first prompt is the one to run.
+      def adopt_pipeline_head(config)
+        return unless config.prompt_id.nil? || config.prompt_id.empty?
+
+        head = Array(config.pipeline).first
+        config.prompt_id = head unless head.nil? || head.empty?
+      end
+
+      def validate_required_prompt_id(config)
+        return unless config.prompt_id.nil? && config.flags.chat != true && config.flags.fuzzy != true
+
+        raise AIA::ConfigurationError,
+              "A prompt ID is required unless you use --chat, --fuzzy, --pipeline or --role, " \
+              "pipe the prompt in, or run an executable prompt. Context files alone are not a prompt. " \
+              "Use -h or --help for help."
       end
 
       def process_role_configuration(config)
-        role = config.prompts.role
+        prompts = config.prompts
+        role    = prompts.role
         return if role.nil? || role.empty?
 
-        roles_prefix = config.prompts.roles_prefix
-
+        roles_prefix = prompts.roles_prefix
         unless AIA::SkillUtils.path_based_id?(role) || roles_prefix.nil? || roles_prefix.empty? || role.start_with?(roles_prefix)
-          config.prompts.role = "#{roles_prefix}/#{role}"
-          role = config.prompts.role
+          role = "#{roles_prefix}/#{role}"
+          prompts.role = role
         end
 
-        config.prompts.roles_dir ||= File.join(config.prompts.dir, roles_prefix.to_s)
-
-        # In chat-only mode (no prompt_id), leave the role configured so ChatLoop
-        # can inject it as initial context. Promoting it to prompt_id would cause
-        # PM to receive the role path as a literal string rather than file content.
         return if config.flags&.chat == true
 
-        if config.prompt_id.nil? || config.prompt_id.empty?
-          unless role.nil? || role.empty?
-            config.prompt_id = role
-            config.pipeline.prepend(config.prompt_id)
-            config.prompts.role = ''
-          end
-        end
+        return unless config.prompt_id.nil? || config.prompt_id.empty?
+        config.prompt_id = role
+        config.pipeline.prepend(role)
+        prompts.role = ''
+      end
+
+      def validate_plugins_dir(config)
+        plugins_dir = config.paths&.plugins_dir
+        return if plugins_dir.nil? || plugins_dir.to_s.strip.empty?
+        return if Dir.exist?(plugins_dir)
+
+        $stderr.puts "Warning: configured plugins directory does not exist: #{plugins_dir}"
       end
 
       def handle_fuzzy_search_prompt_id(config)
@@ -163,9 +217,10 @@ module AIA
       end
 
       def normalize_boolean_flags(config)
-        normalize_boolean_flag(config.flags, :chat)
-        normalize_boolean_flag(config.flags, :fuzzy)
-        normalize_boolean_flag(config.flags, :consensus)
+        flags = config.flags
+        normalize_boolean_flag(flags, :chat)
+        normalize_boolean_flag(flags, :fuzzy)
+        normalize_boolean_flag(flags, :consensus)
       end
 
       def normalize_boolean_flag(flags_section, flag)
@@ -188,12 +243,12 @@ module AIA
         return unless config.dump_file
 
         dump_config(config, config.dump_file)
-        exit 0
+        :early_exit
       end
 
       def handle_mcp_list(config)
         return unless config.mcp_list
-        return if config.list_tools  # defer to handle_list_tools for combined output
+        return if config.list_tools
 
         servers = filter_mcp_servers(config)
 
@@ -202,18 +257,21 @@ module AIA
         else
           label = mcp_filter_active?(config) ? "Active" : "Configured"
           puts "#{label} MCP servers:\n\n"
-          servers.each do |server|
-            name    = server[:name]    || server['name']    || '(unnamed)'
-            command = server[:command] || server['command']  || '(no command)'
-            args    = server[:args]    || server['args']     || []
-            args_str = args.empty? ? '' : " #{args.join(' ')}"
-            puts "  #{name}"
-            puts "    command: #{command}#{args_str}"
-            puts
-          end
+          servers.each { |server| print_mcp_server(McpServerConfig.from_hash(server)) }
         end
 
-        exit 0
+        :early_exit
+      end
+
+      def print_mcp_server(server_config)
+        args_str = server_config.args.empty? ? '' : " #{server_config.args.join(' ')}"
+        puts "  #{server_config.name || '(unnamed)'}"
+        if server_config.command.nil? && server_config.url
+          puts "    url: #{server_config.url}"
+        else
+          puts "    command: #{server_config.command || '(no command)'}#{args_str}"
+        end
+        puts
       end
 
       def handle_list_tools(config)
@@ -228,7 +286,7 @@ module AIA
 
         if local_tools.empty? && mcp_tool_groups.empty?
           $stderr.puts "No tools available."
-          exit 0
+          return :early_exit
         end
 
         if $stdout.tty?
@@ -237,41 +295,7 @@ module AIA
           list_tools_markdown(local_tools, mcp_tool_groups)
         end
 
-        exit 0
-      end
-
-      def handle_list_skills(config)
-        return unless config.list_skills
-
-        skills_dir = AIA.config.skills.dir
-
-        unless Dir.exist?(skills_dir)
-          $stderr.puts "No skills directory found at #{skills_dir}"
-          exit 0
-        end
-
-        skill_dirs = Dir.glob("*/SKILL.md", base: skills_dir).map { |f| File.dirname(f) }.sort
-
-        if skill_dirs.empty?
-          $stderr.puts "No skills found in #{skills_dir}"
-          exit 0
-        end
-
-        skill_dirs.each do |skill_name|
-          skill_md = File.join(skills_dir, skill_name, 'SKILL.md')
-          fm = AIA::SkillUtils.parse_front_matter(skill_md)
-
-          puts "## #{skill_name}"
-          puts
-          puts "| Key | Value |"
-          puts "|-----|-------|"
-          fm.each do |key, value|
-            puts "| #{key} | #{value} |"
-          end
-          puts
-        end
-
-        exit 0
+        :early_exit
       end
 
       def list_tools_terminal(local_tools, mcp_tool_groups)
@@ -290,8 +314,8 @@ module AIA
       end
 
       def print_tool_terminal(tool, width, indent)
-        name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        desc = tool.respond_to?(:description) ? tool.description.to_s.strip : ''
+        name = ToolIntrospection.tool_name(tool)
+        desc = ToolIntrospection.tool_description(tool).strip
 
         puts "  #{name}"
         unless desc.empty?
@@ -302,6 +326,7 @@ module AIA
         puts
       end
 
+      # :reek:TooManyStatements -- sequential markdown report: header, local tools section, one section per MCP server
       def list_tools_markdown(local_tools, mcp_tool_groups)
         total = local_tools.size + mcp_tool_groups.values.sum(&:size)
         sources = 1 + mcp_tool_groups.size
@@ -325,40 +350,30 @@ module AIA
       end
 
       def print_tool_markdown(tool)
-        name = tool.respond_to?(:name) ? tool.name : tool.class.name
-        desc = tool.respond_to?(:description) ? tool.description.to_s.strip : ''
+        name = ToolIntrospection.tool_name(tool)
+        desc = ToolIntrospection.tool_description(tool).strip
 
         puts "### `#{name}`"
         puts
-        unless desc.empty?
-          puts nest_markdown_headings(desc, 3)
-          puts
-        end
+        return if desc.empty?
+        puts nest_markdown_headings(desc, 3)
+        puts
       end
 
-      # Adjusts any markdown headings in text so they nest under the
-      # given parent heading level. e.g. with parent_level=3 (###),
-      # a "# Foo" becomes "#### Foo" and "## Bar" becomes "##### Bar".
-      # Handles headings with optional leading whitespace.
       def nest_markdown_headings(text, parent_level)
-        text.gsub(/^[ \t]*(\#{1,6})\s/) do |match|
-          existing = $1
-          "#" * (existing.length + parent_level) + " "
+        text.gsub(/^[ \t]*(\#{1,6})\s/) do |_match|
+          existing = ::Regexp.last_match(1)
+          ("#" * (existing.length + parent_level)) + " "
         end
       end
 
+      # The servers --mcp-use/--mcp-skip keep. --require libraries are loaded
+      # first and entries naming a RubyLLM::MCP subclass are resolved to it,
+      # exactly as a session does before connecting.
       def filter_mcp_servers(config)
-        servers  = config.mcp_servers || []
-        use_list  = Array(config.mcp_use)
-        skip_list = Array(config.mcp_skip)
-
-        if !use_list.empty?
-          servers.select { |s| use_list.include?(s[:name] || s['name']) }
-        elsif !skip_list.empty?
-          servers.reject { |s| skip_list.include?(s[:name] || s['name']) }
-        else
-          servers
-        end
+        AIA::ToolLoader.require_libs(config)
+        selected = AIA::MCPDiscovery.select(config.mcp_servers || [], use: config.mcp_use, skip: config.mcp_skip)
+        AIA::MCPDiscovery.new.resolve_entries(selected)
       end
 
       def mcp_filter_active?(config)
@@ -371,166 +386,111 @@ module AIA
           if File.exist?(expanded)
             require expanded
           else
-            warn "Warning: Tool file not found: #{path}"
+            $stderr.puts "Warning: Tool file not found: #{path}"
           end
         rescue LoadError, StandardError => e
-          warn "Warning: Failed to load tool '#{path}': #{e.message}"
+          $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
         end
       end
 
+      # Canonical --list-skills handler. Runs after config is built (so a -c
+      # config file's skills.dir is honored) and resolves skills the same way
+      # loading does, so what is listed is always loadable.
+      def handle_list_skills(config)
+        return unless config.respond_to?(:list_skills) && config.list_skills
+
+        puts AIA::SkillUtils.list_skills_markdown(config)
+        :early_exit
+      end
+
+      # --list-roles, from the configured prompts directory and roles prefix.
+      def handle_list_roles(config)
+        return unless config.respond_to?(:list_roles) && config.list_roles
+
+        prompts = config.prompts
+        puts AIA::RoleCatalog.listing(prompts.dir, prompts.roles_prefix, extname: prompts.extname)
+        :early_exit
+      end
+
+      # Every -m MODEL=ROLE role must exist in the configured prompts directory.
+      def validate_model_roles(config)
+        prompts = config.prompts
+        Array(config.models).each do |spec|
+          role = spec.respond_to?(:role) ? spec.role : nil
+          next if role.nil? || role.to_s.empty?
+
+          AIA::RoleCatalog.validate!(role, dir: prompts.dir, prefix: prompts.roles_prefix, extname: prompts.extname)
+        end
+      end
+
+      # The local tools a session would offer: loaded the same way
+      # (--require gems, --tools files, lazily loaded tool gems) and narrowed
+      # by --allowed-tools / --rejected-tools.
       def load_local_tools(config)
-        # Load required libraries (with gem activation and lazy-load triggering)
-        Array(config.require_libs).each do |lib|
-          begin
-            Adapter::GemActivator.activate_gem_for_require(lib)
-            require lib
-            Adapter::GemActivator.trigger_tool_loading(lib)
-          rescue LoadError => e
-            warn "Warning: Failed to require '#{lib}': #{e.message}"
-            warn "Hint: Make sure the gem is installed: gem install #{lib}"
-          rescue StandardError => e
-            warn "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
-          end
-        end
-
-        # Load tool files
-        Array(config.tools&.paths).each do |path|
-          expanded = File.expand_path(path)
-          if File.exist?(expanded)
-            require expanded
-          else
-            warn "Warning: Tool file not found: #{path}"
-          end
-        rescue LoadError, StandardError => e
-          warn "Warning: Failed to load tool '#{path}': #{e.message}"
-        end
-
-        # Scan ObjectSpace for RubyLLM::Tool subclasses
-        ObjectSpace.each_object(Class).select do |klass|
-          next false unless klass < RubyLLM::Tool
-
-          begin
-            klass.new
-            true
-          rescue ArgumentError, LoadError, StandardError
-            false
-          end
-        end
+        ToolLoader.load_tools(config)
+        ToolLoader.filtered_tools(config)
       end
 
       def first_sentences(text, count)
-        # Normalize whitespace: collapse newlines and multiple spaces
         normalized = text.gsub(/\s*\n\s*/, ' ').gsub(/\s{2,}/, ' ').strip
         sentences  = normalized.scan(/[^.!?]*[.!?]/)
         result     = sentences.first(count).join.strip
         result.empty? ? normalized : result
       end
 
+      # :reek:TooManyStatements -- per-server connect loop with progress prints on each outcome path
       def load_mcp_tools_grouped(config)
         servers = filter_mcp_servers(config)
         return {} if servers.empty?
 
-        # Suppress MCP logger noise during listing
-        quiet_mcp_logger
+        servers.each_with_object({}) do |server, groups|
+          server_config = McpServerConfig.from_hash(server)
+          $stderr.print "MCP: Connecting to #{server_config.name}..."
+          $stderr.flush
 
-        groups = {}
-        default_timeout = 8_000
-
-        servers.each do |server|
-          name    = server[:name]    || server['name']
-          command = server[:command] || server['command']
-          args    = server[:args]    || server['args'] || []
-          env     = server[:env]     || server['env']  || {}
-
-          raw_timeout = server[:timeout] || server['timeout'] || default_timeout
-          timeout = raw_timeout.to_i < 1000 ? (raw_timeout.to_i * 1000) : raw_timeout.to_i
-          timeout = [timeout, 30_000].min
-
-          mcp_config = { command: command, args: Array(args) }
-          mcp_config[:env] = env unless env.empty?
-
-          begin
-            $stderr.print "MCP: Connecting to #{name}..."
-            $stderr.flush
-
-            client = begin
-              RubyLLM::MCP.add_client(
-                name: name, transport_type: :stdio,
-                config: mcp_config, request_timeout: timeout, start: false
-              )
-            rescue ArgumentError
-              RubyLLM::MCP.add_client(
-                name: name, transport_type: :stdio,
-                config: mcp_config, start: false
-              )
-            end
-
-            client = RubyLLM::MCP.clients[name]
-            client.start
-
-            if client.alive?
-              server_tools = client.tools rescue []
-              groups[name] = server_tools
-              $stderr.puts " #{server_tools.size} tools"
-            else
-              $stderr.puts " failed"
-            end
-          rescue StandardError => e
-            $stderr.puts " error: #{e.message}"
-          end
-        end
-
-        groups
-      end
-
-      def quiet_mcp_logger
-        if defined?(RubyLLM::MCP) && RubyLLM::MCP.respond_to?(:config)
-          mcp_config = RubyLLM::MCP.config
-          if mcp_config.respond_to?(:logger=)
-            quiet = Logger.new(File::NULL)
-            mcp_config.logger = quiet
-          end
+          tools = collect_server_tools(server, server_config)
+          groups[server_config.name] = tools
+          $stderr.puts " #{tools.size} tools"
+        rescue StandardError => e
+          $stderr.puts " error: #{e.message}"
         end
       end
+
+      # Build the server the way MCPConnectionManager does (RobotLab::MCP.build,
+      # so --list-tools shows exactly the RubyLLM::MCP::Tools a robot would be
+      # handed) and return its tools. Connection failures raise. The server is
+      # closed before returning.
+      def collect_server_tools(server, server_config)
+        mcp = RobotLab::MCP.build(MCPConfigNormalizer.normalize(server))
+        Timeout.timeout(server_config.timeout_ms / 1000.0) { mcp.tools }
+      ensure
+        mcp&.close
+      end
+      # rubocop:enable Metrics/ModuleLength
 
       def handle_completion_script(config)
         return unless config.completion
 
         generate_completion_script(config.completion)
-        exit
+        :early_exit
       end
 
       def generate_completion_script(shell)
         script_path = File.join(File.dirname(__FILE__), "../aia_completion.#{shell}")
 
-        if File.exist?(script_path)
-          puts File.read(script_path)
-        else
-          warn "ERROR: The shell '#{shell}' is not supported or the completion script is missing."
+        unless File.exist?(script_path)
+          raise AIA::ConfigurationError,
+                "ERROR: The shell '#{shell}' is not supported (use bash, zsh or fish)."
         end
-      end
 
-      def validate_final_prompt_requirements(config)
-        chat_mode = config.flags.chat == true
-        fuzzy_mode = config.flags.fuzzy == true
-        if !chat_mode && !fuzzy_mode && (config.prompt_id.nil? || config.prompt_id.empty?) && (config.context_files.nil? || config.context_files.empty?)
-          warn "Error: A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
-          exit 1
-        end
-      end
-
-      def configure_prompt_manager(config)
-        # PM v1.0.0 uses ERB parameters (<%= param %>) instead of regex-based extraction.
-        # parameter_regex is deprecated and ignored.
-        if config.prompts.parameter_regex
-          warn "Warning: --regex / parameter_regex is deprecated. PM v1.0.0 uses ERB parameters (<%= param %>)."
-        end
+        puts File.read(script_path)
       end
 
       def prepare_pipeline(config)
-        return if config.prompt_id.nil? || config.prompt_id.empty? || config.prompt_id == config.pipeline.first
+        prompt_id = config.prompt_id
+        return if prompt_id.nil? || prompt_id.empty? || prompt_id == config.pipeline.first
 
-        config.pipeline.prepend(config.prompt_id)
+        config.pipeline.prepend(prompt_id)
       end
 
       def validate_pipeline_prompts(config)
@@ -541,26 +501,21 @@ module AIA
         config.pipeline.each do |prompt_id|
           next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__' || prompt_id == '__EXECUTABLE_PROMPT__'
 
-          prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}#{config.prompts.extname}")
+          prompt_file_path = AIA::SkillUtils.prompt_file_path(prompt_id, dir: config.prompts.dir, extname: config.prompts.extname)
           unless File.exist?(prompt_file_path)
-            warn "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
+            $stderr.puts "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
             and_exit = true
           end
         end
 
-        exit(1) if and_exit
+        raise AIA::ConfigurationError, "One or more prompt IDs do not exist." if and_exit
       end
 
-      # Dump configuration to file
-      #
-      # @param config [AIA::Config] the configuration to dump
-      # @param file [String] the file path to dump to
       def dump_config(config, file)
         ext = File.extname(file).downcase
 
         config_hash = config.to_h
 
-        # Remove runtime keys
         config_hash.delete(:prompt_id)
         config_hash.delete(:dump_file)
 
@@ -575,7 +530,6 @@ module AIA
         File.write(file, content)
         puts "Config successfully dumped to #{file}"
       end
-
     end
   end
 end

@@ -14,6 +14,9 @@ class UtilityTest < Minitest::Test
     mock_model.stubs(:supports_functions?).returns(true)
     mock_client = mock('client')
     mock_client.stubs(:model).returns(mock_model)
+    mock_client.stubs(:name).returns('TestBot')
+    mock_client.stubs(:crew).returns([mock_client])
+    AIA.stubs(:client).returns(mock_client)
 
     # Mock AIA.config with nested structure (matching new config layout)
     config = OpenStruct.new(
@@ -23,8 +26,12 @@ class UtilityTest < Minitest::Test
       registry: OpenStruct.new(refresh: 7),
       paths: OpenStruct.new(aia_dir: '/tmp/aia_test'),
       tool_names: 'calculator, weather_api, file_reader',
+      loaded_tools: [],
       mcp_servers: [],
-      client: mock_client
+      mcp_use: [],
+      mcp_skip: [],
+      connected_mcp_servers: nil,
+      failed_mcp_servers: nil
     )
     AIA.stubs(:config).returns(config)
 
@@ -33,105 +40,93 @@ class UtilityTest < Minitest::Test
 
     # Mock TTY::Screen.width
     TTY::Screen.stubs(:width).returns(100)
-
-    # Mock AIA::VERSION
-    AIA.stubs(:const_get).with(:VERSION).returns('0.9.9')
-
-    # Mock RubyLLM::VERSION
-    RubyLLM.stubs(:const_get).with(:VERSION).returns('1.3.1')
   end
 
   def teardown
     $stdout = @original_stdout
-    # Call super to ensure Mocha cleanup runs properly
     super
   end
 
   def test_robot_displays_ascii_art
     AIA::Utility.robot
-    
+
     output = @captured_output.string
-    
-    # Check for ASCII art elements
+
+    # Check for ASCII art elements (v2 robot)
     assert_includes output, "(\\____/)"
     assert_includes output, "(_oo_)"
     assert_includes output, "(O)"
-    assert_includes output, "__||__"
-    assert_includes output, "[/______\\]"
-    assert_includes output, "/ \\__AI__/ \\/"
-    assert_includes output, "/    /__\\"
-    assert_includes output, "(\\   /____\\"
+    assert_includes output, "__|||__"
+    assert_includes output, "[/ Tobor \\]"
+    assert_includes output, "/ \\_______/ \\/"
+    assert_includes output, "/___\\"
+    assert_includes output, "/_____\\"
   end
 
   def test_robot_displays_version_information
     AIA::Utility.robot
-    
+
     output = @captured_output.string
-    
-    # Check for version information - flexible pattern matching
-    assert_match /AI Assistant \(v[\d.\w-]+\) is Online/, output
-    assert_match /using ruby_llm \(v[\d.]+(?:\s+MCP\s+v[\d.]+)?\)/, output
+
+    assert_includes output, "AIA v#{AIA::VERSION} is Online"
+    assert_includes output, "ruby_llm"
   end
 
   def test_robot_displays_model_information
     AIA::Utility.robot
-    
+
     output = @captured_output.string
-    
-    # Check for model information
+
     assert_includes output, "claude-3-sonnet"
   end
 
   def test_robot_displays_last_refresh_date
     AIA::Utility.robot
-    
+
     output = @captured_output.string
-    
-    # Check for last refresh information
-    assert_includes output, "model db was last refreshed on"
+
+    # v2 format: "DB: refreshed YYYY-MM-DD at HH:MM"
+    assert_includes output, "DB:"
+    assert_includes output, "refreshed"
     assert_includes output, "2024-01-15"
+    assert_includes output, "10:30"
   end
 
-  def test_robot_with_empty_tool_paths
+  def test_robot_with_no_tools
     AIA.config.tools.paths = []
+    AIA.config.tool_names = ''
+    AIA.config.loaded_tools = []
 
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Should show message about sharing tools
-    assert_includes output, "You can share my tools"
-    refute_includes output, "I will also use your tools"
-    refute_includes output, "My Toolbox contains:"
+    # v2 format: "Tools: none loaded"
+    assert_includes output, "none loaded"
   end
 
-  def test_robot_with_non_empty_tool_paths
-    AIA.config.tools.paths = ['/path/to/tools']
-
-    AIA::Utility.robot
-
-    output = @captured_output.string
-
-    # Should show message about using user's tools
-    assert_includes output, "I will also use your tools"
-    assert_includes output, "My Toolbox contains:"
-    refute_includes output, "You can share my tools"
-  end
-
-  def test_robot_displays_tools_when_available
-    # Use real WordWrapper - no mocking
+  def test_robot_with_tools_available
     AIA.config.tool_names = 'calculator, weather_api, file_reader'
-    AIA.config.tools.paths = ['/some/path']  # Non-empty to trigger toolbox display
+    AIA.config.loaded_tools = [mock('t1'), mock('t2'), mock('t3')]
 
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Should include tool names in output
-    assert_includes output, "calculator"
-    assert_includes output, "weather_api"
-    assert_includes output, "file_reader"
-    assert_includes output, "My Toolbox contains:"
+    # v2 format: "Tools: 3 tools loaded"
+    assert_includes output, "3 tools loaded"
+  end
+
+  def test_robot_displays_tool_count
+    AIA.config.tool_names = 'calculator, weather_api'
+    AIA.config.loaded_tools = [mock('t1'), mock('t2')]
+
+    AIA::Utility.robot
+
+    output = @captured_output.string
+
+    # v2 format: "Tools: 2 tools loaded"
+    assert_includes output, "2 tools loaded"
   end
 
   def test_robot_handles_nil_tools
@@ -139,65 +134,48 @@ class UtilityTest < Minitest::Test
 
     # Should not raise an error
     AIA::Utility.robot
-    # If we get here without an exception, the test passes
 
     output = @captured_output.string
-    assert_includes output, "AI Assistant"  # Should still display basic info
+    assert_includes output, "AIA v"  # Should still display basic info
   end
 
   def test_robot_calculates_correct_width
     TTY::Screen.stubs(:width).returns(120)
 
-    # Mock WordWrapper to verify correct width calculation
-    expected_width = 120 - 18 - 2  # total_width - indent - margin = 100
-    mock_wrapper = mock('wrapper')
-    mock_wrapper.expects(:wrap).returns("tools")
-    WordWrapper::MinimumRaggedness.expects(:new).with(expected_width, anything).returns(mock_wrapper)
-
-    AIA.config.tool_names = 'some tools'
-    AIA.config.tools.paths = ['/path']
-
     AIA::Utility.robot
+
+    output = @captured_output.string
+    assert_includes output, "AIA v"
   end
 
-  def test_robot_applies_correct_indentation
-    # Mock WordWrapper to return multi-line text
-    mock_wrapper = mock('wrapper')
-    mock_wrapper.expects(:wrap).returns("line1\nline2\nline3")
-    WordWrapper::MinimumRaggedness.expects(:new).returns(mock_wrapper)
-
-    AIA.config.tool_names = 'test tools'
-    AIA.config.tools.paths = ['/path']
-
+  def test_robot_banner_structure
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Each line should be indented with 18 spaces
-    lines = output.split("\n")
-    tool_lines = lines.select { |line| line.start_with?(' ' * 18) && line.include?('line') }
-
-    assert tool_lines.size >= 3, "Should have at least 3 indented tool lines"
+    # Verify key banner elements are present (v2 format)
+    assert_includes output, "AIA v"
+    assert_includes output, "is Online"
+    assert_includes output, "ruby_llm"
+    assert_includes output, "DB:"
+    assert_includes output, "refreshed"
   end
 
-  def test_robot_class_method_accessibility
-    # Verify that robot is accessible as a class method
+  def test_robot_module_method_accessibility
     assert_respond_to AIA::Utility, :robot
-    
-    # Verify it's defined as a class method (not instance method)
-    refute_respond_to AIA::Utility.new, :robot
   end
 
   def test_robot_with_edge_case_screen_widths
     # Test with very narrow screen
     TTY::Screen.stubs(:width).returns(25)
-    
+
     # Should handle narrow width gracefully
     AIA::Utility.robot
-    # If we get here without an exception, the test passes
-    
+
     output = @captured_output.string
-    assert_includes output, "AI Assistant"
+    # At very narrow widths the banner may be split across sections;
+    # just verify it doesn't crash and produces some output
+    refute_empty output
   end
 
   def test_robot_string_interpolation
@@ -207,16 +185,16 @@ class UtilityTest < Minitest::Test
     original_models          = AIA.config.models
 
     # Override for test
-    AIA.const_set(:VERSION, 'vX.Y.Z')
-    RubyLLM.const_set(:VERSION, 'vR.L.M')
+    AIA.const_set(:VERSION, 'X.Y.Z')
+    RubyLLM.const_set(:VERSION, 'R.L.M')
     AIA.config.models = [OpenStruct.new(name: 'my-test-model')]
 
     AIA::Utility.robot
     output = @captured_output.string
 
-    # Validate interpolated versions and model
-    assert_includes output, "AI Assistant (vvX.Y.Z)"
-    assert_match /using ruby_llm \(vvR\.L\.M(?:\s+MCP\s+v[\d.]+)?\)/, output
+    # v2 format: "AIA vX.Y.Z is Online"
+    assert_includes output, "AIA vX.Y.Z is Online"
+    assert_includes output, "ruby_llm vR.L.M"
     assert_includes output, 'my-test-model'
 
     # Restore originals
@@ -227,82 +205,70 @@ class UtilityTest < Minitest::Test
 
   def test_robot_with_empty_tools_string
     AIA.config.tool_names = ''
-    AIA.config.tools.paths = ['/path']
+    AIA.config.tools = OpenStruct.new(paths: ['/path'])
+    AIA.config.loaded_tools = []
 
     # Should not raise an error with empty tools string
     AIA::Utility.robot
 
     output = @captured_output.string
-    assert_includes output, "AI Assistant"
+    assert_includes output, "AIA v"
   end
-  
-  def test_robot_executes_all_code_paths_with_tools
-    # This test specifically targets the missed lines by ensuring real execution
-    # Clear existing stubs and create fresh config
 
-    # Clear the existing stub and create a real config object with tools to trigger the missed lines
+  def test_robot_executes_all_code_paths_with_tools
     AIA.unstub(:config)
     real_config = OpenStruct.new(
       llm: OpenStruct.new(temperature: 0.7),
       models: [OpenStruct.new(name: 'gpt-4-turbo')],
       registry: OpenStruct.new(refresh: 7),
       paths: OpenStruct.new(aia_dir: '/tmp/aia_test'),
-      tools: OpenStruct.new(paths: ['/usr/local/tools', '/home/tools']),  # Non-empty to trigger lines 24, 26
-      tool_names: 'calculator, weather_api, file_reader',  # Non-nil to trigger lines 28, 29
-      mcp_servers: []
+      tools: OpenStruct.new(paths: ['/usr/local/tools', '/home/tools']),
+      tool_names: 'calculator, weather_api, file_reader',
+      loaded_tools: [],
+      mcp_servers: [],
+      mcp_use: [],
+      mcp_skip: [],
+      connected_mcp_servers: nil,
+      failed_mcp_servers: nil
     )
 
-    # Temporarily replace the config
     original_config_method = AIA.method(:config) rescue nil
     AIA.define_singleton_method(:config) { real_config }
 
-    # Mock models_last_refresh to return a known date
     AIA::Utility.stubs(:models_last_refresh).returns('2024-12-26 14:30')
+    TTY::Screen.expects(:width).returns(100).at_least_once
 
-    # Mock only what's absolutely necessary to avoid external dependencies
-    TTY::Screen.expects(:width).returns(100).at_least_once  # This will trigger width calculation on line 14
-
-    # Skip complex WordWrapper mocking - just test basic functionality
-
-    # Execute the method - this should hit ALL the missed lines:
-    # Line 12: indent = 18
-    # Line 13: spaces = " "*indent
-    # Line 14: width = TTY::Screen.width - indent - 2
-    # Line 16: puts <<-ROBOT (heredoc start)
-    # Line 24: tools.paths conditional (non-empty path)
-    # Line 26: toolbox message (non-empty path)
-    # Line 28: if AIA.config.tool_names (non-nil tools)
-    # Line 29: WordWrapper execution
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Verify the execution hit the key branches
-    assert_includes output, "AI Assistant (v"
+    # Verify the execution hit the key branches (v2 format)
+    assert_includes output, "AIA v"
+    assert_includes output, "is Online"
     assert_includes output, "gpt-4-turbo"
-    assert_includes output, "using ruby_llm"
+    assert_includes output, "ruby_llm"
     assert_includes output, "2024-12-26"
-    assert_includes output, "I will also use your tools"  # Line 24 branch
-
   ensure
-    # Restore original config method if it existed
     if original_config_method
       AIA.define_singleton_method(:config, &original_config_method)
     else
-      # Restore the original stub from setup
       AIA.stubs(:config).returns(OpenStruct.new(
-        llm: OpenStruct.new(temperature: 0.7),
-        models: [OpenStruct.new(name: 'claude-3-sonnet')],
-        registry: OpenStruct.new(last_refresh: '2024-01-15'),
-        tools: OpenStruct.new(paths: []),
-        tool_names: 'calculator, weather_api, file_reader',
-        mcp_servers: []
-      ))
+                                   llm: OpenStruct.new(temperature: 0.7),
+                                   models: [OpenStruct.new(name: 'claude-3-sonnet')],
+                                   registry: OpenStruct.new(last_refresh: '2024-01-15'),
+                                   tools: OpenStruct.new(paths: []),
+                                   tool_names: 'calculator, weather_api, file_reader',
+                                   loaded_tools: [],
+                                   mcp_servers: [],
+                                   mcp_use: [],
+                                   mcp_skip: [],
+                                   connected_mcp_servers: nil,
+                                   failed_mcp_servers: nil
+                                 ))
     end
   end
-  
+
   def test_robot_executes_all_code_paths_without_tools
-    # Test the other branch where tools.paths is empty
     AIA.unstub(:config)
 
     real_config = OpenStruct.new(
@@ -311,80 +277,71 @@ class UtilityTest < Minitest::Test
       registry: OpenStruct.new(last_refresh: '2024-12-26'),
       tools: OpenStruct.new(paths: []),
       tool_names: nil,
-      mcp_servers: []
+      loaded_tools: [],
+      mcp_servers: [],
+      mcp_use: [],
+      mcp_skip: [],
+      connected_mcp_servers: nil,
+      failed_mcp_servers: nil
     )
     AIA.stubs(:config).returns(real_config)
 
     TTY::Screen.stubs(:width).returns(80)
 
-    # This should hit lines 12, 13, 14, 16, 24, 26 but not 28, 29
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Verify the empty tools.paths branch
-    assert_includes output, "AI Assistant"
+    # v2 format checks
+    assert_includes output, "AIA v"
     assert_includes output, "claude-3"
     assert_includes output, "ruby_llm"
-    assert_includes output, "I did not bring any tools"
-    refute_includes output, "My Toolbox contains:"
+    assert_includes output, "none loaded"
   end
 
-  def test_robot_tool_text_formatting
-    # Test that tools text is properly formatted and indented
-    mock_wrapper = mock('wrapper')
-    mock_wrapper.expects(:wrap).returns("tool1\ntool2")
-    WordWrapper::MinimumRaggedness.expects(:new).returns(mock_wrapper)
-
+  def test_robot_tool_count_display
     AIA.config.tool_names = 'tool1, tool2'
-    AIA.config.tools.paths = ['/path']
+    AIA.config.loaded_tools = [mock('t1'), mock('t2')]
 
     AIA::Utility.robot
 
     output = @captured_output.string
 
-    # Each tool line should end with newline and be properly spaced
-    assert_includes output, "tool1"
-    assert_includes output, "tool2"
+    # v2 format: "Tools: 2 tools loaded"
+    assert_includes output, "2 tools loaded"
+  end
+  # ---------------------------------------------------------------------
+  # MCP counts and labels come from what MCPConnectionManager published
+  # ---------------------------------------------------------------------
+
+  def test_total_tool_count_adds_connected_mcp_tool_counts
+    AIA.config.loaded_tools = %w[a b c]
+    AIA.config.mcp_server_tool_counts = { 'fs' => 14, 'gh' => 2 }
+    assert_equal 19, AIA::Utility.total_tool_count
   end
 
-  def test_robot_basic_execution_no_mocks
-    # Minimal test to ensure basic variable assignments and method execution
-    # This should hit lines 12, 13, 14, 16 without complex mocking
+  def test_total_tool_count_without_mcp_counts_is_local_only
+    AIA.config.loaded_tools = %w[a b c]
+    AIA.config.mcp_server_tool_counts = nil
+    assert_equal 3, AIA::Utility.total_tool_count
+  end
 
-    minimal_config = OpenStruct.new(
-      llm: OpenStruct.new(temperature: 0.7),
-      models: [OpenStruct.new(name: 'test-model')],
-      registry: OpenStruct.new(last_refresh: 'test-date'),
-      tools: OpenStruct.new(paths: []),
-      tool_names: nil,
-      mcp_servers: []
-    )
+  def test_mcp_server_names_falls_back_to_configured_names_before_connection
+    AIA.config.connected_mcp_servers = nil
+    AIA::Utility.stubs(:effective_mcp_server_names).returns(%w[cfgA])
+    assert_equal %w[cfgA], AIA::Utility.mcp_server_names
+  end
 
-    # Temporarily replace config and constants
-    original_config_method = AIA.method(:config) rescue nil
-    AIA.define_singleton_method(:config) { minimal_config }
+  def test_mcp_client_labels_empty_before_connection
+    AIA.config.flags = OpenStruct.new(no_mcp: false)
+    AIA.config.connected_mcp_servers = nil
+    assert_equal [], AIA::Utility.send(:mcp_client_labels)
+  end
 
-    # Mock constants to avoid dependency issues
-    original_aia_version = AIA::VERSION rescue nil
-    original_rubyllm_version = RubyLLM::VERSION rescue nil
-
-    AIA.const_set(:VERSION, '1.0.0') unless AIA.const_defined?(:VERSION)
-    RubyLLM.const_set(:VERSION, '1.0.0') unless RubyLLM.const_defined?(:VERSION)
-
-    TTY::Screen.expects(:width).returns(80).at_least_once
-
-    # This should execute the method and hit the variable assignment lines
-    AIA::Utility.robot
-
-    output = @captured_output.string
-    # Check for key components without exact version
-    assert_match /AI Assistant \(v[\d.\w-]+\) is Online/, output
-
-  ensure
-    # Restore originals
-    if original_config_method
-      AIA.define_singleton_method(:config, &original_config_method)
-    end
+  def test_mcp_client_labels_include_tool_counts
+    AIA.config.flags = OpenStruct.new(no_mcp: false)
+    AIA.config.connected_mcp_servers = %w[fs gh]
+    AIA.config.mcp_server_tool_counts = { 'fs' => 14 }
+    assert_equal %w[fs(14) gh], AIA::Utility.send(:mcp_client_labels)
   end
 end

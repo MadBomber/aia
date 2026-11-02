@@ -2,8 +2,7 @@
 # Setup a prompt completion for use with
 # the zsh shell
 #
-# This script assumes that the system environment
-# variable AIA_PROMPTS__DIR has been set correctly
+# Prompt IDs come from $AIA_PROMPTS__DIR, or ~/.prompts when it is unset.
 
 _aia_completion() {
   # The current word being completed
@@ -18,7 +17,7 @@ _aia_completion() {
   # Check if we are currently completing the option that requires prompt IDs
   if [[ "$prev_word" == "aia" ]]; then
     # Change directory to the prompts directory
-    cd "$AIA_PROMPTS__DIR" || return
+    cd "${AIA_PROMPTS__DIR:-$HOME/.prompts}" || return
 
     # Generate a list of relative paths from the ~/.prompts directory (without .md extension)
     local files=($(find . -name "*.md" -type f | sed 's|^\./||' | sed 's/\.md$//'))

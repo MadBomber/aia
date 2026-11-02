@@ -3,7 +3,6 @@
 
 require 'shellwords'
 require 'open3'
-require 'tempfile'
 
 class AIA::Fzf
   DEFAULT_PARAMETERS = %w[
@@ -12,19 +11,18 @@ class AIA::Fzf
     --prompt='Search term: '
     --delimiter :
     --preview-window=down:50%:wrap
-  ]
+  ].freeze
 
   attr_reader :list, :directory, :query, :subject, :prompt, :extension, :command
 
   def initialize(
-      list:,          # Array of Strings (basenames of files w/o extension)
-      directory:,     # Parent directory of the list items
-      query:      '', # String, the thing be searched for
-      subject:    'Prompt IDs', # or 'Role Names'
-      prompt:     'Select one:',
-      extension:  '.md'
-    )
-
+    list:,          # Array of Strings (basenames of files w/o extension)
+    directory:,     # Parent directory of the list items
+    query:      '', # String, the thing be searched for
+    subject:    'Prompt IDs', # or 'Role Names'
+    prompt:     'Select one:',
+    extension:  '.md'
+  )
     @list       = list
     @directory  = directory
     @query      = query
@@ -34,7 +32,6 @@ class AIA::Fzf
 
     build_command
   end
-
 
   def build_command
     fzf_options = DEFAULT_PARAMETERS.dup
@@ -47,29 +44,10 @@ class AIA::Fzf
     @fzf_args = fzf_options
   end
 
-
   def run
     input = list.join("\n")
-    selected, status = Open3.capture2('fzf', *@fzf_args, stdin_data: input)
-
+    selected, _status = Open3.capture2('fzf', *@fzf_args, stdin_data: input)
     selected.strip.empty? ? nil : selected.strip
-  ensure
-    unlink_tempfile
-  end
-
-  ##############################################
-  private
-
-  def tempfile_path
-    @tempfile ||= Tempfile.new('fzf-input').tap do |file|
-      list.each { |item| file.puts item }
-      file.close
-    end
-    @tempfile.path
-  end
-
-  def unlink_tempfile
-    @tempfile&.unlink
   end
 end
 

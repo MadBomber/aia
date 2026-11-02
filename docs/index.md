@@ -1,232 +1,64 @@
-# AIA - AI Assistant
+# AIA User Manual
 
-<table border="0">
-<tr>
-<td width="30%" valign="top">
-  <img src="assets/images/aia.png" alt="AIA - May I take your prompt?" width="200" />
-  <div align="center">
-      <strong>The Prompt is the Code</strong>
-  </div>
-</td>
-<td width="70%" valign="top">
+AIA ("AI Assistant") is a command-line program for working with large language models from your terminal. You keep your prompts as plain Markdown files, and AIA fills them in, sends them to the model of your choice, and gives you the answer, or keeps the conversation going in an interactive chat.
 
-Welcome to AIA, your powerful CLI tool for dynamic prompt management and AI interaction.
-<br/><br/>
-<strong>AIA (AI Assistant)</strong> is a Ruby-based command-line tool that revolutionizes how you interact with AI models. It's designed for generative AI workflows, enabling you to effortlessly manage AI prompts, integrate seamlessly with shell and embedded Ruby (ERB), run batch processes, and engage in interactive chats with user-defined directives, tools, and MCP clients.
-</td>
-</tr>
-</table>
+<div align="center" markdown>
+![AIA](assets/images/aia.png){ width="320" }
+</div>
 
-  <div align="center">
-      AIA treats prompts as executable programs, complete with configuration, logic, and workflows.
-  </div>
+This manual covers AIA 2.0.0.
 
----
+## Who this manual is for
 
-!!! tip "🚀 New: AI Assistant Scheduler (AIAS)"
+You use a terminal every day and you want an LLM to be part of that work, not a browser tab off to the side. You don't need to know Ruby to use AIA. Some optional features (ERB templates, custom tools) use Ruby, and the manual explains what you need when you get there.
 
-    **Schedule and automate your AIA prompts!** AIAS is a new Ruby gem that lets you run AIA prompts on a cron-like schedule — perfect for recurring AI tasks, automated reports, and timed workflows.
+## What you can do with AIA
 
-    **[View AIAS on GitHub →](https://github.com/madbomber/aias)**
+- **Keep a library of prompts.** Each prompt is a `.md` file in your prompts directory (`~/.prompts` by default). You run one by name: `aia code_review`.
+- **Fill in prompts with parameters.** A prompt can declare values such as `language` or `audience`. AIA asks for them when you run it.
+- **Feed it your files and your shell.** Pass files on the command line, pipe text in on stdin, or embed `$(git diff)` in a prompt and AIA runs the command for you.
+- **Chat.** `aia --chat` opens an interactive session. Use `/` directives in the chat to switch models, include files, save checkpoints, and more.
+- **Use any model.** OpenAI, Anthropic, Google and the other providers RubyLLM supports, plus local models through Ollama or LM Studio. Pick one per run with `--model`.
+- **Run several models at once.** `--model gpt-4o,claude-sonnet-4-5` sends the same prompt to both. Add `--consensus` and AIA combines their answers into one.
+- **Chain prompts into pipelines.** One prompt's output becomes the next one's input.
+- **Give the model tools.** Load Ruby tools or connect MCP servers so the model can read files, query APIs, or run commands, with your approval.
+- **Track usage.** `--tokens` and `--cost` show token counts, time and cost after every response.
 
----
+## A taste
 
-!!! tip "🎭 Roles: Give Your Robot a Personality"
+```bash
+# Ask a one-off question by piping it in
+echo "Explain the difference between a process and a thread in two sentences." | aia
 
-    Roles are plain-text prompt files that define how your AI thinks, talks, and interacts with you. Drop one in `~/.prompts/roles/` and your robot instantly becomes someone new.
+# Run a saved prompt against a file
+aia summarize meeting_notes.txt
 
-    **For fun:**
-    ```bash
-    aia --chat --role pirate           # Arrr, matey!
-    aia --chat --role nyc_cabbie       # opinions about EVERYTHING
-    aia --chat --role stoned_hacker    # solves it anyway, dude
-    ```
-
-    **For serious work:**
-    ```bash
-    # Explains quantum physics to your 7-year-old
-    aia --chat --role first_grade_teacher
-
-    # Three expert robots on the same design doc, simultaneously
-    aia --model gpt-4o=architect,claude=security,gemini=performance design.md
-    ```
-
-    Assign a different role to each model and get multiple expert perspectives in one command. **[Full Roles Guide →](guides/models.md)**
-
-!!! tip "🎓 Skills: Teach Your Robot Your Process"
-
-    Skills are structured instruction sets that tell your robot *exactly how* to approach a task — your workflow, your standards, every single time. Each skill is a directory with a `SKILL.md` file in `~/.prompts/skills/`.
-
-    ```bash
-    aia -s code-quality my_prompt                      # one skill
-    aia -s code-quality,security-review my_prompt      # stack them
-    aia --chat --role senior_dev -s code-quality       # role + skill
-    /skill code-quality                                # add mid-chat
-    ```
-
-    Combine roles and skills: a pirate who follows your code review process, a first-grade teacher who uses your step-by-step explanation method, or multiple robots each with their own role and skill set — all from the command line. **[Full Skills Guide →](directives-reference.md)**
-
----
-
-## Key Features
-
-### 🚀 Dynamic Prompt Management
-- **Hierarchical Configuration**: Embedded directives > CLI args > environment variables > config files > defaults
-- **Prompt Sequences and Workflows**: Chain prompts together for complex AI workflows
-- **Fuzzy Search**: Find prompts quickly with fuzzy matching (requires `fzf`)
-
-### 🎭 Roles & 🎓 Skills
-- **Robot Personalities**: Give any robot a voice — fun personas like a pirate or NYC cabbie, or professional ones like a senior architect or first-grade teacher
-- **Per-Model Roles**: Assign a different role to each model in a multi-model session — `--model gpt-4o=architect,claude=security`
-- **Reusable Skill Sets**: Encode your exact workflow once in a `SKILL.md` file; apply it to any prompt with `-s skill-name`
-- **Role + Skill Combos**: A robot can be *who you want* (role) and *know exactly what to do* (skill) simultaneously
-- **Mid-Chat Skills**: Add a skill to a running chat session with `/skill skill-name`
-
-### 🔧 Powerful Integration
-- **Shell Integration**: Execute shell commands directly within prompts
-- **Ruby (ERB) Processing**: Use Ruby code in your prompts for dynamic content
-- **RubyLLM::Tool Support**: Function callbacks for enhanced AI capabilities
-- **MCP Client Support**: Integrate with Model Context Protocol clients
-
-### 💬 Interactive Chat Sessions
-- **Context Management**: Maintain conversation history and context
-- **Multi-model Support**: Use multiple AI models simultaneously
-- **Consensus Mode**: Get consensus responses from multiple models
-- **Voice Support**: Convert text to speech and back
-
-### 🎯 Advanced Features
-- **Executable Prompts**: Run prompts as executable scripts
-- **ERB Parameters**: Use embedded Ruby for dynamic prompt parameters
-- **Image Generation**: Generate images with customizable parameters
-- **Tool Integration**: Use custom Ruby tools for enhanced functionality
-
-## Quick Start
-
-1. **Install AIA:**
-   ```bash
-   gem install aia
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   brew install fzf
-   ```
-
-3. **Create your first prompt:**
-   ```bash
-   mkdir -p ~/.prompts
-   cat > ~/.prompts/what_is.md << 'EOF'
-   ---
-   parameters:
-     topic: null
-   ---
-   What is <%= topic %>?
-   EOF
-   ```
-
-4. **Run your prompt:**
-   ```bash
-   aia what_is
-   ```
-   You'll be prompted to enter a value for `topic`, then AIA will send your question to the AI model.
-
-5. **Start an interactive chat:**
-   ```bash
-   aia --chat
-
-   # Or use multiple models for comparison
-   aia --chat --model "gpt-4o-mini,gpt-3.5-turbo"
-   ```
-
-When AIA starts, you'll see the friendly robot mascot:
-
-```plain
-
-       ,      ,
-       (\____/) AI Assistant (v1.0.0) is Online
-        (_oo_)   ["gpt-4o-mini", "claude-sonnet-4-20250514"]
-         (O)       using ruby_llm
-       __||__    \) model db was last refreshed on
-     [/______\]  /    2026-02-04
-    / \__AI__/ \/      You can share my tools
-   /    /__\
-  (\   /____\
-
+# Start a chat, with a role, on a specific model
+aia --chat --role code_reviewer --model claude-sonnet-4-5
 ```
 
-## Core Architecture
+## How this manual is organized
 
-AIA follows a modular Ruby gem structure with clear separation of concerns:
+| Part | What it covers |
+|------|----------------|
+| **Getting Started** | [Installation](getting-started/installation.md), a [Quick Tour](getting-started/quick-tour.md) of the main features, and [Your First Prompt](getting-started/first-prompt.md). Start here if you are new. |
+| **Everyday Use** | [Running prompts](everyday/running-prompts.md), [chat sessions](everyday/chat.md), [context files and piping](everyday/context-and-piping.md), [roles and skills](everyday/roles-and-skills.md), [choosing models](everyday/models.md), and [output, history and usage reports](everyday/output-and-history.md). |
+| **Writing Prompts** | [Prompt files and front matter](prompts/prompt-files.md), [parameters](prompts/parameters.md), [directives](prompts/directives.md), [ERB and shell expansion](prompts/erb-and-shell.md), [pipelines](prompts/pipelines.md), and [executable prompts](prompts/executable-prompts.md). |
+| **Extending AIA** | [Tools](extending/tools.md), [MCP servers](extending/mcp.md), [multiple models and consensus](extending/multi-model.md), [crews](extending/crews.md), [local models](extending/local-models.md), [images and speech](extending/images-and-speech.md), and [advanced modes](extending/advanced-modes.md). |
+| **Configuration** | The [config file](configuration/config-file.md), [environment variables](configuration/environment.md), [how settings override each other](configuration/precedence.md), and [security](configuration/security.md). |
+| **Reference** | Every [command-line option](reference/cli.md), every [directive](reference/directives.md), every [configuration key](reference/config-keys.md), and the [FAQ and troubleshooting](reference/faq.md) page. |
+| **Appendix** | [Upgrading to 2.0](appendix/upgrading-2.0.md), [migrating old prompts](appendix/migrating-prompts.md), and a [glossary](appendix/glossary.md). |
 
-### Component Overview
+The Getting Started and Everyday Use parts are written to be read in order. The rest you can dip into when you need it.
 
-```mermaid
-graph TD
-    A[CLI Input] --> B[Config System]
-    B --> C[Prompt Handler]
-    C --> D[Directive Processor]
-    D --> E[Context Manager]
-    E --> F[RubyLLM Adapter]
-    F --> G[AI Models]
+## Getting help
 
-    H[Prompt Files] --> C
-    I[Role Files] --> C
-    J[Tools] --> F
-    K[MCP Clients] --> F
+- `aia --help` lists every option with a one-line description.
+- In a chat session, `/help` lists every directive.
+- Bugs and feature requests: <https://github.com/MadBomber/aia/issues>
+- Changes between releases: the [changelog](https://github.com/MadBomber/aia/blob/main/CHANGELOG.md)
 
-    C --> L[Chat Processor Service]
-    L --> M[UI Presenter]
-    M --> N[Terminal Output]
-```
+## Next steps
 
-### Core Components
-
-- **AIA::Config** - Configuration management with hierarchical precedence
-- **AIA::PromptHandler** - Main prompt processing orchestrator
-- **AIA::ChatProcessorService** - Interactive chat session management
-- **AIA::DirectiveProcessor** - Processes embedded directives (`/command params`)
-- **AIA::RubyLLMAdapter** - Interfaces with the ruby_llm gem for AI model communication (manages conversation history via RubyLLM's Chat.@messages)
-- **AIA::ShellCommandExecutor** - Executes shell commands safely within prompts
-- **AIA::HistoryManager** - Manages prompt parameter history and user input
-- **AIA::UIPresenter** - Terminal output formatting and presentation
-- **AIA::Session** - Manages chat sessions and state
-- **AIA::Fzf** - Fuzzy finder integration for prompt selection
-- **AIA::Directives::Checkpoint** - Manages conversation checkpoints, restore, clear, and review operations
-
-### External Dependencies
-
-- **prompt_manager gem** - Core prompt management functionality
-- **ruby_llm gem** - AI model interface layer
-- **fzf** - Command-line fuzzy finder (external CLI tool)
-
-## Documentation Structure
-
-### Getting Started
-- [Installation](installation.md) - Get AIA up and running
-- [Configuration](configuration.md) - Configure AIA for your needs
-- [Getting Started Guide](guides/getting-started.md) - Your first steps with AIA
-
-### Guides
-- [Chat Mode](guides/chat.md) - Interactive conversations with AI
-- [Working with Models](guides/models.md) - Multi-model support and configuration
-- [Tools Integration](guides/tools.md) - Extend AIA with custom tools
-- [Advanced Prompting](advanced-prompting.md) - Master complex prompt techniques
-
-### Reference
-- [CLI Parameters](cli-reference.md) - Complete command-line reference
-- [Directives Reference](directives-reference.md) - All available directives
-- [Examples](examples/index.md) - Practical examples and use cases
-
-## Community & Support
-
-- **GitHub**: [madbomber/aia](https://github.com/MadBomber/aia)
-- **Issues**: [Report bugs and request features](https://github.com/MadBomber/aia/issues)
-- **RubyGems**: [aia gem](https://rubygems.org/gems/aia)
-
-## License
-
-AIA is open source software. See the [LICENSE](https://github.com/MadBomber/aia/blob/main/LICENSE) file for details.
-
----
-
-Ready to get started? Head to the [Installation](installation.md) guide to begin your AIA journey!
+- [Install AIA](getting-started/installation.md)
+- [Take the quick tour](getting-started/quick-tour.md)

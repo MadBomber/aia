@@ -32,7 +32,7 @@ class ModelSpecTest < Minitest::Test
   def test_to_h
     spec = AIA::ModelSpec.new(name: 'gpt-4o', role: 'coder', instance: 2, internal_id: 'gpt-4o#2')
     h = spec.to_h
-    assert_equal({ name: 'gpt-4o', role: 'coder', instance: 2, internal_id: 'gpt-4o#2' }, h)
+    assert_equal({ name: 'gpt-4o', role: 'coder', instance: 2, internal_id: 'gpt-4o#2', provider: nil }, h)
   end
 
   def test_to_s_with_role
@@ -123,6 +123,60 @@ class ModelSpecTest < Minitest::Test
   def test_duplicate_predicate_false
     spec = AIA::ModelSpec.new(name: 'gpt-4o', instance: 1)
     refute spec.duplicate?
+  end
+
+  def test_ollama_provider_extraction
+    spec = AIA::ModelSpec.new(name: 'ollama/llama3:latest')
+    assert_equal 'llama3:latest', spec.name
+    assert_equal 'ollama', spec.provider
+    assert spec.local_provider?
+  end
+
+  def test_lms_provider_extraction
+    spec = AIA::ModelSpec.new(name: 'lms/my-model')
+    assert_equal 'my-model', spec.name
+    assert_equal 'lms', spec.provider
+    assert spec.local_provider?
+  end
+
+  def test_apfel_provider_extraction
+    spec = AIA::ModelSpec.new(name: 'apfel/some-model')
+    assert_equal 'some-model', spec.name
+    assert_equal 'apfel', spec.provider
+    assert spec.local_provider?
+  end
+
+  def test_no_provider_for_regular_models
+    spec = AIA::ModelSpec.new(name: 'gpt-4o')
+    assert_nil spec.provider
+    refute spec.local_provider?
+  end
+
+  # Any prefix RubyLLM has registered is a provider — nothing is hardcoded.
+  def test_registered_provider_prefix_extracted
+    spec = AIA::ModelSpec.new(name: 'anthropic/claude-3')
+    assert_equal 'claude-3', spec.name
+    assert_equal 'anthropic', spec.provider
+  end
+
+  def test_unknown_prefix_not_extracted
+    spec = AIA::ModelSpec.new(name: 'notaprovider/some-model')
+    assert_equal 'notaprovider/some-model', spec.name
+    assert_nil spec.provider
+  end
+
+  # Registry ids whose first segment is not a provider slug pass through
+  # (dashes are not valid in provider slugs).
+  def test_registry_id_with_slash_not_extracted
+    spec = AIA::ModelSpec.new(name: 'meta-llama/llama-4-maverick')
+    assert_equal 'meta-llama/llama-4-maverick', spec.name
+    assert_nil spec.provider
+  end
+
+  def test_explicit_provider_not_overridden
+    spec = AIA::ModelSpec.new(name: 'ollama/llama3', provider: 'custom')
+    assert_equal 'ollama/llama3', spec.name
+    assert_equal 'custom', spec.provider
   end
 
   def test_accessors_are_mutable

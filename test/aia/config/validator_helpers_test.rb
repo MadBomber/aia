@@ -137,7 +137,7 @@ class ValidatorHelpersTest < Minitest::Test
         { name: 'server2' },
         { name: 'server3' }
       ],
-      mcp_use: ['server1', 'server3'],
+      mcp_use: %w[server1 server3],
       mcp_skip: []
     )
     result = AIA::ConfigValidator.send(:filter_mcp_servers, config)
@@ -247,7 +247,7 @@ class ValidatorHelpersTest < Minitest::Test
   def test_prepare_pipeline_prepends_prompt_id
     config = OpenStruct.new(prompt_id: 'test_prompt', pipeline: ['other'])
     AIA::ConfigValidator.send(:prepare_pipeline, config)
-    assert_equal ['test_prompt', 'other'], config.pipeline
+    assert_equal %w[test_prompt other], config.pipeline
   end
 
   def test_prepare_pipeline_skips_nil_prompt_id
@@ -263,28 +263,12 @@ class ValidatorHelpersTest < Minitest::Test
   end
 
   def test_prepare_pipeline_skips_if_already_first
-    config = OpenStruct.new(prompt_id: 'test', pipeline: ['test', 'other'])
+    config = OpenStruct.new(prompt_id: 'test', pipeline: %w[test other])
     AIA::ConfigValidator.send(:prepare_pipeline, config)
-    assert_equal ['test', 'other'], config.pipeline
+    assert_equal %w[test other], config.pipeline
   end
 
   # =========================================================================
   # configure_prompt_manager (deprecation warning)
   # =========================================================================
-
-  def test_configure_prompt_manager_warns_on_parameter_regex
-    config = OpenStruct.new(prompts: OpenStruct.new(parameter_regex: '\\[\\[.*?\\]\\]'))
-    _output = capture_io do
-      AIA::ConfigValidator.send(:configure_prompt_manager, config)
-    end
-    # Should warn about deprecation (captured in stderr)
-  end
-
-  def test_configure_prompt_manager_no_warn_without_regex
-    config = OpenStruct.new(prompts: OpenStruct.new(parameter_regex: nil))
-    _, err = capture_io do
-      AIA::ConfigValidator.send(:configure_prompt_manager, config)
-    end
-    refute_includes err, "deprecated"
-  end
 end

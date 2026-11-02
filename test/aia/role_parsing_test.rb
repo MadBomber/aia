@@ -5,7 +5,6 @@ require 'ostruct'
 require 'fileutils'
 require 'tmpdir'
 require 'tempfile'
-require 'pathname'
 require_relative '../../lib/aia/config/cli_parser'
 
 class RoleParsingTest < Minitest::Test
@@ -165,7 +164,7 @@ class RoleParsingTest < Minitest::Test
 
   # Test invalid syntax: leading equals
   def test_parse_invalid_syntax_leading_equals
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, '=architect')
     end
     assert_match(/Invalid model syntax/, error.message)
@@ -173,20 +172,10 @@ class RoleParsingTest < Minitest::Test
 
   # Test invalid syntax: trailing equals
   def test_parse_invalid_syntax_trailing_equals
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=')
     end
     assert_match(/Invalid model syntax/, error.message)
-  end
-
-  # Test role validation: nonexistent role
-  def test_validate_nonexistent_role
-    error = assert_raises(ArgumentError) do
-      AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=nonexistent')
-    end
-    assert_match(/Role file not found/, error.message)
-    assert_match(/Available roles:/, error.message)
-    assert_match(/architect/, error.message)
   end
 
   # Test role validation: existing role passes
@@ -196,21 +185,10 @@ class RoleParsingTest < Minitest::Test
     assert_equal 'architect', result[0][:role]
   end
 
-  # Test list_available_role_names
-  def test_list_available_role_names
-    roles = AIA::CLIParser.send(:list_available_role_names, @temp_dir, 'roles')
-
-    assert_includes roles, 'architect'
-    assert_includes roles, 'security'
-    assert_includes roles, 'performance'
-    assert_includes roles, 'specialized/senior_architect'
-  end
-
   # Test complex real-world scenario
   def test_complex_real_world_scenario
     result = AIA::CLIParser.send(:parse_models_with_roles,
-      'gpt-4o=architect,gpt-4o=security,claude=performance,gemini'
-    )
+                                 'gpt-4o=architect,gpt-4o=security,claude=performance,gemini')
 
     assert_equal 4, result.length
 
@@ -237,43 +215,5 @@ class RoleParsingTest < Minitest::Test
     assert_nil result[3][:role]
     assert_equal 1, result[3][:instance]
     assert_equal 'gemini', result[3][:internal_id]
-  end
-
-  def test_validate_role_absolute_path_existing_file
-    role_file = Tempfile.new(['role', '.md'])
-    role_file.write("You are an expert.")
-    role_file.close
-
-    # Should not raise
-    AIA::CLIParser.send(:validate_role_exists, role_file.path)
-  ensure
-    role_file.unlink if role_file
-  end
-
-  def test_validate_role_absolute_path_without_extension
-    Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'expert.md'), "You are an expert.")
-      role_path = File.join(dir, 'expert')
-
-      # Should not raise — auto-appends .md
-      AIA::CLIParser.send(:validate_role_exists, role_path)
-    end
-  end
-
-  def test_validate_role_relative_path_existing_file
-    Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'teacher.md'), "You are a teacher.")
-      # Build a ./... relative path that path_based_id? recognises and that
-      # File.expand_path resolves correctly from the current working directory.
-      relative = "./#{Pathname.new(dir).relative_path_from(Dir.pwd)}/teacher"
-      AIA::CLIParser.send(:validate_role_exists, relative)
-    end
-  end
-
-  def test_validate_role_absolute_path_missing_raises
-    error = assert_raises(ArgumentError) do
-      AIA::CLIParser.send(:validate_role_exists, '/nonexistent/path/missing-role')
-    end
-    assert_match(/Role file not found/, error.message)
   end
 end

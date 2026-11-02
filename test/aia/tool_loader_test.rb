@@ -1,0 +1,293 @@
+# frozen_string_literal: true
+
+# test/aia/tool_loader_test.rb
+
+require_relative '../test_helper'
+require_relative '../../lib/aia'
+
+class ToolLoaderTest < Minitest::Test
+  def setup
+    @config = create_test_config
+    AIA.stubs(:config).returns(@config)
+    AIA.stubs(:turn_state).returns(OpenStruct.new(active_tools: nil))
+  end
+
+  def teardown
+    AIA::ToolLoader.clear_cache!
+    AIA::ToolLoader.reset_instance!
+    super
+  end
+
+  def test_cached_tools_returns_nil_when_empty
+    AIA::ToolLoader.clear_cache!
+    assert_nil AIA::ToolLoader.cached_tools
+  end
+
+  def test_cached_tools_returns_cache_after_load
+    AIA::ToolLoader.load_tools(@config)
+    assert_kind_of Array, AIA::ToolLoader.cached_tools
+  end
+
+  def test_clear_cache_resets_cache
+    AIA::ToolLoader.load_tools(@config)
+    refute_nil AIA::ToolLoader.cached_tools
+
+    AIA::ToolLoader.clear_cache!
+    assert_nil AIA::ToolLoader.cached_tools
+  end
+
+  def test_load_tools_populates_cache
+    AIA::ToolLoader.clear_cache!
+    AIA::ToolLoader.load_tools(@config)
+
+    cache = AIA::ToolLoader.cached_tools
+    assert_kind_of Array, cache
+  end
+
+  def test_filtered_tools_returns_empty_when_no_tools
+    @config.loaded_tools = []
+    result = AIA::ToolLoader.filtered_tools(@config)
+    assert_equal [], result
+  end
+
+  def test_filtered_tools_deduplicates_by_name
+    tool1 = mock('tool1')
+    tool1.stubs(:name).returns('MyTool')
+    tool2 = mock('tool2')
+    tool2.stubs(:name).returns('MyTool')
+
+    @config.loaded_tools = [tool1, tool2]
+    result = AIA::ToolLoader.filtered_tools(@config)
+    assert_equal 1, result.length
+  end
+
+  # A tool named apart from its Ruby class, like shared_tools' DnsTool ("dns").
+  class LookupTool < RubyLLM::Tool
+    def self.tool_name = 'lookup'
+
+    description 'Looks things up'
+
+    def execute = 'found'
+  end
+
+  def test_filtered_tools_matches_allowed_names_against_a_tool_class_tool_name
+    @config.loaded_tools = [LookupTool]
+    @config.tools.allowed = ['lookup']
+
+    assert_equal [LookupTool], AIA::ToolLoader.filtered_tools(@config)
+  end
+
+  def test_discover_tools_skips_ruby_llm_mcp_tool
+    refute_includes AIA::ToolLoader.discover_tools, RubyLLM::MCP::Tool
+  end
+
+  def test_mcp_tool_class_recognizes_mcp_tools_only
+    loader = AIA::ToolLoader.new
+    assert loader.mcp_tool_class?(RubyLLM::MCP::Tool)
+    refute loader.mcp_tool_class?(LookupTool)
+  end
+
+  def test_require_libs_requires_each_library
+    loader = AIA::ToolLoader.new
+    loader.expects(:require).with('set')
+    loader.expects(:require).with('json')
+    loader.require_libs(OpenStruct.new(require_libs: %w[set json]))
+  end
+
+  def test_filtered_tools_applies_allowed_filter
+    tool1 = mock('tool1')
+    tool1.stubs(:name).returns('AllowedTool')
+    tool2 = mock('tool2')
+    tool2.stubs(:name).returns('RejectedTool')
+
+    @config.loaded_tools = [tool1, tool2]
+    @config.tools.allowed = ['allowed']
+
+    result = AIA::ToolLoader.filtered_tools(@config)
+    assert_equal 1, result.length
+    assert_equal 'AllowedTool', result.first.name
+  end
+
+  def test_filtered_tools_applies_rejected_filter
+    tool1 = mock('tool1')
+    tool1.stubs(:name).returns('GoodTool')
+    tool2 = mock('tool2')
+    tool2.stubs(:name).returns('BadTool')
+
+    @config.loaded_tools = [tool1, tool2]
+    @config.tools.rejected = ['bad']
+
+    result = AIA::ToolLoader.filtered_tools(@config)
+    assert_equal 1, result.length
+    assert_equal 'GoodTool', result.first.name
+  end
+
+  def test_discover_tools_skips_unavailable_tools
+    unavailable_tool_class = Class.new(RubyLLM::Tool) do
+      def self.name = 'unavailable_tool'
+      description "A tool that is not available"
+      def execute = "ok"
+
+      def available?
+        false
+      end
+    end
+
+    available_tool_class = Class.new(RubyLLM::Tool) do
+      def self.name = 'available_tool'
+      description "A tool that is available"
+      def execute = "ok"
+
+      def available?
+        true
+      end
+    end
+
+    tools = AIA::ToolLoader.discover_tools
+
+    refute_includes tools, unavailable_tool_class,
+                    "Unavailable tool should be filtered out"
+    assert_includes tools, available_tool_class,
+                    "Available tool should be included"
+  ensure
+    nil
+    nil
+    GC.start
+  end
+
+  def test_two_instances_have_independent_caches
+    loader_a = AIA::ToolLoader.new
+    loader_b = AIA::ToolLoader.new
+
+    loader_a.load_tools(@config)
+    assert_kind_of Array, loader_a.cached_tools
+    assert_nil loader_b.cached_tools, "loader_b cache should remain nil when loader_a loads tools"
+  end
+
+  def test_clear_cache_only_affects_instance
+    loader_a = AIA::ToolLoader.new
+    loader_b = AIA::ToolLoader.new
+
+    loader_a.load_tools(@config)
+    loader_b.load_tools(@config)
+
+    loader_a.clear_cache!
+
+    assert_nil loader_a.cached_tools, "loader_a cache should be nil after clear"
+    assert_kind_of Array, loader_b.cached_tools, "loader_b cache should be unaffected"
+  end
+
+  def test_reset_instance_creates_fresh_default_instance
+    AIA::ToolLoader.load_tools(@config)
+    refute_nil AIA::ToolLoader.cached_tools
+
+    AIA::ToolLoader.reset_instance!
+
+    assert_nil AIA::ToolLoader.cached_tools, "New default instance should have nil cache"
+  end
+
+  def test_discover_tools_includes_tools_without_available_method
+    basic_tool_class = Class.new(RubyLLM::Tool) do
+      def self.name = 'basic_tool'
+      description "A basic tool without available? method"
+      def execute = 'ok'
+    end
+
+    tools = AIA::ToolLoader.discover_tools
+
+    assert_includes tools, basic_tool_class,
+                    "Tools without available? should be included"
+  ensure
+    nil
+    GC.start
+  end
+
+  def test_implements_execute_false_for_class_without_execute
+    half_loaded = Class.new(RubyLLM::Tool) { description "body raised before execute" }
+    refute AIA::ToolLoader.new.implements_execute?(half_loaded)
+  end
+
+  def test_implements_execute_true_for_class_with_execute
+    complete = Class.new(RubyLLM::Tool) { def execute = 'ok' }
+    assert AIA::ToolLoader.new.implements_execute?(complete)
+  end
+
+  def test_discover_tools_skips_and_reports_half_loaded_tools
+    half_loaded = Class.new(RubyLLM::Tool) do
+      def self.name = 'half_loaded_tool'
+      description "body raised before execute"
+    end
+
+    tools = nil
+    _out, err = capture_io { tools = AIA::ToolLoader.discover_tools }
+
+    refute_includes tools, half_loaded
+    assert_match(/did not finish loading.*half_loaded_tool/, err)
+  ensure
+    GC.start
+  end
+
+  def test_discover_tools_is_silent_about_unavailable_tools_without_debug
+    Class.new(RubyLLM::Tool) do
+      def self.name = 'quiet_unavailable_tool'
+      def execute = 'ok'
+      def available? = false
+    end
+
+    _out, err = capture_io { AIA::ToolLoader.discover_tools }
+
+    refute_match(/quiet_unavailable_tool/, err)
+  ensure
+    GC.start
+  end
+
+  def test_warn_incomplete_tools_silent_when_empty
+    _out, err = capture_io { AIA::ToolLoader.new.warn_incomplete_tools([]) }
+    assert_empty err
+  end
+
+  private
+
+  def create_test_config
+    OpenStruct.new(
+      models: [OpenStruct.new(name: 'gpt-4o-mini', role: nil, instance: 1, internal_id: 'gpt-4o-mini')],
+      pipeline: [],
+      context_files: [],
+      mcp_servers: [],
+      mcp_use: [],
+      mcp_skip: [],
+      require_libs: [],
+      loaded_tools: [],
+      tool_names: '',
+      prompts: OpenStruct.new(
+        dir: '/tmp/test_prompts',
+        extname: '.md',
+        roles_prefix: 'roles',
+        roles_dir: '/tmp/test_prompts/roles',
+        role: nil,
+        system_prompt: nil
+      ),
+      flags: OpenStruct.new(
+        chat: false,
+        no_mcp: false,
+        debug: false,
+        verbose: false,
+        consensus: false,
+        tokens: false
+      ),
+      llm: OpenStruct.new(
+        temperature: 0.7,
+        max_tokens: 2048,
+        top_p: 1.0,
+        frequency_penalty: 0.0,
+        presence_penalty: 0.0
+      ),
+      tools: OpenStruct.new(
+        paths: [],
+        allowed: nil,
+        rejected: nil
+      ),
+      output: OpenStruct.new(file: nil, append: false)
+    )
+  end
+end

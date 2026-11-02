@@ -1,0 +1,25 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+group :development do
+  gem 'aigcm'
+  gem 'debug_me'
+  gem 'fasterer'
+  gem 'flay'
+  gem 'flog'
+  gem 'reek'
+  gem 'rubocop'
+  gem 'simplecov_lcov_formatter'
+  gem 'deep-cover', require: false
+
+  # Not an aia dependency: users bring it with --require shared_tools.
+  # Listed here so bin/aia can load it and its deps for examples 18 and 30.
+  gem 'shared_tools', '>= 0.7.1'
+  gem 'dentaku' # shared_tools CalculatorTool (an optional shared_tools dependency)
+end
+
+gemspec
+
+gem 'robot_lab', path: '../robot_lab'
+gem 'ractor_queue', path: '../../../ractor_queue'

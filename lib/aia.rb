@@ -1,65 +1,125 @@
 # lib/aia.rb
 #
-# This is the main entry point for the AIA application.
-# The AIA module serves as the namespace for the AIA application, which
-# provides an interface for interacting with AI models and managing prompts.
+# Main entry point for the AIA application (v2).
+# AIA is a thin CLI shell orchestrating robot_lab robots.
 
-require 'ruby_llm'
-require 'ruby_llm/mcp'
-
-# NOTE: Complex parameters are now supported natively in ruby_llm-mcp >= 0.8.0
-#       The support_complex_parameters! method has been removed.
-
+gem 'bigdecimal', '>= 4.0'
+require 'bigdecimal'
+require 'robot_lab'
 require 'pm'
 
-
-require 'debug_me'
-include DebugMe
-$DEBUG_ME = false
-DebugMeDefaultOptions[:skip1] = true
-
-require_relative 'extensions/openstruct_merge'    # adds self.merge self.get_value
-require_relative 'extensions/ruby_llm/modalities' # adds model.modalities.text_to_text? etc.
-
-require_relative 'refinements/string' # adds #include_any? #include_all?
+# Patches disabled 2026-09-16 (per DVH) — re-enable by uncommenting.
+# NOTE: with ruby_llm_tool_param_compat disabled, the 2.0-style tool DSL
+# (`parameter`/`description:`) in lib/aia/tools/ requires ruby_llm >= 2.0.
+# require_relative 'aia/patches/ruby_llm_tool_error'
+# require_relative 'aia/patches/ruby_llm_streaming_error'
+# require_relative 'aia/patches/ruby_llm_tool_param_compat'
 
 require_relative 'aia/errors'
+require_relative 'aia/timing'
+require_relative 'aia/tool_introspection'
+require_relative 'aia/turn_state'
+require_relative 'aia/content_extractor'
+require_relative 'aia/speech'
 require_relative 'aia/utility'
+require_relative 'aia/mcp_server_config'
 require_relative 'aia/skill_utils'
+require_relative 'aia/role_catalog'
+require_relative 'aia/model_registry'
+require_relative 'aia/task_board'
+require_relative 'aia/trakflow_bridge'
+require_relative 'aia/task_coordinator'
 require_relative 'aia/version'
+require_relative 'aia/provider_registry'
 require_relative 'aia/config'
 require_relative 'aia/logger'
-
-# Top-level logger method available anywhere in the application
-def logger
-  AIA::LoggerManager.aia_logger
-end
 
 require_relative 'aia/config/cli_parser'
 require_relative 'aia/config/validator'
 require_relative 'aia/prompt_handler'
-require_relative 'aia/ruby_llm_adapter'
+require_relative 'aia/tool_loader'
+require_relative 'aia/plugin_loader'
+require_relative 'aia/plugin_monitor'
+require_relative 'aia/spawn_spec_parser'
+require_relative 'aia/crew'
+require_relative 'aia/tools/recruit_robot_tool'
+require_relative 'aia/tools/reskill_robot_tool'
+require_relative 'aia/system_prompt_assembler'
+require_relative 'aia/mcp_config_normalizer'
+require_relative 'aia/network_memory_manager'
+require_relative 'aia/tool_approver'
+require_relative 'aia/robot_factory'
+require_relative 'aia/robot_sync'
+require_relative 'aia/robot_builder'
 require_relative 'aia/directive_processor'
-require_relative 'aia/history_manager'
+require_relative 'aia/variable_input_collector'
 require_relative 'aia/ui_presenter'
-require_relative 'aia/chat_processor_service'
 require_relative 'aia/input_collector'
-require_relative 'aia/prompt_pipeline'
+require_relative 'aia/handler_context'
+require_relative 'aia/handler_protocol'
+require_relative 'aia/model_alias_registry'
+require_relative 'aia/mcp_discovery'
+require_relative 'aia/mcp_grouper'
+require_relative 'aia/cost_calculator'
+require_relative 'aia/session_tracker'
+require_relative 'aia/similarity_scorer'
+require_relative 'aia/fact_asserter'
+require_relative 'aia/tool_filter'
+require_relative 'aia/tool_filter_registry'
+require_relative 'aia/tool_filter_strategy'
+require_relative 'aia/streaming_runner'
+require_relative 'aia/mention_router'
+require_relative 'aia/special_mode_handler'
+require_relative 'aia/mcp_connection_manager'
+require_relative 'aia/startup_coordinator'
+require_relative 'aia/pipeline_orchestrator'
 require_relative 'aia/chat_loop'
 require_relative 'aia/session'
 
 # The AIA module serves as the namespace for the AIA application, which
 # provides an interface for interacting with AI models and managing prompts.
 module AIA
-  at_exit do
-    warn 'Exiting AIA application...'
-  end
+  require 'debug_me'
+  include DebugMe
+
+  $DEBUG_ME = false
+  DebugMeDefaultOptions[:skip1] = true
+
+  at_exit { AIA.announce_exit }
 
   @config = nil
   @client = nil
+  @session_tracker = nil
+  @turn_state = TurnState.new
 
   class << self
-    attr_accessor :config, :client
+    attr_accessor :config, :client, :session_tracker, :turn_state, :mcp_manager
+    attr_writer :task_coordinator
+
+    # The TrakFlow task coordinator, started the first time it is asked for.
+    #
+    # @return [AIA::TaskCoordinator, nil]
+    def task_coordinator
+      @task_coordinator ||= TaskBoard.coordinator
+    end
+
+    # Say goodbye when an interactive chat session ends. One-shot commands
+    # (--version, --help, --mcp-list, piped prompts) exit silently.
+    #
+    # @param io [IO]
+    def announce_exit(io = $stderr)
+      io.puts 'Exiting AIA application...' if chat?
+    end
+
+    def logger
+      AIA::LoggerManager.aia_logger
+    end
+
+    def reset!
+      @config = @client = @session_tracker = @turn_state =
+                            @task_coordinator = @mcp_manager = nil
+      ToolLoader.reset_instance!
+    end
 
     def good_file?(filename)
       File.exist?(filename) &&
@@ -67,78 +127,104 @@ module AIA
         !File.directory?(filename)
     end
 
-
     def bad_file?(filename)
       !good_file?(filename)
     end
-
 
     # Convenience flag accessors (delegate to config.flags section)
     def chat?
       @config&.flags&.chat == true
     end
 
-
     def debug?
       @config&.flags&.debug == true
     end
 
+    # Emit a warning always; if --debug is active and an exception is given,
+    # also print the first 5 backtrace frames so errors are diagnosable.
+    #
+    # @param msg [String]
+    # @param exc [Exception, nil]
+    def debug_warn(msg, exc: nil)
+      $stderr.puts msg
+      return unless exc && exc.backtrace && config&.flags&.debug
+      $stderr.puts exc.backtrace.first(5).join("\n")
+    end
 
     def verbose?
       @config&.flags&.verbose == true
     end
 
-
     def fuzzy?
       @config&.flags&.fuzzy == true
     end
-
 
     def speak?
       @config&.flags&.speak == true
     end
 
+    def paint?
+      @config&.flags&.paint == true
+    end
 
     def append?
       @config&.output&.append == true
     end
 
-
+    # :reek:TooManyStatements -- application boot sequence: parse, validate, log, load plugins, build robots, start session
     def run
-      # Parse CLI arguments
       cli_overrides = CLIParser.parse
-
-      # Create config with CLI overrides
       @config = Config.setup(cli_overrides)
+      return if ConfigValidator.tailor(@config) == :early_exit
 
-      # Validate and tailor configuration (handles --dump early exit)
-      ConfigValidator.tailor(@config)
+      log_startup
 
-      # Load Fzf if fuzzy search is enabled and fzf is installed
-      if @config.flags.fuzzy
-        begin
-          if system('which fzf >/dev/null 2>&1')
-            require_relative 'aia/fzf'
-          else
-            warn 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
-          end
-        rescue StandardError => e
-          warn "Warning: Failed to load fzf: #{e.message}"
-        end
+      PluginLoader.load!(@config)
+      start_plugin_monitor
+      RobotFactory.setup(@config)
+      load_fzf_integration
+      start_session
+    rescue AIA::ConfigurationError => e
+      $stderr.puts e.message
+      exit 1
+    rescue AIA::Error => e
+      $stderr.puts e.message
+      exit 1
+    end
+
+    private
+
+    # Record startup in all three log files. Only aia.log gets the full
+    # configuration dump; llm.log and mcp.log just note that AIA started,
+    # since their configuration is already covered by the aia.log entry.
+    def log_startup
+      LoggerManager.aia_logger.debug('AIA started up.', @config.to_h)
+      LoggerManager.llm_logger.debug('AIA started up.')
+      LoggerManager.mcp_logger.debug('AIA started up.')
+    end
+
+    def start_plugin_monitor
+      return unless @config.flags.chat
+
+      @plugin_monitor = PluginMonitor.new(@config).start
+      at_exit { @plugin_monitor&.stop }
+    end
+
+    def load_fzf_integration
+      return unless @config.flags.fuzzy
+
+      if system('which fzf >/dev/null 2>&1')
+        require_relative 'aia/fzf'
+      else
+        $stderr.puts 'Warning: Fuzzy search enabled but fzf not found. Install fzf for enhanced search capabilities.'
       end
+    rescue StandardError => e
+      $stderr.puts "Warning: Failed to load fzf: #{e.message}"
+    end
 
-      prompt_handler = PromptHandler.new
-
-      @client = RubyLLMAdapter.new
-
-      # There are two kinds of sessions: batch and chat
-      # A chat session is started when the --chat CLI option is used
-      # BUT its also possible to start a chat session with an initial prompt AND
-      # within that initial prompt there can be a workflow (aka pipeline)
-      # defined.  If that is the case, then the chat session will not start
-      # until the initial prompt has completed its workflow.
-
-      session = Session.new(prompt_handler)
+    def start_session
+      session = Session.new(PromptHandler.new)
+      at_exit { session.cleanup }
       session.start
     end
   end

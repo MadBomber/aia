@@ -1,118 +1,149 @@
 # lib/aia/utility.rb
 
-require 'word_wrapper'      # Pure ruby word wrapping
+require 'word_wrapper'
+require 'simple_flow'
+require 'trak_flow'
+require 'tty-table'
+require_relative 'mcp_utility'
+require_relative 'tool_utility'
 
 module AIA
-  class Utility
+  module Utility
     class << self
-      def tools?
-        AIA.config&.tool_names && !AIA.config.tool_names.empty?
-      end
+      include MCPUtility
+      include ToolUtility
 
-      def user_tools?
-        AIA.config&.tools&.paths && !AIA.config.tools.paths.empty?
-      end
-
-      def mcp_servers?
-        AIA.config&.mcp_servers && !AIA.config.mcp_servers.empty?
-      end
-
-      # Returns only successfully connected MCP server names
-      def mcp_server_names
-        # Use connected_mcp_servers if available (populated during MCP setup)
-        connected = AIA.config&.connected_mcp_servers
-        return connected if connected && !connected.empty?
-
-        # Fallback to configured servers if connection status not yet known
-        return [] unless mcp_servers?
-        AIA.config.mcp_servers.map { |s| s[:name] || s["name"] }.compact
-      end
-
-      # Returns true if there are any connected MCP servers
-      def connected_mcp_servers?
-        connected = AIA.config&.connected_mcp_servers
-        connected && !connected.empty?
-      end
-
-      # Returns list of failed MCP servers with their errors
-      def failed_mcp_servers
-        AIA.config&.failed_mcp_servers || []
-      end
-
-      def supports_tools?
-        AIA.client&.model&.supports_functions? || false
-      end
-
-      # Returns the last refresh date from models.json modification time
       def models_last_refresh
         aia_dir = AIA.config&.paths&.aia_dir
         return nil if aia_dir.nil?
-
         models_file = File.join(File.expand_path(aia_dir), 'models.json')
-        return nil unless File.exist?(models_file)
-
         File.mtime(models_file).strftime('%Y-%m-%d %H:%M')
+      rescue Errno::ENOENT
+        nil
       end
 
-      # Displays the AIA robot ASCII art
-      # Yes, its slightly frivolous but it does contain some
-      # useful configuration information.
+      def build_crew_line
+        names = robot_names
+        return '' if names.empty?
+        "Today's crew: #{format_crew_mentions(names)}"
+      end
+
       def robot
-        indent  = 18
-        spaces  = " "*indent
-        width   = TTY::Screen.width - indent - 2
+        art = [
+          '       ,      ,',
+          '       (\____/)',
+          '        (_oo_)',
+          '         (O)',
+          '       __|||__    \)',
+          '     [/ Tobor \]  /',
+          '    / \_______/ \/',
+          '   /    /___\\',
+          '  (\   /_____\\',
+          '     :::     :::',
+          '     :::     :::'
+        ].join("\n")
 
-        mcp_version = defined?(RubyLLM::MCP::VERSION) ? " MCP v" + RubyLLM::MCP::VERSION : ''
+        art_width   = art.lines.map(&:length).max
+        info_width  = [TTY::Screen.width - art_width - 4, 30].max
+        label_width = 7  # "Models:" is the widest label
+        value_width = [info_width - label_width - 1, 20].max
 
-        # Extract model names from config (handles ModelSpec objects or Hashes)
-        model_display = if AIA.config&.models && !AIA.config.models.empty?
-          models = AIA.config.models
-          models.map do |spec|
-            if spec.is_a?(AIA::ModelSpec)
-              spec.name
-            elsif spec.is_a?(Hash)
-              spec[:name] || spec['name'] || spec.to_s
-            else
-              spec.to_s
-            end
-          end.join(', ')
-        else
-          'unknown-model'
-        end
+        header = "AIA v#{AIA::VERSION} is Online"
 
-        # Build MCP line based on connection status
-        mcp_line = if !mcp_servers?
-          ''  # No MCP servers configured
-        elsif connected_mcp_servers?
-          "MCP: #{mcp_server_names.join(', ')}"
-        else
-          "MCP: (none connected)"
-        end
+        inner = TTY::Table.new(banner_detail_rows)
+        details = inner.render(:basic, multiline: true,
+                               column_widths: [label_width, value_width],
+                               alignments: %i[right left])
 
-        puts <<-ROBOT
+        outer = TTY::Table.new([[art, "#{header}\n\n#{details}"]])
+        puts "\n#{outer.render(:basic, multiline: true, column_widths: [art_width, info_width], padding: [0, 1, 0, 0])}"
+      end
 
-       ,      ,
-       (\\____/) AI Assistant (v#{AIA::VERSION}) is Online
-        (_oo_)   #{model_display}#{supports_tools? ? ' (supports tools)' : ''}
-         (O)       using ruby_llm (v#{RubyLLM::VERSION}#{mcp_version})
-       __||__    \\) model db was last refreshed on
-     [/______\\]  /    #{models_last_refresh || 'unknown'}
-    / \\__AI__/ \\/      #{user_tools? ? 'I will also use your tools' : (tools? ? 'You can share my tools' : 'I did not bring any tools')}
-   /    /__\\              #{mcp_line}
-  (\\   /____\\   #{user_tools? && tools? ? 'My Toolbox contains:' : ''}
-        ROBOT
-        if user_tools? && tools?
-          tool_names = AIA.config.tool_names
-          if tool_names && !tool_names.to_s.empty?
-            puts WordWrapper::MinimumRaggedness.new(
-                width,
-                tool_names.to_s # String of tool names, comma separated
-              ).wrap
-              .split("\n")
-              .map{|s| spaces+s+"\n"}
-              .join
+      private
+
+      def robot_names
+        client = AIA.client
+        return [] unless client
+        client.crew.map(&:name)
+      end
+
+      def format_crew_mentions(names)
+        names.map { |n| "@#{n.downcase}" }.join(', ')
+      end
+
+      def banner_detail_rows
+        [
+          ['Models:', banner_models],
+          ['DB:',     banner_db],
+          ['Libs:',   banner_libs],
+          ['Tools:',  banner_tools],
+          ['MCP:',    banner_mcp],
+          ['Crew:',   banner_crew]
+        ]
+      end
+
+      def banner_models
+        models = AIA.config&.models
+        return 'unknown-model' if models.nil? || models.empty?
+        models.map do |spec|
+          case spec
+          when AIA::ModelSpec then spec.name
+          when Hash           then spec[:name] || spec['name'] || spec.to_s
+          else                     spec.to_s
           end
+        end.join(', ')
+      end
+
+      def banner_libs
+        parts = ["ruby_llm v#{RubyLLM::VERSION}"]
+        parts << "robot_lab v#{RobotLab::VERSION}"         if defined?(RobotLab::VERSION)
+        parts << "simple_flow v#{SimpleFlow::VERSION}"     if defined?(SimpleFlow::VERSION)
+        parts << "trak_flow v#{TrakFlow::VERSION}"         if defined?(TrakFlow::VERSION)
+        parts << "typed_bus v#{TypedBus::VERSION}"         if defined?(TypedBus::VERSION)
+        parts.join(', ')
+      end
+
+      def banner_tools
+        count = total_tool_count
+        if count.positive?
+          "#{count} #{count == 1 ? 'tool' : 'tools'} loaded"
+        else
+          'none loaded'
         end
+      end
+
+      def banner_mcp
+        connected = mcp_client_labels
+        failed    = failed_mcp_servers.map { |f| server_name(f) }
+        return '(none configured)' if connected.empty? && failed.empty?
+        parts = []
+        parts << connected.join(', ')           unless connected.empty?
+        parts << "FAILED: #{failed.join(', ')}" unless failed.empty?
+        parts.join(' | ')
+      end
+
+      # connected_mcp_servers (set by MCPConnectionManager) is the authoritative
+      # name list; mcp_server_tool_counts provides per-server tool counts.
+      def mcp_client_labels
+        cfg = AIA.config
+        return [] if cfg&.flags&.no_mcp
+
+        counts = cfg&.mcp_server_tool_counts || {}
+        Array(cfg&.connected_mcp_servers).map do |name|
+          count = counts[name]
+          count ? "#{name}(#{count})" : name
+        end
+      end
+
+      def banner_db
+        refresh = models_last_refresh
+        refresh ? "refreshed #{refresh.gsub(' ', ' at ')}" : 'not yet refreshed'
+      end
+
+      def banner_crew
+        names = robot_names
+        return '' if names.empty?
+        format_crew_mentions(names)
       end
     end
   end

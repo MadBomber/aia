@@ -3,6 +3,7 @@
 require_relative '../test_helper'
 require 'ostruct'
 require 'tmpdir'
+require 'aia/fzf'
 
 class PromptHandlerFetchPromptTest < Minitest::Test
   def setup
@@ -11,22 +12,22 @@ class PromptHandlerFetchPromptTest < Minitest::Test
     Dir.mkdir(@roles_dir)
 
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: [OpenStruct.new(name: 'test-model')],
-      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
-      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
-      tools: OpenStruct.new(paths: []),
-      context_files: [],
-      pipeline: [],
-      prompts: OpenStruct.new(
-        dir: @prompts_dir,
-        extname: '.md',
-        roles_dir: @roles_dir,
-        roles_prefix: 'roles',
-        role: nil,
-        parameter_regex: nil
-      ),
-      prompt_id: 'test_prompt'
-    ))
+                                 models: [OpenStruct.new(name: 'test-model')],
+                                 llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+                                 flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+                                 tools: OpenStruct.new(paths: []),
+                                 context_files: [],
+                                 pipeline: [],
+                                 prompts: OpenStruct.new(
+                                   dir: @prompts_dir,
+                                   extname: '.md',
+                                   roles_dir: @roles_dir,
+                                   roles_prefix: 'roles',
+                                   role: nil,
+                                   parameter_regex: nil
+                                 ),
+                                 prompt_id: 'test_prompt'
+                               ))
 
     @handler = AIA::PromptHandler.new
   end
@@ -34,6 +35,18 @@ class PromptHandlerFetchPromptTest < Minitest::Test
   def teardown
     FileUtils.rm_rf(@prompts_dir)
     super
+  end
+
+  def test_role_picker_lists_the_roles_aia_can_load
+    FileUtils.mkdir_p(File.join(@roles_dir, 'dev'))
+    File.write(File.join(@roles_dir, 'dev', 'architect.md'), 'Architect')
+    File.write(File.join(@roles_dir, 'writer.md'), 'Writer')
+    File.write(File.join(@roles_dir, '_draft.md'), 'Private')
+    fzf = mock('fzf')
+    fzf.stubs(:run).returns('dev/architect')
+    AIA::Fzf.expects(:new).with(has_entries(list: %w[dev/architect writer], directory: @roles_dir)).returns(fzf)
+
+    assert_equal 'roles/dev/architect', @handler.send(:search_role_id_with_fzf, 'arch')
   end
 
   def test_fetch_fuzzy_search_sentinel
@@ -50,7 +63,7 @@ class PromptHandlerFetchPromptTest < Minitest::Test
 
     mock_parsed = mock('parsed')
     mock_parsed.stubs(:metadata).returns(nil)
-    PM.stubs(:parse).with("puts 'hello'").returns(mock_parsed)
+    PM.stubs(:parse_string).with("puts 'hello'").returns(mock_parsed)
 
     result = @handler.fetch_prompt('__EXECUTABLE_PROMPT__')
     assert_equal mock_parsed, result
@@ -61,21 +74,17 @@ class PromptHandlerFetchPromptTest < Minitest::Test
 
     mock_parsed = mock('parsed')
     mock_parsed.stubs(:metadata).returns(nil)
-    PM.stubs(:parse).with('my_prompt').returns(mock_parsed)
+    PM.stubs(:parse).with(Pathname.new(File.join(@prompts_dir, 'my_prompt.md'))).returns(mock_parsed)
 
     result = @handler.fetch_prompt('my_prompt')
     assert_equal mock_parsed, result
   end
 
   def test_fetch_prompt_missing_file_without_fuzzy
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.fetch_prompt('nonexistent')
-    assert stderr_messages.any? { |m| m.include?('Could not find prompt') }
+    _, err = capture_io { @handler.fetch_prompt('nonexistent') }
+    assert_includes err, 'Could not find prompt'
   end
 end
-
 
 class PromptHandlerFetchRoleTest < Minitest::Test
   def setup
@@ -84,22 +93,22 @@ class PromptHandlerFetchRoleTest < Minitest::Test
     Dir.mkdir(@roles_dir)
 
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: [OpenStruct.new(name: 'test-model')],
-      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
-      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
-      tools: OpenStruct.new(paths: []),
-      context_files: [],
-      pipeline: [],
-      prompts: OpenStruct.new(
-        dir: @prompts_dir,
-        extname: '.md',
-        roles_dir: @roles_dir,
-        roles_prefix: 'roles',
-        role: nil,
-        parameter_regex: nil
-      ),
-      prompt_id: 'test_prompt'
-    ))
+                                 models: [OpenStruct.new(name: 'test-model')],
+                                 llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+                                 flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+                                 tools: OpenStruct.new(paths: []),
+                                 context_files: [],
+                                 pipeline: [],
+                                 prompts: OpenStruct.new(
+                                   dir: @prompts_dir,
+                                   extname: '.md',
+                                   roles_dir: @roles_dir,
+                                   roles_prefix: 'roles',
+                                   role: nil,
+                                   parameter_regex: nil
+                                 ),
+                                 prompt_id: 'test_prompt'
+                               ))
 
     @handler = AIA::PromptHandler.new
   end
@@ -110,11 +119,8 @@ class PromptHandlerFetchRoleTest < Minitest::Test
   end
 
   def test_fetch_role_nil_exits
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.fetch_role(nil)
-    assert stderr_messages.any? { |m| m.include?('Role ID cannot be empty') }
+    _, err = capture_io { @handler.fetch_role(nil) }
+    assert_includes err, 'Role ID cannot be empty'
   end
 
   def test_fetch_role_prepends_prefix
@@ -132,14 +138,10 @@ class PromptHandlerFetchRoleTest < Minitest::Test
   end
 
   def test_fetch_role_missing_without_fuzzy
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.fetch_role('nonexistent')
-    assert stderr_messages.any? { |m| m.include?('Could not find role') }
+    _, err = capture_io { @handler.fetch_role('nonexistent') }
+    assert_includes err, 'Could not find role'
   end
 end
-
 
 class PromptHandlerLoadRoleForModelTest < Minitest::Test
   def setup
@@ -148,22 +150,22 @@ class PromptHandlerLoadRoleForModelTest < Minitest::Test
     Dir.mkdir(@roles_dir)
 
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: [OpenStruct.new(name: 'test-model')],
-      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
-      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
-      tools: OpenStruct.new(paths: []),
-      context_files: [],
-      pipeline: [],
-      prompts: OpenStruct.new(
-        dir: @prompts_dir,
-        extname: '.md',
-        roles_dir: @roles_dir,
-        roles_prefix: 'roles',
-        role: nil,
-        parameter_regex: nil
-      ),
-      prompt_id: 'test_prompt'
-    ))
+                                 models: [OpenStruct.new(name: 'test-model')],
+                                 llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+                                 flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+                                 tools: OpenStruct.new(paths: []),
+                                 context_files: [],
+                                 pipeline: [],
+                                 prompts: OpenStruct.new(
+                                   dir: @prompts_dir,
+                                   extname: '.md',
+                                   roles_dir: @roles_dir,
+                                   roles_prefix: 'roles',
+                                   role: nil,
+                                   parameter_regex: nil
+                                 ),
+                                 prompt_id: 'test_prompt'
+                               ))
 
     @handler = AIA::PromptHandler.new
   end
@@ -207,15 +209,12 @@ class PromptHandlerLoadRoleForModelTest < Minitest::Test
   def test_load_role_handles_error_gracefully
     @handler.stubs(:fetch_role).raises(StandardError, 'role error')
 
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    result = @handler.load_role_for_model({ role: 'broken' })
+    result = nil
+    _, err = capture_io { result = @handler.load_role_for_model({ role: 'broken' }) }
     assert_nil result
-    assert stderr_messages.any? { |m| m.include?('Could not load role') }
+    assert_includes err, 'Could not load role'
   end
 end
-
 
 class PromptHandlerApplyMetadataTest < Minitest::Test
   def setup
@@ -269,7 +268,24 @@ class PromptHandlerApplyMetadataTest < Minitest::Test
     parsed.stubs(:metadata).returns(metadata)
 
     @handler.apply_metadata_config(parsed)
-    assert_equal ['gpt-4o'], @config.models
+    assert_equal ['gpt-4o'], @config.models.map(&:name)
+    assert_kind_of AIA::ModelSpec, @config.models.first
+  end
+
+  def test_apply_model_shorthand_with_role_and_list
+    metadata = OpenStruct.new(to_h: { 'model' => ['gpt-4o=architect', 'claude-haiku-4-5'] })
+    parsed = mock('parsed')
+    parsed.stubs(:metadata).returns(metadata)
+
+    @handler.apply_metadata_config(parsed)
+    assert_equal %w[gpt-4o claude-haiku-4-5], @config.models.map(&:name)
+    assert_equal 'architect', @config.models.first.role
+  end
+
+  def test_deep_merge_config_models_become_model_specs
+    @handler.send(:deep_merge_config, { models: ['gpt-4o'] })
+    assert_kind_of AIA::ModelSpec, @config.models.first
+    assert_equal 'gpt-4o', @config.models.first.name
   end
 
   def test_apply_temperature_shorthand
@@ -300,12 +316,12 @@ class PromptHandlerApplyMetadataTest < Minitest::Test
   end
 
   def test_apply_pipeline_shorthand
-    metadata = OpenStruct.new(to_h: { 'pipeline' => ['a', 'b', 'c'] })
+    metadata = OpenStruct.new(to_h: { 'pipeline' => %w[a b c] })
     parsed = mock('parsed')
     parsed.stubs(:metadata).returns(metadata)
 
     @handler.apply_metadata_config(parsed)
-    assert_equal ['a', 'b', 'c'], @config.pipeline
+    assert_equal %w[a b c], @config.pipeline
   end
 
   def test_apply_shell_shorthand
@@ -327,7 +343,6 @@ class PromptHandlerApplyMetadataTest < Minitest::Test
   end
 end
 
-
 class PromptHandlerShorthandConflictsTest < Minitest::Test
   def setup
     @prompts_dir = Dir.mktmpdir
@@ -335,22 +350,22 @@ class PromptHandlerShorthandConflictsTest < Minitest::Test
     Dir.mkdir(@roles_dir)
 
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: ['test-model'],
-      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
-      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
-      tools: OpenStruct.new(paths: []),
-      context_files: [],
-      pipeline: [],
-      prompts: OpenStruct.new(
-        dir: @prompts_dir,
-        extname: '.md',
-        roles_dir: @roles_dir,
-        roles_prefix: 'roles',
-        role: nil,
-        parameter_regex: nil
-      ),
-      prompt_id: 'test_prompt'
-    ))
+                                 models: ['test-model'],
+                                 llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+                                 flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+                                 tools: OpenStruct.new(paths: []),
+                                 context_files: [],
+                                 pipeline: [],
+                                 prompts: OpenStruct.new(
+                                   dir: @prompts_dir,
+                                   extname: '.md',
+                                   roles_dir: @roles_dir,
+                                   roles_prefix: 'roles',
+                                   role: nil,
+                                   parameter_regex: nil
+                                 ),
+                                 prompt_id: 'test_prompt'
+                               ))
 
     @handler = AIA::PromptHandler.new
   end
@@ -393,7 +408,6 @@ class PromptHandlerShorthandConflictsTest < Minitest::Test
   end
 end
 
-
 class PromptHandlerHelperMethodsTest < Minitest::Test
   def setup
     @prompts_dir = Dir.mktmpdir
@@ -401,22 +415,22 @@ class PromptHandlerHelperMethodsTest < Minitest::Test
     Dir.mkdir(@roles_dir)
 
     AIA.stubs(:config).returns(OpenStruct.new(
-      models: ['test-model'],
-      llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
-      flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
-      tools: OpenStruct.new(paths: []),
-      context_files: [],
-      pipeline: [],
-      prompts: OpenStruct.new(
-        dir: @prompts_dir,
-        extname: '.md',
-        roles_dir: @roles_dir,
-        roles_prefix: 'roles',
-        role: nil,
-        parameter_regex: nil
-      ),
-      prompt_id: 'test_prompt'
-    ))
+                                 models: ['test-model'],
+                                 llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
+                                 flags: OpenStruct.new(chat: false, fuzzy: false, erb: false, shell: false),
+                                 tools: OpenStruct.new(paths: []),
+                                 context_files: [],
+                                 pipeline: [],
+                                 prompts: OpenStruct.new(
+                                   dir: @prompts_dir,
+                                   extname: '.md',
+                                   roles_dir: @roles_dir,
+                                   roles_prefix: 'roles',
+                                   role: nil,
+                                   parameter_regex: nil
+                                 ),
+                                 prompt_id: 'test_prompt'
+                               ))
 
     @handler = AIA::PromptHandler.new
   end
@@ -461,7 +475,7 @@ class PromptHandlerHelperMethodsTest < Minitest::Test
 
   def test_dig_hash_nested_keys
     hash = { a: { b: { c: 42 } } }
-    assert_equal 42, @handler.send(:dig_hash, hash, [:a, :b, :c])
+    assert_equal 42, @handler.send(:dig_hash, hash, %i[a b c])
   end
 
   def test_dig_hash_missing_key_returns_nil
@@ -471,12 +485,12 @@ class PromptHandlerHelperMethodsTest < Minitest::Test
 
   def test_dig_hash_nil_intermediate_returns_nil
     hash = { a: nil }
-    assert_nil @handler.send(:dig_hash, hash, [:a, :b])
+    assert_nil @handler.send(:dig_hash, hash, %i[a b])
   end
 
   def test_dig_hash_with_string_fallback
     hash = { 'a' => { 'b' => 99 } }
-    assert_equal 99, @handler.send(:dig_hash, hash, [:a, :b])
+    assert_equal 99, @handler.send(:dig_hash, hash, %i[a b])
   end
 
   # --- deep_merge_config ---
@@ -487,7 +501,8 @@ class PromptHandlerHelperMethodsTest < Minitest::Test
       llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
       flags: OpenStruct.new(chat: false, fuzzy: false),
       pipeline: [],
-      prompts: OpenStruct.new(dir: @prompts_dir, extname: '.md', roles_dir: @roles_dir, roles_prefix: 'roles', role: nil, parameter_regex: nil)
+      prompts: OpenStruct.new(dir: @prompts_dir, extname: '.md', roles_dir: @roles_dir, roles_prefix: 'roles', role: nil,
+                              parameter_regex: nil)
     )
     AIA.stubs(:config).returns(config)
 
@@ -502,7 +517,8 @@ class PromptHandlerHelperMethodsTest < Minitest::Test
       llm: OpenStruct.new(temperature: 0.7, max_tokens: 2048),
       flags: OpenStruct.new(chat: false, fuzzy: false),
       pipeline: [],
-      prompts: OpenStruct.new(dir: @prompts_dir, extname: '.md', roles_dir: @roles_dir, roles_prefix: 'roles', role: nil, parameter_regex: nil)
+      prompts: OpenStruct.new(dir: @prompts_dir, extname: '.md', roles_dir: @roles_dir, roles_prefix: 'roles', role: nil,
+                              parameter_regex: nil)
     )
     AIA.stubs(:config).returns(config)
 
@@ -514,48 +530,32 @@ class PromptHandlerHelperMethodsTest < Minitest::Test
   # --- handle_missing_prompt ---
 
   def test_handle_missing_prompt_empty_id
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.send(:handle_missing_prompt, '')
-    assert stderr_messages.any? { |m| m.include?('cannot be empty') }
+    _, err = capture_io { @handler.send(:handle_missing_prompt, '') }
+    assert_includes err, 'cannot be empty'
   end
 
   def test_handle_missing_prompt_non_fuzzy_exits
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.send(:handle_missing_prompt, 'no_such_prompt')
-    assert stderr_messages.any? { |m| m.include?('Could not find prompt') }
+    _, err = capture_io { @handler.send(:handle_missing_prompt, 'no_such_prompt') }
+    assert_includes err, 'Could not find prompt'
   end
 
   # --- handle_missing_role ---
 
   def test_handle_missing_role_empty
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.send(:handle_missing_role, '')
-    assert stderr_messages.any? { |m| m.include?('Role ID cannot be empty') }
+    _, err = capture_io { @handler.send(:handle_missing_role, '') }
+    assert_includes err, 'Role ID cannot be empty'
   end
 
   def test_handle_missing_role_roles_slash
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.send(:handle_missing_role, 'roles/')
-    assert stderr_messages.any? { |m| m.include?('Role ID cannot be empty') }
+    _, err = capture_io { @handler.send(:handle_missing_role, 'roles/') }
+    assert_includes err, 'Role ID cannot be empty'
   end
 
   def test_handle_missing_role_non_fuzzy_exits
-    stderr_messages = []
-    @handler.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    @handler.send(:handle_missing_role, 'no_such_role')
-    assert stderr_messages.any? { |m| m.include?('Could not find role') }
+    _, err = capture_io { @handler.send(:handle_missing_role, 'no_such_role') }
+    assert_includes err, 'Could not find role'
   end
 end
-
 
 class PromptHandlerShorthandKeysTest < Minitest::Test
   def test_shorthand_keys_constant

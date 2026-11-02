@@ -1,38 +1,54 @@
 # lib/aia/directives/model_directives.rb
 
+require_relative '../modality_query'
+
 module AIA
   class ModelDirectives < Directive
     desc "List all available AI models"
     def available_models(args = nil, context_manager = nil)
       positive_terms, negative_terms = parse_search_terms(Array(args))
 
-      current_models = AIA.config.models
+      provider_slugs = configured_provider_slugs(AIA.config.models)
 
-      model_names = current_models.map do |m|
-        m.respond_to?(:name) ? m.name : m.to_s
-      end
-
-      using_local_provider = model_names.any? { |m| m.start_with?('ollama/', 'lms/') }
-
-      if using_local_provider
-        show_local_models(model_names, positive_terms, negative_terms)
+      if provider_slugs.any?
+        show_provider_models(provider_slugs, positive_terms, negative_terms)
       else
         show_rubyllm_models(positive_terms, negative_terms)
       end
 
       ""
     end
-    alias_method :am,         :available_models
-    alias_method :available,   :available_models
-    alias_method :models,      :available_models
-    alias_method :all_models,  :available_models
-    alias_method :llms,        :available_models
+    alias am available_models
+    alias available available_models
+    alias models available_models
+    alias all_models available_models
+    alias llms available_models
 
     desc "Compare responses from multiple models"
     def compare(args, context_manager = nil)
-      return 'Error: No prompt provided for comparison' if args.empty?
+      prompt, models = parse_compare_args(args)
 
-      prompt = nil
+      return report_error('Error: No prompt provided for comparison') unless prompt
+      return report_error('Error: No models specified. Use --models model1,model2,model3') if models.empty?
+
+      puts "\nComparing responses for: #{prompt}\n"
+      puts '=' * 80
+
+      models.each { |model_name| compare_with_model(model_name.strip, prompt) }
+
+      puts "\n" + ('=' * 80)
+      puts "\nComparison complete!"
+
+      ''
+    end
+    alias cmp compare
+
+    # --- helpers (no desc → not registered) ---
+
+    # Split a //compare arg list into [prompt, models]; every word that is
+    # not part of `--models a,b,c` belongs to the prompt.
+    def parse_compare_args(args)
+      words  = []
       models = []
 
       i = 0
@@ -41,204 +57,147 @@ module AIA
           models = args[i + 1].split(',')
           i += 2
         else
-          prompt ||= args[i]
+          words << args[i]
           i += 1
         end
       end
 
-      return 'Error: No prompt provided for comparison' unless prompt
-      return 'Error: No models specified. Use --models model1,model2,model3' if models.empty?
-
-      puts "\nComparing responses for: #{prompt}\n"
-      puts '=' * 80
-
-      results = {}
-
-      models.each do |model_name|
-        model_name.strip!
-        puts "\n🤖 **#{model_name}:**"
-        puts '-' * 40
-
-        begin
-          chat = RubyLLM.chat(model: model_name)
-          response = chat.ask(prompt)
-          content = response.content
-
-          puts content
-          results[model_name] = content
-        rescue StandardError => e
-          error_msg = "Error with #{model_name}: #{e.message}"
-          puts error_msg
-          results[model_name] = error_msg
-        end
-      end
-
-      puts '\n' + '=' * 80
-      puts "\nComparison complete!"
-
-      ''
-    end
-    alias_method :cmp, :compare
-
-    # --- helpers (no desc → not registered) ---
-
-    def show_local_models(current_models, positive_terms, negative_terms)
-      require 'net/http'
-      require 'json'
-
-      puts "\nLocal LLM Models:"
-      puts
-
-      current_models.each do |model_spec|
-        if model_spec.start_with?('ollama/')
-          api_base = ENV.fetch('OLLAMA_API_BASE', 'http://localhost:11434')
-          api_base = api_base.gsub(%r{/v1/?$}, '')
-          show_ollama_models(api_base, positive_terms, negative_terms)
-        elsif model_spec.start_with?('lms/')
-          api_base = ENV.fetch('LMS_API_BASE', 'http://localhost:1234')
-          show_lms_models(api_base, positive_terms, negative_terms)
-        end
-      end
+      prompt = words.join(' ').strip
+      [prompt.empty? ? nil : prompt, models]
     end
 
-    def show_ollama_models(api_base, positive_terms, negative_terms)
-      begin
-        uri = URI("#{api_base}/api/tags")
-        response = Net::HTTP.get_response(uri)
+    def compare_with_model(model_name, prompt)
+      puts "\n🤖 **#{model_name}:**"
+      puts '-' * 40
 
-        unless response.is_a?(Net::HTTPSuccess)
-          puts "❌ Cannot connect to Ollama at #{api_base}"
-          return
+      response = RubyLLM.chat(model: model_name).ask(prompt)
+      puts response.content
+    rescue StandardError => e
+      puts "Error with #{model_name}: #{e.message}"
+    end
+
+    # Log and print a directive error, then return nil so the chat loop
+    # skips forwarding it to the robot (an error is not conversational output).
+    def report_error(msg)
+      AIA::LoggerManager.aia_logger.error(msg)
+      puts msg
+      nil
+    end
+
+    # Provider slugs referenced by the configured models — from ModelSpec#provider
+    # when present, else from a registered "<slug>/" name prefix (raw string
+    # model specs). Entirely registry-driven; no provider names are hardcoded.
+    def configured_provider_slugs(models)
+      Array(models).filter_map do |m|
+        if m.respond_to?(:provider) && m.provider
+          m.provider.to_s
+        else
+          name = (m.respond_to?(:name) ? m.name : m).to_s
+          prefix = name.split('/', 2).first if name.include?('/')
+          prefix if AIA::ProviderRegistry.registered?(prefix)
         end
+      end.uniq
+    end
 
-        data = JSON.parse(response.body)
-        models = data['models'] || []
+    # List each provider's live models through RubyLLM's own provider API
+    # (Provider#list_models), the same path every registered provider —
+    # built-in or gem-supplied — implements.
+    # :reek:TooManyStatements -- sequential terminal report per provider: header, listing, connection guard
+    def show_provider_models(provider_slugs, positive_terms = nil, negative_terms = nil)
+      positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
 
-        if models.empty?
-          puts "No Ollama models found"
-          return
-        end
-
-        puts "Ollama Models (#{api_base}):"
+      provider_slugs.each do |slug|
+        puts "\n#{slug} models:"
         puts "-" * 60
 
-        counter = 0
-        models.each do |model|
-          name = model['name']
-          size = model['size'] ? format_bytes(model['size']) : 'unknown'
-          modified = model['modified_at'] ? Time.parse(model['modified_at']).strftime('%Y-%m-%d') : 'unknown'
-
-          entry = "- ollama/#{name} (size: #{size}, modified: #{modified})"
-          entry_down = entry.downcase
-
-          show_it = positive_terms.empty? || positive_terms.any? { |q| entry_down.include?(q) }
-          show_it &&= negative_terms.none? { |q| entry_down.include?(q) }
-
-          if show_it
-            puts entry
-            counter += 1
-          end
-        end
-
-        puts
-        puts "#{counter} Ollama model(s) available"
-        puts
+        entries = provider_model_entries(slug)
+        print_filtered_entries(entries, positive_terms, negative_terms, "#{slug} model(s) available")
       rescue StandardError => e
-        puts "❌ Error fetching Ollama models: #{e.message}"
+        puts "❌ Cannot list models for provider '#{slug}': #{e.message}"
       end
     end
 
-    def show_lms_models(api_base, positive_terms, negative_terms)
-      begin
-        uri = URI("#{api_base.gsub(%r{/v1/?$}, '')}/v1/models")
-        response = Net::HTTP.get_response(uri)
+    # One "- <slug>/<model-id>" line per model the provider reports.
+    def provider_model_entries(slug)
+      provider = AIA::ProviderRegistry.instantiate(slug)
+      provider.list_models.map { |model| "- #{slug}/#{model.id}" }
+    end
 
-        unless response.is_a?(Net::HTTPSuccess)
-          puts "❌ Cannot connect to LM Studio at #{api_base}"
-          return
-        end
+    # The entry is a String; Array#intersect? would raise TypeError
+    def entry_matches?(entry_lc, positive_terms, negative_terms)
+      (positive_terms.empty? || positive_terms.any? { |q| entry_lc.include?(q) }) &&
+        negative_terms.none? { |q| entry_lc.include?(q) }
+    end
 
-        data = JSON.parse(response.body)
-        models = data['data'] || []
+    def print_filtered_entries(entries, positive_terms, negative_terms, summary_label)
+      counter = 0
+      entries.each do |entry|
+        next unless entry_matches?(entry.downcase, positive_terms, negative_terms)
 
-        if models.empty?
-          puts "No LM Studio models found"
-          return
-        end
-
-        puts "LM Studio Models (#{api_base}):"
-        puts "-" * 60
-
-        counter = 0
-        models.each do |model|
-          name = model['id']
-          entry = "- lms/#{name}"
-          entry_down = entry.downcase
-
-          show_it = positive_terms.empty? || positive_terms.any? { |q| entry_down.include?(q) }
-          show_it &&= negative_terms.none? { |q| entry_down.include?(q) }
-
-          if show_it
-            puts entry
-            counter += 1
-          end
-        end
-
-        puts
-        puts "#{counter} LM Studio model(s) available"
-        puts
-      rescue StandardError => e
-        puts "❌ Error fetching LM Studio models: #{e.message}"
+        puts entry
+        counter += 1
       end
-    end
 
-    def format_bytes(bytes)
-      units = ['B', 'KB', 'MB', 'GB', 'TB']
-      return "0 B" if bytes.zero?
-
-      exp = (Math.log(bytes) / Math.log(1024)).to_i
-      exp = [exp, units.length - 1].min
-
-      "%.1f %s" % [bytes.to_f / (1024 ** exp), units[exp]]
-    end
-
-    def show_rubyllm_models(positive_terms, negative_terms)
-      modality_terms = positive_terms.select { |q| q.include?('_to_') }
-      text_terms     = positive_terms.reject { |q| q.include?('_to_') }
-
-      header = "\nAvailable LLMs"
-      header += " for #{positive_terms.join(' and ')}" unless positive_terms.empty?
-      header += " excluding: #{negative_terms.join(', ')}" unless negative_terms.empty?
-
-      puts header + ':'
       puts
+      puts "#{counter} #{summary_label}"
+      puts
+    end
+
+    # :reek:TooManyStatements -- sequential terminal report: header, filtered model listing, summary
+    def show_rubyllm_models(positive_terms = nil, negative_terms = nil)
+      positive_terms, negative_terms = normalized_model_search_terms(positive_terms, negative_terms)
+
+      # expand comma-separated terms passed as a single token
+      positive_terms = positive_terms.first.split(',') if positive_terms.size == 1
+
+      puts rubyllm_header(positive_terms, negative_terms)
+      puts
+
+      # modality terms (e.g. "text_to_text") trigger capability checks; the rest
+      # are plain substring filters applied to the formatted entry string
+      modality_terms, substring_terms = positive_terms.partition { |q| ModalityQuery.modality_term?(q) }
 
       counter = 0
-
       RubyLLM.models.all.each do |llm|
-        cw = llm.context_window
-        caps = llm.capabilities.join(',')
-        inputs = llm.modalities.input.join(',')
-        outputs = llm.modalities.output.join(',')
-        mode = "#{inputs} to #{outputs}"
-        in_1m = llm.pricing.text_tokens.standard.to_h[:input_per_million]
-        entry = "- #{llm.id} (#{llm.provider}) in: $#{in_1m} cw: #{cw} mode: #{mode} caps: #{caps}"
-        entry_down = entry.downcase
+        entry = format_rubyllm_entry(llm)
+        next unless rubyllm_entry_visible?(llm, entry, modality_terms, substring_terms, negative_terms)
 
-        show_it = true
-        modality_terms.each { |q| show_it &&= llm.modalities.send("#{q}?") }
-        text_terms.each     { |q| show_it &&= entry_down.include?(q) }
-        negative_terms.each { |q| show_it &&= !entry_down.include?(q) }
-
-        if show_it
-          counter += 1
-          puts entry
-        end
+        counter += 1
+        puts entry
       end
 
-      puts if counter > 0
+      puts if counter.positive?
       puts "#{counter} LLMs matching your query"
       puts
+    end
+
+    def rubyllm_header(positive_terms, negative_terms)
+      header = "\nAvailable LLMs"
+      header += " for #{positive_terms.join(' and ')}" if positive_terms.any?
+      header += " (excluding: #{negative_terms.join(', ')})" if negative_terms.any?
+      header + ':'
+    end
+
+    def format_rubyllm_entry(llm)
+      modalities = llm.modalities
+      mode  = "#{modalities.input.join(',')} to #{modalities.output.join(',')}"
+      in_1m = llm.pricing.text_tokens.standard.to_h[:input_per_million]
+      "- #{llm.id} (#{llm.provider}) in: $#{in_1m} cw: #{llm.context_window} mode: #{mode} caps: #{llm.capabilities.join(',')}"
+    end
+
+    def rubyllm_entry_visible?(llm, entry, modality_terms, substring_terms, negative_terms)
+      modality_terms.all? { |q| ModalityQuery.matches?(llm.modalities, q) } &&
+        substring_terms.all? { |q| entry.include?(q) } &&
+        negative_terms.none? { |q| entry.downcase.include?(q) }
+    end
+
+    def normalized_model_search_terms(positive_terms, negative_terms = nil)
+      return parse_search_terms(Array(positive_terms)) if negative_terms.nil?
+
+      [
+        Array(positive_terms).compact.map { |term| term.to_s.downcase },
+        Array(negative_terms).compact.map { |term| term.to_s.downcase }
+      ]
     end
   end
 end

@@ -11,6 +11,7 @@
 #   1. Run directly:        ./prompts_dir/fun_fact
 #   2. Pass to aia:         aia prompts_dir/fun_fact
 #   3. Pipe to aia:         cat prompts_dir/fun_fact | aia --no-output
+#      (the shebang line is dropped, and its options are not applied)
 #
 # Prerequisites:
 #   - Run 00_setup_aia.sh first
@@ -71,6 +72,8 @@ echo "--- Part 3: Piping a prompt file to AIA ---"
 echo
 echo "Any prompt file — even one with a shebang — can be piped to AIA."
 echo "The shebang line is automatically stripped from piped input."
+echo "The options written on the shebang line are not used when you"
+echo "pipe the file, so pass the ones you need on the command line."
 echo
 echo "Running: cat prompts_dir/fun_fact | aia -c ${CONFIG} --no-output"
 echo

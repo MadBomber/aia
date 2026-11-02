@@ -31,8 +31,13 @@ class ContextDirectivesTest < Minitest::Test
     @mock_chat.stubs(:add_message)
 
     @mock_client = mock('client')
-    @mock_client.stubs(:respond_to?).with(:chats).returns(true)
-    @mock_client.stubs(:chats).returns({ 'gpt-4o' => @mock_chat })
+    @mock_client.stubs(:chat).returns(@mock_chat)
+    @mock_client.stubs(:respond_to?).with(:network?).returns(false)
+    @mock_client.stubs(:respond_to?).with(:name).returns(true)
+    @mock_client.stubs(:name).returns('gpt-4o')
+    @mock_client.stubs(:messages).returns([@mock_system_msg, @mock_message, @mock_assistant_msg])
+    @mock_client.stubs(:clear_messages)
+    @mock_client.stubs(:replace_messages)
     AIA.stubs(:client).returns(@mock_client)
   end
 
@@ -78,7 +83,7 @@ class ContextDirectivesTest < Minitest::Test
   end
 
   def test_checkpoint_error_when_no_chats
-    @mock_client.stubs(:chats).returns(nil)
+    AIA.stubs(:client).returns(nil)
     result = @instance.checkpoint([])
     assert_includes result, "Error: No active chat sessions found."
   end
@@ -110,7 +115,6 @@ class ContextDirectivesTest < Minitest::Test
   end
 
   def test_restore_named_checkpoint
-    @mock_chat.stubs(:instance_variable_set)
     @instance.checkpoint(['save1'])
     result = @instance.restore(['save1'])
     assert_includes result, "Context restored to checkpoint 'save1'"
@@ -118,7 +122,7 @@ class ContextDirectivesTest < Minitest::Test
 
   def test_restore_error_when_no_chats
     @instance.checkpoint(['save1'])
-    @mock_client.stubs(:chats).returns(nil)
+    AIA.stubs(:client).returns(nil)
     result = @instance.restore(['save1'])
     assert_includes result, "Error: No active chat sessions found."
   end
@@ -126,8 +130,6 @@ class ContextDirectivesTest < Minitest::Test
   # --- /clear ---
 
   def test_clear_resets_context
-    @mock_chat.stubs(:instance_variable_set)
-    @mock_chat.stubs(:add_message)
     @instance.checkpoint(['save1'])
 
     result = @instance.clear([])
@@ -138,23 +140,46 @@ class ContextDirectivesTest < Minitest::Test
   end
 
   def test_clear_keeps_system_prompt_by_default
-    @mock_chat.expects(:instance_variable_set).with(:@messages, [])
-    @mock_chat.expects(:add_message).with(@mock_system_msg)
-
+    @mock_client.expects(:clear_messages).with(keep_system: true)
     @instance.clear([])
   end
 
   def test_clear_removes_system_prompt_with_all_flag
-    @mock_chat.expects(:instance_variable_set).with(:@messages, [])
-    @mock_chat.expects(:add_message).never
-
+    @mock_client.expects(:clear_messages).with(keep_system: false)
     @instance.clear(['--all'])
   end
 
   def test_clear_error_when_no_chats
-    @mock_client.stubs(:chats).returns(nil)
+    AIA.stubs(:client).returns(nil)
     result = @instance.clear([])
     assert_includes result, "Error: No active chat sessions found."
+  end
+
+  # AIA.client is a RobotLab::Network in crew / multi-model sessions; the
+  # directive must act on every member robot, not on the network itself.
+  def test_clear_clears_every_robot_in_a_network
+    robot_a = mock('robot_a')
+    robot_b = mock('robot_b')
+    robot_a.expects(:clear_messages).with(keep_system: true)
+    robot_b.expects(:clear_messages).with(keep_system: true)
+
+    network = mock('network')
+    network.stubs(:respond_to?).with(:network?).returns(true)
+    network.stubs(:network?).returns(true)
+    network.stubs(:robots).returns({ 'tobor' => robot_a, 'scout' => robot_b })
+    AIA.stubs(:client).returns(network)
+
+    assert_equal "Chat context cleared.", @instance.clear([])
+  end
+
+  def test_get_robots_expands_a_network_into_member_robots
+    network = mock('network')
+    network.stubs(:respond_to?).with(:network?).returns(true)
+    network.stubs(:network?).returns(true)
+    network.stubs(:robots).returns({ 'tobor' => :robot })
+    AIA.stubs(:client).returns(network)
+
+    assert_equal({ 'tobor' => :robot }, @instance.send(:get_robots))
   end
 
   # --- /review ---
@@ -179,7 +204,7 @@ class ContextDirectivesTest < Minitest::Test
   end
 
   def test_review_error_when_no_chats
-    @mock_client.stubs(:chats).returns(nil)
+    AIA.stubs(:client).returns(nil)
     result = @instance.review([])
     assert_includes result, "Error: No active chat sessions found."
   end
@@ -226,7 +251,7 @@ class ContextDirectivesTest < Minitest::Test
   def test_checkpoint_names_returns_keys
     @instance.checkpoint(['a'])
     @instance.checkpoint(['b'])
-    assert_equal ['a', 'b'], @instance.checkpoint_names
+    assert_equal %w[a b], @instance.checkpoint_names
   end
 
   def test_reset_clears_all_state

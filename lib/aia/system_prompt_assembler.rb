@@ -1,0 +1,93 @@
+# frozen_string_literal: true
+
+# lib/aia/system_prompt_assembler.rb
+#
+# System prompt resolution, identity prompts, and role loading.
+# Extracted from RobotFactory to isolate the prompt assembly concern.
+# Completely stateless — no module ivars.
+
+require 'pm'
+require_relative 'skill_utils'
+require_relative 'role_catalog'
+
+module AIA
+  module SystemPromptAssembler
+    module_function
+
+    # Resolve system prompt from config (including role).
+    #
+    # @param config [AIA::Config] the AIA configuration
+    # @param model_spec [ModelSpec, nil] optional model spec with role override
+    # @return [String, nil] the assembled system prompt
+    def resolve_system_prompt(config, model_spec = nil)
+      prompts_cfg   = config.prompts
+      system_prompt = prompts_cfg.system_prompt
+
+      role_id = model_spec&.role || prompts_cfg.role
+      if role_id && !role_id.empty?
+        role_content = load_role_content(config, role_id)
+        if role_content
+          system_prompt = [system_prompt, role_content].compact.join("\n\n")
+        end
+      end
+
+      # In chat mode inject --skill content here so it persists across all turns.
+      # Pipeline mode appends skills to each prompt text instead (pipeline_orchestrator).
+      if config.flags&.chat == true
+        skill_content = AIA::SkillUtils.load_skills_content(
+          Array(prompts_cfg&.skills),
+          AIA::SkillUtils.skills_base_dir(config)
+        )
+        system_prompt = [system_prompt, skill_content].compact.join("\n\n") if skill_content
+      end
+
+      system_prompt
+    end
+
+    # Build a system prompt fragment that tells a robot its name, its
+    # model, and the other robots in the network.
+    #
+    # @param robot_name [String] this robot's creative name
+    # @param spec [ModelSpec] this robot's model spec
+    # @param roster [Array<Hash>] all robots: [{ name:, spec: }, ...]
+    # @return [String]
+    # :reek:TooManyStatements -- builds the identity line plus a roster entry per teammate; one cohesive prompt fragment
+    def build_identity_prompt(robot_name, spec, roster)
+      provider_label = spec.provider ? " (#{spec.provider})" : ""
+      lines = ["You are #{robot_name}, powered by #{spec.name}#{provider_label}."]
+
+      if roster.size > 1
+        lines << "You are part of a team of AI robots:"
+        roster.each do |entry|
+          entry_spec = entry[:spec]
+          p = entry_spec.provider ? " (#{entry_spec.provider})" : ""
+          marker = entry[:name] == robot_name ? " ← you" : ""
+          lines << "  - #{entry[:name]}: #{entry_spec.name}#{p}#{marker}"
+        end
+        lines << "Users can address a specific robot with @name mentions."
+      end
+
+      lines.join("\n")
+    end
+
+    # Load a role for the system prompt. Named roles come from the roles
+    # folder of the prompts directory; path-based roles from anywhere. The
+    # file is processed like a prompt: front matter removed, shell and ERB
+    # expanded.
+    #
+    # @param config [AIA::Config] the AIA configuration
+    # @param role_id [String] the role identifier or path
+    # @return [String, nil] the rendered role, or nil if it is missing or fails
+    def load_role_content(config, role_id)
+      prompts_cfg = config.prompts
+      role_file = AIA::RoleCatalog.role_file(role_id, dir: prompts_cfg.dir, prefix: prompts_cfg.roles_prefix,
+                                                      extname: prompts_cfg.extname)
+      return nil unless File.exist?(role_file)
+
+      PM.parse(Pathname.new(role_file)).to_s
+    rescue => e
+      $stderr.puts "Warning: Could not load role '#{role_id}': #{e.message}"
+      nil
+    end
+  end
+end

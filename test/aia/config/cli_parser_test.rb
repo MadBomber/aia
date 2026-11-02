@@ -54,29 +54,192 @@ class CLIParserModelsTest < Minitest::Test
   end
 
   def test_parse_model_invalid_syntax_leading_equals
-    assert_raises(ArgumentError) do
+    assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, '=role')
     end
   end
 
   def test_parse_model_invalid_syntax_trailing_equals
-    assert_raises(ArgumentError) do
+    assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, 'model=')
     end
   end
+end
 
-  def test_parse_model_nonexistent_role_raises
-    Dir.mktmpdir do |dir|
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
+class SkillsListMarkdownTest < Minitest::Test
+  TESTING_SKILL_MD = <<~MD.freeze
+    ---
+    name: testing
+    description: Write tests using Minitest.
+    ---
+    # Testing skill content
+  MD
 
-      assert_raises(ArgumentError) do
-        AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=nonexistent')
-      end
+  DEBUGGING_SKILL_MD = <<~MD.freeze
+    ---
+    name: debugging
+    description: Debug Ruby applications.
+    ---
+    # Debugging skill content
+  MD
+
+  def config_for(skills_dir, **extra)
+    AIA::Config.new(overrides: { skills_dir: skills_dir, **extra })
+  end
+
+  def test_list_skills_markdown_produces_markdown_h2_per_skill
+    Dir.mktmpdir do |skills_dir|
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+      Dir.mkdir(File.join(skills_dir, 'debugging'))
+      File.write(File.join(skills_dir, 'debugging', 'SKILL.md'), DEBUGGING_SKILL_MD)
+
+      out = AIA::SkillUtils.list_skills_markdown(config_for(skills_dir))
+
+      assert_match(/^## debugging/, out)
+      assert_match(/^## testing/, out)
     end
+  end
+
+  def test_list_skills_markdown_renders_front_matter_as_table
+    Dir.mktmpdir do |skills_dir|
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+
+      out = AIA::SkillUtils.list_skills_markdown(config_for(skills_dir))
+
+      assert_match(/\| Key \| Value \|/, out)
+      assert_match(/\| name \| testing \|/, out)
+      assert_match(/\| description \| Write tests using Minitest\. \|/, out)
+    end
+  end
+
+  def test_list_skills_markdown_no_front_matter_shows_placeholder
+    Dir.mktmpdir do |skills_dir|
+      Dir.mkdir(File.join(skills_dir, 'bare'))
+      File.write(File.join(skills_dir, 'bare', 'SKILL.md'), "# Just a heading, no front matter\n")
+
+      out = AIA::SkillUtils.list_skills_markdown(config_for(skills_dir))
+
+      assert_match(/^## bare/, out)
+      assert_match(/No front matter/, out)
+    end
+  end
+
+  def test_list_skills_markdown_ignores_subdirs_without_skill_md
+    Dir.mktmpdir do |skills_dir|
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+      Dir.mkdir(File.join(skills_dir, 'incomplete'))
+      File.write(File.join(skills_dir, 'incomplete', 'notes.md'), '# just notes')
+      File.write(File.join(skills_dir, 'orphan.md'), '# orphan')
+
+      out = AIA::SkillUtils.list_skills_markdown(config_for(skills_dir))
+
+      assert_match(/testing/, out)
+      refute_match(/incomplete/, out)
+      refute_match(/orphan/, out)
+    end
+  end
+
+  def test_list_skills_markdown_with_empty_dir
+    Dir.mktmpdir do |skills_dir|
+      out = AIA::SkillUtils.list_skills_markdown(config_for(skills_dir))
+
+      assert_match(/No skills found/, out)
+    end
+  end
+
+  def test_list_skills_markdown_no_dir
+    Dir.mktmpdir do |dir|
+      missing = File.join(dir, 'nonexistent_skills')
+
+      out = AIA::SkillUtils.list_skills_markdown(config_for(missing))
+
+      assert_match(/No skills directory found/, out)
+    end
+  end
+
+  def test_list_skills_markdown_escapes_pipe_in_value
+    Dir.mktmpdir do |skills_dir|
+      Dir.mkdir(File.join(skills_dir, 'piped'))
+      File.write(File.join(skills_dir, 'piped', 'SKILL.md'), <<~MD)
+        ---
+        name: piped
+        description: Use foo | bar syntax.
+        ---
+      MD
+
+      out = AIA::SkillUtils.list_skills_markdown(config_for(skills_dir))
+
+      assert_match(/Use foo \\| bar syntax\./, out)
+    end
+  end
+
+  # End-to-end: the live --list-skills path through ConfigValidator.
+  def test_handle_list_skills_lists_skills_and_early_exits
+    Dir.mktmpdir do |skills_dir|
+      Dir.mkdir(File.join(skills_dir, 'testing'))
+      File.write(File.join(skills_dir, 'testing', 'SKILL.md'), TESTING_SKILL_MD)
+
+      config = AIA::Config.new(overrides: { skills_dir: skills_dir, list_skills: true })
+
+      result = nil
+      out, _err = capture_io do
+        result = AIA::ConfigValidator.send(:handle_list_skills, config)
+      end
+
+      assert_match(/^## testing/, out)
+      assert_equal :early_exit, result
+    end
+  end
+end
+
+class CLIParserErrorReportingTest < Minitest::Test
+  # Parses +args+ expecting the parser to call exit(1); returns stderr.
+  def parse_with(args)
+    old_argv = ARGV.dup
+    ARGV.replace(args)
+    AIA::CLIParser.expects(:exit).with(1).at_least_once
+    _out, err = capture_io { AIA::CLIParser.parse }
+    err
   ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
+    ARGV.replace(old_argv)
+  end
+
+  def test_invalid_numeric_value_exits_1_without_backtrace
+    err = parse_with(['-t', 'hot'])
+    assert_match(/ERROR: invalid argument: -t hot/, err)
+    assert_match(/use --help/, err)
+    refute_match(/\.rb:\d+/, err)
+  end
+
+  def test_invalid_enum_value_exits_1
+    err = parse_with(['--tool-approval', 'maybe'])
+    assert_match(/ERROR: invalid argument: --tool-approval maybe/, err)
+  end
+
+  def test_report_parse_error_exits_1
+    AIA::CLIParser.expects(:exit).with(1)
+    _out, err = capture_io { AIA::CLIParser.send(:report_parse_error, AIA::ConfigurationError.new('boom')) }
+    assert_equal "ERROR: boom\n", err
+  end
+end
+
+class CLIParserPromptOptionsTest < Minitest::Test
+  def test_parse_plugins_dir_option
+    old_argv = ARGV.dup
+    ARGV.replace(['--plugins-dir', '/tmp/aia_plugins'])
+
+    result = AIA::CLIParser.parse
+    assert_equal '/tmp/aia_plugins', result[:plugins_dir]
+  ensure
+    ARGV.replace(old_argv)
+  end
+
+  def test_plugins_dir_cli_override_expands_tilde_path_in_config
+    config = AIA::Config.new(overrides: { plugins_dir: '~/cli_plugins' })
+    assert_equal File.expand_path('~/cli_plugins'), config.paths.plugins_dir
   end
 end
 
@@ -105,7 +268,7 @@ class CLIParserToolsPathsTest < Minitest::Test
 
       result = AIA::CLIParser.send(:process_tools_paths, dir)
       assert_equal 2, result.size
-      assert result.all? { |p| p.end_with?('.rb') }
+      assert(result.all? { |p| p.end_with?('.rb') })
     end
   end
 
@@ -130,31 +293,91 @@ class CLIParserToolsPathsTest < Minitest::Test
       assert_equal 1, result.size
     end
   end
+end
 
-  def test_list_available_role_names
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-      File.write(File.join(roles_dir, 'architect.md'), '')
-      File.write(File.join(roles_dir, 'reviewer.md'), '')
+# P1: Verify CLI_TO_NESTED_MAP covers all flat CLI keys that need mapping
+class CLIToNestedMapCompletenessTest < Minitest::Test
+  # Keys handled specially in Config#apply_overrides or Config#initialize
+  # (not routed through CLI_TO_NESTED_MAP)
+  SPECIAL_KEYS = %i[
+    models
+    extra_config_file
+    mcp_files
+    pipeline
+    require_libs
+    context_files
+    mcp_use
+    mcp_skip
+    mcp_servers
+  ].freeze
 
-      result = AIA::CLIParser.send(:list_available_role_names, dir, 'roles')
-      assert_equal ['architect', 'reviewer'], result
+  # Runtime attributes set on Config but not routed to nested sections
+  RUNTIME_KEYS = %i[
+    remaining_args
+    list_roles
+    prompt_id
+    dump_file
+    completion
+    mcp_list
+    list_tools
+    list_skills
+    list_models
+    list_providers
+    provider
+    log_level_override
+    log_file_override
+    executable_prompt_content
+    stdin_content
+  ].freeze
+
+  def test_all_cli_parser_keys_are_accounted_for
+    # Extract all option keys that CLIParser can set
+    cli_keys = extract_cli_parser_keys
+
+    mapped_keys = AIA::Config::CLI_TO_NESTED_MAP.keys
+    all_known = mapped_keys + SPECIAL_KEYS + RUNTIME_KEYS
+
+    unmapped = cli_keys - all_known
+
+    assert_empty unmapped,
+                 "CLI parser keys not in CLI_TO_NESTED_MAP, SPECIAL_KEYS, or RUNTIME_KEYS: #{unmapped.inspect}\n" \
+                 "Add them to the appropriate location."
+  end
+
+  def test_cli_to_nested_map_targets_valid_sections
+    schema_sections = %i[service llm prompts skills output audio image tools flags registry paths logger concurrency
+                         tool_filter]
+
+    AIA::Config::CLI_TO_NESTED_MAP.each do |cli_key, (section, _nested_key)|
+      assert_includes schema_sections, section,
+                      "CLI_TO_NESTED_MAP[:#{cli_key}] targets unknown section :#{section}"
     end
   end
 
-  def test_list_available_role_names_empty
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
+  # I12: Validate that every nested key in CLI_TO_NESTED_MAP exists in defaults.yml
+  def test_cli_to_nested_map_targets_valid_schema_keys
+    defaults_path = File.expand_path('../../../lib/aia/config/defaults.yml', __dir__)
+    schema = YAML.safe_load_file(defaults_path, permitted_classes: [Symbol], symbolize_names: true)
+    defaults = schema[:defaults] || schema
 
-      result = AIA::CLIParser.send(:list_available_role_names, dir, 'roles')
-      assert_equal [], result
+    AIA::Config::CLI_TO_NESTED_MAP.each do |cli_key, (section, nested_key)|
+      section_hash = defaults[section]
+      assert section_hash.is_a?(Hash),
+             "CLI_TO_NESTED_MAP[:#{cli_key}] targets section :#{section} which is not a Hash in defaults.yml"
+
+      assert section_hash.key?(nested_key),
+             "CLI_TO_NESTED_MAP[:#{cli_key}] targets :#{section}.#{nested_key} which does not exist in defaults.yml. " \
+             "Add :#{nested_key} to the :#{section} section in defaults.yml or fix the mapping."
     end
   end
 
-  def test_list_available_role_names_no_dir
-    result = AIA::CLIParser.send(:list_available_role_names, '/nonexistent', 'roles')
-    assert_equal [], result
+  private
+
+  def extract_cli_parser_keys
+    # Parse the CLI parser source to find all `options[:key]` assignments
+    parser_path = File.expand_path('../../../lib/aia/config/cli_parser.rb', __dir__)
+    source = File.read(parser_path)
+
+    source.scan(/options\[:(\w+)\]/).flatten.map(&:to_sym).uniq
   end
 end

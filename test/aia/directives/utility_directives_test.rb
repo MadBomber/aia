@@ -12,6 +12,7 @@ class UtilityDirectivesTest < Minitest::Test
 
     @test_config = OpenStruct.new(
       loaded_tools: [],
+      loaded_plugins: [],
       flags: OpenStruct.new(debug: false)
     )
     AIA.stubs(:config).returns(@test_config)
@@ -62,7 +63,7 @@ class UtilityDirectivesTest < Minitest::Test
 
     @test_config.loaded_tools = [tool_a, tool_b]
 
-    result = @instance.tools(['calc'])
+    @instance.tools(['calc'])
     output = @captured_output.string
     assert_includes output, "calculator"
     refute_includes output, "web_search"
@@ -80,11 +81,24 @@ class UtilityDirectivesTest < Minitest::Test
     assert_includes output, "No tools match the filter"
   end
 
-  # --- /terse ---
+  # --- /plugins ---
 
-  def test_terse_returns_empty_string
-    result = @instance.terse([])
-    assert_equal "", result
+  def test_plugins_with_no_plugins_loaded
+    result = @instance.plugins([])
+    assert_equal '', result
+    output = @captured_output.string
+    assert_includes output, "No plugins are loaded"
+  end
+
+  def test_plugins_lists_loaded_plugin_basenames
+    @test_config.loaded_plugins = %w[alpha beta_plugin]
+
+    result = @instance.plugins([])
+    assert_equal '', result
+    output = @captured_output.string
+    assert_includes output, "Loaded Plugins"
+    assert_includes output, "alpha"
+    assert_includes output, "beta_plugin"
   end
 
   # --- /robot ---

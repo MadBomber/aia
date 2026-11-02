@@ -34,9 +34,28 @@
 
 module AIA
   class Directive < PM::Directive
-    DIRECTIVE_PREFIX = '/'
+    DIRECTIVE_PREFIX = '/'.freeze
 
     class << self
+      # ---- State-setting DSL -----------------------------------------------
+      # Directives that mutate turn-state or set a mode flag (rather than
+      # returning text for the AI) should declare themselves here so that
+      # ChatLoop can ask the processor instead of hardcoding a name list.
+      #
+      # Usage (in a subclass body):
+      #   state_setting! :verify, :decompose, :concurrent, :conc
+      #
+      # The names must match the directive method names (without the / prefix).
+
+      def state_setting!(*method_names)
+        @state_setting_methods ||= []
+        @state_setting_methods.concat(method_names.map(&:to_s))
+      end
+
+      def state_setting_methods
+        @state_setting_methods || []
+      end
+
       # ---- Dispatch override ------------------------------------------------
       # AIA directive methods use (args_array, context_manager) convention,
       # not (ctx, *args). Override build_dispatch_block to adapt.
@@ -49,6 +68,7 @@ module AIA
       # Application-level concern: formats help text using DIRECTIVE_PREFIX
       # and all registered directive subclasses.
 
+      # :reek:TooManyStatements -- sequential terminal report: header, one section per directive category, footer
       def help
         puts
         puts "Available Directives"
@@ -65,14 +85,7 @@ module AIA
           puts "-" * cat.length
 
           klass.directive_descriptions.each do |method_name, description|
-            aliases    = klass.directive_aliases[method_name] || []
-            alias_text = if aliases.any?
-                           " (aliases: #{aliases.map { |a| "#{DIRECTIVE_PREFIX}#{a}" }.join(', ')})"
-                         else
-                           ""
-                         end
-
-            puts "  #{DIRECTIVE_PREFIX}#{method_name}#{alias_text}"
+            puts "  #{DIRECTIVE_PREFIX}#{method_name}#{alias_text_for(klass, method_name)}"
             puts "      #{description}"
             puts
 
@@ -83,31 +96,35 @@ module AIA
         puts "\nTotal: #{total} directives available"
         ""
       end
+
+      # Format the "(aliases: ...)" suffix for a directive, or "" when it has none.
+      def alias_text_for(klass, method_name)
+        aliases = klass.directive_aliases[method_name] || []
+        return "" if aliases.empty?
+
+        " (aliases: #{aliases.map { |a| "#{DIRECTIVE_PREFIX}#{a}" }.join(', ')})"
+      end
     end
 
     private
 
-    # Split args into positive and negative search terms.
-    # Tokens prefixed with -, ~, or ! are negative (exclusion) terms.
-    # All other tokens (bare or +-prefixed) are positive (inclusion) terms.
-    # All terms are downcased.
-    #
-    # @param args [Array<String>] raw argument tokens
-    # @return [Array<Array<String>>] [positive_terms, negative_terms]
+    # Split raw args into [positive_terms, negative_terms].
+    # Leading '+' is stripped; the term is treated as positive.
+    # Leading '-', '~', or '!' marks the term as negative (AND NOT).
+    # Bare terms are positive. All terms are lowercased.
     def parse_search_terms(args)
       positive = []
       negative = []
 
-      Array(args).each do |arg|
-        arg.split.each do |token|
-          downcased = token.downcase
-          if downcased =~ /\A[-~!]/
-            negative << downcased[1..]
-          elsif downcased.start_with?('+')
-            positive << downcased[1..]
-          else
-            positive << downcased
-          end
+      args.flat_map { |a| a.to_s.split }.each do |raw|
+        if raw.start_with?('+')
+          term = raw[1..].downcase
+          positive << term unless term.empty?
+        elsif raw.start_with?('-', '~', '!')
+          term = raw[1..].downcase
+          negative << term unless term.empty?
+        else
+          positive << raw.downcase
         end
       end
 

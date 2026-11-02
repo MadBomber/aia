@@ -6,7 +6,8 @@
 # Provides loggers for three systems:
 #   - aia: Used within the AIA codebase for application-level logging
 #   - llm: Passed to RubyLLM gem's configuration (RubyLLM.logger)
-#   - mcp: Passed to RubyLLM::MCP process (RubyLLM::MCP.logger)
+#   - mcp: MCP connection logging (MCPConnectionManager) and RobotLab.config.logger;
+#          ruby_llm's own MCP client logs through RubyLLM.logger (llm)
 #
 # Configuration is read from AIA.config.logger section:
 #   logger:
@@ -76,22 +77,23 @@ module AIA
       def configure_llm_logger
         return unless defined?(RubyLLM)
 
-        logger = llm_logger
+        logger     = llm_logger
+        llm_config = RubyLLM.config
 
         # Set our logger on the RubyLLM config object
-        if RubyLLM.config.respond_to?(:logger=)
-          RubyLLM.config.logger = logger
+        if llm_config.respond_to?(:logger=)
+          llm_config.logger = logger
         end
 
         # Also set log_file and log_level in case the logger gets recreated
-        if RubyLLM.config.respond_to?(:log_file=)
+        if llm_config.respond_to?(:log_file=)
           file = effective_log_file(logger_config_for(:llm))
-          RubyLLM.config.log_file = resolve_log_file_io(file)
+          llm_config.log_file = resolve_log_file_io(file)
         end
 
-        if RubyLLM.config.respond_to?(:log_level=)
+        if llm_config.respond_to?(:log_level=)
           level = effective_log_level(logger_config_for(:llm))
-          RubyLLM.config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
+          llm_config.log_level = LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN }
         end
 
         # Reset the memoized @logger on RubyLLM module so next call uses our config
@@ -99,39 +101,8 @@ module AIA
         RubyLLM.instance_variable_set(:@logger, nil) if RubyLLM.instance_variable_defined?(:@logger)
       end
 
-      # Configure RubyLLM::MCP's logger
-      # RubyLLM::MCP.config has attr_writer :logger and a memoized getter.
-      # We need to set both the config.logger and reset any memoization.
-      def configure_mcp_logger
-        return unless defined?(RubyLLM::MCP)
-
-        logger = mcp_logger
-
-        # First reset the memoized @logger so our settings take effect
-        # RubyLLM::MCP.config.logger does: @logger ||= Logger.new(...)
-        config = RubyLLM::MCP.config
-        config.instance_variable_set(:@logger, nil) if config.instance_variable_defined?(:@logger)
-
-        # Set our logger on the MCP config object
-        # RubyLLM::MCP.config has attr_writer :logger (which sets @logger directly)
-        if config.respond_to?(:logger=)
-          config.logger = logger
-        end
-
-        # Also set log_file and log_level in case the logger gets recreated
-        if config.respond_to?(:log_file=)
-          file = effective_log_file(logger_config_for(:mcp))
-          config.log_file = resolve_log_file_io(file)
-        end
-
-        if config.respond_to?(:log_level=)
-          level = effective_log_level(logger_config_for(:mcp))
-          config.log_level = LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN)
-        end
-      end
-
       # Convert log file specification to IO object or file path
-      # RubyLLM::MCP expects an IO object or file path for log_file config
+      # RubyLLM expects an IO object or file path for log_file config
       def resolve_log_file_io(file)
         case file.to_s.upcase
         when 'STDOUT'
@@ -160,6 +131,26 @@ module AIA
         @test_mode = false
       end
 
+      # Update existing loggers' levels in-place from current config.
+      # Call this after runtime config changes (e.g. /config debug = false)
+      # so the log level takes effect immediately without recreating loggers.
+      def reconfigure_levels!
+        return if test_mode?
+
+        %i[aia llm mcp].each do |system|
+          logger = instance_variable_get(:"@#{system}_logger")
+          next unless logger
+
+          config  = logger_config_for(system)
+          level   = effective_log_level(config, system)
+          numeric = LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN }
+          logger.level = numeric
+        end
+
+        # Keep the RubyLLM config in sync so it doesn't override us
+        configure_llm_logger
+      end
+
       # =======================================================================
       # Test Mode Support
       # =======================================================================
@@ -173,7 +164,7 @@ module AIA
       def test_mode!(level: :debug)
         reset!
         @test_mode = true
-        @test_level = LOG_LEVELS.fetch(level.to_s, Lumberjack::Severity::DEBUG)
+        @test_level = LOG_LEVELS.fetch(level.to_s) { Lumberjack::Severity::DEBUG }
 
         # Pre-create loggers with test devices
         @aia_logger = create_test_logger(:aia)
@@ -253,7 +244,7 @@ module AIA
         device = create_device(file, flush: flush)
         Lumberjack::Logger.new(
           device,
-          level:    LOG_LEVELS.fetch(level, Lumberjack::Severity::WARN),
+          level:    LOG_LEVELS.fetch(level) { Lumberjack::Severity::WARN },
           progname: system.to_s.upcase
         )
       end
@@ -287,23 +278,21 @@ module AIA
       # @param file [String] The file config value
       # @param flush [Boolean] If true, flush immediately (no buffering)
       # @return [Lumberjack::Device] The device instance
+      # :reek:BooleanParameter -- flush: maps directly onto Lumberjack's autoflush; two constructors would obscure that single toggle
       def create_device(file, flush: true)
-        # buffer_size: 0 means immediate flush (no buffering)
-        buffer_size = flush ? 0 : 8192
-
         case file.to_s.upcase
         when 'STDOUT'
-          Lumberjack::Device::Writer.new($stdout, buffer_size: buffer_size)
+          Lumberjack::Device::Writer.new($stdout, autoflush: flush)
         when 'STDERR'
-          Lumberjack::Device::Writer.new($stderr, buffer_size: buffer_size)
+          Lumberjack::Device::Writer.new($stderr, autoflush: flush)
         else
           path = File.expand_path(file)
-          # Use date rolling for file-based logs
-          # Multiple loggers can safely write to the same file
-          Lumberjack::Device::DateRollingLogFile.new(
+          # Daily date rolling via Logger::LogDevice, which also makes the
+          # file safe for multiple loggers to write to
+          Lumberjack::Device::LogFile.new(
             path,
-            roll: :daily,
-            buffer_size: buffer_size
+            shift_age: 'daily',
+            autoflush: flush
           )
         end
       end
@@ -313,15 +302,11 @@ module AIA
       # @param system [Symbol] The system (:aia, :llm, :mcp)
       # @return [ConfigSection, nil] The configuration section
       def logger_config_for(system)
-        return nil unless AIA.config&.logger
+        logger_cfg = AIA.config&.logger
+        return nil unless logger_cfg
+        return nil unless %i[aia llm mcp].include?(system)
 
-        case system
-        when :aia then AIA.config.logger.aia
-        when :llm then AIA.config.logger.llm
-        when :mcp then AIA.config.logger.mcp
-        end
-      rescue NoMethodError
-        nil
+        logger_cfg.public_send(system) if logger_cfg.respond_to?(system)
       end
     end
   end

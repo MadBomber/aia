@@ -44,10 +44,18 @@ echo "==="
 cat prompts_dir/use_tools.md
 echo "==="
 echo
-echo "Running: aia -c ${CONFIG} --no-output --rq shared_tools use_tools"
+echo "shared_tools ships with 80+ tools. Passing all of them in one API"
+echo "call can cause the model to skip tool use. We use --allowed-tools"
+echo "to expose only the three tools this prompt actually needs."
+echo
+echo "Running: aia -c ${CONFIG} --no-output --rq shared_tools \\"
+echo "         --allowed-tools current_date_time,system_info,dns \\"
+echo "         use_tools"
 echo
 echo "The model will call tools to get live data, then summarize"
 echo "the results."
 echo
 
-aia -c "${CONFIG}" --no-output --rq shared_tools use_tools
+aia -c "${CONFIG}" --no-output --rq shared_tools \
+  --allowed-tools current_date_time,system_info,dns \
+  use_tools

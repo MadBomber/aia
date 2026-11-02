@@ -3,138 +3,6 @@
 require_relative '../../test_helper'
 require 'tmpdir'
 
-class CLIParserValidateRoleExistsTest < Minitest::Test
-  def test_validate_role_exists_with_valid_role
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-      File.write(File.join(roles_dir, 'architect.md'), '# Architect')
-
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
-
-      # Should not raise
-      AIA::CLIParser.send(:validate_role_exists, 'architect')
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
-
-  def test_validate_role_exists_with_prefixed_role
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-      File.write(File.join(roles_dir, 'architect.md'), '# Architect')
-
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
-
-      # Should not raise when role already has prefix
-      AIA::CLIParser.send(:validate_role_exists, 'roles/architect')
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
-
-  def test_validate_role_exists_raises_with_missing_role
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-      File.write(File.join(roles_dir, 'architect.md'), '# Architect')
-
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
-
-      error = assert_raises(ArgumentError) do
-        AIA::CLIParser.send(:validate_role_exists, 'nonexistent')
-      end
-      assert_match(/Role file not found/, error.message)
-      assert_match(/Available roles/, error.message)
-      assert_match(/architect/, error.message)
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
-
-  def test_validate_role_exists_raises_with_no_roles_dir
-    Dir.mktmpdir do |dir|
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
-
-      error = assert_raises(ArgumentError) do
-        AIA::CLIParser.send(:validate_role_exists, 'nonexistent')
-      end
-      assert_match(/Role file not found/, error.message)
-      assert_match(/No roles directory/, error.message)
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
-end
-
-
-class CLIParserListRolesTest < Minitest::Test
-  def test_list_available_roles_with_roles
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-      File.write(File.join(roles_dir, 'architect.md'), "---\nname: architect\ndescription: test\n---\n")
-      File.write(File.join(roles_dir, 'reviewer.md'), "---\nname: reviewer\ndescription: test\n---\n")
-
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
-
-      out, _err = capture_io do
-        AIA::CLIParser.send(:list_available_roles)
-      end
-      assert_match(/## architect/, out)
-      assert_match(/## reviewer/, out)
-      assert_match(/\| Key \| Value \|/, out)
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
-
-  def test_list_available_roles_with_empty_dir
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
-
-      out, _err = capture_io do
-        AIA::CLIParser.send(:list_available_roles)
-      end
-      assert_match(/No role files found/, out)
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
-
-  def test_list_available_roles_no_dir
-    Dir.mktmpdir do |dir|
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'nonexistent_roles'
-
-      out, _err = capture_io do
-        AIA::CLIParser.send(:list_available_roles)
-      end
-      assert_match(/No roles directory/, out)
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
-end
-
-
 class CLIParserCreateOptionParserTest < Minitest::Test
   def test_create_option_parser_returns_parser
     options = {}
@@ -275,6 +143,48 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     assert_equal 'architect', options[:role]
   end
 
+  def test_parses_skill_single
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing'])
+    assert_equal ['testing'], options[:skills]
+  end
+
+  def test_parses_skill_short_flag
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['-s', 'testing'])
+    assert_equal ['testing'], options[:skills]
+  end
+
+  def test_parses_skill_comma_separated
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing,debugging'])
+    assert_equal %w[testing debugging], options[:skills]
+  end
+
+  def test_parses_skill_repeatable
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing', '--skill', 'debugging'])
+    assert_equal %w[testing debugging], options[:skills]
+  end
+
+  def test_parses_skill_combined_comma_and_repeat
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', 'testing,debugging', '--skill', 'refactoring'])
+    assert_equal %w[testing debugging refactoring], options[:skills]
+  end
+
+  def test_parses_skill_strips_whitespace
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--skill', ' testing , debugging '])
+    assert_equal %w[testing debugging], options[:skills]
+  end
+
   def test_parses_next_prompt
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
@@ -286,7 +196,7 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['-p', 'a,b,c'])
-    assert_equal ['a', 'b', 'c'], options[:pipeline]
+    assert_equal %w[a b c], options[:pipeline]
   end
 
   def test_parses_system_prompt
@@ -328,21 +238,21 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--rq', 'lib1,lib2'])
-    assert_equal ['lib1', 'lib2'], options[:require_libs]
+    assert_equal %w[lib1 lib2], options[:require_libs]
   end
 
   def test_parses_allowed_tools
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--at', 'tool1,tool2'])
-    assert_equal ['tool1', 'tool2'], options[:allowed_tools]
+    assert_equal %w[tool1 tool2], options[:allowed_tools]
   end
 
   def test_parses_rejected_tools
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--rt', 'tool1,tool2'])
-    assert_equal ['tool1', 'tool2'], options[:rejected_tools]
+    assert_equal %w[tool1 tool2], options[:rejected_tools]
   end
 
   def test_parses_list_tools
@@ -399,7 +309,7 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--mu', 'server1,server2'])
-    assert_equal ['server1', 'server2'], options[:mcp_use]
+    assert_equal %w[server1 server2], options[:mcp_use]
   end
 
   def test_parses_mcp_skip
@@ -441,11 +351,8 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
 
-    stderr_messages = []
-    AIA::CLIParser.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    parser.parse!(['--log-level', 'invalid'])
-    assert stderr_messages.any? { |m| m.include?('Invalid log level') }
+    _, err = capture_io { parser.parse!(['--log-level', 'invalid']) }
+    assert_includes err, 'Invalid log level'
   end
 
   def test_parses_log_to
@@ -469,36 +376,11 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     assert_equal false, options[:consensus]
   end
 
-  def test_parses_markdown
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-    parser.parse!(['--md'])
-    assert_equal true, options[:markdown]
-  end
-
-  def test_parses_no_markdown
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-    parser.parse!(['--no-markdown'])
-    assert_equal false, options[:markdown]
-  end
-
-  def test_parses_terse_no_error
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-
-    # --terse is deprecated but should not raise
-    parser.parse!(['--terse'])
-    # No option is set since it's a no-op deprecated flag
-  end
-
-  def test_parses_regex_stores_value
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-
-    # --regex is deprecated but should still store the value
-    parser.parse!(['--regex', '\\w+'])
-    assert_equal '\\w+', options[:parameter_regex]
+  def test_removed_options_are_invalid
+    %w[--md --no-markdown --expert-routing --load --save].each do |flag|
+      parser = AIA::CLIParser.send(:create_option_parser, {})
+      assert_raises(OptionParser::InvalidOption, flag) { parser.parse!([flag]) }
+    end
   end
 
   def test_parses_speech_model
@@ -521,8 +403,21 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     parser.parse!(['--history-file', '/tmp/history.yml'])
     assert_equal '/tmp/history.yml', options[:history_file]
   end
-end
 
+  def test_parses_track_pipeline
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--track-pipeline'])
+    assert_equal true, options[:track_pipeline]
+  end
+
+  def test_parses_concurrent_auto
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--concurrent-auto'])
+    assert_equal true, options[:concurrent_auto]
+  end
+end
 
 class CLIParserToolsPathsExtendedTest < Minitest::Test
   def test_rejects_non_rb_file
@@ -530,19 +425,15 @@ class CLIParserToolsPathsExtendedTest < Minitest::Test
       txt_file = File.join(dir, 'tool.txt')
       File.write(txt_file, '# not ruby')
 
-      stderr_messages = []
-      AIA::CLIParser.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-      AIA::CLIParser.send(:process_tools_paths, txt_file)
-      assert stderr_messages.any? { |m| m.include?('should have *.rb extension') }
+      _, err = capture_io { AIA::CLIParser.send(:process_tools_paths, txt_file) }
+      assert_includes err, 'should have *.rb extension'
     end
   end
 
   def test_rejects_nonexistent_path
-    stderr_messages = []
-    AIA::CLIParser.stubs(:warn).with { |msg| stderr_messages << msg; true }
-
-    AIA::CLIParser.send(:process_tools_paths, '/nonexistent/path/tool.rb')
-    assert stderr_messages.any? { |m| m.include?('not valid') }
+    _, err = capture_io do
+      AIA::CLIParser.send(:process_tools_paths, '/nonexistent/path/tool.rb')
+    end
+    assert_includes err, 'not valid'
   end
 end

@@ -1,0 +1,13 @@
+logger:
+  aia:
+    file: ~/.config/aia/logs/aia.log
+    level: info
+    flush: true
+  llm:
+    file: ~/.config/aia/logs/llm.log
+    level: info
+    flush: true
+  mcp:
+    file: ~/.config/aia/logs/mcp.log
+    level: info
+    flush: true
