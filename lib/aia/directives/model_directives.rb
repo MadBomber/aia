@@ -45,10 +45,10 @@ module AIA
 
     # --- helpers (no desc → not registered) ---
 
-    # Split a //compare arg list into [prompt, models]; the first non-flag
-    # token is the prompt, `--models a,b,c` supplies the model list.
+    # Split a //compare arg list into [prompt, models]; every word that is
+    # not part of `--models a,b,c` belongs to the prompt.
     def parse_compare_args(args)
-      prompt = nil
+      words  = []
       models = []
 
       i = 0
@@ -57,12 +57,13 @@ module AIA
           models = args[i + 1].split(',')
           i += 2
         else
-          prompt ||= args[i]
+          words << args[i]
           i += 1
         end
       end
 
-      [prompt, models]
+      prompt = words.join(' ').strip
+      [prompt.empty? ? nil : prompt, models]
     end
 
     def compare_with_model(model_name, prompt)

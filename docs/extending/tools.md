@@ -169,7 +169,7 @@ The config file equivalents are `tools.allowed` and `tools.rejected`.
 
 In a chat session AIA picks the tools that fit each turn. It compares your message with every tool's name, description and parameter names (local and MCP tools alike) and sends the model only the tools that score high enough, up to 30 per turn. This is on by default.
 
-- When **no** tool matches a turn, the model gets **no** tools for that turn. If the model ignores a tool you expected it to use, name the tool or describe what it does in your message.
+- When **no** tool matches a turn, the model gets **no** tools for that turn. This keeps a large tool set from going over a provider's limit on tools per request. If the model ignores a tool you expected it to use, name the tool or describe what it does in your message.
 - To see which tools were chosen for each turn, run with `--verbose` or `--debug`:
 
   ```text

@@ -163,7 +163,7 @@ class ExecutionDirectivesTest < Minitest::Test
   end
 
   def test_say_calls_system_and_returns_empty_string
-    @instance.expects(:system).with({}, 'say', 'hello').returns(nil)
+    AIA::Speech.expects(:system).with({}, 'say', 'hello').returns(nil)
     result = @instance.say(['hello'])
     assert_equal '', result
   end
@@ -171,11 +171,18 @@ class ExecutionDirectivesTest < Minitest::Test
   # Bare `say` reads stdin and speaks every subsequent input line, hijacking
   # the chat session — /say without text must never spawn it.
   def test_say_without_text_returns_usage_instead_of_spawning_say
-    @instance.expects(:system).never
+    AIA::Speech.expects(:system).never
 
-    assert_equal 'Usage: /say TEXT', @instance.say([])
-    assert_equal 'Usage: /say TEXT', @instance.say([''])
-    assert_equal 'Usage: /say TEXT', @instance.say(['   '])
-    assert_equal 'Usage: /say TEXT', @instance.say(nil)
+    out, = capture_io do
+      [[], [''], ['   '], nil].each { assert_nil @instance.say(it) }
+    end
+    assert_includes out, 'Usage: /say TEXT'
+  end
+
+  def test_say_uses_the_configured_speak_command
+    AIA.config.stubs(:audio).returns(OpenStruct.new(speak_command: 'mytts', speech_model: nil, voice: nil))
+    AIA::Speech.expects(:system).with({}, 'mytts', 'hello there', anything).returns(true)
+    File.stubs(:size?).returns(nil)
+    assert_equal '', @instance.say(%w[hello there])
   end
 end

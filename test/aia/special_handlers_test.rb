@@ -567,6 +567,9 @@ end
 
 class SpawnHandlerIntegrationTest < Minitest::Test
   def setup
+    # Spawned specialists get the chief's tools and MCP servers (see chat_crew_fixes_test.rb).
+    AIA::Crew.stubs(:chief_local_tools).returns([])
+    AIA::Crew.stubs(:chief_mcp).returns({})
     @ui = mock('ui_presenter')
     @ui.stubs(:display_info)
 

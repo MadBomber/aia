@@ -115,6 +115,14 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - The role in the system prompt is processed like a prompt: front matter removed, ERB and `$(...)` expanded.
   - `--skill` warns when the skills directory doesn't exist, and path skills load without one.
   - `--help` describes `--system-prompt` as literal text.
+- **Chat and crews:**
+  - `/compare` sends the whole argument string as the prompt, not just its first word.
+  - An `@word` that names no crew member (an email address, `@deprecated`) goes to the model; only a mistyped name at the start of a message is held back.
+  - `/spawn` specialists get the chief's tools and MCP servers, and `skill:<id>` in `/spawn` is applied.
+  - The task-board tool reaches the robots: TrakFlow starts before the robot collects its tools.
+  - `/verify` builds its robots with the model's provider, so `ollama/…` and other non-default providers work.
+  - `/drop_recruit`, `/reskill` and duplicate-name checks ignore case, as `@mentions` do.
+  - `/say` uses `--speak-command`, and its usage message is no longer sent to the model.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

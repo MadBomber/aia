@@ -7,6 +7,9 @@ require_relative '../../lib/aia/spawn_handler'
 
 class SpawnHandlerTest < Minitest::Test
   def setup
+    # Spawned specialists get the chief's tools and MCP servers (see chat_crew_fixes_test.rb).
+    AIA::Crew.stubs(:chief_local_tools).returns([])
+    AIA::Crew.stubs(:chief_mcp).returns({})
     @config = OpenStruct.new(
       flags: OpenStruct.new(chat: false, debug: false, verbose: false),
       models: [OpenStruct.new(name: 'gpt-4o-mini')],

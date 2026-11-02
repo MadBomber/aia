@@ -25,7 +25,7 @@ Start a message with `@name` to send it to that crewmate instead of the chief. N
 > @critic Does this API design have any obvious flaws?
 ```
 
-Only the named robot replies. AIA removes the leading `@critic` before passing the message on. Unknown names are reported rather than ignored. If no `@name` in the message matches a crew member, the message isn't sent to any robot, and that includes any `@word`, such as the domain in an email address:
+Only the named robot replies. AIA removes the leading `@critic` before passing the message on. An `@word` that names nobody is ordinary text and goes to the chief with the rest of the message, so you can write an email address or `@deprecated` freely. If the message *starts* with an `@name` that matches no one, AIA assumes a typo, reports it and sends nothing:
 
 ```text
 Unknown robot: @critc  (available: Tobor, researcher, critic)
@@ -153,7 +153,7 @@ The chief may recruit the members itself. Run `/robots` to see what it created. 
 |---|---|---|
 | Handles | Every message you send it with `@name` | Only your **next** message |
 | Joins the crew | Yes: listed in `/robots`, reachable with `@name` | No |
-| Tools and MCP servers | The chief's | None |
+| Tools and MCP servers | The chief's | The chief's |
 | Good for | A standing teammate | A one-off expert answer |
 
 Both accept the same `name provider/model instructions` form. If you keep spawning the same specialist, recruit it instead.

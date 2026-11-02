@@ -108,7 +108,7 @@ You need at least two robots: several `-m` models, or crewmates you added with `
 ```text
 /spawn                                   # let the chief decide what kind of specialist
 /spawn <type>                            # e.g. /spawn security_expert
-/spawn <name> <provider/model> <system prompt...>
+/spawn <name> <provider/model> [skill:<id>...] <system prompt...>
 ```
 
 ```text
@@ -121,9 +121,9 @@ Specialist 'tax_attorney' responding...
 
 - With no argument, the chief picks a specialist role and writes its instructions.
 - With a type, the specialist is told it's a `<type>` specialist.
-- The full form chooses the name, the model and the instructions. Use `-` or `inherit` as the model to keep the chief's model. The model can be on a different provider from the chief, for example a hosted expert in a local-model chat.
+- The full form chooses the name, the model and the instructions. Use `-` or `inherit` as the model to keep the chief's model. The model can be on a different provider from the chief, for example a hosted expert in a local-model chat. `skill:<id>` adds a skill's text to the specialist's instructions, as it does for recruits.
 
-AIA keeps up to five specialists per session and reuses one when you ask for the same role again. Specialists don't get your tools or MCP servers. If the job needs them, [recruit a crewmate](crews.md#recruiting-crewmates) instead.
+AIA keeps up to five specialists per session and reuses one when you ask for the same role again. Specialists get the chief's tools and MCP servers, under the same tool-approval setting.
 
 ## `/delegate`: plan and hand off
 

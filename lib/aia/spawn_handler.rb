@@ -43,7 +43,11 @@ module AIA
       # Spawn or reuse specialist (evict oldest when cache is full)
       specialist = @spawned[role] ||= begin
         evict_oldest! if @spawned.size >= MAX_CACHE_SIZE
-        primary.spawn(name: role, system_prompt: instruction, **ToolApprover.options(AIA.config), **spawn_opts)
+        primary.spawn(
+          name: role, system_prompt: instruction,
+          **chief_tool_opts(primary),
+          **ToolApprover.options(AIA.config), **spawn_opts
+        )
       end
 
       @ui_presenter.display_info("Specialist '#{role}' responding...")
@@ -79,9 +83,7 @@ module AIA
     # @return [Array(String, String, Hash)] [role, instruction, spawn_opts]
     def resolve_specialist(context, primary, prompt)
       if (spec = context.spawn_spec)
-        role        = spec[:name]
-        instruction = spec[:system_prompt] || "You are #{role}."
-        [role, instruction, model_opts(spec)]
+        [spec[:name], Crew.compose_system_prompt(spec), model_opts(spec)]
       elsif (type = context.specialist_type)
         [type, "You are a #{type} specialist. Answer precisely within your domain of expertise.", {}]
       else
@@ -100,6 +102,16 @@ module AIA
       return {} unless spec[:model]
 
       { model: spec[:model], provider: spec[:provider] }
+    end
+
+    # The chief's local tools and MCP servers, so a specialist can do the
+    # same work. Empty sets are left out.
+    #
+    # @return [Hash]
+    def chief_tool_opts(primary)
+      tools = Crew.chief_local_tools(primary)
+      opts  = tools.empty? ? {} : { local_tools: tools }
+      opts.merge(Crew.chief_mcp(primary))
     end
 
     def evict_oldest!

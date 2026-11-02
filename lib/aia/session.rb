@@ -48,13 +48,16 @@ module AIA
       # the same live server instances (see RobotFactory.mcp_servers).
       @mcp_manager = MCPConnectionManager.start(cfg)
 
+      coordinator = StartupCoordinator.new(robot: nil, ui_presenter: @ui_presenter, mcp_manager: @mcp_manager)
+      coordinator.prepare_task_board
+
       # Build robot or network
       @robot = RobotFactory.build(cfg)
       AIA.client = @robot
       @robot_sync = RobotSync.new(cfg, @robot)
 
-      # Run the remaining startup coordination: tools, filters, task board, bus
-      coordinator = StartupCoordinator.new(robot: @robot, ui_presenter: @ui_presenter, mcp_manager: @mcp_manager)
+      # Run the remaining startup coordination: tool filters, bus
+      coordinator.robot = @robot
       coordinator.run(cfg)
       @filters = coordinator.filters
 

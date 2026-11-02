@@ -229,6 +229,8 @@ class SessionTest < Minitest::Test
 
       mock_coordinator = mock('coordinator')
       mock_coordinator.stubs(:run)
+      mock_coordinator.stubs(:prepare_task_board)
+      mock_coordinator.stubs(:robot=)
       mock_coordinator.stubs(:filters).returns({})
       mock_coordinator.stubs(:mcp_manager).returns(nil)
       AIA::StartupCoordinator.stubs(:new).returns(mock_coordinator)

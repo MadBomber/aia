@@ -54,11 +54,11 @@ module AIA
       name = name.to_s
       old  = find_member(crew, name)
       raise CrewError, "No crewmate named '#{name}'." unless old
-      raise CrewError, "Cannot reskill the chief '#{name}'." if crew.chief&.name == name
+      raise CrewError, "Cannot reskill the chief '#{old.name}'." if chief?(crew, old.name)
 
-      crew.remove_robot(name)
+      crew.remove_robot(old.name)
       recruit(
-        name: name, model: old.model, provider: old.provider,
+        name: old.name, model: old.model, provider: old.provider,
         skills: skills, system_prompt: system_prompt
       )
     end
@@ -72,10 +72,11 @@ module AIA
     def drop(name)
       crew = require_crew
       name = name.to_s
-      raise CrewError, "No crewmate named '#{name}'." unless member?(crew, name)
-      raise CrewError, "Cannot drop the chief '#{name}'." if crew.chief&.name == name
+      member = find_member(crew, name)
+      raise CrewError, "No crewmate named '#{name}'." unless member
+      raise CrewError, "Cannot drop the chief '#{member.name}'." if chief?(crew, member.name)
 
-      crew.remove_robot(name)
+      crew.remove_robot(member.name)
     end
 
     # The crew (Network) backing the current session.
@@ -89,14 +90,21 @@ module AIA
       crew
     end
 
+    # Crew names are matched without regard to case, as @mentions are.
+    #
     # @return [Boolean]
     def member?(crew, name)
-      crew.crew.any? { |robot| robot.name == name }
+      !find_member(crew, name).nil?
     end
 
     # @return [RobotLab::Robot, nil]
     def find_member(crew, name)
-      crew.crew.find { |robot| robot.name == name }
+      crew.crew.find { |robot| robot.name.to_s.casecmp?(name.to_s) }
+    end
+
+    # @return [Boolean]
+    def chief?(crew, name)
+      crew.chief&.name.to_s.casecmp?(name.to_s)
     end
 
     # Build the recruit's system prompt (its role) from any assigned skills

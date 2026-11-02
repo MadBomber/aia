@@ -107,7 +107,7 @@ The directives you'll use most in chat:
 | `/checkpoint`, `/restore`, `/clear`, `/review`, `/checkpoints` | Manage the conversation (see below) |
 | `/tools [FILTER]`, `/mcp`, `/robots`, `/plugins` | Show loaded tools, MCP servers, the active robots, loaded plugins |
 | `/cost` | Print this session's token and cost figures as CSV |
-| `/say TEXT` | Speak text aloud with the macOS `say` command (it doesn't use `--speak-command`) |
+| `/say TEXT` | Speak text aloud with your speak command (`say` by default) |
 | `/ruby CODE` (alias `/rb`) | Run Ruby code (only when started with `--allow-ruby-eval`) |
 
 Every directive, with all arguments and aliases, is in the [Directives reference](../reference/directives.md). Directives can also be used inside prompt files; see [Directives](../prompts/directives.md).

@@ -37,17 +37,13 @@ module AIA
     def say(args, context_manager = nil)
       # Without text, `say` reads stdin and speaks every line the user types
       # next — hijacking the chat session — so never invoke it bare.
-      return "Usage: /say TEXT" if Array(args).join(' ').strip.empty?
-
-      audio = AIA.config.audio
-      voice = audio.voice
-      env   = {}
-      env['SPEECH_MODEL'] = audio.speech_model if audio.speech_model
-      if voice && !voice.strip.empty?
-        system(env, 'say', '-v', voice, *args)
-      else
-        system(env, 'say', *args)
+      text = Array(args).join(' ').strip
+      if text.empty?
+        puts "Usage: /say TEXT"
+        return nil
       end
+
+      Speech.speak_text(text)
       ""
     end
 

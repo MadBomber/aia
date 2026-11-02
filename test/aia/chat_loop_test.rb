@@ -199,7 +199,7 @@ class ChatLoopREPLTest < Minitest::Test
 
   def test_speak_no_ops_when_speak_disabled
     AIA.stubs(:speak?).returns(false)
-    @chat_loop.expects(:system).never
+    AIA::Speech.expects(:system).never
     @chat_loop.send(:speak, 'hello')
   end
 
@@ -207,23 +207,23 @@ class ChatLoopREPLTest < Minitest::Test
     AIA.stubs(:speak?).returns(true)
     @config.audio = OpenStruct.new(speak_command: 'mplayer', speech_model: nil, voice: nil)
     # Custom commands get two system calls: convert (command + tmpfile), then afplay
-    @chat_loop.expects(:system).with({}, 'mplayer', 'hello', anything).returns(true)
+    AIA::Speech.expects(:system).with({}, 'mplayer', 'hello', anything).returns(true)
     File.stubs(:size?).returns(1024)
-    @chat_loop.expects(:system).with('afplay', anything).returns(true)
+    AIA::Speech.expects(:system).with('afplay', anything).returns(true)
     @chat_loop.send(:speak, 'hello')
   end
 
   def test_speak_passes_voice_to_say_command
     AIA.stubs(:speak?).returns(true)
     @config.audio = OpenStruct.new(speak_command: 'say', speech_model: nil, voice: 'Samantha')
-    @chat_loop.expects(:system).with({}, 'say', '-v', 'Samantha', 'hello').returns(true)
+    AIA::Speech.expects(:system).with({}, 'say', '-v', 'Samantha', 'hello').returns(true)
     @chat_loop.send(:speak, 'hello')
   end
 
   def test_speak_passes_speech_model_as_env_var
     AIA.stubs(:speak?).returns(true)
     @config.audio = OpenStruct.new(speak_command: 'say', speech_model: 'tts-1', voice: nil)
-    @chat_loop.expects(:system).with({ 'SPEECH_MODEL' => 'tts-1' }, 'say', 'hello').returns(true)
+    AIA::Speech.expects(:system).with({ 'SPEECH_MODEL' => 'tts-1' }, 'say', 'hello').returns(true)
     @chat_loop.send(:speak, 'hello')
   end
 end

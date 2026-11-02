@@ -14,6 +14,7 @@ require "tty-spinner"
 module AIA
   class StartupCoordinator
     attr_reader :filters, :mcp_manager
+    attr_writer :robot
 
     def initialize(robot:, ui_presenter:, mcp_manager: nil)
       @robot       = robot
@@ -33,9 +34,14 @@ module AIA
       @filters = ToolFilterRegistry.build_from_config(config, tools)
       spinner.success
 
-      initialize_task_coordinator if trakflow_available?
-
       attach_bus_if_network
+    end
+
+    # Start the TrakFlow task board. Call this before the robot is built: the
+    # task-board tools (DelegateToForemanTool) only offer themselves once it
+    # is running, and the robot collects its tools when it is built.
+    def prepare_task_board
+      initialize_task_coordinator if trakflow_available?
     end
 
     private

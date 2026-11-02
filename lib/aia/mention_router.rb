@@ -15,6 +15,10 @@ module AIA
     # Reserved @mention that broadcasts the message to every crew member.
     BROADCAST_TOKEN = 'crew'
 
+    # An @name at the start of a word. The look-behind leaves e-mail
+    # addresses (bob@example.com) and dotted names alone.
+    MENTION = /(?<![\w.@])@(\w+)/
+
     def initialize(ui_presenter:, tracker:, streaming_runner:)
       @ui_presenter = ui_presenter
       @tracker = tracker
@@ -32,13 +36,17 @@ module AIA
       prompt = context.prompt
       return false unless robot.network?
 
-      mention_tokens = prompt.scan(/@(\w+)/i).flatten
+      mention_tokens = prompt.scan(MENTION).flatten
       return false if mention_tokens.empty?
 
       all_robots = robot.crew
       matched = resolve_mentions(mention_tokens, all_robots)
 
+      # No crew member named: ordinary text for the model, unless the message
+      # opens with an @address -- most likely a mistyped name.
       if matched.empty?
+        return false unless addressed?(prompt)
+
         report_unknown_mentions(mention_tokens, all_robots)
         return true
       end
@@ -60,11 +68,16 @@ module AIA
       prompt.sub(/\A(?:\s*@\w+)+\s*/i, '').strip
     end
 
+    # True when the message opens with an @address.
+    def addressed?(prompt)
+      prompt.match?(/\A\s*@\w/)
+    end
+
     # True when every @mention is part of the leading address — i.e. nothing but
     # @mentions before the message — so it's a broadcast to its addressees and
     # runs concurrently. A @mention woven into the body makes it sequential.
     def leading_address_only?(prompt)
-      !strip_addressing_prefix(prompt).match?(/@\w+/)
+      !strip_addressing_prefix(prompt).match?(MENTION)
     end
 
     # Resolve @mention tokens to robots. The reserved @crew token broadcasts to

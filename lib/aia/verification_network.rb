@@ -16,13 +16,12 @@ module AIA
       run_config = RobotFactory.build_run_config(config)
       tools = ToolLoader.filtered_tools(config)
       mcp = RobotFactory.mcp_servers(config)
-      model_id = model.internal_id
 
       # rubocop:disable-next Metrics/BlockLength
       RobotLab.create_network(name: "aia-verification") do
-        worker_a = RobotLab.build(
+        worker_a = RobotFactory.build_robot(
+          model,
           name:          "verifier-a",
-          model:         model_id,
           system_prompt: "Answer the following question. Be thorough and precise.",
           local_tools:   tools,
           mcp:           mcp,
@@ -30,9 +29,9 @@ module AIA
         )
         task :verify_a, worker_a, depends_on: :none
 
-        worker_b = RobotLab.build(
+        worker_b = RobotFactory.build_robot(
+          model,
           name:          "verifier-b",
-          model:         model_id,
           system_prompt: "Answer the following question independently. " \
                          "Focus on correctness and completeness.",
           local_tools:   tools,
@@ -41,9 +40,9 @@ module AIA
         )
         task :verify_b, worker_b, depends_on: :none
 
-        reconciler = RobotLab.build(
+        reconciler = RobotFactory.build_robot(
+          model,
           name:          "reconciler",
-          model:         model_id,
           system_prompt: "Compare two independent answers to the same question. " \
                          "Identify agreements and disagreements. " \
                          "Produce a final, reconciled answer that is most accurate. " \

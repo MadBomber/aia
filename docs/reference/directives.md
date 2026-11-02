@@ -161,16 +161,15 @@ Chat context cleared.
 **Aliases:** `/cmp` · **Use in:** Chat · **Chat output:** Shown
 
 ```text
-/compare WORD --models MODEL1,MODEL2[,...]
+/compare PROMPT --models MODEL1,MODEL2[,...]
 ```
 
 Sends the prompt to each listed model separately and prints each response under the model's name. The models don't see your conversation.
 
-!!! warning "Only the first word is used as the prompt"
-    Arguments are split on spaces, so `/compare` takes just the first word after it as the prompt. To compare models on a real question, start AIA with several models instead (`--model gpt-4o,claude-sonnet-4`), or switch with `/model gpt-4o,claude-sonnet-4`. See [Multi-Model & Consensus](../extending/multi-model.md).
+Every word that isn't part of `--models` belongs to the prompt.
 
 ```text
-/compare haiku --models gpt-4o-mini,claude-haiku-4-5
+/compare Write a haiku about autumn --models gpt-4o-mini,claude-haiku-4-5
 ```
 
 ## /concurrent
@@ -470,7 +469,7 @@ See [ERB & Shell](../prompts/erb-and-shell.md#running-ruby-in-chat-ruby) and [Se
 /say TEXT
 ```
 
-Speaks the text with the macOS `say` command. If you've set a voice (`--voice` or `audio.voice`), AIA uses it. Without text, AIA prints `Usage: /say TEXT`. To have every response spoken, use `--speak`. See [Images & Speech](../extending/images-and-speech.md).
+Speaks the text with your speak command (`--speak-command` or `audio.speak_command`; the macOS `say` command by default). With `say`, AIA uses your voice (`--voice` or `audio.voice`) if you've set one. Without text, AIA prints `Usage: /say TEXT` and sends nothing to the model. To have every response spoken, use `--speak`. See [Images & Speech](../extending/images-and-speech.md).
 
 ```text
 /say The build is green
@@ -515,7 +514,7 @@ Lists the skills in your skills directory with their name and description. Terms
 /spawn NAME PROVIDER/MODEL [SYSTEM PROMPT]   # exactly the specialist you describe
 ```
 
-Creates a one-off specialist robot to answer your next message. Unlike a [recruit](#add_recruit), a spawned specialist doesn't join the crew. In the full form, use `-` or `inherit` as the model to keep the session's model. See [Crews](../extending/crews.md).
+Creates a one-off specialist robot to answer your next message. Unlike a [recruit](#add_recruit), a spawned specialist doesn't join the crew. In the full form, use `-` or `inherit` as the model to keep the session's model, and add `skill:<id>` to give the specialist a skill. A specialist gets the chief's tools and MCP servers. See [Crews](../extending/crews.md).
 
 ```text
 /spawn security

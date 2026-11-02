@@ -106,7 +106,7 @@ module AIA
       logger = AIA.logger
 
       if scored.empty?
-        logger.debug "[#{label}] No tools matched (all tools available)"
+        logger.debug "[#{label}] No tools matched (no tools sent this turn)"
         return
       end
 
