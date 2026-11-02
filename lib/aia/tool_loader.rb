@@ -137,15 +137,23 @@ module AIA
     end
 
     # Discover RubyLLM::Tool subclasses from ObjectSpace.
-    # Skips tools that report themselves as unavailable via #available?.
+    # Skips tools that report themselves as unavailable via #available?
+    # (reported only under --debug, since that is a deliberate opt-out) and
+    # tools whose class body never finished loading (always reported).
     def discover_tools
-      ObjectSpace.each_object(Class).select do |klass|
-        next false unless defined?(RubyLLM::Tool) && klass < RubyLLM::Tool
+      return [] unless defined?(RubyLLM::Tool)
+
+      incomplete = []
+      tools = ObjectSpace.each_object(Class).select do |klass|
+        next false unless klass < RubyLLM::Tool
+        unless implements_execute?(klass)
+          incomplete << (klass.name || klass.inspect)
+          next false
+        end
         begin
           instance = klass.new
           if instance.respond_to?(:available?) && !instance.available?
-            tool_name = instance.respond_to?(:name) ? instance.name : klass.name
-            $stderr.puts "Info: Tool '#{tool_name}' is not available, skipping"
+            $stderr.puts "Info: Tool '#{tool_name(instance)}' is not available, skipping" if AIA.debug?
             next false
           end
           true
@@ -153,6 +161,24 @@ module AIA
           false
         end
       end
+      warn_incomplete_tools(incomplete)
+      tools
+    end
+
+    # True when the tool class defines its own #execute. A class whose body
+    # raised partway through (e.g. a gem written against an older RubyLLM
+    # tool DSL) still inherits RubyLLM::Tool's abstract #execute and would
+    # fail with NotImplementedError on the first tool call.
+    def implements_execute?(klass)
+      klass.instance_method(:execute).owner != RubyLLM::Tool
+    end
+
+    # One summary line for tool classes rejected by #implements_execute?.
+    def warn_incomplete_tools(names)
+      return if names.empty?
+
+      $stderr.puts "Warning: #{names.size} tool(s) did not finish loading and were skipped " \
+                   "(the gem providing them may need updating): #{names.sort.join(', ')}"
     end
 
     # Activate a gem that isn't yet active by asking RubyGems to activate it.

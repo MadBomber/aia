@@ -93,6 +93,7 @@ class ToolLoaderTest < Minitest::Test
     unavailable_tool_class = Class.new(RubyLLM::Tool) do
       def self.name = 'unavailable_tool'
       description "A tool that is not available"
+      def execute = "ok"
       def available?
         false
       end
@@ -101,6 +102,7 @@ class ToolLoaderTest < Minitest::Test
     available_tool_class = Class.new(RubyLLM::Tool) do
       def self.name = 'available_tool'
       description "A tool that is available"
+      def execute = "ok"
       def available?
         true
       end
@@ -153,6 +155,7 @@ class ToolLoaderTest < Minitest::Test
     basic_tool_class = Class.new(RubyLLM::Tool) do
       def self.name = 'basic_tool'
       description "A basic tool without available? method"
+      def execute = 'ok'
     end
 
     tools = AIA::ToolLoader.discover_tools
@@ -162,6 +165,50 @@ class ToolLoaderTest < Minitest::Test
   ensure
     nil
     GC.start
+  end
+
+  def test_implements_execute_false_for_class_without_execute
+    half_loaded = Class.new(RubyLLM::Tool) { description "body raised before execute" }
+    refute AIA::ToolLoader.new.implements_execute?(half_loaded)
+  end
+
+  def test_implements_execute_true_for_class_with_execute
+    complete = Class.new(RubyLLM::Tool) { def execute = 'ok' }
+    assert AIA::ToolLoader.new.implements_execute?(complete)
+  end
+
+  def test_discover_tools_skips_and_reports_half_loaded_tools
+    half_loaded = Class.new(RubyLLM::Tool) do
+      def self.name = 'half_loaded_tool'
+      description "body raised before execute"
+    end
+
+    tools = nil
+    _out, err = capture_io { tools = AIA::ToolLoader.discover_tools }
+
+    refute_includes tools, half_loaded
+    assert_match(/did not finish loading.*half_loaded_tool/, err)
+  ensure
+    GC.start
+  end
+
+  def test_discover_tools_is_silent_about_unavailable_tools_without_debug
+    Class.new(RubyLLM::Tool) do
+      def self.name = 'quiet_unavailable_tool'
+      def execute = 'ok'
+      def available? = false
+    end
+
+    _out, err = capture_io { AIA::ToolLoader.discover_tools }
+
+    refute_match(/quiet_unavailable_tool/, err)
+  ensure
+    GC.start
+  end
+
+  def test_warn_incomplete_tools_silent_when_empty
+    _out, err = capture_io { AIA::ToolLoader.new.warn_incomplete_tools([]) }
+    assert_empty err
   end
 
   private
