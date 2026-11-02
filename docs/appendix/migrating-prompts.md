@@ -47,7 +47,7 @@ for a <%= target_audience %> reader:
 
 Settings move into YAML front matter, placeholders become ERB, and each parameter gets a default (`null` means aia will ask for it).
 
-The script writes every `//config` setting as a top-level key. aia only reads a few top-level keys (`next`, `pipeline`, `shell`, `erb`, plus the model settings below) and ignores the rest. So move any other migrated setting, such as `tokens: true` or an `llm:` block, under a `config:` key. See [Prompt Files](../prompts/prompt-files.md) and [Parameters](../prompts/parameters.md).
+The script puts each `//config` setting where aia 2.0 reads it. `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell` and `erb` stay at the top level of the front matter; everything else goes under a `config:` key, at its place in the configuration (`//config tokens true` becomes `config:` / `flags:` / `tokens: true`). A key the script doesn't recognize, such as the removed `terse`, is put under `config:` as written and listed as a warning, so you can fix or delete it. See [Prompt Files](../prompts/prompt-files.md) and [Parameters](../prompts/parameters.md).
 
 The script turns `//config model …` into a front-matter `model:`, and `//temperature` / `//top_p` into `temperature:` / `top_p:`. These keep working in 2.0. See [Prompt Files](../prompts/prompt-files.md#front-matter-keys).
 
@@ -103,9 +103,6 @@ AIA_PROMPTS__DIR=~/old-prompts ruby bin/migrate_prompts --dry-run
 | `--reprocess` | Look at `*.txt-review` files again and migrate the ones that now pass. |
 | `-h`, `--help` | Show usage. |
 
-!!! tip "No output at all?"
-    The script reports through Ruby's warning channel. If your environment sets `RUBYOPT=-W0` (which silences warnings), it runs without printing anything. Run it as `RUBYOPT= ruby bin/migrate_prompts …` to see the report.
-
 The original `.txt` and `.json` files are left in place. Delete them yourself once you're happy with the `.md` versions.
 
 ## What gets converted
@@ -124,28 +121,20 @@ Each parameter's default is the **most recent** value from the `.json` history f
 
 | Old line | Becomes |
 |---|---|
-| `//config KEY VALUE` or `//config KEY=VALUE` | `KEY: VALUE` in front matter. Dotted keys nest (`llm.max_tokens` → `llm:` / `max_tokens:`). `true`/`false` and numbers keep their types. |
+| `//config KEY VALUE` or `//config KEY=VALUE` | `KEY: VALUE` at the top level for `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell` and `erb`; otherwise under `config:` (`max_tokens` → `config:` / `llm:` / `max_tokens:`). Dotted keys nest under `config:` as written. `true`/`false` and numbers keep their types. |
 | `//temp 0.3` | `temperature: 0.3` |
 | `//topp 0.9` | `top_p: 0.9` |
 | `//next other_prompt` | `next: other_prompt` |
 | `//pipeline a, b, c` | `pipeline: [a, b, c]` |
 | `//include FILE` | `<%= include('FILE') %>` |
-| `//shell COMMAND` | `<%= system('COMMAND') %>` |
+| `//shell COMMAND` | ``<%= `COMMAND` %>``, which inserts the command's output |
 | `//ruby CODE` | `<%= CODE %>`, with placeholders turned into parameter names |
 | `//backend …` | Dropped. |
 | Any other `//name …` | Left in the body unchanged, with an `Unrecognized directive` warning in the summary. |
 
 When a directive argument contains a placeholder, it becomes the parameter: `//include [FILE]` turns into `<%= include(file) %>`.
 
-!!! warning "Check every converted `//shell` line"
-    Ruby's `system` runs the command but returns `true` or `false`; the command's output goes to your terminal, not into the prompt. Where you wanted the output in the prompt, replace the line with shell expansion:
-
-    ```markdown
-    <%= system('git log -5 --oneline') %>    ← inserts "true"
-    $(git log -5 --oneline)                  ← inserts the log
-    ```
-
-    See [ERB & Shell](../prompts/erb-and-shell.md).
+A placeholder in a `//shell` command becomes an interpolated parameter: `//shell ls [DIR]` turns into ``<%= `ls #{dir}` %>``. See [ERB & Shell](../prompts/erb-and-shell.md).
 
 ### Everything else
 

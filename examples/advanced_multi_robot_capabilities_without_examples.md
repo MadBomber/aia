@@ -21,7 +21,6 @@ front matter, or `//` prompt-file directives in batch mode.
 | `/spawn` specialist robots | `SpawnHandler` | 1 | `/spawn [type]` in chat |
 | `/debate` multi-round | `DebateHandler` | 2 | `/debate` in chat |
 | `@mention` routing | `MentionRouter` | 2 | `@robot_name question` in chat |
-| Natural language model switch | `ModelSwitchHandler` | 1 | "switch to X" in chat |
 | `/delegate` TrakFlow teams | `DelegateHandler` | 2 | `/delegate` in chat |
 
 ## Feature Details
@@ -67,13 +66,6 @@ front matter, or `//` prompt-file directives in batch mode.
 - Genuinely interactive: the value is in the user directing conversation flow
   turn-by-turn; less meaningful as a one-shot batch operation.
 
-### Natural Language Model Switch (`lib/aia/model_switch_handler.rb`)
-- Detects model-change intent from natural language input, e.g. "switch to llama"
-  or "use phi4-mini instead". Shows "Interpreted as: /model X" and prompts for
-  confirmation (y/n). On confirmation, rebuilds the robot with the new model and
-  transfers history. Also handles `model_compare` and `model_switch_capability` intents.
-- Genuinely interactive: depends on the user directing the conversation.
-
 ### `/delegate` TrakFlow Teams (`lib/aia/delegate_handler.rb`)
 - A lead robot breaks the prompt into subtasks and assigns each to team members via
   a TrakFlow plan. Each robot executes its subtask in order with full shared context.
@@ -85,8 +77,8 @@ front matter, or `//` prompt-file directives in batch mode.
 ## Batch Mode Extension Opportunities
 
 `/verify`, `/decompose`, `/debate`, and `/spawn` are ready to be lifted out of
-chat-only access. `@mention` routing and natural language model switching are
-genuinely conversational and are better left as chat-only features.
+chat-only access. `@mention` routing is
+genuinely conversational and is better left as a chat-only feature.
 
 | Feature | Suggested CLI flag | Suggested front matter key |
 |---|---|---|

@@ -16,48 +16,52 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 echo "=== Demo 16: Directives ==="
 echo
-echo "Directives are built-in functions available in prompts (via ERB)"
-echo "and in chat mode (via /command). Here are the available directives:"
-echo
-echo "  Prompt Manager Core:"
-echo "    include   - Include recursively and render another prompt file(s)"
-echo "    insert    - Insert (non-recursive) raw file contents (aliases: read)"
-echo
-echo "The remaining directives are more useful as /commands in chat mode:"
-echo
-echo "  Configuration:"
-echo "    /config   - View or set configuration values"
-echo "    /model    - View or change the AI model"
-echo "    /temp     - Set the temperature parameter"
-echo "    /top_p    - Set the top_p parameter"
-echo
-echo "  Context:"
-echo "    /checkpoint - Create a named checkpoint"
-echo "    /restore    - Restore to a previous checkpoint"
-echo "    /clear      - Clear the conversation context"
-echo "    /review     - Display the current context"
-echo "    /list       - List all available checkpoints"
-echo
-echo "  Execution:"
-echo "    /ruby     - Execute Ruby code"
-echo "    /speak    - Use text-to-speech"
-echo
-echo "  Model:"
-echo "    /models   - List all available AI models"
-echo "    /compare  - Compare responses from multiple models"
-echo
-echo "  Utility:"
-echo "    /tools    - List available tools"
-echo "    /terse    - Request concise responses"
-echo "    /robot    - Display ASCII robot art"
-echo "    /help     - Show directive help"
-echo
-echo "  Web & File:"
-echo "    /web      - Fetch and include webpage content"
-echo "    /skills   - List available Claude Code skills"
-echo "    /skill    - Include a Claude Code skill"
-echo "    /paste    - Paste from the system clipboard"
-echo
+cat <<'EOF'
+Directives are built-in functions available in prompts (via ERB)
+and in chat mode (via /command). Run /help in a chat for the full,
+current list. The main ones:
+
+  Prompt Manager core (in prompt files):
+    include   - Include and render another prompt file
+    insert    - Insert a file's raw contents (alias: read)
+
+  Configuration:
+    /config   - View or set configuration values (alias: /cfg)
+    /model    - View or change the AI model
+    /temperature, /top_p - Set sampling parameters (aliases: /temp, /topp)
+    /cost     - Session cost and token metrics as CSV
+
+  Context:
+    /checkpoint  - Create a named checkpoint (aliases: /ckp, /cp)
+    /restore     - Restore a checkpoint
+    /clear       - Clear the conversation context
+    /review      - Show the conversation context (alias: /context)
+    /checkpoints - List checkpoints
+
+  Execution:
+    /ruby     - Run Ruby code (needs --allow-ruby-eval)
+    /say      - Speak text aloud
+    /verify, /decompose, /debate, /delegate, /spawn, /concurrent, /orchestrate
+              - Special handling for your next message
+    /add_recruit, /drop_recruit, /reskill - Manage the crew
+
+  Models:
+    /models   - Search available models (aliases: /available_models, /am, ...)
+    /compare  - Compare responses from several models (alias: /cmp)
+
+  Tasks (TrakFlow):
+    /tasks, /task, /plan
+
+  Utility:
+    /tools, /mcp, /plugins, /robots, /robot, /help
+
+  Web and files:
+    /webpage  - Fetch a webpage (aliases: /web, /website)
+    /skills   - List your AIA skills
+    /skill    - Include an AIA skill
+    /paste    - Paste from the clipboard (alias: /clipboard)
+
+EOF
 
 # --- Part 1: Using include in a prompt ---
 

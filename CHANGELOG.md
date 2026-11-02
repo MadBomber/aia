@@ -140,6 +140,12 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - The completion scripts fall back to `~/.prompts` when `AIA_PROMPTS__DIR` is unset.
   - `--track-pipeline` updates the steps of the plan it created, in order, instead of matching any task whose title contains the prompt ID.
 - **`--refresh DAYS` works again.** AIA keeps its model list in `<paths.aia_dir>/models.json` and refreshes it from the providers every `registry.refresh` days (default 7, `0` = never), as 1.x did. A failed refresh warns and keeps the existing list.
+- **`bin/migrate_prompts`:**
+  - `//shell COMMAND` becomes ``<%= `COMMAND` %>``, which inserts the command's output; it used to become `<%= system(...) %>`, which inserted `true`.
+  - `//config` settings land where aia reads them: `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell` and `erb` at the top of the front matter, everything else under `config:` at its place in the configuration. Unknown keys are kept under `config:` with a warning.
+  - The report prints even when `RUBYOPT=-W0` silences Ruby warnings.
+- **The fuzzy role picker** (`--fuzzy` with a role that isn't found) lists roles from `prompts.dir`/`prompts.roles_prefix`, including subdirectories, the same roles `--list-roles` shows.
+- **Examples:** `16_directives.sh` lists the real directives, `15_parameters.sh` says AIA asks for every parameter, `21_executable_prompts.sh` notes that a piped file's shebang options are not applied, and `aia_config_orchestrator.yml` no longer claims to extend the base config.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

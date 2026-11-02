@@ -1,7 +1,9 @@
 # AIA configuration for agent harness demo (29_agent_harness.sh)
 #
-# Extends the base demo config with an orchestrator system prompt so Tobor
-# is pre-configured as the primary coordinator from the start of the session.
+# The base demo settings plus an orchestrator system prompt, so Tobor is
+# the primary coordinator from the start of the session. -c replaces the
+# configuration rather than adding to it, so this file repeats the base
+# settings (prompts dir, model, output) instead of inheriting them.
 # The system_prompt is injected into the robot's context at build time —
 # it is NOT sent as a user message. Use this config with --chat and optionally
 # -m MODEL_A,MODEL_B to add specialist network robots.

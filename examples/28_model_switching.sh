@@ -7,9 +7,8 @@
 # and carries the conversation over (by default the old model
 # summarizes it for the new one; see model_switch_history).
 #
-# Note: Natural language model switching ("use claude-haiku-4-5 instead")
-# is detected by ModelSwitchHandler but currently stubbed. Use
-# /model directly for reliable in-session model changes.
+# Note: typing a request such as "use claude-haiku-4-5 instead" does not
+# switch models; it goes to the model as an ordinary message. Use /model.
 #
 # Prerequisites:
 #   - Run 00_setup_aia.sh first (ANTHROPIC_API_KEY must be set)

@@ -398,8 +398,12 @@ aia --system-prompt "Answer in one short paragraph." my_prompt
 |---|---|---|
 | none | `prompts.system_prompt` | `AIA_PROMPTS__SYSTEM_PROMPT` |
 
-```bash
-aia --chat --system-prompt house_rules
+```yaml
+# ~/.config/aia/aia.yml
+prompts:
+  system_prompt: |
+    Answer in British English.
+    Keep answers under 200 words.
 ```
 
 ---

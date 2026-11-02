@@ -372,23 +372,6 @@ class ValidatorRoleConfigurationTest < Minitest::Test
     assert_empty config.pipeline
   end
 
-  def test_sets_roles_dir
-    config = OpenStruct.new(
-      prompts: OpenStruct.new(
-        role: 'architect',
-        roles_prefix: 'roles',
-        roles_dir: nil,
-        dir: '/tmp/prompts'
-      ),
-      flags: OpenStruct.new(chat: false),
-      prompt_id: 'existing',
-      pipeline: []
-    )
-
-    AIA::ConfigValidator.send(:process_role_configuration, config)
-    assert_equal '/tmp/prompts/roles', config.prompts.roles_dir
-  end
-
   def test_process_role_configuration_does_not_mangle_absolute_path_role
     config = OpenStruct.new(
       prompts: OpenStruct.new(

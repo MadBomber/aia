@@ -58,7 +58,7 @@ models:
 | `prompts.role` | string | unset | `AIA_PROMPTS__ROLE` | `-r`, `--role` | Role to apply. A role ID or a path to a file. |
 | `prompts.roles_prefix` | string | `roles` | `AIA_PROMPTS__ROLES_PREFIX` | `--roles-prefix` | Subdirectory of `prompts.dir` holding role files. |
 | `prompts.skills` | list | `[]` | — | `-s`, `--skill` | Skills to add to every prompt or chat session. |
-| `prompts.system_prompt` | string | unset | `AIA_PROMPTS__SYSTEM_PROMPT` | `--system-prompt` | Prompt ID used as the chat system prompt. |
+| `prompts.system_prompt` | string | unset | `AIA_PROMPTS__SYSTEM_PROMPT` | `--system-prompt` | System prompt text, used in chat and one-shot runs. Literal text, not a prompt ID. |
 
 ## `skills`
 

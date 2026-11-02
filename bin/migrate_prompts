@@ -34,6 +34,32 @@ class PromptMigrator
   BACKEND_RE        = %r{\A//backend(\s|$)}i
   DIRECTIVE_RE      = %r{\A//(\w+)}
 
+  # Front-matter keys aia applies at the top level.
+  ROOT_KEYS = %w[model temperature top_p next pipeline shell erb].freeze
+
+  # Flat setting names and where they live under config:. Mirrors
+  # AIA::Config::CLI_TO_NESTED_MAP (a test keeps the two in step); this
+  # script needs only Ruby, so it can't load aia to read it.
+  CONFIG_PATHS = {
+    'chat' => 'flags.chat', 'cost' => 'flags.cost', 'fuzzy' => 'flags.fuzzy', 'tokens' => 'flags.tokens',
+    'no_mcp' => 'flags.no_mcp', 'debug' => 'flags.debug', 'verbose' => 'flags.verbose',
+    'consensus' => 'flags.consensus', 'track_pipeline' => 'flags.track_pipeline',
+    'auto_tool_filter' => 'flags.auto_tool_filter', 'allow_ruby_eval' => 'flags.allow_ruby_eval',
+    'thinking' => 'flags.thinking', 'speak' => 'flags.speak', 'paint' => 'flags.paint',
+    'tool_filter_timeout_s' => 'tool_filter.timeout_s', 'concurrent_auto' => 'concurrency.auto',
+    'max_tokens' => 'llm.max_tokens', 'frequency_penalty' => 'llm.frequency_penalty',
+    'presence_penalty' => 'llm.presence_penalty',
+    'prompts_dir' => 'prompts.dir', 'roles_prefix' => 'prompts.roles_prefix', 'role' => 'prompts.role',
+    'skills_dir' => 'skills.dir', 'skills' => 'prompts.skills', 'system_prompt' => 'prompts.system_prompt',
+    'output' => 'output.file', 'history_file' => 'output.history_file', 'append' => 'output.append',
+    'voice' => 'audio.voice', 'speak_command' => 'audio.speak_command', 'speech_model' => 'audio.speech_model',
+    'transcription_model' => 'audio.transcription_model',
+    'image_model' => 'image.model', 'image_size' => 'image.size', 'image_quality' => 'image.quality',
+    'image_style' => 'image.style',
+    'tool_paths' => 'tools.paths', 'allowed_tools' => 'tools.allowed', 'rejected_tools' => 'tools.rejected',
+    'tool_approval' => 'tools.approval', 'refresh' => 'registry.refresh', 'plugins_dir' => 'paths.plugins_dir'
+  }.freeze
+
   def initialize(options)
     @options = options
     @stats   = { migrated: 0, flagged: 0, skipped: 0, reprocessed: 0, still_flagged: 0, warnings: [] }
@@ -77,8 +103,9 @@ class PromptMigrator
 
   private
 
+  # $stderr.puts, not warn: warn is silent under RUBYOPT=-W0.
   def log(msg)
-    warn msg
+    $stderr.puts msg
   end
 
   # --- File resolution ---
@@ -419,7 +446,7 @@ class PromptMigrator
     when CONFIG_BARE_RE
       # Bare //config with no args — ignore
     when CONFIG_RE
-      parse_config_directive(::Regexp.last_match(1), result[:yaml])
+      parse_config_directive(::Regexp.last_match(1), result[:yaml], result[:warnings])
     when TEMP_RE
       result[:yaml]['temperature'] = parse_value(::Regexp.last_match(1).strip)
     when TOPP_RE
@@ -435,7 +462,7 @@ class PromptMigrator
       result[:body_lines] << "<%= include(#{directive_arg_to_ruby(arg)}) %>"
     when SHELL_RE
       arg = ::Regexp.last_match(1).strip
-      result[:body_lines] << "<%= system(#{directive_arg_to_ruby(arg)}) %>"
+      result[:body_lines] << shell_erb(directive_arg_to_ruby(arg))
     when RUBY_RE
       code = ::Regexp.last_match(1).strip
       code = code.gsub(CLEAN_PLACEHOLDER) { ::Regexp.last_match(1).downcase }
@@ -450,7 +477,20 @@ class PromptMigrator
     # rubocop:enable Metrics/AbcSize
   end
 
-  def parse_config_directive(args_str, yaml)
+  # ERB that inserts a command's output, from the Ruby expression
+  # directive_arg_to_ruby made of the //shell argument: a single-quoted
+  # literal, a double-quoted string with #{param} interpolation, or a bare
+  # parameter name. Backticks interpolate like double quotes.
+  def shell_erb(command)
+    body = case command
+           when /\A'(.*)'\z/m then ::Regexp.last_match(1).gsub("\\'", "'")
+           when /\A"(.*)"\z/m then ::Regexp.last_match(1)
+           else "\#{#{command}}"
+           end
+    "<%= `#{body}` %>"
+  end
+
+  def parse_config_directive(args_str, yaml, warnings = [])
     args_str = args_str.strip
 
     if args_str.include?('=')
@@ -464,7 +504,21 @@ class PromptMigrator
     key   = key.strip.delete('?')
     value = parse_value(value&.strip)
 
-    set_nested(yaml, key, value)
+    set_nested(yaml, *config_destination(key, warnings), value)
+  end
+
+  # Where a //config key belongs: [hash path root, dotted key]. aia applies
+  # ROOT_KEYS at the top level; everything else must sit under config:.
+  #
+  # @return [Array(String, String)] ['' or 'config', dotted key]
+  def config_destination(key, warnings = [])
+    key = 'model' if key == 'models'
+    return ['', key] if ROOT_KEYS.include?(key)
+    return ['config', key] if key.include?('.')
+    return ['config', CONFIG_PATHS[key]] if CONFIG_PATHS.key?(key)
+
+    warnings << "Unknown //config key '#{key}' placed under config: as-is; check it"
+    ['config', key]
   end
 
   def directive_arg_to_ruby(arg)
@@ -674,8 +728,9 @@ class PromptMigrator
     end
   end
 
-  def set_nested(hash, dotted_key, value)
+  def set_nested(hash, root, dotted_key, value)
     keys    = dotted_key.split('.')
+    keys.unshift(root) unless root.empty?
     current = hash
     keys[0..-2].each do |k|
       current[k] ||= {}
@@ -717,6 +772,9 @@ class PromptMigrator
 end
 
 # --- CLI ---
+
+# Tests load this file for PromptMigrator alone.
+return if defined?(MIGRATE_PROMPTS_NO_CLI)
 
 options = {
   dry_run:   false,

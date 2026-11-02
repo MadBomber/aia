@@ -194,8 +194,6 @@ module AIA
           prompts.role = role
         end
 
-        prompts.roles_dir ||= File.join(prompts.dir, roles_prefix.to_s)
-
         return if config.flags&.chat == true
 
         return unless config.prompt_id.nil? || config.prompt_id.empty?

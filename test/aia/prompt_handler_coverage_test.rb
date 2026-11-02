@@ -3,6 +3,7 @@
 require_relative '../test_helper'
 require 'ostruct'
 require 'tmpdir'
+require 'aia/fzf'
 
 class PromptHandlerFetchPromptTest < Minitest::Test
   def setup
@@ -34,6 +35,18 @@ class PromptHandlerFetchPromptTest < Minitest::Test
   def teardown
     FileUtils.rm_rf(@prompts_dir)
     super
+  end
+
+  def test_role_picker_lists_the_roles_aia_can_load
+    FileUtils.mkdir_p(File.join(@roles_dir, 'dev'))
+    File.write(File.join(@roles_dir, 'dev', 'architect.md'), 'Architect')
+    File.write(File.join(@roles_dir, 'writer.md'), 'Writer')
+    File.write(File.join(@roles_dir, '_draft.md'), 'Private')
+    fzf = mock('fzf')
+    fzf.stubs(:run).returns('dev/architect')
+    AIA::Fzf.expects(:new).with(has_entries(list: %w[dev/architect writer], directory: @roles_dir)).returns(fzf)
+
+    assert_equal 'roles/dev/architect', @handler.send(:search_role_id_with_fzf, 'arch')
   end
 
   def test_fetch_fuzzy_search_sentinel

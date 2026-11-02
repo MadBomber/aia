@@ -24,7 +24,6 @@ module AIA
 
     def initialize
       @prompts_dir = AIA.config.prompts.dir
-      @roles_dir   = AIA.config.prompts.roles_dir
 
       flags = AIA.config.flags
       PM.configure do |c|
@@ -377,11 +376,11 @@ module AIA
 
     def search_role_id_with_fzf(initial_query)
       prompts_cfg = AIA.config.prompts
-      role_files = Dir.glob(File.join(@roles_dir, "*#{prompts_cfg.extname}"))
-                      .map { |file| File.basename(file, prompts_cfg.extname) }
+      prefix     = prompts_cfg.roles_prefix
+      role_files = RoleCatalog.names(@prompts_dir, prefix, extname: prompts_cfg.extname)
       fzf = AIA::Fzf.new(
         list: role_files,
-        directory: @prompts_dir,
+        directory: File.join(@prompts_dir, prefix.to_s),
         query: initial_query,
         subject: 'Role IDs',
         prompt: 'Select a role ID:'
