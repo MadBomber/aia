@@ -49,10 +49,6 @@ class ChatLoopREPLTest < Minitest::Test
     @tool_filter_strategy.stubs(:resolve).returns(nil)
     @tool_filter_strategy.stubs(:active_strategy_label).returns("none")
 
-    @model_switch_handler = mock('model_switch_handler')
-    AIA::ModelSwitchHandler.stubs(:new).returns(@model_switch_handler)
-    @model_switch_handler.stubs(:handle).returns(false)
-
     @config = OpenStruct.new(
       flags: OpenStruct.new(tokens: false, debug: false),
       output: OpenStruct.new(file: nil),
@@ -179,19 +175,6 @@ class ChatLoopREPLTest < Minitest::Test
     @chat_loop.stubs(:present_result)
     AIA.turn_state.stubs(:active_mcp_servers=)
 
-    @chat_loop.start
-  end
-
-  # ===================================================================
-  # Model switch skips robot call
-  # ===================================================================
-
-  def test_model_switch_skips_streaming_runner
-    AIA.stubs(:client).returns(@robot)
-    @ui.stubs(:ask_question).returns("use gpt-4o", "")
-    @model_switch_handler.stubs(:handle).returns(true)
-    @special_mode_handler.expects(:robot=).with(@robot).once
-    @streaming_runner.expects(:run).never
     @chat_loop.start
   end
 

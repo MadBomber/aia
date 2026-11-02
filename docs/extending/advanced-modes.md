@@ -213,10 +213,6 @@ Ready tasks (1):
 aia --track-pipeline research --pipeline outline,draft
 ```
 
-## Options that have no effect yet
-
-`--expert-routing` (config `flags.expert_routing`) is accepted, but it doesn't currently change how prompts are handled.
-
 ## See also
 
 - [Crews](crews.md)

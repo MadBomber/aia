@@ -46,7 +46,7 @@ module AIA
     # ==========================================================================
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
-    SECTIONS = %i[service llm prompts roles skills output audio image embedding
+    SECTIONS = %i[service llm prompts skills output audio image
                   tools flags registry paths logger concurrency tool_filter].freeze
 
     attr_config(*SECTIONS)
@@ -110,12 +110,10 @@ module AIA
       service: config_section_coercion(:service),
       llm: config_section_coercion(:llm),
       prompts: config_section_coercion(:prompts),
-      roles: config_section_coercion(:roles),
       skills: config_section_coercion(:skills),
       output: config_section_coercion(:output),
       audio: config_section_coercion(:audio),
       image: config_section_coercion(:image),
-      embedding: config_section_coercion(:embedding),
       tools: config_section_coercion(:tools),
       flags: config_section_coercion(:flags),
       logger: config_section_coercion(:logger),
@@ -169,10 +167,7 @@ module AIA
       verbose: %i[flags verbose],
       consensus: %i[flags consensus],
       track_pipeline: %i[flags track_pipeline],
-      expert_routing: %i[flags expert_routing],
       auto_tool_filter: %i[flags auto_tool_filter],
-      tool_filter_load: %i[flags tool_filter_load],
-      tool_filter_save: %i[flags tool_filter_save],
       allow_ruby_eval: %i[flags allow_ruby_eval],
       thinking: %i[flags thinking],
       tool_filter_timeout_s: %i[tool_filter timeout_s],
@@ -189,14 +184,11 @@ module AIA
       role: %i[prompts role],
       skills_dir: %i[skills dir],
       skills: %i[prompts skills],
-      tools_prefix: %i[prompts tools_prefix],
-      tool: %i[prompts tool],
       system_prompt: %i[prompts system_prompt],
       # output section
       output: %i[output file],
       history_file: %i[output history_file],
       append: %i[output append],
-      markdown: %i[output markdown],
       # audio section (speak is a flag, not audio config)
       speak: %i[flags speak],
       voice: %i[audio voice],
@@ -389,13 +381,9 @@ module AIA
 
     def expand_paths
       expand_path_on(paths, :aia_dir)
-      expand_path_on(paths, :config_file)
       expand_path_on(paths, :plugins_dir)
       expand_path_on(prompts, :dir)
-      expand_path_on(prompts, :roles_dir)
-      expand_path_on(roles, :dir)
       expand_path_on(skills, :dir)
-      expand_path_on(tools, :dir)
       expand_path_on(output, :history_file)
     end
 

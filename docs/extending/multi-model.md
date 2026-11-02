@@ -117,7 +117,7 @@ The switch rebuilds the crew from the new model list, so crewmates you added wit
 Tools and MCP servers are turned off while AIA replays or summarizes, so the transfer can't cause side effects.
 
 !!! note
-    `/model` expects real model names. The short aliases from older AIA versions (`sonnet`, `fast`, `cheap`, ...) and switching by typing "switch to claude" are no longer supported.
+    Use `/model` to switch. It takes model names or aliases such as `sonnet` or `cheap` (see [`/model`](../reference/directives.md)). Typing a request such as "switch to claude" goes to the model as an ordinary message.
 
 ## Costs and timing
 

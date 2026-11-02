@@ -107,9 +107,6 @@ module AIA
       @input_collector     = InputCollector.new
 
       @session_tracker     = SessionTracker.new
-      @alias_registry      = ModelAliasRegistry.new(
-        AIA.config.respond_to?(:model_aliases) ? (AIA.config.model_aliases || {}) : {}
-      )
       @chat_loop           = nil  # created after robot is built
 
       rotate_history_log_if_needed
@@ -141,7 +138,6 @@ module AIA
       ChatLoop.new(
         AIA.client || @robot, @ui_presenter, @directive_processor,
         session_tracker: @session_tracker,
-        alias_registry: @alias_registry,
         filters: @filters,
         robot_sync: @robot_sync
       )

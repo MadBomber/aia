@@ -62,14 +62,6 @@ aia -f
 aia --fuzzy --chat
 ```
 
-### `--expert-routing`
-
-Accepted for compatibility. In 2.0.0 it sets `flags.expert_routing` but nothing reads that setting, so it has no effect.
-
-| Default | Config key | Env |
-|---|---|---|
-| off | `flags.expert_routing` | `AIA_FLAGS__EXPERT_ROUTING` |
-
 ### `--track-pipeline`
 
 Record each step of a pipeline as a task in [TrakFlow](../extending/advanced-modes.md). It only takes effect when the current directory holds an initialized TrakFlow project; otherwise the pipeline runs untracked.
@@ -101,14 +93,6 @@ Before each turn, offer the model only the tools whose descriptions are similar 
 ```bash
 aia --chat --no-auto-tool-filter --tools ~/my_tools
 ```
-
-### `--load`, `--save`
-
-Accepted for compatibility with the 2.0 pre-releases, where they loaded and saved tool-filter databases in `~/.config/aia/`. The TF-IDF filter in 2.0.0 keeps nothing on disk, so both options have no effect.
-
-| Default | Config key | Env |
-|---|---|---|
-| off | `flags.tool_filter_load` / `flags.tool_filter_save` | `AIA_FLAGS__TOOL_FILTER_LOAD` / `AIA_FLAGS__TOOL_FILTER_SAVE` |
 
 ---
 
@@ -292,14 +276,6 @@ The file that holds the lines you type at the chat prompt, so the up-arrow recal
 aia --chat --history-file ~/.config/aia/chat_history
 aia --chat --no-history-file
 ```
-
-### `--md`, `--[no-]markdown`
-
-Sets `output.markdown`. In 2.0.0 nothing reads that setting, so the option has no visible effect.
-
-| Default | Config key | Env |
-|---|---|---|
-| on | `output.markdown` | `AIA_OUTPUT__MARKDOWN` |
 
 ---
 
@@ -722,7 +698,14 @@ aia --cost -m gpt-4o,claude-sonnet-4-6 compare_designs
 
 ### `--refresh DAYS`
 
-Sets `registry.refresh`. In 2.0.0 nothing reads that setting, so the option has no effect. The model registry that `--available-models` searches comes from the installed ruby_llm.
+How often, in days, AIA refreshes its list of models. AIA keeps the list in `models.json` in its own directory (`paths.aia_dir`, `~/.config/aia` by default). When a session starts and the file is missing or more than `DAYS` days old, AIA asks the providers you have API keys for and the published RubyLLM catalogue for their current models, and saves the result. `0` turns refreshing off; AIA then uses the saved file if there is one, or the list that comes with RubyLLM. If the refresh fails (for example, offline), AIA warns and carries on with the list it already had.
+
+The chat banner's `DB:` line shows when the list was last refreshed. `/models` searches this list. `--available-models` runs before the session starts, so it searches the list RubyLLM keeps for itself.
+
+```bash
+aia --refresh 0 --chat     # never refresh
+aia --refresh 1 --chat     # refresh at most once a day
+```
 
 | Default | Config key | Env |
 |---|---|---|

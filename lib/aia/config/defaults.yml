@@ -61,18 +61,11 @@ defaults:
     extname: .md
     #
     role: ~
-    roles_dir: ~/.prompts/roles
     roles_prefix: roles
     #
     skills: []
     #
-    tool: ~
-    tools_prefix: tools
-    #
     system_prompt: ~
-
-  roles:
-    dir: ~/.prompts/roles
 
   skills:
     dir: ~/.prompts/skills
@@ -85,7 +78,6 @@ defaults:
   output:
     file: temp.md
     append: false
-    markdown: true
     history_file: ~/.prompts/_prompts.log
 
   # ---------------------------------------------------------------------------
@@ -112,20 +104,11 @@ defaults:
     style: vivid
 
   # ---------------------------------------------------------------------------
-  # Embedding Configuration
-  # Access: AIA.config.embedding.model
-  # Env: AIA_EMBEDDING__MODEL
-  # ---------------------------------------------------------------------------
-  embedding:
-    model: text-embedding-ada-002
-
-  # ---------------------------------------------------------------------------
   # Tools Configuration
   # Access: AIA.config.tools.paths, AIA.config.tools.allowed, etc.
   # Env: AIA_TOOLS__PATHS, AIA_TOOLS__ALLOWED, etc.
   # ---------------------------------------------------------------------------
   tools:
-    dir: ~/.prompts/tools
     paths: []
     allowed: ~
     rejected: ~
@@ -150,13 +133,9 @@ defaults:
     speak: false
     shell: true
     erb: true
-    clear: false
     consensus: false
     track_pipeline: false
-    expert_routing: false
     auto_tool_filter: true
-    tool_filter_load: false
-    tool_filter_save: false
     allow_ruby_eval: false
     paint: false
     thinking: false
@@ -218,13 +197,12 @@ defaults:
 
   # ---------------------------------------------------------------------------
   # Paths Configuration
-  # Access: AIA.config.paths.aia_dir, AIA.config.paths.config_file, AIA.config.paths.plugins_dir
-  # Env: AIA_PATHS__AIA_DIR, AIA_PATHS__CONFIG_FILE
+  # Access: AIA.config.paths.aia_dir, AIA.config.paths.plugins_dir
+  # Env: AIA_PATHS__AIA_DIR
   # Special-case env: AIA_PLUGINS_DIR
   # ---------------------------------------------------------------------------
   paths:
     aia_dir: ~/.config/aia
-    config_file: ~/.config/aia/aia.yml
     plugins_dir: ~
 
   # ---------------------------------------------------------------------------
@@ -250,7 +228,6 @@ defaults:
   # ---------------------------------------------------------------------------
   concurrency:
     auto: false
-    independent_servers: []
     threshold: 2
     mcp_timeout: 120
 

@@ -77,10 +77,6 @@ module AIA
           options[:fuzzy] = true
         end
 
-        opts.on("--expert-routing", "Route each prompt to a specialist robot based on domain classification") do
-          options[:expert_routing] = true
-        end
-
         opts.on("--track-pipeline", "Track pipeline execution in TrakFlow") do
           options[:track_pipeline] = true
         end
@@ -91,14 +87,6 @@ module AIA
 
         opts.on("-A", "--[no-]auto-tool-filter", "Use TF-IDF similarity-based tool filtering (default: on)") do |v|
           options[:auto_tool_filter] = v
-        end
-
-        opts.on("--load", "Load persisted tool filter databases from ~/.config/aia/") do
-          options[:tool_filter_load] = true
-        end
-
-        opts.on("--save", "Save tool filter databases to ~/.config/aia/") do
-          options[:tool_filter_save] = true
         end
       end
 
@@ -171,10 +159,6 @@ module AIA
 
         opts.on("--[no-]history-file [FILE]", "Set conversation history file path") do |file|
           options[:history_file] = file
-        end
-
-        opts.on("--md", "--[no-]markdown", "Enable Markdown formatting") do |md|
-          options[:markdown] = md
         end
       end
 

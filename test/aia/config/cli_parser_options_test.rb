@@ -376,18 +376,11 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     assert_equal false, options[:consensus]
   end
 
-  def test_parses_markdown
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-    parser.parse!(['--md'])
-    assert_equal true, options[:markdown]
-  end
-
-  def test_parses_no_markdown
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-    parser.parse!(['--no-markdown'])
-    assert_equal false, options[:markdown]
+  def test_removed_options_are_invalid
+    %w[--md --no-markdown --expert-routing --load --save].each do |flag|
+      parser = AIA::CLIParser.send(:create_option_parser, {})
+      assert_raises(OptionParser::InvalidOption, flag) { parser.parse!([flag]) }
+    end
   end
 
   def test_parses_speech_model
@@ -409,13 +402,6 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     parser = AIA::CLIParser.send(:create_option_parser, options)
     parser.parse!(['--history-file', '/tmp/history.yml'])
     assert_equal '/tmp/history.yml', options[:history_file]
-  end
-
-  def test_parses_expert_routing
-    options = {}
-    parser = AIA::CLIParser.send(:create_option_parser, options)
-    parser.parse!(['--expert-routing'])
-    assert_equal true, options[:expert_routing]
   end
 
   def test_parses_track_pipeline

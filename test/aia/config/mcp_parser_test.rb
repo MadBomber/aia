@@ -167,22 +167,6 @@ class McpParserTest < Minitest::Test
     end
   end
 
-  def test_parse_preserves_independent_field
-    json = {
-      "mcpServers" => {
-        "search" => {
-          "command" => "search_mcp",
-          "independent" => true
-        }
-      }
-    }
-
-    with_temp_json(json) do |path|
-      servers = AIA::McpParser.parse_files([path])
-      assert_equal true, servers.first[:independent]
-    end
-  end
-
   def test_parse_preserves_group_field
     json = {
       "mcpServers" => {

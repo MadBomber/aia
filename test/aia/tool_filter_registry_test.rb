@@ -10,9 +10,7 @@ class ToolFilterRegistryTest < Minitest::Test
     @tools = []
 
     @base_flags = OpenStruct.new(
-      auto_tool_filter: false,
-      tool_filter_load: false,
-      tool_filter_save: false
+      auto_tool_filter: false
     )
 
     @base_config = OpenStruct.new(

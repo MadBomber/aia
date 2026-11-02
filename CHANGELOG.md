@@ -11,7 +11,7 @@ AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab):
 These changes can break an existing setup. [Upgrading to 2.0](docs/appendix/upgrading-2.0.md) has the details.
 
 - **Ruby 4.0.9 or newer.**
-- **Removed options:** `--terse`, `--regex` and `--skills-prefix`. Passing one now stops AIA with an invalid-option error. The config keys `flags.terse`, `prompts.parameter_regex` and `prompts.skills_prefix` are gone too. Use `--skills-dir` in place of `--skills-prefix`.
+- **Removed options:** `--terse`, `--regex`, `--skills-prefix` and `--md` / `--[no-]markdown`. Passing one now stops AIA with an invalid-option error. The config keys `flags.terse`, `prompts.parameter_regex`, `prompts.skills_prefix` and `output.markdown` are gone too, along with these keys nothing read: `flags.clear`, `embedding.model`, `tools.dir`, `roles.dir`, `prompts.roles_dir`, `prompts.tool`, `prompts.tools_prefix` and `paths.config_file`. Old config files that still set them load as before. Use `--skills-dir` in place of `--skills-prefix`.
 - **Changed defaults:** `llm.max_tokens` is `32767` (was `2048`) and `llm.top_p` is `nil` (was `1.0`). `audio.speak_command` is `say`; it was `afplay`, which plays audio files, not text. `audio.voice`, `audio.speech_model` and `audio.transcription_model` are `nil` (were `alloy`, `tts-1` and `whisper-1`).
 - **Custom tools must use the ruby_llm 2 DSL.** `param :text, desc: "..."` is now `parameter :text, description: "..."`. A tool still written the 1.x way raises `NoMethodError` when it loads.
 - **MCP runs on ruby_llm 2.1's own client.** The `ruby_llm-mcp` gem is no longer used and cannot be loaded alongside ruby_llm 2.1. Servers listed under `mcp_servers:` keep working. Also:
@@ -78,6 +78,8 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
 - Dependencies: `kbs`, `ruby_llm-mcp`, `zvec`, `sqlite-vec`, `informers`, `ostruct`, `securerandom`.
 - The `--terse`, `--regex` and `--skills-prefix` options, the `/terse` directive, and their config keys.
 - The unused `rules:` config section (`AIA_RULES__*`).
+- Options and keys that had no effect: `--expert-routing`, `--load`, `--save`, `--md`, their `flags.*` / `output.markdown` keys, `concurrency.independent_servers`, the MCP server key `independent:`, and the config keys listed under Upgrading.
+- `ModelSwitchHandler`, the disabled plain-language model switcher ("switch to claude"). `/model` switches models.
 - Compatibility shims: the `AIA::HistoryManager` and `AIA::ConfigSection` aliases, and the `RobotFactory` forwarding methods `clear_tool_cache!`, `filtered_tools`, `resolve_system_prompt` and `build_identity_prompt` (call `ToolLoader` and `SystemPromptAssembler` directly).
 
 ### Fixed
@@ -137,6 +139,7 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - `--completion` with an unsupported shell exits 1.
   - The completion scripts fall back to `~/.prompts` when `AIA_PROMPTS__DIR` is unset.
   - `--track-pipeline` updates the steps of the plan it created, in order, instead of matching any task whose title contains the prompt ID.
+- **`--refresh DAYS` works again.** AIA keeps its model list in `<paths.aia_dir>/models.json` and refreshes it from the providers every `registry.refresh` days (default 7, `0` = never), as 1.x did. A failed refresh warns and keeps the existing list.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

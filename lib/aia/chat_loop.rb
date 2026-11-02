@@ -18,14 +18,12 @@ module AIA
     include Speech
 
     def initialize(robot, ui_presenter, directive_processor,
-                   session_tracker: nil, alias_registry: nil, filters: {}, robot_sync: nil)
+                   session_tracker: nil, filters: {}, robot_sync: nil)
       @robot               = robot
       @robot_sync          = robot_sync
       @ui_presenter        = ui_presenter
       @directive_processor = directive_processor
       @tracker             = session_tracker || SessionTracker.new
-      @alias_registry      = alias_registry || ModelAliasRegistry.new
-      @model_switch_handler = ModelSwitchHandler.new(@alias_registry, @ui_presenter)
       @filters             = filters
 
       @streaming_runner = StreamingRunner.new
@@ -93,8 +91,6 @@ module AIA
         processed_prompt = resolve_input(follow_up_prompt)
         next if processed_prompt.nil?
 
-        next if model_switch_handled?
-
         sync_robot_settings
         next if special_routing_handled?(processed_prompt, @robot)
 
@@ -134,13 +130,6 @@ module AIA
     rescue StandardError => e
       @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
       nil
-    end
-
-    def model_switch_handled?
-      return false unless @model_switch_handler.handle(HandlerContext.new(config: AIA.config))
-
-      update_robot
-      true
     end
 
     def special_routing_handled?(processed_prompt, active_robot)

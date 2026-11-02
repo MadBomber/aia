@@ -181,8 +181,6 @@ In a chat session AIA picks the tools that fit each turn. It compares your messa
 
   The config file key is `flags.auto_tool_filter: false`.
 
-`--load` and `--save` are accepted for saving tool-filter databases, but the current filter rebuilds its index at startup and doesn't use them.
-
 ## Tools that need your approval
 
 Some tool calls must be approved before they run. That happens when an MCP server is configured with `requires_approval` (see [MCP Servers](mcp.md#requiring-approval)), or when a tool declares that it needs approval (with RubyLLM's `requires_approval`). MCP servers can also ask you for input mid-task.

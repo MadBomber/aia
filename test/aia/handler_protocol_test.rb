@@ -44,7 +44,7 @@ class HandlerProtocolTest < Minitest::Test
   end
 
   # =========================================================================
-  # All 5 handlers include HandlerProtocol
+  # All 4 handlers include HandlerProtocol
   # =========================================================================
 
   def test_spawn_handler_includes_protocol
@@ -63,10 +63,6 @@ class HandlerProtocolTest < Minitest::Test
     assert AIA::MentionRouter.include?(AIA::HandlerProtocol)
   end
 
-  def test_model_switch_handler_includes_protocol
-    assert AIA::ModelSwitchHandler.include?(AIA::HandlerProtocol)
-  end
-
   # =========================================================================
   # All 5 handlers respond to handle(context)
   # =========================================================================
@@ -76,8 +72,7 @@ class HandlerProtocolTest < Minitest::Test
       AIA::SpawnHandler,
       AIA::DebateHandler,
       AIA::DelegateHandler,
-      AIA::MentionRouter,
-      AIA::ModelSwitchHandler
+      AIA::MentionRouter
     ]
     handlers.each do |klass|
       assert klass.method_defined?(:handle), "#{klass} should define #handle"

@@ -333,11 +333,6 @@ class ConfigTest < Minitest::Test
     $stderr = original_stderr
   end
 
-  def test_expert_routing_override_sets_flag
-    config = AIA::Config.new(overrides: { expert_routing: true })
-    assert_equal true, config.flags.expert_routing
-  end
-
   def test_track_pipeline_override_sets_flag
     config = AIA::Config.new(overrides: { track_pipeline: true })
     assert_equal true, config.flags.track_pipeline
@@ -346,11 +341,6 @@ class ConfigTest < Minitest::Test
   def test_concurrent_auto_override_sets_concurrency
     config = AIA::Config.new(overrides: { concurrent_auto: true })
     assert_equal true, config.concurrency.auto
-  end
-
-  def test_expert_routing_defaults_to_false
-    config = AIA::Config.new
-    assert_equal false, config.flags.expert_routing
   end
 
   def test_track_pipeline_defaults_to_false

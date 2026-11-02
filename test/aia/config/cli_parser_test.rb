@@ -345,7 +345,7 @@ class CLIToNestedMapCompletenessTest < Minitest::Test
   end
 
   def test_cli_to_nested_map_targets_valid_sections
-    schema_sections = %i[service llm prompts roles skills output audio image embedding tools flags registry paths logger concurrency
+    schema_sections = %i[service llm prompts skills output audio image tools flags registry paths logger concurrency
                          tool_filter]
 
     AIA::Config::CLI_TO_NESTED_MAP.each do |cli_key, (section, _nested_key)|

@@ -32,6 +32,7 @@ ERROR: invalid option: --terse
 | `--terse` | Nothing. It had no effect in 1.x. |
 | `--regex PATTERN` | Nothing. Parameters are ERB (`<%= name %>`), so a custom placeholder pattern no longer means anything. |
 | `--skills-prefix PREFIX` | Point `--skills-dir` at the directory that holds your skill subdirectories. |
+| `--md`, `--[no-]markdown` | Nothing. Responses are written as the model returns them. |
 
 Check shell aliases, scripts, cron jobs and executable prompts' `#!` lines for these.
 
@@ -46,6 +47,12 @@ These are ignored if they are still in your config file, as are their `AIA_*` en
 | `flags.terse` | See `--terse`. |
 | `prompts.parameter_regex` | See `--regex`. |
 | `prompts.skills_prefix` | See `--skills-prefix`. |
+| `output.markdown` | See `--md`. |
+| `prompts.roles_dir`, `roles.dir` | Roles are always found in `prompts.dir`/`prompts.roles_prefix`. |
+| `prompts.tool`, `prompts.tools_prefix`, `tools.dir` | Load tools with `--tools` or `tools.paths`. |
+| `embedding.model` | Nothing used it. |
+| `flags.clear` | Use the `/clear` directive. |
+| `paths.config_file` | aia finds your config file in its standard place (`~/.config/aia/aia.yml`, or `$XDG_CONFIG_HOME/aia/aia.yml` when that is set); use `-c` for another one. |
 
 ### Changed defaults
 
@@ -112,7 +119,9 @@ These existed in the 2.0 alpha and beta releases and were removed before 2.0.0:
 - The KBS rule engine, the `/rules` directive, user-defined rule hooks and `--tool-filter-kbs`.
 - The zvec, sqlite-vec and LSI tool filters. TF-IDF is the only tool filter; it is on by default and switched with `-A` / `--[no-]auto-tool-filter`. This replaces the `tool_filter_a` setting.
 
-`-A` used to mean `--tool-filter-kbs`; it now means `--auto-tool-filter`. `--load` and `--save` are still accepted but no longer do anything.
+- `--expert-routing` (`flags.expert_routing`), `--load` and `--save` (`flags.tool_filter_load`, `flags.tool_filter_save`), `concurrency.independent_servers`, the MCP server key `independent:`, and switching models by typing "switch to claude". Passing one of these options is now an invalid-option error, and the keys are ignored. Use `/model` to switch models.
+
+`-A` used to mean `--tool-filter-kbs`; it now means `--auto-tool-filter`.
 
 ## What's new in 2.0
 

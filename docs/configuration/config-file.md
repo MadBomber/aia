@@ -106,12 +106,11 @@ See [Local Models](../extending/local-models.md).
 ```yaml
 prompts:
   dir: ~/Dropbox/prompts
-  roles_dir: ~/Dropbox/prompts/roles
 skills:
   dir: ~/Dropbox/prompts/skills
 ```
 
-`skills.dir` and `prompts.roles_dir` don't follow `prompts.dir` automatically. Also export `AIA_PROMPTS__DIR` so shell completion finds the same place, since the completion scripts can't read the config file and otherwise look in `~/.prompts` (see [Environment Variables](environment.md)).
+Roles move with `prompts.dir` (they live in its `roles` subdirectory), but `skills.dir` doesn't follow it automatically. Also export `AIA_PROMPTS__DIR` so shell completion finds the same place, since the completion scripts can't read the config file and otherwise look in `~/.prompts` (see [Environment Variables](environment.md)).
 
 ### Always show tokens and cost
 

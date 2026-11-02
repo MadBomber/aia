@@ -23,15 +23,4 @@ class SkillsConfigTest < Minitest::Test
     config = AIA::Config.new(overrides: { skills_dir: '/custom/skills' })
     assert_equal '/custom/skills', config.skills.dir
   end
-
-  def test_roles_section_exists
-    assert_respond_to @config, :roles
-    expected = File.expand_path('~/.prompts/roles')
-    assert_equal expected, @config.roles.dir
-  end
-
-  def test_tools_dir_expanded
-    assert_respond_to @config.tools, :dir
-    assert_equal File.expand_path('~/.prompts/tools'), @config.tools.dir
-  end
 end

@@ -43,11 +43,9 @@ class McpParserHelpersTest < Minitest::Test
     assert_equal({}, AIA::McpParser.send(:routing_metadata, {}))
   end
 
-  def test_routing_metadata_preserves_false_independent
+  def test_routing_metadata_keeps_topics_and_group
     meta = AIA::McpParser.send(:routing_metadata,
                                'topics' => 'files', 'independent' => false, 'group' => 'g1')
-    assert_equal ['files'], meta[:topics]
-    assert_equal false, meta[:independent]
-    assert_equal 'g1', meta[:group]
+    assert_equal({ topics: ['files'], group: 'g1' }, meta)
   end
 end

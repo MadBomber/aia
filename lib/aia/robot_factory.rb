@@ -294,6 +294,9 @@ module AIA
         # Configure local provider API endpoints from environment variables
         configure_local_providers(config)
 
+        # Use AIA's models.json, refreshing it every registry.refresh days
+        ModelRegistry.prepare(config)
+
         # Wire audio model settings into RubyLLM config
         configure_audio(config)
       end

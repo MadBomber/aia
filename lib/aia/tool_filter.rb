@@ -13,12 +13,8 @@ module AIA
   class ToolFilter
     attr_reader :tool_count, :prep_ms, :label
 
-    # :reek:BooleanParameter -- load_db:/save_db: toggle embedding-cache persistence per strategy; mode objects would multiply constructors
-    def initialize(label:, db_dir: nil, load_db: false, save_db: false)
+    def initialize(label:)
       @label      = label
-      @db_dir     = db_dir
-      @load_db    = load_db
-      @save_db    = save_db
       @tool_count = 0
       @prep_ms    = 0.0
     end
@@ -47,11 +43,6 @@ module AIA
     # True when the filter has indexed at least one tool.
     def available?
       @tool_count.positive?
-    end
-
-    # True when this filter supports database persistence (--load / --save).
-    def persistable?
-      false
     end
 
     protected

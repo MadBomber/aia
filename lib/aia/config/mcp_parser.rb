@@ -11,7 +11,6 @@
 #     transport: { type: "stdio", command: "npx", args: [...], env: {...} },
 #     timeout: 8000,
 #     topics: ["routing"],     # AIA routing metadata (optional)
-#     independent: false,      # AIA concurrency metadata (optional)
 #     group: "services"        # AIA grouping metadata (optional)
 #   }
 #
@@ -129,7 +128,6 @@ module AIA
       def routing_metadata(config)
         meta = {}
         meta[:topics]      = Array(config['topics']) if config['topics']
-        meta[:independent] = config['independent'] unless config['independent'].nil?
         meta[:group]       = config['group'] if config['group']
         meta
       end
