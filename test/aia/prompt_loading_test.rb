@@ -50,6 +50,13 @@ class PromptLoadingTest < Minitest::Test
     assert_equal 'From a path.', @handler.fetch_prompt(path.delete_suffix('.md')).to_s
   end
 
+  # Bug #21: parameters named after private Kernel methods (needs prompt_manager 1.2)
+  def test_parameters_named_after_kernel_methods_render_their_values
+    write_prompt('report', "---\nparameters:\n  format: markdown\n  test: unit\n---\nAs <%= format %> for <%= test %>.")
+
+    assert_equal 'As markdown for unit.', @handler.fetch_prompt('report').to_s.strip
+  end
+
   def test_piped_single_word_is_text_not_a_file
     @config.executable_prompt_content = 'hello'
     assert_equal 'hello', @handler.fetch_prompt('__EXECUTABLE_PROMPT__').to_s
