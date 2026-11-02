@@ -392,9 +392,7 @@ module AIA
         raise "No role ID selected"
       end
 
-      unless role.start_with?(prompts_cfg.roles_prefix)
-        role = prompts_cfg.roles_prefix + '/' + role
-      end
+      role = "#{prefix}/#{role}" unless role.start_with?(prefix)
 
       role
     end

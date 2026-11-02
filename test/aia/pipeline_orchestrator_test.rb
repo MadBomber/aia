@@ -123,6 +123,46 @@ class PipelineOrchestratorTest < Minitest::Test
     build_orchestrator.process(@config)
   end
 
+  def test_tracked_step_is_started_then_completed
+    stub_prompt
+    AIA.stubs(:paint?).returns(false)
+    AIA.stubs(:speak?).returns(false)
+    bridge = mock('bridge')
+    steps = sequence('steps')
+    bridge.expects(:update_step_status).with('prompt1', :started).in_sequence(steps)
+    bridge.expects(:update_step_status).with('prompt1', :completed).in_sequence(steps)
+    orchestrator = build_orchestrator
+    orchestrator.stubs(:compute_result).returns([OpenStruct.new(reply: 'ok'), 'ok'])
+
+    orchestrator.send(:run_step, 'prompt1', @config, bridge)
+  end
+
+  def test_tracked_step_is_blocked_when_it_fails
+    stub_prompt
+    bridge = mock('bridge')
+    bridge.expects(:update_step_status).with('prompt1', :started)
+    bridge.expects(:update_step_status).with('prompt1', :failed, reason: 'boom')
+    orchestrator = build_orchestrator
+    orchestrator.stubs(:compute_result).raises(StandardError, 'boom')
+
+    assert_raises(StandardError) { orchestrator.send(:run_step, 'prompt1', @config, bridge) }
+  end
+
+  def test_process_creates_the_plan_with_track_pipeline
+    stub_prompt
+    @config.flags.track_pipeline = true
+    bridge = mock('bridge')
+    bridge.expects(:create_plan_from_pipeline).with(['prompt1'])
+    bridge.stubs(:update_step_status)
+    AIA::TrakFlowBridge.stubs(:new).returns(bridge)
+    orchestrator = build_orchestrator
+    orchestrator.stubs(:compute_result).returns([OpenStruct.new(reply: 'ok'), 'ok'])
+    AIA.stubs(:paint?).returns(false)
+    AIA.stubs(:speak?).returns(false)
+
+    orchestrator.process(@config)
+  end
+
   def test_build_prompt_text_appends_skills_in_pipeline_mode
     Dir.mktmpdir do |skills_base|
       skill_dir = File.join(skills_base, 'expert')

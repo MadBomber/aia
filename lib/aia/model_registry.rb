@@ -62,12 +62,13 @@ module AIA
     # Refresh the model list from the provider APIs and save it to +path+.
     # On failure RubyLLM keeps the list it already had.
     def refresh(path)
-      previous = RubyLLM.config.model_registry_file
+      llm_config = RubyLLM.config
+      previous   = llm_config.model_registry_file
       FileUtils.mkdir_p(File.dirname(path))
-      RubyLLM.config.model_registry_file = path
+      llm_config.model_registry_file = path
       Speech.run_with_spinner("Refreshing the model list...") { RubyLLM.models.refresh }
     rescue StandardError => e
-      RubyLLM.config.model_registry_file = previous
+      llm_config&.model_registry_file = previous
       $stderr.puts "Warning: Could not refresh the model list (#{e.message}). Using the existing list."
     end
   end

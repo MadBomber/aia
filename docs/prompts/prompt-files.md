@@ -10,10 +10,10 @@ The **prompt ID** is the file name without its `.md` extension. A file named `~/
 aia code_review
 ```
 
-AIA looks for `<prompts dir>/<prompt ID>.md`. If there is no such prompt and no file by that name either, AIA stops and suggests close matches:
+AIA looks for `<prompts dir>/<prompt ID>.md`. If there is no such prompt and no file by that name either, AIA stops and suggests close matches. Here the prompt is `code_review` but a hyphen was typed:
 
 ```text
-No prompt named 'code_reveiw' in /Users/you/.prompts (and no file by that name).
+No prompt named 'code-review' in /Users/you/.prompts (and no file by that name).
 Did you mean: code_review?
 ```
 

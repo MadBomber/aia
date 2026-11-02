@@ -40,10 +40,10 @@ AIA treats the first argument as a prompt ID only when **both** of these are tru
 
 Otherwise the first argument is treated as a context file like the rest. So if you have a file called `summarize` in your working directory, `aia summarize notes.txt` will treat both as context files (and, with no prompt ID, stop with `A prompt ID is required…`). Rename the file or run from another directory.
 
-If the first argument has no extension and is neither a prompt nor a file, AIA reports it as a missing prompt and suggests close matches:
+If the first argument has no extension and is neither a prompt nor a file, AIA reports it as a missing prompt and suggests close matches. Here the prompt is `code_review` but a hyphen was typed:
 
 ```text
-No prompt named 'code_reveiw' in /Users/you/.prompts (and no file by that name).
+No prompt named 'code-review' in /Users/you/.prompts (and no file by that name).
 Did you mean: code_review?
 ```
 

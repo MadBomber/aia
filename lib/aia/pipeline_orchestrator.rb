@@ -27,54 +27,22 @@ module AIA
 
     # Process all prompts in the pipeline.
     #
+    # Shift-based loop: prompt front matter that sets config.pipeline
+    # (`next:` or `pipeline:`) is picked up on the next iteration.
+    #
     # @param config [AIA::Config]
-    # :reek:TooManyStatements -- shift-based loop so front-matter pipeline edits take effect; tracking interleaved
     # :reek:DuplicateMethodCall -- config.pipeline is deliberately re-read each iteration because prompt front matter mutates it mid-loop
     def process(config)
-      # Only --track-pipeline starts TrakFlow for a pipeline run.
-      bridge   = config.flags.track_pipeline ? TrakFlowBridge.new : nil
-      tracking = bridge&.available? || false
+      # Only --track-pipeline starts TrakFlow for a pipeline run. The bridge
+      # does nothing when TrakFlow isn't available.
+      bridge = config.flags.track_pipeline ? TrakFlowBridge.new : nil
+      bridge&.create_plan_from_pipeline(config.pipeline)
 
-      bridge.create_plan_from_pipeline(config.pipeline) if tracking
-
-      # Use shift-based loop so that prompt front matter which sets
-      # config.pipeline (via `next:` or `pipeline:`) is picked up on
-      # the next iteration rather than being silently ignored.
       until config.pipeline.empty?
         prompt_id = config.pipeline.shift
         next if prompt_id.nil? || prompt_id.empty?
 
-        begin
-          bridge.update_step_status(prompt_id, :started) if tracking
-
-          prompt_text = build_prompt_text(prompt_id, config)
-          next if prompt_text.nil? || prompt_text.strip.empty?
-
-          # Front matter may have changed the model or its settings
-          @robot = @robot_sync.call(@robot) if @robot_sync
-
-          result, content = compute_result(prompt_text, config)
-
-          bridge.update_step_status(prompt_id, :completed) if tracking
-
-          @tracker.record_turn(
-            model:  config.models.first.name,
-            input:  prompt_text,
-            result: result
-          )
-
-          @ui.display_ai_response(content)
-          # An image was saved next to the output file; there is no text to keep or speak.
-          unless AIA.paint?
-            output_to_file(content, config)
-            speak(content)
-          end
-          display_metrics(result, config)
-          @ui.display_separator
-        rescue StandardError => e
-          bridge.update_step_status(prompt_id, :failed, reason: e.message) if tracking
-          raise
-        end
+        run_step(prompt_id, config, bridge)
       end
     end
 
@@ -87,6 +55,41 @@ module AIA
     end
 
     private
+
+    # Run one pipeline prompt, recording its progress on +bridge+ (a
+    # TrakFlowBridge, or nil when the run isn't tracked).
+    #
+    # :reek:TooManyStatements -- build, sync, run, record and present one step, with its tracking interleaved
+    def run_step(prompt_id, config, bridge)
+      bridge&.update_step_status(prompt_id, :started)
+
+      prompt_text = build_prompt_text(prompt_id, config)
+      return if prompt_text.nil? || prompt_text.strip.empty?
+
+      # Front matter may have changed the model or its settings
+      @robot = @robot_sync.call(@robot) if @robot_sync
+
+      result, content = compute_result(prompt_text, config)
+      bridge&.update_step_status(prompt_id, :completed)
+
+      @tracker.record_turn(model: config.models.first.name, input: prompt_text, result: result)
+      present_result(content, result, config)
+    rescue StandardError => e
+      bridge&.update_step_status(prompt_id, :failed, reason: e.message)
+      raise
+    end
+
+    # Show a step's response, then save and speak it. A --paint step saved
+    # an image next to the output file, so there is no text to keep or speak.
+    def present_result(content, result, config)
+      @ui.display_ai_response(content)
+      unless AIA.paint?
+        output_to_file(content, config)
+        speak(content)
+      end
+      display_metrics(result, config)
+      @ui.display_separator
+    end
 
     # Returns [result, displayable_content] for one prompt — image when in paint
     # mode, otherwise the LLM text response.

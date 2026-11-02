@@ -154,36 +154,42 @@ module AIA
     # @param skills_base_dir [String] base directory for named skills
     # @return [String, nil] skill body text, or nil on error
     def load_single_skill_content(skill_id, skills_base_dir)
-      unless path_based_id?(skill_id) || (skills_base_dir && Dir.exist?(skills_base_dir))
-        $stderr.puts "Warning: Skill '#{skill_id}' not loaded: skills directory #{skills_base_dir.inspect} does not exist"
-        return nil
-      end
-
-      if path_based_id?(skill_id) && non_markdown_skill_file?(File.expand_path(skill_id))
-        $stderr.puts "Warning: #{non_markdown_skill_message(skill_id)}; not loaded"
-        return nil
-      end
+      problem = skill_load_problem(skill_id, skills_base_dir)
+      return skill_warning(problem) if problem
 
       skill_dir = find_skill_dir(skill_id, skills_base_dir)
-      unless skill_dir
-        $stderr.puts "Warning: Skill '#{skill_id}' not found in #{skills_base_dir}"
-        return nil
-      end
+      return skill_warning("Skill '#{skill_id}' not found in #{skills_base_dir}") unless skill_dir
 
-      raw = if File.file?(skill_dir)
-              File.read(skill_dir)
-            else
-              skill_path = File.join(skill_dir, 'SKILL.md')
-              unless File.exist?(skill_path)
-                $stderr.puts "Warning: SKILL.md not found in #{skill_dir}"
-                return nil
-              end
-              File.read(skill_path)
-            end
-
-      skill_body(raw)
+      raw = read_skill_source(skill_dir)
+      raw && skill_body(raw)
     rescue StandardError => e
-      $stderr.puts "Warning: Could not load skill '#{skill_id}': #{e.message}"
+      skill_warning("Could not load skill '#{skill_id}': #{e.message}")
+    end
+
+    # Why +skill_id+ can't be loaded before looking for it, or nil.
+    def skill_load_problem(skill_id, skills_base_dir)
+      path_id = path_based_id?(skill_id)
+      unless path_id || (skills_base_dir && Dir.exist?(skills_base_dir))
+        return "Skill '#{skill_id}' not loaded: skills directory #{skills_base_dir.inspect} does not exist"
+      end
+      return "#{non_markdown_skill_message(skill_id)}; not loaded" if path_id && non_markdown_skill_file?(File.expand_path(skill_id))
+
+      nil
+    end
+
+    # The raw text of a found skill: the file itself, or the folder's SKILL.md.
+    def read_skill_source(skill_dir)
+      return File.read(skill_dir) if File.file?(skill_dir)
+
+      skill_path = File.join(skill_dir, 'SKILL.md')
+      return File.read(skill_path) if File.exist?(skill_path)
+
+      skill_warning("SKILL.md not found in #{skill_dir}")
+    end
+
+    # Print a skill warning; returns nil so callers can `return skill_warning(...)`.
+    def skill_warning(message)
+      $stderr.puts "Warning: #{message}"
       nil
     end
 

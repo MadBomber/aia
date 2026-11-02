@@ -48,20 +48,7 @@ module AIA
     def model(args, context_manager = nil)
       cfg = AIA.config
 
-      if args.empty?
-        puts
-        models = cfg.models
-        models.size == 1 ? show_single_model(models) : show_multi_model(models)
-        puts
-      else
-        model_names = args.join(' ').split(',').map(&:strip).reject(&:empty?)
-        model_names = resolve_model_aliases(model_names, cfg.model_aliases)
-        cfg.models = AIA::Config::TO_MODEL_SPECS.call(model_names)
-        mode = HistoryTransfer.mode_for(cfg)
-        puts "Switching to #{model_names.join(', ')} (conversation: #{mode})..." unless mode == :clean
-        AIA.client = RobotFactory.rebuild(cfg, history_mode: mode)
-      end
-
+      args.empty? ? show_models(cfg.models) : switch_models(cfg, args)
       ''
     end
 
@@ -222,7 +209,26 @@ module AIA
       key = config_item.to_s
       return key.split('.').map(&:to_sym) if key.include?('.')
 
-      AIA::Config::CLI_TO_NESTED_MAP[key.to_sym] || (AIA::Config.schema.key?(key.to_sym) ? [key.to_sym] : nil)
+      sym = key.to_sym
+      AIA::Config::CLI_TO_NESTED_MAP[sym] || (AIA::Config.schema.key?(sym) ? [sym] : nil)
+    end
+
+    # Print the current model, or every model of a multi-model session.
+    def show_models(models)
+      puts
+      models.size == 1 ? show_single_model(models) : show_multi_model(models)
+      puts
+    end
+
+    # Switch to the comma-separated models in +args+ (aliases allowed),
+    # carrying the conversation over per model_switch_history.
+    def switch_models(cfg, args)
+      model_names = args.join(' ').split(',').map(&:strip).reject(&:empty?)
+      model_names = resolve_model_aliases(model_names, cfg.model_aliases)
+      cfg.models = AIA::Config::TO_MODEL_SPECS.call(model_names)
+      mode = HistoryTransfer.mode_for(cfg)
+      puts "Switching to #{model_names.join(', ')} (conversation: #{mode})..." unless mode == :clean
+      AIA.client = RobotFactory.rebuild(cfg, history_mode: mode)
     end
 
     # Replace names that exactly match a model alias (built in, or from the

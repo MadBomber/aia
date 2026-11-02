@@ -78,19 +78,7 @@ module AIA
         return report_skill_error("Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills.")
       end
 
-      return File.read(skill_dir) if File.file?(skill_dir)
-
-      skill_path = File.join(skill_dir, 'SKILL.md')
-      unless File.exist?(skill_path)
-        msg = if path_based_id?(skill_name)
-                "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
-              else
-                "Error: Skill '#{File.basename(skill_dir)}' has no SKILL.md in #{dir}."
-              end
-        return report_skill_error(msg)
-      end
-
-      File.read(skill_path)
+      read_skill_text(skill_name, skill_dir, dir)
     end
 
     desc "Paste content from the system clipboard"
@@ -135,6 +123,21 @@ module AIA
 
     # Log and print a /skill error message; returns nil so callers can
     # `return report_skill_error(msg)` from any guard.
+    # The text of a found skill: the file itself, or the folder's SKILL.md.
+    def read_skill_text(skill_name, skill_dir, dir)
+      return File.read(skill_dir) if File.file?(skill_dir)
+
+      skill_path = File.join(skill_dir, 'SKILL.md')
+      return File.read(skill_path) if File.exist?(skill_path)
+
+      msg = if path_based_id?(skill_name)
+              "Error: No skill matching '#{skill_name}' found in #{dir}. Use /skills to list available skills."
+            else
+              "Error: Skill '#{File.basename(skill_dir)}' has no SKILL.md in #{dir}."
+            end
+      report_skill_error(msg)
+    end
+
     def report_skill_error(msg)
       AIA::LoggerManager.aia_logger.error(msg)
       puts msg

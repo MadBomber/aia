@@ -54,11 +54,13 @@ module AIA
       name = name.to_s
       old  = find_member(crew, name)
       raise CrewError, "No crewmate named '#{name}'." unless old
-      raise CrewError, "Cannot reskill the chief '#{old.name}'." if chief?(crew, old.name)
 
-      crew.remove_robot(old.name)
+      old_name = old.name
+      raise CrewError, "Cannot reskill the chief '#{old_name}'." if chief?(crew, old_name)
+
+      crew.remove_robot(old_name)
       recruit(
-        name: old.name, model: old.model, provider: old.provider,
+        name: old_name, model: old.model, provider: old.provider,
         skills: skills, system_prompt: system_prompt
       )
     end
@@ -74,9 +76,11 @@ module AIA
       name = name.to_s
       member = find_member(crew, name)
       raise CrewError, "No crewmate named '#{name}'." unless member
-      raise CrewError, "Cannot drop the chief '#{member.name}'." if chief?(crew, member.name)
 
-      crew.remove_robot(member.name)
+      member_name = member.name
+      raise CrewError, "Cannot drop the chief '#{member_name}'." if chief?(crew, member_name)
+
+      crew.remove_robot(member_name)
     end
 
     # The crew (Network) backing the current session.

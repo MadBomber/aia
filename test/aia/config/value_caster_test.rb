@@ -25,7 +25,7 @@ class ValueCasterTest < Minitest::Test
     assert_in_delta 1.0, Caster.cast('1', 0.7)
   end
 
-  def test_unparseable_number_is_kept
+  def test_unparsable_number_is_kept
     assert_equal 'lots', Caster.cast('lots', 32_767)
     assert_equal '08x', Caster.cast('08x', 1)
   end

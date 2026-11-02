@@ -685,14 +685,14 @@ class ValidatorPromptSelectionTest < Minitest::Test
 
   def test_mistyped_prompt_id_names_the_prompt
     Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'code-review.md'), 'Review this')
+      File.write(File.join(dir, 'code_review.md'), 'Review this')
       config = config_with(prompts: OpenStruct.new(dir: dir, extname: '.md'))
 
       error = assert_raises(AIA::ConfigurationError) do
-        AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['code-reviw'])
+        AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['code-review'])
       end
-      assert_includes error.message, "No prompt named 'code-reviw'"
-      assert_includes error.message, 'Did you mean: code-review?'
+      assert_includes error.message, "No prompt named 'code-review'"
+      assert_includes error.message, 'Did you mean: code_review?'
     end
   end
 

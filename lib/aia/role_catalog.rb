@@ -11,6 +11,7 @@ require_relative 'skill_utils'
 require_relative 'errors'
 
 module AIA
+  # :reek:DataClump -- pure functions over (dir, prefix, extname) on purpose: callers pass the configured values explicitly (see above)
   module RoleCatalog
     module_function
 

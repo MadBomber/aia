@@ -82,10 +82,10 @@ This is handy, and it also means a stray `$(...)` in your text will run. See [ER
 
 ## Directives in chat
 
-A line that starts with `/` is a **directive**, a command for AIA rather than a message for the model. `/help` lists them all. If you mistype one, AIA tells you:
+A line that starts with `/` is a **directive**, a command for AIA rather than a message for the model. `/help` lists them all. If you type one AIA doesn't know, it tells you:
 
 ```text
-Unknown directive: /modle  (use /help to see available directives)
+Unknown directive: /switch  (use /help to see available directives)
 ```
 
 When a directive produces output (a file, a web page, your clipboard), AIA shows it and then sends it to the model with a short note saying which directive it came from, so the model can use it. Directives that change settings or only display information (`/model`, `/config`, `/checkpoint`, `/help`, `/cost`) are not sent to the model.
