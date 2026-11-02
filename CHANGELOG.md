@@ -2,28 +2,132 @@
 
 ## [2.0.0] 2026-11-01
 
-This section captures all changes since v1.1.0.
+AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab): every session is a crew of robots, MCP servers come from ruby_llm 2.1's built-in client, and any provider RubyLLM registers can be used. This entry summarizes everything since 1.1.1, the last 1.x release, including the `2.0.0.pre.alpha` and `2.0.0.pre.beta2` pre-releases. The detailed notes for each stage follow below it.
+
+**Requires** Ruby >= 4.0.9 · robot_lab `~> 0.5, >= 0.5.1` · ruby_llm 2.1 (through robot_lab)
+
+### Upgrading from 1.x
+
+These changes can break an existing setup:
+
+- **Ruby 4.0.9 or newer.**
+- **Custom tools must use the ruby_llm 2 DSL.** `param :text, desc: "..."` is now `parameter :text, description: "..."`. A tool still written the 1.x way raises `NoMethodError` when it loads.
+- **MCP runs on ruby_llm 2.1's own client.** The `ruby_llm-mcp` gem is no longer used and cannot be loaded alongside ruby_llm 2.1. Servers listed under `mcp_servers:` keep working. Also:
+  - Server classes loaded with `--require` must subclass `RubyLLM::MCP`.
+  - `sse` and `ws` transports are gone; use the server's Streamable HTTP `url:` or a stdio `command:`.
+  - When two servers offer a tool with the same name, the second now fails to connect. Give one of them a `prefix:`.
+- **Approval-gated tools now ask first.** Tools listed under a server's `requires_approval:` prompt `Allow it? [y/N]`, and are refused when there is no terminal. For unattended runs, set `--tool-approval approve` or `deny`.
+- **`/model` keeps the conversation.** Switching models hands the new model a summary of the conversation so far. Set `model_switch_history: clean` to start fresh, as 1.x did.
+- **`/ruby` is off by default.** Enable it with `--allow-ruby-eval`.
+- **Tool filtering is TF-IDF only, and on by default.** Toggle it with `--[no-]auto-tool-filter`, which replaces `tool_filter_a`. The KBS rule engine is gone, and with it `-A`/`--tool-filter-kbs`, `/rules` and user-defined rule hooks.
+- **`--speak` defaults to the macOS `say` command** (it was `afplay`, which fails on text). `skills_prefix` now defaults to `nil`.
+- **Embedding AIA in Ruby code:** `AIA.client` is a `RobotLab::Robot` or `RobotLab::Network`. `RubyLLMAdapter` and `lib/aia/adapter/` are gone.
+- **The gem no longer ships `docs/`, `examples/` or `mcp_servers/`.** They are in the [repository](https://github.com/MadBomber/aia).
 
 ### Added
 
-- **Tool approval and MCP input requests** (`lib/aia/tool_approver.rb`). Tool calls that require approval (an MCP server's `requires_approval:`) were always denied, and servers' requests for input (elicitation) were always declined, because AIA never told robot_lab how to settle them. The new `tools.approval` setting (`--tool-approval MODE`, `AIA_TOOLS__APPROVAL`) does: `ask` (default) shows the tool and its arguments and asks `Allow it? [y/N]`, and asks for each value a server requests, typed by its schema; with no terminal it refuses. `approve` runs every such call, `deny` refuses them all. Prompts go to stderr and pause the spinner. It applies to every robot AIA builds, including crew recruits and spawned specialists.
+**Crews and multi-robot work**
+- Every chat session is a crew, even with one model; its lead robot is the chief.
+  - `/add_recruit` (`/add`) adds persistent members, `/drop_recruit` (`/drop`) removes them, and `/reskill` resets a member with a new role.
+  - `skill:<id>` assigns roles from skills, and the chief can recruit and reskill members itself.
+- `@crew` sends a prompt to every member. Leading `@a @b` addresses run concurrently, and a `@name` inside the body runs members as a pipeline.
+- `/spawn <name> <provider/model> <prompt>` creates a one-shot specialist.
+- Orchestration patterns:
+  - multi-model parallel, consensus and pipeline networks
+  - `/verify`: two independent answers plus a reconciler
+  - `/debate`, which ends when the robots' answers converge
+  - `/decompose` and `/delegate`
+  - `/orchestrate`: three-tier lead and specialist planning
+- Multi-model turns run their LLM calls concurrently.
+- TrakFlow task tracking: the `/plan`, `/task` and `/tasks` directives, plus the `TaskBoardTool` and `DelegateToForemanTool` tools.
+
+**MCP**
+- All configured servers connect in parallel before the first robot is built. Each server process starts once and is shared by every robot, crewmate and network worker.
+- Streamable HTTP servers can be configured with `url:`, `headers:` and `bearer_token:`.
+- Servers accept `prefix:`, `only:`, `except:`, `requires_approval:` and `description:`.
+- `tools.approval` (`--tool-approval ask|approve|deny`) handles approval-gated tool calls and servers' requests for input. `ask`, the default, prompts on the terminal.
+
+**Providers and models**
+- `AIA::ProviderRegistry` takes its provider list from RubyLLM. It loads `ruby_llm-providers-<slug>` gems on demand, and a `<SLUG>_API_BASE` variable overrides a provider's endpoint.
+- `--provider` sets the default for model names without a provider prefix. `--list-providers` shows each provider, marked as local or as having an API key; `--list-models` lists a provider's live models.
+- `/model` switches models mid-session, with fuzzy name matching. `model_switch_history` decides how the conversation carries over: `summarize` (default), `replay` or `clean`.
+- `--[no-]thinking` hides or shows the `<think>` reasoning that local models stream.
+
+**Skills, audio and output**
+- `--skill` / `-s` injects skills into the system prompt in chat mode, and into each prompt in pipeline mode. The `SKILL.md` skills system itself arrived in 1.1.0.
+- Audio:
+  - `--speak-command` runs your own TTS script; `~/.config/aia/tts.sh` is a ready-made OpenAI one.
+  - `--speech-model`, `--transcription-model` and `--voice` now take effect.
+  - `--speak` shows a spinner for converting and for speaking.
+- `--history-file` and `--no-history-file` now work.
+- `tool_filter.timeout_s` sets the TF-IDF filter's timeout.
 
 ### Changed
 
+- The example scripts and configs run on Anthropic (`claude-haiku-4-5`, `claude-sonnet-4-6`) and need only `ANTHROPIC_API_KEY`. The example tool plugins moved to `examples/plugins/`.
+- Heavy subsystems load only when used: verification, decomposition, TrakFlow and the special-mode handlers.
+- "Exiting AIA application..." now appears only when a chat session ends, not after `--version`, `--help` or a one-shot run.
+
+### Removed
+
+- KBS rule engine: `RuleRouter`, `ExpertRouter`, `DynamicRuleBuilder`, `DecisionApplier` and the rules DSL.
+- The zvec, sqlite-vec and LSI tool filters.
+- Dependencies: `kbs`, `ruby_llm-mcp`, `zvec`, `sqlite-vec`, `informers`, `ostruct`, `securerandom`.
+
+### Fixed
+
+- **MCP:**
+  - aia no longer crashes with `NoMethodError` at startup, in `//tools` or in the banner under ruby_llm 2.1. This affected every fresh install of the 2.0 pre-releases.
+  - `--no-mcp` is honored.
+  - Streamable HTTP servers keep their `url`.
+  - `--mcp-list --list-tools` uses the same connection path as the robots.
+- **Model switching:** conversation history now carries over to crews. Prompt decomposition uses structured output again instead of always falling back to JSON parsing.
+- **Errors and warnings now reach the terminal** (aia now writes them with `$stderr.puts` instead of `warn`).
+- **Smaller fixes:**
+  - The AI response is no longer written to the output file twice.
+  - An unknown `@mention` is reported instead of being broadcast to every robot.
+  - A pipeline's `next:` and `pipeline:` changes take effect mid-run.
+  - Directives supplied by `--tools` work inside ERB prompts.
+  - Ollama model tags resolve.
+  - GPT-5 and o-series models get the right token and temperature parameters.
+  - Pipeline metrics no longer crash.
+  - `/clear`, `/checkpoint`, `/restore` and `/review` work with crews.
+  - `/say` with no text no longer captures stdin.
+  - Skill paths are confined to the skills directory.
+  - `bin/aia` works with a relative `BUNDLE_GEMFILE`.
+
+### Known Issues
+
+- **Skill paths can load non-markdown files.** A skill given as a path (`--skill ./x`, `/skill ./x`) loads any readable file, not just markdown. Skills given by name are limited to the skills directory.
+
+### Details: changes after 2.0.0.pre.beta2
+
+#### Added
+
+- **ruby_llm 2.0 provider handling** (`fa5a16e`, not previously recorded here):
+  - `AIA::ProviderRegistry` (`lib/aia/provider_registry.rb`) detects providers from RubyLLM's own registry instead of hardcoded names, loads `ruby_llm-providers-<slug>` gems on demand, and applies `<SLUG>_API_BASE` endpoint overrides.
+  - New CLI flags: `--provider SLUG`, `--list-models` and `--list-providers`. `//models` lists any registered provider through `Provider#list_models`.
+  - The built-in tools and example plugins moved to the ruby_llm 2 tool DSL (`parameter` / `description:`).
+  - `/clear`, `/checkpoint`, `/restore` and `/review` work when `AIA.client` is a `RobotLab::Network`, and `/say` without text no longer captures stdin.
+  - `plugins/` moved to `examples/plugins/`, with a README.
+- **Tool approval and MCP input requests** (`lib/aia/tool_approver.rb`). Tool calls that require approval (an MCP server's `requires_approval:`) were always denied, and servers' requests for input (elicitation) were always declined, because AIA never told robot_lab how to settle them. The new `tools.approval` setting (`--tool-approval MODE`, `AIA_TOOLS__APPROVAL`) does: `ask` (default) shows the tool and its arguments and asks `Allow it? [y/N]`, and asks for each value a server requests, typed by its schema; with no terminal it refuses. `approve` runs every such call, `deny` refuses them all. Prompts go to stderr and pause the spinner. It applies to every robot AIA builds, including crew recruits and spawned specialists.
+
+#### Changed
+
 - **The gem ships only what it runs.** `spec.files` is now `lib/` (without `AGENTS.md`), `bin/aia`, `.version`, `README.md`, `CHANGELOG.md` and `LICENSE`: 97 files instead of 292. `docs/`, `examples/`, `mcp_servers/`, dev configs and planning notes stay in the repository.
 - **Minimum Ruby raised to 4.0.9.** `required_ruby_version` is now `>= 4.0.9` (was `>= 4.0.0`), and a `.ruby-version` file pins development to 4.0.9.
-- **robot_lab 0.5 / ruby_llm 2.1 MCP.** `robot_lab` is now `~> 0.5`, whose MCP servers are ruby_llm 2.1's built-in `RubyLLM::MCP` objects. AIA builds one server per configured MCP server with `RobotLab::MCP.build`, connects them all (concurrently, with spinners) *before* the first robot is built, and passes the same live instances to every robot via `RobotLab.build(mcp:)` — so each server process starts once per session however many robots, crewmates or network workers use it. Servers that fail to connect are left out, so robots do not retry them every turn. `AIA.mcp_manager` holds the connections; `RobotFactory.mcp_servers(config, group = nil)` replaces `mcp_server_configs` / `normalize_mcp_config`.
+- **robot_lab 0.5 / ruby_llm 2.1 MCP.** `robot_lab` is now `~> 0.5, >= 0.5.1` (0.5.1 accepts a String `oauth: { grant: }` from YAML, which 0.5.0 rejected), whose MCP servers are ruby_llm 2.1's built-in `RubyLLM::MCP` objects. AIA builds one server per configured MCP server with `RobotLab::MCP.build`, connects them all (concurrently, with spinners) *before* the first robot is built, and passes the same live instances to every robot via `RobotLab.build(mcp:)` — so each server process starts once per session however many robots, crewmates or network workers use it. Servers that fail to connect are left out, so robots do not retry them every turn. `AIA.mcp_manager` holds the connections; `RobotFactory.mcp_servers(config, group = nil)` replaces `mcp_server_configs` / `normalize_mcp_config`.
 - **Two MCP servers offering a tool with the same name.** robot_lab refuses to offer duplicate tool names, so the later server is now reported as failed with a message to set `prefix:` on one of them (previously the duplicate tool was silently dropped).
 - **MCP config keys pass through to robot_lab.** `MCPConfigNormalizer` keeps `url`/`headers`/`bearer_token` (Streamable HTTP servers lost their `url` before) and robot_lab settings such as `prefix`, `only`, `except`, `requires_approval` and `description`. `type: sse` / `ws` servers are reported as failed at startup — point them at their Streamable HTTP endpoint.
 
 - **`/model` carries the conversation over by default.** Switching models now reads `model_switch_history` (it was ignored, so every switch started fresh) and its default changes from `clean` to `summarize`: the old model summarizes the conversation and the summary is handed to every robot in the new crew. Set `model_switch_history: clean` to start fresh, or `replay` to re-run each user turn on the new model. Model switches made by the intent-routing handler follow the same setting.
 - **Examples run on Anthropic.** The demo scripts and configs use `claude-haiku-4-5` / `claude-sonnet-4-6` and need only `ANTHROPIC_API_KEY`.
 
-### Removed
+#### Removed
 
 - The `ruby_llm-mcp` integration: `AIA::Utility.legacy_ruby_llm_mcp?`, `MCPConnectionManager#absorb_ruby_llm_mcp_clients`, `#inject_into`, `#client`, `#connected_clients`, and `LoggerManager.configure_mcp_logger`. ruby_llm 2.1 (required by robot_lab 0.5) owns the `RubyLLM::MCP` constant, so that gem cannot be loaded alongside it. MCP servers loaded with `--require` must now be `RubyLLM::MCP` subclasses to be usable, and they are not picked up automatically.
 
-### Fixed
+#### Fixed
 
 - **"Exiting AIA application..." on every exit.** It printed after `--version`, `--help` and piped one-shot runs; it now appears only when a chat session ends.
 - **Leftover `require 'ruby_llm/mcp'`** in `lib/aia/utility.rb`, written for the retired ruby_llm-mcp gem, is gone; ruby_llm 2.1 provides `RubyLLM::MCP` itself. The `--help` link to ruby_llm-mcp now points to robot_lab.
@@ -34,6 +138,7 @@ This section captures all changes since v1.1.0.
 - **Prompt decomposition always took the JSON fallback.** The structured-output check called a capability method ruby_llm 2.1 no longer has; it now uses `RubyLLM::Model#supports?(:structured_output)`.
 - **`bin/aia` with a relative `BUNDLE_GEMFILE`.** A relative path (as exported by the workspace `.envrc`) is resolved against the repo root, so `bin/aia` works when run from another directory such as `examples/`.
 - **`examples/tools/word_count_tool.rb`** declared its parameter with the pre-2.1 DSL and was offered to the model with no `text` argument.
+
 
 ## [2.0.0.pre.beta2] 2026-09-09
 

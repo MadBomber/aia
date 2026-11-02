@@ -469,7 +469,10 @@ class ModelsDirectiveTest < Minitest::Test
       @instance.available_models
       output = @captured_output.string
 
-      assert_match(/Ollama|Cannot connect|Local LLM/, output)
+      # Without a local Ollama, model_directives.rb reports
+      # "Cannot list models for provider 'ollama': ..." once the provider is
+      # registered (test order decides whether an earlier test registered it).
+      assert_match(/Ollama|ollama|Cannot connect|Cannot list models|Local LLM/, output)
     end
   rescue Timeout::Error
     flunk "Ollama detection test timed out after 10 seconds"
