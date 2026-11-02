@@ -88,8 +88,13 @@ Available LLMs for openai and mini:
 
 Each line shows the model ID, its provider, and what goes in and comes out. Terms are matched as plain text against the whole line (case matters), so a provider name such as `anthropic` or an input type such as `pdf` works as a filter too.
 
-!!! warning "Capability terms"
-    A term containing `_to_` (such as `text_to_image`) is meant to filter by capability, but in 2.0.0 it stops with a `NoMethodError`. Filter on the line's text instead, for example `aia --available-models "to image"`.
+### Filter by capability
+
+A term of the form `INPUT_to_OUTPUT` matches models by what they accept and produce, rather than by text: `text_to_image` finds models that take text and return images, `audio_to_text` finds transcription models, and so on. Combine it with other terms:
+
+```bash
+aia --available-models text_to_image,openai
+```
 
 ### Ask a provider what it serves: `--list-models`
 

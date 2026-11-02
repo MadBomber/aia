@@ -79,11 +79,11 @@ An option was typed with an underscore instead of a dash. Use `-B`.
 
 The option doesn't exist. `--terse`, `--regex` and `--skills-prefix` were removed in 2.0; see [Upgrading to 2.0](../appendix/upgrading-2.0.md). Otherwise check spelling against `aia --help`.
 
-### A Ruby error report ending in `invalid argument: -t hot (OptionParser::InvalidArgument)`
+### `ERROR: invalid argument: -t hot`
 
-An option got a value of the wrong kind: `-t`, `--top-p` and the penalties need a number, `--max-tokens` and `--refresh` a whole number, and `--tool-approval` one of `ask`, `approve`, `deny`. aia prints a Ruby backtrace for these rather than a one-line message; the last part of the first line says which option was wrong.
+An option got a value of the wrong kind: `-t`, `--top-p` and the penalties need a number, `--max-tokens` and `--refresh` a whole number, and `--tool-approval` one of `ask`, `approve`, `deny`. The message names the option and the value it rejected.
 
-### A Ruby error report containing `Role file not found: …/roles/reviewer.md`
+### `ERROR: Role file not found: …/roles/reviewer.md`
 
 You used `-m MODEL=ROLE` and the role file doesn't exist. The message lists the roles that do exist. Note that this check looks in `$AIA_PROMPTS__DIR/roles` (or `~/.prompts/roles`) even if you passed `--prompts-dir`. `aia --list-roles` shows what is available. See [Roles & Skills](../everyday/roles-and-skills.md).
 
@@ -189,9 +189,9 @@ Work through [Troubleshooting a setting](../configuration/precedence.md#troubles
 
 Environment values are plain text, and aia treats the text `false` as *on* for most switches. `unset AIA_FLAGS__TOKENS` instead. See [Environment Variables](../configuration/environment.md).
 
-### A temperature or model in my prompt's front matter is ignored, or the run crashes
+### A temperature or model in my prompt's front matter is ignored
 
-In 2.0.0, the model connection is built once at startup from your config files, environment and command line. `temperature:` and `top_p:` in front matter update the configuration but don't retune the robot that is already running. A front-matter `model:` makes the run stop with `NoMethodError: undefined method 'name' for an instance of String` after the model replies; remove it. Give them on the command line instead (`-m`, `-t`), or use `/model` in chat, which rebuilds the robot with the current settings. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
+In 2.0.0, the model connection is built once at startup from your config files, environment and command line. `model:`, `temperature:` and `top_p:` in front matter update the configuration but don't retune the robot that is already running. Give them on the command line instead (`-m`, `-t`), or use `/model` in chat, which rebuilds the robot with the current settings. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
 
 ### Can I have per-project settings?
 

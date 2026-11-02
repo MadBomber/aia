@@ -47,7 +47,7 @@ class CLIParserValidateRoleExistsTest < Minitest::Test
       ENV['AIA_PROMPTS__DIR'] = dir
       ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
 
-      error = assert_raises(ArgumentError) do
+      error = assert_raises(AIA::ConfigurationError) do
         AIA::CLIParser.send(:validate_role_exists, 'nonexistent')
       end
       assert_match(/Role file not found/, error.message)
@@ -64,7 +64,7 @@ class CLIParserValidateRoleExistsTest < Minitest::Test
       ENV['AIA_PROMPTS__DIR'] = dir
       ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
 
-      error = assert_raises(ArgumentError) do
+      error = assert_raises(AIA::ConfigurationError) do
         AIA::CLIParser.send(:validate_role_exists, 'nonexistent')
       end
       assert_match(/Role file not found/, error.message)

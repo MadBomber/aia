@@ -255,7 +255,24 @@ class PromptHandlerApplyMetadataTest < Minitest::Test
     parsed.stubs(:metadata).returns(metadata)
 
     @handler.apply_metadata_config(parsed)
-    assert_equal ['gpt-4o'], @config.models
+    assert_equal ['gpt-4o'], @config.models.map(&:name)
+    assert_kind_of AIA::ModelSpec, @config.models.first
+  end
+
+  def test_apply_model_shorthand_with_role_and_list
+    metadata = OpenStruct.new(to_h: { 'model' => ['gpt-4o=architect', 'claude-haiku-4-5'] })
+    parsed = mock('parsed')
+    parsed.stubs(:metadata).returns(metadata)
+
+    @handler.apply_metadata_config(parsed)
+    assert_equal %w[gpt-4o claude-haiku-4-5], @config.models.map(&:name)
+    assert_equal 'architect', @config.models.first.role
+  end
+
+  def test_deep_merge_config_models_become_model_specs
+    @handler.send(:deep_merge_config, { models: ['gpt-4o'] })
+    assert_kind_of AIA::ModelSpec, @config.models.first
+    assert_equal 'gpt-4o', @config.models.first.name
   end
 
   def test_apply_temperature_shorthand

@@ -267,7 +267,7 @@ The context files for the run. aia fills it from the file names on the command l
 
 A prompt's YAML front matter can change configuration for the run. The short forms `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell` and `erb` sit at the top level; anything else goes under a `config:` section using the same section names as this page:
 
-In 2.0.0, `model`, `temperature`, `top_p` and `llm.*` keys in front matter don't take effect (and `model` stops the run with an error); see [Prompt Files](../prompts/prompt-files.md#front-matter-keys). The other keys do:
+In 2.0.0, `model`, `temperature`, `top_p` and `llm.*` keys in front matter don't take effect; see [Prompt Files](../prompts/prompt-files.md#front-matter-keys). The other keys do:
 
 ```yaml
 ---

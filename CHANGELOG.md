@@ -89,6 +89,9 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - `--mcp-list --list-tools` uses the same connection path as the robots.
 - **Model switching:** conversation history now carries over to crews. Prompt decomposition uses structured output again instead of always falling back to JSON parsing.
 - **Errors and warnings now reach the terminal** (aia now writes them with `$stderr.puts` instead of `warn`).
+- **Command-line errors:** an invalid option value (`-t hot`, `--tool-approval maybe`), a malformed `-m` spec or a missing `-m MODEL=ROLE` role file now prints a one-line `ERROR:` message and exits 1 instead of a Ruby backtrace.
+- **Model search:** `--available-models` and `/available_models` capability terms such as `text_to_image` work again under ruby_llm 2.1 instead of crashing with `NoMethodError`.
+- **Front-matter `model:`** no longer crashes the run after the model replies.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

@@ -110,7 +110,7 @@ AIA understands these keys at the top level of the front matter:
 `next` and `pipeline` cannot both appear in one file. AIA stops with an error if they do.
 
 !!! warning "Don't put model settings in front matter"
-    In 2.0.0, a top-level `model:` key stops the run with a `NoMethodError` after the model has replied, so you never see the response. `temperature:` and `top_p:` (and `llm:` keys under `config:`) are accepted but have no effect, because the model connection is built before the prompt is read. Put model settings on the command line instead (`-m`, `-t`, `--top-p`), or on the shebang line of an [executable prompt](executable-prompts.md). See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
+    In 2.0.0, `model:`, `temperature:` and `top_p:` (and `llm:` keys under `config:`) are accepted but have no effect, because the model connection is built before the prompt is read. Put model settings on the command line instead (`-m`, `-t`, `--top-p`), or on the shebang line of an [executable prompt](executable-prompts.md). See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
 
 ### The `config:` section
 

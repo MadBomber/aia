@@ -1,5 +1,7 @@
 # lib/aia/directives/model_directives.rb
 
+require_relative '../modality_query'
+
 module AIA
   class ModelDirectives < Directive
     desc "List all available AI models"
@@ -152,7 +154,7 @@ module AIA
 
       # modality terms (e.g. "text_to_text") trigger capability checks; the rest
       # are plain substring filters applied to the formatted entry string
-      modality_terms, substring_terms = positive_terms.partition { |q| q.include?('_to_') }
+      modality_terms, substring_terms = positive_terms.partition { |q| ModalityQuery.modality_term?(q) }
 
       counter = 0
       RubyLLM.models.all.each do |llm|
@@ -183,7 +185,7 @@ module AIA
     end
 
     def rubyllm_entry_visible?(llm, entry, modality_terms, substring_terms, negative_terms)
-      modality_terms.all? { |q| llm.modalities.send("#{q}?") } &&
+      modality_terms.all? { |q| ModalityQuery.matches?(llm.modalities, q) } &&
         substring_terms.all? { |q| entry.include?(q) } &&
         negative_terms.none? { |q| entry.downcase.include?(q) }
     end

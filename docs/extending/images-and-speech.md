@@ -50,17 +50,17 @@ aia --paint --im dall-e-3 --is 1792x1024 --iq hd --style natural lighthouse
 Which sizes, qualities and styles are accepted depends on the model and provider. Check the provider's documentation. To find image-capable models:
 
 ```bash
-aia --available-models "to image"
+aia --available-models text_to_image
 ```
 
 ```text
-Available LLMs for to image:
+Available LLMs for text_to_image:
 
 - gpt-image-1 (azure) text,image to image
 ...
 ```
 
-The search matches text in each line, so `"to image"` finds models whose output is an image. Add a provider name to narrow it: `--available-models "to image,openai"`.
+`text_to_image` matches models that take text and return an image. Add a provider name to narrow it: `--available-models text_to_image,openai`.
 
 ## Hearing replies with `--speak`
 

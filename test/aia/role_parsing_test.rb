@@ -164,7 +164,7 @@ class RoleParsingTest < Minitest::Test
 
   # Test invalid syntax: leading equals
   def test_parse_invalid_syntax_leading_equals
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, '=architect')
     end
     assert_match(/Invalid model syntax/, error.message)
@@ -172,7 +172,7 @@ class RoleParsingTest < Minitest::Test
 
   # Test invalid syntax: trailing equals
   def test_parse_invalid_syntax_trailing_equals
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=')
     end
     assert_match(/Invalid model syntax/, error.message)
@@ -180,7 +180,7 @@ class RoleParsingTest < Minitest::Test
 
   # Test role validation: nonexistent role
   def test_validate_nonexistent_role
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=nonexistent')
     end
     assert_match(/Role file not found/, error.message)
@@ -269,7 +269,7 @@ class RoleParsingTest < Minitest::Test
   end
 
   def test_validate_role_absolute_path_missing_raises
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:validate_role_exists, '/nonexistent/path/missing-role')
     end
     assert_match(/Role file not found/, error.message)

@@ -177,9 +177,9 @@ module AIA
     def apply_root_shorthands(meta_hash)
       cfg = AIA.config
 
-      # model → cfg.models (replace with single-model array)
+      # model → cfg.models (replace; a String or list becomes ModelSpecs)
       model_val = shorthand(meta_hash, :model)
-      cfg.models = [model_val] if model_val
+      cfg.models = Config::TO_MODEL_SPECS.call(Array(model_val)) if model_val
 
       temp_val = shorthand(meta_hash, :temperature)
       cfg.llm.temperature = temp_val if temp_val
@@ -230,6 +230,8 @@ module AIA
           if sub_config
             deep_merge_into_config(sub_config, value)
           end
+        elsif key == :models
+          target.models = Config::TO_MODEL_SPECS.call(Array(value))
         elsif target.respond_to?(:"#{key}=")
           target.send(:"#{key}=", value)
         end

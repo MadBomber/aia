@@ -8,7 +8,9 @@
 require 'optparse'
 require 'yaml'
 require_relative 'model_spec'
+require_relative '../errors'
 require_relative '../skill_utils'
+require_relative '../modality_query'
 
 module AIA
   # rubocop:disable Metrics/ModuleLength
@@ -23,10 +25,8 @@ module AIA
         begin
           parser = create_option_parser(options)
           parser.parse!
-        rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
-          $stderr.puts "ERROR: #{e.message}"
-          $stderr.puts "       use --help for usage report"
-          exit 1
+        rescue OptionParser::ParseError, AIA::ConfigurationError => e
+          report_parse_error(e)
         end
 
         # Post-parse so these work regardless of flag order (and after any
@@ -484,7 +484,7 @@ module AIA
           spec.strip!
 
           if spec =~ /^=|=$/
-            raise ArgumentError, "Invalid model syntax: '#{spec}'. Expected format: MODEL[=ROLE]"
+            raise AIA::ConfigurationError, "Invalid model syntax: '#{spec}'. Expected format: MODEL[=ROLE]"
           end
 
           if spec.include?('=')
@@ -519,6 +519,15 @@ module AIA
         models
       end
 
+      # Print a command-line error without a backtrace and exit 1. Covers every
+      # OptionParser failure (unknown option, missing or invalid argument) and
+      # configuration errors raised while options are parsed (e.g. a missing role).
+      def report_parse_error(error)
+        $stderr.puts "ERROR: #{error.message}"
+        $stderr.puts '       use --help for usage report' if error.is_a?(OptionParser::ParseError)
+        exit 1
+      end
+
       def validate_role_exists(role_id)
         return validate_role_path!(role_id) if AIA::SkillUtils.path_based_id?(role_id)
 
@@ -529,14 +538,14 @@ module AIA
         role_file_path = File.join(prompts_dir, "#{role_id}.md")
         return if File.exist?(role_file_path)
 
-        raise ArgumentError, role_not_found_message(role_file_path, prompts_dir, roles_prefix)
+        raise AIA::ConfigurationError, role_not_found_message(role_file_path, prompts_dir, roles_prefix)
       end
 
       # A path-based role id must resolve to an existing file.
       def validate_role_path!(role_id)
         expanded = File.expand_path(role_id)
         expanded += '.md' if File.extname(expanded).empty?
-        raise ArgumentError, "Role file not found: #{expanded}" unless File.exist?(expanded)
+        raise AIA::ConfigurationError, "Role file not found: #{expanded}" unless File.exist?(expanded)
       end
 
       def role_not_found_message(role_file_path, prompts_dir, roles_prefix)
@@ -730,7 +739,7 @@ module AIA
       # Split a query into modality terms (e.g. "text_to_text", leading ':'
       # stripped) and plain substring terms.
       def parse_model_query(query)
-        modality, substrings = query.partition { |q| q.include?('_to_') }
+        modality, substrings = query.partition { |q| ModalityQuery.modality_term?(q) }
         [modality.map { |q| q.delete_prefix(':') }, substrings]
       end
 
@@ -740,7 +749,7 @@ module AIA
       end
 
       def model_entry_visible?(llm, entry, modality_terms, substring_terms)
-        modality_terms.all? { |q| llm.modalities.send("#{q}?") } &&
+        modality_terms.all? { |q| ModalityQuery.matches?(llm.modalities, q) } &&
           substring_terms.all? { |q| entry.include?(q) }
       end
       # rubocop:enable Metrics/ModuleLength

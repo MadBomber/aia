@@ -54,13 +54,13 @@ class CLIParserModelsTest < Minitest::Test
   end
 
   def test_parse_model_invalid_syntax_leading_equals
-    assert_raises(ArgumentError) do
+    assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, '=role')
     end
   end
 
   def test_parse_model_invalid_syntax_trailing_equals
-    assert_raises(ArgumentError) do
+    assert_raises(AIA::ConfigurationError) do
       AIA::CLIParser.send(:parse_models_with_roles, 'model=')
     end
   end
@@ -70,7 +70,7 @@ class CLIParserModelsTest < Minitest::Test
       ENV['AIA_PROMPTS__DIR'] = dir
       ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
 
-      assert_raises(ArgumentError) do
+      assert_raises(AIA::ConfigurationError) do
         AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=nonexistent')
       end
     end
@@ -206,6 +206,49 @@ class SkillsListMarkdownTest < Minitest::Test
       assert_match(/^## testing/, out)
       assert_equal :early_exit, result
     end
+  end
+end
+
+class CLIParserErrorReportingTest < Minitest::Test
+  # Parses +args+ expecting the parser to call exit(1); returns stderr.
+  def parse_with(args)
+    old_argv = ARGV.dup
+    ARGV.replace(args)
+    AIA::CLIParser.expects(:exit).with(1).at_least_once
+    _out, err = capture_io { AIA::CLIParser.parse }
+    err
+  ensure
+    ARGV.replace(old_argv)
+  end
+
+  def test_invalid_numeric_value_exits_1_without_backtrace
+    err = parse_with(['-t', 'hot'])
+    assert_match(/ERROR: invalid argument: -t hot/, err)
+    assert_match(/use --help/, err)
+    refute_match(/\.rb:\d+/, err)
+  end
+
+  def test_invalid_enum_value_exits_1
+    err = parse_with(['--tool-approval', 'maybe'])
+    assert_match(/ERROR: invalid argument: --tool-approval maybe/, err)
+  end
+
+  def test_missing_role_exits_1_with_message
+    Dir.mktmpdir do |dir|
+      old = ENV.fetch('AIA_PROMPTS__DIR', nil)
+      ENV['AIA_PROMPTS__DIR'] = dir
+      err = parse_with(['-m', 'gpt-4o=missingrole'])
+      assert_match(/ERROR: Role file not found/, err)
+      refute_match(/use --help/, err)
+    ensure
+      old ? ENV['AIA_PROMPTS__DIR'] = old : ENV.delete('AIA_PROMPTS__DIR')
+    end
+  end
+
+  def test_report_parse_error_exits_1
+    AIA::CLIParser.expects(:exit).with(1)
+    _out, err = capture_io { AIA::CLIParser.send(:report_parse_error, AIA::ConfigurationError.new('boom')) }
+    assert_equal "ERROR: boom\n", err
   end
 end
 

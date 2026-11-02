@@ -187,7 +187,7 @@ The model, or models, to use. Format: `MODEL[=ROLE][,MODEL[=ROLE]]...`
 - One model: `-m claude-haiku-4-5`
 - With an explicit provider: `-m ollama/llama3.2`
 - Several models run the same prompt in parallel: `-m gpt-4o,claude-sonnet-4-6`. See [Multi-Model & Consensus](../extending/multi-model.md).
-- `=ROLE` gives that model its own [role](../everyday/roles-and-skills.md): `-m gpt-4o=architect,claude-sonnet-4-6=reviewer`. The role file must exist, or aia stops with a Ruby error report containing `Role file not found`.
+- `=ROLE` gives that model its own [role](../everyday/roles-and-skills.md): `-m gpt-4o=architect,claude-sonnet-4-6=reviewer`. The role file must exist, or aia stops with `ERROR: Role file not found` and lists the roles it found.
 - The same model can appear more than once, with different roles.
 
 | Default | Config key | Env |
@@ -848,7 +848,7 @@ Print the option summary and exit.
 
 ## Exit status
 
-aia exits with status `1` for an unknown option, a missing required value, a configuration error (such as a missing prompt or config file), or a failed `--list-models`. An option given an invalid value (`-t hot`, `--tool-approval maybe`, or a `-m MODEL=ROLE` whose role file is missing) stops aia with a Ruby error report rather than a one-line message.
+aia exits with status `1` for an unknown option, a missing or invalid value (`-t hot`, `--tool-approval maybe`), a `-m MODEL=ROLE` whose role file is missing, a configuration error (such as a missing prompt or config file), or a failed `--list-models`. Each prints a one-line `ERROR:` message.
 
 ## See also
 
