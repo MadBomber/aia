@@ -69,12 +69,9 @@ aia --mcp ~/mcp/filesystem.json --chat
 aia --mcp github.json --mcp postgres.json my_prompt
 ```
 
-A file without an `mcpServers` key is read as one server, named after the file: `{"command": "my-server", "args": ["--stdio"]}`. Here `command` may also be an array whose first element is the program. This one-server form reads only `type`, `command`, `args`, `env` and `timeout`, so it can't describe an HTTP server.
+A file without an `mcpServers` key is read as one server, named after the file: `{"command": "my-server", "args": ["--stdio"]}`. Here `command` may also be an array whose first element is the program. Both forms accept the same keys.
 
-!!! note "What JSON files carry"
-    From a JSON file AIA reads `command`, `args`, `env`, `url`, `headers`, `type`, `timeout` and `group`. Settings such as `prefix`, `only`, `except` and `requires_approval` are read only from the YAML config file, so put servers that need them there.
-
-    An HTTP server in a JSON file needs an explicit `"type": "http"` (or `"streamable-http"`) next to its `url`. Without one, AIA treats it as a stdio server and it fails with `uses stdio but has no command`. In the YAML config a `url` is enough.
+A server in a JSON file can use every key a server in the YAML config can: `command`, `args`, `env`, `url`, `headers`, `type`, `timeout`, `group`, `prefix`, `only`, `except` and `requires_approval`. A `url` with no `type` is a Streamable HTTP server.
 
 ## Choosing servers for a session
 

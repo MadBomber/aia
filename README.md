@@ -909,7 +909,7 @@ aia --model ollama/llama3.2,gpt-4o-mini --consensus my_prompt
 **Environment Variables:**
 ```bash
 # Optional: Set custom Ollama API endpoint
-export OLLAMA_API_BASE=http://localhost:11434
+export OLLAMA_API_BASE=http://localhost:11434/v1
 ```
 
 **Reasoning models:** models such as `qwen3` stream their chain-of-thought

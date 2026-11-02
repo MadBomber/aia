@@ -857,8 +857,9 @@ class ValidatorListToolsTest < Minitest::Test
       tools: OpenStruct.new(paths: nil)
     )
 
-    # Stub ObjectSpace to return no tool subclasses
-    ObjectSpace.stubs(:each_object).with(Class).returns([].each)
+    # The session tool loader finds nothing
+    AIA::ToolLoader.stubs(:load_tools)
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
 
     err = capture_stderr_through_exception do
       AIA::ConfigValidator.send(:handle_list_tools, config)
@@ -914,5 +915,20 @@ class ValidatorListToolsTest < Minitest::Test
       mcp_servers: [{ name: 'svc', command: 'svc-bin', args: [] }],
       mcp_use: [], mcp_skip: []
     )
+  end
+end
+
+class ValidatorListToolsFilterTest < Minitest::Test
+  def test_list_tools_uses_the_session_loader_and_filters
+    config = OpenStruct.new(tools: OpenStruct.new(allowed: ['date'], rejected: []))
+    AIA::ToolLoader.expects(:load_tools).with(config)
+    AIA::ToolLoader.expects(:filtered_tools).with(config).returns([:date_tool])
+    assert_equal [:date_tool], AIA::ConfigValidator.send(:load_local_tools, config)
+  end
+
+  def test_mcp_list_applies_use_and_skip_together
+    servers = [{ name: 'a' }, { name: 'b' }, { name: 'c' }]
+    config = OpenStruct.new(mcp_servers: servers, mcp_use: %w[a b], mcp_skip: %w[b])
+    assert_equal [{ name: 'a' }], AIA::ConfigValidator.send(:filter_mcp_servers, config)
   end
 end

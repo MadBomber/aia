@@ -35,17 +35,14 @@ Everything you know about prompts still applies: [parameters](../prompts/paramet
 
 | Option | Config key | Default | Meaning |
 |--------|-----------|---------|---------|
-| `--im`, `--image-model MODEL` | `image.model` | `dall-e-3` | The image model |
+| `--im`, `--image-model MODEL` | `image.model` | `gpt-image-1` | The image model |
 | `--is`, `--image-size SIZE` | `image.size` | `1024x1024` | Image dimensions |
 | `--iq`, `--image-quality QUALITY` | `image.quality` | `standard` | Quality setting |
 | `--style`, `--image-style STYLE` | `image.style` | `vivid` | Style setting |
 
 ```bash
-aia --paint --im dall-e-3 --is 1792x1024 --iq hd --style natural lighthouse
+aia --paint --im gpt-image-1 --is 1536x1024 --iq hd --style natural lighthouse
 ```
-
-!!! tip "If the default model isn't available"
-    AIA's default image model is `dall-e-3`, but the current model catalogue may not list it. If `--paint` fails with a model error, choose a model the catalogue lists, such as `--im gpt-image-1`.
 
 Which sizes, qualities and styles are accepted depends on the model and provider. Check the provider's documentation. To find image-capable models:
 

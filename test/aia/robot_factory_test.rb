@@ -27,7 +27,7 @@ class RobotFactoryTest < Minitest::Test
     RubyLLM.config.ollama_api_base = original
   end
 
-  def test_configure_local_providers_leaves_bases_alone_without_env_override
+  def test_configure_local_providers_defaults_ollama_without_env_override
     @config.models = [OpenStruct.new(provider: nil)]
     original = RubyLLM.config.ollama_api_base
     original_env = ENV.fetch('OLLAMA_API_BASE', nil)
@@ -36,7 +36,7 @@ class RobotFactoryTest < Minitest::Test
     AIA::RobotFactory.send(:configure_local_providers, @config)
 
     if original.nil?
-      assert_nil RubyLLM.config.ollama_api_base
+      assert_equal "http://localhost:11434/v1", RubyLLM.config.ollama_api_base
     else
       assert_equal original, RubyLLM.config.ollama_api_base
     end

@@ -366,17 +366,7 @@ module AIA
       end
 
       def filter_mcp_servers(config)
-        servers = config.mcp_servers || []
-        use_list  = Array(config.mcp_use)
-        skip_list = Array(config.mcp_skip)
-
-        if !use_list.empty?
-          servers.select { |s| use_list.include?(s[:name] || s['name']) }
-        elsif !skip_list.empty?
-          servers.reject { |s| skip_list.include?(s[:name] || s['name']) }
-        else
-          servers
-        end
+        AIA::MCPDiscovery.select(config.mcp_servers || [], use: config.mcp_use, skip: config.mcp_skip)
       end
 
       def mcp_filter_active?(config)
@@ -426,36 +416,12 @@ module AIA
         end
       end
 
+      # The local tools a session would offer: loaded the same way
+      # (--require gems, --tools files, lazily loaded tool gems) and narrowed
+      # by --allowed-tools / --rejected-tools.
       def load_local_tools(config)
-        require_configured_libs(config)
-        require_tool_files(config)
-        instantiable_tool_classes
-      end
-
-      # :reek:DuplicateMethodCall -- each e.message belongs to a different rescue clause exception; nothing to hoist
-      def require_configured_libs(config)
-        Array(config.require_libs).each do |lib|
-          require lib
-        rescue LoadError => e
-          $stderr.puts "Warning: Failed to require '#{lib}': #{e.message}"
-          $stderr.puts "Hint: Make sure the gem is installed: gem install #{lib}"
-        rescue StandardError => e
-          $stderr.puts "Warning: Error in library '#{lib}': #{e.class} - #{e.message}"
-        end
-      end
-
-      # Scan ObjectSpace for RubyLLM::Tool subclasses that can be instantiated.
-      def instantiable_tool_classes
-        ObjectSpace.each_object(Class).select do |klass|
-          next false unless defined?(RubyLLM::Tool) && klass < RubyLLM::Tool
-
-          begin
-            klass.new
-            true
-          rescue StandardError
-            false
-          end
-        end
+        ToolLoader.load_tools(config)
+        ToolLoader.filtered_tools(config)
       end
 
       def first_sentences(text, count)

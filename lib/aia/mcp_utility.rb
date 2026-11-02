@@ -25,7 +25,6 @@ module AIA
       AIA.config&.failed_mcp_servers || []
     end
 
-    # :reek:TooManyStatements -- server-name resolution applying no_mcp, use-list, and skip-list filters in precedence order
     def effective_mcp_server_names
       cfg = AIA.config
       return [] if cfg&.flags&.no_mcp
@@ -33,17 +32,7 @@ module AIA
       servers = cfg&.mcp_servers || []
       return [] if servers.empty?
 
-      names     = servers.map { |s| server_name(s) }.compact
-      use_list  = Array(cfg.mcp_use)
-      skip_list = Array(cfg.mcp_skip)
-
-      if use_list.any?
-        names.select { |n| use_list.include?(n) }
-      elsif skip_list.any?
-        names.reject { |n| skip_list.include?(n) }
-      else
-        names
-      end
+      MCPDiscovery.select(servers, use: cfg.mcp_use, skip: cfg.mcp_skip).map { server_name(it) }.compact
     end
 
     def server_name(s)

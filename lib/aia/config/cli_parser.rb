@@ -271,7 +271,7 @@ module AIA
           options[:paint] = true
         end
 
-        opts.on("--im", "--image-model MODEL", "Set image model for generation (default: dall-e-3)") do |model|
+        opts.on("--im", "--image-model MODEL", "Set image model for generation (default: gpt-image-1)") do |model|
           options[:image_model] = model
         end
 
@@ -579,6 +579,7 @@ module AIA
         slug = options[:provider]
         if slug
           require_listed_libs(options)
+          AIA::ProviderRegistry.apply_env_endpoints
           list_provider_models(slug)
         else
           $stderr.puts "ERROR: --list-models requires --provider SLUG " \

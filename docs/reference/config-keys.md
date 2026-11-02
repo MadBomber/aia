@@ -99,7 +99,7 @@ Turning speech on is a flag: `flags.speak`.
 
 | Key | Type | Default | Env | CLI |
 |---|---|---|---|---|
-| `image.model` | string | `dall-e-3` | `AIA_IMAGE__MODEL` | `--image-model` |
+| `image.model` | string | `gpt-image-1` | `AIA_IMAGE__MODEL` | `--image-model` |
 | `image.size` | string | `1024x1024` | `AIA_IMAGE__SIZE` | `--image-size` |
 | `image.quality` | string | `standard` | `AIA_IMAGE__QUALITY` | `--image-quality` |
 | `image.style` | string | `vivid` | `AIA_IMAGE__STYLE` | `--image-style` |

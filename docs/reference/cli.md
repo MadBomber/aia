@@ -536,7 +536,7 @@ aia --paint logo_idea
 
 | Default | Config key | Env |
 |---|---|---|
-| `dall-e-3` | `image.model` | `AIA_IMAGE__MODEL` |
+| `gpt-image-1` | `image.model` | `AIA_IMAGE__MODEL` |
 
 ### `--is`, `--image-size SIZE`
 
@@ -643,7 +643,7 @@ Any other value stops aia with `invalid argument: --tool-approval …`.
 
 ### `--list-tools`
 
-List the local tools (from `--tools` and `--require`) with their descriptions, and exit. Add `--mcp-list` to connect to each MCP server and list its tools as well. When output is not a terminal, the list is written as Markdown.
+List the local tools (from `--tools` and `--require`) with their descriptions, after `--allowed-tools` and `--rejected-tools` are applied, and exit. Add `--mcp-list` to connect to each MCP server and list its tools as well. When output is not a terminal, the list is written as Markdown.
 
 ```bash
 aia --tools ~/my_tools --list-tools

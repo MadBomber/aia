@@ -9,6 +9,20 @@ module AIA
   class MCPDiscovery
     def initialize; end
 
+    # The servers --mcp-use keeps (all of them when it is empty), minus
+    # those --mcp-skip names. Shared by sessions, --mcp-list and the banner.
+    #
+    # @param servers [Array<Hash>] configured servers
+    # @param use [Array<String>] --mcp-use names
+    # @param skip [Array<String>] --mcp-skip names
+    # @return [Array<Hash>]
+    def self.select(servers, use: [], skip: [])
+      use  = Array(use)
+      skip = Array(skip)
+      kept = use.empty? ? Array(servers) : Array(servers).select { use.include?(AIA::Utility.server_name(it)) }
+      kept.reject { skip.include?(AIA::Utility.server_name(it)) }
+    end
+
     # Discover relevant MCP servers for the current prompt.
     # Priority: explicit --mcp-use list > all configured servers.
     # --mcp-skip is always applied last.
@@ -18,27 +32,7 @@ module AIA
     def discover(config)
       return [] if config.flags&.no_mcp
 
-      servers = select_servers(config)
-      apply_skip_filter(servers, config)
-    end
-
-    private
-
-    def select_servers(config)
-      return select_by_names(config.mcp_servers || [], Array(config.mcp_use)) if Array(config.mcp_use).any?
-
-      config.mcp_servers || []
-    end
-
-    def apply_skip_filter(servers, config)
-      skip_list = Array(config.mcp_skip)
-      return servers if skip_list.empty?
-
-      servers.reject { |s| skip_list.include?(AIA::Utility.server_name(s)) }
-    end
-
-    def select_by_names(all_servers, names)
-      all_servers.select { |s| names.include?(AIA::Utility.server_name(s)) }
+      self.class.select(config.mcp_servers || [], use: config.mcp_use, skip: config.mcp_skip)
     end
   end
 end

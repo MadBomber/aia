@@ -105,7 +105,7 @@ defaults:
   # Env: AIA_IMAGE__MODEL, AIA_IMAGE__SIZE, etc.
   # ---------------------------------------------------------------------------
   image:
-    model: dall-e-3
+    model: gpt-image-1
     size: 1024x1024
     quality: standard
     style: vivid

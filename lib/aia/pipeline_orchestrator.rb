@@ -106,7 +106,7 @@ module AIA
       image = @ui.with_spinner("Generating image") do
         RubyLLM.paint(
           prompt_text,
-          model:  img_cfg.model || 'dall-e-3',
+          model:  img_cfg.model || 'gpt-image-1',
           size:   img_cfg.size  || '1024x1024',
           params: params
         )

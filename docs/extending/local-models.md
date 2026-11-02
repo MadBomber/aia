@@ -76,13 +76,7 @@ export LMS_API_BASE=http://localhost:1234/v1
     ollama pull llama3.2
     ```
 
-2. Tell RubyLLM where Ollama is. The Ollama provider needs this set:
-
-    ```bash
-    export OLLAMA_API_BASE=http://localhost:11434/v1
-    ```
-
-3. Use the `ollama/` prefix:
+2. Use the `ollama/` prefix. AIA expects Ollama at `http://localhost:11434/v1`; if it runs elsewhere, set `OLLAMA_API_BASE` (see [Custom endpoints](#custom-endpoints)):
 
     ```bash
     aia -m ollama/llama3.2 my_prompt

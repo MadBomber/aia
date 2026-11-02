@@ -128,9 +128,6 @@ On a terminal the list is plain text. When you pipe it or redirect it to a file,
 aia --list-tools --mcp-list > tools.md
 ```
 
-!!! note
-    `--list-tools` may not list tools from gems that load their tools lazily, such as `shared_tools`. To see everything that's really loaded, start a chat and use `/tools`.
-
 Inside a chat, `/tools` lists every loaded tool, local and MCP. Give it a word to filter by name or description:
 
 ```text
@@ -140,7 +137,7 @@ Inside a chat, `/tools` lists every loaded tool, local and MCP. Give it a word t
 
 Your AIA crew-management tools (`AIA::RecruitRobotTool` and `AIA::ReskillRobotTool`) always show up in these lists. They let the model add crewmates on its own; see [Crews](crews.md#letting-the-chief-recruit).
 
-`--list-tools` lists every loaded tool and ignores `--allowed-tools` and `--rejected-tools` (below). `/tools` likewise shows everything that's loaded, not only what the model is allowed to use.
+`--list-tools` loads tools the way a session does, including gems such as `shared_tools` that load their tools lazily, and applies `--allowed-tools` and `--rejected-tools` (below). `/tools` shows everything that's loaded, not only what the model is allowed to use.
 
 ## Limiting which tools the model sees
 

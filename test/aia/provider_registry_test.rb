@@ -62,7 +62,7 @@ class ProviderRegistryTest < Minitest::Test
     RubyLLM.config.ollama_api_base = original
   end
 
-  def test_apply_env_endpoints_ignores_unset_env_vars
+  def test_apply_env_endpoints_defaults_ollama_when_unset
     original = RubyLLM.config.ollama_api_base
     original_env = ENV.fetch('OLLAMA_API_BASE', nil)
     ENV.delete('OLLAMA_API_BASE')
@@ -70,7 +70,7 @@ class ProviderRegistryTest < Minitest::Test
     AIA::ProviderRegistry.apply_env_endpoints
 
     if original.nil?
-      assert_nil RubyLLM.config.ollama_api_base
+      assert_equal "http://localhost:11434/v1", RubyLLM.config.ollama_api_base
     else
       assert_equal original, RubyLLM.config.ollama_api_base
     end

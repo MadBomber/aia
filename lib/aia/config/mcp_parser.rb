@@ -39,6 +39,12 @@ require 'json'
 
 module AIA
   module McpParser
+    # Keys that describe how to reach the server; they go into :transport.
+    TRANSPORT_KEYS = %w[type command args env url headers bearer_token oauth cwd directory].freeze
+
+    # Server settings robot_lab understands, carried through as written.
+    SERVER_KEYS = %w[prefix only except requires_approval description].freeze
+
     class << self
       # Parse MCP server configuration files and return array of server configs
       # in robot_lab's nested transport format.
@@ -93,20 +99,29 @@ module AIA
       # @param mcp_servers [Hash] the mcpServers hash from JSON
       # @return [Array<Hash>] array of server configurations
       def convert_mcp_servers_format(mcp_servers)
-        mcp_servers.map do |name, config|
-          server = { name: name, transport: build_transport(config) }
-          server[:timeout] = config['timeout'].to_i if config['timeout']
-          server.merge!(routing_metadata(config))
-        end
+        mcp_servers.map { |name, config| build_server(name, config) }
       end
 
+      # One server in robot_lab's format. Both JSON forms accept the same keys.
+      def build_server(name, config)
+        server = { name: name, transport: build_transport(config) }
+        server[:timeout] = config['timeout'].to_i if config['timeout']
+        SERVER_KEYS.each { |key| server[key.to_sym] = config[key] if config.key?(key) }
+        server.merge!(routing_metadata(config))
+      end
+
+      # The transport hash. With no "type", a url means Streamable HTTP and
+      # anything else stdio. A "command" given as an array holds the command
+      # followed by its arguments.
       def build_transport(config)
-        transport = { type: config['type'] || 'stdio' }
-        transport[:command] = config['command'] if config['command']
-        transport[:args]    = Array(config['args']) if config['args']
-        transport[:env]     = config['env'] if config['env']
-        transport[:url]     = config['url'] if config['url']
-        transport[:headers] = config['headers'] if config['headers']
+        transport = config.slice(*TRANSPORT_KEYS).transform_keys(&:to_sym)
+        command = transport[:command]
+        if command.is_a?(Array)
+          transport[:command] = command.first
+          transport[:args]    = Array(command[1..]) + Array(transport[:args])
+        end
+        transport[:args] = Array(transport[:args]) if transport.key?(:args)
+        transport[:type] ||= transport[:url] && !transport[:command] ? 'streamable-http' : 'stdio'
         transport
       end
 
@@ -119,33 +134,14 @@ module AIA
         meta
       end
 
-      # Convert simple format to robot_lab nested transport format
+      # Convert simple format to robot_lab nested transport format. The
+      # server is named after the file ("filesystem.json" -> "filesystem").
       #
-      # @param parsed [Hash] parsed JSON with type and command
+      # @param parsed [Hash] one server's settings
       # @param file_path [String] file path for deriving server name
       # @return [Array<Hash>] array with single server configuration
       def convert_simple_format(parsed, file_path)
-        # Derive name from filename (e.g., "filesystem.json" -> "filesystem")
-        name = File.basename(file_path, '.*')
-
-        transport = { type: parsed['type'] || 'stdio' }
-
-        command = parsed['command']
-        if command.is_a?(Array)
-          # Command is an array: first element is command, rest are args
-          transport[:command] = command.first
-          transport[:args] = command[1..] || []
-        elsif command
-          transport[:command] = command
-          transport[:args] = parsed['args'] || []
-        end
-
-        transport[:env] = parsed['env'] if parsed['env']
-
-        server = { name: name, transport: transport }
-        server[:timeout] = parsed['timeout'].to_i if parsed['timeout']
-
-        [server]
+        [build_server(File.basename(file_path, '.*'), parsed)]
       end
     end
   end

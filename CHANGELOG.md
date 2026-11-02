@@ -123,6 +123,12 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - `/verify` builds its robots with the model's provider, so `ollama/…` and other non-default providers work.
   - `/drop_recruit`, `/reskill` and duplicate-name checks ignore case, as `@mentions` do.
   - `/say` uses `--speak-command`, and its usage message is no longer sent to the model.
+- **Tools, MCP and providers:**
+  - `--list-tools` loads tools the way a session does (lazily loaded gems such as `shared_tools` included) and applies `--allowed-tools` / `--rejected-tools`.
+  - `--mcp-list` and the banner apply `--mcp-use` and `--mcp-skip` together, as a session does.
+  - `--mcp` JSON servers accept every YAML server key (`prefix`, `only`, `except`, `requires_approval`, `url`, `headers` …) in both JSON forms, and a `url` with no `type` is Streamable HTTP.
+  - Ollama works without `OLLAMA_API_BASE`: it defaults to `http://localhost:11434/v1`, and `--list-models` honors `<PROVIDER>_API_BASE`.
+  - The default image model is `gpt-image-1` (`dall-e-3` is no longer in RubyLLM's catalogue).
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

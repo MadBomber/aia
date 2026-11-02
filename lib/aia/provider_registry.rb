@@ -74,17 +74,32 @@ module AIA
       installed_gem_slugs.each { |slug| load(slug) }
     end
 
+    # Endpoints for local servers that RubyLLM leaves unset, so they work
+    # without an environment variable when running on their usual port.
+    DEFAULT_ENDPOINTS = { 'ollama' => 'http://localhost:11434/v1' }.freeze
+
     # Generic env-var endpoint overrides: for every registered provider,
     # <SLUG>_API_BASE sets RubyLLM.config.<slug>_api_base when the provider
     # defines that option (RubyLLM registers the accessor with the provider).
+    # A provider in DEFAULT_ENDPOINTS with no endpoint set gets its default.
     def apply_env_endpoints
       RubyLLM.configure do |c|
         slugs.each do |slug|
-          env_value = ENV.fetch("#{slug.upcase}_API_BASE", nil)
-          setter    = :"#{slug}_api_base="
-          c.public_send(setter, env_value) if env_value && c.respond_to?(setter)
+          setter = :"#{slug}_api_base="
+          next unless c.respond_to?(setter)
+
+          value = ENV.fetch("#{slug.upcase}_API_BASE", nil) || default_endpoint(c, slug)
+          c.public_send(setter, value) if value
         end
       end
+    end
+
+    # The default endpoint for +slug+ when RubyLLM has none configured.
+    def default_endpoint(ruby_llm_config, slug)
+      getter = :"#{slug}_api_base"
+      return nil if ruby_llm_config.respond_to?(getter) && ruby_llm_config.public_send(getter)
+
+      DEFAULT_ENDPOINTS[slug.to_s]
     end
   end
 end
