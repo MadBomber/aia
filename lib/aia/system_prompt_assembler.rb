@@ -6,7 +6,9 @@
 # Extracted from RobotFactory to isolate the prompt assembly concern.
 # Completely stateless — no module ivars.
 
+require 'pm'
 require_relative 'skill_utils'
+require_relative 'role_catalog'
 
 module AIA
   module SystemPromptAssembler
@@ -68,22 +70,21 @@ module AIA
       lines.join("\n")
     end
 
-    # Load role file content.
+    # Load a role for the system prompt. Named roles come from the roles
+    # folder of the prompts directory; path-based roles from anywhere. The
+    # file is processed like a prompt: front matter removed, shell and ERB
+    # expanded.
     #
     # @param config [AIA::Config] the AIA configuration
-    # @param role_id [String] the role identifier
-    # @return [String, nil] the role file content or nil
+    # @param role_id [String] the role identifier or path
+    # @return [String, nil] the rendered role, or nil if it is missing or fails
     def load_role_content(config, role_id)
-      prompts_cfg  = config.prompts
-      roles_prefix = prompts_cfg.roles_prefix
-      unless role_id.start_with?(roles_prefix)
-        role_id = "#{roles_prefix}/#{role_id}"
-      end
-
-      role_file = File.join(prompts_cfg.dir, "#{role_id}#{prompts_cfg.extname}")
+      prompts_cfg = config.prompts
+      role_file = AIA::RoleCatalog.role_file(role_id, dir: prompts_cfg.dir, prefix: prompts_cfg.roles_prefix,
+                                                      extname: prompts_cfg.extname)
       return nil unless File.exist?(role_file)
 
-      File.read(role_file)
+      PM.parse(Pathname.new(role_file)).to_s
     rescue => e
       $stderr.puts "Warning: Could not load role '#{role_id}': #{e.message}"
       nil

@@ -109,6 +109,12 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - Piped text drops a leading `#!` line and keeps its front matter, and piped text that is one word or ends in `.md` is no longer read as a file name.
   - A required parameter declared only in an included file is asked for instead of stopping the run.
   - Front-matter `pipeline:` may be a comma-separated string.
+- **Roles and skills:**
+  - `--list-roles` and the `-m MODEL=ROLE` check use the configured prompts directory (`--prompts-dir`, config file), not only `AIA_PROMPTS__DIR`.
+  - A role given as a path reaches the system prompt, in chat too.
+  - The role in the system prompt is processed like a prompt: front matter removed, ERB and `$(...)` expanded.
+  - `--skill` warns when the skills directory doesn't exist, and path skills load without one.
+  - `--help` describes `--system-prompt` as literal text.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

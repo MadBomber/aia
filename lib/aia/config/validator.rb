@@ -4,6 +4,7 @@ require 'timeout'
 require 'did_you_mean'
 require 'word_wrapper'
 require_relative '../skill_utils'
+require_relative '../role_catalog'
 
 # lib/aia/config/validator.rb
 #
@@ -38,6 +39,7 @@ module AIA
         return :early_exit if handle_early_exits(config) == :early_exit
         adopt_pipeline_head(config)
         process_role_configuration(config)
+        validate_model_roles(config)
         validate_required_prompt_id(config)
         validate_plugins_dir(config)
         handle_fuzzy_search_prompt_id(config)
@@ -53,6 +55,7 @@ module AIA
         return :early_exit if handle_mcp_list(config)          == :early_exit
         return :early_exit if handle_list_tools(config)        == :early_exit
         return :early_exit if handle_list_skills(config)       == :early_exit
+        return :early_exit if handle_list_roles(config)        == :early_exit
         :early_exit if handle_completion_script(config) == :early_exit
       end
 
@@ -401,6 +404,26 @@ module AIA
 
         puts AIA::SkillUtils.list_skills_markdown(config)
         :early_exit
+      end
+
+      # --list-roles, from the configured prompts directory and roles prefix.
+      def handle_list_roles(config)
+        return unless config.respond_to?(:list_roles) && config.list_roles
+
+        prompts = config.prompts
+        puts AIA::RoleCatalog.listing(prompts.dir, prompts.roles_prefix, extname: prompts.extname)
+        :early_exit
+      end
+
+      # Every -m MODEL=ROLE role must exist in the configured prompts directory.
+      def validate_model_roles(config)
+        prompts = config.prompts
+        Array(config.models).each do |spec|
+          role = spec.respond_to?(:role) ? spec.role : nil
+          next if role.nil? || role.to_s.empty?
+
+          AIA::RoleCatalog.validate!(role, dir: prompts.dir, prefix: prompts.roles_prefix, extname: prompts.extname)
+        end
       end
 
       def load_local_tools(config)

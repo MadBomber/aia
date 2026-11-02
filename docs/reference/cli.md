@@ -317,9 +317,6 @@ The directory that holds your prompt files.
 aia --prompts-dir ./prompts release_notes
 ```
 
-!!! note
-    `--list-roles` and the role check done by `-m MODEL=ROLE` look up roles with `AIA_PROMPTS__DIR` (or `~/.prompts`), not `--prompts-dir`, because they run while options are still being read. If your prompts live elsewhere, set the environment variable.
-
 ### `--plugins-dir DIR`
 
 A directory of Ruby plugin files. Every `*.rb` file directly inside it is loaded at startup; during a chat session aia watches the directory and reloads a plugin when you add, change or delete it. aia warns if the directory does not exist. See [Plugins](../prompts/plugins.md).
@@ -415,7 +412,7 @@ aia research -p outline,draft topic_notes.md
 
 ### `--system-prompt TEXT`
 
-Use `TEXT` as the system prompt, in chat and in one-shot runs. `--help` calls the argument `PROMPT_ID`, but aia uses the value as literal text; it doesn't look up a prompt file. A role (`--role`) is added after it.
+Use `TEXT` as the system prompt, in chat and in one-shot runs. The value is literal text; aia doesn't look up a prompt file. A role (`--role`) is added after it.
 
 ```bash
 aia --system-prompt "Answer in one short paragraph." my_prompt

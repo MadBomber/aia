@@ -111,7 +111,7 @@ skills:
   dir: ~/Dropbox/prompts/skills
 ```
 
-`skills.dir` and `prompts.roles_dir` don't follow `prompts.dir` automatically. Also export `AIA_PROMPTS__DIR` so `--list-roles` and shell completion find the same place (see [Environment Variables](environment.md)).
+`skills.dir` and `prompts.roles_dir` don't follow `prompts.dir` automatically. Also export `AIA_PROMPTS__DIR` so shell completion finds the same place (see [Environment Variables](environment.md)).
 
 ### Always show tokens and cost
 

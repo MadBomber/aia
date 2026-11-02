@@ -135,8 +135,7 @@ module AIA
         end
 
         opts.on("--list-roles", "List available roles and exit") do
-          list_available_roles
-          exit 0
+          options[:list_roles] = true
         end
 
         opts.on("--sm", "--speech-model MODEL", "Set speech model") do |model|
@@ -223,8 +222,8 @@ module AIA
           options[:pipeline] += pipeline.split(',').map(&:strip)
         end
 
-        opts.on("--system-prompt PROMPT_ID", "Set system prompt for chat sessions") do |prompt_id|
-          options[:system_prompt] = prompt_id
+        opts.on("--system-prompt TEXT", "Set the system prompt (literal text)") do |text|
+          options[:system_prompt] = text
         end
       end
 
@@ -492,8 +491,6 @@ module AIA
             model_name.strip!
             role_name.strip!
 
-            validate_role_exists(role_name)
-
             model_counts[model_name] += 1
             instance = model_counts[model_name]
 
@@ -526,86 +523,6 @@ module AIA
         $stderr.puts "ERROR: #{error.message}"
         $stderr.puts '       use --help for usage report' if error.is_a?(OptionParser::ParseError)
         exit 1
-      end
-
-      def validate_role_exists(role_id)
-        return validate_role_path!(role_id) if AIA::SkillUtils.path_based_id?(role_id)
-
-        prompts_dir  = ENV.fetch('AIA_PROMPTS__DIR') { File.join(Dir.home, '.prompts') }
-        roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
-        role_id      = "#{roles_prefix}/#{role_id}" unless role_id.start_with?(roles_prefix)
-
-        role_file_path = File.join(prompts_dir, "#{role_id}.md")
-        return if File.exist?(role_file_path)
-
-        raise AIA::ConfigurationError, role_not_found_message(role_file_path, prompts_dir, roles_prefix)
-      end
-
-      # A path-based role id must resolve to an existing file.
-      def validate_role_path!(role_id)
-        expanded = File.expand_path(role_id)
-        expanded += '.md' if File.extname(expanded).empty?
-        raise AIA::ConfigurationError, "Role file not found: #{expanded}" unless File.exist?(expanded)
-      end
-
-      def role_not_found_message(role_file_path, prompts_dir, roles_prefix)
-        available_roles = list_available_role_names(prompts_dir, roles_prefix)
-        message = "Role file not found: #{role_file_path}\n\n"
-
-        if available_roles.empty?
-          message + "No roles directory found at #{File.join(prompts_dir, roles_prefix)}\n" \
-                    "Create the directory and add role files to use this feature."
-        else
-          message + "Available roles:\n" +
-            available_roles.map { |r| "  - #{r}" }.join("\n") +
-            "\n\nCreate the role file or use an existing role."
-        end
-      end
-
-      # :reek:TooManyStatements -- sequential terminal report: guards, then a markdown table per role; exits after printing
-      def list_available_roles
-        prompts_dir = ENV.fetch('AIA_PROMPTS__DIR') { File.join(Dir.home, '.prompts') }
-        roles_prefix = ENV.fetch('AIA_PROMPTS__ROLES_PREFIX', 'roles')
-        roles_dir = File.join(prompts_dir, roles_prefix)
-
-        unless Dir.exist?(roles_dir)
-          puts "No roles directory found at #{roles_dir}"
-          puts "Create this directory and add role files to use roles."
-          return
-        end
-
-        roles = list_available_role_names(prompts_dir, roles_prefix)
-
-        if roles.empty?
-          puts "No role files found in #{roles_dir}"
-          puts "Create .md files in this directory to define roles."
-          return
-        end
-
-        roles.each do |role_id|
-          role_file = File.join(roles_dir, "#{role_id}.md")
-          front_matter = AIA::SkillUtils.parse_front_matter(role_file)
-
-          puts "## #{role_id}"
-          puts
-          puts "| Key | Value |"
-          puts "|-----|-------|"
-          front_matter.each do |key, value|
-            safe_value = value.to_s.gsub('|', '\\|')
-            puts "| #{key} | #{safe_value} |"
-          end
-          puts
-        end
-      end
-
-      def list_available_role_names(prompts_dir, roles_prefix)
-        roles_dir = File.join(prompts_dir, roles_prefix)
-        return [] unless Dir.exist?(roles_dir)
-
-        Dir.glob("**/*.md", base: roles_dir)
-           .map { |f| f.chomp('.md') }
-           .reject { |f| f.split('/').any? { |part| part.start_with?('_') } }
-           .sort
       end
 
       # Post-parse handler for `--list-providers`. Lists every provider

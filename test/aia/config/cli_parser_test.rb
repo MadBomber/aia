@@ -64,20 +64,6 @@ class CLIParserModelsTest < Minitest::Test
       AIA::CLIParser.send(:parse_models_with_roles, 'model=')
     end
   end
-
-  def test_parse_model_nonexistent_role_raises
-    Dir.mktmpdir do |dir|
-      ENV['AIA_PROMPTS__DIR'] = dir
-      ENV['AIA_PROMPTS__ROLES_PREFIX'] = 'roles'
-
-      assert_raises(AIA::ConfigurationError) do
-        AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=nonexistent')
-      end
-    end
-  ensure
-    ENV.delete('AIA_PROMPTS__DIR')
-    ENV.delete('AIA_PROMPTS__ROLES_PREFIX')
-  end
 end
 
 class SkillsListMarkdownTest < Minitest::Test
@@ -233,18 +219,6 @@ class CLIParserErrorReportingTest < Minitest::Test
     assert_match(/ERROR: invalid argument: --tool-approval maybe/, err)
   end
 
-  def test_missing_role_exits_1_with_message
-    Dir.mktmpdir do |dir|
-      old = ENV.fetch('AIA_PROMPTS__DIR', nil)
-      ENV['AIA_PROMPTS__DIR'] = dir
-      err = parse_with(['-m', 'gpt-4o=missingrole'])
-      assert_match(/ERROR: Role file not found/, err)
-      refute_match(/use --help/, err)
-    ensure
-      old ? ENV['AIA_PROMPTS__DIR'] = old : ENV.delete('AIA_PROMPTS__DIR')
-    end
-  end
-
   def test_report_parse_error_exits_1
     AIA::CLIParser.expects(:exit).with(1)
     _out, err = capture_io { AIA::CLIParser.send(:report_parse_error, AIA::ConfigurationError.new('boom')) }
@@ -319,33 +293,6 @@ class CLIParserToolsPathsTest < Minitest::Test
       assert_equal 1, result.size
     end
   end
-
-  def test_list_available_role_names
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-      File.write(File.join(roles_dir, 'architect.md'), '')
-      File.write(File.join(roles_dir, 'reviewer.md'), '')
-
-      result = AIA::CLIParser.send(:list_available_role_names, dir, 'roles')
-      assert_equal %w[architect reviewer], result
-    end
-  end
-
-  def test_list_available_role_names_empty
-    Dir.mktmpdir do |dir|
-      roles_dir = File.join(dir, 'roles')
-      Dir.mkdir(roles_dir)
-
-      result = AIA::CLIParser.send(:list_available_role_names, dir, 'roles')
-      assert_equal [], result
-    end
-  end
-
-  def test_list_available_role_names_no_dir
-    result = AIA::CLIParser.send(:list_available_role_names, '/nonexistent', 'roles')
-    assert_equal [], result
-  end
 end
 
 # P1: Verify CLI_TO_NESTED_MAP covers all flat CLI keys that need mapping
@@ -367,6 +314,7 @@ class CLIToNestedMapCompletenessTest < Minitest::Test
   # Runtime attributes set on Config but not routed to nested sections
   RUNTIME_KEYS = %i[
     remaining_args
+    list_roles
     prompt_id
     dump_file
     completion

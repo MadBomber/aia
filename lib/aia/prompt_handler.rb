@@ -8,12 +8,6 @@ module AIA
   class PromptHandler
     include AIA::SkillUtils
 
-    # Struct for path-based role content (bypasses PM parsing)
-    RoleContent = Struct.new(:content) do
-      def to_s = content
-      def metadata = nil
-    end
-
     # Root-level YAML keys that are shorthands for deeper config paths
     SHORTHAND_KEYS = %w[model temperature top_p next pipeline shell erb].freeze
 
@@ -309,8 +303,7 @@ module AIA
     end
 
     def fetch_role_from_path(role_id)
-      expanded = File.expand_path(role_id)
-      expanded += '.md' if File.extname(expanded).empty?
+      expanded = prompt_path(role_id)
 
       unless File.exist?(expanded)
         $stderr.puts "Warning: Role file not found at path: #{expanded}"
@@ -318,7 +311,9 @@ module AIA
         return handle_missing_role(role_id)
       end
 
-      RoleContent.new(File.read(expanded))
+      parsed = PM.parse(Pathname.new(expanded))
+      apply_metadata_config(parsed)
+      parsed
     end
 
     def fuzzy_search_prompt(prompt_id)

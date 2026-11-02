@@ -178,31 +178,11 @@ class RoleParsingTest < Minitest::Test
     assert_match(/Invalid model syntax/, error.message)
   end
 
-  # Test role validation: nonexistent role
-  def test_validate_nonexistent_role
-    error = assert_raises(AIA::ConfigurationError) do
-      AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=nonexistent')
-    end
-    assert_match(/Role file not found/, error.message)
-    assert_match(/Available roles:/, error.message)
-    assert_match(/architect/, error.message)
-  end
-
   # Test role validation: existing role passes
   def test_validate_existing_role
     # Should not raise error
     result = AIA::CLIParser.send(:parse_models_with_roles, 'gpt-4o=architect')
     assert_equal 'architect', result[0][:role]
-  end
-
-  # Test list_available_role_names
-  def test_list_available_role_names
-    roles = AIA::CLIParser.send(:list_available_role_names, @temp_dir, 'roles')
-
-    assert_includes roles, 'architect'
-    assert_includes roles, 'security'
-    assert_includes roles, 'performance'
-    assert_includes roles, 'specialized/senior_architect'
   end
 
   # Test complex real-world scenario
@@ -235,43 +215,5 @@ class RoleParsingTest < Minitest::Test
     assert_nil result[3][:role]
     assert_equal 1, result[3][:instance]
     assert_equal 'gemini', result[3][:internal_id]
-  end
-
-  def test_validate_role_absolute_path_existing_file
-    role_file = Tempfile.new(['role', '.md'])
-    role_file.write("You are an expert.")
-    role_file.close
-
-    # Should not raise
-    AIA::CLIParser.send(:validate_role_exists, role_file.path)
-  ensure
-    role_file.unlink if role_file
-  end
-
-  def test_validate_role_absolute_path_without_extension
-    Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'expert.md'), "You are an expert.")
-      role_path = File.join(dir, 'expert')
-
-      # Should not raise — auto-appends .md
-      AIA::CLIParser.send(:validate_role_exists, role_path)
-    end
-  end
-
-  def test_validate_role_relative_path_existing_file
-    Dir.mktmpdir do |dir|
-      File.write(File.join(dir, 'teacher.md'), "You are a teacher.")
-      # Build a ./... relative path that path_based_id? recognises and that
-      # File.expand_path resolves correctly from the current working directory.
-      relative = "./#{Pathname.new(dir).relative_path_from(Dir.pwd)}/teacher"
-      AIA::CLIParser.send(:validate_role_exists, relative)
-    end
-  end
-
-  def test_validate_role_absolute_path_missing_raises
-    error = assert_raises(AIA::ConfigurationError) do
-      AIA::CLIParser.send(:validate_role_exists, '/nonexistent/path/missing-role')
-    end
-    assert_match(/Role file not found/, error.message)
   end
 end

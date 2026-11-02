@@ -30,18 +30,15 @@ aia --role ./project_roles/onboarding_buddy.md explain setup.md
 aia --role ~/team/roles/architect explain design.md     # .md is optional
 ```
 
-!!! warning "Path roles and chat"
-    In `--chat` mode AIA currently loads roles only from the roles folder of your prompts directory. A role given as a path is silently ignored in chat, so copy (or symlink) it into `~/.prompts/roles/` first.
-
 What happens to the role depends on the mode:
 
 | Mode | Where the role goes |
 |------|---------------------|
 | Running a prompt or [pipeline](../prompts/pipelines.md) | Placed in front of **each** prompt's text, and also added to the **system prompt** |
 | `--chat` | Added to the **system prompt**, so it applies to every turn (if you start the chat with a prompt ID, it is also placed in front of that prompt) |
-| `--role` with no prompt ID and no `--chat` | Nothing runs: AIA stops with `A prompt ID is required…` unless you pipe text in |
+| `--role` with no prompt ID and no `--chat` | The role file itself runs as the prompt |
 
-The copy placed in front of a prompt is processed like a prompt file. The copy in the system prompt is the file's raw text: its front matter, ERB and `$(...)` are sent as written. A role given as a path never reaches the system prompt.
+Both copies are processed like a prompt file: the front matter is removed, and ERB and `$(...)` are expanded. Roles given as a path work the same way as roles from the roles folder, in every mode.
 
 ### Listing roles
 
@@ -60,9 +57,6 @@ You are a meticulous senior code reviewer. ...
 
 Files and folders whose names start with `_` are left out of the list, which is a convenient way to hide drafts.
 
-!!! note "Where `--list-roles` looks"
-    `--list-roles` reads the prompts directory from the `AIA_PROMPTS__DIR` environment variable, falling back to `~/.prompts`. It doesn't see a directory set only with `--prompts-dir` or in a config file.
-
 ### A different role per model
 
 When you run several models at once, each can play its own role. Append `=ROLE` to the model name:
@@ -71,7 +65,7 @@ When you run several models at once, each can play its own role. Append `=ROLE` 
 aia --model gpt-4o=optimist,claude-sonnet-4-5=skeptic --chat
 ```
 
-AIA checks that each role file exists before starting. If one doesn't, it lists the roles it found. (Like `--list-roles`, this check uses `AIA_PROMPTS__DIR` or `~/.prompts`.) More in [Multiple Models and Consensus](../extending/multi-model.md).
+AIA checks that each role file exists before starting. If one doesn't, it lists the roles it found. More in [Multiple Models and Consensus](../extending/multi-model.md).
 
 ### Changing the roles folder name
 
@@ -123,8 +117,7 @@ aia -s ~/notes/house_style.md summarize report.txt
 
 If a skill can't be found, AIA prints a warning (`Warning: Skill 'x' not found in …`) and carries on without it.
 
-!!! note "Path skills still need a skills directory"
-    `--skill` loads nothing, not even a path such as `./skills/release-checklist`, unless your skills directory (see [Where skills live](#where-skills-live)) exists. If it doesn't, the skills are skipped without a warning.
+If your skills directory (see [Where skills live](#where-skills-live)) doesn't exist, each named skill is skipped with a warning. Skills given as a path still load.
 
 | Mode | Where skills go |
 |------|-----------------|

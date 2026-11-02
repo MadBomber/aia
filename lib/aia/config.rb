@@ -60,7 +60,7 @@ module AIA
     # Runtime attributes (not loaded from config files)
     attr_accessor :provider # --provider: default provider for prefixless models; also scopes --list-models
     attr_accessor :prompt_id, :stdin_content, :remaining_args, :dump_file,
-                  :completion, :mcp_list, :list_tools, :list_skills,
+                  :completion, :mcp_list, :list_tools, :list_skills, :list_roles,
                   :executable_prompt_content,
                   :tool_names, :loaded_tools, :loaded_plugins,
                   :log_level_override, :log_file_override,

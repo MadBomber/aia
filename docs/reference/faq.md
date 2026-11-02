@@ -83,9 +83,9 @@ The option doesn't exist. `--terse`, `--regex` and `--skills-prefix` were remove
 
 An option got a value of the wrong kind: `-t`, `--top-p` and the penalties need a number, `--max-tokens` and `--refresh` a whole number, and `--tool-approval` one of `ask`, `approve`, `deny`. The message names the option and the value it rejected.
 
-### `ERROR: Role file not found: …/roles/reviewer.md`
+### `Role file not found: …/roles/reviewer.md`
 
-You used `-m MODEL=ROLE` and the role file doesn't exist. The message lists the roles that do exist. Note that this check looks in `$AIA_PROMPTS__DIR/roles` (or `~/.prompts/roles`) even if you passed `--prompts-dir`. `aia --list-roles` shows what is available. See [Roles & Skills](../everyday/roles-and-skills.md).
+You used `-m MODEL=ROLE` and the role file doesn't exist. The message lists the roles that do exist. `aia --list-roles` shows what is available. See [Roles & Skills](../everyday/roles-and-skills.md).
 
 ### `Warning: Invalid role ID or file not found: roles/reviewer`
 

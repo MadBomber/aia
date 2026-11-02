@@ -127,7 +127,6 @@ module AIA
     def load_skills_content(skill_ids, skills_base_dir)
       ids = Array(skill_ids).reject { |s| s.nil? || s.strip.empty? }
       return nil if ids.empty?
-      return nil unless skills_base_dir && Dir.exist?(skills_base_dir)
 
       contents = ids.filter_map { |id| load_single_skill_content(id, skills_base_dir) }
       contents.empty? ? nil : contents.join("\n\n")
@@ -140,6 +139,11 @@ module AIA
     # @param skills_base_dir [String] base directory for named skills
     # @return [String, nil] skill body text, or nil on error
     def load_single_skill_content(skill_id, skills_base_dir)
+      unless path_based_id?(skill_id) || (skills_base_dir && Dir.exist?(skills_base_dir))
+        $stderr.puts "Warning: Skill '#{skill_id}' not loaded: skills directory #{skills_base_dir.inspect} does not exist"
+        return nil
+      end
+
       skill_dir = find_skill_dir(skill_id, skills_base_dir)
       unless skill_dir
         $stderr.puts "Warning: Skill '#{skill_id}' not found in #{skills_base_dir}"
