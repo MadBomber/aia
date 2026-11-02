@@ -157,17 +157,22 @@ class VerificationProviderTest < Minitest::Test
 end
 
 class TaskBoardStartupTest < Minitest::Test
-  def test_prepare_task_board_starts_the_coordinator_when_trakflow_is_available
+  def test_prepare_task_board_loads_the_tools_without_touching_trakflow
     coordinator = AIA::StartupCoordinator.new(robot: nil, ui_presenter: nil)
-    coordinator.stubs(:trakflow_available?).returns(true)
-    coordinator.expects(:initialize_task_coordinator)
+    AIA::TaskBoard.stubs(:gem_available?).returns(true)
+    AIA::TaskBoard.expects(:ensure_project!).never
+    AIA::TaskBoard.expects(:coordinator).never
+
     coordinator.prepare_task_board
+
+    assert defined?(AIA::TaskBoardTool)
   end
 
   def test_prepare_task_board_skips_without_trakflow
     coordinator = AIA::StartupCoordinator.new(robot: nil, ui_presenter: nil)
-    coordinator.stubs(:trakflow_available?).returns(false)
-    coordinator.expects(:initialize_task_coordinator).never
-    coordinator.prepare_task_board
+    AIA::TaskBoard.stubs(:gem_available?).returns(false)
+    coordinator.expects(:require_relative).never
+
+    assert_nil coordinator.prepare_task_board
   end
 end

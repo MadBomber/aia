@@ -25,6 +25,9 @@ require_relative 'aia/utility'
 require_relative 'aia/mcp_server_config'
 require_relative 'aia/skill_utils'
 require_relative 'aia/role_catalog'
+require_relative 'aia/task_board'
+require_relative 'aia/trakflow_bridge'
+require_relative 'aia/task_coordinator'
 require_relative 'aia/version'
 require_relative 'aia/provider_registry'
 require_relative 'aia/config'
@@ -90,7 +93,15 @@ module AIA
   @turn_state = TurnState.new
 
   class << self
-    attr_accessor :config, :client, :session_tracker, :turn_state, :task_coordinator, :mcp_manager
+    attr_accessor :config, :client, :session_tracker, :turn_state, :mcp_manager
+    attr_writer :task_coordinator
+
+    # The TrakFlow task coordinator, started the first time it is asked for.
+    #
+    # @return [AIA::TaskCoordinator, nil]
+    def task_coordinator
+      @task_coordinator ||= TaskBoard.coordinator
+    end
 
     # Say goodbye when an interactive chat session ends. One-shot commands
     # (--version, --help, --mcp-list, piped prompts) exit silently.

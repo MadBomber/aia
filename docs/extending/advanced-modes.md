@@ -184,7 +184,7 @@ A system prompt that tells the chief when to use `/spawn`, `/decompose` and `/de
 
 ## Task tracking with TrakFlow
 
-AIA uses [TrakFlow](https://github.com/madbomber/trak_flow), a small local task tracker, to record plans and tasks. A TrakFlow project is marked by a `.trak_flow` directory. At startup AIA looks for one in the current directory and its parents, and **creates one in the current directory** if it finds none. The tasks themselves go in TrakFlow's database, which by default is `~/.config/trak_flow/tf.db`, shared by every project.
+AIA uses [TrakFlow](https://github.com/madbomber/trak_flow), a small local task tracker, to record plans and tasks. A TrakFlow project is marked by a `.trak_flow` directory. AIA starts TrakFlow only when a feature needs it: a task directive below, `/spawn` or `/delegate` work, `--track-pipeline`, or a model using the task-board tools. Then it looks for a `.trak_flow` directory in the current directory and its parents, and **creates one in the current directory** if it finds none. A session that uses none of these leaves nothing behind. The tasks themselves go in TrakFlow's database, which by default is `~/.config/trak_flow/tf.db`, shared by every project.
 
 ### Directives
 
@@ -207,7 +207,7 @@ Ready tasks (1):
 
 ### Tracking a pipeline
 
-`--track-pipeline` records a [pipeline](../prompts/pipelines.md) run as a TrakFlow plan, with one step per prompt. Each step is marked in progress, completed or blocked (with the error) as AIA works through it:
+`--track-pipeline` records a [pipeline](../prompts/pipelines.md) run as a TrakFlow plan, with one step per prompt. Each step is marked in progress, completed or blocked (with the error) as AIA works through it. A prompt that appears twice in the pipeline gets two steps, and each run updates its own. Without `--track-pipeline`, a pipeline run doesn't touch TrakFlow:
 
 ```bash
 aia --track-pipeline research --pipeline outline,draft

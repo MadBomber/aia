@@ -195,7 +195,7 @@ Yes. Put a `config/aia.yml` in the project and run aia from the project's root; 
 
 ### Shell completion doesn't offer my prompts
 
-The completion scripts list `.md` files under `$AIA_PROMPTS__DIR`, so that variable must be exported in your shell — setting `prompts.dir` in the config file isn't enough. See [`--completion`](cli.md#-completion-shell).
+The completion scripts list `.md` files under `$AIA_PROMPTS__DIR`, or `~/.prompts` when it is unset. They can't read your config file, so if your prompts live somewhere else, export `AIA_PROMPTS__DIR` in your shell — setting `prompts.dir` in the config file isn't enough. See [`--completion`](cli.md#-completion-shell).
 
 ## Models and output
 

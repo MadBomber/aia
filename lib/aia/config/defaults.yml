@@ -96,6 +96,7 @@ defaults:
   audio:
     voice: ~
     speak_command: say
+    player: ~
     speech_model: ~
     transcription_model: ~
 

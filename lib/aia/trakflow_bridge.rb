@@ -11,7 +11,9 @@ require "trak_flow"
 module AIA
   class TrakFlowBridge
     def initialize
-      @db = connect_database
+      @db      = connect_database
+      @steps   = Hash.new { |hash, key| hash[key] = [] } # prompt ID => this plan's unstarted steps
+      @current = {}                                     # prompt ID => the step now running
     end
 
     # Whether a TrakFlow project is initialized and the database is accessible.
@@ -40,6 +42,7 @@ module AIA
           title: "Step #{i + 1}: #{prompt_id}",
           type:  "task"
         })
+        @steps[prompt_id] << step
 
         if prev_step
           @db.add_dependency(TrakFlow::Models::Dependency.new(
@@ -60,13 +63,13 @@ module AIA
 
     # Update a task's status in TrakFlow.
     #
-    # @param step_name [String] task title to find
+    # @param step_name [String] the prompt ID of a step in the plan this bridge created
     # @param status [Symbol] :started, :completed, or :failed
     # @param reason [String, nil] reason for failure
     def update_step_status(step_name, status, reason: nil)
       return unless available?
 
-      task = find_task_by_title(step_name)
+      task = step_for(step_name, status)
       return unless task
 
       case status
@@ -157,7 +160,7 @@ module AIA
 
     # Connect to the TrakFlow database if a project is initialized.
     def connect_database
-      return nil unless TrakFlow.initialized?
+      return nil unless TaskBoard.ensure_project!
 
       db = TrakFlow::Storage::Database.new(TrakFlow.database_path)
       db.connect
@@ -166,10 +169,13 @@ module AIA
       nil
     end
 
-    # Find a task by its title (partial match).
-    def find_task_by_title(title)
-      tasks = @db.list_tasks(title: title)
-      tasks.first
+    # The step this bridge created for +prompt_id+. :started takes the next
+    # unstarted one (a prompt can appear twice); later updates reuse it.
+    # Steps are never looked up by title, so older plans can't collide.
+    def step_for(prompt_id, status)
+      return @current[prompt_id] unless status == :started
+
+      @current[prompt_id] = @steps[prompt_id].shift
     end
   end
 end

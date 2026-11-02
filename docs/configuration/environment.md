@@ -62,13 +62,7 @@ export AIA_PLUGINS_DIR=~/.config/aia/plugins
 
 ### `AIA_PROMPTS__DIR` and `AIA_PROMPTS__ROLES_PREFIX`
 
-Besides setting `prompts.dir` and `prompts.roles_prefix` normally, these two are read directly by:
-
-- `aia --list-roles`
-- the role check for `-m MODEL=ROLE`
-- the shell completion scripts from `aia --completion` (`AIA_PROMPTS__DIR` only)
-
-Those run before the config file is read, so they see only the environment (falling back to `~/.prompts` and `roles`). If you keep prompts somewhere other than `~/.prompts`, export `AIA_PROMPTS__DIR` rather than setting `prompts.dir` only in the config file.
+These set `prompts.dir` and `prompts.roles_prefix` like any other variable. `AIA_PROMPTS__DIR` matters in one more place: the shell completion scripts from `aia --completion` read it directly, because they run in your shell and can't read the config file. They fall back to `~/.prompts` when it is unset. If you keep prompts somewhere other than `~/.prompts` and want completion, export `AIA_PROMPTS__DIR` rather than setting `prompts.dir` only in the config file.
 
 ### `AIA_SKILLS__DIR`
 

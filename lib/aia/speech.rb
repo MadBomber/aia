@@ -7,8 +7,18 @@
 # includer that responds to it, and #speak only talks when --speak is on.
 # The /say directive calls Speech.speak_text directly.
 
+require 'shellwords'
+
 module AIA
   module Speech
+    # Players tried in order when audio.player is not set.
+    PLAYERS = [
+      %w[afplay],
+      %w[mpv --no-video --really-quiet],
+      %w[ffplay -nodisp -autoexit -loglevel quiet],
+      %w[mpg123 -q]
+    ].freeze
+
     module_function
 
     # Speak +text+ with the configured speak command (audio.speak_command,
@@ -45,9 +55,32 @@ module AIA
       tmpfile.close
       path = tmpfile.path
       run_with_spinner("Converting to audio...") { system(env, command, text, path) }
-      run_with_spinner("Speaking...") { system('afplay', path) } if File.size?(path)
+      play(path) if File.size?(path)
     ensure
       tmpfile&.unlink
+    end
+
+    # Play an audio file with audio.player, or the first known player found.
+    def play(path)
+      player = player_command(AIA.config.audio.player)
+      unless player
+        $stderr.puts "Warning: No audio player found. Set audio.player (for example `mpv`)."
+        return
+      end
+
+      run_with_spinner("Speaking...") { system(*player, path) }
+    end
+
+    # The player command as an argument list: the configured one (split like
+    # a shell would), or the first of PLAYERS on the PATH.
+    def player_command(configured)
+      return Shellwords.split(configured.to_s) unless configured.to_s.strip.empty?
+
+      PLAYERS.find { on_path?(it.first) }
+    end
+
+    def on_path?(program)
+      ENV['PATH'].to_s.split(File::PATH_SEPARATOR).any? { File.executable?(File.join(it, program)) }
     end
 
     def run_with_spinner(message)

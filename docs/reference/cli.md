@@ -486,7 +486,7 @@ See [Images & Speech](../extending/images-and-speech.md) for walkthroughs.
 
 ### `--speak`
 
-In a chat session, speak each response aloud after it is shown. Prompts run without `--chat` aren't spoken. See [Images & Speech](../extending/images-and-speech.md).
+Speak each response aloud after it is shown: every reply in a chat, the reply to a one-shot prompt, and each step of a pipeline. `--paint` results aren't spoken. See [Images & Speech](../extending/images-and-speech.md).
 
 | Default | Config key | Env |
 |---|---|---|
@@ -510,7 +510,7 @@ aia --speak --voice Samantha daily_briefing
 
 ### `--speak-command CMD`
 
-The program that speaks. With `say`, aia calls `say [-v VOICE] TEXT`. Any other command is called as `CMD TEXT OUTFILE`; it must write an audio file to `OUTFILE`, which aia then plays with `afplay`. The speech model is in `$SPEECH_MODEL`.
+The program that speaks. With `say`, aia calls `say [-v VOICE] TEXT`. Any other command is called as `CMD TEXT OUTFILE`; it must write an audio file to `OUTFILE`, which aia then plays with your audio player (`audio.player`; see [`config-keys`](config-keys.md)). The speech model is in `$SPEECH_MODEL`.
 
 | Default | Config key | Env |
 |---|---|---|
@@ -522,7 +522,7 @@ aia --speak --speak-command ~/bin/openai_tts.sh --speech-model tts-1-hd my_promp
 
 ### `--paint`
 
-Generate an image from the prompt instead of a text response.
+Generate an image from the prompt instead of a text response. The image is saved next to the output file with a `.png` extension; the output file itself isn't written, and nothing is spoken.
 
 | Default | Config key | Env |
 |---|---|---|
@@ -741,7 +741,7 @@ This is the quickest way to answer "where did that setting come from?". See [The
 
 ### `--completion SHELL`
 
-Print a tab-completion script for `bash`, `zsh` or `fish` and exit. The script completes prompt IDs after `aia` by listing the `.md` files under **`$AIA_PROMPTS__DIR`**, so that variable must be set in your shell; elsewhere it falls back to ordinary file completion.
+Print a tab-completion script for `bash`, `zsh` or `fish` and exit. Any other shell name is an error (exit status 1). The script completes prompt IDs after `aia` by listing the `.md` files under **`$AIA_PROMPTS__DIR`**, or `~/.prompts` when that variable is unset. The script can't read your config file, so if your prompts live elsewhere, export `AIA_PROMPTS__DIR`. Elsewhere on the command line it falls back to ordinary file completion.
 
 === "bash"
 

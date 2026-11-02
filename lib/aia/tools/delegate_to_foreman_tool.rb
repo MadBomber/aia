@@ -17,8 +17,10 @@ module AIA
               description: "Natural language description of the task board operation " \
                            "(e.g., 'create a research task about recessions assigned to Tobor with labels research, economics')"
 
+    # Offered whenever TrakFlow is installed; the task board starts when
+    # Foreman first needs it.
     def available?
-      AIA.task_coordinator&.available? || false
+      AIA::TaskBoard.gem_available?
     end
 
     def execute(request:, **_params)

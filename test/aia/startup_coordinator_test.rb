@@ -73,23 +73,6 @@ class StartupCoordinatorTest < Minitest::Test
     coordinator.run(@config)
   end
 
-  # initialize_task_coordinator must NOT call clear! on the task coordinator.
-  # Wiping task state on every startup silently destroys prior session work.
-  def test_initialize_task_coordinator_does_not_call_clear
-    mock_tc = mock('task_coordinator')
-    mock_tc.expects(:clear!).never
-
-    AIA::TaskCoordinator.stubs(:new).returns(mock_tc)
-    AIA.stubs(:task_coordinator=)
-    AIA.stubs(:task_coordinator).returns(mock_tc)
-    TrakFlow.stubs(:initialized?).returns(true)
-
-    coordinator = AIA::StartupCoordinator.new(
-      robot: mock('robot'), ui_presenter: @ui
-    )
-    coordinator.send(:initialize_task_coordinator)
-  end
-
   def test_attach_bus_failure_logs_debug_warn
     robot = mock('network_robot')
     robot.stubs(:is_a?).with(RobotLab::Network).returns(true)
@@ -98,13 +81,5 @@ class StartupCoordinatorTest < Minitest::Test
     AIA.expects(:debug_warn).with(regexp_matches(/bus/i), has_key(:exc)).once
     coordinator = AIA::StartupCoordinator.new(robot: robot, ui_presenter: mock('ui'))
     coordinator.send(:attach_bus_if_network)  # must not raise
-  end
-
-  def test_task_coordinator_failure_logs_debug_warn
-    TrakFlow.stubs(:initialized?).returns(false)
-    AIA::StartupCoordinator.any_instance.stubs(:ensure_trakflow_initialized).raises(StandardError, "db error")
-    AIA.expects(:debug_warn).with(regexp_matches(/TaskCoordinator|coordinator/i), has_key(:exc)).once
-    coordinator = AIA::StartupCoordinator.new(robot: mock('robot'), ui_presenter: mock('ui'))
-    coordinator.send(:initialize_task_coordinator)  # must not raise
   end
 end

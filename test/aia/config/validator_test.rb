@@ -620,10 +620,10 @@ class ValidatorCompletionScriptTest < Minitest::Test
   end
 
   def test_generate_completion_script_missing_shell
-    _, err = capture_io do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::ConfigValidator.send(:generate_completion_script, 'nonexistent_shell')
     end
-    assert_includes err, 'not supported'
+    assert_includes error.message, 'not supported'
   end
 
   def test_generate_completion_script_existing_shell

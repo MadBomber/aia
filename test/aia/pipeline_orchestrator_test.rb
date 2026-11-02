@@ -84,6 +84,45 @@ class PipelineOrchestratorTest < Minitest::Test
     orchestrator.process(@config)
   end
 
+  def test_process_speaks_each_response_when_speak_is_on
+    stub_prompt
+    AIA.stubs(:paint?).returns(false)
+    AIA.stubs(:speak?).returns(true)
+    AIA::Speech.expects(:speak_text).with("AI response").once
+    orchestrator = build_orchestrator
+    orchestrator.stubs(:compute_result).returns([OpenStruct.new(reply: "AI response"), "AI response"])
+
+    orchestrator.process(@config)
+  end
+
+  def test_process_stays_quiet_when_speak_is_off
+    stub_prompt
+    AIA.stubs(:paint?).returns(false)
+    AIA.stubs(:speak?).returns(false)
+    AIA::Speech.expects(:speak_text).never
+
+    build_orchestrator.process(@config)
+  end
+
+  def test_process_paint_neither_writes_the_output_file_nor_speaks
+    stub_prompt
+    AIA.stubs(:paint?).returns(true)
+    AIA.stubs(:speak?).returns(true)
+    orchestrator = build_orchestrator
+    orchestrator.stubs(:compute_result).returns([OpenStruct.new(reply: "x"), "Image saved to out.png"])
+    orchestrator.expects(:output_to_file).never
+    AIA::Speech.expects(:speak_text).never
+
+    orchestrator.process(@config)
+  end
+
+  def test_process_leaves_trakflow_alone_without_track_pipeline
+    stub_prompt
+    AIA::TrakFlowBridge.expects(:new).never
+
+    build_orchestrator.process(@config)
+  end
+
   def test_build_prompt_text_appends_skills_in_pipeline_mode
     Dir.mktmpdir do |skills_base|
       skill_dir = File.join(skills_base, 'expert')
@@ -145,6 +184,13 @@ class PipelineOrchestratorTest < Minitest::Test
   end
 
   private
+
+  def stub_prompt
+    parsed = mock('parsed')
+    parsed.stubs(:parameters).returns(nil)
+    parsed.stubs(:to_s).returns("prompt text")
+    @prompt_handler.stubs(:fetch_prompt).returns(parsed)
+  end
 
   def build_orchestrator
     AIA::PipelineOrchestrator.new(

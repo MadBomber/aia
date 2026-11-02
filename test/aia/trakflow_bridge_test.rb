@@ -163,9 +163,9 @@ class TrakFlowBridgeTest < Minitest::Test
 
   def test_update_step_status_sets_in_progress
     bridge = stub_connected_bridge
-    task = TrakFlow::Models::Task.new(title: "my_step", status: "open")
+    task = TrakFlow::Models::Task.new(title: "Step 1: my_step", status: "open")
+    plan_steps(bridge, "my_step" => [task])
 
-    @mock_db.stubs(:list_tasks).with(title: "my_step").returns([task])
     @mock_db.expects(:update_task).with { |t| t.status == "in_progress" }
 
     bridge.update_step_status("my_step", :started)
@@ -173,30 +173,49 @@ class TrakFlowBridgeTest < Minitest::Test
 
   def test_update_step_status_closes_on_completed
     bridge = stub_connected_bridge
-    task = TrakFlow::Models::Task.new(title: "my_step", status: "in_progress")
+    task = TrakFlow::Models::Task.new(title: "Step 1: my_step", status: "open")
+    plan_steps(bridge, "my_step" => [task])
 
-    @mock_db.stubs(:list_tasks).with(title: "my_step").returns([task])
-    @mock_db.expects(:update_task).with { |t| t.status == "closed" }
-
+    @mock_db.expects(:update_task).twice
+    bridge.update_step_status("my_step", :started)
     bridge.update_step_status("my_step", :completed)
+
+    assert_equal "closed", task.status
   end
 
   def test_update_step_status_blocks_on_failed
     bridge = stub_connected_bridge
-    task = TrakFlow::Models::Task.new(title: "my_step", status: "in_progress")
+    task = TrakFlow::Models::Task.new(title: "Step 1: my_step", status: "open")
+    plan_steps(bridge, "my_step" => [task])
 
-    @mock_db.stubs(:list_tasks).with(title: "my_step").returns([task])
-    @mock_db.expects(:update_task).with { |t| t.status == "blocked" }
-
+    @mock_db.expects(:update_task).twice
+    bridge.update_step_status("my_step", :started)
     bridge.update_step_status("my_step", :failed, reason: "timeout")
+
+    assert_equal "blocked", task.status
+  end
+
+  def test_update_step_status_tracks_repeated_prompt_ids_in_order
+    bridge = stub_connected_bridge
+    first  = TrakFlow::Models::Task.new(title: "Step 1: same", status: "open")
+    second = TrakFlow::Models::Task.new(title: "Step 2: same", status: "open")
+    plan_steps(bridge, "same" => [first, second])
+    @mock_db.stubs(:update_task)
+
+    bridge.update_step_status("same", :started)
+    bridge.update_step_status("same", :completed)
+    bridge.update_step_status("same", :started)
+
+    assert_equal "closed", first.status
+    assert_equal "in_progress", second.status
   end
 
   def test_update_step_status_ignores_missing_task
     bridge = stub_connected_bridge
-    @mock_db.stubs(:list_tasks).returns([])
+    @mock_db.expects(:update_task).never
 
-    # Should not raise or call update
     bridge.update_step_status("nonexistent", :started)
+    bridge.update_step_status("nonexistent", :completed)
   end
 
   # =========================================================================
@@ -224,6 +243,11 @@ class TrakFlowBridgeTest < Minitest::Test
   private
 
   # Stub a bridge with a connected mock database.
+  def plan_steps(bridge, steps)
+    table = bridge.instance_variable_get(:@steps)
+    steps.each { |id, tasks| table[id].concat(tasks) }
+  end
+
   def stub_connected_bridge
     TrakFlow.stubs(:initialized?).returns(true)
     TrakFlow.stubs(:database_path).returns("/tmp/test_tf.db")

@@ -129,6 +129,14 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - `--mcp` JSON servers accept every YAML server key (`prefix`, `only`, `except`, `requires_approval`, `url`, `headers` …) in both JSON forms, and a `url` with no `type` is Streamable HTTP.
   - Ollama works without `OLLAMA_API_BASE`: it defaults to `http://localhost:11434/v1`, and `--list-models` honors `<PROVIDER>_API_BASE`.
   - The default image model is `gpt-image-1` (`dall-e-3` is no longer in RubyLLM's catalogue).
+- **Output, speech and side effects:**
+  - `--speak` speaks one-shot prompts and each pipeline step, not only chat replies.
+  - New `audio.player` (`AIA_AUDIO__PLAYER`) plays the file a custom speak command writes. Unset, AIA uses the first of `afplay`, `mpv`, `ffplay` and `mpg123` on the `PATH` instead of always calling `afplay`.
+  - TrakFlow starts on first use, so a session that records no tasks no longer creates `.trak_flow/` in the current directory. Pipelines touch TrakFlow only with `--track-pipeline`.
+  - `--paint` no longer writes "Image saved to: …" into the output file.
+  - `--completion` with an unsupported shell exits 1.
+  - The completion scripts fall back to `~/.prompts` when `AIA_PROMPTS__DIR` is unset.
+  - `--track-pipeline` updates the steps of the plan it created, in order, instead of matching any task whose title contains the prompt ID.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

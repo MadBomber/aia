@@ -89,7 +89,8 @@ models:
 | Key | Type | Default | Env | CLI | Meaning |
 |---|---|---|---|---|---|
 | `audio.voice` | string | unset | `AIA_AUDIO__VOICE` | `--voice` | Voice name, passed to `say -v`. |
-| `audio.speak_command` | string | `say` | `AIA_AUDIO__SPEAK_COMMAND` | `--speak-command` | Program that speaks responses. Other than `say`, it is called as `CMD TEXT OUTFILE` and the resulting file is played with `afplay`. |
+| `audio.speak_command` | string | `say` | `AIA_AUDIO__SPEAK_COMMAND` | `--speak-command` | Program that speaks responses. Other than `say`, it is called as `CMD TEXT OUTFILE` and the resulting file is played with `audio.player`. |
+| `audio.player` | string | unset | `AIA_AUDIO__PLAYER` | — | Command that plays the file a custom speak command writes, e.g. `mpv --no-video`. Unset: the first of `afplay`, `mpv`, `ffplay`, `mpg123` found on your `PATH`. |
 | `audio.speech_model` | string | unset | `AIA_AUDIO__SPEECH_MODEL` | `--speech-model` | Passed to the speak command as `$SPEECH_MODEL`. |
 | `audio.transcription_model` | string | unset | `AIA_AUDIO__TRANSCRIPTION_MODEL` | `--transcription-model` | Speech-to-text model for the session. |
 

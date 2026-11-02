@@ -471,11 +471,12 @@ module AIA
       def generate_completion_script(shell)
         script_path = File.join(File.dirname(__FILE__), "../aia_completion.#{shell}")
 
-        if File.exist?(script_path)
-          puts File.read(script_path)
-        else
-          $stderr.puts "ERROR: The shell '#{shell}' is not supported or the completion script is missing."
+        unless File.exist?(script_path)
+          raise AIA::ConfigurationError,
+                "ERROR: The shell '#{shell}' is not supported (use bash, zsh or fish)."
         end
+
+        puts File.read(script_path)
       end
 
       def prepare_pipeline(config)

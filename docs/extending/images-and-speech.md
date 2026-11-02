@@ -61,14 +61,15 @@ Available LLMs for text_to_image:
 
 ## Hearing replies with `--speak`
 
-In a chat, `--speak` reads every reply aloud, including replies from crewmates you address with `@name`:
+`--speak` reads replies aloud: every reply in a chat, including replies from crewmates you address with `@name`, the reply to a one-shot prompt, and each step of a pipeline:
 
 ```bash
 aia --chat --speak
 aia --chat --speak --voice Samantha
+aia --speak daily_briefing
 ```
 
-`--speak` works in chat sessions. Prompts you run without `--chat` aren't spoken.
+Images from `--paint` aren't spoken.
 
 ### The default: macOS `say`
 
@@ -82,7 +83,7 @@ To use a cloud voice or another text-to-speech engine, point `--speak-command` a
 aia --chat --speak --speak-command ~/bin/tts.sh
 ```
 
-AIA runs the command with two arguments: the text to speak, and the path of an `.mp3` file to write. When the command has written that file, AIA plays it with `afplay`. `afplay` comes with macOS, so on other systems the file is written but not played. For example:
+AIA runs the command with two arguments: the text to speak, and the path of an `.mp3` file to write. When the command has written that file, AIA plays it with `audio.player`. If you haven't set one, AIA uses the first of `afplay` (built into macOS), `mpv`, `ffplay` and `mpg123` that it finds on your `PATH`, and warns if it finds none. For example:
 
 ```bash
 #!/usr/bin/env bash
@@ -97,6 +98,14 @@ curl -s https://api.openai.com/v1/audio/speech \
 ```
 
 `--speech-model` (`--sm`) is handed to your command as the `SPEECH_MODEL` environment variable. AIA doesn't use it any other way. The config key for the command is `audio.speak_command` (default `say`).
+
+To choose the player yourself, set `audio.player` in your config file or `AIA_AUDIO__PLAYER` in the environment. The value is a command line; AIA adds the file path at the end:
+
+```yaml
+audio:
+  speak_command: ~/bin/tts.sh
+  player: mpv --no-video --really-quiet
+```
 
 ### Speaking a single line: `/say`
 

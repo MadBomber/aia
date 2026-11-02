@@ -37,50 +37,17 @@ module AIA
       attach_bus_if_network
     end
 
-    # Start the TrakFlow task board. Call this before the robot is built: the
-    # task-board tools (DelegateToForemanTool) only offer themselves once it
-    # is running, and the robot collects its tools when it is built.
+    # Load the task-board tools. Call this before the robot is built, since
+    # the robot collects its tools when it is built. The board itself
+    # (TaskBoard) starts only when something records a task.
     def prepare_task_board
-      initialize_task_coordinator if trakflow_available?
+      return unless TaskBoard.gem_available?
+
+      require_relative 'tools/task_board_tool'
+      require_relative 'tools/delegate_to_foreman_tool'
     end
 
     private
-
-    # Initialize TaskCoordinator, auto-creating the TrakFlow project if needed.
-    def initialize_task_coordinator
-      require_relative 'task_coordinator'
-      require_relative 'trakflow_bridge'
-      require_relative 'tools/task_board_tool'
-      require_relative 'tools/delegate_to_foreman_tool'
-
-      ensure_trakflow_initialized unless TrakFlow.initialized?
-
-      AIA.task_coordinator = TaskCoordinator.new
-    rescue StandardError => e
-      AIA.debug_warn("TaskCoordinator initialization failed (non-fatal): #{e.message}", exc: e)
-    end
-
-    # Return true if the trak_flow gem is available; false if it cannot be loaded.
-    def trakflow_available?
-      defined?(TrakFlow) || begin
-        require 'trak_flow'
-        true
-      rescue LoadError
-        false
-      end
-    end
-
-    # Bootstrap a TrakFlow project so the task board is always available.
-    # Uses the default database path (~/.config/trak_flow/tf.db).
-    def ensure_trakflow_initialized
-      trakflow_dir = TrakFlow.trak_flow_dir
-      FileUtils.mkdir_p(trakflow_dir)
-
-      db = TrakFlow::Storage::Database.new
-      db.connect
-
-      TrakFlow.reset_root!
-    end
 
     # Attach a shared TypedBus to multi-model networks.
     def attach_bus_if_network

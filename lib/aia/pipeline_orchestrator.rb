@@ -12,6 +12,7 @@ require_relative 'skill_utils'
 module AIA
   class PipelineOrchestrator
     include ContentExtractor
+    include Speech
     include SkillUtils
 
     # :reek:LongParameterList -- collaborators injected for isolated testing
@@ -30,8 +31,9 @@ module AIA
     # :reek:TooManyStatements -- shift-based loop so front-matter pipeline edits take effect; tracking interleaved
     # :reek:DuplicateMethodCall -- config.pipeline is deliberately re-read each iteration because prompt front matter mutates it mid-loop
     def process(config)
-      bridge   = TrakFlowBridge.new
-      tracking = bridge.available? && config.flags.track_pipeline
+      # Only --track-pipeline starts TrakFlow for a pipeline run.
+      bridge   = config.flags.track_pipeline ? TrakFlowBridge.new : nil
+      tracking = bridge&.available? || false
 
       bridge.create_plan_from_pipeline(config.pipeline) if tracking
 
@@ -62,7 +64,11 @@ module AIA
           )
 
           @ui.display_ai_response(content)
-          output_to_file(content, config)
+          # An image was saved next to the output file; there is no text to keep or speak.
+          unless AIA.paint?
+            output_to_file(content, config)
+            speak(content)
+          end
           display_metrics(result, config)
           @ui.display_separator
         rescue StandardError => e
