@@ -1,0 +1,3752 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A powerful CLI tool for dynamic prompt management and AI interaction">
+      
+      
+        <meta name="author" content="Dewayne VanHoozer">
+      
+      
+        <link rel="canonical" href="https://madbomber.github.io/aia/reference/directives/">
+      
+      
+        <link rel="prev" href="../cli/">
+      
+      
+        <link rel="next" href="../config-keys/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Directives - AIA - AI Assistant</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/css/custom.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#directives-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AIA - AI Assistant" class="md-header__button md-logo" aria-label="AIA - AI Assistant" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AIA - AI Assistant
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Directives
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/madbomber/aia" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    madbomber/aia
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../everyday/running-prompts/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Everyday Use
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../prompts/prompt-files/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Writing Prompts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../extending/tools/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Extending AIA
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../configuration/config-file/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Configuration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../cli/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../appendix/upgrading-2.0/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Appendix
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AIA - AI Assistant" class="md-nav__button md-logo" aria-label="AIA - AI Assistant" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AIA - AI Assistant
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/madbomber/aia" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    madbomber/aia
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quick-tour/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Tour
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/first-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Your First Prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Everyday Use
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Everyday Use
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../everyday/running-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../everyday/chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat Sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../everyday/context-and-piping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Context Files & Piping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../everyday/roles-and-skills/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roles & Skills
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../everyday/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choosing Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../everyday/output-and-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output & History
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Prompts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Writing Prompts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prompts/prompt-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prompt Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prompts/parameters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parameters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prompts/directives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prompts/erb-and-shell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ERB & Shell
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prompts/plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prompts/pipelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prompts/executable-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Executable Prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extending AIA
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Extending AIA
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extending/tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extending/mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Servers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extending/multi-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multiple Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extending/crews/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Crews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extending/local-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extending/images-and-speech/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Images & Speech
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extending/advanced-modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/config-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/precedence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Precedence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directives
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntax
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add_recruit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /add_recruit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available_models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /available_models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /checkpoint
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoints_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /checkpoints_list
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /clear
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compare" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /compare
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concurrent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /concurrent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cost" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /cost
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /debate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decompose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /decompose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delegate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /delegate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drop_recruit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /drop_recruit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /help
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#include" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /include
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#insert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /insert
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /mcp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orchestrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /orchestrate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /paste
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reskill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /reskill
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /restore
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#robot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /robot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#robots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /robots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ruby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /ruby
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#say" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /say
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skill
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skills
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spawn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /spawn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#temperature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /temperature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#top_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /top_p
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /verify
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#webpage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /webpage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-keys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ & Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Appendix
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../appendix/upgrading-2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading to 2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../appendix/migrating-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrating Prompts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../appendix/glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntax
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#add_recruit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /add_recruit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available_models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /available_models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /checkpoint
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoints_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /checkpoints_list
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /clear
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compare" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /compare
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concurrent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /concurrent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cost" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /cost
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /debate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decompose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /decompose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delegate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /delegate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drop_recruit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /drop_recruit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /help
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#include" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /include
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#insert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /insert
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /mcp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orchestrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /orchestrate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /paste
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reskill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /reskill
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /restore
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#robot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /robot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#robots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /robots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ruby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /ruby
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#say" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /say
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skill
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /skills
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spawn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /spawn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /task
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#temperature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /temperature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#top_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /top_p
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /verify
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#webpage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /webpage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../cli/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Reference
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/madbomber/aia/edit/main/docs/reference/directives.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/madbomber/aia/raw/main/docs/reference/directives.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="directives-reference">Directives Reference<a class="headerlink" href="#directives-reference" title="Permanent link">&para;</a></h1>
+<p>This page lists every directive in AIA 2.0 in alphabetical order, with its aliases, arguments and an example. For an introduction, read <a href="../../prompts/directives/">Directives</a> first.</p>
+<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>Form</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chat</td>
+<td><code>/name arg1 arg2</code></td>
+<td>Must be on a line by itself. The name is case-insensitive. Arguments are split on spaces, and quotes don't group words.</td>
+</tr>
+<tr>
+<td>Prompt file</td>
+<td><code>&lt;%= name 'arg1', 'arg2' %&gt;</code></td>
+<td>An ERB tag. Its result replaces the tag. A directive with no arguments is just <code>&lt;%= name %&gt;</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Use in</strong> shows where each directive is meant to be used:</p>
+<ul>
+<li><strong>Chat</strong>: designed for interactive sessions.</li>
+<li><strong>Prompt</strong>: returns text, so it is useful inside a prompt file.</li>
+<li><strong>Both</strong>: useful in either place.</li>
+</ul>
+<p><strong>Chat output</strong> describes what happens to the result in a chat session:</p>
+<ul>
+<li><strong>Sent</strong>: AIA prints the result and also sends it to the model as part of the conversation.</li>
+<li><strong>Shown</strong>: AIA prints the result only. Nothing reaches the model.</li>
+<li><strong>Next prompt</strong>: AIA turns on a mode that applies to your next message only.</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Directive</th>
+<th>Aliases</th>
+<th>Use in</th>
+<th>Chat output</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#add_recruit"><code>/add_recruit</code></a></td>
+<td><code>/add</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Add a persistent robot to the crew</td>
+</tr>
+<tr>
+<td><a href="#available_models"><code>/available_models</code></a></td>
+<td><code>/am</code>, <code>/available</code>, <code>/models</code>, <code>/all_models</code>, <code>/llms</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Search the model list</td>
+</tr>
+<tr>
+<td><a href="#checkpoint"><code>/checkpoint</code></a></td>
+<td><code>/ckp</code>, <code>/cp</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Save a point in the conversation</td>
+</tr>
+<tr>
+<td><a href="#checkpoints_list"><code>/checkpoints_list</code></a></td>
+<td><code>/checkpoints</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>List checkpoints</td>
+</tr>
+<tr>
+<td><a href="#clear"><code>/clear</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Forget the conversation</td>
+</tr>
+<tr>
+<td><a href="#compare"><code>/compare</code></a></td>
+<td><code>/cmp</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Ask several models the same thing</td>
+</tr>
+<tr>
+<td><a href="#concurrent"><code>/concurrent</code></a></td>
+<td><code>/conc</code></td>
+<td>Chat</td>
+<td>Next prompt</td>
+<td>Query MCP server groups in parallel</td>
+</tr>
+<tr>
+<td><a href="#config"><code>/config</code></a></td>
+<td><code>/cfg</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Show or change settings</td>
+</tr>
+<tr>
+<td><a href="#cost"><code>/cost</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Token and cost report as CSV</td>
+</tr>
+<tr>
+<td><a href="#debate"><code>/debate</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Next prompt</td>
+<td>Multi-round debate between robots</td>
+</tr>
+<tr>
+<td><a href="#decompose"><code>/decompose</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Next prompt</td>
+<td>Split a prompt into parallel sub-tasks</td>
+</tr>
+<tr>
+<td><a href="#delegate"><code>/delegate</code></a></td>
+<td><code>/del</code></td>
+<td>Chat</td>
+<td>Next prompt</td>
+<td>Assign sub-tasks to robots via TrakFlow</td>
+</tr>
+<tr>
+<td><a href="#drop_recruit"><code>/drop_recruit</code></a></td>
+<td><code>/drop</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Remove a robot from the crew</td>
+</tr>
+<tr>
+<td><a href="#help"><code>/help</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>List all directives</td>
+</tr>
+<tr>
+<td><a href="#include"><code>/include</code></a></td>
+<td></td>
+<td>Both</td>
+<td>Sent</td>
+<td>Insert another file, processed as a prompt</td>
+</tr>
+<tr>
+<td><a href="#insert"><code>/insert</code></a></td>
+<td><code>/read</code></td>
+<td>Both</td>
+<td>Sent</td>
+<td>Insert a file's raw text</td>
+</tr>
+<tr>
+<td><a href="#mcp"><code>/mcp</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>MCP server status and tools</td>
+</tr>
+<tr>
+<td><a href="#model"><code>/model</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Show or switch the model</td>
+</tr>
+<tr>
+<td><a href="#orchestrate"><code>/orchestrate</code></a></td>
+<td><code>/orch</code></td>
+<td>Chat</td>
+<td>Next prompt</td>
+<td>Three-tier orchestration</td>
+</tr>
+<tr>
+<td><a href="#paste"><code>/paste</code></a></td>
+<td><code>/clipboard</code></td>
+<td>Both</td>
+<td>Sent</td>
+<td>Insert the clipboard contents</td>
+</tr>
+<tr>
+<td><a href="#plan"><code>/plan</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Sent</td>
+<td>Create a TrakFlow plan</td>
+</tr>
+<tr>
+<td><a href="#plugins"><code>/plugins</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>List loaded plugins</td>
+</tr>
+<tr>
+<td><a href="#reskill"><code>/reskill</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Reset a crew member with new skills</td>
+</tr>
+<tr>
+<td><a href="#restore"><code>/restore</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Go back to a checkpoint</td>
+</tr>
+<tr>
+<td><a href="#review"><code>/review</code></a></td>
+<td><code>/context</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Show the conversation</td>
+</tr>
+<tr>
+<td><a href="#robot"><code>/robot</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>ASCII robot art</td>
+</tr>
+<tr>
+<td><a href="#robots"><code>/robots</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Show the active robot(s)</td>
+</tr>
+<tr>
+<td><a href="#ruby"><code>/ruby</code></a></td>
+<td><code>/rb</code></td>
+<td>Chat</td>
+<td>Sent</td>
+<td>Run Ruby (needs <code>--allow-ruby-eval</code>)</td>
+</tr>
+<tr>
+<td><a href="#say"><code>/say</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Speak text aloud</td>
+</tr>
+<tr>
+<td><a href="#skill"><code>/skill</code></a></td>
+<td></td>
+<td>Both</td>
+<td>Sent</td>
+<td>Insert a skill's text</td>
+</tr>
+<tr>
+<td><a href="#skills"><code>/skills</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>List skills</td>
+</tr>
+<tr>
+<td><a href="#spawn"><code>/spawn</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Next prompt</td>
+<td>One-off specialist robot</td>
+</tr>
+<tr>
+<td><a href="#task"><code>/task</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Sent</td>
+<td>Create a TrakFlow task</td>
+</tr>
+<tr>
+<td><a href="#tasks"><code>/tasks</code></a></td>
+<td><code>/tf</code></td>
+<td>Chat</td>
+<td>Sent</td>
+<td>Show TrakFlow ready tasks</td>
+</tr>
+<tr>
+<td><a href="#temperature"><code>/temperature</code></a></td>
+<td><code>/temp</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Set temperature</td>
+</tr>
+<tr>
+<td><a href="#tools"><code>/tools</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>List available tools</td>
+</tr>
+<tr>
+<td><a href="#top_p"><code>/top_p</code></a></td>
+<td><code>/topp</code></td>
+<td>Chat</td>
+<td>Shown</td>
+<td>Set top-p</td>
+</tr>
+<tr>
+<td><a href="#verify"><code>/verify</code></a></td>
+<td></td>
+<td>Chat</td>
+<td>Next prompt</td>
+<td>Two answers plus reconciliation</td>
+</tr>
+<tr>
+<td><a href="#webpage"><code>/webpage</code></a></td>
+<td><code>/website</code>, <code>/web</code></td>
+<td>Both</td>
+<td>Sent</td>
+<td>Insert a web page as Markdown</td>
+</tr>
+</tbody>
+</table>
+<p>Front matter keys such as <code>next:</code> and <code>pipeline:</code> aren't directives. See <a href="../../prompts/prompt-files/#front-matter-keys">Prompt Files</a>. There are no <code>/next</code> or <code>/pipeline</code> chat directives.</p>
+<hr />
+<h2 id="add_recruit">/add_recruit<a class="headerlink" href="#add_recruit" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/add</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>/add_recruit NAME [PROVIDER/MODEL] [skill:ID[,ID...]] [SYSTEM PROMPT...]
+</span></code></pre></div>
+<p>Adds a robot named <code>NAME</code> to the crew. A recruit stays for the rest of the session, and you can address it with <code>@NAME</code>.</p>
+<ul>
+<li>With only a name, the recruit uses the session's model.</li>
+<li>Use <code>-</code> or <code>inherit</code> in place of a model to keep the session's model while still giving a system prompt.</li>
+<li>Each <code>skill:ID</code> token assigns one or more <a href="../../everyday/roles-and-skills/">skills</a>. The skills become the recruit's role.</li>
+<li>Everything after the model is the recruit's system prompt.</li>
+</ul>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>/add_recruit critic openai/gpt-4o You are a blunt code reviewer.
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>/add tester - skill:rspec_writer
+</span></code></pre></div>
+<p>AIA replies <code>Recruited 'critic' into the crew (openai/gpt-4o).</code> If it can't add the recruit, it replies <code>Recruit failed: ...</code>. See <a href="../../extending/crews/">Crews</a>.</p>
+<h2 id="available_models">/available_models<a class="headerlink" href="#available_models" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/am</code>, <code>/available</code>, <code>/models</code>, <code>/all_models</code>, <code>/llms</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>/available_models [TERM ...]
+</span></code></pre></div>
+<p>Lists models with their provider, input price per million tokens, context window, modalities and capabilities.</p>
+<ul>
+<li>A plain term (or <code>+term</code>) keeps the models whose entry contains it.</li>
+<li><code>-term</code>, <code>~term</code> or <code>!term</code> removes the models whose entry contains it.</li>
+<li>A term with <code>_to_</code>, such as <code>text_to_image</code>, filters by modality.</li>
+<li>If your current model has a <code>provider/</code> prefix, AIA asks that provider for its live model list instead.</li>
+</ul>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/models claude -haiku
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>/am text_to_image
+</span></code></pre></div>
+<h2 id="checkpoint">/checkpoint<a class="headerlink" href="#checkpoint" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/ckp</code>, <code>/cp</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>/checkpoint [NAME]
+</span></code></pre></div>
+<p>Saves the current conversation under <code>NAME</code>. Without a name, checkpoints are numbered <code>1</code>, <code>2</code>, <code>3</code> and so on. Checkpoints last only for the current session.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>/checkpoint before_refactor
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Checkpoint 'before_refactor' created at position 6.
+</span></code></pre></div>
+<h2 id="checkpoints_list">/checkpoints_list<a class="headerlink" href="#checkpoints_list" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/checkpoints</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Lists the saved checkpoints with their position, the time each was created, and a preview of the last message you sent before it.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>/checkpoints
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>=== Available Checkpoints ===
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  before_refactor: position 6, created 14:02:11
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    → "Now refactor the parser to use a state machine"
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>=== End of Checkpoints ===
+</span></code></pre></div>
+<h2 id="clear">/clear<a class="headerlink" href="#clear" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>/clear [--all]
+</span></code></pre></div>
+<p>Removes the conversation history from every robot in the session. The system prompt is kept unless you add <code>--all</code>. All checkpoints are deleted too.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>/clear
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>Chat context cleared.
+</span></code></pre></div>
+<h2 id="compare">/compare<a class="headerlink" href="#compare" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/cmp</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>/compare PROMPT --models MODEL1,MODEL2[,...]
+</span></code></pre></div>
+<p>Sends the prompt to each listed model separately and prints each response under the model's name. The models don't see your conversation.</p>
+<p>Every word that isn't part of <code>--models</code> belongs to the prompt.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>/compare Write a haiku about autumn --models gpt-4o-mini,claude-haiku-4-5
+</span></code></pre></div>
+<h2 id="concurrent">/concurrent<a class="headerlink" href="#concurrent" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/conc</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
+<p>Runs your next message with your MCP servers split into independent groups that are queried in parallel. This needs more than one MCP server that is relevant to the prompt, in at least two groups. Otherwise the message runs normally. To do this automatically on every prompt, use <code>--concurrent-auto</code>. See <a href="../../extending/mcp/">MCP Servers</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>/concurrent
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Compare the open GitHub issues with the TODOs in the local repository.
+</span></code></pre></div>
+<h2 id="config">/config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/cfg</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>/config                  # show every setting
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>/config SECTION          # show one top-level section, e.g. llm, flags, output
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>/config KEY VALUE        # change a setting
+</span></code></pre></div>
+<p><code>KEY</code> can be:</p>
+<ul>
+<li>An option name, such as <code>temperature</code>, <code>max_tokens</code>, <code>debug</code>, <code>verbose</code>, <code>consensus</code> or <code>tokens</code></li>
+<li>A dotted path, such as <code>llm.max_tokens</code> or <code>output.file</code></li>
+</ul>
+<p>The change lasts for the rest of the session only. Model settings such as <code>temperature</code>, <code>top_p</code> and <code>llm.*</code> apply from your next message: AIA retunes the running robot, and every crewmate, without losing the conversation. See <a href="../../configuration/precedence/#when-layers-6-and-7-take-effect">Configuration Precedence</a>. AIA warns <code>Unknown config option 'x'</code> if it doesn't recognize the key.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>/config llm
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>/config debug true
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>/config llm.max_tokens 4000
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Value types</p>
+<p>AIA converts the value to the setting's type: numbers for <code>temperature</code> or <code>llm.max_tokens</code>, true/false for on/off settings (<code>true</code>, <code>yes</code>, <code>on</code>, <code>1</code> / <code>false</code>, <code>no</code>, <code>off</code>, <code>0</code>), and comma-separated lists for list settings. A value that doesn't fit is stored as you typed it.</p>
+</div>
+<h2 id="cost">/cost<a class="headerlink" href="#cost" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Prints a CSV table of the session's turns. It shows the model, input, output and total tokens, the cost and the elapsed time for each turn, followed by a <code>TOTAL</code> row. If an output file is set, the CSV is also appended to it.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>/cost
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>model,input_tokens,output_tokens,total_tokens,cost,elapsed
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>gpt-4o-mini,412,256,668,$0.00022,2.1s
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>TOTAL,412,256,668,$0.00022,2.1s
+</span></code></pre></div>
+<h2 id="debate">/debate<a class="headerlink" href="#debate" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
+<p>Your next message becomes the subject of a debate among the robots in the session. The debate runs at least 2 rounds and at most 5, and stops early when the robots agree. You need at least two robots, from several models (<code>--model a,b</code>) or from recruits. With only one robot, the message runs normally. See <a href="../../extending/advanced-modes/">Advanced Modes</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>/debate
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>Should a small team start with a monolith or microservices?
+</span></code></pre></div>
+<h2 id="decompose">/decompose<a class="headerlink" href="#decompose" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
+<p>Splits your next message into independent sub-tasks, runs them in parallel, and combines the results. Timing figures show how long the work took in parallel compared with one after another. If the message can't usefully be split, it runs normally.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>/decompose
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>Summarize the pros and cons of Postgres, MySQL and SQLite for a mobile backend.
+</span></code></pre></div>
+<h2 id="delegate">/delegate<a class="headerlink" href="#delegate" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/del</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
+<p>Breaks your next message into sub-tasks, assigns each one to a robot in the crew, records the plan in TrakFlow, and runs it. This needs more than one robot and an initialized TrakFlow project (<code>tf init</code>). Otherwise the message runs normally.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>/delegate
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>Design the database schema, write the migration, and write tests for it.
+</span></code></pre></div>
+<h2 id="drop_recruit">/drop_recruit<a class="headerlink" href="#drop_recruit" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/drop</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>/drop_recruit NAME
+</span></code></pre></div>
+<p>Removes a recruit from the crew.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>/drop critic
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>Dropped 'critic' from the crew.
+</span></code></pre></div>
+<h2 id="help">/help<a class="headerlink" href="#help" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Lists every directive, including <a href="../../prompts/directives/#writing-your-own-directive">custom ones</a>, grouped by category with their aliases and descriptions.</p>
+<h2 id="include">/include<a class="headerlink" href="#include" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Both · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>/include PATH                       # chat
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>&lt;%= include 'PATH' %&gt;               # prompt file
+</span></code></pre></div>
+<p>Inserts another file after processing it as a prompt. Its shell references, ERB and parameters are all handled, and it can include other files in turn. In a prompt file, <code>PATH</code> is relative to the directory of the file that contains the tag. In chat, it is relative to your current directory. Include loops are detected and stop with an error. <code>include</code> isn't available in executable or piped prompts. Use <code>insert</code> there.</p>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>&lt;%= include 'shared/house_style.md' %&gt;
+</span></code></pre></div>
+<h2 id="insert">/insert<a class="headerlink" href="#insert" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/read</code> · <strong>Use in:</strong> Both · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>/insert PATH
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>&lt;%= insert 'PATH' %&gt;
+</span></code></pre></div>
+<p>Inserts a file's text exactly as it is, with no shell expansion, ERB or parameters. Paths resolve the same way as for <code>include</code>, or against the current directory when there is no prompt file.</p>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>Review this code:
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>&lt;%= insert 'lib/parser.rb' %&gt;
+</span></code></pre></div>
+<h2 id="mcp">/mcp<a class="headerlink" href="#mcp" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Shows how many MCP servers are defined, connected and failed. It lists each connected server's tools and the error for each failed server.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>/mcp
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>MCP Server Status
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>=================
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>Defined: 2  Connected: 1  Failed: 1
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>Connected Servers:
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>  github (26 tools)
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>    - list_issues
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>    ...
+</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>Failed Servers:
+</span><span id="__span-24-12"><a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>  postgres: connection refused
+</span></code></pre></div>
+<h2 id="model">/model<a class="headerlink" href="#model" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>/model                       # show details of the current model(s)
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>/model MODEL[,MODEL...]      # switch to one or more models
+</span></code></pre></div>
+<p>With no argument, AIA shows the current model's details. With several models, it shows each one's provider, context window, prices and capabilities.</p>
+<p>Switching keeps your conversation: by default the old model summarizes it for the new one. Set <code>model_switch_history</code> to <code>replay</code> (re-send your messages) or <code>clean</code> (start fresh). <code>MODEL</code> can also be an alias such as <code>sonnet</code> or <code>cheap</code>, or one you define under <code>model_aliases</code>.</p>
+<p>See <a href="../../everyday/models/">Choosing Models</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>/model claude-sonnet-4
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>/model gpt-4o,claude-sonnet-4
+</span></code></pre></div>
+<h2 id="orchestrate">/orchestrate<a class="headerlink" href="#orchestrate" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/orch</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
+<p>Treats your next message as a set of application requirements. Three tiers of robots work on it: an orchestrator, lead agents and specialists. See <a href="../../extending/advanced-modes/">Advanced Modes</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>/orchestrate
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>Build a command-line tool that tracks reading habits, with a SQLite store and a weekly report.
+</span></code></pre></div>
+<h2 id="paste">/paste<a class="headerlink" href="#paste" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/clipboard</code> · <strong>Use in:</strong> Both · <strong>Chat output:</strong> Sent</p>
+<p>Inserts the text on your system clipboard.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>/paste
+</span></code></pre></div>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>Fix the grammar in this paragraph:
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>&lt;%= paste %&gt;
+</span></code></pre></div>
+<h2 id="plan">/plan<a class="headerlink" href="#plan" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>/plan DESCRIPTION
+</span></code></pre></div>
+<p>Creates a TrakFlow item from the description. This needs an initialized TrakFlow project (<code>tf init</code>). Otherwise AIA prints <code>TrakFlow not available. Run 'tf init' to initialize a project.</code></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>/plan Migrate the reporting jobs from cron to Solid Queue
+</span></code></pre></div>
+<h2 id="plugins">/plugins<a class="headerlink" href="#plugins" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Lists the <a href="../../prompts/plugins/">plugins</a> that are currently loaded, by file name without <code>.rb</code>.</p>
+<h2 id="reskill">/reskill<a class="headerlink" href="#reskill" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>/reskill NAME [skill:ID[,ID...]] [SYSTEM PROMPT...]
+</span></code></pre></div>
+<p>Clears a crew member's conversation and gives it new skills, a new system prompt, or both.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>/reskill critic skill:security_review
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>Reskilled 'critic' with security_review (clean slate).
+</span></code></pre></div>
+<h2 id="restore">/restore<a class="headerlink" href="#restore" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>/restore [NAME]
+</span></code></pre></div>
+<p>Returns the conversation to a checkpoint. Everything after it is discarded, and so are any checkpoints saved after it. Without a name, AIA restores the checkpoint before the most recent one. That takes at least two checkpoints.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>/restore before_refactor
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>Context restored to checkpoint 'before_refactor' (position 6).
+</span></code></pre></div>
+<h2 id="review">/review<a class="headerlink" href="#review" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/context</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Prints the conversation so far, one numbered line per message, with 📍 markers where checkpoints were saved. Long messages are shortened, and tool calls are summarized.</p>
+<h2 id="robot">/robot<a class="headerlink" href="#robot" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Prints AIA's ASCII robot.</p>
+<h2 id="robots">/robots<a class="headerlink" href="#robots" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<p>Shows the active robot or robots and the mode: Single, Crew, Parallel, Pipeline or Consensus. For each robot it shows the model and provider, the cost per 1K input and output tokens, how many local and MCP tools it has, and its role.</p>
+<h2 id="ruby">/ruby<a class="headerlink" href="#ruby" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/rb</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>/ruby RUBY CODE
+</span></code></pre></div>
+<p>Evaluates one line of Ruby and sends the result to the model. <strong>Disabled by default.</strong> Enable it with <code>--allow-ruby-eval</code>, or with <code>flags: { allow_ruby_eval: true }</code> in <code>~/.config/aia/aia.yml</code>. While it is disabled, the directive only prints an error. While it is enabled, AIA prints a warning to STDERR before it runs the code. If the code raises an error, the error message is sent in place of a result.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>/ruby Dir.glob('spec/**/*_spec.rb').size
+</span></code></pre></div>
+<p>See <a href="../../prompts/erb-and-shell/#running-ruby-in-chat-ruby">ERB &amp; Shell</a> and <a href="../../configuration/security/">Security</a>.</p>
+<h2 id="say">/say<a class="headerlink" href="#say" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>/say TEXT
+</span></code></pre></div>
+<p>Speaks the text with your speak command (<code>--speak-command</code> or <code>audio.speak_command</code>; the macOS <code>say</code> command by default). With <code>say</code>, AIA uses your voice (<code>--voice</code> or <code>audio.voice</code>) if you've set one. Without text, AIA prints <code>Usage: /say TEXT</code> and sends nothing to the model. To have every response spoken, use <code>--speak</code>. See <a href="../../extending/images-and-speech/">Images &amp; Speech</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>/say The build is green
+</span></code></pre></div>
+<h2 id="skill">/skill<a class="headerlink" href="#skill" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Both · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>/skill ID
+</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>&lt;%= skill 'ID' %&gt;
+</span></code></pre></div>
+<p>Inserts the <code>SKILL.md</code> text of a skill from your skills directory (default <code>~/.prompts/skills</code>). <code>ID</code> can be the start of a skill's directory name, or a path that begins with <code>/</code>, <code>./</code>, <code>../</code> or <code>~/</code>, to a skill folder or to a <code>.md</code> / <code>.markdown</code> file. See <a href="../../everyday/roles-and-skills/">Roles &amp; Skills</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>/skill changelog
+</span></code></pre></div>
+<h2 id="skills">/skills<a class="headerlink" href="#skills" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>/skills [TERM ...]
+</span></code></pre></div>
+<p>Lists the skills in your skills directory with their name and description. Terms filter the list by the text of each skill's front matter: a plain term must appear, and a <code>-term</code> must not.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>/skills ruby -rails
+</span></code></pre></div>
+<h2 id="spawn">/spawn<a class="headerlink" href="#spawn" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-44-1"><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>/spawn                                       # AIA picks a specialist for the next prompt
+</span><span id="__span-44-2"><a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a>/spawn TYPE                                  # a specialist of this kind
+</span><span id="__span-44-3"><a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a>/spawn NAME PROVIDER/MODEL [SYSTEM PROMPT]   # exactly the specialist you describe
+</span></code></pre></div>
+<p>Creates a one-off specialist robot to answer your next message. Unlike a <a href="#add_recruit">recruit</a>, a spawned specialist doesn't join the crew. In the full form, use <code>-</code> or <code>inherit</code> as the model to keep the session's model, and add <code>skill:&lt;id&gt;</code> to give the specialist a skill. A specialist gets the chief's tools and MCP servers. See <a href="../../extending/crews/">Crews</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-45-1"><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>/spawn security
+</span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a>Review this login controller for vulnerabilities: &lt;%= insert 'app/controllers/sessions_controller.rb' %&gt;
+</span></code></pre></div>
+<h2 id="task">/task<a class="headerlink" href="#task" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-46-1"><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>/task TITLE
+</span></code></pre></div>
+<p>Creates a TrakFlow task with the given title. Like <code>/plan</code>, it needs an initialized TrakFlow project.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-47-1"><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>/task Add retry logic to the webhook sender
+</span></code></pre></div>
+<h2 id="tasks">/tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/tf</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-48-1"><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>/tasks             # ready tasks
+</span><span id="__span-48-2"><a id="__codelineno-48-2" name="__codelineno-48-2" href="#__codelineno-48-2"></a>/tasks summary     # project summary
+</span></code></pre></div>
+<p>Shows TrakFlow tasks that are ready to work on, or a summary of the project.</p>
+<h2 id="temperature">/temperature<a class="headerlink" href="#temperature" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/temp</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-49-1"><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>/temperature VALUE
+</span></code></pre></div>
+<p>Sets the sampling temperature for the rest of the session. Lower values give more focused answers, and higher values give more varied ones. This is the same as <code>/config temperature VALUE</code>. In 2.0.0 the robot that is already running keeps its old temperature. The new value applies after you switch with <code>/model</code>, and to robots built later in the session.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-50-1"><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a>/temp 0.2
+</span></code></pre></div>
+<h2 id="tools">/tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-51-1"><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a>/tools [FILTER]
+</span></code></pre></div>
+<p>Lists the tools the model can call, both local and MCP, with their descriptions. <code>FILTER</code> keeps only the tools whose name or description contains that text. See <a href="../../extending/tools/">Tools</a>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-52-1"><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a>/tools file
+</span></code></pre></div>
+<h2 id="top_p">/top_p<a class="headerlink" href="#top_p" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/topp</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Shown</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-53-1"><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>/top_p VALUE
+</span></code></pre></div>
+<p>Sets top-p (nucleus) sampling for the rest of the session. This is the same as <code>/config top_p VALUE</code>. Like <code>/temperature</code>, it doesn't change the robot that is already running until you switch with <code>/model</code>. Some providers reject requests that set both temperature and top-p.</p>
+<h2 id="verify">/verify<a class="headerlink" href="#verify" title="Permanent link">&para;</a></h2>
+<p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
+<p>Gets two independent answers to your next message, then reconciles them into one answer. This is useful for questions where a single answer might be confidently wrong.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-54-1"><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>/verify
+</span><span id="__span-54-2"><a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a>How many weekdays are there between 2026-11-02 and 2026-12-25 inclusive?
+</span></code></pre></div>
+<h2 id="webpage">/webpage<a class="headerlink" href="#webpage" title="Permanent link">&para;</a></h2>
+<p><strong>Aliases:</strong> <code>/website</code>, <code>/web</code> · <strong>Use in:</strong> Both · <strong>Chat output:</strong> Sent</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-55-1"><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>/webpage URL
+</span><span id="__span-55-2"><a id="__codelineno-55-2" name="__codelineno-55-2" href="#__codelineno-55-2"></a>&lt;%= webpage 'URL' %&gt;
+</span></code></pre></div>
+<p>Fetches a web page through the <a href="https://pure.md">pure.md</a> service and inserts it as Markdown. This requires the <code>PUREMD_API_KEY</code> environment variable. Without it, AIA prints <code>ERROR: PUREMD_API_KEY is required in order to include a webpage</code>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-56-1"><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>/web https://docs.ruby-lang.org/en/master/NEWS_md.html
+</span></code></pre></div>
+<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../prompts/directives/">Directives</a>: concepts, categories and writing your own</li>
+<li><a href="../../everyday/chat/">Chat Sessions</a>: directives in everyday chat</li>
+<li><a href="../cli/">CLI Options</a>: the command-line equivalents of many settings</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024 Dewayne VanHoozer
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/madbomber/aia" target="_blank" rel="noopener" title="AIA on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://rubygems.org/gems/aia" target="_blank" rel="noopener" title="AIA on RubyGems" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M116.7 33.8c4.5-6.1 11.7-9.8 19.3-9.8h240c7.6 0 14.8 3.6 19.3 9.8l112 152c6.8 9.2 6.1 21.9-1.5 30.4l-232 256c-4.5 5-11 7.9-17.8 7.9s-13.2-2.9-17.8-7.9l-232-256c-7.7-8.5-8.3-21.2-1.5-30.4zm38.5 39.8c-3.3 2.5-4.2 7-2.1 10.5l57.4 95.7L63.3 192c-4.1.3-7.3 3.8-7.3 8s3.2 7.6 7.3 8l192 16h1.3l192-16c4.1-.3 7.3-3.8 7.3-8s-3.2-7.6-7.3-8l-147.2-12.3 57.4-95.6c2.1-3.5 1.2-8.1-2.1-10.5s-7.9-2-10.7 1l-90 97.6-90.1-97.6c-2.8-3-7.4-3.4-10.7-1"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.path", "navigation.indexes", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../../assets/js/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
