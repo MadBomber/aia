@@ -189,9 +189,9 @@ Work through [Troubleshooting a setting](../configuration/precedence.md#troubles
 
 Environment values are plain text, and aia treats the text `false` as *on* for most switches. `unset AIA_FLAGS__TOKENS` instead. See [Environment Variables](../configuration/environment.md).
 
-### A temperature or model in my prompt's front matter is ignored
+### A temperature or model in my prompt's front matter is ignored, or the run crashes
 
-In 2.0.0, the model connection is built once at startup from your config files, environment and command line. `model:`, `temperature:` and `top_p:` in front matter update the configuration but don't retune the robot that is already running. Give them on the command line instead (`-m`, `-t`), or use `/model` in chat, which rebuilds the robot with the current settings. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
+In 2.0.0, the model connection is built once at startup from your config files, environment and command line. `temperature:` and `top_p:` in front matter update the configuration but don't retune the robot that is already running. A front-matter `model:` makes the run stop with `NoMethodError: undefined method 'name' for an instance of String` after the model replies; remove it. Give them on the command line instead (`-m`, `-t`), or use `/model` in chat, which rebuilds the robot with the current settings. See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
 
 ### Can I have per-project settings?
 

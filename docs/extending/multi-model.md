@@ -100,17 +100,10 @@ Switching to claude-sonnet-4-5 (conversation: summarize)...
 > /model gpt-4o-mini,claude-haiku-4-5
 ```
 
-The conversation so far comes with you. How it's carried over is set by `model_switch_history` in your config file:
+The conversation so far comes with you: the old model writes a summary of the conversation, and the new model starts from that summary. This costs one extra request.
 
-| Value | What the new model gets |
-|-------|-------------------------|
-| `summarize` (default) | The old model writes a summary of the conversation, and the new model starts from that summary. This costs one extra request. |
-| `replay` | Every message you sent is re-sent to the new model, one at a time. This is the most faithful option but makes one request per message you typed. |
-| `clean` | Nothing. The new model starts fresh. |
-
-```yaml
-model_switch_history: replay
-```
+!!! note "`model_switch_history` has no effect in 2.0.0"
+    `defaults.yml` and the 2.0.0 changelog describe a `model_switch_history` setting (`summarize`, `replay`, `clean`), but aia 2.0.0 never loads it, so every switch summarizes. For a fresh start, run `/clear` after `/model`.
 
 Tools and MCP servers are turned off while AIA replays or summarizes, so the transfer can't cause side effects.
 

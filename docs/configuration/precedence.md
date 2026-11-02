@@ -50,7 +50,7 @@ List every date mentioned in the text, one per line, in ISO 8601.
 
 \* Environment values reach aia as text; see the caution on [Environment Variables](environment.md). The order is the same for every key.
 
-If you then run `aia -t 0.2 extract_dates contract.txt`, the prompt's `temperature: 0.0` replaces `0.2` in the configuration when the prompt is loaded — but see the next section for when that reaches the model.
+If you then run `aia -t 0.2 extract_dates contract.txt`, the prompt's `temperature: 0.0` replaces `0.2` in the configuration when the prompt is loaded, but the model still runs at `0.2`. The next section explains why.
 
 Check any combination without calling a model by adding `--dump`:
 
@@ -66,7 +66,7 @@ Config successfully dumped to /tmp/c.yml
 
 aia builds the model connection (the *robot*) once, at startup, from layers 1–5. Front matter and directives are applied later, while aia runs, and they update the configuration from that point on. Two things follow:
 
-- **Model settings in front matter or chat don't retune the robot that is already running.** In 2.0.0, `model:`, `temperature:` and `top_p:` in a prompt's front matter, and `/temperature`, `/top_p` or `/config llm.…` in chat, change the configuration, but the running robot keeps the model and parameters it was built with. `/model` is the exception: it rebuilds the robot, and the new one picks up the current configuration, including any temperature you changed. To be sure a prompt runs with particular model settings, give them on the command line (or put them in a `-c` config file).
+- **Model settings in front matter or chat don't retune the robot that is already running.** In 2.0.0, `temperature:` and `top_p:` in a prompt's front matter, and `/temperature`, `/top_p` or `/config llm.…` in chat, change the configuration, but the running robot keeps the parameters it was built with. A front-matter `model:` is worse: the run stops with a `NoMethodError` after the model replies, so don't use it. `/model` is the exception: it rebuilds the robot, and the new one picks up the current configuration, including any temperature you changed. To be sure a prompt runs with particular model settings, give them on the command line (or put them in a `-c` config file).
 - **Other settings apply right away** — for example the output file, the pipeline (`next:` / `pipeline:`), or flags such as `tokens`.
 
 ### Front matter lasts for the rest of the run

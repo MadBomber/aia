@@ -47,6 +47,9 @@ for a <%= target_audience %> reader:
 
 Settings move into YAML front matter, placeholders become ERB, and each parameter gets a default (`null` means aia will ask for it). See [Prompt Files](../prompts/prompt-files.md) and [Parameters](../prompts/parameters.md).
 
+!!! warning "Remove migrated model settings"
+    The script turns `//config model …` into a front-matter `model:`, and `//temperature` / `//top_p` into `temperature:` / `top_p:`. In 2.0.0 a front-matter `model:` stops the run with an error and the other two have no effect, so delete those lines after migrating and pass `-m` / `-t` on the command line instead. See [Prompt Files](../prompts/prompt-files.md#front-matter-keys).
+
 ## Get the script
 
 `migrate_prompts` is not installed with the gem. It lives in the aia repository and needs nothing but Ruby:

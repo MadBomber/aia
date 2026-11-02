@@ -6,7 +6,7 @@
 
   <img src="docs/assets/images/aia.png" alt="Robots waiter ready to take your order."><br />
   **The Prompt is the Code**<br />
-  <p>Check out the new <a href="http://madbomber.github.io/aia/guides/models/?h=inline+role+syntax#inline-role-syntax">Inline Role Syntax</a> when working with multiple concurrent models.</p>
+  <p>Check out the new <a href="https://madbomber.github.io/aia/extending/multi-model/#giving-each-model-a-role">Inline Role Syntax</a> when working with multiple concurrent models.</p>
 </div>
 
 ---
@@ -833,7 +833,7 @@ answer to `@name`, and inherit the chief's tools and MCP servers.
 ```
 
 Unlike `/spawn` — a one-shot specialist for the next prompt only — recruited
-members stay in the crew. See the [Crews guide](docs/guides/crew.md) for the
+members stay in the crew. See the [Crews guide](docs/extending/crews.md) for the
 full picture.
 
 #### Dynamic Model Switching

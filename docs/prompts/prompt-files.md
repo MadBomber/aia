@@ -70,7 +70,6 @@ A prompt file has two parts. The first is an optional YAML **front matter** bloc
 
 ```markdown
 ---
-temperature: 0.3
 parameters:
   language: Ruby
   focus: readability
@@ -102,9 +101,6 @@ AIA understands these keys at the top level of the front matter:
 | Key | What it does | Example |
 |-----|--------------|---------|
 | `parameters` | Declares the values the prompt needs. A `null` (empty) value means required. | `parameters: { name: null, tone: friendly }` |
-| `model` | Model to use for this prompt | `model: gpt-4o` |
-| `temperature` | Sampling temperature | `temperature: 0.9` |
-| `top_p` | Top-p sampling value | `top_p: 0.8` |
 | `next` | Prompt ID to run after this one | `next: explain_joke` |
 | `pipeline` | List of prompt IDs to run after this one | `pipeline: [evaluate, pick_best]` |
 | `shell` | `false` turns off shell expansion for this file | `shell: false` |
@@ -113,6 +109,9 @@ AIA understands these keys at the top level of the front matter:
 
 `next` and `pipeline` cannot both appear in one file. AIA stops with an error if they do.
 
+!!! warning "Don't put model settings in front matter"
+    In 2.0.0, a top-level `model:` key stops the run with a `NoMethodError` after the model has replied, so you never see the response. `temperature:` and `top_p:` (and `llm:` keys under `config:`) are accepted but have no effect, because the model connection is built before the prompt is read. Put model settings on the command line instead (`-m`, `-t`, `--top-p`), or on the shebang line of an [executable prompt](executable-prompts.md). See [Configuration Precedence](../configuration/precedence.md#when-layers-6-and-7-take-effect).
+
 ### The `config:` section
 
 Use `config:` for any setting that has no shortcut key. It takes the same nested keys as `~/.config/aia/aia.yml` (see [Config Keys](../reference/config-keys.md)):
@@ -120,15 +119,13 @@ Use `config:` for any setting that has no shortcut key. It takes the same nested
 ```yaml
 ---
 config:
-  llm:
-    max_tokens: 800
   flags:
     tokens: true
 ---
 Summarize the attached file in five bullet points.
 ```
 
-Don't set a value both ways. If `temperature:` and `config: { llm: { temperature: ... } }` are both in one file, AIA stops with a `Conflict:` error that names both keys.
+Don't set a value both ways. If a top-level key such as `temperature:` and the matching `config:` key are both in one file, AIA stops with a `Conflict:` error that names both keys.
 
 ### Other keys
 
@@ -138,7 +135,6 @@ AIA ignores any front matter key it doesn't recognize. That makes the front matt
 ---
 description: Weekly status report for the platform team
 author: dewayne
-temperature: 0.4
 ---
 ```
 
@@ -172,9 +168,6 @@ If fzf isn't installed, `aia --fuzzy` stops with `Error: 'fzf' is not installed.
     ```bash
     mkdir -p ~/.prompts
     cat > ~/.prompts/commit_message.md <<'EOF'
-    ---
-    temperature: 0.2
-    ---
     Write a conventional commit message for the following staged diff.
     Use a subject line under 60 characters, then a short body.
 

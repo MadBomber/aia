@@ -37,13 +37,13 @@ Set the corresponding API key as an environment variable (e.g., `OPENAI_API_KEY`
 
 `00_setup_aia.sh` — Verifies that `aia` is installed and `ANTHROPIC_API_KEY` is set, creates the `prompts_dir/` directory, and writes `aia_config.yml` (model `claude-haiku-4-5`). Run this once before any other demo.
 
-Docs: [Getting Started](https://madbomber.github.io/aia/guides/getting-started/), [Installation](https://madbomber.github.io/aia/installation/), [Local Models](https://madbomber.github.io/aia/guides/local-models/)
+Docs: [Quick Tour](https://madbomber.github.io/aia/getting-started/quick-tour/), [Installation](https://madbomber.github.io/aia/getting-started/installation/), [Local Models](https://madbomber.github.io/aia/extending/local-models/)
 
 ### 01 — Basic Usage
 
 `01_basic_usage.sh` — The simplest case: send a prompt file to a model and print the response. Demonstrates the `-c` config flag and `--no-output` to suppress file output.
 
-Docs: [Basic Usage](https://madbomber.github.io/aia/guides/basic-usage/), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Running Prompts](https://madbomber.github.io/aia/everyday/running-prompts/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 02 — YAML Front Matter
 
@@ -51,55 +51,55 @@ Docs: [Basic Usage](https://madbomber.github.io/aia/guides/basic-usage/), [CLI R
 
 **Supported front matter keys:** `model`, `temperature`, `top_p`, `next`, `pipeline`, `shell`, `erb`
 
-Docs: [Configuration](https://madbomber.github.io/aia/configuration/), [Prompt Management](https://madbomber.github.io/aia/prompt_management/)
+Docs: [Config File](https://madbomber.github.io/aia/configuration/config-file/), [Prompt Files](https://madbomber.github.io/aia/prompts/prompt-files/)
 
 ### 03 — Shell Integration
 
 `03_shell_integration.sh` — Demonstrates `$(command)` and `$ENVAR` expansion in prompts. Part 1 shows shell expansion on (default); Part 2 uses `shell: false` in front matter to pass the raw `$(...)` text through to the model.
 
-Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Configuration](https://madbomber.github.io/aia/configuration/)
+Docs: [ERB & Shell](https://madbomber.github.io/aia/prompts/erb-and-shell/), [Config File](https://madbomber.github.io/aia/configuration/config-file/)
 
 ### 04 — ERB Templating
 
 `04_erb_templating.sh` — Demonstrates `<%= expression %>` ERB tags in prompts. Part 1 shows ERB evaluation on (default); Part 2 uses `erb: false` in front matter to send the literal ERB tags to the model.
 
-Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Configuration](https://madbomber.github.io/aia/configuration/)
+Docs: [ERB & Shell](https://madbomber.github.io/aia/prompts/erb-and-shell/), [Config File](https://madbomber.github.io/aia/configuration/config-file/)
 
 ### 05 — Shell Then ERB
 
 `05_shell_then_erb.sh` — Demonstrates that shell expansion runs before ERB processing. Shell output becomes part of the Ruby expression that ERB evaluates. For example, `<%= "$(uname -s)".downcase %>` first expands to `<%= "Darwin".downcase %>`, then ERB produces `darwin`.
 
-Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/)
+Docs: [ERB & Shell](https://madbomber.github.io/aia/prompts/erb-and-shell/)
 
 ### 06 — Prompt Chaining
 
 `06_prompt_chaining.sh` — Chains two prompts so the output of the first becomes context for the second. Part 1 uses the `--next` CLI flag; Part 2 uses the `next:` front matter key. Both produce the same result.
 
-Docs: [Workflows and Pipelines](https://madbomber.github.io/aia/workflows-and-pipelines/), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Pipelines](https://madbomber.github.io/aia/prompts/pipelines/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 07 — Pipeline
 
 `07_pipeline.sh` — Runs a four-step pipeline where each prompt refines the previous response: brainstorm names, evaluate them, pick the best, write a tagline. Uses `--pipeline` with comma-separated prompt IDs. Notes that the same chain can be defined via `pipeline:` in front matter.
 
-Docs: [Workflows and Pipelines](https://madbomber.github.io/aia/workflows-and-pipelines/), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Pipelines](https://madbomber.github.io/aia/prompts/pipelines/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 08 — Context Files
 
 `08_context_files.sh` — Attaches external file contents to a prompt using positional arguments after the prompt ID. The model receives both the prompt and the file contents, allowing it to reference them in its response.
 
-Docs: [Basic Usage](https://madbomber.github.io/aia/guides/basic-usage/), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Running Prompts](https://madbomber.github.io/aia/everyday/running-prompts/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 09 — Roles
 
 `09_roles.sh` — Demonstrates `--role` to prepend a reusable system prompt. Role files live in `prompts_dir/roles/` as `.md` files. Runs the same prompt three ways: no role (baseline), `--role pirate`, and `--role formal`, showing how roles change the response style.
 
-Docs: [Working with Models — Per-Model Roles](https://madbomber.github.io/aia/guides/models/#per-model-roles), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Multiple Models](https://madbomber.github.io/aia/extending/multi-model/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 10 — STDIN Piping
 
 `10_stdin_piping.sh` — Pipes text into AIA via STDIN. The piped content is appended to the prompt. Part 1 pipes a string with `echo`; Part 2 pipes the output of `ls -la`.
 
-Docs: [Executable Prompts — Piping and Redirection](https://madbomber.github.io/aia/guides/executable-prompts/#piping-and-redirection), [Basic Usage](https://madbomber.github.io/aia/guides/basic-usage/)
+Docs: [Executable Prompts](https://madbomber.github.io/aia/prompts/executable-prompts/), [Running Prompts](https://madbomber.github.io/aia/everyday/running-prompts/)
 
 ### 11 — Multiple Models
 
@@ -107,13 +107,13 @@ Docs: [Executable Prompts — Piping and Redirection](https://madbomber.github.i
 
 **Requires:** `ANTHROPIC_API_KEY` (uses `claude-sonnet-4-6` and `claude-haiku-4-5`).
 
-Docs: [Working with Models — Multi-Model Operations](https://madbomber.github.io/aia/guides/models/#multi-model-operations), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Multiple Models](https://madbomber.github.io/aia/extending/multi-model/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 12 — Token Usage
 
 `12_token_usage.sh` — Demonstrates the `--tokens` flag, which displays input/output token counts after each response. Part 1 shows single-model usage; Part 2 shows a multi-model comparison table.
 
-Docs: [Working with Models — Token Usage and Cost Tracking](https://madbomber.github.io/aia/guides/models/#token-usage-and-cost-tracking), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Output & History](https://madbomber.github.io/aia/everyday/output-and-history/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 13 — Cost Tracking
 
@@ -121,31 +121,31 @@ Docs: [Working with Models — Token Usage and Cost Tracking](https://madbomber.
 
 **Requires:** `ANTHROPIC_API_KEY` environment variable.
 
-Docs: [Working with Models — Token Usage and Cost Tracking](https://madbomber.github.io/aia/guides/models/#token-usage-and-cost-tracking), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Output & History](https://madbomber.github.io/aia/everyday/output-and-history/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 14 — Output to File
 
 `14_output_file.sh` — Demonstrates the `-o` flag for saving responses to a file. Part 1 writes to a file; Part 2 shows the default overwrite behavior; Part 3 uses `--append` to accumulate multiple responses in the same file.
 
-Docs: [Basic Usage — Output Management](https://madbomber.github.io/aia/guides/basic-usage/#3-output-management), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Output & History](https://madbomber.github.io/aia/everyday/output-and-history/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 15 — Parameters
 
 `15_parameters.sh` — Demonstrates prompt parameters defined in YAML front matter. Parameters create reusable templates with `<%= name %>` placeholders filled at runtime. Part 1 uses a prompt where all parameters have defaults (runs automatically). Part 2 has a required parameter (null default) that AIA prompts the user to enter interactively.
 
-Docs: [Prompt Management](https://madbomber.github.io/aia/prompt_management/), [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/)
+Docs: [Prompt Files](https://madbomber.github.io/aia/prompts/prompt-files/), [Parameters](https://madbomber.github.io/aia/prompts/parameters/)
 
 ### 16 — Directives
 
 `16_directives.sh` — Lists all available directives and demonstrates two features. Part 1 uses the `include` directive, which inserts and renders another prompt file at render time via `<%= include 'path/to/file' %>`. Part 2 shows how to create a custom directive: a Ruby class inheriting from `AIA::Directive` with `desc`-annotated methods. The custom `timestamp` directive is loaded via `--tools` and used in a prompt with `<%= timestamp %>`.
 
-Docs: [Directives Reference](https://madbomber.github.io/aia/directives-reference/), [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/)
+Docs: [Directives Reference](https://madbomber.github.io/aia/reference/directives/), [Directives](https://madbomber.github.io/aia/prompts/directives/)
 
 ### 17 — Require and Conditionals
 
 `17_require_and_conditionals.sh` — Two ERB power features. Part 1 uses `--rq json` to load the `json` gem so `JSON.pretty_generate` works inside ERB tags. Part 2 uses `<% if %>` / `<% elsif %>` / `<% else %>` control flow with a parameter to conditionally include different prompt sections based on the audience.
 
-Docs: [Advanced Prompting — Conditional Execution](https://madbomber.github.io/aia/advanced-prompting/#conditional-execution), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [ERB & Shell](https://madbomber.github.io/aia/prompts/erb-and-shell/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 18 — Tools via --require
 
@@ -153,13 +153,13 @@ Docs: [Advanced Prompting — Conditional Execution](https://madbomber.github.io
 
 **Requires:** `gem install shared_tools`
 
-Docs: [Shared Tools](https://madbomber.github.io/aia/guides/shared-tools/), [Tools Integration](https://madbomber.github.io/aia/guides/tools/)
+Docs: [Tools](https://madbomber.github.io/aia/extending/tools/)
 
 ### 19 — Local Tools
 
 `19_local_tools.sh` — Loads a local `RubyLLM::Tool` from a `.rb` file using `--tools tools/word_count_tool.rb`. Shows the full tool pattern: class definition, description, parameters, and execute method. The model calls the tool to analyze a text passage.
 
-Docs: [Tools Integration — Creating Custom Tools](https://madbomber.github.io/aia/guides/tools/#creating-custom-tools), [CLI Reference](https://madbomber.github.io/aia/cli-reference/)
+Docs: [Tools](https://madbomber.github.io/aia/extending/tools/), [CLI Options](https://madbomber.github.io/aia/reference/cli/)
 
 ### 20 — MCP Servers
 
@@ -167,13 +167,13 @@ Docs: [Tools Integration — Creating Custom Tools](https://madbomber.github.io/
 
 **Requires:** Node.js / `npx` (for the `@modelcontextprotocol/server-filesystem` server).
 
-Docs: [MCP Integration](https://madbomber.github.io/aia/mcp-integration/), [Configuration — MCP Server Configuration](https://madbomber.github.io/aia/configuration/#mcp-server-configuration)
+Docs: [MCP Servers](https://madbomber.github.io/aia/extending/mcp/)
 
 ### 21 — Executable Prompts
 
 `21_executable_prompts.sh` — Demonstrates prompt files with a shebang line (`#!/usr/bin/env aia ...`) that can be run directly from the command line. AIA auto-detects the shebang and strips it before processing. Part 1 runs a minimal executable prompt directly. Part 2 runs an executable prompt that combines front matter, ERB, and shell expansion. Part 3 pipes a prompt file (shebang included) to AIA via STDIN, showing that the shebang is stripped automatically from piped input too.
 
-Docs: [Executable Prompts](https://madbomber.github.io/aia/guides/executable-prompts/)
+Docs: [Executable Prompts](https://madbomber.github.io/aia/prompts/executable-prompts/)
 
 ### 22 — Chat Mode
 
@@ -181,7 +181,7 @@ Docs: [Executable Prompts](https://madbomber.github.io/aia/guides/executable-pro
 
 **Requires:** `expect` (pre-installed on macOS).
 
-Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Directives Reference](https://madbomber.github.io/aia/directives-reference/), [Workflows and Pipelines](https://madbomber.github.io/aia/workflows-and-pipelines/)
+Docs: [Chat Sessions](https://madbomber.github.io/aia/everyday/chat/), [Directives Reference](https://madbomber.github.io/aia/reference/directives/), [Pipelines](https://madbomber.github.io/aia/prompts/pipelines/)
 
 ### 23 — Verify Mode
 
@@ -189,7 +189,7 @@ Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Directives Re
 
 **Requires:** `expect` (pre-installed on macOS).
 
-Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Chat Guide](https://madbomber.github.io/aia/guides/chat/)
+Docs: [Advanced Modes](https://madbomber.github.io/aia/extending/advanced-modes/), [Chat Sessions](https://madbomber.github.io/aia/everyday/chat/)
 
 ### 24 — Decompose Mode
 
@@ -197,7 +197,7 @@ Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/),
 
 **Requires:** `expect` (pre-installed on macOS).
 
-Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Chat Guide](https://madbomber.github.io/aia/guides/chat/)
+Docs: [Advanced Modes](https://madbomber.github.io/aia/extending/advanced-modes/), [Chat Sessions](https://madbomber.github.io/aia/everyday/chat/)
 
 ### 25 — Spawn Mode
 
@@ -205,7 +205,7 @@ Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/),
 
 **Requires:** `expect` (pre-installed on macOS).
 
-Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Chat Guide](https://madbomber.github.io/aia/guides/chat/)
+Docs: [Advanced Modes](https://madbomber.github.io/aia/extending/advanced-modes/), [Chat Sessions](https://madbomber.github.io/aia/everyday/chat/)
 
 ### 26 — Debate Mode
 
@@ -213,7 +213,7 @@ Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/),
 
 **Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
-Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
+Docs: [Advanced Modes](https://madbomber.github.io/aia/extending/advanced-modes/), [Multiple Models](https://madbomber.github.io/aia/extending/multi-model/)
 
 ### 27 — @mention Routing
 
@@ -221,7 +221,7 @@ Docs: [Advanced Prompting](https://madbomber.github.io/aia/advanced-prompting/),
 
 **Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
-Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
+Docs: [Chat Sessions](https://madbomber.github.io/aia/everyday/chat/), [Multiple Models](https://madbomber.github.io/aia/extending/multi-model/)
 
 ### 28 — Model Switching
 
@@ -229,7 +229,7 @@ Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with 
 
 **Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
-Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Working with Models](https://madbomber.github.io/aia/guides/models/)
+Docs: [Chat Sessions](https://madbomber.github.io/aia/everyday/chat/), [Multiple Models](https://madbomber.github.io/aia/extending/multi-model/)
 
 ### 29 — Agent Harness
 
@@ -239,7 +239,7 @@ The orchestrator role file lives at `examples/prompts_dir/roles/orchestrator.md`
 
 **Requires:** `expect` (pre-installed on macOS), `ANTHROPIC_API_KEY`.
 
-Docs: [Chat Guide](https://madbomber.github.io/aia/guides/chat/), [Roles](https://madbomber.github.io/aia/guides/roles/)
+Docs: [Chat Sessions](https://madbomber.github.io/aia/everyday/chat/), [Roles & Skills](https://madbomber.github.io/aia/everyday/roles-and-skills/)
 
 ## Running All Demos
 

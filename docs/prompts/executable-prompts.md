@@ -22,9 +22,8 @@ When you run `./fun_fact`, the system runs `aia --no-output ./fun_fact`. AIA see
 Anything that works in a regular prompt file also works here. That includes front matter, [parameters](parameters.md), [shell expansion and ERB](erb-and-shell.md):
 
 ```markdown
-#!/usr/bin/env -S aia --no-output
+#!/usr/bin/env -S aia --no-output -t 0.3
 ---
-temperature: 0.3
 parameters:
   days: 1
 ---
@@ -77,10 +76,7 @@ git diff --cached | ./commit_message
 ```
 
 ```markdown
-#!/usr/bin/env -S aia --no-output
----
-temperature: 0.2
----
+#!/usr/bin/env -S aia --no-output -t 0.2
 Write a conventional commit message for the staged diff below.
 Subject line under 60 characters, then a short body.
 ```

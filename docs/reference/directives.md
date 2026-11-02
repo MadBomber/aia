@@ -342,11 +342,7 @@ Failed Servers:
 
 With no argument, AIA shows the current model's details. With several models, it shows each one's provider, context window, prices and capabilities.
 
-Switching keeps your conversation. The `model_switch_history` setting controls how:
-
-- `summarize` (the default): the old model summarizes the conversation for the new one
-- `replay`: every message you've sent is sent again to the new model
-- `clean`: the new model starts fresh
+Switching keeps your conversation: the old model summarizes it for the new one. The `model_switch_history` setting that would choose `replay` or `clean` instead isn't loaded in 2.0.0; run `/clear` after `/model` for a fresh start.
 
 See [Choosing Models](../everyday/models.md).
 

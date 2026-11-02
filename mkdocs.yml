@@ -143,28 +143,45 @@ extra:
 
 # Navigation
 nav:
-  - Home: index.md
-  - Installation: installation.md
-  - Breaking Changes: breaking_changes.md
-  - Configuration: configuration.md
-  - Guides:
-    - guides/index.md
-    - Getting Started: guides/getting-started.md
-    - Chat Mode: guides/chat.md
-    - Working with Models: guides/models.md
-    - Crews: guides/crew.md
-    - Local Models: guides/local-models.md
-    - Available Models: guides/available-models.md
-    - Image Generation: guides/image-generation.md
-    - Tools Integration: guides/tools.md
-    - Shared Tools: guides/shared-tools.md
-    - Migrating Prompts: guides/migrate-prompts.md
+  - Introduction: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Tour: getting-started/quick-tour.md
+    - Your First Prompt: getting-started/first-prompt.md
+  - Everyday Use:
+    - Running Prompts: everyday/running-prompts.md
+    - Chat Sessions: everyday/chat.md
+    - Context Files & Piping: everyday/context-and-piping.md
+    - Roles & Skills: everyday/roles-and-skills.md
+    - Choosing Models: everyday/models.md
+    - Output & History: everyday/output-and-history.md
+  - Writing Prompts:
+    - Prompt Files: prompts/prompt-files.md
+    - Parameters: prompts/parameters.md
+    - Directives: prompts/directives.md
+    - ERB & Shell: prompts/erb-and-shell.md
+    - Plugins: prompts/plugins.md
+    - Pipelines: prompts/pipelines.md
+    - Executable Prompts: prompts/executable-prompts.md
+  - Extending AIA:
+    - Tools: extending/tools.md
+    - MCP Servers: extending/mcp.md
+    - Multiple Models: extending/multi-model.md
+    - Crews: extending/crews.md
+    - Local Models: extending/local-models.md
+    - Images & Speech: extending/images-and-speech.md
+    - Advanced Modes: extending/advanced-modes.md
+  - Configuration:
+    - Config File: configuration/config-file.md
+    - Environment Variables: configuration/environment.md
+    - Precedence: configuration/precedence.md
+    - Security: configuration/security.md
   - Reference:
-    - CLI Parameters: cli-reference.md
-    - Directives: directives-reference.md
-  - Advanced:
-    - Prompt Management: prompt_management.md
-    - Advanced Prompting: advanced-prompting.md
-    - Workflows & Pipelines: workflows-and-pipelines.md
-    - MCP Integration: mcp-integration.md
-    - Tools & MCP Examples: tools-and-mcp-examples.md
+    - CLI Options: reference/cli.md
+    - Directives: reference/directives.md
+    - Config Keys: reference/config-keys.md
+    - FAQ & Troubleshooting: reference/faq.md
+  - Appendix:
+    - Upgrading to 2.0: appendix/upgrading-2.0.md
+    - Migrating Prompts: appendix/migrating-prompts.md
+    - Glossary: appendix/glossary.md

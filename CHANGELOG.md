@@ -8,7 +8,7 @@ AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab):
 
 ### Upgrading from 1.x
 
-These changes can break an existing setup. [docs/breaking_changes.md](docs/breaking_changes.md) has the details.
+These changes can break an existing setup. [Upgrading to 2.0](docs/appendix/upgrading-2.0.md) has the details.
 
 - **Ruby 4.0.9 or newer.**
 - **Removed options:** `--terse`, `--regex` and `--skills-prefix`. Passing one now stops AIA with an invalid-option error. The config keys `flags.terse`, `prompts.parameter_regex` and `prompts.skills_prefix` are gone too. Use `--skills-dir` in place of `--skills-prefix`.
