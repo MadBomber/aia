@@ -290,10 +290,14 @@ module AIA
       nil # nothing to clean up on a server that never started
     end
 
-    # Extract timeout in seconds from server config.
-    # Config values >= 1000 are treated as milliseconds.
+    # Extract timeout in seconds from server config, or from a RubyLLM::MCP
+    # subclass's own +timeout+ setting. Config values >= 1000 are treated as
+    # milliseconds.
     def server_timeout(server_config)
-      raw = server_config.is_a?(Hash) ? (server_config[:timeout] || server_config['timeout']) : nil
+      raw = case server_config
+            when Hash  then server_config[:timeout] || server_config['timeout']
+            when Class then server_config.timeout if server_config.respond_to?(:timeout)
+            end
       return DEFAULT_TIMEOUT if raw.nil?
 
       seconds = raw.to_f

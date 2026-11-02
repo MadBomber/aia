@@ -23,6 +23,7 @@ class DebateHandlerIntegrationTest < Minitest::Test
   def setup
     @ui = mock('ui_presenter')
     @ui.stubs(:display_info)
+    @ui.stubs(:display_robot_turn)
 
     @tracker = mock('tracker')
     @tracker.stubs(:record_turn)

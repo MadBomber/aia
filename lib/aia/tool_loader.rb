@@ -27,6 +27,7 @@ module AIA
       def cached_tools            = instance.cached_tools
       def clear_cache!            = instance.clear_cache!
       def load_tools(config)      = instance.load_tools(config)
+      def require_libs(config)    = instance.require_libs(config)
       def filtered_tools(config)  = instance.filtered_tools(config)
       def discover_tools          = instance.discover_tools
       def eager_load_gem_tools    = instance.eager_load_gem_tools
@@ -53,18 +54,9 @@ module AIA
 
     # Load tools from require_libs and tool paths, then cache the result.
     # Subsequent calls to RobotFactory.build skip this entirely if cache exists.
-    # :reek:TooManyStatements -- sequential phases: require_libs with activation retry, tool files, eager loads, discovery cache
+    # :reek:TooManyStatements -- sequential phases: require_libs, tool files, eager loads, discovery cache
     def load_tools(config)
-      Array(config.require_libs).each do |lib|
-        require lib
-      rescue LoadError
-        # Not yet active — activate it (and its deps) via RubyGems, then retry
-        if activate_unbundled_gem(lib)
-          require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
-        else
-          $stderr.puts "Warning: Failed to require '#{lib}': gem not found"
-        end
-      end
+      require_libs(config)
 
       # Load tool files from paths
       Array(config.tools&.paths).each do |path|
@@ -93,9 +85,26 @@ module AIA
       config.tool_names = tools.map { |t| tool_name(t) }.join(', ')
     end
 
-    # A tool's display name: instances expose #name; bare classes fall back to the class name.
+    # Require each --require library, activating an unbundled gem first when
+    # needed. Safe to call more than once: Kernel#require skips loaded files.
+    # Session calls it before connecting MCP servers, so mcp_servers: entries
+    # can name RubyLLM::MCP subclasses those libraries define.
+    def require_libs(config)
+      Array(config.require_libs).each do |lib|
+        require lib
+      rescue LoadError
+        # Not yet active — activate it (and its deps) via RubyGems, then retry
+        if activate_unbundled_gem(lib)
+          require lib rescue warn("Warning: Failed to require '#{lib}' after activation")
+        else
+          $stderr.puts "Warning: Failed to require '#{lib}': gem not found"
+        end
+      end
+    end
+
+    # The name the model calls a tool by (see ToolIntrospection.tool_name).
     def tool_name(tool)
-      tool.respond_to?(:name) ? tool.name : tool.class.name
+      ToolIntrospection.tool_name(tool)
     end
 
     # Filter tools based on allowed/rejected lists and KBS decisions.
@@ -146,6 +155,8 @@ module AIA
       incomplete = []
       tools = ObjectSpace.each_object(Class).select do |klass|
         next false unless klass < RubyLLM::Tool
+        next false if mcp_tool_class?(klass)
+
         unless implements_execute?(klass)
           incomplete << (klass.name || klass.inspect)
           next false
@@ -163,6 +174,13 @@ module AIA
       end
       warn_incomplete_tools(incomplete)
       tools
+    end
+
+    # True for ruby_llm's RubyLLM::MCP::Tool (and subclasses): the wrapper an
+    # MCP server's tools arrive in. They come from MCPConnectionManager, never
+    # from ObjectSpace, and have no #execute of their own.
+    def mcp_tool_class?(klass)
+      defined?(RubyLLM::MCP::Tool) ? klass <= RubyLLM::MCP::Tool : false
     end
 
     # True when the tool class defines its own #execute. A class whose body

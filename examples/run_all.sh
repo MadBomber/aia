@@ -142,6 +142,7 @@ SCRIPTS=(
   27_mention_routing.sh
   28_model_switching.sh
   # 29_agent_harness.sh — skipped: 3-tier orchestration, 10-20 min runtime
+  30_shared_tools_and_mcp.sh
 )
 
 SKIPPED=(
@@ -222,6 +223,7 @@ BATCH_MODE_SCRIPTS=(
   26_debate.sh
   27_mention_routing.sh
   28_model_switching.sh
+  30_shared_tools_and_mcp.sh
 )
 
 # --- Main ---

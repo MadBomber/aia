@@ -212,6 +212,17 @@ class SessionTest < Minitest::Test
     @session.send(:output_to_file, 'test response')
   end
 
+  # --require libraries must load before MCP servers connect, so that
+  # mcp_servers: entries can name the RubyLLM::MCP classes they define.
+  def test_start_requires_libs_before_connecting_mcp_servers
+    stop = Class.new(StandardError)
+    order = sequence('startup')
+    AIA::ToolLoader.expects(:require_libs).with(AIA.config).in_sequence(order)
+    AIA::MCPConnectionManager.expects(:start).with(AIA.config).in_sequence(order).raises(stop)
+
+    assert_raises(stop) { @session.start }
+  end
+
   def test_start_does_not_register_at_exit_hook
     # After the fix, Session#start must NOT call at_exit at all — even on
     # the non-early-return code path that previously contained the hook.

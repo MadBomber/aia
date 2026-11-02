@@ -43,3 +43,6 @@ _notes.txt
 /.serena/
 /notes/
 /site/
+
+# Page snapshots written by the Playwright MCP server (example 30)
+examples/.playwright-mcp/

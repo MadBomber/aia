@@ -140,7 +140,7 @@ module AIA
     def robot_tool_names(robot)
       local = robot.respond_to?(:local_tools) ? Array(robot.local_tools) : []
       mcp   = robot.respond_to?(:mcp_tools)   ? Array(robot.mcp_tools)   : []
-      (local + mcp).map { |t| t.respond_to?(:name) ? t.name : t.class.name }
+      (local + mcp).map { |t| ToolIntrospection.tool_name(t) }
     end
 
     def show_thinking?

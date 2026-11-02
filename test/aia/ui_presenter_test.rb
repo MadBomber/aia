@@ -117,6 +117,21 @@ class UIPresenterTest < Minitest::Test
     temp_file.unlink
   end
 
+  def test_display_robot_turn_writes_heading_and_indented_response_in_one_write
+    output = StringIO.new
+    output.expects(:write).with("\nRound 1 · Tobor:\n   First line\n   Second line\n").once
+    output.expects(:flush)
+
+    @presenter.display_robot_turn("Round 1 · Tobor", "First line\nSecond line", output)
+  end
+
+  def test_display_robot_turn_accepts_a_reply_object
+    output = StringIO.new
+    @presenter.display_robot_turn("Round 2 · Zen", OpenStruct.new(reply: "CONVERGED"), output)
+
+    assert_equal "\nRound 2 · Zen:\n   CONVERGED\n", output.string
+  end
+
   def test_format_chat_response_with_regular_text
     output_buffer = StringIO.new
     @presenter.format_chat_response("Simple text", output_buffer)

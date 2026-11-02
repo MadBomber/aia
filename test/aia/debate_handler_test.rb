@@ -20,6 +20,7 @@ class DebateHandlerTest < Minitest::Test
     @ui.stubs(:display_info)
     @ui.stubs(:display_ai_response)
     @ui.stubs(:display_separator)
+    @ui.stubs(:display_robot_turn)
 
     @tracker = mock('session_tracker')
     @tracker.stubs(:record_turn)
@@ -185,6 +186,49 @@ class DebateHandlerTest < Minitest::Test
     result = handler.handle(AIA::HandlerContext.new(prompt: "Discuss AI"))
     assert_includes result, "[FAILED]"
     assert_includes result, "Alice"
+  end
+
+  # Each robot's response is shown as soon as its turn ends, under a
+  # "Round N · Name" heading, not only in the transcript returned at the end.
+  def test_each_robot_turn_is_displayed_as_it_completes
+    robot_a = build_mock_robot("Alice", "Alice's opening argument.")
+    robot_b = build_mock_robot("Bob", "Bob's opening argument.")
+    alice_replies = [OpenStruct.new(reply: "Alice's opening argument."), OpenStruct.new(reply: "CONVERGED Alice")]
+    bob_replies   = [OpenStruct.new(reply: "Bob's opening argument."),   OpenStruct.new(reply: "CONVERGED Bob")]
+    robot_a.stubs(:run).returns(*alice_replies)
+    robot_b.stubs(:run).returns(*bob_replies)
+    handler = AIA::DebateHandler.new(robot: two_robot_network(robot_a, robot_b), ui_presenter: @ui, tracker: @tracker)
+
+    @ui.expects(:display_robot_turn).with("Round 1 · Alice", "Alice's opening argument.")
+    @ui.expects(:display_robot_turn).with("Round 1 · Bob",   "Bob's opening argument.")
+    @ui.expects(:display_robot_turn).with("Round 2 · Alice", "CONVERGED Alice")
+    @ui.expects(:display_robot_turn).with("Round 2 · Bob",   "CONVERGED Bob")
+
+    handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
+  end
+
+  def test_failed_turn_is_displayed_with_failed_marker
+    robot_a = mock('robot_a')
+    robot_a.stubs(:name).returns("Alice")
+    robot_a.stubs(:with_bus)
+    robot_a.stubs(:run).raises(RuntimeError, "model timeout")
+    robot_b = build_mock_robot("Bob", "Bob's reply.")
+    handler = AIA::DebateHandler.new(robot: two_robot_network(robot_a, robot_b), ui_presenter: @ui, tracker: @tracker)
+
+    @ui.expects(:display_robot_turn).with("Round 1 · Alice", "[FAILED] model timeout").at_least_once
+
+    handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
+  end
+
+  def test_one_progress_line_per_round_names_every_robot
+    robot_a = build_mock_robot("Alice", "CONVERGED")
+    robot_b = build_mock_robot("Bob", "CONVERGED")
+    handler = AIA::DebateHandler.new(robot: two_robot_network(robot_a, robot_b), ui_presenter: @ui, tracker: @tracker)
+
+    @ui.expects(:display_info).with("  Round 1: Alice and Bob responding...")
+    @ui.expects(:display_info).with("  Round 2: Alice and Bob responding...")
+
+    handler.handle(AIA::HandlerContext.new(prompt: "Topic"))
   end
 
   def test_debate_continues_when_one_robot_fails
@@ -371,6 +415,14 @@ class DebateHandlerTest < Minitest::Test
   end
 
   private
+
+  def two_robot_network(robot_a, robot_b)
+    network = mock('network')
+    network.stubs(:network?).returns(true)
+    network.stubs(:crew).returns([robot_a, robot_b])
+    network.stubs(:respond_to?).with(:memory).returns(false)
+    network
+  end
 
   def build_mock_robot(name, reply_text)
     robot = mock(name.downcase)

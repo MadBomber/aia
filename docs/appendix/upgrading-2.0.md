@@ -104,7 +104,7 @@ Servers listed under `mcp_servers:` keep working, with three exceptions:
 
 - **The `sse` and `ws` transports are gone.** Use the server's Streamable HTTP endpoint (`url:`) or run it locally over stdio (`command:`). A server still set to `sse` or `ws` is reported as failed at startup.
 - **Two servers can't offer a tool with the same name.** The second one fails to connect. Give one of them a `prefix:` so its tool names are distinct.
-- **Server classes loaded with `--require` must be `RubyLLM::MCP` subclasses**, and they are no longer picked up automatically.
+- **Server classes loaded with `--require` must be `RubyLLM::MCP` subclasses**, and they are no longer picked up automatically. List them by class name under `mcp_servers:` (see [Naming a server class](../extending/mcp.md#naming-a-server-class)).
 
 See [MCP Servers](../extending/mcp.md).
 

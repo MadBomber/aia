@@ -241,6 +241,32 @@ class SpecialModeHandlerTest < Minitest::Test
     assert_equal false, AIA.turn_state.force_debate
   end
 
+  # The debate handler shows each turn live; the returned transcript is saved
+  # to --output but not displayed a second time.
+  def test_debate_transcript_is_saved_but_not_redisplayed
+    AIA.turn_state.request(:debate)
+    debate_handler = mock('debate_handler')
+    debate_handler.stubs(:handle).returns("debate transcript")
+    @handler.instance_variable_set(:@debate_handler, debate_handler)
+
+    @ui.expects(:display_ai_response).never
+    @ui.expects(:display_separator).once
+    @handler.expects(:output_to_file).with("debate transcript")
+
+    assert_equal true, @handler.handle("debate topic")
+  end
+
+  def test_delegate_result_is_still_displayed
+    AIA.turn_state.request(:delegate)
+    delegate_handler = mock('delegate_handler')
+    delegate_handler.stubs(:handle).returns("delegate result")
+    @handler.instance_variable_set(:@delegate_handler, delegate_handler)
+
+    @ui.expects(:display_ai_response).with("delegate result").once
+
+    assert_equal true, @handler.handle("task")
+  end
+
   def test_debate_returns_false_when_handler_returns_nil
     AIA.turn_state.request(:debate)
 

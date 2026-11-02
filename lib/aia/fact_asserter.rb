@@ -10,10 +10,10 @@ module AIA
   class FactAsserter
     # Extract the tool's name as a non-nil String.
     #
-    # @param tool [Object] any object that responds to .name
-    # @return [String]
+    # @param tool [Object] a tool instance or RubyLLM::Tool class
+    # @return [String] the name the model calls it by (see ToolIntrospection.tool_name)
     def tool_name(tool)
-      String(tool.respond_to?(:name) ? tool.name : "").strip
+      String(ToolIntrospection.tool_name(tool)).strip
     end
 
     # Extract the tool's description as a non-nil String.

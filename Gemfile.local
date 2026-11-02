@@ -12,6 +12,11 @@ group :development do
   gem 'rubocop'
   gem 'simplecov_lcov_formatter'
   gem 'deep-cover', require: false
+
+  # Not an aia dependency: users bring it with --require shared_tools.
+  # Listed here so bin/aia can load it and its deps for examples 18 and 30.
+  gem 'shared_tools', '>= 0.7.1'
+  gem 'dentaku' # shared_tools CalculatorTool (an optional shared_tools dependency)
 end
 
 gemspec

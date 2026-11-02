@@ -83,26 +83,43 @@ module AIA
 
     private
 
-    # Run every robot once against the round context, concurrently.
+    # Run every robot once against the round context, concurrently, showing
+    # each robot's response as soon as it arrives.
     # Returns one entry per robot: a result hash, or FailedResponse on error.
-    # :reek:TooManyStatements -- async fan-out with per-robot progress, memory write, and failure capture
     def run_debate_round(robots, round_context, round, round_no)
+      @ui_presenter.display_info("  Round #{round_no}: #{robots.map(&:name).join(' and ')} responding...")
+
       Sync do
         barrier = Async::Barrier.new
         tasks = robots.map do |robot|
           barrier.async do
-            name = robot.name
-            @ui_presenter.display_info("  Round #{round_no}: #{name}...")
-            result  = robot.run(round_context, mcp: :inherit, tools: :inherit)
-            content = extract_content(result)
-            write_to_memory(round, name, content)
-            { robot: name, content: content }
-          rescue => e
-            FailedResponse.new(robot_name: name, error_message: e.message)
+            run_debater(robot, round_context, round).tap { |entry| show_turn(round_no, entry) }
           end
         end
         barrier.wait
         tasks.map(&:wait)
+      end
+    end
+
+    # One robot's turn in one round.
+    #
+    # @return [Hash, FailedResponse] {robot:, content:} or the captured failure
+    def run_debater(robot, round_context, round)
+      name    = robot.name
+      result  = robot.run(round_context, mcp: :inherit, tools: :inherit)
+      content = extract_content(result)
+      write_to_memory(round, name, content)
+      { robot: name, content: content }
+    rescue => e
+      FailedResponse.new(robot_name: name, error_message: e.message)
+    end
+
+    # Display one debate turn under a "Round N · Name" heading.
+    def show_turn(round_no, entry)
+      if entry.is_a?(FailedResponse)
+        @ui_presenter.display_robot_turn("Round #{round_no} · #{entry.robot_name}", "[FAILED] #{entry.error_message}")
+      else
+        @ui_presenter.display_robot_turn("Round #{round_no} · #{entry[:robot]}", entry[:content])
       end
     end
 

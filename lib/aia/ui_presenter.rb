@@ -5,6 +5,7 @@ require 'tty-spinner'
 require 'tty-table'
 require 'reline'
 require 'fileutils'
+require 'stringio'
 
 module AIA
   # :reek:TooManyMethods -- one small builder per table/report section keeps each display testable in isolation
@@ -24,6 +25,21 @@ module AIA
     def display_ai_response(response)
       puts "\nAI: "
       format_chat_response(response)
+    end
+
+    # Show one robot's turn (a debate round, say) under a heading. The block is
+    # rendered into a buffer and written in one call, so robots finishing
+    # concurrently cannot interleave their lines.
+    #
+    # @param heading [String] e.g. "Round 1 · Tobor"
+    # @param response [String, RubyLLM::Message, #reply]
+    # @param output [IO]
+    def display_robot_turn(heading, response, output = $stdout)
+      buffer = StringIO.new
+      buffer.puts "\n#{heading}:"
+      format_chat_response(response, buffer)
+      output.write(buffer.string)
+      output.flush
     end
 
     # :reek:TooManyStatements -- line-by-line rendering with a code-fence state machine; the states share locals

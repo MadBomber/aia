@@ -25,14 +25,48 @@ module AIA
 
     # Discover relevant MCP servers for the current prompt.
     # Priority: explicit --mcp-use list > all configured servers.
-    # --mcp-skip is always applied last.
+    # --mcp-skip is always applied last. Entries that name a RubyLLM::MCP
+    # subclass are resolved to the class (see #resolve_entries).
     #
     # @param config the AIA configuration
-    # @return [Array<Hash>] relevant MCP server configs
+    # @return [Array<Hash, Class<RubyLLM::MCP>>] relevant MCP server configs
     def discover(config)
       return [] if config.flags&.no_mcp
 
-      self.class.select(config.mcp_servers || [], use: config.mcp_use, skip: config.mcp_skip)
+      selected = self.class.select(config.mcp_servers || [], use: config.mcp_use, skip: config.mcp_skip)
+      resolve_entries(selected)
+    end
+
+    # Turn constant-name entries ("SharedTools::MCP::Memory") into their
+    # RubyLLM::MCP subclass, loaded by --require before MCP servers connect.
+    # An entry that names no such class, or whose class reports itself
+    # unavailable via +available?+ (e.g. a missing API key), is skipped
+    # with a one-line note. Hash entries pass through unchanged.
+    #
+    # @param entries [Array<Hash, String, Class>]
+    # @return [Array<Hash, Class<RubyLLM::MCP>>]
+    def resolve_entries(entries)
+      entries.filter_map do |entry|
+        klass = AIA::Utility.mcp_class_name?(entry) ? RobotLab::MCP.resolve(entry) : entry
+        next klass unless klass.is_a?(Class) && klass.respond_to?(:available?) && !klass.available?
+
+        note_skipped(AIA::Utility.server_name(klass), unavailable_reason(klass))
+      rescue RobotLab::MCPError => e
+        note_skipped(entry, e.message)
+      end
+    end
+
+    private
+
+    def unavailable_reason(klass)
+      missing = klass.respond_to?(:missing_envars) ? Array(klass.missing_envars) : []
+      missing.empty? ? "not available" : "missing #{missing.join(', ')}"
+    end
+
+    # Report a skipped server; returns nil so filter_map drops the entry.
+    def note_skipped(name, reason)
+      $stderr.puts "Info: MCP server '#{name}' skipped (#{reason})"
+      nil
     end
   end
 end

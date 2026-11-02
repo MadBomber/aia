@@ -23,7 +23,9 @@ module AIA
       { mode: :verify,         run: :handle_verification   },
       { mode: :decompose,      run: :handle_decomposition  },
       { mode: :concurrent_mcp, run: :handle_concurrent_mcp },
-      { mode: :debate,         sub: { handler: :debate_handler,   label: 'Debate'     } },
+      # live: the handler already displayed its output turn by turn, so the
+      # returned transcript is only saved (--output), not displayed again.
+      { mode: :debate,         sub: { handler: :debate_handler,   label: 'Debate', live: true } },
       { mode: :delegate,       sub: { handler: :delegate_handler, label: 'Delegation' } },
       { mode: :spawn,          sub: { handler: :spawn_handler,    label: 'Spawn',
                                       context: lambda { |prompt, taken|
@@ -83,7 +85,7 @@ module AIA
       content  = send(spec[:handler]).handle(HandlerContext.new(**ctx_args))
       return false unless content
 
-      display_and_save(content)
+      spec[:live] ? save_live_output(content) : display_and_save(content)
       true
     rescue StandardError => e
       @ui_presenter.display_info("#{spec[:label]} failed: #{e.message}. Falling back to normal mode.")
@@ -278,6 +280,12 @@ module AIA
     # Used by handlers that receive pre-extracted content from sub-handlers.
     def display_and_save(content)
       @ui_presenter.display_ai_response(content)
+      output_to_file(content)
+      @ui_presenter.display_separator
+    end
+
+    # For a handler that displayed its output as it went: save, don't repeat.
+    def save_live_output(content)
       output_to_file(content)
       @ui_presenter.display_separator
     end

@@ -44,7 +44,11 @@ module AIA
     def start
       cfg = AIA.config
 
-      # Connect MCP servers first: every robot built from here on is handed
+      # --require libraries first, so mcp_servers: entries can name the
+      # RubyLLM::MCP subclasses they define (e.g. SharedTools::MCP::Memory).
+      ToolLoader.require_libs(cfg)
+
+      # Connect MCP servers next: every robot built from here on is handed
       # the same live server instances (see RobotFactory.mcp_servers).
       @mcp_manager = MCPConnectionManager.start(cfg)
 

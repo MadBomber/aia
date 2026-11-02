@@ -17,9 +17,15 @@ module AIA
       # Settings robot_lab understands (timeout, prefix, only, except,
       # requires_approval, description, ...) are carried through unchanged.
       #
-      # @param server [Hash]
-      # @return [Hash]
+      # A RubyLLM::MCP subclass or instance, or the constant name of one,
+      # already describes its own transport and is returned unchanged
+      # (RobotLab::MCP.build resolves the name).
+      #
+      # @param server [Hash, Class<RubyLLM::MCP>, RubyLLM::MCP, String]
+      # @return [Hash, Class<RubyLLM::MCP>, RubyLLM::MCP, String]
       def normalize(server)
+        return server if mcp_object?(server) || AIA::Utility.mcp_class_name?(server)
+
         server = server.to_h.transform_keys(&:to_sym)
 
         # Already in robot_lab format — pass through
@@ -30,6 +36,12 @@ module AIA
         transport[:args]   = Array(transport[:args]) if transport.key?(:args)
 
         server.except(*TRANSPORT_KEYS).merge(transport: transport)
+      end
+
+      # @param server [Object]
+      # @return [Boolean] true for a RubyLLM::MCP instance or subclass
+      def mcp_object?(server)
+        server.is_a?(RubyLLM::MCP) || (server.is_a?(Class) && server <= RubyLLM::MCP)
       end
     end
   end

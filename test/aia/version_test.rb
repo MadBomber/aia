@@ -56,17 +56,20 @@ class VersionTest < Minitest::Test
   end
 
   # robot_lab 0.5 is the first with ruby_llm 2.1's RubyLLM::MCP servers (mcp:);
-  # 0.5.1 is the floor because it accepts a String OAuth grant from YAML.
-  def test_gemspec_requires_robot_lab_0_5_1
+  # 0.5.1 accepts a String OAuth grant from YAML. 0.6.0 is the floor: it
+  # instantiates RubyLLM::Tool classes in local_tools: (so --require'd tool
+  # classes such as shared_tools' pass name allowlists), accepts MCP server
+  # classes by constant name, and scores class-level server descriptions.
+  def test_gemspec_requires_robot_lab_0_6_0
     gemspec_path = File.expand_path('../../aia.gemspec', __dir__)
     spec = Gem::Specification.load(gemspec_path)
     dependency = spec.runtime_dependencies.find { |dep| dep.name == 'robot_lab' }
 
     refute_nil dependency, "robot_lab should be a runtime dependency"
     requirement = dependency.requirement
-    assert requirement.satisfied_by?(Gem::Version.new('0.5.1')), "robot_lab dependency should allow v0.5.1"
+    assert requirement.satisfied_by?(Gem::Version.new('0.6.0')), "robot_lab dependency should allow v0.6.0"
     assert requirement.satisfied_by?(Gem::Version.new('0.9.0')), "robot_lab dependency should allow later 0.x"
-    refute requirement.satisfied_by?(Gem::Version.new('0.5.0')), "robot_lab dependency should exclude v0.5.0"
+    refute requirement.satisfied_by?(Gem::Version.new('0.5.1')), "robot_lab dependency should exclude v0.5.1"
     refute requirement.satisfied_by?(Gem::Version.new('1.0.0')), "robot_lab dependency should exclude v1.0"
   end
 

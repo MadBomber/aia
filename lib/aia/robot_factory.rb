@@ -100,7 +100,7 @@ module AIA
         cached = ToolLoader.cached_tools
         if cached
           config.loaded_tools = cached
-          config.tool_names = cached.map { |t| t.respond_to?(:name) ? t.name : t.class.name }.join(', ')
+          config.tool_names = cached.map { |t| ToolIntrospection.tool_name(t) }.join(', ')
         else
           ToolLoader.load_tools(config)
         end

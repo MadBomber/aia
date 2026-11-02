@@ -21,6 +21,32 @@ class ToolIntrospectionTest < Minitest::Test
                  AIA::ToolIntrospection.tool_name(ToolIntrospectionTest::BareTool.new)
   end
 
+  # A RubyLLM::Tool whose model-facing name differs from its Ruby class name,
+  # as shared_tools' tools do.
+  class ClockTool < RubyLLM::Tool
+    def self.tool_name = 'clock'
+
+    description 'Tells the time'
+
+    def execute = 'noon'
+  end
+
+  def test_tool_name_of_a_tool_class_is_its_tool_name
+    assert_equal 'clock', AIA::ToolIntrospection.tool_name(ClockTool)
+  end
+
+  def test_tool_name_of_a_tool_instance_is_its_name
+    assert_equal 'clock', AIA::ToolIntrospection.tool_name(ClockTool.new)
+  end
+
+  def test_tool_name_of_a_plain_class_is_its_constant_name
+    assert_equal 'ToolIntrospectionTest::BareTool', AIA::ToolIntrospection.tool_name(BareTool)
+  end
+
+  def test_fact_asserter_names_a_tool_class_by_its_tool_name
+    assert_equal 'clock', AIA::FactAsserter.new.tool_name(ClockTool)
+  end
+
   def test_tool_description_stringifies
     tool = NamedTool.new('search', :symbolic)
     assert_equal 'symbolic', AIA::ToolIntrospection.tool_description(tool)

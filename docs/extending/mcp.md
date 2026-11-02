@@ -48,6 +48,25 @@ mcp_servers:
 
 All servers connect at the same time. The whole connection phase is also capped by `concurrency.mcp_timeout` (default 120 seconds), but never at less than your slowest server's own timeout. Servers started with `npx` or `uvx` can be slow the first time they download, so give them a generous timeout.
 
+### Naming a server class
+
+An entry in `mcp_servers:` can also be the name of a `RubyLLM::MCP` subclass. The class describes its own command or URL, environment and timeout, so the entry needs nothing else. Load the file that defines the class with `require_libs:` (or `--require`); AIA loads those libraries before it connects any server.
+
+```yaml
+require_libs:
+  - shared_tools
+  - shared_tools/mcp
+
+mcp_servers:
+  - SharedTools::MCP::Memory
+  - SharedTools::MCP::GitHub
+  - name: filesystem              # Hash entries still work alongside them
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "."]
+```
+
+The server is known by the class's default name (`SharedTools::MCP::GitHub` is `github`), which is the name to use with `--mcp-use` and `--mcp-skip`. If the class has an `available?` method that returns false, as the shared_tools classes do when their API key is missing, AIA skips the server and says why. Example 30 in the repository uses every shared_tools server this way.
+
 ## Loading servers from a JSON file
 
 `--mcp FILE` reads servers from a JSON file in the format used by Claude Desktop and VS Code. You can repeat it, and the servers are added to the ones in your config file:

@@ -266,7 +266,11 @@ module AIA
       def print_mcp_server(server_config)
         args_str = server_config.args.empty? ? '' : " #{server_config.args.join(' ')}"
         puts "  #{server_config.name || '(unnamed)'}"
-        puts "    command: #{server_config.command || '(no command)'}#{args_str}"
+        if server_config.command.nil? && server_config.url
+          puts "    url: #{server_config.url}"
+        else
+          puts "    command: #{server_config.command || '(no command)'}#{args_str}"
+        end
         puts
       end
 
@@ -363,8 +367,13 @@ module AIA
         end
       end
 
+      # The servers --mcp-use/--mcp-skip keep. --require libraries are loaded
+      # first and entries naming a RubyLLM::MCP subclass are resolved to it,
+      # exactly as a session does before connecting.
       def filter_mcp_servers(config)
-        AIA::MCPDiscovery.select(config.mcp_servers || [], use: config.mcp_use, skip: config.mcp_skip)
+        AIA::ToolLoader.require_libs(config)
+        selected = AIA::MCPDiscovery.select(config.mcp_servers || [], use: config.mcp_use, skip: config.mcp_skip)
+        AIA::MCPDiscovery.new.resolve_entries(selected)
       end
 
       def mcp_filter_active?(config)

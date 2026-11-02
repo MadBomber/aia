@@ -1,0 +1,46 @@
+# AIA configuration for demo 30: every shared_tools tool and MCP server.
+#
+# require_libs loads the shared_tools gem (its RubyLLM::Tool classes) and
+# shared_tools/mcp (its RubyLLM::MCP server classes) before MCP servers
+# connect, so mcp_servers: can name those classes directly. Each class
+# describes its own command/url, env vars and timeout; no transport
+# settings are needed here.
+#
+# A server whose API key is missing reports itself unavailable and is
+# skipped with a one-line note at startup:
+#
+#   Memory, SequentialThinking, Chart, Playwright  no key (npx downloads them)
+#   GitHub      GITHUB_PERSONAL_ACCESS_TOKEN + github-mcp-server binary
+#   Tavily      TAVILY_API_KEY
+#   BraveSearch BRAVE_API_KEY
+#   Notion      NOTION_TOKEN + notion-mcp-server binary
+#   Slack       SLACK_MCP_XOXP_TOKEN or SLACK_MCP_XOXB_TOKEN + slack-mcp-server binary
+#   HuggingFace HF_TOKEN + hf-mcp-server binary
+
+prompts:
+  dir: ./prompts_dir
+
+models:
+  - name: claude-sonnet-4-6
+
+output:
+  file: ~
+
+flags:
+  chat: false
+
+require_libs:
+  - shared_tools
+  - shared_tools/mcp
+
+mcp_servers:
+  - SharedTools::MCP::Memory
+  - SharedTools::MCP::SequentialThinking
+  - SharedTools::MCP::Chart
+  - SharedTools::MCP::Playwright
+  - SharedTools::MCP::GitHub
+  - SharedTools::MCP::Tavily
+  - SharedTools::MCP::BraveSearch
+  - SharedTools::MCP::Notion
+  - SharedTools::MCP::Slack
+  - SharedTools::MCP::HuggingFace

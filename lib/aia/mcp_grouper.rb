@@ -19,7 +19,8 @@ module AIA
       groups = Hash.new { |h, k| h[k] = [] }
 
       servers.each do |server|
-        group_name = server[:group] || server["group"]
+        # Only a Hash config can carry a group; a RubyLLM::MCP class is independent.
+        group_name = server.is_a?(Hash) ? (server[:group] || server["group"]) : nil
         if group_name
           groups[group_name] << server
         else

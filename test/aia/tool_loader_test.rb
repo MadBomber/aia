@@ -61,6 +61,39 @@ class ToolLoaderTest < Minitest::Test
     assert_equal 1, result.length
   end
 
+  # A tool named apart from its Ruby class, like shared_tools' DnsTool ("dns").
+  class LookupTool < RubyLLM::Tool
+    def self.tool_name = 'lookup'
+
+    description 'Looks things up'
+
+    def execute = 'found'
+  end
+
+  def test_filtered_tools_matches_allowed_names_against_a_tool_class_tool_name
+    @config.loaded_tools = [LookupTool]
+    @config.tools.allowed = ['lookup']
+
+    assert_equal [LookupTool], AIA::ToolLoader.filtered_tools(@config)
+  end
+
+  def test_discover_tools_skips_ruby_llm_mcp_tool
+    refute_includes AIA::ToolLoader.discover_tools, RubyLLM::MCP::Tool
+  end
+
+  def test_mcp_tool_class_recognizes_mcp_tools_only
+    loader = AIA::ToolLoader.new
+    assert loader.mcp_tool_class?(RubyLLM::MCP::Tool)
+    refute loader.mcp_tool_class?(LookupTool)
+  end
+
+  def test_require_libs_requires_each_library
+    loader = AIA::ToolLoader.new
+    loader.expects(:require).with('set')
+    loader.expects(:require).with('json')
+    loader.require_libs(OpenStruct.new(require_libs: %w[set json]))
+  end
+
   def test_filtered_tools_applies_allowed_filter
     tool1 = mock('tool1')
     tool1.stubs(:name).returns('AllowedTool')

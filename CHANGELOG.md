@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+**Requires** robot_lab `~> 0.6` (was `~> 0.5, >= 0.5.1`).
+
+### Added
+
+- **`mcp_servers:` entries can name a `RubyLLM::MCP` subclass**, such as `SharedTools::MCP::GitHub`. The class supplies its own command or URL, environment and timeout. The server is known by the class's default name (`github`) for `--mcp-use`, `--mcp-skip` and `--mcp-list`. A class whose `available?` returns false (for example, a missing API key) is skipped with a one-line note naming the missing variables. `--mcp-list` prints a URL for HTTP servers.
+- **Example 30** (`examples/30_shared_tools_and_mcp.sh`) uses every shared_tools tool and MCP server.
+
+### Fixed
+
+- **Tool allowlists and the TF-IDF tool filter matched tool classes by their Ruby class name.** `--allowed-tools`, `--rejected-tools` and the per-turn tool filter named a tool class by its constant (`SharedTools::Tools::DnsTool`) instead of the name the model calls it by (`dns`). Since shared_tools 0.7 and robot_lab 0.6 use the tool name, `--allowed-tools dns` matched nothing, and a filtered chat turn sent none of the local tools. Example 18 was affected: the model reported it had no tools. aia now uses a tool class's `tool_name` everywhere (`ToolIntrospection.tool_name`), and example 18 uses the new names.
+- **`--require` libraries now load before MCP servers connect**, so `mcp_servers:` can refer to the classes they define. `--mcp-list` and `--list-tools` load them first too.
+- **`RubyLLM::MCP::Tool` is no longer reported as a local tool "that did not finish loading"** once a library that defines MCP server classes is required.
+
+### Changed
+
+- **robot_lab 0.6.** In 0.6, a `RubyLLM::Tool` class loaded with `--require` passes tool-name allowlists, a template's `mcp:` front matter can name a `RubyLLM::MCP` subclass by its constant name, and `mcp_discovery` reads descriptions declared on a server class (as the shared_tools 0.7.1 clients do).
+- **`/debate` shows each turn as it happens.** Each robot's response now prints as soon as that robot finishes, under a `Round N · Name` heading. Before, every round printed only a `Round N: Name...` placeholder, and all of the responses appeared in a single `AI:` block after the debate ended. Each round now prints one progress line (`Round 1: Tobor and Zen responding...`). The full transcript is no longer shown a second time at the end; it is still written to `--output` and recorded for the session.
+
 ## [2.0.0] 2026-11-01
 
 AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab): every session is a crew of robots, MCP servers come from ruby_llm 2.1's built-in client, and any provider RubyLLM registers can be used. This entry summarizes everything since 1.1.1, the last 1.x release, including the `2.0.0.pre.alpha` and `2.0.0.pre.beta2` pre-releases. The detailed notes for each stage follow below it.
