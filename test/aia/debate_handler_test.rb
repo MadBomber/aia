@@ -364,7 +364,7 @@ class DebateHandlerTest < Minitest::Test
   end
 
   def test_force_debate_flag
-    @turn_state.force_debate = true
+    @turn_state.request(:debate)
     assert @turn_state.force_debate
     @turn_state.clear!
     refute @turn_state.force_debate

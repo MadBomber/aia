@@ -137,9 +137,7 @@ module AIA
       concurrency = config.respond_to?(:concurrency) ? config.concurrency : nil
       return nil unless concurrency&.auto || turn_state.force_concurrent_mcp
 
-      if turn_state.force_concurrent_mcp
-        turn_state.force_concurrent_mcp = false
-      end
+      turn_state.clear_mode(:concurrent_mcp)
 
       discovery         = MCPDiscovery.new
       relevant_servers  = discovery.discover(config)

@@ -29,19 +29,19 @@ class ConfigTest < Minitest::Test
   def test_config_has_llm_section
     config = AIA::Config.new
     assert_respond_to config, :llm
-    assert_instance_of AIA::ConfigSection, config.llm
+    assert_instance_of MywayConfig::ConfigSection, config.llm
   end
 
   def test_config_has_prompts_section
     config = AIA::Config.new
     assert_respond_to config, :prompts
-    assert_instance_of AIA::ConfigSection, config.prompts
+    assert_instance_of MywayConfig::ConfigSection, config.prompts
   end
 
   def test_config_has_flags_section
     config = AIA::Config.new
     assert_respond_to config, :flags
-    assert_instance_of AIA::ConfigSection, config.flags
+    assert_instance_of MywayConfig::ConfigSection, config.flags
   end
 
   def test_config_has_tool_filter_section
@@ -366,7 +366,7 @@ class ConfigTest < Minitest::Test
   def test_concurrency_section_exists
     config = AIA::Config.new
     assert_respond_to config, :concurrency
-    assert_instance_of AIA::ConfigSection, config.concurrency
+    assert_instance_of MywayConfig::ConfigSection, config.concurrency
   end
 
   def test_concurrency_in_to_h

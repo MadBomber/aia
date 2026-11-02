@@ -14,26 +14,22 @@ module AIA
   class SpecialModeHandler
     include ContentExtractor
 
-    # Special-mode dispatch table. Each row is triggered by a TurnState flag and
+    # Special-mode dispatch table. Each row is triggered by a TurnState mode and
     # runs either a bespoke method (`run:`) or, for the uniform "sub-handler
     # returns content" family, the shared #run_sub_handler (`sub:`). Adding a
     # mode means adding a row here plus (for a bespoke mode) its handle_* method
     # — never editing #handle.
     MODES = [
-      { flag: :force_verify,         run: :handle_verification   },
-      { flag: :force_decompose,      run: :handle_decomposition  },
-      { flag: :force_concurrent_mcp, run: :handle_concurrent_mcp },
-      { flag: :force_debate,         sub: { handler: :debate_handler,   label: 'Debate'     } },
-      { flag: :force_delegate,       sub: { handler: :delegate_handler, label: 'Delegation' } },
-      { flag: :force_spawn,          sub: { handler: :spawn_handler,    label: 'Spawn',
-                                            context: lambda { |prompt, ts|
-                                              type = ts.spawn_type
-                                              spec = ts.spawn_spec
-                                              ts.spawn_type = nil
-                                              ts.spawn_spec = nil
-                                              { prompt: prompt, specialist_type: type, spawn_spec: spec }
-                                            } } },
-      { flag: :force_orchestrate,    run: :handle_orchestration  }
+      { mode: :verify,         run: :handle_verification   },
+      { mode: :decompose,      run: :handle_decomposition  },
+      { mode: :concurrent_mcp, run: :handle_concurrent_mcp },
+      { mode: :debate,         sub: { handler: :debate_handler,   label: 'Debate'     } },
+      { mode: :delegate,       sub: { handler: :delegate_handler, label: 'Delegation' } },
+      { mode: :spawn,          sub: { handler: :spawn_handler,    label: 'Spawn',
+                                      context: lambda { |prompt, taken|
+                                        { prompt: prompt, specialist_type: taken[:spawn_type], spawn_spec: taken[:spawn_spec] }
+                                      } } },
+      { mode: :orchestrate,    run: :handle_orchestration  }
     ].freeze
 
     # Memoized sub-handler accessors, used to propagate a robot swap.
@@ -66,15 +62,14 @@ module AIA
     # @param prompt [String] the user prompt
     # @return [Boolean]
     def handle(prompt)
-      turn_state = AIA.turn_state
-      mode = MODES.find { |m| turn_state.public_send(m[:flag]) }
-      return false unless mode
+      taken = AIA.turn_state.consume!
+      return false unless taken
 
-      turn_state.public_send(:"#{mode[:flag]}=", false)
-      if mode[:sub]
-        run_sub_handler(mode[:sub], prompt, turn_state)
+      row = MODES.find { |m| m[:mode] == taken[:mode] }
+      if row[:sub]
+        run_sub_handler(row[:sub], prompt, taken)
       else
-        send(mode[:run], prompt)
+        send(row[:run], prompt)
       end
     end
 
@@ -83,8 +78,8 @@ module AIA
     # Run a "sub-handler returns content" mode: debate / delegate / spawn share
     # this exact shape, differing only by handler, label, and (spawn) an extra
     # context field built by spec[:context].
-    def run_sub_handler(spec, prompt, turn_state)
-      ctx_args = spec[:context] ? spec[:context].call(prompt, turn_state) : { prompt: prompt }
+    def run_sub_handler(spec, prompt, taken)
+      ctx_args = spec[:context] ? spec[:context].call(prompt, taken) : { prompt: prompt }
       content  = send(spec[:handler]).handle(HandlerContext.new(**ctx_args))
       return false unless content
 

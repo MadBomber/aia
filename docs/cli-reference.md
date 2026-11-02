@@ -7,7 +7,6 @@
   - [Mode Options](#mode-options)
     - [`--chat`](#--chat)
     - [`-f, --fuzzy`](#-f---fuzzy)
-    - [`--terse`](#--terse)
     - [`--tokens`](#--tokens)
     - [`--cost`](#--cost)
     - [`--mcp FILE`](#--mcp-file)
@@ -23,7 +22,6 @@
     - [`-s, --skill SKILL_IDS`](#-s---skill-skill_ids)
     - [`--list-skills`](#--list-skills)
     - [`--skills-dir DIR`](#--skills-dir-dir)
-    - [`--skills-prefix PREFIX`](#--skills-prefix-prefix)
     - [`--sm, --speech-model MODEL`](#--sm---speech-model-model)
     - [`--tm, --transcription-model MODEL`](#--tm---transcription-model-model)
   - [File Options](#file-options)
@@ -37,13 +35,11 @@
     - [`--roles-prefix PREFIX`](#--roles-prefix-prefix)
     - [`-r, --role ROLE_ID`](#-r---role-role_id)
     - [`--list-roles`](#--list-roles)
-    - [`--skills-prefix PREFIX`](#--skills-prefix-prefix-1)
     - [`-s, --skill SKILL_IDS`](#-s---skill-skill_ids-1)
     - [`--list-skills`](#--list-skills-1)
     - [`-n, --next PROMPT_ID`](#-n---next-prompt_id)
     - [`-p PROMPTS, --pipeline PROMPTS`](#-p-prompts---pipeline-prompts)
     - [`--system-prompt PROMPT_ID`](#--system-prompt-prompt_id)
-    - [`--regex PATTERN`](#--regex-pattern)
   - [AI Parameters](#ai-parameters)
     - [`-t, --temperature TEMP`](#-t---temperature-temp)
     - [`--max-tokens TOKENS`](#--max-tokens-tokens)
@@ -127,16 +123,6 @@ aia -f
 ```
 
 **Note**: If `fzf` is not installed, AIA will exit with an error.
-
-### `--terse`
-**Deprecated.** Accepted for backward compatibility but has no effect.
-
-Formerly added a special instruction to the prompt asking the AI to keep responses short and to the point.
-
-```bash
-aia --terse my_prompt
-aia --terse --chat
-```
 
 ### `--tokens`
 Display token usage information after each response in chat mode. Shows input tokens, output tokens, and model ID.
@@ -398,23 +384,6 @@ aia --skills-dir /shared/team-skills -s code-review my_prompt
 
 **Environment variable**: `AIA_SKILLS__DIR`
 
-### `--skills-prefix PREFIX`
-Subdirectory name appended to the skills base to build the full skills path (default: none — unset). Affects `AIA.config.prompts.skills_prefix`.
-
-Path resolution when prefix is set:
-- If `--skills-dir` is also given: `skills-dir/prefix`
-- Otherwise: `prompts-dir/prefix` (using `--prompts-dir` or `AIA_PROMPTS__DIR`)
-
-```bash
-aia --skills-prefix team-skills --list-skills
-# Looks for skills under ~/.prompts/team-skills/
-
-aia --skills-dir /shared --skills-prefix team-skills --list-skills
-# Looks for skills under /shared/team-skills/
-```
-
-**Environment variable**: `AIA_PROMPTS__SKILLS_PREFIX`
-
 ### `--sm, --speech-model MODEL`
 Set the `SPEECH_MODEL` environment variable that AIA passes to the
 `speak_command`. AIA does not call any TTS API — this value is only meaningful
@@ -580,21 +549,6 @@ Roles are discovered from:
 
 **See also**: `--role`, `--model`, `--prompts-dir`, `--roles-prefix`
 
-### `--skills-prefix PREFIX`
-Subdirectory name appended to the base path to form the skills directory (default: none — unset).
-
-When unset and no `--skills-dir` is given, skills are resolved from `~/.prompts/skills/`.
-
-```bash
-# Use custom prefix under prompts-dir
-aia --skills-prefix capabilities --skill expert
-# Looks for ~/.prompts/capabilities/expert/SKILL.md
-
-# Use prefix under an explicit skills-dir
-aia --skills-dir /shared --skills-prefix team --skill expert
-# Looks for /shared/team/expert/SKILL.md
-```
-
 ### `-s, --skill SKILL_IDS`
 One or more skill IDs to layer into the prompt after the role. Skills define *what the LLM does* in order to respond — they sit between the role (identity) and the user prompt in the assembled system prompt.
 
@@ -628,7 +582,7 @@ aia --role ruby_expert --skill testing --skill minitest my_prompt
 
 Follow-up turns in chat mode include only the system prompt and the user message; role and skills are carried implicitly via conversation history.
 
-**See also**: `--role`, `--list-skills`, `--skills-prefix`
+**See also**: `--role`, `--list-skills`, `--skills-dir`
 
 ### `--list-skills`
 List all available skills and exit. A skill is a subdirectory of the skills directory that contains a `SKILL.md` file. Output is a formatted markdown document.
@@ -656,11 +610,11 @@ aia --list-skills
 
 Skills are discovered from:
 - **Default location**: `~/.prompts/skills/`
-- **Custom location**: Set via `--prompts-dir` and `--skills-prefix`
+- **Custom location**: Set via `--skills-dir`
 - **Convention**: Each skill is a subdirectory containing a `SKILL.md` file; plain `.md` files and subdirectories without `SKILL.md` are ignored
 - **Output**: H2 heading per skill ID, followed by a two-column table of YAML front matter key/value pairs
 
-**See also**: `--skill`, `--skills-prefix`
+**See also**: `--skill`, `--skills-dir`
 
 ### `-n, --next PROMPT_ID`
 Next prompt to process (can be used multiple times to build a pipeline).
@@ -685,14 +639,6 @@ System prompt ID to use for chat sessions.
 ```bash
 aia --system-prompt helpful_assistant --chat
 aia --system-prompt code_expert --chat my_code.py
-```
-
-### `--regex PATTERN`
-**Deprecated.** No longer used; prompt parameters use ERB syntax.
-
-```bash
-aia --regex '\{\{(\w+)\}\}' my_template_prompt
-aia --regex '<%=\s*(\w+)\s*%>' erb_prompt
 ```
 
 ## AI Parameters

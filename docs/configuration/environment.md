@@ -1,0 +1,138 @@
+# Environment Variables
+
+Environment variables let you set aia's options per shell, per project (with a tool like direnv) or per command, without touching a config file. They also carry your provider API keys.
+
+## Setting any config key: `AIA_*`
+
+Every key in the configuration can be set with an environment variable. Take the key's dotted path, write it in capitals, join the levels with `__` (two underscores), and put `AIA_` in front:
+
+| Config key | Environment variable |
+|---|---|
+| `llm.temperature` | `AIA_LLM__TEMPERATURE` |
+| `prompts.dir` | `AIA_PROMPTS__DIR` |
+| `output.file` | `AIA_OUTPUT__FILE` |
+| `flags.tokens` | `AIA_FLAGS__TOKENS` |
+| `logger.llm.level` | `AIA_LOGGER__LLM__LEVEL` |
+| `require_libs` | `AIA_REQUIRE_LIBS` |
+
+[Configuration Keys](../reference/config-keys.md) lists the variable for every key.
+
+```bash
+# for one command
+AIA_OUTPUT__FILE=dates.md aia extract_dates contract.txt
+
+# for the rest of the shell session
+export AIA_PROMPTS__DIR=~/work/prompts
+export AIA_SKILLS__DIR=~/work/prompts/skills
+```
+
+Environment variables override your config file and are overridden by command-line options. See [Configuration Precedence](precedence.md).
+
+!!! warning "Values arrive as plain text"
+    aia does not convert environment values to numbers or true/false. Two consequences:
+
+    - **On/off settings are unreliable as environment variables.** Prefer the config file or a command-line option for them. If you do use one:
+        - `AIA_FLAGS__CHAT`, `AIA_FLAGS__FUZZY` and `AIA_FLAGS__CONSENSUS` understand `true` and `false`.
+        - `AIA_FLAGS__DEBUG`, `AIA_FLAGS__VERBOSE`, `AIA_FLAGS__SPEAK`, `AIA_FLAGS__PAINT` and `AIA_OUTPUT__APPEND` have no reliable effect whatever their value. Use `-d`, `-v`, `--speak`, `--paint`, `-a` or the config file.
+        - Every other on/off variable switches the setting **on for any value, including `false`**. To turn one off, `unset` it.
+    - **Numbers stay text.** `AIA_LLM__TEMPERATURE=0.2` reaches the model request as the string `"0.2"`, which a provider may reject. Set numbers in the config file or with `-t`, `--max-tokens` and friends.
+    - **One value per variable for `tools.allowed` and `tools.rejected`.** `AIA_TOOLS__ALLOWED=read,write` is matched as the one string `read,write`. Put lists in the config file or use `--at` / `--rt`.
+
+    The top-level lists `pipeline`, `require_libs`, `mcp_use`, `mcp_skip` and `context_files` *are* split on commas: `AIA_REQUIRE_LIBS=shared_tools,json`.
+
+    Run `aia --dump check.yml` to see exactly what aia made of your variables.
+
+## Variables with special handling
+
+### `AIA_MODEL`
+
+The model or models to use, in the same form as `-m`:
+
+```bash
+export AIA_MODEL=claude-haiku-4-5
+export AIA_MODEL="gpt-4o,claude-sonnet-4-6"       # run both
+export AIA_MODEL="gpt-4o=architect,gpt-4o=critic" # same model, two roles
+export AIA_MODEL=ollama/llama3.2                  # provider prefix
+```
+
+`-m` on the command line wins over `AIA_MODEL`. `AIA_MODEL` also wins over the `models:` in a file given with `-c`.
+
+### `AIA_PLUGINS_DIR`
+
+The plugins directory (config key `paths.plugins_dir`). Note the name: it is `AIA_PLUGINS_DIR`, not `AIA_PATHS__PLUGINS_DIR`. `--plugins-dir` wins over it. Like `AIA_MODEL`, it still applies when you use `-c`. See [Plugins](../prompts/plugins.md).
+
+```bash
+export AIA_PLUGINS_DIR=~/.config/aia/plugins
+```
+
+### `AIA_PROMPTS__DIR` and `AIA_PROMPTS__ROLES_PREFIX`
+
+Besides setting `prompts.dir` and `prompts.roles_prefix` normally, these two are read directly by:
+
+- `aia --list-roles`
+- the role check for `-m MODEL=ROLE`
+- the shell completion scripts from `aia --completion` (`AIA_PROMPTS__DIR` only)
+
+Those run before the config file is read, so they see only the environment (falling back to `~/.prompts` and `roles`). If you keep prompts somewhere other than `~/.prompts`, export `AIA_PROMPTS__DIR` rather than setting `prompts.dir` only in the config file.
+
+### `AIA_SKILLS__DIR`
+
+Sets `skills.dir`. Its default, `~/.prompts/skills`, does not follow `AIA_PROMPTS__DIR`, so if you move your prompts and keep skills beside them, set both.
+
+## Provider API keys
+
+Keys use each provider's usual variable name. Set the ones for the providers you use:
+
+| Provider | Variable(s) |
+|---|---|
+| OpenAI | `OPENAI_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| Google Gemini | `GEMINI_API_KEY` |
+| DeepSeek | `DEEPSEEK_API_KEY` |
+| Mistral | `MISTRAL_API_KEY` |
+| Perplexity | `PERPLEXITY_API_KEY` |
+| OpenRouter | `OPENROUTER_API_KEY` |
+| xAI | `XAI_API_KEY` |
+| GPUStack | `GPUSTACK_API_KEY` |
+| AWS Bedrock | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_SESSION_TOKEN` |
+| Google Vertex AI | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` |
+
+The default model, `gpt-4o-mini`, needs `OPENAI_API_KEY`. Local providers such as Ollama and LM Studio need no key.
+
+`aia --list-providers` marks each provider that has a key with `(has API key)`; for that check aia looks for `<PROVIDER>_API_KEY` (for example `COHERE_API_KEY`).
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+aia -m claude-haiku-4-5 my_prompt
+```
+
+## Provider endpoints: `<PROVIDER>_API_BASE`
+
+For any provider that has a configurable endpoint, `<PROVIDER>_API_BASE` points it somewhere else — a local server on a different port, a proxy, a self-hosted gateway. `<PROVIDER>` is the provider's slug from `aia --list-providers`, in capitals.
+
+```bash
+export OLLAMA_API_BASE=http://gpu-box.local:11434/v1
+export OPENAI_API_BASE=https://llm-proxy.example.com/v1
+```
+
+See [Local Models](../extending/local-models.md).
+
+## Other variables aia reads
+
+| Variable | Used for |
+|---|---|
+| `PUREMD_API_KEY` | Required by the `/webpage` directive, which fetches pages through the pure.md service. |
+| `XDG_CONFIG_HOME` | If set, aia looks for its config file at `$XDG_CONFIG_HOME/aia/aia.yml` first. See [The Config File](config-file.md#where-aia-looks). |
+| `COLUMNS` | Width used to wrap `--list-tools` output. |
+| `BUNDLE_GEMFILE` | Only when running `bin/aia` from a clone of the aia repository. |
+
+## Variables aia sets for you
+
+When aia runs your speak command (`--speak` with `--speak-command`, or the `/say` directive) it passes the speech model as `SPEECH_MODEL` in that command's environment.
+
+## See also
+
+- [The Config File](config-file.md)
+- [Configuration Precedence](precedence.md)
+- [Configuration Keys](../reference/config-keys.md)
+- [Security](security.md) — keeping API keys safe

@@ -9,7 +9,6 @@ class SpecialDirectivesTest < Minitest::Test
   def setup
     @config = OpenStruct.new(
       flags: OpenStruct.new(chat: false, debug: false, verbose: false, consensus: false),
-      rules: OpenStruct.new(dir: nil, enabled: false),
       models: [OpenStruct.new(name: 'gpt-4o-mini', role: nil)],
       pipeline: [],
       context_files: [],

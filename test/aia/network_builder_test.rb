@@ -54,8 +54,7 @@ class NetworkBuilderTest < Minitest::Test
         presence_penalty:  0.0
       ),
       tools: OpenStruct.new(paths: [], allowed: nil, rejected: nil),
-      output: OpenStruct.new(file: nil, append: false),
-      rules:  OpenStruct.new(dir: nil, enabled: false)
+      output: OpenStruct.new(file: nil, append: false)
     )
 
     @namer = AIA::RobotNamer.new(first_name: 'Tobor')

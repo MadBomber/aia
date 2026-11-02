@@ -274,8 +274,7 @@ class SpawnHandlerTest < Minitest::Test
   end
 
   def test_force_spawn_flag_and_type
-    @turn_state.force_spawn = true
-    @turn_state.spawn_type = "data_scientist"
+    @turn_state.request(:spawn, type: "data_scientist")
 
     assert @turn_state.force_spawn
     assert_equal "data_scientist", @turn_state.spawn_type

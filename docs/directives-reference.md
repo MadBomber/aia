@@ -35,7 +35,6 @@
     - [`/pipeline`](#pipeline)
     - [`/mcp`](#mcp)
     - [`/robots`](#robots)
-    - [`/terse`](#terse)
     - [`/robot`](#robot)
   - [Context Management Directives](#context-management-directives)
     - [`/checkpoint`](#checkpoint)
@@ -778,9 +777,6 @@ Mode: Consensus Network (3 robots)
 - Shows mode: Single, Parallel, Consensus, or Pipeline
 - Displays robot name, model, provider, cost, tools, and role
 - For networks, shows all robots including the Weaver synthesizer
-
-### `/terse`
-*Deprecated.* Previously added an instruction for concise responses. Now a no-op.
 
 ### `/robot`
 Generate ASCII art robot.

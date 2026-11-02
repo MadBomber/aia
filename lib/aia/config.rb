@@ -28,9 +28,6 @@ require_relative 'config/model_spec'
 require_relative 'config/mcp_parser'
 
 module AIA
-  # Backward compatibility alias
-  ConfigSection = MywayConfig::ConfigSection
-
   class Config < MywayConfig::Base
     config_name :aia
     env_prefix :aia
@@ -49,7 +46,7 @@ module AIA
 
     # Nested section attributes (defined as hashes, converted to ConfigSection)
     attr_config :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
-                :tools, :flags, :registry, :paths, :logger, :rules, :concurrency,
+                :tools, :flags, :registry, :paths, :logger, :concurrency,
                 :tool_filter
 
     # Array/collection attributes
@@ -119,7 +116,6 @@ module AIA
       logger: config_section_coercion(:logger),
       registry: config_section_coercion(:registry),
       paths: config_section_coercion(:paths),
-      rules: config_section_coercion(:rules),
       concurrency: config_section_coercion(:concurrency),
       tool_filter: config_section_coercion(:tool_filter),
 
@@ -216,9 +212,7 @@ module AIA
       # registry section
       refresh: %i[registry refresh],
       # paths section
-      plugins_dir: %i[paths plugins_dir],
-      # rules section
-      rules_enabled: %i[rules enabled]
+      plugins_dir: %i[paths plugins_dir]
     }.freeze
 
     def initialize(overrides: {})
@@ -262,7 +256,6 @@ module AIA
     end
 
     # Convert config to hash (for dump, etc.)
-    # rubocop:disable-next Metrics/AbcSize
     def to_h
       {
         service: service.to_h,
@@ -280,7 +273,6 @@ module AIA
         logger: logger.to_h,
         registry: registry.to_h,
         paths: paths.to_h,
-        rules: rules.to_h,
         concurrency: concurrency.to_h,
         pipeline: pipeline,
         require_libs: require_libs,
@@ -324,7 +316,7 @@ module AIA
         when :mcp_servers
           self.mcp_servers = Array(value)
         when :service, :llm, :prompts, :roles, :skills, :output, :audio, :image, :embedding,
-             :tools, :flags, :registry, :paths, :logger, :rules, :concurrency
+             :tools, :flags, :registry, :paths, :logger, :concurrency
           section = send(key)
           if section.is_a?(MywayConfig::ConfigSection) && value.is_a?(Hash)
             merge_into_section(section, value)
@@ -409,7 +401,6 @@ module AIA
       expand_path_on(skills, :dir)
       expand_path_on(tools, :dir)
       expand_path_on(output, :history_file)
-      expand_path_on(rules, :dir)
     end
 
     def expand_path_on(obj, method_name)

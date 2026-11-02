@@ -314,13 +314,6 @@ aia parameterized_analysis
 aia parameterized_analysis --subject "user behavior" --focus_area "conversion rates"
 ```
 
-### Parameter Extraction
-```bash
-# Use regex to extract parameters from prompts
-aia --regex '\{\{(\w+)\}\}' template_prompt
-aia --regex '<%=\s*(\w+)\s*%>' erb_prompt
-```
-
 ## Roles and Context
 
 ### Role Definitions
@@ -561,9 +554,9 @@ erb -T - ~/.prompts/template_prompt.md < /dev/null
 
 #### Missing Parameters
 ```bash
-# Check required parameters
-aia --regex '<%=\s*(\w+)\s*%>' my_prompt
-# Ensure all extracted parameters are provided
+# Parameters with a null default in the front matter are required.
+# AIA asks for each one that has no value.
+aia my_prompt
 ```
 
 #### File Not Found

@@ -8,21 +8,23 @@ AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab):
 
 ### Upgrading from 1.x
 
-These changes can break an existing setup:
+These changes can break an existing setup. [docs/breaking_changes.md](docs/breaking_changes.md) has the details.
 
 - **Ruby 4.0.9 or newer.**
+- **Removed options:** `--terse`, `--regex` and `--skills-prefix`. Passing one now stops AIA with an invalid-option error. The config keys `flags.terse`, `prompts.parameter_regex` and `prompts.skills_prefix` are gone too. Use `--skills-dir` in place of `--skills-prefix`.
+- **Changed defaults:** `llm.max_tokens` is `32767` (was `2048`) and `llm.top_p` is `nil` (was `1.0`). `audio.speak_command` is `say`; it was `afplay`, which plays audio files, not text. `audio.voice`, `audio.speech_model` and `audio.transcription_model` are `nil` (were `alloy`, `tts-1` and `whisper-1`).
 - **Custom tools must use the ruby_llm 2 DSL.** `param :text, desc: "..."` is now `parameter :text, description: "..."`. A tool still written the 1.x way raises `NoMethodError` when it loads.
 - **MCP runs on ruby_llm 2.1's own client.** The `ruby_llm-mcp` gem is no longer used and cannot be loaded alongside ruby_llm 2.1. Servers listed under `mcp_servers:` keep working. Also:
   - Server classes loaded with `--require` must subclass `RubyLLM::MCP`.
   - `sse` and `ws` transports are gone; use the server's Streamable HTTP `url:` or a stdio `command:`.
   - When two servers offer a tool with the same name, the second now fails to connect. Give one of them a `prefix:`.
-- **Approval-gated tools now ask first.** Tools listed under a server's `requires_approval:` prompt `Allow it? [y/N]`, and are refused when there is no terminal. For unattended runs, set `--tool-approval approve` or `deny`.
-- **`/model` keeps the conversation.** Switching models hands the new model a summary of the conversation so far. Set `model_switch_history: clean` to start fresh, as 1.x did.
+- **`/terse` has been removed.**
 - **`/ruby` is off by default.** Enable it with `--allow-ruby-eval`.
-- **Tool filtering is TF-IDF only, and on by default.** Toggle it with `--[no-]auto-tool-filter`, which replaces `tool_filter_a`. The KBS rule engine is gone, and with it `-A`/`--tool-filter-kbs`, `/rules` and user-defined rule hooks.
-- **`--speak` defaults to the macOS `say` command** (it was `afplay`, which fails on text). `skills_prefix` now defaults to `nil`.
-- **Embedding AIA in Ruby code:** `AIA.client` is a `RobotLab::Robot` or `RobotLab::Network`. `RubyLLMAdapter` and `lib/aia/adapter/` are gone.
+- **`/model` keeps the conversation.** Switching models hands the new model a summary of the conversation so far. Set `model_switch_history: clean` to start fresh, as 1.x did.
+- **Embedding AIA in Ruby code:** `AIA.client` is a `RobotLab::Robot` or `RobotLab::Network`. `RubyLLMAdapter` and `lib/aia/adapter/` are gone. `AIA::HistoryManager` is now `AIA::VariableInputCollector`, and `AIA::ConfigSection` is now `MywayConfig::ConfigSection`.
 - **The gem no longer ships `docs/`, `examples/` or `mcp_servers/`.** They are in the [repository](https://github.com/MadBomber/aia).
+
+If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule hooks and `--tool-filter-kbs` have been removed. Tool filtering is TF-IDF only and on by default, toggled with `-A` / `--[no-]auto-tool-filter`, which replaces `tool_filter_a`.
 
 ### Added
 
@@ -67,12 +69,16 @@ These changes can break an existing setup:
 - The example scripts and configs run on Anthropic (`claude-haiku-4-5`, `claude-sonnet-4-6`) and need only `ANTHROPIC_API_KEY`. The example tool plugins moved to `examples/plugins/`.
 - Heavy subsystems load only when used: verification, decomposition, TrakFlow and the special-mode handlers.
 - "Exiting AIA application..." now appears only when a chat session ends, not after `--version`, `--help` or a one-shot run.
+- **One special mode per turn is now enforced.** `/verify`, `/decompose`, `/concurrent`, `/debate`, `/delegate`, `/spawn` and `/orchestrate` go through `TurnState#request`, so a later directive replaces an earlier one instead of both staying set. The `TurnState` `force_*` flags are read-only; handlers take the active mode with `TurnState#consume!`.
 
 ### Removed
 
 - KBS rule engine: `RuleRouter`, `ExpertRouter`, `DynamicRuleBuilder`, `DecisionApplier` and the rules DSL.
 - The zvec, sqlite-vec and LSI tool filters.
 - Dependencies: `kbs`, `ruby_llm-mcp`, `zvec`, `sqlite-vec`, `informers`, `ostruct`, `securerandom`.
+- The `--terse`, `--regex` and `--skills-prefix` options, the `/terse` directive, and their config keys.
+- The unused `rules:` config section (`AIA_RULES__*`).
+- Compatibility shims: the `AIA::HistoryManager` and `AIA::ConfigSection` aliases, and the `RobotFactory` forwarding methods `clear_tool_cache!`, `filtered_tools`, `resolve_system_prompt` and `build_identity_prompt` (call `ToolLoader` and `SystemPromptAssembler` directly).
 
 ### Fixed
 

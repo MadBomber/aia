@@ -145,6 +145,7 @@ extra:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Breaking Changes: breaking_changes.md
   - Configuration: configuration.md
   - Guides:
     - guides/index.md

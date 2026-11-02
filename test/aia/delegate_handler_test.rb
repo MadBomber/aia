@@ -162,7 +162,7 @@ class DelegateHandlerTest < Minitest::Test
   end
 
   def test_force_delegate_flag
-    @turn_state.force_delegate = true
+    @turn_state.request(:delegate)
     assert @turn_state.force_delegate
     @turn_state.clear!
     refute @turn_state.force_delegate

@@ -81,8 +81,7 @@ class MultiModelTest < Minitest::Test
       require_libs: [],
       loaded_tools: [],
       tool_names: '',
-      prompt_id: nil,
-      rules: OpenStruct.new(dir: nil, enabled: false)
+      prompt_id: nil
     )
   end
 

@@ -254,17 +254,6 @@ defaults:
     mcp_timeout: 120
 
   # ---------------------------------------------------------------------------
-  # Rules Configuration (Enhanced Multi-KB in v2)
-  # Access: AIA.config.rules.dir, AIA.config.rules.enabled, etc.
-  # Env: AIA_RULES__DIR, AIA_RULES__ENABLED
-  # ---------------------------------------------------------------------------
-  rules:
-    dir: ~/.config/aia/rules
-    enabled: true
-    store: memory
-    db_path: ~/.config/aia/rules.db
-
-  # ---------------------------------------------------------------------------
   # Context Files (set at runtime)
   # Access: AIA.config.context_files (array of file paths)
   # ---------------------------------------------------------------------------

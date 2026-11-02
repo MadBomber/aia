@@ -82,7 +82,6 @@ Gem::Specification.new do |spec|
     ║               AIA — AI Assistant v2.0                        ║
     ║                                                              ║
     ║  v2 is powered by robot_lab for robust orchestration         ║
-    ║  Full CLI backward compatibility with v1                     ║
     ╚══════════════════════════════════════════════════════════════╝
 
     Get started:  aia --help

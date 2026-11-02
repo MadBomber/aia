@@ -93,9 +93,7 @@ prompts:
   roles_dir: ~/.prompts/roles # Full path to roles directory
   role: ~                     # Default role
   skills: []                  # Skill IDs to prepend to prompt (set by --skill/-s)
-  skills_prefix: ~            # Subdirectory appended to skills base path (nil = unset)
   system_prompt: ~            # Default system prompt
-  parameter_regex: ~          # Regex for parameter extraction
 
 # Roles Configuration
 # Access: AIA.config.roles.dir
@@ -549,10 +547,8 @@ prompts:
   roles_prefix: roles       # ~/.prompts/roles/
   roles_dir: ~/.prompts/roles
   role: ~                   # Default role (null = none)
-  skills_prefix: ~          # Prefix appended to skills base (nil = unset, uses skills.dir directly)
   skills: []                # Default skills (empty = none)
   system_prompt: ~          # Default system prompt
-  parameter_regex: ~        # Custom parameter extraction regex
 
 # Top-level directory shortcuts (expand ~ automatically)
 roles:

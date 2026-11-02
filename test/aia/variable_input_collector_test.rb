@@ -12,10 +12,6 @@ class VariableInputCollectorTest < Minitest::Test
     assert_instance_of AIA::VariableInputCollector, @collector
   end
 
-  def test_history_manager_alias_points_to_same_class
-    assert_equal AIA::VariableInputCollector, AIA::HistoryManager
-  end
-
   def test_request_variable_value_prompts_user
     Reline.stubs(:readline).returns("user_input")
     Reline.stubs(:line_editor).returns(OpenStruct.new(prompt_proc: nil, :prompt_proc= => nil))

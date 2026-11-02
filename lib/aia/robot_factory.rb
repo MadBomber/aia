@@ -74,24 +74,6 @@ module AIA
         new_robot
       end
 
-      # --- Forwarding wrappers for backward compatibility ---
-
-      def clear_tool_cache!
-        ToolLoader.clear_cache!
-      end
-
-      def filtered_tools(config)
-        ToolLoader.filtered_tools(config)
-      end
-
-      def resolve_system_prompt(config, model_spec = nil)
-        SystemPromptAssembler.resolve_system_prompt(config, model_spec)
-      end
-
-      def build_identity_prompt(robot_name, spec, roster)
-        SystemPromptAssembler.build_identity_prompt(robot_name, spec, roster)
-      end
-
       # Build a concurrent MCP network where independent server groups
       # run in parallel with a synthesizer to merge results.
       #

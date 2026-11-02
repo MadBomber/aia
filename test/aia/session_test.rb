@@ -63,10 +63,6 @@ class SessionTest < Minitest::Test
                                  registry: OpenStruct.new(
                                    refresh: 7,
                                    last_refresh: nil
-                                 ),
-                                 rules: OpenStruct.new(
-                                   dir: nil,
-                                   enabled: false
                                  )
                                ))
 

@@ -50,7 +50,6 @@ class MCPStartupTest < Minitest::Test
       audio: OpenStruct.new(voice: 'alloy', speak_command: 'afplay', speech_model: 'tts-1'),
       registry: OpenStruct.new(refresh: 7),
       paths: OpenStruct.new(aia_dir: '/tmp/aia_test'),
-      rules: OpenStruct.new(dir: nil, enabled: false),
       logger: OpenStruct.new(
         aia: OpenStruct.new(file: 'STDOUT', level: 'debug', flush: true),
         llm: OpenStruct.new(file: 'STDOUT', level: 'debug', flush: true),

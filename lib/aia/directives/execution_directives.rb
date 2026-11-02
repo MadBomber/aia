@@ -53,32 +53,32 @@ module AIA
 
     desc "Execute next prompt with concurrent MCP server access"
     def concurrent(args, context_manager = nil)
-      AIA.turn_state.force_concurrent_mcp = true
+      AIA.turn_state.request(:concurrent_mcp)
       "Concurrent MCP mode enabled for next prompt."
     end
     alias conc concurrent
 
     desc "Run next prompt through verification (two independent answers + reconciliation)"
     def verify(args, context_manager = nil)
-      AIA.turn_state.force_verify = true
+      AIA.turn_state.request(:verify)
       "Verification mode enabled for next prompt."
     end
 
     desc "Decompose next prompt into parallel sub-tasks"
     def decompose(args, context_manager = nil)
-      AIA.turn_state.force_decompose = true
+      AIA.turn_state.request(:decompose)
       "Decomposition mode enabled for next prompt."
     end
 
     desc "Multi-round debate between robots in the network"
     def debate(args, context_manager = nil)
-      AIA.turn_state.force_debate = true
+      AIA.turn_state.request(:debate)
       "Debate mode enabled for next prompt."
     end
 
     desc "Delegate subtasks to specific robots via TrakFlow plan"
     def delegate(args, context_manager = nil)
-      AIA.turn_state.force_delegate = true
+      AIA.turn_state.request(:delegate)
       "Delegation mode enabled for next prompt."
     end
     alias del delegate
@@ -86,18 +86,13 @@ module AIA
     desc "Spawn a specialist robot for the next prompt. " \
          "Usage: /spawn  |  /spawn <type>  |  /spawn <name> <provider/model> <system prompt>"
     def spawn(args, context_manager = nil)
-      state = AIA.turn_state
-      state.force_spawn = true
-
       if args.size >= 2
         spec = AIA::SpawnSpecParser.parse(args)
-        state.spawn_spec = spec
-        state.spawn_type = nil
+        AIA.turn_state.request(:spawn, spec: spec)
         "Spawn mode enabled: '#{spec[:name]}' (#{spawn_model_summary(spec)}) for next prompt."
       else
         type = args.first
-        state.spawn_spec = nil
-        state.spawn_type = type
+        AIA.turn_state.request(:spawn, type: type)
         type_msg = type ? " (#{type})" : " (auto-detect)"
         "Spawn mode enabled#{type_msg} for next prompt."
       end
@@ -143,7 +138,7 @@ module AIA
 
     desc "3-tier layered orchestration: orchestrator → lead agents → specialists"
     def orchestrate(args, context_manager = nil)
-      AIA.turn_state.force_orchestrate = true
+      AIA.turn_state.request(:orchestrate)
       "Orchestration mode enabled. Your next prompt is the application requirements."
     end
     alias orch orchestrate

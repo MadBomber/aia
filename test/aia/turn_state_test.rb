@@ -161,6 +161,61 @@ class TurnStateTest < Minitest::Test
   end
 
   # ---------------------------------------------------------------------------
+  # consume! / clear_mode
+  # ---------------------------------------------------------------------------
+
+  def test_request_spawn_with_spec_sets_spawn_spec
+    spec = { name: "Ada", model: "gpt-4o" }
+    @ts.request(:spawn, spec: spec)
+    assert_equal spec, @ts.spawn_spec
+    assert_nil @ts.spawn_type
+  end
+
+  def test_consume_returns_nil_when_no_mode_active
+    assert_nil @ts.consume!
+  end
+
+  def test_consume_returns_active_mode_and_clears_it
+    @ts.request(:debate)
+    assert_equal({ mode: :debate, spawn_type: nil, spawn_spec: nil }, @ts.consume!)
+    assert_nil @ts.active_mode
+  end
+
+  def test_consume_returns_spawn_details_and_clears_them
+    @ts.request(:spawn, type: "analyst")
+    assert_equal({ mode: :spawn, spawn_type: "analyst", spawn_spec: nil }, @ts.consume!)
+    assert_nil @ts.spawn_type
+    refute @ts.force_spawn
+  end
+
+  def test_consume_leaves_active_mcp_servers_alone
+    @ts.active_mcp_servers = [:server_a]
+    @ts.request(:verify)
+    @ts.consume!
+    assert_equal [:server_a], @ts.active_mcp_servers
+  end
+
+  def test_clear_mode_clears_matching_active_mode
+    @ts.request(:concurrent_mcp)
+    @ts.clear_mode(:concurrent_mcp)
+    assert_nil @ts.active_mode
+  end
+
+  def test_clear_mode_leaves_other_mode_alone
+    @ts.request(:verify)
+    @ts.clear_mode(:concurrent_mcp)
+    assert_equal :verify, @ts.active_mode
+  end
+
+  def test_exclusive_flags_have_no_public_writers
+    AIA::TurnState::EXCLUSIVE_MODES.each do |mode|
+      refute_respond_to @ts, :"force_#{mode}="
+    end
+    refute_respond_to @ts, :spawn_type=
+    refute_respond_to @ts, :spawn_spec=
+  end
+
+  # ---------------------------------------------------------------------------
   # Error handling
   # ---------------------------------------------------------------------------
 

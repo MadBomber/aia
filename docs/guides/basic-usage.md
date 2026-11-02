@@ -375,7 +375,6 @@ The `run` prompt is a configuration-only prompt that serves as a foundation for 
 
 /config model = gpt-4o-mini
 /config temperature = 0.7
-/config terse = true
 ```
 
 **Usage Examples:**
@@ -422,7 +421,7 @@ export AIA_MODEL=gpt-4o-mini
 export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 
 # Quick chat alias
-alias chat='aia --chat --terse'
+alias chat='aia --chat'
 
 # Quick question function
 ask() { echo "$1" | aia --no-output; }

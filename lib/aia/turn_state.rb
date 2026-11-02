@@ -6,10 +6,9 @@
 # Replaces ad-hoc instance variable flags on AIA.config.
 #
 # Only one special mode may be requested per turn (mutual exclusion).
-# Use TurnState#request(mode, **opts) to enqueue a mode — this clears
-# all other force_* flags before setting the new one. Assigning the
-# attr_accessors directly bypasses mutual exclusion (for backward compat
-# and direct test assertions).
+# TurnState#request(mode, **opts) enqueues a mode and clears all other
+# force_* flags. #consume! hands the active mode to its handler and
+# clears it. The force_* flags are read-only from outside.
 
 module AIA
   # :reek:TooManyInstanceVariables -- one boolean flag per exclusive mode plus spawn/mcp details; a Hash would lose the attr_accessor API
@@ -19,9 +18,12 @@ module AIA
       verify decompose concurrent_mcp debate delegate spawn orchestrate
     ].freeze
 
-    attr_accessor :force_verify, :force_decompose, :force_concurrent_mcp,
-                  :force_debate, :force_delegate, :force_spawn, :spawn_type,
-                  :spawn_spec, :force_orchestrate, :active_mcp_servers
+    attr_reader :force_verify, :force_decompose, :force_concurrent_mcp,
+                :force_debate, :force_delegate, :force_spawn, :spawn_type,
+                :spawn_spec, :force_orchestrate
+
+    # Per-turn MCP server filter; not an exclusive mode.
+    attr_accessor :active_mcp_servers
 
     def initialize
       clear!
@@ -33,8 +35,9 @@ module AIA
     #
     # @param mode [Symbol] one of EXCLUSIVE_MODES
     # @param type [String, nil] specialist type (only relevant for :spawn)
+    # @param spec [Hash, nil] explicit specialist spec (only relevant for :spawn)
     # @raise [ArgumentError] if mode is not one of EXCLUSIVE_MODES
-    def request(mode, type: nil)
+    def request(mode, type: nil, spec: nil)
       unless EXCLUSIVE_MODES.include?(mode)
         raise ArgumentError, "Unknown TurnState mode: #{mode.inspect}. Valid: #{EXCLUSIVE_MODES.join(', ')}"
       end
@@ -49,8 +52,28 @@ module AIA
       when :delegate       then @force_delegate        = true
       when :spawn          then @force_spawn = true
                                 @spawn_type = type
+                                @spawn_spec = spec
       when :orchestrate    then @force_orchestrate     = true
       end
+    end
+
+    # Take the active mode for handling and clear it.
+    #
+    # @return [Hash, nil] { mode:, spawn_type:, spawn_spec: }, or nil when no mode is active
+    def consume!
+      mode = active_mode
+      return nil unless mode
+
+      taken = { mode: mode, spawn_type: @spawn_type, spawn_spec: @spawn_spec }
+      clear_exclusive_flags!
+      taken
+    end
+
+    # Clear +mode+ if it is the active mode; leave any other mode alone.
+    #
+    # @param mode [Symbol] one of EXCLUSIVE_MODES
+    def clear_mode(mode)
+      clear_exclusive_flags! if active_mode == mode
     end
 
     def clear!

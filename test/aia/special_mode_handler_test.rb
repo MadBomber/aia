@@ -49,7 +49,7 @@ class SpecialModeHandlerTest < Minitest::Test
   # --- force_verify ---
 
   def test_handle_dispatches_to_verification
-    AIA.turn_state.force_verify = true
+    AIA.turn_state.request(:verify)
 
     # Stub VerificationNetwork.build to return a mock network
     network = mock('network')
@@ -65,7 +65,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_verification_clears_flag
-    AIA.turn_state.force_verify = true
+    AIA.turn_state.request(:verify)
 
     AIA::VerificationNetwork.stubs(:build).raises(StandardError.new("test error"))
 
@@ -77,7 +77,7 @@ class SpecialModeHandlerTest < Minitest::Test
   # --- force_decompose ---
 
   def test_handle_dispatches_to_decomposition
-    AIA.turn_state.force_decompose = true
+    AIA.turn_state.request(:decompose)
 
     decomposer = mock('decomposer')
     decomposer.stubs(:decompose).returns(%w[subtask1 subtask2])
@@ -93,7 +93,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_decomposition_clears_flag
-    AIA.turn_state.force_decompose = true
+    AIA.turn_state.request(:decompose)
 
     decomposer = mock('decomposer')
     decomposer.stubs(:decompose).raises(StandardError.new("decompose error"))
@@ -105,7 +105,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_decomposition_returns_false_when_no_subtasks
-    AIA.turn_state.force_decompose = true
+    AIA.turn_state.request(:decompose)
 
     decomposer = mock('decomposer')
     decomposer.stubs(:decompose).returns([])
@@ -115,7 +115,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_subtask_failure_does_not_abort_decomposition
-    AIA.turn_state.force_decompose = true
+    AIA.turn_state.request(:decompose)
 
     sub_result = mock('sub_result')
     sub_result.stubs(:reply).returns('good answer')
@@ -135,7 +135,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_subtask_failure_excludes_nil_from_synthesis
-    AIA.turn_state.force_decompose = true
+    AIA.turn_state.request(:decompose)
 
     sub_result = mock('sub_result')
     sub_result.stubs(:reply).returns('good answer')
@@ -159,7 +159,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_all_subtasks_failing_returns_false
-    AIA.turn_state.force_decompose = true
+    AIA.turn_state.request(:decompose)
 
     decomposer = mock('decomposer')
     decomposer.stubs(:decompose).returns(%w[task_a task_b])
@@ -171,7 +171,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_concurrent_subtasks_all_complete
-    AIA.turn_state.force_decompose = true
+    AIA.turn_state.request(:decompose)
 
     result_a = mock('result_a')
     result_a.stubs(:reply).returns('answer_a')
@@ -198,7 +198,7 @@ class SpecialModeHandlerTest < Minitest::Test
 
   def test_handle_dispatches_to_concurrent_mcp
     @config.mcp_servers = [{ name: 'a' }, { name: 'b' }]
-    AIA.turn_state.force_concurrent_mcp = true
+    AIA.turn_state.request(:concurrent_mcp)
 
     discovery = mock('discovery')
     discovery.stubs(:discover).returns([{ name: 'a' }, { name: 'b' }])
@@ -222,7 +222,7 @@ class SpecialModeHandlerTest < Minitest::Test
 
   def test_concurrent_mcp_returns_false_with_single_server
     @config.mcp_servers = [{ name: 'a' }]
-    AIA.turn_state.force_concurrent_mcp = true
+    AIA.turn_state.request(:concurrent_mcp)
 
     assert_equal false, @handler.handle("test")
   end
@@ -230,7 +230,7 @@ class SpecialModeHandlerTest < Minitest::Test
   # --- force_debate ---
 
   def test_handle_dispatches_to_debate
-    AIA.turn_state.force_debate = true
+    AIA.turn_state.request(:debate)
 
     # Pre-populate the lazy ivar with a mock so the accessor returns it.
     debate_handler = mock('debate_handler')
@@ -242,7 +242,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_debate_returns_false_when_handler_returns_nil
-    AIA.turn_state.force_debate = true
+    AIA.turn_state.request(:debate)
 
     debate_handler = mock('debate_handler')
     debate_handler.stubs(:handle).returns(nil)
@@ -252,7 +252,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_debate_clears_flag
-    AIA.turn_state.force_debate = true
+    AIA.turn_state.request(:debate)
 
     debate_handler = mock('debate_handler')
     debate_handler.stubs(:handle).raises(StandardError.new("debate error"))
@@ -266,7 +266,7 @@ class SpecialModeHandlerTest < Minitest::Test
   # --- force_delegate ---
 
   def test_handle_dispatches_to_delegation
-    AIA.turn_state.force_delegate = true
+    AIA.turn_state.request(:delegate)
 
     delegate_handler = mock('delegate_handler')
     delegate_handler.stubs(:handle).returns("delegation result")
@@ -277,7 +277,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_delegation_returns_false_when_handler_returns_nil
-    AIA.turn_state.force_delegate = true
+    AIA.turn_state.request(:delegate)
 
     delegate_handler = mock('delegate_handler')
     delegate_handler.stubs(:handle).returns(nil)
@@ -287,7 +287,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_delegation_clears_flag
-    AIA.turn_state.force_delegate = true
+    AIA.turn_state.request(:delegate)
 
     delegate_handler = mock('delegate_handler')
     delegate_handler.stubs(:handle).raises(StandardError.new("delegate error"))
@@ -301,8 +301,7 @@ class SpecialModeHandlerTest < Minitest::Test
   # --- force_spawn ---
 
   def test_handle_dispatches_to_spawn
-    AIA.turn_state.force_spawn = true
-    AIA.turn_state.spawn_type = 'security_expert'
+    AIA.turn_state.request(:spawn, type: 'security_expert')
 
     spawn_handler = mock('spawn_handler')
     spawn_handler.stubs(:handle).returns("spawn result")
@@ -314,8 +313,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_spawn_returns_false_when_handler_returns_nil
-    AIA.turn_state.force_spawn = true
-    AIA.turn_state.spawn_type = nil
+    AIA.turn_state.request(:spawn)
 
     spawn_handler = mock('spawn_handler')
     spawn_handler.stubs(:handle).returns(nil)
@@ -325,8 +323,7 @@ class SpecialModeHandlerTest < Minitest::Test
   end
 
   def test_spawn_clears_flag_and_type
-    AIA.turn_state.force_spawn = true
-    AIA.turn_state.spawn_type = 'analyst'
+    AIA.turn_state.request(:spawn, type: 'analyst')
 
     spawn_handler = mock('spawn_handler')
     spawn_handler.stubs(:handle).raises(StandardError.new("spawn error"))
@@ -351,9 +348,8 @@ class SpecialModeHandlerTest < Minitest::Test
 
   # --- Priority: verify > decompose > concurrent_mcp > debate > delegate > spawn ---
 
-  def test_verify_takes_priority_over_decompose
-    AIA.turn_state.force_verify = true
-    AIA.turn_state.force_decompose = true
+  def test_handle_consumes_the_mode_so_it_runs_once
+    AIA.turn_state.request(:verify)
 
     network = mock('network')
     result = mock('result')
@@ -364,11 +360,7 @@ class SpecialModeHandlerTest < Minitest::Test
     @ui.stubs(:with_spinner).yields.returns(result)
 
     assert_equal true, @handler.handle("test")
-    assert_equal false, AIA.turn_state.force_verify
-    # decompose was not cleared because verify was handled first
-    assert_equal true, AIA.turn_state.force_decompose
-
-    # Clean up
-    AIA.turn_state.force_decompose = false
+    assert_nil AIA.turn_state.active_mode
+    assert_equal false, @handler.handle("test")
   end
 end

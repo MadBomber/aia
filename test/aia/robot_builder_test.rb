@@ -23,7 +23,6 @@ class RobotBuilderTest < Minitest::Test
         system_prompt: nil, role: nil,
         dir: '/tmp', extname: '.md', roles_prefix: 'roles', roles_dir: '/tmp/roles'
       ),
-      rules: OpenStruct.new(dir: nil, enabled: false),
       output: OpenStruct.new(file: nil, append: false)
     )
     AIA.stubs(:config).returns(@config)

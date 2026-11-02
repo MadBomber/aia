@@ -45,7 +45,4 @@ module AIA
       end
     end
   end
-
-  # Backward-compatibility alias — prefer VariableInputCollector in new code.
-  HistoryManager = VariableInputCollector
 end

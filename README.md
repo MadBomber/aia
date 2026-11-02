@@ -579,9 +579,8 @@ Directives are special commands in prompt files and chat sessions that begin wit
 /config model = gpt-4
 /config temperature = 0.9
 
-# Enable chat mode and terse responses
+# Enable chat mode
 /config chat = true
-/config terse = true
 
 Your prompt content here...
 ```
@@ -1595,7 +1594,7 @@ export AIA_OUTPUT__FILE=./temp.md
 export AIA_MODEL=gpt-4o-mini
 export AIA_FLAGS__VERBOSE=true  # Shows spinner while waiting for LLM response
 
-alias chat='aia --chat --terse'
+alias chat='aia --chat'
 ask() { echo "$1" | aia --no-output; }
 ```
 

@@ -205,8 +205,7 @@ class ToolLoaderTest < Minitest::Test
         allowed: nil,
         rejected: nil
       ),
-      output: OpenStruct.new(file: nil, append: false),
-      rules: OpenStruct.new(dir: nil, enabled: false)
+      output: OpenStruct.new(file: nil, append: false)
     )
   end
 end

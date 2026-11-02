@@ -67,9 +67,6 @@ aia --temperature 1.2 --chat
 # More focused responses  
 aia --temperature 0.3 --chat
 
-# Shorter responses
-aia --terse --chat
-
 # Limit response length
 aia --max-tokens 100 --chat
 ```

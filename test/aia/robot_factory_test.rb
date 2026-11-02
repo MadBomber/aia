@@ -202,34 +202,6 @@ class RobotFactoryTest < Minitest::Test
     AIA::ToolLoader.clear_cache!
   end
 
-  # Forwarding wrappers
-  def test_clear_tool_cache_delegates_to_tool_loader
-    AIA::ToolLoader.instance.instance_variable_set(:@tool_cache, [:fake])
-    AIA::RobotFactory.clear_tool_cache!
-    assert_nil AIA::ToolLoader.cached_tools
-  end
-
-  def test_filtered_tools_delegates_to_tool_loader
-    @config.loaded_tools = []
-    result = AIA::RobotFactory.filtered_tools(@config)
-    assert_equal [], result
-  end
-
-  def test_resolve_system_prompt_delegates_to_assembler
-    @config.prompts.system_prompt = 'Hello'
-    @config.prompts.role = nil
-    model_spec = OpenStruct.new(name: 'gpt-4o', role: nil)
-    result = AIA::RobotFactory.resolve_system_prompt(@config, model_spec)
-    assert_equal 'Hello', result
-  end
-
-  def test_build_identity_prompt_delegates_to_assembler
-    spec = OpenStruct.new(name: 'gpt-4o', provider: nil)
-    roster = [{ name: 'Tobor', spec: spec }]
-    result = AIA::RobotFactory.build_identity_prompt('Tobor', spec, roster)
-    assert_match(/You are Tobor/, result)
-  end
-
   # Task 4: Each build must get a fresh RobotNamer to avoid used-name state leak.
   # The bug: @namer is a class-level instance variable that persists between
   # build() calls. After the fix, namer must be a local variable passed as a
@@ -323,8 +295,7 @@ class RobotFactoryTest < Minitest::Test
         allowed: nil,
         rejected: nil
       ),
-      output: OpenStruct.new(file: nil, append: false),
-      rules: OpenStruct.new(dir: nil, enabled: false)
+      output: OpenStruct.new(file: nil, append: false)
     )
   end
 end
