@@ -10,6 +10,7 @@
 # resettable default instance (reset via ToolLoader.reset_instance! or AIA.reset!).
 
 module AIA
+  # :reek:TooManyMethods -- class-level delegators mirror the instance API; each loading step is its own small, testable method
   class ToolLoader
     class << self
       # Returns the shared default instance, creating it on first call.
@@ -82,7 +83,7 @@ module AIA
       tools = discover_tools
       @tool_cache = tools
       config.loaded_tools = tools
-      config.tool_names = tools.map { |t| tool_name(t) }.join(', ')
+      config.tool_names = tools.map { |t| ToolIntrospection.tool_name(t) }.join(', ')
     end
 
     # Require each --require library, activating an unbundled gem first when
@@ -102,11 +103,6 @@ module AIA
       end
     end
 
-    # The name the model calls a tool by (see ToolIntrospection.tool_name).
-    def tool_name(tool)
-      ToolIntrospection.tool_name(tool)
-    end
-
     # Filter tools based on allowed/rejected lists and KBS decisions.
     # :reek:TooManyStatements -- allowed filter, rejected filter, then a name-dedup pass over the tool list
     # :reek:DuplicateMethodCall -- tool_name(t) is applied per element inside three separate filter blocks; no shared scope to hoist into
@@ -118,7 +114,7 @@ module AIA
       if allowed && !allowed.empty?
         allowed_list = Array(allowed).map(&:strip).map(&:downcase)
         tools = tools.select do |t|
-          name = tool_name(t).downcase
+          name = ToolIntrospection.tool_name(t).downcase
           # name is a String; Array#intersect? would raise TypeError
           allowed_list.any? { |a| name.include?(a) }
         end
@@ -127,7 +123,7 @@ module AIA
       if rejected && !rejected.empty?
         rejected_list = Array(rejected).map(&:strip).map(&:downcase)
         tools = tools.reject do |t|
-          name = tool_name(t).downcase
+          name = ToolIntrospection.tool_name(t).downcase
           # name is a String; Array#intersect? would raise TypeError
           rejected_list.any? { |r| name.include?(r) }
         end
@@ -135,7 +131,7 @@ module AIA
 
       seen = {}
       tools.select do |t|
-        name = tool_name(t)
+        name = ToolIntrospection.tool_name(t)
         if seen[name]
           false
         else
@@ -152,28 +148,22 @@ module AIA
     def discover_tools
       return [] unless defined?(RubyLLM::Tool)
 
-      incomplete = []
-      tools = ObjectSpace.each_object(Class).select do |klass|
-        next false unless klass < RubyLLM::Tool
-        next false if mcp_tool_class?(klass)
+      candidates = ObjectSpace.each_object(Class).select { |klass| klass < RubyLLM::Tool && !mcp_tool_class?(klass) }
+      incomplete, complete = candidates.partition { |klass| !implements_execute?(klass) }
+      warn_incomplete_tools(incomplete.map { |klass| klass.name || klass.inspect })
+      complete.select { |klass| available_tool?(klass) }
+    end
 
-        unless implements_execute?(klass)
-          incomplete << (klass.name || klass.inspect)
-          next false
-        end
-        begin
-          instance = klass.new
-          if instance.respond_to?(:available?) && !instance.available?
-            $stderr.puts "Info: Tool '#{tool_name(instance)}' is not available, skipping" if AIA.debug?
-            next false
-          end
-          true
-        rescue LoadError, StandardError
-          false
-        end
-      end
-      warn_incomplete_tools(incomplete)
-      tools
+    # True when the tool class can be instantiated and does not report
+    # itself unavailable through #available? (reported only under --debug).
+    def available_tool?(klass)
+      instance = klass.new
+      return true unless instance.respond_to?(:available?) && !instance.available?
+
+      $stderr.puts "Info: Tool '#{ToolIntrospection.tool_name(instance)}' is not available, skipping" if AIA.debug?
+      false
+    rescue LoadError, StandardError
+      false
     end
 
     # True for ruby_llm's RubyLLM::MCP::Tool (and subclasses): the wrapper an

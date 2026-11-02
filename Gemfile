@@ -18,8 +18,8 @@ group :development do
   # Not an aia dependency: users bring it with --require shared_tools.
   # Listed here so bin/aia (which runs under bundler/setup) can load it
   # and its dependencies (csv, nokogiri) for examples 18 and 30.
-  gem 'shared_tools', '>= 0.7.1'
   gem 'dentaku' # shared_tools CalculatorTool (an optional shared_tools dependency)
+  gem 'shared_tools', '>= 0.7.1'
 end
 
 gemspec

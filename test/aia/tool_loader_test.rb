@@ -127,6 +127,7 @@ class ToolLoaderTest < Minitest::Test
       def self.name = 'unavailable_tool'
       description "A tool that is not available"
       def execute = "ok"
+
       def available?
         false
       end
@@ -136,6 +137,7 @@ class ToolLoaderTest < Minitest::Test
       def self.name = 'available_tool'
       description "A tool that is available"
       def execute = "ok"
+
       def available?
         true
       end
