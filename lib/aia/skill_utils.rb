@@ -10,6 +10,17 @@ module AIA
       id.to_s.start_with?('/', './', '../', '~/')
     end
 
+    # The file a prompt ID names. A path-based ID ("./x", "~/p/x.md") is
+    # expanded, gaining +extname+ when it has none; any other ID is
+    # relative to +dir+.
+    def prompt_file_path(prompt_id, dir:, extname:)
+      id = prompt_id.to_s
+      return File.join(dir, "#{id}#{extname}") unless path_based_id?(id)
+
+      expanded = File.expand_path(id)
+      File.extname(expanded).empty? ? "#{expanded}#{extname}" : expanded
+    end
+
     def parse_front_matter(path)
       return {} unless File.exist?(path)
       content = File.read(path)

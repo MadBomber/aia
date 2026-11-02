@@ -54,6 +54,12 @@ module AIA
       flags.public_send(name) != false
     end
 
+    # A pipeline from front matter: a list, or a comma-separated String
+    # ("a, b"), as a list of prompt IDs.
+    def self.pipeline_list(value)
+      Array(value).flat_map { it.to_s.split(',') }.map(&:strip).reject(&:empty?)
+    end
+
     def fetch_prompt(prompt_id)
       if prompt_id == '__FUZZY_SEARCH__'
         return fuzzy_search_prompt('')
@@ -63,10 +69,10 @@ module AIA
         return fetch_executable_prompt
       end
 
-      prompt_file_path = File.join(@prompts_dir, "#{prompt_id}#{AIA.config.prompts.extname}")
+      prompt_file_path = prompt_path(prompt_id)
 
       parsed = if File.exist?(prompt_file_path)
-                 PM.parse(prompt_id)
+                 parse_prompt_file(prompt_id)
                else
                  $stderr.puts "Warning: Invalid prompt ID or file not found: #{prompt_id}"
                  logger.warn("Invalid prompt ID or file not found: #{prompt_id}")
@@ -89,9 +95,7 @@ module AIA
       role_file_path = File.join(@prompts_dir, "#{role_id}#{prompts_cfg.extname}")
 
       parsed = if File.exist?(role_file_path)
-                 # PM.parse(role_id) cannot resolve subdirectory IDs like "roles/jersey_mike"
-                 # and returns the ID string as content.  Parse from raw file content instead.
-                 PM.parse_string(File.read(role_file_path))
+                 parse_prompt_file(role_id)
                else
                  $stderr.puts "Warning: Invalid role ID or file not found: #{role_id}"
                  logger.warn("Invalid role ID or file not found: #{role_id}")
@@ -148,7 +152,7 @@ module AIA
 
     def fetch_executable_prompt
       content = AIA.config.executable_prompt_content
-      parsed = PM.parse(content)
+      parsed = PM.parse_string(content)
       apply_metadata_config(parsed) if parsed
       parsed
     end
@@ -204,10 +208,10 @@ module AIA
 
       # next / pipeline → cfg.pipeline (replace)
       next_val = shorthand(meta_hash, :next)
-      apply_pipeline_shorthand(cfg, [next_val], "next: #{next_val}") if next_val
+      apply_pipeline_shorthand(cfg, next_val, "next: #{next_val}") if next_val
 
       pipeline_val = shorthand(meta_hash, :pipeline)
-      apply_pipeline_shorthand(cfg, Array(pipeline_val), "pipeline") if pipeline_val
+      apply_pipeline_shorthand(cfg, pipeline_val, "pipeline") if pipeline_val
 
       # shell / erb → cfg.flags (and PM's shell/erb via metadata)
       shell_val = shorthand(meta_hash, :shell)
@@ -227,7 +231,7 @@ module AIA
       if cfg.pipeline.any?
         logger.info "Prompt metadata '#{label}' overrides remaining pipeline #{cfg.pipeline.inspect}"
       end
-      cfg.pipeline = new_pipeline
+      cfg.pipeline = self.class.pipeline_list(new_pipeline)
     end
 
     def logger
@@ -245,6 +249,8 @@ module AIA
           if sub_config
             deep_merge_into_config(sub_config, value)
           end
+        elsif key == :pipeline
+          target.pipeline = self.class.pipeline_list(value)
         elsif key == :models
           target.models = Config::TO_MODEL_SPECS.call(Array(value))
         elsif target.respond_to?(:"#{key}=")
@@ -322,7 +328,7 @@ module AIA
         raise "Error: Could not find prompt with ID: #{prompt_id} even with fuzzy search"
       end
 
-      PM.parse(new_prompt_id)
+      parse_prompt_file(new_prompt_id)
     end
 
     def handle_missing_role(role_id)
@@ -346,7 +352,19 @@ module AIA
         raise "Error: Could not find role with ID: #{role_id} even with fuzzy search"
       end
 
-      PM.parse(new_role_id)
+      parse_prompt_file(new_role_id)
+    end
+
+    # Full path of the prompt file for +prompt_id+ (relative to the prompts dir).
+    def prompt_path(prompt_id)
+      SkillUtils.prompt_file_path(prompt_id, dir: @prompts_dir, extname: AIA.config.prompts.extname)
+    end
+
+    # Parse the prompt file for +prompt_id+. PM.parse only treats a single
+    # \w+ word as a file name, so IDs such as "code-review" or "dev/review"
+    # would be parsed as literal text; a Pathname is always read as a file.
+    def parse_prompt_file(prompt_id)
+      PM.parse(Pathname.new(prompt_path(prompt_id)))
     end
 
     def search_prompt_id_with_fzf(initial_query)

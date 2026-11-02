@@ -75,6 +75,11 @@ module AIA
     # Allow robot to be updated (after model switch)
     attr_writer :robot
 
+    # The parameter names in a PM "Missing required parameters: a, b" message.
+    def self.missing_parameter_names(message)
+      message.to_s.sub(/\AMissing required parameters:/, '').split(',').map(&:strip).reject(&:empty?)
+    end
+
     private
 
     # Returns [result, displayable_content] for one prompt — image when in paint
@@ -172,7 +177,7 @@ module AIA
         values.each { |k, v| parameters[k] = v }
       end
 
-      prompt_text = parsed.to_s
+      prompt_text = render_prompt(parsed)
 
       role = config.prompts.role
       if role && !role.empty?
@@ -199,6 +204,22 @@ module AIA
       end
 
       add_context_files(prompt_text, config)
+    end
+
+    # Render +parsed+, asking for any required parameter that only an
+    # included file declares. Such a parameter is not known until the
+    # include runs, so each MissingParameterError names more to ask for;
+    # rendering stops retrying once it names nothing new.
+    def render_prompt(parsed)
+      extra = {}
+      loop do
+        return parsed.to_s(extra)
+      rescue PM::MissingParameterError => e
+        names = self.class.missing_parameter_names(e.message) - extra.keys
+        raise if names.empty?
+
+        extra.merge!(@input_collector.collect(names.to_h { [it, nil] }))
+      end
     end
 
     # Append context file contents to prompt

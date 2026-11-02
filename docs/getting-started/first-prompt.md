@@ -29,7 +29,7 @@ The bold name is the robot that answered. AIA gives each model it runs a name; w
 
 Two things to notice:
 
-- **The prompt ID** is the file name without `.md`. Keep prompt files at the top level of `~/.prompts` and use underscores, not hyphens: in AIA 2.0.0 a prompt in a subfolder (`dev/explain_code`) or with a hyphen in its name (`explain-code`) isn't loaded from its file. See [Prompt Files](../prompts/prompt-files.md).
+- **The prompt ID** is the file name without `.md`. A prompt in a subfolder includes the folder: `~/.prompts/dev/explain-code.md` is `dev/explain-code`.
 - **Extra arguments are context files.** Everything after the prompt ID must be an existing file. AIA appends each one to the prompt.
 
 !!! note "About `--no-output`"

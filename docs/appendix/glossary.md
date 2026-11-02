@@ -72,7 +72,7 @@ The terms this manual uses, in alphabetical order, with a pointer to where each 
 : A Markdown file (`.md`) in your prompts directory that contains a prompt, optionally with front matter, parameters, ERB and shell expansion. See [Prompt Files](../prompts/prompt-files.md).
 
 **Prompt ID**
-: A prompt file's name without `.md`. `aia code_review` runs `~/.prompts/code_review.md`. In 2.0.0, use only letters, digits and underscores, and keep prompt files at the top level of the prompts directory. See [Prompt Files](../prompts/prompt-files.md#prompt-ids).
+: A prompt file's name without `.md`. `aia code_review` runs `~/.prompts/code_review.md`. A prompt in a subfolder includes the folder (`dev/code-review`), and an ID starting with `/`, `./`, `../` or `~/` is a path to a prompt file. See [Prompt Files](../prompts/prompt-files.md#prompt-ids).
 
 **Prompts directory**
 : Where aia looks for prompt files. Default `~/.prompts`; change it with `--prompts-dir` or `AIA_PROMPTS__DIR`.

@@ -27,8 +27,7 @@ aia summarize report.txt
 aia code_review lib/*.rb
 ```
 
-!!! warning "Keep prompt files at the top level, named with underscores"
-    In AIA 2.0.0, prompt IDs that contain a subdirectory (`dev/code_review`) or a hyphen (`code-review`) are not loaded from the file; the ID itself is sent as the prompt text. See [Prompt Files](../prompts/prompt-files.md).
+Prompt files can live in subfolders, and their names can contain hyphens. `~/.prompts/dev/code-review.md` has the ID `dev/code-review`. You can also name a prompt file by its path, starting with `/`, `./`, `../` or `~/`, such as `aia ./drafts/idea.md`.
 
 Use a different prompts directory for one run with `--prompts-dir DIR`, or permanently with `AIA_PROMPTS__DIR` or `prompts.dir` in the config file.
 
@@ -41,7 +40,14 @@ AIA treats the first argument as a prompt ID only when **both** of these are tru
 
 Otherwise the first argument is treated as a context file like the rest. So if you have a file called `summarize` in your working directory, `aia summarize notes.txt` will treat both as context files (and, with no prompt ID, stop with `A prompt ID is required…`). Rename the file or run from another directory.
 
-Every remaining argument must be an existing file. If one isn't, AIA stops before calling the model:
+If the first argument has no extension and is neither a prompt nor a file, AIA reports it as a missing prompt and suggests close matches:
+
+```text
+No prompt named 'code_reveiw' in /Users/you/.prompts (and no file by that name).
+Did you mean: code_review?
+```
+
+Every other argument must be an existing file. If one isn't, AIA stops before calling the model:
 
 ```text
 The following files do not exist: notes.txt
@@ -123,7 +129,7 @@ For each prompt, AIA assembles the text in this order:
 Each part is separated by a blank line. In chat mode the skills go into the system prompt instead, so they apply to every turn. A role from your roles folder also goes into the system prompt, in every mode (see [Roles and Skills](roles-and-skills.md)).
 
 !!! note "A role on its own"
-    `aia --role editor` with no prompt ID and no `--chat` stops with `A prompt ID is required…`. Pipe something in (`echo "Tighten this paragraph: ..." | aia --role editor`) or give a prompt ID.
+    `aia --role editor` with no prompt ID and no `--chat` runs the role file itself as the prompt. Add a prompt ID (`aia --role editor tighten draft.md`) to use the role as the system prompt for that prompt instead.
 
 ## Changing settings for one run
 
@@ -168,9 +174,10 @@ Press ++ctrl+c++ to interrupt AIA at any time. It prints `Interrupted. Exiting..
 
 | Message | Meaning |
 |---------|---------|
-| `A prompt ID is required unless using --chat, --fuzzy, or providing context files.` | You ran `aia` with nothing to send. Despite the wording, context files alone aren't enough: without `--chat` you also need a prompt ID or piped text. |
+| `A prompt ID is required unless you use --chat, --fuzzy, --pipeline or --role, …` | You ran `aia` with nothing to send. Context files alone aren't a prompt: add a prompt ID, `--chat`, or piped text. |
 | `Error: Prompt ID 'x' does not exist at …` | A prompt named in `--pipeline`/`--next` isn't in your prompts directory. |
-| `The following files do not exist: …` | A context file name is wrong, or a prompt ID wasn't recognized (see the rules above). |
+| `No prompt named 'x' in … (and no file by that name).` | The prompt ID is misspelled, or the prompt is in another directory. AIA suggests close matches. |
+| `The following files do not exist: …` | A context file name is wrong. |
 | `Unknown argument(s): _x … Did you mean: -x?` | You typed `_` instead of `-` in front of an option. |
 
 ## See also

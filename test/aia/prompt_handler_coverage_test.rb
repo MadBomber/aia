@@ -50,7 +50,7 @@ class PromptHandlerFetchPromptTest < Minitest::Test
 
     mock_parsed = mock('parsed')
     mock_parsed.stubs(:metadata).returns(nil)
-    PM.stubs(:parse).with("puts 'hello'").returns(mock_parsed)
+    PM.stubs(:parse_string).with("puts 'hello'").returns(mock_parsed)
 
     result = @handler.fetch_prompt('__EXECUTABLE_PROMPT__')
     assert_equal mock_parsed, result
@@ -61,7 +61,7 @@ class PromptHandlerFetchPromptTest < Minitest::Test
 
     mock_parsed = mock('parsed')
     mock_parsed.stubs(:metadata).returns(nil)
-    PM.stubs(:parse).with('my_prompt').returns(mock_parsed)
+    PM.stubs(:parse).with(Pathname.new(File.join(@prompts_dir, 'my_prompt.md'))).returns(mock_parsed)
 
     result = @handler.fetch_prompt('my_prompt')
     assert_equal mock_parsed, result

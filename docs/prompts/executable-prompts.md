@@ -95,8 +95,7 @@ aia --no-output < question.txt
 
 Piped prompts are processed like a prompt file, with front matter, shell expansion and ERB.
 
-!!! warning "Don't pipe a file that has a shebang"
-    When you pipe a file that starts with `#!` into `aia`, the shebang line is sent to the model with the rest of the text. A front matter block after it is also not recognized. Run the file directly (`./fun_fact`) or pass it as an argument (`aia --no-output ./fun_fact`) instead.
+If the piped text starts with a `#!` line, that line is dropped, so you can pipe an executable prompt (`cat fun_fact | aia`) and its front matter still applies.
 
 ## Where the response goes
 

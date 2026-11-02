@@ -101,6 +101,14 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
 - **`flags.shell` and `flags.erb`** set the default for every prompt; front matter still overrides them.
 - **`tool_filter.timeout_s`** sets the chat tool filter's time limit.
 - **`--dump`** includes `tool_filter`, `model_switch_history` and `model_aliases`, and `-c` files can set `tool_filter`.
+- **Prompt loading:**
+  - Prompt IDs with hyphens or subfolders (`code-review`, `dev/review`) load their file instead of being sent to the model as text. A prompt ID can also be a path (`./drafts/idea`).
+  - `aia -p a,b` with no prompt ID runs `a` then `b`, and `aia -r role` alone runs the role file as the prompt.
+  - The "prompt ID is required" message no longer says context files are enough.
+  - A mistyped prompt ID reports `No prompt named 'x'` with spelling suggestions instead of `The following files do not exist`.
+  - Piped text drops a leading `#!` line and keeps its front matter, and piped text that is one word or ends in `.md` is no longer read as a file name.
+  - A required parameter declared only in an included file is asked for instead of stopping the run.
+  - Front-matter `pipeline:` may be a comma-separated string.
 - **Smaller fixes:**
   - The AI response is no longer written to the output file twice.
   - An unknown `@mention` is reported instead of being broadcast to every robot.

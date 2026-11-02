@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'timeout'
+require 'did_you_mean'
 require 'word_wrapper'
 require_relative '../skill_utils'
 
@@ -35,12 +36,12 @@ module AIA
         handle_executable_prompt(config)
         handle_stdin_as_prompt(config)
         return :early_exit if handle_early_exits(config) == :early_exit
-        validate_required_prompt_id(config)
+        adopt_pipeline_head(config)
         process_role_configuration(config)
+        validate_required_prompt_id(config)
         validate_plugins_dir(config)
         handle_fuzzy_search_prompt_id(config)
         normalize_boolean_flags(config)
-        validate_final_prompt_requirements(config)
         prepare_pipeline(config)
         validate_pipeline_prompts(config)
 
@@ -94,11 +95,37 @@ module AIA
                   "Did you mean: #{suggestions}?\n" \
                   "Flags require a dash prefix (e.g., -B not _B)."
           end
+          raise AIA::ConfigurationError, missing_prompt_message(config, bad_files) if missing_prompt_id?(config, remaining_args, bad_files)
           raise AIA::ConfigurationError, "The following files do not exist: #{bad_files.join(', ')}"
         end
 
         config.context_files ||= []
         config.context_files += remaining_args
+      end
+
+      # The first argument looks like a prompt ID (no extension) but names
+      # neither a prompt nor a file.
+      def missing_prompt_id?(config, remaining_args, bad_files)
+        word = remaining_args.first
+        config.prompt_id.nil? && bad_files.first == word && File.extname(word).empty?
+      end
+
+      def missing_prompt_message(config, bad_files)
+        word, *others = bad_files
+        dir = config.prompts.dir
+        message = "No prompt named '#{word}' in #{dir} (and no file by that name)."
+        suggestions = prompt_suggestions(word, dir, config.prompts.extname)
+        message += "\nDid you mean: #{suggestions.join(', ')}?" if suggestions.any?
+        message += "\nThe following files do not exist: #{others.join(', ')}" if others.any?
+        message
+      end
+
+      # Prompt IDs under +dir+ that are close spellings of +word+.
+      def prompt_suggestions(word, dir, extname)
+        return [] unless dir && Dir.exist?(dir)
+
+        ids = Dir.glob("**/*#{extname}", base: dir).map { it.delete_suffix(extname) }
+        DidYouMean::SpellChecker.new(dictionary: ids).correct(word).first(3)
       end
 
       def handle_executable_prompt(config)
@@ -123,20 +150,34 @@ module AIA
         content = config.stdin_content
         return unless content && !content.strip.empty?
 
-        if content.lines.first&.strip&.start_with?('#!')
-          content = content.lines[1..].join
-        end
-
-        config.executable_prompt_content = content
+        config.executable_prompt_content = strip_shebang(content)
         config.stdin_content = nil
         config.prompt_id = '__EXECUTABLE_PROMPT__'
+      end
+
+      # Piped text arrives with a leading newline (see process_stdin_content).
+      # Drop it, and a "#!" line if the text starts with one, so the front
+      # matter that follows is recognized.
+      def strip_shebang(content)
+        text = content.delete_prefix("\n")
+        text.start_with?('#!') ? text.lines[1..].join : text
+      end
+
+      # With no prompt ID, --pipeline's first prompt is the one to run.
+      def adopt_pipeline_head(config)
+        return unless config.prompt_id.nil? || config.prompt_id.empty?
+
+        head = Array(config.pipeline).first
+        config.prompt_id = head unless head.nil? || head.empty?
       end
 
       def validate_required_prompt_id(config)
         return unless config.prompt_id.nil? && config.flags.chat != true && config.flags.fuzzy != true
 
         raise AIA::ConfigurationError,
-              "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
+              "A prompt ID is required unless you use --chat, --fuzzy, --pipeline or --role, " \
+              "pipe the prompt in, or run an executable prompt. Context files alone are not a prompt. " \
+              "Use -h or --help for help."
       end
 
       def process_role_configuration(config)
@@ -448,16 +489,6 @@ module AIA
         end
       end
 
-      def validate_final_prompt_requirements(config)
-        chat_mode = config.flags.chat == true
-        fuzzy_mode = config.flags.fuzzy == true
-        no_prompt = config.prompt_id.nil? || config.prompt_id.empty?
-        no_context = config.context_files.nil? || config.context_files.empty?
-        return unless !chat_mode && !fuzzy_mode && no_prompt && no_context
-        raise AIA::ConfigurationError,
-              "A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help."
-      end
-
       def prepare_pipeline(config)
         prompt_id = config.prompt_id
         return if prompt_id.nil? || prompt_id.empty? || prompt_id == config.pipeline.first
@@ -473,7 +504,7 @@ module AIA
         config.pipeline.each do |prompt_id|
           next if prompt_id.nil? || prompt_id.empty? || prompt_id == '__FUZZY_SEARCH__' || prompt_id == '__EXECUTABLE_PROMPT__'
 
-          prompt_file_path = File.join(config.prompts.dir, "#{prompt_id}#{config.prompts.extname}")
+          prompt_file_path = AIA::SkillUtils.prompt_file_path(prompt_id, dir: config.prompts.dir, extname: config.prompts.extname)
           unless File.exist?(prompt_file_path)
             $stderr.puts "Error: Prompt ID '#{prompt_id}' does not exist at #{prompt_file_path}"
             and_exit = true

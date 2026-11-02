@@ -10,14 +10,14 @@ The **prompt ID** is the file name without its `.md` extension. A file named `~/
 aia code_review
 ```
 
-AIA looks for `<prompts dir>/<prompt ID>.md`. If the file is missing, AIA treats the word as a context file name instead, and stops because no such file exists:
+AIA looks for `<prompts dir>/<prompt ID>.md`. If there is no such prompt and no file by that name either, AIA stops and suggests close matches:
 
 ```text
-The following files do not exist: code_reveiw
+No prompt named 'code_reveiw' in /Users/you/.prompts (and no file by that name).
+Did you mean: code_review?
 ```
 
-!!! warning "Use letters, digits and underscores in prompt IDs"
-    Name prompt files with letters, digits and underscores only, such as `code_review.md` or `summarize2.md`. In AIA 2.0, IDs that contain a hyphen (`code-review`) or a subdirectory (`dev/review`) are not loaded from the file. The ID itself is sent to the model as the prompt text. Rename those files with underscores and keep them at the top level of the prompts directory.
+Prompt IDs can include subfolders and hyphens: `~/.prompts/dev/code-review.md` is `dev/code-review`. An ID that starts with `/`, `./`, `../` or `~/` is a path to a prompt file anywhere on disk; `.md` is optional.
 
 If the first argument names a file that exists in your current directory, AIA treats it as a context file rather than a prompt ID. Context files alone aren't enough to run: unless you add `--chat` (or the file is an [executable prompt](executable-prompts.md)), AIA stops with `A prompt ID is required…`. See [Context Files & Piping](../everyday/context-and-piping.md).
 

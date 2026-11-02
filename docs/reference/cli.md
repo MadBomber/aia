@@ -14,11 +14,11 @@ aia [options] --chat [PROMPT_ID] [CONTEXT_FILE]*
 - If the first argument is not a prompt ID, aia treats it as a context file. If that file starts with a `#!` line, aia runs it as an [executable prompt](../prompts/executable-prompts.md).
 - Text piped on standard input is added to the prompt. With no prompt ID, piped text *is* the prompt.
 
-You need a prompt ID unless you use `--chat` or `--fuzzy`, pipe the prompt in, or run an executable prompt. Despite what the message says, context files on their own are not enough:
+You need a prompt ID unless you use `--chat`, `--fuzzy`, `--pipeline` (its first prompt runs first) or `--role` (the role file runs as the prompt), pipe the prompt in, or run an executable prompt. Context files on their own are not enough:
 
 ```console
 $ aia
-A prompt ID is required unless using --chat, --fuzzy, or providing context files. Use -h or --help for help.
+A prompt ID is required unless you use --chat, --fuzzy, --pipeline or --role, pipe the prompt in, or run an executable prompt. Context files alone are not a prompt. Use -h or --help for help.
 ```
 
 !!! note "Option values"

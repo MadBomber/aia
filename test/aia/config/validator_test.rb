@@ -642,62 +642,121 @@ class ValidatorCompletionScriptTest < Minitest::Test
   end
 end
 
-class ValidatorFinalPromptRequirementsTest < Minitest::Test
-  def test_exits_when_no_prompt_no_context_no_chat_no_fuzzy
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: false),
-      prompt_id: nil,
-      context_files: nil
+class ValidatorPromptSelectionTest < Minitest::Test
+  def config_with(**overrides)
+    OpenStruct.new(
+      {
+        flags: OpenStruct.new(chat: false, fuzzy: false),
+        prompts: OpenStruct.new(role: nil, roles_prefix: 'roles', roles_dir: nil, dir: '/tmp/prompts', extname: '.md'),
+        prompt_id: nil,
+        pipeline: [],
+        context_files: []
+      }.merge(overrides)
     )
+  end
 
+  def test_pipeline_head_becomes_prompt_id
+    config = config_with(pipeline: %w[first second])
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    assert_equal 'first', config.prompt_id
+  end
+
+  def test_pipeline_head_does_not_replace_prompt_id
+    config = config_with(prompt_id: 'given', pipeline: %w[first])
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    assert_equal 'given', config.prompt_id
+  end
+
+  def test_pipeline_head_ignores_empty_pipeline
+    config = config_with
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    assert_nil config.prompt_id
+  end
+
+  def test_role_alone_passes_required_prompt_check
+    config = config_with
+    config.prompts.role = 'tutor'
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+    AIA::ConfigValidator.send(:validate_required_prompt_id, config)
+    assert_equal 'roles/tutor', config.prompt_id
+  end
+
+  def test_role_with_pipeline_stays_a_role
+    config = config_with(pipeline: %w[first])
+    config.prompts.role = 'tutor'
+    AIA::ConfigValidator.send(:adopt_pipeline_head, config)
+    AIA::ConfigValidator.send(:process_role_configuration, config)
+    assert_equal 'first', config.prompt_id
+    assert_equal 'roles/tutor', config.prompts.role
+    assert_equal %w[first], config.pipeline
+  end
+
+  def test_context_files_alone_still_need_a_prompt
+    config = config_with(context_files: ['file.rb'])
     error = assert_raises(AIA::ConfigurationError) do
-      AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+      AIA::ConfigValidator.send(:validate_required_prompt_id, config)
     end
-    assert_includes error.message, 'prompt ID is required'
+    assert_includes error.message, 'Context files alone are not a prompt'
+    refute_includes error.message, 'or providing context files'
   end
 
-  def test_passes_with_prompt_id
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: false),
-      prompt_id: 'my_prompt',
-      context_files: nil
-    )
+  def test_mistyped_prompt_id_names_the_prompt
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'code-review.md'), 'Review this')
+      config = config_with(prompts: OpenStruct.new(dir: dir, extname: '.md'))
 
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+      error = assert_raises(AIA::ConfigurationError) do
+        AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['code-reviw'])
+      end
+      assert_includes error.message, "No prompt named 'code-reviw'"
+      assert_includes error.message, 'Did you mean: code-review?'
+    end
   end
 
-  def test_passes_in_chat_mode
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: true, fuzzy: false),
-      prompt_id: nil,
-      context_files: nil
-    )
+  def test_mistyped_prompt_id_also_lists_missing_files
+    Dir.mktmpdir do |dir|
+      config = config_with(prompts: OpenStruct.new(dir: dir, extname: '.md'))
 
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+      error = assert_raises(AIA::ConfigurationError) do
+        AIA::ConfigValidator.send(:validate_and_set_context_files, config, %w[nothing gone.rb])
+      end
+      assert_includes error.message, "No prompt named 'nothing'"
+      assert_includes error.message, 'The following files do not exist: gone.rb'
+      refute_includes error.message, 'Did you mean'
+    end
   end
 
-  def test_passes_in_fuzzy_mode
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: true),
-      prompt_id: nil,
-      context_files: nil
-    )
-
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+  def test_missing_file_with_extension_is_still_a_missing_file
+    config = config_with
+    error = assert_raises(AIA::ConfigurationError) do
+      AIA::ConfigValidator.send(:validate_and_set_context_files, config, ['gone.rb'])
+    end
+    assert_equal 'The following files do not exist: gone.rb', error.message
   end
 
-  def test_passes_with_context_files
-    config = OpenStruct.new(
-      flags: OpenStruct.new(chat: false, fuzzy: false),
-      prompt_id: nil,
-      context_files: ['file.rb']
-    )
+  def test_strip_shebang_from_piped_text
+    text = "\n#!/usr/bin/env aia\n---\nmodel: x\n---\nHello\n"
+    assert_equal "---\nmodel: x\n---\nHello\n", AIA::ConfigValidator.send(:strip_shebang, text)
+  end
 
-    AIA::ConfigValidator.expects(:warn).never
-    AIA::ConfigValidator.send(:validate_final_prompt_requirements, config)
+  def test_strip_shebang_drops_leading_newline_only
+    assert_equal "---\na: 1\n---\nHi", AIA::ConfigValidator.send(:strip_shebang, "\n---\na: 1\n---\nHi")
+  end
+
+  def test_piped_prompt_keeps_front_matter
+    config = config_with(stdin_content: "\n#!/usr/bin/env aia\n---\ntemperature: 0.2\n---\nHello")
+    AIA::ConfigValidator.send(:handle_stdin_as_prompt, config)
+    assert_equal '__EXECUTABLE_PROMPT__', config.prompt_id
+    assert_equal "---\ntemperature: 0.2\n---\nHello", config.executable_prompt_content
+  end
+
+  def test_pipeline_validation_accepts_path_based_ids
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'my-role.md')
+      File.write(path, 'You are kind.')
+      config = config_with(pipeline: [path.delete_suffix('.md')])
+      AIA::ConfigValidator.send(:validate_pipeline_prompts, config)
+    end
   end
 end
 

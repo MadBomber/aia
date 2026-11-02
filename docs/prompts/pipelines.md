@@ -52,6 +52,8 @@ The prompt ID you name on the command line runs first. Add more steps with `--pi
 
 Both commands run `brainstorm`, `evaluate`, `pick_best` and `tagline` in that order.
 
+Without a prompt ID, the first prompt in `--pipeline` runs first: `aia -p brainstorm,evaluate,pick_best,tagline` runs the same chain.
+
 Before it starts, AIA checks that every prompt ID given on the command line exists. If any is missing, nothing runs:
 
 ```text
@@ -85,6 +87,7 @@ Now `aia brainstorm` runs the whole chain.
 
 Keep these points in mind:
 
+- `pipeline:` can be a YAML list or a comma-separated string: `pipeline: evaluate, pick_best, tagline`.
 - A file can have `next:` or `pipeline:`, but not both.
 - `next:` and `pipeline:` **replace** whatever steps were still waiting to run, including steps from `--pipeline` or `--next`. Use the command line or front matter for a chain, not both.
 - Any step can set its own `next:`, so prompts can hand off to each other: `a` says `next: b`, `b` says `next: c`, and so on.

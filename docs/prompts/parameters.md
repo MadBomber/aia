@@ -99,7 +99,7 @@ Review this file for bugs:
 
 When a prompt pulls in another file with `<%= include 'path/to/file.md' %>`, the included file sees the same parameter values as the file that includes it. You answer each question once, and both files use the answer.
 
-AIA only asks about the parameters declared in the file you run. A parameter declared only in an included file uses its default from that file. If it has no default, the run stops with `Missing required parameters: name`, so declare it in the including file too. See [Directives](directives.md#composing-prompts-from-other-files).
+AIA asks about the parameters declared in the file you run first. A parameter declared only in an included file uses its default from that file. If it has no default, AIA asks for it when the include is reached. See [Directives](directives.md#composing-prompts-from-other-files).
 
 ## Parameters in pipelines
 

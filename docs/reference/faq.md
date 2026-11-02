@@ -54,13 +54,13 @@ In `~/.prompts`, unless you've set `--prompts-dir`, `prompts.dir` or `AIA_PROMPT
 
 ## Error messages
 
-### `A prompt ID is required unless using --chat, --fuzzy, or providing context files.`
+### `A prompt ID is required unless you use --chat, --fuzzy, --pipeline or --role, …`
 
-You ran `aia` with no prompt ID. Context files, `-p` or `-r` on their own don't count, whatever the message says. Give a prompt ID (`aia my_prompt`), start a chat (`aia --chat`), pick a prompt with `aia --fuzzy`, or pipe in some text.
+You ran `aia` with nothing to send. Context files on their own are not a prompt. Give a prompt ID (`aia my_prompt`), a pipeline (`aia -p draft,polish`), a role (`aia -r editor`), start a chat (`aia --chat`), pick a prompt with `aia --fuzzy`, or pipe in some text.
 
-### `The following files do not exist: my_prompt`
+### `No prompt named 'my_prompt' in … (and no file by that name).`
 
-aia looked for `my_prompt` as a prompt file, didn't find `~/.prompts/my_prompt.md`, and so treated it as a context file — which doesn't exist either. Usually it is:
+aia looked for `~/.prompts/my_prompt.md` and for a file called `my_prompt`, and found neither. If a prompt has a similar name, the message ends with `Did you mean: …?`. Usually it is:
 
 - a typo in the prompt ID;
 - a prompt in a different directory — check `ls ~/.prompts/my_prompt.md`, or add `--prompts-dir`;
