@@ -38,6 +38,41 @@ class PromptHandlerTest < Minitest::Test
     refute PM.config.erb
   end
 
+  # --- mode: front matter ---
+
+  def test_mode_for_names_the_chat_directives_without_the_slash
+    assert_equal :debate,         AIA::PromptHandler.mode_for('debate')
+    assert_equal :verify,         AIA::PromptHandler.mode_for(' Verify ')
+    assert_equal :concurrent_mcp, AIA::PromptHandler.mode_for('concurrent')
+    assert_equal :orchestrate,    AIA::PromptHandler.mode_for(:orchestrate)
+  end
+
+  def test_mode_for_rejects_a_name_that_is_not_a_mode
+    error = assert_raises(AIA::ConfigurationError) { AIA::PromptHandler.mode_for('argue') }
+    assert_match(/Unknown mode: "argue"/, error.message)
+    assert_match(/concurrent, debate, decompose/, error.message)
+  end
+
+  def test_mode_front_matter_requests_that_mode_for_the_turn
+    AIA.turn_state = AIA::TurnState.new
+    metadata = mock('metadata')
+    metadata.stubs(:to_h).returns({ 'mode' => 'debate' })
+
+    @handler.apply_metadata_config(OpenStruct.new(metadata: metadata))
+
+    assert_equal :debate, AIA.turn_state.active_mode
+  end
+
+  def test_front_matter_without_mode_leaves_the_turn_state_alone
+    AIA.turn_state = AIA::TurnState.new
+    metadata = mock('metadata')
+    metadata.stubs(:to_h).returns({ 'temperature' => 0.2 })
+
+    @handler.apply_metadata_config(OpenStruct.new(metadata: metadata))
+
+    assert_nil AIA.turn_state.active_mode
+  end
+
   def test_flag_enabled_unless_explicitly_false
     assert AIA::PromptHandler.flag_enabled?(OpenStruct.new(shell: true), :shell)
     assert AIA::PromptHandler.flag_enabled?(OpenStruct.new(shell: nil), :shell)

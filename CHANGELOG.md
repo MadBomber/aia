@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.2] Unreleased
+
+### Added
+
+- **`mode:` front matter key.** A prompt file can ask for one of the special modes that the chat directives `/debate`, `/verify`, `/decompose`, `/delegate`, `/spawn`, `/orchestrate` and `/concurrent` request, by naming it in its front matter: `mode: debate`. Prompts run from the command line, in a pipeline or as executable prompts then get that mode, which until now ran only in chat; a `/debate` line inside a prompt file was sent to the model as text. As in chat, a debate needs several robots (`--model a,b,c`).
+
 ## [2.0.1] 2026-11-02
 
 ### Fixed

@@ -103,6 +103,7 @@ AIA understands these keys at the top level of the front matter:
 | `parameters` | Declares the values the prompt needs. A `null` (empty) value means required. | `parameters: { name: null, tone: friendly }` |
 | `next` | Prompt ID to run after this one | `next: explain_joke` |
 | `pipeline` | List of prompt IDs to run after this one | `pipeline: [evaluate, pick_best]` |
+| `mode` | Runs this prompt in a special mode (`debate`, `verify`, `decompose`, `delegate`, `spawn`, `orchestrate` or `concurrent`), as the chat directive of that name would. See [Advanced Modes](../extending/advanced-modes.md). | `mode: debate` |
 | `shell` | `false` turns off shell expansion for this file | `shell: false` |
 | `erb` | `false` turns off ERB rendering for this file | `erb: false` |
 | `config` | Any other AIA setting, nested the same way as in the config file | see below |

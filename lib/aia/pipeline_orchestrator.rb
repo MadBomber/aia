@@ -69,6 +69,11 @@ module AIA
       # Front matter may have changed the model or its settings
       @robot = @robot_sync.call(@robot) if @robot_sync
 
+      if special_mode_handled?(prompt_text)
+        bridge&.update_step_status(prompt_id, :completed)
+        return
+      end
+
       result, content = compute_result(prompt_text, config)
       bridge&.update_step_status(prompt_id, :completed)
 
@@ -77,6 +82,29 @@ module AIA
     rescue StandardError => e
       bridge&.update_step_status(prompt_id, :failed, reason: e.message)
       raise
+    end
+
+    # A directive in the prompt (/debate, /verify, /decompose, /delegate,
+    # /spawn, /orchestrate) asked for a special mode: hand the turn to the
+    # SpecialModeHandler, as ChatLoop does. True when it ran the turn, which
+    # includes displaying, saving and recording it. Concurrent MCP is left
+    # to execute_prompt, which honors it alongside config.concurrency.auto.
+    # A --paint step has no robot turn to hand over.
+    def special_mode_handled?(prompt_text)
+      return false if AIA.paint? || !special_mode_requested?
+
+      special_mode_handler.robot = @robot
+      special_mode_handler.handle(prompt_text)
+    end
+
+    # True when the turn state holds a mode for SpecialModeHandler to run.
+    def special_mode_requested?
+      mode = AIA.turn_state.active_mode
+      !mode.nil? && mode != :concurrent_mcp
+    end
+
+    def special_mode_handler
+      @special_mode_handler ||= SpecialModeHandler.new(robot: @robot, ui_presenter: @ui, tracker: @tracker)
     end
 
     # Show a step's response, then save and speak it. A --paint step saved

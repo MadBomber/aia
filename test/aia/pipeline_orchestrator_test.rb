@@ -223,6 +223,58 @@ class PipelineOrchestratorTest < Minitest::Test
     assert_equal 'Just the prompt.', result
   end
 
+  # --- special modes a prompt directive requests (/debate, /verify, ...) ---
+
+  def test_run_step_hands_a_requested_mode_to_the_special_mode_handler
+    stub_prompt
+    AIA.turn_state.request(:debate)
+    handler = mock('special_mode_handler')
+    handler.expects(:robot=).with { it.equal?(@robot) }
+    handler.expects(:handle).with('prompt text').returns(true)
+    AIA::SpecialModeHandler.stubs(:new).returns(handler)
+    @robot.expects(:run).never
+    @tracker.expects(:record_turn).never # the handler records the turn itself
+    bridge = mock('bridge')
+    steps = sequence('steps')
+    bridge.expects(:update_step_status).with('prompt1', :started).in_sequence(steps)
+    bridge.expects(:update_step_status).with('prompt1', :completed).in_sequence(steps)
+
+    build_orchestrator.send(:run_step, 'prompt1', @config, bridge)
+  end
+
+  def test_run_step_runs_normally_when_the_handler_declines
+    stub_prompt
+    AIA.turn_state.request(:debate)
+    handler = mock('special_mode_handler')
+    handler.stubs(:robot=)
+    handler.expects(:handle).with('prompt text').returns(false)
+    AIA::SpecialModeHandler.stubs(:new).returns(handler)
+    @robot.expects(:run).once.returns(OpenStruct.new(reply: 'AI response'))
+    @tracker.expects(:record_turn).once
+
+    build_orchestrator.send(:run_step, 'prompt1', @config, nil)
+  end
+
+  def test_run_step_leaves_concurrent_mcp_to_execute_prompt
+    stub_prompt
+    AIA.turn_state.request(:concurrent_mcp)
+    AIA::SpecialModeHandler.expects(:new).never
+    @robot.expects(:run).once.returns(OpenStruct.new(reply: 'AI response'))
+
+    build_orchestrator.send(:run_step, 'prompt1', @config, nil)
+  end
+
+  def test_run_step_ignores_special_modes_when_painting
+    stub_prompt
+    AIA.turn_state.request(:debate)
+    AIA.stubs(:paint?).returns(true)
+    AIA::SpecialModeHandler.expects(:new).never
+    orchestrator = build_orchestrator
+    orchestrator.stubs(:compute_result).returns([OpenStruct.new(reply: 'x'), 'Image saved to out.png'])
+
+    orchestrator.send(:run_step, 'prompt1', @config, nil)
+  end
+
   private
 
   def stub_prompt
