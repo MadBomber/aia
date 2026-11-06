@@ -6,6 +6,10 @@
 
 - **`mode:` front matter key.** A prompt file can ask for one of the special modes that the chat directives `/debate`, `/verify`, `/decompose`, `/delegate`, `/spawn`, `/orchestrate` and `/concurrent` request, by naming it in its front matter: `mode: debate`. Prompts run from the command line, in a pipeline or as executable prompts then get that mode, which until now ran only in chat; a `/debate` line inside a prompt file was sent to the model as text. As in chat, a debate needs several robots (`--model a,b,c`).
 
+### Fixed
+
+- **Test suite loads on Ruby 4.1.** `ostruct` is a bundled gem since Ruby 4.0 and only reached the test bundle as a transitive dependency of `oj` 3.17.7; `oj` 3.17.8 dropped it, so `bundle update` left the suite unable to load `OpenStruct`. It is now a development dependency. The speech player test no longer stubs `ENV`, which Ruby 4.1 rejects as a shareable object.
+
 ## [2.0.1] 2026-11-02
 
 ### Fixed

@@ -125,16 +125,29 @@ class SpeechPlayerTest < Minitest::Test
     assert_includes err, 'audio.player'
   end
 
+  # ENV is Ractor-shareable, so mocha cannot stub it on Ruby 4.1+: swap
+  # PATH for real and put it back.
   def test_on_path_finds_an_executable
     Dir.mktmpdir do |dir|
       exe = File.join(dir, 'fakeplayer')
       File.write(exe, "#!/bin/sh\n")
       File.chmod(0o755, exe)
-      ENV.stubs(:[]).with('PATH').returns(dir)
 
-      assert AIA::Speech.on_path?('fakeplayer')
-      refute AIA::Speech.on_path?('nosuchplayer')
+      with_path(dir) do
+        assert AIA::Speech.on_path?('fakeplayer')
+        refute AIA::Speech.on_path?('nosuchplayer')
+      end
     end
+  end
+
+  private
+
+  def with_path(path)
+    saved = ENV.fetch('PATH', nil)
+    ENV['PATH'] = path
+    yield
+  ensure
+    ENV['PATH'] = saved
   end
 end
 
