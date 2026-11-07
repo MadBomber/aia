@@ -3,6 +3,7 @@
 # test/aia/tools/task_board_tool_test.rb
 
 require_relative '../../test_helper'
+require_relative '../../../lib/aia/tools/task_board_tool'
 
 class TaskBoardToolTest < Minitest::Test
   def setup

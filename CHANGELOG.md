@@ -14,6 +14,8 @@
 
 - **Unit suite passes without API keys or a UTF-8 locale.** The network-building tests create real RubyLLM chats, which ruby_llm 2.1 refuses without a provider API key, so 37 tests errored unless `OPENAI_API_KEY` was set. They now skip that credential check; they never call an API. The gemspec version test errored under a non-UTF-8 locale; it now loads the gemspec and compares its version with `AIA::VERSION`. `test_helper.rb` requires `ostruct`, so test files that use `OpenStruct` also run on their own.
 
+- **Every unit test file runs on its own.** Six test files errored with `uninitialized constant` when run by themselves, because the classes they test (`TaskDecomposer`, `TaskExecutor`, `ToolFilter::TFIDF`, `TaskBoardTool`) are loaded lazily by aia and were only present when another test had already required them. Each file now requires the class it tests.
+
 ## [2.0.1] 2026-11-02
 
 ### Fixed

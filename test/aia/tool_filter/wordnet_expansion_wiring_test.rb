@@ -7,6 +7,7 @@
 
 require_relative '../../test_helper'
 require_relative '../../../lib/aia'
+require_relative '../../../lib/aia/tool_filter/tfidf'
 
 class WordNetExpansionWiringTest < Minitest::Test
   MockToolWiring = Struct.new(:name, :description, :parameters)
