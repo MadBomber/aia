@@ -42,6 +42,9 @@ class PipelineOrchestratorTest < Minitest::Test
     @robot = mock('robot')
     @robot.stubs(:is_a?).with(RobotLab::Network).returns(false)
     @robot.stubs(:run).returns(OpenStruct.new(reply: "AI response"))
+
+    AIA::LLMErrorCollector.reset!
+    AIA::LLMErrorCollector.stubs(:install!)
   end
 
   def test_process_skips_nil_pipeline_entries
@@ -275,6 +278,71 @@ class PipelineOrchestratorTest < Minitest::Test
     orchestrator.send(:run_step, 'prompt1', @config, nil)
   end
 
+  # --- LLM errors robot_lab shielded into reply text ---
+
+  def test_process_installs_the_llm_error_collector
+    @config.pipeline = []
+    AIA::LLMErrorCollector.unstub(:install!)
+    AIA::LLMErrorCollector.expects(:install!).once
+
+    build_orchestrator.process(@config)
+  end
+
+  def test_run_step_raises_llm_error_outside_chat_when_a_robot_failed
+    stub_prompt
+    AIA.stubs(:chat?).returns(false)
+    robot_run_records_llm_error
+    @tracker.expects(:record_turn).never
+    @ui.expects(:display_ai_response).never
+    bridge = mock('bridge')
+    steps = sequence('steps')
+    bridge.expects(:update_step_status).with('prompt1', :started).in_sequence(steps)
+    bridge.expects(:update_step_status).with('prompt1', :failed, reason: regexp_matches(/invalid x-api-key/)).in_sequence(steps)
+
+    error = assert_raises(AIA::LLMError) { build_orchestrator.send(:run_step, 'prompt1', @config, bridge) }
+
+    assert_equal "LLM error in prompt 'prompt1': Tobor: RuntimeError: invalid x-api-key", error.message
+  end
+
+  def test_run_step_shows_the_error_and_carries_on_in_chat
+    stub_prompt
+    AIA.stubs(:chat?).returns(true)
+    robot_run_records_llm_error
+    @tracker.expects(:record_turn).never
+    @ui.expects(:display_ai_response).never
+    @ui.expects(:display_info).with("LLM error in prompt 'prompt1': Tobor: RuntimeError: invalid x-api-key")
+    bridge = mock('bridge')
+    bridge.expects(:update_step_status).with('prompt1', :started)
+    bridge.expects(:update_step_status).with('prompt1', :failed, reason: regexp_matches(/invalid x-api-key/))
+
+    build_orchestrator.send(:run_step, 'prompt1', @config, bridge)
+  end
+
+  def test_run_step_forgets_the_previous_steps_errors
+    stub_prompt
+    AIA.stubs(:chat?).returns(false)
+    AIA::LLMErrorCollector.on_error(Struct.new(:robot, :error).new(nil, RuntimeError.new('stale')))
+
+    build_orchestrator.send(:run_step, 'prompt1', @config, nil)
+
+    refute AIA::LLMErrorCollector.errors?
+  end
+
+  def test_run_step_raises_llm_error_when_a_special_mode_robot_failed_outside_chat
+    stub_prompt
+    AIA.stubs(:chat?).returns(false)
+    AIA.turn_state.request(:debate)
+    handler = mock('special_mode_handler')
+    handler.stubs(:robot=)
+    handler.expects(:handle).with('prompt text').returns(true)
+    AIA::SpecialModeHandler.stubs(:new).returns(handler)
+    @robot.expects(:run).never
+    AIA::LLMErrorCollector.stubs(:reset!) # keep the error below as if the debate had raised it
+    record_llm_error
+
+    assert_raises(AIA::LLMError) { build_orchestrator.send(:run_step, 'prompt1', @config, nil) }
+  end
+
   private
 
   def stub_prompt
@@ -292,5 +360,22 @@ class PipelineOrchestratorTest < Minitest::Test
       ui_presenter:    @ui,
       session_tracker: @tracker
     )
+  end
+  # A robot whose run fails the way robot_lab reports it: the on_error hook
+  # fires, then the exception is shielded into an "Error:" reply.
+  FailingRobot = Struct.new(:on_error) do
+    def run(*, **)
+      on_error.call
+      OpenStruct.new(reply: 'Error: RuntimeError: invalid x-api-key')
+    end
+  end
+
+  def robot_run_records_llm_error
+    @robot = FailingRobot.new(method(:record_llm_error))
+  end
+
+  def record_llm_error
+    ctx = Struct.new(:robot, :error).new(Struct.new(:name).new('Tobor'), RuntimeError.new('invalid x-api-key'))
+    AIA::LLMErrorCollector.on_error(ctx)
   end
 end

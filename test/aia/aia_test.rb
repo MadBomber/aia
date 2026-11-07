@@ -10,6 +10,16 @@ class AIATest < Minitest::Test
     assert_respond_to AIA, :run, "AIA should respond to the 'run' method"
   end
 
+  def test_run_exits_1_with_a_message_on_an_unshielded_ruby_llm_error
+    AIA::CLIParser.stubs(:parse).raises(RubyLLM::ConfigurationError, "Anthropic provider is not configured")
+
+    AIA.expects(:exit).with(1)
+
+    _, err = capture_io { AIA.run }
+
+    assert_equal "LLM error: RubyLLM::ConfigurationError: Anthropic provider is not configured\n", err
+  end
+
   def test_config_method_exists
     assert_respond_to AIA, :config, "AIA should respond to the 'config' method"
   end

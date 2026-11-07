@@ -38,6 +38,8 @@ module AIA
       bridge = config.flags.track_pipeline ? TrakFlowBridge.new : nil
       bridge&.create_plan_from_pipeline(config.pipeline)
 
+      LLMErrorCollector.install!
+
       until config.pipeline.empty?
         prompt_id = config.pipeline.shift
         next if prompt_id.nil? || prompt_id.empty?
@@ -69,12 +71,15 @@ module AIA
       # Front matter may have changed the model or its settings
       @robot = @robot_sync.call(@robot) if @robot_sync
 
+      LLMErrorCollector.reset!
       if special_mode_handled?(prompt_text)
-        bridge&.update_step_status(prompt_id, :completed)
+        bridge&.update_step_status(prompt_id, :completed) unless llm_errors_handled?(prompt_id, bridge)
         return
       end
 
       result, content = compute_result(prompt_text, config)
+      return if llm_errors_handled?(prompt_id, bridge)
+
       bridge&.update_step_status(prompt_id, :completed)
 
       @tracker.record_turn(model: config.models.first.name, input: prompt_text, result: result)
@@ -82,6 +87,23 @@ module AIA
     rescue StandardError => e
       bridge&.update_step_status(prompt_id, :failed, reason: e.message)
       raise
+    end
+
+    # robot_lab shields a robot's exception into an "Error: ..." reply, so a
+    # failed LLM call comes back looking like an answer. The collector hook
+    # saw the real exception. Outside chat the step fails and aia exits 1
+    # (see AIA.run); in a chat session the error is shown and the session
+    # carries on. True when the step failed.
+    def llm_errors_handled?(prompt_id, bridge)
+      return false unless LLMErrorCollector.errors?
+
+      message = LLMErrorCollector.message(prompt_id)
+      raise AIA::LLMError, message unless AIA.chat?
+
+      @ui.display_info(message)
+      @ui.display_separator
+      bridge&.update_step_status(prompt_id, :failed, reason: message)
+      true
     end
 
     # A directive in the prompt (/debate, /verify, /decompose, /delegate,

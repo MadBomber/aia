@@ -834,6 +834,8 @@ Print the option summary and exit.
 
 aia exits with status `1` for an unknown option, a missing or invalid value (`-t hot`, `--tool-approval maybe`), a `-m MODEL=ROLE` whose role file is missing, a configuration error (such as a missing prompt or config file), or a failed `--list-models`. Each prints a one-line `ERROR:` message.
 
+Outside a chat session, aia also exits with status `1` when a prompt's LLM call fails (a bad API key, a rate limit, a provider outage, an unconfigured provider): the error is printed to stderr instead of being shown as the answer. In a chat session (`--chat`) the error is shown and the session continues.
+
 ## See also
 
 - [Configuration Keys](config-keys.md) — every setting, its type and default

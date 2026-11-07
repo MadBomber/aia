@@ -73,6 +73,7 @@ require_relative 'aia/mention_router'
 require_relative 'aia/special_mode_handler'
 require_relative 'aia/mcp_connection_manager'
 require_relative 'aia/startup_coordinator'
+require_relative 'aia/llm_error_collector'
 require_relative 'aia/pipeline_orchestrator'
 require_relative 'aia/chat_loop'
 require_relative 'aia/session'
@@ -190,6 +191,10 @@ module AIA
       exit 1
     rescue AIA::Error => e
       $stderr.puts e.message
+      exit 1
+    rescue RubyLLM::Error, RubyLLM::ConfigurationError => e
+      # An LLM failure that nothing shielded (image generation, provider setup)
+      $stderr.puts "LLM error: #{e.class}: #{e.message}"
       exit 1
     end
 
