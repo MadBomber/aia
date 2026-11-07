@@ -49,10 +49,10 @@ class VersionTest < Minitest::Test
     gemspec_path = File.join(File.dirname(__FILE__), '..', '..', 'aia.gemspec')
 
     return unless File.exist?(gemspec_path)
-    gemspec_content = File.read(gemspec_path)
 
-    return unless gemspec_content.match(/version\s*=\s*AIA::VERSION/)
-    assert_equal AIA::VERSION, AIA::VERSION, "Version should be self-consistent"
+    # Gem::Specification.load reads the gemspec as UTF-8 whatever the locale
+    spec = Gem::Specification.load(gemspec_path)
+    assert_equal AIA::VERSION, spec.version.to_s, "gemspec version should match AIA::VERSION"
   end
 
   # robot_lab 0.5 is the first with ruby_llm 2.1's RubyLLM::MCP servers (mcp:);
