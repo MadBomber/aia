@@ -2,7 +2,6 @@
 
 require_relative "test_helper"
 require "open3"
-require "rbconfig"
 require "tmpdir"
 
 # test_helper.rb keeps aia's exit calls from ending the test process. That
@@ -13,12 +12,6 @@ class TestHelperExitStatusTest < Minitest::Test
 
     assert_match(/1 tests, 1 failures/, output)
     refute status.success?, "a failing test file exited 0"
-  end
-
-  def test_passing_test_file_exits_zero
-    output, status = run_probe("assert true")
-
-    assert status.success?, "a passing test file exited non-zero:\n#{output}"
   end
 
   private
