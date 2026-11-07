@@ -19,10 +19,14 @@ class LazyLoadedRequiresTest < Minitest::Test
 
   private
 
+  # The child first checks that `require 'aia'` alone leaves each constant
+  # undefined, so the test still means something if aia starts loading it.
   def assert_loads(feature, constants)
-    script = "require 'aia'; require '#{feature}'; #{constants.join('; ')}"
+    before = constants.map { "abort 'aia already defines #{it}' if defined?(#{it})" }
+    after  = constants.map { "abort '#{feature} does not define #{it}' unless defined?(#{it})" }
+    script = ["require 'aia'", *before, "require '#{feature}'", *after].join("\n")
     output, status = Open3.capture2e(RbConfig.ruby, '-I', File.expand_path('../../lib', __dir__), '-e', script)
 
-    assert status.success?, "requiring #{feature} did not define #{constants.join(', ')}:\n#{output}"
+    assert status.success?, output
   end
 end
