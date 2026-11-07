@@ -9,6 +9,9 @@
 # Decomposition is delegated to TaskDecomposer.
 # Step execution is delegated to TaskExecutor.
 
+require_relative 'task_decomposer'
+require_relative 'task_executor'
+
 module AIA
   class DelegateHandler
     include ContentExtractor

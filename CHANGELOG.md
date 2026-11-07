@@ -18,6 +18,8 @@
 
 - **Every unit test file runs on its own.** Six files raised `uninitialized constant` when run alone, because aia loads a class each one uses lazily: `TaskDecomposer`, `TaskExecutor`, `TaskBoardTool` (one file each) and `ToolFilter::TFIDF` (three files). Each file now requires that class.
 
+- **`DelegateHandler` and `DelegateToForemanTool` load what they use.** `delegate_handler.rb` now requires `TaskDecomposer` and `TaskExecutor`, and `delegate_to_foreman_tool.rb` requires `TaskBoardTool`. Each worked only because its one caller also required those files, so loading either on its own and calling it raised `uninitialized constant`.
+
 ## [2.0.1] 2026-11-02
 
 ### Fixed
