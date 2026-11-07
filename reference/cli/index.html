@@ -5066,6 +5066,7 @@
 <hr />
 <h2 id="exit-status">Exit status<a class="headerlink" href="#exit-status" title="Permanent link">&para;</a></h2>
 <p>aia exits with status <code>1</code> for an unknown option, a missing or invalid value (<code>-t hot</code>, <code>--tool-approval maybe</code>), a <code>-m MODEL=ROLE</code> whose role file is missing, a configuration error (such as a missing prompt or config file), or a failed <code>--list-models</code>. Each prints a one-line <code>ERROR:</code> message.</p>
+<p>Outside a chat session, aia also exits with status <code>1</code> when a prompt's LLM call fails (a bad API key, a rate limit, a provider outage, an unconfigured provider): the error is printed to stderr instead of being shown as the answer. In a chat session (<code>--chat</code>) the error is shown and the session continues.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../config-keys/">Configuration Keys</a> — every setting, its type and default</li>
