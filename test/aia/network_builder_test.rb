@@ -63,6 +63,10 @@ class NetworkBuilderTest < Minitest::Test
     AIA::ToolLoader.instance.instance_variable_set(:@tool_cache, [])
 
     AIA.stubs(:config).returns(@config)
+
+    # These tests build real RubyLLM chats but never call an API. Skip the
+    # provider credential check so they pass without API keys in ENV.
+    RubyLLM::Provider.any_instance.stubs(:ensure_configured!)
   end
 
   def teardown

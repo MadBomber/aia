@@ -7,6 +7,7 @@
 require_relative "simplecov_helper"
 
 require "fileutils"
+require "ostruct" # OpenStruct test doubles; a bundled gem since Ruby 4.0
 require "debug_me"
 include DebugMe
 
