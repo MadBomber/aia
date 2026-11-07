@@ -27,6 +27,6 @@ class LazyLoadedRequiresTest < Minitest::Test
     script = ["require 'aia'", *before, "require '#{feature}'", *after].join("\n")
     output, status = Open3.capture2e(RbConfig.ruby, '-I', File.expand_path('../../lib', __dir__), '-e', script)
 
-    assert status.success?, output
+    assert status.success?, "#{feature} (#{status.inspect}):\n#{output}"
   end
 end
