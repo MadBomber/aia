@@ -12,7 +12,7 @@
 
 - **Test suite loads on Ruby 4.1.** `ostruct` is a bundled gem since Ruby 4.0 and only reached the test bundle as a transitive dependency of `oj` 3.17.7; `oj` 3.17.8 dropped it, so `bundle update` left the suite unable to load `OpenStruct`. It is now a development dependency. The speech player test no longer stubs `ENV`, which Ruby 4.1 rejects as a shareable object.
 
-- **Unit suite passes without API keys or a UTF-8 locale.** The network-building tests create real RubyLLM chats, and ruby_llm 2.1 refuses to create a chat for a provider with no API key, so 37 tests errored unless `OPENAI_API_KEY` was set. They now skip that credential check; they never call an API. The gemspec version test read the gemspec in the locale's encoding and errored under a non-UTF-8 locale; it now loads the gemspec and checks its version against `AIA::VERSION`, which it previously compared with itself. `test_helper.rb` requires `ostruct`, so test files that use `OpenStruct` also run on their own.
+- **Unit suite passes without API keys or a UTF-8 locale.** The network-building tests create real RubyLLM chats, which ruby_llm 2.1 refuses without a provider API key, so 37 tests errored unless `OPENAI_API_KEY` was set. They now skip that credential check; they never call an API. The gemspec version test errored under a non-UTF-8 locale; it now loads the gemspec and compares its version with `AIA::VERSION`. `test_helper.rb` requires `ostruct`, so test files that use `OpenStruct` also run on their own.
 
 ## [2.0.1] 2026-11-02
 

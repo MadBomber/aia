@@ -1,5 +1,4 @@
 require_relative '../test_helper'
-require 'ostruct'
 require_relative '../../lib/aia'
 
 class VersionTest < Minitest::Test
@@ -46,12 +45,7 @@ class VersionTest < Minitest::Test
   end
 
   def test_version_consistency_with_gemspec
-    gemspec_path = File.join(File.dirname(__FILE__), '..', '..', 'aia.gemspec')
-
-    return unless File.exist?(gemspec_path)
-
-    # Gem::Specification.load reads the gemspec as UTF-8 whatever the locale
-    spec = Gem::Specification.load(gemspec_path)
+    spec = Gem::Specification.load(File.expand_path('../../aia.gemspec', __dir__))
     assert_equal AIA::VERSION, spec.version.to_s, "gemspec version should match AIA::VERSION"
   end
 
