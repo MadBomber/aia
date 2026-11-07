@@ -43,11 +43,21 @@ Minitest::Reporters.use! [
   TerminalSummaryReporter.new
 ]
 
-# Prevent AIA's exit/abort calls from terminating the test process mid-run.
+# Prevent AIA's exit calls from terminating the test process mid-run.
+# Suppression ends once the suite has run, so Minitest's own exit status
+# (non-zero when a test fails) still reaches the shell.
+module TestExitGuard
+  @active = true
+  class << self
+    attr_accessor :active
+  end
+end
+Minitest.after_run { TestExitGuard.active = false }
+
 module Kernel
   alias original_exit exit
   def exit(status = true)
-    if defined?(Minitest) && Minitest.class_variable_defined?(:@@installed_at_exit)
+    if TestExitGuard.active
       warn "exit(#{status}) suppressed during test run"
       [0, true].include?(status)
     else
@@ -57,7 +67,7 @@ module Kernel
 
   alias original_exit! exit!
   def exit!(status = false)
-    if defined?(Minitest) && Minitest.class_variable_defined?(:@@installed_at_exit)
+    if TestExitGuard.active
       warn "exit!(#{status}) suppressed during test run"
       [0, true].include?(status)
     else

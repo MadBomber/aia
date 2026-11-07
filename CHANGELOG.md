@@ -10,6 +10,8 @@
 
 - **Batch runs exit 1 on LLM errors.** robot_lab shields a robot's exception into an `Error: ...` reply so one failing robot cannot crash a network, which left `aia prompt` printing a bad API key, rate limit or provider outage as the answer and exiting 0. A hook now records the real exception for each pipeline step: outside chat the step fails, the error goes to stderr and aia exits 1; in a chat session the error is shown and the session continues. Unshielded RubyLLM errors (image generation, provider setup) exit 1 with a one-line message instead of a backtrace.
 
+- **Failing test runs exit non-zero.** `test_helper.rb`'s `exit` override, which stops aia's exit calls from ending a test run early, also swallowed Minitest's exit status, so `rake test` and single test files exited 0 when tests failed. The override now stands down after the suite runs.
+
 - **Test suite loads on Ruby 4.1.** `ostruct` is a bundled gem since Ruby 4.0 and only reached the test bundle as a transitive dependency of `oj` 3.17.7; `oj` 3.17.8 dropped it, so `bundle update` left the suite unable to load `OpenStruct`. It is now a development dependency. The speech player test no longer stubs `ENV`, which Ruby 4.1 rejects as a shareable object.
 
 - **Unit suite passes without API keys or a UTF-8 locale.** The network-building tests create real RubyLLM chats, which ruby_llm 2.1 refuses without a provider API key, so 37 tests errored unless `OPENAI_API_KEY` was set. They now skip that credential check; they never call an API. The gemspec version test errored under a non-UTF-8 locale; it now loads the gemspec and compares its version with `AIA::VERSION`. `test_helper.rb` requires `ostruct`, so test files that use `OpenStruct` also run on their own.
