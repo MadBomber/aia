@@ -8,9 +8,19 @@ Gem::Specification.new do |spec|
   spec.authors  = ['Dewayne VanHoozer']
   spec.email    = ['dvanhoozer@gmail.com']
 
-  spec.summary      = 'Multi-model AI CLI with dynamic prompts, consensus responses, shell & Ruby integration, and seamless chat workflows.'
+  spec.summary      = 'Command-line AI assistant: Markdown prompts with directives, ERB and shell, chat with crews of robots, ' \
+                      'MCP servers, and any RubyLLM provider including coding-agent CLIs.'
   spec.description  = <<~DESC
-    AIA is a powerful CLI console application that brings multi-model AI capabilities to your command line, supporting 20+ providers including OpenAI, Anthropic, and Google. Built on robot_lab for robust robot orchestration, AIA v2 provides a thin CLI shell over a rich execution engine. Run multiple AI models simultaneously for comparison, get consensus responses from collaborative AI teams, or compare individual outputs side-by-side. With dynamic prompt management, embedded directives, shell and Ruby integration, interactive chats, and comprehensive history tracking, AIA transforms how you interact with AI.
+    AIA runs large language models from the terminal. Prompts are Markdown files with YAML front matter: parameters
+    that AIA asks for, directives such as /include and /shell, ERB and shell expansion, and keys that pick the model,
+    temperature or a special mode. Run a prompt once, chain prompts into a pipeline, make a prompt file executable,
+    or open an interactive chat with history, checkpoints and skills.
+
+    Every session is a crew of robots built on robot_lab. Name several models to compare them side by side, ask for a
+    consensus or a debate, have two independent answers reconciled with /verify, or decompose and delegate work to
+    specialists. Robots use RubyLLM tools and MCP servers through ruby_llm 2.1's built-in client, with per-tool
+    approval and automatic tool filtering. Any provider RubyLLM registers can be used, local or remote, plus optional
+    ruby_llm-providers-* gems that run Claude Code, Codex or GitHub Copilot as models. Requires Ruby 4.0.9 or newer.
   DESC
 
   spec.homepage     = 'https://github.com/MadBomber/aia'
@@ -80,12 +90,14 @@ Gem::Specification.new do |spec|
   spec.post_install_message = <<~MSG
 
     ╔══════════════════════════════════════════════════════════════╗
-    ║               AIA — AI Assistant v2.0                        ║
+    ║#{"AIA — AI Assistant v#{AIA::VERSION}".center(62)}║
     ║                                                              ║
-    ║  v2 is powered by robot_lab for robust orchestration         ║
+    ║  Prompts as Markdown, crews of robots, MCP servers, and      ║
+    ║  any RubyLLM provider, including coding-agent CLIs.          ║
     ╚══════════════════════════════════════════════════════════════╝
 
     Get started:  aia --help
+    What is new:  https://github.com/MadBomber/aia/blob/main/CHANGELOG.md
     Full docs:    https://madbomber.github.io/aia
 
   MSG
