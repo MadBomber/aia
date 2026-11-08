@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -2421,12 +2421,14 @@
 </div>
 <p>An option on the command line beats <code>AIA_MODEL</code>, which beats the config file. The full order is in <a href="../../configuration/precedence/">Precedence</a>.</p>
 <h2 id="model-names">Model names<a class="headerlink" href="#model-names" title="Permanent link">&para;</a></h2>
-<p>There are two ways to write a model name.</p>
+<p>There are three ways to write a model name.</p>
 <p><strong>A catalog ID</strong> such as <code>gpt-4o</code>, <code>claude-sonnet-4-5</code> or <code>gemini-2.5-flash</code>. RubyLLM knows which provider serves it.</p>
 <p><strong><code>provider/model</code></strong> such as <code>ollama/llama3.2</code>, <code>openrouter/anthropic/claude-sonnet-4-5</code> or <code>gpustack/qwen3</code>. Use this form for local servers and for gateways that serve other companies' models. AIA treats the part before the first <code>/</code> as a provider only if it is a registered provider (see <code>--list-providers</code>). Otherwise the whole string is used as the model name, which is why catalog IDs like <code>meta-llama/llama-4-maverick</code> still work.</p>
+<p><strong>A bare provider name</strong> such as <code>claude_code</code>. This is that provider's default model, the same as <code>claude_code/default</code>. It is the usual way to name an agent CLI provider (Claude Code, Codex, Copilot), which picks its own model when none is given.</p>
 <p>If most of your models come from one provider, set it once with <code>--provider</code> and leave the prefix off:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aia<span class="w"> </span>--provider<span class="w"> </span>ollama<span class="w"> </span>-m<span class="w"> </span>llama3.2<span class="w"> </span>--chat<span class="w">        </span><span class="c1"># same as -m ollama/llama3.2</span>
 </span></code></pre></div>
+<p><code>--provider</code> sets only the provider, never a model. Without <code>-m</code>, the models from <code>AIA_MODEL</code> or your config file keep their names and are re-pointed at that provider, because the command line outranks both: <code>--provider claude_code</code> with <code>AIA_MODEL=lms/qwen3.8</code> exported asks Claude Code for a model named <code>qwen3.8</code>. For a provider's default model, name the provider as the model: <code>-m claude_code</code>.</p>
 <p>If AIA can't find the model you asked for, it stops before running anything:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&lt;RubyLLM's "model not found" message&gt;
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Requested model(s): claude-sonet-4-5
@@ -2624,7 +2626,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.path", "navigation.indexes", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../assets/js/mathjax.js"></script>
       

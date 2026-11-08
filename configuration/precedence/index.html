@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -2401,6 +2401,7 @@
 <p>Your personal config file, any <code>./config/aia.yml</code>, and all other <code>AIA_*</code> variables are ignored for that run. Use it to keep self-contained setups — "local models only", "work account" — that your everyday settings can't leak into.</p>
 <h2 id="lists-are-replaced-not-merged">Lists are replaced, not merged<a class="headerlink" href="#lists-are-replaced-not-merged" title="Permanent link">&para;</a></h2>
 <p>When a higher layer sets a list — <code>models</code>, <code>pipeline</code>, <code>tools.paths</code>, <code>mcp_servers</code> — it replaces the lower layer's list. <code>-m gpt-4o</code> on the command line means <em>only</em> <code>gpt-4o</code>, even if your config file lists three models.</p>
+<p><code>--provider</code> re-points rather than replaces. Given without <code>-m</code>, it keeps the <code>models</code> list from the lower layers and sets its provider on every entry, prefix or not, so the model names come from <code>AIA_MODEL</code> or the config file while the provider comes from the command line. Given with <code>-m</code>, it applies only to the entries named there without a <code>provider/</code> prefix. It never selects a model; <code>-m claude_code</code> (a bare provider name) selects that provider's default model.</p>
 <p>Some command-line options add to what came before them on the same command line: <code>-m</code>, <code>-s</code>, <code>-n</code>, <code>-p</code>, <code>--rq</code>, <code>--at</code>, <code>--rt</code>, <code>--mu</code>, <code>--ms</code> and <code>--mcp</code> can be repeated. <code>--mcp FILE</code> adds its servers to the <code>mcp_servers</code> from your config file.</p>
 <h2 id="troubleshooting-a-setting">Troubleshooting a setting<a class="headerlink" href="#troubleshooting-a-setting" title="Permanent link">&para;</a></h2>
 <ol>
@@ -2502,7 +2503,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.path", "navigation.indexes", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../assets/js/mathjax.js"></script>
       
