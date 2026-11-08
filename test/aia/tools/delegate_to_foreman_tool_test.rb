@@ -22,8 +22,8 @@ class DelegateToForemanToolTest < Minitest::Test
     foreman = Object.new
     AIA::RobotFactory.stubs(:build_run_config).returns(:run_config)
     AIA::RobotFactory.expects(:build_robot)
-      .with(@model_spec, has_entries(name: 'Foreman', local_tools: [AIA::TaskBoardTool], config: :run_config))
-      .returns(foreman)
+                     .with(@model_spec, has_entries(name: 'Foreman', local_tools: [AIA::TaskBoardTool], config: :run_config))
+                     .returns(foreman)
 
     assert_same foreman, AIA::DelegateToForemanTool.foreman
   end
