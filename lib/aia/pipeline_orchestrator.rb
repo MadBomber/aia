@@ -158,16 +158,16 @@ module AIA
       img_cfg = config.image
       quality = img_cfg.quality
       style   = img_cfg.style
-      params  = {}
-      params[:quality] = quality if quality && !quality.to_s.strip.empty?
-      params[:style]   = style   if style   && !style.to_s.strip.empty?
+      provider_options = {}
+      provider_options[:quality] = quality if quality && !quality.to_s.strip.empty?
+      provider_options[:style]   = style   if style   && !style.to_s.strip.empty?
 
       image = @ui.with_spinner("Generating image") do
         RubyLLM.paint(
           prompt_text,
-          model:  img_cfg.model || 'gpt-image-1',
-          size:   img_cfg.size  || '1024x1024',
-          params: params
+          model: img_cfg.model || 'gpt-image-1',
+          size:  img_cfg.size  || '1024x1024',
+          provider_options:
         )
       end
 

@@ -343,6 +343,42 @@ class PipelineOrchestratorTest < Minitest::Test
     assert_raises(AIA::LLMError) { build_orchestrator.send(:run_step, 'prompt1', @config, nil) }
   end
 
+  # --- generate_image -------------------------------------------------------
+  # ruby_llm 2.1 takes extra image options as provider_options:, not params:.
+
+  def test_generate_image_passes_quality_and_style_as_provider_options
+    @config.image = OpenStruct.new(model: nil, size: nil, quality: 'hd', style: 'vivid')
+    image = stub(url: 'https://img/1.png')
+    @ui.stubs(:with_spinner).yields.returns(image)
+    RubyLLM.expects(:paint)
+           .with('a cat', model: 'gpt-image-1', size: '1024x1024', provider_options: { quality: 'hd', style: 'vivid' })
+           .returns(image)
+
+    assert_equal 'https://img/1.png', build_orchestrator.send(:generate_image, 'a cat', @config)
+  end
+
+  def test_generate_image_omits_blank_quality_and_style
+    @config.image = OpenStruct.new(model: 'dall-e-3', size: '512x512', quality: nil, style: '  ')
+    image = stub(url: nil)
+    @ui.stubs(:with_spinner).yields.returns(image)
+    RubyLLM.expects(:paint)
+           .with('a cat', model: 'dall-e-3', size: '512x512', provider_options: {})
+           .returns(image)
+
+    assert_equal '(image returned no URL)', build_orchestrator.send(:generate_image, 'a cat', @config)
+  end
+
+  def test_generate_image_saves_to_the_output_file_as_png
+    @config.image = OpenStruct.new(model: nil, size: nil, quality: nil, style: nil)
+    @config.output.file = '/tmp/out.md'
+    image = mock('image')
+    @ui.stubs(:with_spinner).yields.returns(image)
+    image.expects(:save).with('/tmp/out.png')
+    RubyLLM.stubs(:paint).returns(image)
+
+    assert_equal 'Image saved to: /tmp/out.png', build_orchestrator.send(:generate_image, 'a cat', @config)
+  end
+
   private
 
   def stub_prompt

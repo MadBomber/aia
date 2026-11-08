@@ -16,6 +16,8 @@ Coding-agent CLIs (Claude Code, Codex, GitHub Copilot) can be used as models, an
 
 - **Batch runs exit 1 on LLM errors.** robot_lab shields a robot's exception into an `Error: ...` reply so one failing robot cannot crash a network, which left `aia prompt` printing a bad API key, rate limit or provider outage as the answer and exiting 0. A hook now records the real exception for each pipeline step: outside chat the step fails, the error goes to stderr and aia exits 1; in a chat session the error is shown and the session continues. Unshielded RubyLLM errors (image generation, provider setup) exit 1 with a one-line message instead of a backtrace.
 
+- **`--paint` works again, and `--image_quality` / `--image_style` reach the API.** Since 2.0.0 the image step handed `RubyLLM.paint` a `params:` keyword that ruby_llm 2.1 does not have, so every `--paint` run stopped with `ArgumentError: unknown keyword: :params` before any request was made. The options now go through `provider_options:`, which ruby_llm merges into the request, so `--image_quality hd --image_style vivid` take effect (#135).
+
 - **`DelegateHandler` and `DelegateToForemanTool` load what they use.** `delegate_handler.rb` now requires `TaskDecomposer` and `TaskExecutor`, and `delegate_to_foreman_tool.rb` requires `TaskBoardTool`. Each worked only because its one caller also required those files, so loading either on its own and calling it raised `uninitialized constant`.
 
 **Test suite**
