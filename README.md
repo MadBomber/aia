@@ -6,7 +6,7 @@
 
   <img src="docs/assets/images/aia.png" alt="Robots waiter ready to take your order."><br />
   **The Prompt is the Code**<br />
-  <p>Check out the new <a href="https://madbomber.github.io/aia/extending/multi-model/#giving-each-model-a-role">Inline Role Syntax</a> when working with multiple concurrent models.</p>
+  <p>New in 2.1: <a href="#coding-agents-as-models-claude-code-codex-copilot">coding agents as models</a>. Point <code>--model</code> at <code>claude_code/</code>, <code>codex/</code> or <code>copilot/</code> and the Claude Code, Codex or GitHub Copilot CLI answers your prompt, alone or as a member of a crew.</p>
 </div>
 
 ---
@@ -33,6 +33,7 @@ For more information on AIA visit these locations:
 | Prompt management | File-based system with history, variables, and fuzzy search | Limited or none |
 | Workflow pipelines | Native `--next` / `--pipeline` chaining | Manual chaining required |
 | Local model support | Ollama and LM Studio out of the box | Varies |
+| Coding agents as models | Claude Code, Codex and Copilot CLIs used like any other model, alone or in a crew | Not available |
 | Tool integration | RubyLLM tools + MCP server ecosystem | Limited |
 | Shell & ERB integration | Native — prompts are live Ruby/shell programs | External only |
 | Agent orchestration | Debate, spawn, verify, decompose, delegate directives | Not available |
@@ -175,6 +176,7 @@ Implement a schema registry with event-driven synchronization...
       - [Ollama Integration](#ollama-integration)
       - [LM Studio Integration](#lm-studio-integration)
       - [Listing Local Models](#listing-local-models)
+    - [Coding Agents as Models (Claude Code, Codex, Copilot)](#coding-agents-as-models-claude-code-codex-copilot)
     - [Shell Integration](#shell-integration)
     - [Embedded Ruby (ERB)](#embedded-ruby-erb)
     - [Prompt Sequences](#prompt-sequences)
@@ -948,7 +950,26 @@ aia --model lms/local-model,gpt-4o-mini my_prompt
 export LMS_API_BASE=http://localhost:1234/v1
 ```
 
-#### Coding Agents as Models (Claude Code, Codex, Copilot)
+#### Listing Local Models
+
+The `/available_models` directive (alias: `/models`) lists all models known to the system:
+
+```bash
+# In a prompt file or chat session
+/available_models
+
+# Or use the short alias
+/models
+```
+
+**Benefits of Local Models:**
+- 🔒 **Privacy**: No data sent to external servers
+- 💰 **Cost**: Zero API costs after initial setup
+- 🚀 **Speed**: No network latency
+- 📡 **Offline**: Works without internet connection
+- 🔧 **Control**: Full control over model and parameters
+
+### Coding Agents as Models (Claude Code, Codex, Copilot)
 
 An agent CLI can stand in for a model. With the matching
 `ruby_llm-providers-*` gem installed, the provider prefix sends the prompt to
@@ -987,25 +1008,6 @@ Because the agent brings its own tools, aia's `--tools` and MCP servers are
 not attached to these robots (a one-line notice says so). Permissions, the
 working directory, timeouts and extra CLI flags are set through the gem's
 `RubyLLM.config.<provider>_*` options; see each gem's README.
-
-#### Listing Local Models
-
-The `/available_models` directive (alias: `/models`) lists all models known to the system:
-
-```bash
-# In a prompt file or chat session
-/available_models
-
-# Or use the short alias
-/models
-```
-
-**Benefits of Local Models:**
-- 🔒 **Privacy**: No data sent to external servers
-- 💰 **Cost**: Zero API costs after initial setup
-- 🚀 **Speed**: No network latency
-- 📡 **Offline**: Works without internet connection
-- 🔧 **Control**: Full control over model and parameters
 
 ### Shell Integration
 
