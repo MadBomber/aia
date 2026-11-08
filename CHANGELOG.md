@@ -4,9 +4,13 @@
 
 ### Added
 
+- **Coding agents as models.** `--model claude_code/opus`, `codex/default` or `copilot/auto` sends prompts to the Claude Code, Codex or GitHub Copilot CLI in batch mode (stdin in, JSON out) through the `ruby_llm-providers-claude_code`, `-codex` and `-copilot` gems, which resume the agent's own session between turns. A bare provider name (`--model claude_code`) now means that provider's default model. Providers that answer `accepts_tools?` with `false` get no aia tools or MCP servers attached, with a one-line notice. An installed provider gem is found and loaded even when aia itself runs under Bundler (a `bin/aia` checkout, or an app that lists aia in its Gemfile) and the gem is not in that Gemfile, provided the bundle already satisfies the gem's dependencies.
+
 - **`mode:` front matter key.** A prompt file can ask for one of the special modes that the chat directives `/debate`, `/verify`, `/decompose`, `/delegate`, `/spawn`, `/orchestrate` and `/concurrent` request, by naming it in its front matter: `mode: debate`. Prompts run from the command line, in a pipeline or as executable prompts then get that mode, which until now ran only in chat; a `/debate` line inside a prompt file was sent to the model as text. As in chat, a debate needs several robots (`--model a,b,c`).
 
 ### Fixed
+
+- **`--provider` outranks `AIA_MODEL` and the config file.** `--provider claude_code` replaced the provider only of models given without a `<provider>/` prefix, so with `AIA_MODEL=lms/qwen3.8` exported the flag did nothing and the prompt still went to LM Studio. A command-line `--provider` now applies to every model that came from the environment or a config file, prefix or not, keeping their model names; it sets the provider, never the model, so `--model claude_code` (a bare provider name) remains the way to ask for a provider's default model. Models named on the command line with `--model` keep an explicit prefix, since both values come from the same place. When a provider gem cannot be loaded because aia is running under Bundler, the warning now names the Gemfile to add the `ruby_llm-providers-<slug>` gem to.
 
 - **Batch runs exit 1 on LLM errors.** robot_lab shields a robot's exception into an `Error: ...` reply so one failing robot cannot crash a network, which left `aia prompt` printing a bad API key, rate limit or provider outage as the answer and exiting 0. A hook now records the real exception for each pipeline step: outside chat the step fails, the error goes to stderr and aia exits 1; in a chat session the error is shown and the session continues. Unshielded RubyLLM errors (image generation, provider setup) exit 1 with a one-line message instead of a backtrace.
 

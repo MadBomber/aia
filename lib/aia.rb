@@ -186,19 +186,22 @@ module AIA
       RobotFactory.setup(@config)
       load_fzf_integration
       start_session
-    rescue AIA::ConfigurationError => e
-      $stderr.puts e.message
-      exit 1
     rescue AIA::Error => e
-      $stderr.puts e.message
-      exit 1
+      fail_run(e.message)
     rescue RubyLLM::Error, RubyLLM::ConfigurationError => e
       # An LLM failure that nothing shielded (image generation, provider setup)
-      $stderr.puts "LLM error: #{e.class}: #{e.message}"
-      exit 1
+      fail_run("LLM error: #{e.class}: #{e.message}")
     end
 
     private
+
+    # Print a one-line fatal error to stderr and exit 1.
+    #
+    # @param message [String]
+    def fail_run(message)
+      $stderr.puts message
+      exit 1
+    end
 
     # Record startup in all three log files. Only aia.log gets the full
     # configuration dump; llm.log and mcp.log just note that AIA started,

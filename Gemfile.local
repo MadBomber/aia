@@ -22,4 +22,10 @@ end
 gemspec
 
 gem 'robot_lab', path: '../robot_lab'
+# Agent-CLI providers (claude_code, codex, copilot): not aia dependencies —
+# users install the ruby_llm-providers-* gem they want. Listed here so
+# bin/aia can resolve `--model claude_code/opus` against the local checkouts.
+gem 'ruby_llm-providers-claude_code', path: '../../ruby_llm-providers_project/claude_code'
+gem 'ruby_llm-providers-codex',       path: '../../ruby_llm-providers_project/codex'
+gem 'ruby_llm-providers-copilot',     path: '../../ruby_llm-providers_project/copilot'
 gem 'ractor_queue', path: '../../../ractor_queue'

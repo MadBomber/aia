@@ -407,4 +407,35 @@ class ConfigDefaultProviderTest < Minitest::Test
     assert_nil config.provider
     assert_nil config.models.first.provider
   end
+
+  # Command-line values outrank the environment: `--provider` replaces the
+  # provider of a model that came in through AIA_MODEL, prefix and all.
+  def test_cli_provider_overrides_env_var_model_prefix
+    original_model = ENV.fetch("AIA_MODEL", nil)
+    ENV["AIA_MODEL"] = "lms/qwen3.8"
+
+    config = AIA::Config.new(overrides: { provider: "claude_code" })
+
+    assert_equal "claude_code", config.models.first.provider
+    assert_equal "qwen3.8", config.models.first.name
+  ensure
+    original_model ? ENV["AIA_MODEL"] = original_model : ENV.delete("AIA_MODEL")
+  end
+
+  # ...and the config file.
+  def test_cli_provider_overrides_config_file_model_prefix
+    original_model = ENV.delete("AIA_MODEL")
+    require "tempfile"
+    file = Tempfile.new(["aia_test_config", ".yml"])
+    file.write("models:\n  - name: ollama/llama3\n")
+    file.close
+
+    config = AIA::Config.new(overrides: { extra_config_file: file.path, provider: "lms" })
+
+    assert_equal "lms", config.models.first.provider
+    assert_equal "llama3", config.models.first.name
+  ensure
+    ENV["AIA_MODEL"] = original_model if original_model
+    file&.unlink
+  end
 end

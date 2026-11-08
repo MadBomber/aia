@@ -3,6 +3,7 @@
 # test/aia/robot_factory_test.rb
 
 require_relative '../test_helper'
+require 'ostruct'
 require_relative '../../lib/aia'
 
 class RobotFactoryTest < Minitest::Test
@@ -87,6 +88,17 @@ class RobotFactoryTest < Minitest::Test
     spec = OpenStruct.new(provider: 'lms')
 
     assert_equal 'lms', AIA::RobotFactory.resolve_provider(spec)
+  end
+
+  def test_bundler_hint_names_the_gemfile_to_add_the_provider_gem_to
+    hint = AIA::RobotFactory.bundler_hint('xyz', '/repo/Gemfile')
+
+    assert_match(%r{add gem 'ruby_llm-providers-xyz' to /repo/Gemfile}, hint)
+  end
+
+  def test_bundler_hint_is_empty_outside_bundler
+    assert_equal '', AIA::RobotFactory.bundler_hint('xyz', nil)
+    assert_equal '', AIA::RobotFactory.bundler_hint('xyz', '')
   end
 
   def test_ensure_provider_loaded_warns_but_does_not_raise_for_unknown_provider
@@ -224,6 +236,52 @@ class RobotFactoryTest < Minitest::Test
     # After the fix, @namer must NOT be set as a class ivar (no leaked state)
     assert_nil AIA::RobotFactory.instance_variable_get(:@namer),
                '@namer should not be stored as a class-level instance variable after the fix'
+  end
+
+  # --- providers that bring their own tools (agent CLIs) ---
+
+  # Stands in for an agent-CLI provider class such as claude_code's.
+  class NoToolsProvider
+    def self.accepts_tools?
+      false
+    end
+  end
+
+  def test_provider_accepts_tools_is_true_unless_the_class_says_otherwise
+    assert AIA::RobotFactory.provider_accepts_tools?(nil)
+    assert AIA::RobotFactory.provider_accepts_tools?('openai')
+    assert AIA::RobotFactory.provider_accepts_tools?('no_such_provider_xyz')
+
+    AIA::ProviderRegistry.stubs(:providers).returns('agent' => NoToolsProvider)
+
+    refute AIA::RobotFactory.provider_accepts_tools?('agent')
+  end
+
+  def test_build_robot_drops_tools_and_mcp_for_agent_providers_with_one_notice
+    AIA::ProviderRegistry.stubs(:providers).returns('agent' => NoToolsProvider)
+    AIA::RobotFactory.stubs(:ensure_provider_loaded)
+    AIA::RobotFactory.instance_variable_set(:@tools_dropped_notices, nil)
+    spec = AIA::ModelSpec.new(name: 'default', provider: 'agent')
+    RobotLab.expects(:build).twice.with do |**kw|
+      kw[:model] == 'default' && kw[:provider] == 'agent' && kw[:name] == 'r' && kw[:local_tools] == [] && kw[:mcp] == []
+    end.returns(:robot)
+    AIA.expects(:debug_warn).with(regexp_matches(/agent runs its own tools; aia tools and MCP servers/)).once
+
+    2.times do
+      assert_equal :robot, AIA::RobotFactory.build_robot(spec, name: 'r', local_tools: [:tool], mcp: [{ name: 'x' }])
+    end
+  ensure
+    AIA::RobotFactory.instance_variable_set(:@tools_dropped_notices, nil)
+  end
+
+  def test_build_robot_keeps_tools_for_ordinary_providers
+    spec = AIA::ModelSpec.new(name: 'gpt-4o')
+    RobotLab.expects(:build).with do |**kw|
+      kw[:model] == 'gpt-4o' && !kw.key?(:provider) && kw[:local_tools] == [:tool] && kw[:mcp] == [{ name: 'x' }]
+    end.returns(:robot)
+    AIA.expects(:debug_warn).never
+
+    assert_equal :robot, AIA::RobotFactory.build_robot(spec, name: 'r', local_tools: [:tool], mcp: [{ name: 'x' }])
   end
 
   # --- configure_audio ---

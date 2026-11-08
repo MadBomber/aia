@@ -173,6 +173,22 @@ class ModelSpecTest < Minitest::Test
     assert_nil spec.provider
   end
 
+  # A bare provider name (no slash) selects that provider's default model —
+  # the usual way to name an agent-CLI provider such as claude_code.
+  def test_bare_provider_name_means_default_model
+    spec = AIA::ModelSpec.new(name: 'ollama')
+    assert_equal AIA::ModelSpec::DEFAULT_MODEL, spec.name
+    assert_equal 'ollama', spec.provider
+    assert spec.local_provider?
+    assert_equal 'ollama', spec.internal_id
+  end
+
+  def test_bare_unknown_name_untouched
+    spec = AIA::ModelSpec.new(name: 'notaprovider')
+    assert_equal 'notaprovider', spec.name
+    assert_nil spec.provider
+  end
+
   def test_explicit_provider_not_overridden
     spec = AIA::ModelSpec.new(name: 'ollama/llama3', provider: 'custom')
     assert_equal 'ollama/llama3', spec.name

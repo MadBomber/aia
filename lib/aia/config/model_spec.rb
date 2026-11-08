@@ -13,6 +13,10 @@
 
 module AIA
   class ModelSpec
+    # The model id used when a bare provider name is given (e.g. `claude_code`):
+    # the provider's own default model.
+    DEFAULT_MODEL = 'default'
+
     attr_accessor :name, :role, :instance, :internal_id, :provider
 
     def initialize(hash = {})
@@ -76,18 +80,23 @@ module AIA
 
     private
 
-    # Extract a provider prefix from the model name. The prefix is a provider
-    # exactly when RubyLLM knows it (registered already, or loadable as a
+    # Extract a provider from the model name. "<provider>/<model-id>" splits
+    # on the slash; a bare "<provider>" with no slash names that provider's
+    # DEFAULT_MODEL, which is how agent-CLI providers such as claude_code,
+    # codex and copilot are usually given. The prefix is a provider exactly
+    # when RubyLLM knows it (registered already, or loadable as a
     # conventional ruby_llm-providers-<prefix> gem) — no provider names are
     # hardcoded here. Names whose first segment is not a provider (registry
-    # ids like "meta-llama/llama-4-maverick") pass through untouched.
+    # ids like "meta-llama/llama-4-maverick", plain ids like "gpt-4o") pass
+    # through untouched.
     def extract_provider_from_name!
-      return unless @name&.include?('/')
+      return if @name.nil?
 
       prefix, rest = @name.split('/', 2)
       return unless ProviderRegistry.available?(prefix)
+
       @provider = prefix
-      @name = rest
+      @name = rest || DEFAULT_MODEL
     end
   end
 end

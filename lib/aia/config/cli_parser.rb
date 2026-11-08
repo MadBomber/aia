@@ -99,8 +99,9 @@ module AIA
         end
 
         opts.on('--provider SLUG',
-                'Default provider for models given without a provider/ prefix; ' \
-                'also scopes --list-models (any RubyLLM-registered provider)') do |slug|
+                'Provider for models given without a provider/ prefix; also re-points ' \
+                'models from AIA_MODEL or the config file at it, keeping their names. ' \
+                'Scopes --list-models (any RubyLLM-registered provider)') do |slug|
           options[:provider] = slug
         end
 

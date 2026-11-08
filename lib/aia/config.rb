@@ -227,7 +227,7 @@ module AIA
       apply_models_env_var unless overrides[:models]
       apply_plugins_dir_env_var unless overrides[:plugins_dir]
       apply_overrides(overrides) if overrides && !overrides.empty?
-      apply_default_provider
+      apply_cli_provider(overrides.key?(:models) ? :fill : :replace)
       expand_paths
       process_mcp_files(overrides[:mcp_files]) if overrides[:mcp_files]
     end
@@ -382,13 +382,22 @@ module AIA
       end
     end
 
-    # `--provider SLUG` gives prefixless models a default provider. A model
-    # named with an explicit "<provider>/" prefix keeps its own.
-    def apply_default_provider
+    # `--provider SLUG` on the command line. Given together with --model
+    # (+mode+ :fill), it is the provider for the models named there without
+    # a "<provider>/" prefix; an explicit prefix keeps its own provider,
+    # since both values come from the command line. Given without --model
+    # (+mode+ :replace), the models from AIA_MODEL or the config file keep
+    # their names but take this provider, prefix or not, because a
+    # command-line flag outranks both.
+    #
+    # @param mode [Symbol] :fill or :replace
+    def apply_cli_provider(mode)
       return if provider.nil? || provider.to_s.empty?
 
       Array(models).each do |spec|
-        spec.provider ||= provider if spec.respond_to?(:provider)
+        next unless spec.respond_to?(:provider)
+
+        spec.provider = provider if mode == :replace || spec.provider.nil?
       end
     end
 

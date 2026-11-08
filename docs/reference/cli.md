@@ -120,7 +120,7 @@ This option exits as soon as it is parsed, so put it last if you combine it with
 
 ### `--provider SLUG`
 
-The provider to use for model names given without a `provider/` prefix. It also selects the provider for `--list-models`. A model written with an explicit prefix (`ollama/llama3.2`) keeps its own provider. Run `aia --list-providers` to see the valid slugs.
+The provider to use for model names given with `-m` and no `provider/` prefix; a model written there with an explicit prefix (`ollama/llama3.2`) keeps its own provider. Models that came from `AIA_MODEL` or a config file are re-pointed at this provider, prefix or not, keeping their names, because the command line outranks both. `--provider` never selects a model: for a provider's default model, name the provider as the model (`-m claude_code`). It also selects the provider for `--list-models`. Run `aia --list-providers` to see the valid slugs.
 
 | Default | Config key | Env |
 |---|---|---|
@@ -170,6 +170,7 @@ The model, or models, to use. Format: `MODEL[=ROLE][,MODEL[=ROLE]]...`
 
 - One model: `-m claude-haiku-4-5`
 - With an explicit provider: `-m ollama/llama3.2`
+- A bare provider name is that provider's default model: `-m claude_code` means `claude_code/default`. This is the usual way to name an agent CLI provider (Claude Code, Codex, Copilot).
 - Several models run the same prompt in parallel: `-m gpt-4o,claude-sonnet-4-6`. See [Multi-Model & Consensus](../extending/multi-model.md).
 - `=ROLE` gives that model its own [role](../everyday/roles-and-skills.md): `-m gpt-4o=architect,claude-sonnet-4-6=reviewer`. The role file must exist, or aia stops with `ERROR: Role file not found` and lists the roles it found.
 - The same model can appear more than once, with different roles.
