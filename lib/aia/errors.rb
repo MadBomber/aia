@@ -36,4 +36,8 @@ module AIA
 
   # Raised when all sub-tasks fail in SpecialModeHandler decompose mode
   class DecomposeError < Error; end
+
+  # Raised when a robot's LLM call fails during a batch (non-chat) pipeline
+  # step; robot_lab shields the exception into reply text, this surfaces it
+  class LLMError < Error; end
 end

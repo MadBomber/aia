@@ -253,8 +253,6 @@ module AIA
     def delegate_handler
       @delegate_handler ||= begin
         require_relative 'delegate_handler'
-        require_relative 'task_decomposer'
-        require_relative 'task_executor'
         DelegateHandler.new(
           robot: @robot, ui_presenter: @ui_presenter,
           tracker: @tracker, task_coordinator: AIA.task_coordinator

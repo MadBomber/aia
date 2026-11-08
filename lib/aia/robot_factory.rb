@@ -243,7 +243,47 @@ module AIA
       # @return [RobotLab::Robot]
       def build_robot(spec, **opts)
         opts[:provider] = resolve_provider(spec) if spec.provider
+        opts = without_tools(spec, opts) unless provider_accepts_tools?(spec.provider)
         RobotLab.build(model: spec.name, **opts)
+      end
+
+      # Whether a provider can take RubyLLM tools. Agent-CLI providers
+      # (claude_code, codex, copilot) run their own tools and say so with a
+      # class-level `accepts_tools?` returning false; every other provider
+      # accepts tools. Nothing is hardcoded here — the provider class decides.
+      #
+      # @param provider [String, nil] a RubyLLM provider slug
+      # @return [Boolean]
+      def provider_accepts_tools?(provider)
+        klass = provider && ProviderRegistry.providers[provider.to_s]
+        return true unless klass.respond_to?(:accepts_tools?)
+
+        klass.accepts_tools?
+      end
+
+      # Strip the tools and MCP servers from a robot's build options for a
+      # provider that brings its own, telling the user once per provider what
+      # was left out so a `--tools` or `--mcp-use` that silently did nothing
+      # is not a mystery.
+      #
+      # @param spec [AIA::ModelSpec]
+      # @param opts [Hash] RobotLab.build options
+      # @return [Hash] opts with empty local_tools: and mcp:
+      def without_tools(spec, opts)
+        dropped = []
+        dropped << 'tools' if opts[:local_tools]&.any?
+        dropped << 'MCP servers' if opts[:mcp]&.any?
+        notice_tools_dropped(spec.provider, dropped) unless dropped.empty?
+        opts.merge(local_tools: [], mcp: [])
+      end
+
+      # One notice per provider per process.
+      def notice_tools_dropped(provider, dropped)
+        @tools_dropped_notices ||= {}
+        return if @tools_dropped_notices[provider]
+
+        @tools_dropped_notices[provider] = true
+        AIA.debug_warn("#{provider} runs its own tools; aia #{dropped.join(' and ')} are not attached to it")
       end
 
       # Resolve a spec's provider to a RubyLLM provider slug. Slugs pass
@@ -265,8 +305,21 @@ module AIA
 
         AIA.debug_warn(
           "provider '#{provider}' is not registered with RubyLLM and no " \
-          "ruby_llm/providers/#{provider} library could be loaded"
+          "ruby_llm/providers/#{provider} library could be loaded#{bundler_hint(provider)}"
         )
+      end
+
+      # Under Bundler only the gems in the Gemfile can be required, so a
+      # provider gem installed with `gem install` stays invisible. Name the
+      # Gemfile to add it to; outside Bundler there is nothing to add.
+      #
+      # @param provider [String] a provider slug
+      # @param gemfile [String, nil] the active Gemfile; nil when not under Bundler
+      # @return [String] text to append to the warning, "" outside Bundler
+      def bundler_hint(provider, gemfile = ENV.fetch('BUNDLE_GEMFILE', nil))
+        return '' if gemfile.nil? || gemfile.empty?
+
+        "; aia is running under Bundler, so add gem 'ruby_llm-providers-#{provider}' to #{gemfile}"
       end
 
       private

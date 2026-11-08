@@ -1,5 +1,5 @@
 # lib/aia/version.rb
 
 module AIA
-  VERSION = '2.0.1'.freeze
+  VERSION = '2.1.0'.freeze
 end

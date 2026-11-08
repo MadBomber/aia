@@ -37,7 +37,9 @@ module AIA
     # Attempt to require the conventional gem path for a provider slug.
     # Returns true when the provider ends up registered. Failed lookups are
     # cached so repeated non-provider prefixes (model ids also use "/")
-    # don't pay the require cost every time.
+    # don't pay the require cost every time. When the plain require fails
+    # because aia runs under Bundler and the gem is installed but not in the
+    # Gemfile, the gem is sideloaded from the RubyGems search path.
     def load(slug)
       slug = slug.to_s
       return false unless slug.match?(/\A[a-z0-9_]+\z/)
@@ -50,8 +52,52 @@ module AIA
           require "ruby_llm/providers/#{slug}"
           registered?(slug)
         rescue LoadError
-          false
+          sideload(slug)
         end
+    end
+
+    # Load an installed `ruby_llm-providers-<slug>` gem that the active
+    # bundle hides. Under Bundler only the Gemfile's gems can be required,
+    # so a provider gem added with `gem install` is invisible to a plain
+    # require even though it sits on disk. This finds its gemspec on the
+    # RubyGems search path and, when every runtime dependency it declares is
+    # already satisfied by the bundle, adds its lib directory to the load
+    # path and requires it. The bundle itself is not changed. Returns true
+    # when the provider ends up registered.
+    def sideload(slug)
+      spec = installed_spec(slug)
+      return false unless spec
+
+      unmet = spec.runtime_dependencies.reject { |dep| dependency_met?(dep) }
+      unless unmet.empty?
+        AIA.debug_warn("#{spec.full_name} is installed but needs #{unmet.join(', ')}, which this bundle does not provide")
+        return false
+      end
+
+      spec.full_require_paths.each { |dir| $LOAD_PATH.unshift(dir) unless $LOAD_PATH.include?(dir) }
+      require "ruby_llm/providers/#{slug}"
+      registered?(slug)
+    rescue LoadError
+      false
+    end
+
+    # The newest installed gemspec for `ruby_llm-providers-<slug>`, read from
+    # the specifications directories on the RubyGems search path, or nil.
+    # Reads the files directly, so it sees gems the bundle does not.
+    def installed_spec(slug)
+      name = "ruby_llm-providers-#{slug}"
+      Gem.path
+         .flat_map { |dir| Dir[File.join(dir, 'specifications', "#{name}-*.gemspec")] }
+         .filter_map { |file| Gem::Specification.load(file) }
+         .select { |spec| spec.name == name }
+         .max_by(&:version)
+    end
+
+    # Whether a gem dependency is satisfied by a gem already active in this
+    # process (under Bundler, that is the bundle).
+    def dependency_met?(dep)
+      active = Gem.loaded_specs[dep.name]
+      !active.nil? && dep.requirement.satisfied_by?(active.version)
     end
 
     # A provider instance ready for API calls (model listing etc.).
@@ -60,12 +106,17 @@ module AIA
       RubyLLM::Provider.resolve!(slug.to_sym).new(RubyLLM.config)
     end
 
-    # Slugs of conventionally named provider gems visible to the bundle
-    # (ruby_llm-providers-<slug>), whether or not they are loaded yet.
+    # Slugs of conventionally named provider gems (ruby_llm-providers-<slug>)
+    # that are installed, whether in the bundle or only on the RubyGems
+    # search path, and whether or not they are loaded yet.
     def installed_gem_slugs
-      Gem::Specification.filter_map do |spec|
-        spec.name.delete_prefix('ruby_llm-providers-') if spec.name.start_with?('ruby_llm-providers-')
-      end.uniq
+      prefix = 'ruby_llm-providers-'
+      bundled = Gem::Specification.map(&:name)
+      on_disk = Gem.path.flat_map { |dir| Dir[File.join(dir, 'specifications', "#{prefix}*.gemspec")] }
+                   .map { |file| File.basename(file, '.gemspec').sub(/-[^-]+\z/, '') }
+      (bundled + on_disk).select { |name| name.start_with?(prefix) }
+                         .map { |name| name.delete_prefix(prefix) }
+                         .uniq
     end
 
     # Register every installed conventional provider gem, so a full listing

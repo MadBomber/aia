@@ -296,7 +296,8 @@ aia --fuzzy
 | Option | Description | Example |
 |--------|-------------|---------|
 | `--chat` | Start interactive chat session | `aia --chat` |
-| `--model MODEL` | Specify AI model(s) to use. Supports `MODEL[=ROLE]` syntax | `aia --model gpt-4o-mini,gpt-3.5-turbo` or `aia --model gpt-4o=architect,claude=security` |
+| `--model MODEL` | Specify AI model(s) to use. Supports `MODEL[=ROLE]` syntax. A bare provider name (`claude_code`) means that provider's default model | `aia --model gpt-4o-mini,gpt-3.5-turbo` or `aia --model gpt-4o=architect,claude=security` |
+| `--provider SLUG` | Provider for models named without a `provider/` prefix. Also re-points models from `AIA_MODEL` or the config file at this provider, keeping their names. Scopes `--list-models` | `aia --provider ollama -m llama3.2` |
 | `--consensus` | Enable consensus mode for multi-model | `aia --consensus` |
 | `--no-consensus` | Force individual responses | `aia --no-consensus` |
 | `--role ROLE` | Use a role/system prompt (default for all models) | `aia --role expert` |
@@ -347,6 +348,8 @@ AIA determines configuration settings using this order (highest to lowest priori
 5. **Default values**: [defaults.yml](lib/aia/config/defaults.yml)
 
 **Note:** When `-c` / `--config-file` is used, it replaces the user config and environment variables. Configuration resets to bundled defaults, then the specified file is applied, then CLI arguments take precedence.
+
+**`--provider` sets the provider, not the model.** Models named with `--model` and no `provider/` prefix get it. Models that came from `AIA_MODEL` or a config file get it too, replacing their own prefix but keeping their names, because the command line outranks both. So `--provider claude_code` with `AIA_MODEL=lms/qwen3.8` exported asks Claude Code for a model named `qwen3.8`. To use a provider's default model, name the provider as the model: `--model claude_code` means `claude_code/default`.
 
 ### Configuration Methods
 
@@ -944,6 +947,46 @@ aia --model lms/local-model,gpt-4o-mini my_prompt
 # Optional: Set custom LM Studio API endpoint (default: http://localhost:1234/v1)
 export LMS_API_BASE=http://localhost:1234/v1
 ```
+
+#### Coding Agents as Models (Claude Code, Codex, Copilot)
+
+An agent CLI can stand in for a model. With the matching
+`ruby_llm-providers-*` gem installed, the provider prefix sends the prompt to
+the agent's batch mode on stdin and reads its answer back from stdout. The
+agent keeps its own tools, settings and MCP servers and works in the current
+directory, so any aia prompt, pipeline or multi-model run can be driven by an
+agent that reads and edits files.
+
+| Prefix | Gem | CLI |
+|---|---|---|
+| `claude_code/` | `ruby_llm-providers-claude_code` | `claude -p` |
+| `codex/` | `ruby_llm-providers-codex` | `codex exec` |
+| `copilot/` | `ruby_llm-providers-copilot` | `copilot` (non-interactive) |
+
+```bash
+gem install ruby_llm-providers-claude_code
+
+# The part after the slash is the agent's --model; a bare prefix means its default
+aia --model claude_code/opus refactor_prompt
+aia --model claude_code my_prompt
+
+# --provider alone keeps the model name from AIA_MODEL or the config file and
+# hands it to the agent; for the agent's default model use --model as above
+aia --provider claude_code --model sonnet my_prompt
+
+# Chat keeps the agent's session alive between turns (--resume)
+aia --chat --model claude_code/sonnet
+
+# Cross-vendor review: one agent implements, another reviews
+aia --model claude_code/sonnet=implementer,codex/default=reviewer --consensus review_prompt
+
+aia --list-models --provider claude_code
+```
+
+Because the agent brings its own tools, aia's `--tools` and MCP servers are
+not attached to these robots (a one-line notice says so). Permissions, the
+working directory, timeouts and extra CLI flags are set through the gem's
+`RubyLLM.config.<provider>_*` options; see each gem's README.
 
 #### Listing Local Models
 

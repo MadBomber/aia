@@ -43,17 +43,21 @@ An option on the command line beats `AIA_MODEL`, which beats the config file. Th
 
 ## Model names
 
-There are two ways to write a model name.
+There are three ways to write a model name.
 
 **A catalog ID** such as `gpt-4o`, `claude-sonnet-4-5` or `gemini-2.5-flash`. RubyLLM knows which provider serves it.
 
 **`provider/model`** such as `ollama/llama3.2`, `openrouter/anthropic/claude-sonnet-4-5` or `gpustack/qwen3`. Use this form for local servers and for gateways that serve other companies' models. AIA treats the part before the first `/` as a provider only if it is a registered provider (see `--list-providers`). Otherwise the whole string is used as the model name, which is why catalog IDs like `meta-llama/llama-4-maverick` still work.
+
+**A bare provider name** such as `claude_code`. This is that provider's default model, the same as `claude_code/default`. It is the usual way to name an agent CLI provider (Claude Code, Codex, Copilot), which picks its own model when none is given.
 
 If most of your models come from one provider, set it once with `--provider` and leave the prefix off:
 
 ```bash
 aia --provider ollama -m llama3.2 --chat        # same as -m ollama/llama3.2
 ```
+
+`--provider` sets only the provider, never a model. Without `-m`, the models from `AIA_MODEL` or your config file keep their names and are re-pointed at that provider, because the command line outranks both: `--provider claude_code` with `AIA_MODEL=lms/qwen3.8` exported asks Claude Code for a model named `qwen3.8`. For a provider's default model, name the provider as the model: `-m claude_code`.
 
 If AIA can't find the model you asked for, it stops before running anything:
 

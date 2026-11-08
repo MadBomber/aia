@@ -25,6 +25,10 @@ class RobotFactoryNetworkTest < Minitest::Test
 
     # Initialize the namer (used directly when testing NetworkBuilder methods)
     @namer = AIA::RobotNamer.new(first_name: 'Tobor')
+
+    # These tests build real RubyLLM chats but never call an API. Skip the
+    # provider credential check so they pass without API keys in ENV.
+    RubyLLM::Provider.any_instance.stubs(:ensure_configured!)
   end
 
   def teardown

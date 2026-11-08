@@ -4,6 +4,7 @@
 
 require_relative '../test_helper'
 require_relative '../../lib/aia'
+require_relative '../../lib/aia/task_decomposer'
 
 class TaskDecomposerTest < Minitest::Test
   def setup

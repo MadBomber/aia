@@ -119,7 +119,7 @@ When you switch models with `/model`, the new model is given a summary of the co
 Is 2^61 - 1 prime?
 ```
 
-The `/verify` directive above gets two independent answers and then reconciles them. Others in this group are `/decompose`, `/debate`, `/delegate`, `/concurrent`, `/orchestrate` and `/spawn`. The crew directives `/add_recruit`, `/drop_recruit` and `/reskill` manage a team of robots that you can address with `@name`. These are covered in [Advanced Modes](../extending/advanced-modes.md) and [Crews](../extending/crews.md).
+The `/verify` directive above gets two independent answers and then reconciles them. Others in this group are `/decompose`, `/debate`, `/delegate`, `/concurrent`, `/orchestrate` and `/spawn`. The crew directives `/add_recruit`, `/drop_recruit` and `/reskill` manage a team of robots that you can address with `@name`. These are covered in [Advanced Modes](../extending/advanced-modes.md) and [Crews](../extending/crews.md). In a prompt file, ask for one of these modes with the `mode:` [front matter key](prompt-files.md#front-matter-keys) instead: `mode: debate`.
 
 ### Looking around
 

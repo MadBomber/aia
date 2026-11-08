@@ -38,7 +38,7 @@ If you use one provider all the time, set it with `--provider` and leave off the
 aia --provider ollama -m llama3.2 my_prompt
 ```
 
-A model that has its own prefix keeps it. `--provider` also tells `--list-models` which provider to ask:
+A model named on the command line with its own prefix keeps it. Models that came from `AIA_MODEL` or a config file take the `--provider` instead, keeping their names, because the command line outranks both. `--provider` never chooses a model; for a provider's default model, name the provider as the model (`-m claude_code`), see [Model names](../everyday/models.md#model-names). `--provider` also tells `--list-models` which provider to ask:
 
 ```bash
 $ aia --provider ollama --list-models
@@ -56,6 +56,8 @@ ollama models:
 ### Provider gems
 
 Some providers ship as separate gems named `ruby_llm-providers-<name>`. Install the gem and use its prefix: AIA loads it the first time it sees that prefix. You can also load one explicitly with `--require` (`--rq`). `--list-providers` lists every installed provider gem.
+
+This works when aia itself runs under Bundler too, from a checkout's `bin/aia` or as a gem in an application's Gemfile. A provider gem that is installed but not in that Gemfile is found on the RubyGems search path and loaded, as long as the bundle already satisfies the gem's own dependencies. If it does not, aia says which requirement is unmet and asks you to add the gem to the Gemfile.
 
 ### Custom endpoints
 

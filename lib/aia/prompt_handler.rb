@@ -22,6 +22,9 @@ module AIA
       'erb'         => [%w[config erb], %w[config flags erb]]
     }.freeze
 
+    # Front matter `mode:` names that differ from their TurnState mode.
+    MODE_SHORTHANDS = { 'concurrent' => :concurrent_mcp }.freeze
+
     def initialize
       @prompts_dir = AIA.config.prompts.dir
 
@@ -34,6 +37,22 @@ module AIA
       end
 
       register_pm_directives
+    end
+
+    # The TurnState mode a front matter `mode:` +value+ names: a chat
+    # directive's name without the slash (debate, verify, decompose,
+    # delegate, spawn, orchestrate, concurrent).
+    #
+    # @param value [String, Symbol]
+    # @return [Symbol] one of TurnState::EXCLUSIVE_MODES
+    # @raise [ConfigurationError] for a name that is not a mode
+    def self.mode_for(value)
+      name = value.to_s.strip.downcase
+      mode = MODE_SHORTHANDS.fetch(name, name.to_sym)
+      return mode if TurnState::EXCLUSIVE_MODES.include?(mode)
+
+      names = (TurnState::EXCLUSIVE_MODES - MODE_SHORTHANDS.values).map(&:to_s) + MODE_SHORTHANDS.keys
+      raise ConfigurationError, "Unknown mode: #{value.inspect} (one of #{names.sort.join(', ')})"
     end
 
     # A shell/erb flag is on unless it is explicitly false.
@@ -212,6 +231,11 @@ module AIA
 
       erb_val = shorthand(meta_hash, :erb)
       cfg.flags.erb = erb_val unless erb_val.nil?
+
+      # mode → the special mode for this prompt's turn, as the chat
+      # directive of that name (/debate, /verify, ...) would request it
+      mode_val = shorthand(meta_hash, :mode)
+      AIA.turn_state.request(self.class.mode_for(mode_val)) if mode_val
     end
 
     # Fetch a front-matter shorthand value by string or symbol key.

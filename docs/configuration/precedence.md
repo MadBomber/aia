@@ -90,6 +90,8 @@ Your personal config file, any `./config/aia.yml`, and all other `AIA_*` variabl
 
 When a higher layer sets a list — `models`, `pipeline`, `tools.paths`, `mcp_servers` — it replaces the lower layer's list. `-m gpt-4o` on the command line means *only* `gpt-4o`, even if your config file lists three models.
 
+`--provider` re-points rather than replaces. Given without `-m`, it keeps the `models` list from the lower layers and sets its provider on every entry, prefix or not, so the model names come from `AIA_MODEL` or the config file while the provider comes from the command line. Given with `-m`, it applies only to the entries named there without a `provider/` prefix. It never selects a model; `-m claude_code` (a bare provider name) selects that provider's default model.
+
 Some command-line options add to what came before them on the same command line: `-m`, `-s`, `-n`, `-p`, `--rq`, `--at`, `--rt`, `--mu`, `--ms` and `--mcp` can be repeated. `--mcp FILE` adds its servers to the `mcp_servers` from your config file.
 
 ## Troubleshooting a setting

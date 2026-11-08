@@ -133,8 +133,10 @@ class ConfigTest < Minitest::Test
   end
 
   def test_plugins_dir_defaults_to_nil
-    config = AIA::Config.new
-    assert_nil config.paths.plugins_dir
+    with_plugins_dir_env(nil) do
+      config = AIA::Config.new
+      assert_nil config.paths.plugins_dir
+    end
   end
 
   def test_plugins_dir_override_sets_paths_plugins_dir
@@ -143,19 +145,28 @@ class ConfigTest < Minitest::Test
   end
 
   def test_plugins_dir_uses_aia_plugins_dir_env_var
-    ENV['AIA_PLUGINS_DIR'] = '/tmp/env_plugins'
-    config = AIA::Config.new
-    assert_equal '/tmp/env_plugins', config.paths.plugins_dir
-  ensure
-    ENV.delete('AIA_PLUGINS_DIR')
+    with_plugins_dir_env('/tmp/env_plugins') do
+      config = AIA::Config.new
+      assert_equal '/tmp/env_plugins', config.paths.plugins_dir
+    end
   end
 
   def test_plugins_dir_env_var_expands_tilde_path
-    ENV['AIA_PLUGINS_DIR'] = '~/env_plugins'
-    config = AIA::Config.new
-    assert_equal File.expand_path('~/env_plugins'), config.paths.plugins_dir
+    with_plugins_dir_env('~/env_plugins') do
+      config = AIA::Config.new
+      assert_equal File.expand_path('~/env_plugins'), config.paths.plugins_dir
+    end
+  end
+
+  # Runs the block with AIA_PLUGINS_DIR set to +value+ (unset when nil) and
+  # restores whatever the developer's shell had exported afterwards, so these
+  # tests neither see nor clobber the real environment.
+  def with_plugins_dir_env(value)
+    saved = ENV.fetch('AIA_PLUGINS_DIR', nil)
+    value.nil? ? ENV.delete('AIA_PLUGINS_DIR') : ENV['AIA_PLUGINS_DIR'] = value
+    yield
   ensure
-    ENV.delete('AIA_PLUGINS_DIR')
+    saved.nil? ? ENV.delete('AIA_PLUGINS_DIR') : ENV['AIA_PLUGINS_DIR'] = saved
   end
 
   def test_runtime_attributes
@@ -406,5 +417,36 @@ class ConfigDefaultProviderTest < Minitest::Test
 
     assert_nil config.provider
     assert_nil config.models.first.provider
+  end
+
+  # Command-line values outrank the environment: `--provider` replaces the
+  # provider of a model that came in through AIA_MODEL, prefix and all.
+  def test_cli_provider_overrides_env_var_model_prefix
+    original_model = ENV.fetch("AIA_MODEL", nil)
+    ENV["AIA_MODEL"] = "lms/qwen3.8"
+
+    config = AIA::Config.new(overrides: { provider: "claude_code" })
+
+    assert_equal "claude_code", config.models.first.provider
+    assert_equal "qwen3.8", config.models.first.name
+  ensure
+    original_model ? ENV["AIA_MODEL"] = original_model : ENV.delete("AIA_MODEL")
+  end
+
+  # ...and the config file.
+  def test_cli_provider_overrides_config_file_model_prefix
+    original_model = ENV.delete("AIA_MODEL")
+    require "tempfile"
+    file = Tempfile.new(["aia_test_config", ".yml"])
+    file.write("models:\n  - name: ollama/llama3\n")
+    file.close
+
+    config = AIA::Config.new(overrides: { extra_config_file: file.path, provider: "lms" })
+
+    assert_equal "lms", config.models.first.provider
+    assert_equal "llama3", config.models.first.name
+  ensure
+    ENV["AIA_MODEL"] = original_model if original_model
+    file&.unlink
   end
 end

@@ -7,6 +7,8 @@
 # with full TaskBoardTool access. Foreman is built on first use
 # and cached for the session.
 
+require_relative 'task_board_tool'
+
 module AIA
   class DelegateToForemanTool < RubyLLM::Tool
     description "Delegate a task management request to Foreman, the task board manager. " \

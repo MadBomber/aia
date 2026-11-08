@@ -1,5 +1,4 @@
 require_relative '../test_helper'
-require 'ostruct'
 require_relative '../../lib/aia'
 
 class VersionTest < Minitest::Test
@@ -46,13 +45,7 @@ class VersionTest < Minitest::Test
   end
 
   def test_version_consistency_with_gemspec
-    gemspec_path = File.join(File.dirname(__FILE__), '..', '..', 'aia.gemspec')
-
-    return unless File.exist?(gemspec_path)
-    gemspec_content = File.read(gemspec_path)
-
-    return unless gemspec_content.match(/version\s*=\s*AIA::VERSION/)
-    assert_equal AIA::VERSION, AIA::VERSION, "Version should be self-consistent"
+    assert_equal AIA::VERSION, load_gemspec.version.to_s, "gemspec version should match AIA::VERSION"
   end
 
   # robot_lab 0.5 is the first with ruby_llm 2.1's RubyLLM::MCP servers (mcp:);
@@ -61,9 +54,7 @@ class VersionTest < Minitest::Test
   # classes such as shared_tools' pass name allowlists), accepts MCP server
   # classes by constant name, and scores class-level server descriptions.
   def test_gemspec_requires_robot_lab_0_6_0
-    gemspec_path = File.expand_path('../../aia.gemspec', __dir__)
-    spec = Gem::Specification.load(gemspec_path)
-    dependency = spec.runtime_dependencies.find { |dep| dep.name == 'robot_lab' }
+    dependency = load_gemspec.runtime_dependencies.find { |dep| dep.name == 'robot_lab' }
 
     refute_nil dependency, "robot_lab should be a runtime dependency"
     requirement = dependency.requirement
@@ -119,5 +110,13 @@ class VersionTest < Minitest::Test
     refute_match(/alpha/, AIA::VERSION.downcase, "Release version should not contain 'alpha'")
     refute_match(/beta/, AIA::VERSION.downcase, "Release version should not contain 'beta'")
     refute_match(/rc/, AIA::VERSION.downcase, "Release version should not contain 'rc'")
+  end
+
+  private
+
+  def load_gemspec
+    spec = Gem::Specification.load(File.expand_path('../../aia.gemspec', __dir__))
+    refute_nil spec, 'aia.gemspec failed to load'
+    spec
   end
 end
