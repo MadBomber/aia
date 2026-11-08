@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **`--provider` keeps a model name that is also a provider name.** In 2.1.0 a bare model name that is a RubyLLM provider slug was read as that provider's default model before `--provider` applied, so `--provider ollama -m mistral` asked the provider `mistral` for its `default` model and `AIA_MODEL=mistral --provider ollama` asked ollama for `default`. With `--provider`, such a name is now an ordinary model id under that provider (`ollama/mistral`), as the README and `--provider` help describe. Without `--provider`, a bare provider name still means that provider's default model (`--model claude_code`).
+
 ## [2.1.0] - 2026-11-07
 
 Coding-agent CLIs (Claude Code, Codex, GitHub Copilot) can be used as models, and a prompt file can ask for a special mode such as `debate` in its front matter. Batch runs now exit 1 when an LLM call fails. The unit test suite runs without API keys, a UTF-8 locale or a particular Ruby patch level, and every test file runs on its own.
