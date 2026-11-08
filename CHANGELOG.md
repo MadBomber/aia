@@ -1,6 +1,8 @@
 # Changelog
 
-## [2.0.2] Unreleased
+## [2.1.0] - 2026-11-07
+
+Coding-agent CLIs (Claude Code, Codex, GitHub Copilot) can be used as models, and a prompt file can ask for a special mode such as `debate` in its front matter. Batch runs now exit 1 when an LLM call fails. The unit test suite runs without API keys, a UTF-8 locale or a particular Ruby patch level, and every test file runs on its own.
 
 ### Added
 
@@ -14,6 +16,10 @@
 
 - **Batch runs exit 1 on LLM errors.** robot_lab shields a robot's exception into an `Error: ...` reply so one failing robot cannot crash a network, which left `aia prompt` printing a bad API key, rate limit or provider outage as the answer and exiting 0. A hook now records the real exception for each pipeline step: outside chat the step fails, the error goes to stderr and aia exits 1; in a chat session the error is shown and the session continues. Unshielded RubyLLM errors (image generation, provider setup) exit 1 with a one-line message instead of a backtrace.
 
+- **`DelegateHandler` and `DelegateToForemanTool` load what they use.** `delegate_handler.rb` now requires `TaskDecomposer` and `TaskExecutor`, and `delegate_to_foreman_tool.rb` requires `TaskBoardTool`. Each worked only because its one caller also required those files, so loading either on its own and calling it raised `uninitialized constant`.
+
+**Test suite**
+
 - **Failing test runs exit non-zero.** `test_helper.rb`'s `exit` override, which stops aia's exit calls from ending a test run early, also swallowed Minitest's exit status, so `rake test` and single test files exited 0 when tests failed. The override now stands down after the suite runs.
 
 - **Test suite loads on Ruby 4.1.** `ostruct` is a bundled gem since Ruby 4.0 and only reached the test bundle as a transitive dependency of `oj` 3.17.7; `oj` 3.17.8 dropped it, so `bundle update` left the suite unable to load `OpenStruct`. It is now a development dependency. The speech player test no longer stubs `ENV`, which Ruby 4.1 rejects as a shareable object.
@@ -22,9 +28,9 @@
 
 - **Every unit test file runs on its own.** Six files raised `uninitialized constant` when run alone, because aia loads a class each one uses lazily: `TaskDecomposer`, `TaskExecutor`, `TaskBoardTool` (one file each) and `ToolFilter::TFIDF` (three files). Each file now requires that class.
 
-- **`DelegateHandler` and `DelegateToForemanTool` load what they use.** `delegate_handler.rb` now requires `TaskDecomposer` and `TaskExecutor`, and `delegate_to_foreman_tool.rb` requires `TaskBoardTool`. Each worked only because its one caller also required those files, so loading either on its own and calling it raised `uninitialized constant`.
+- **`ConfigTest` ignores the shell's `AIA_PLUGINS_DIR`.** The test that checks `paths.plugins_dir` defaults to `nil` read whatever the developer's shell had exported and failed, and the two tests that set the variable deleted it afterwards. All three now set the variable for their own run and restore it.
 
-## [2.0.1] 2026-11-02
+## [2.0.1] - 2026-11-02
 
 ### Fixed
 
@@ -35,7 +41,7 @@
 - `logger.mcp.file` defaults to `~/.config/aia/logs/mcp.log` (was `STDOUT`), so MCP connection warnings no longer print over the spinner. Failed servers are still listed in the startup banner. A config file that sets `file: STDOUT` keeps the old behavior.
 - Log directories are created when they don't exist.
 
-## [2.0.0] 2026-11-02
+## [2.0.0] - 2026-11-02
 
 AIA 2.0 rebuilds the CLI on [robot_lab](https://github.com/MadBomber/robot_lab): every session is a crew of robots, MCP servers come from ruby_llm 2.1's built-in client, and any provider RubyLLM registers can be used. This entry summarizes everything since 1.1.1, the last 1.x release, including the `2.0.0.pre.alpha` and `2.0.0.pre.beta2` pre-releases.
 
@@ -460,7 +466,7 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - Added `handle_tool_crash` method that logs errors with 5-line traceback
   - Tool crashes no longer crash AIA - conversation continues gracefully
 
-## [0.9.24] 2025-12-17
+## [0.9.24] - 2025-12-17
 ### Fixes
 - Ran into a problem with the `shared_tools` gem and the --require parameter of AIA which required changes to both gems.
 
@@ -485,7 +491,7 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
   - Added `handle_tool_crash` method for graceful error handling
   - Removed debug statements
 
-## [0.9.23] 2025-12-06
+## [0.9.23] - 2025-12-06
 
 ### New Features
 - **MCP Server Configuration**: Added native support for defining MCP (Model Context Protocol) servers in the config file
@@ -518,7 +524,7 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
       MY_VAR: "value"
 ```
 
-## [0.9.22] 2025-11-12
+## [0.9.22] - 2025-11-12
 
 ### Bug Fixes
 - **TEST SUITE**: Fixed all Mocha test isolation issues causing stub contamination between tests
@@ -534,14 +540,14 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
 - Standardized stub usage pattern across test suite for consistency
 - Eliminated stub leakage that caused "unexpected invocation" and "AIA was instantiated in one test but receiving invocations in another" errors
 
-## [0.9.21] 2025-10-08
+## [0.9.21] - 2025-10-08
 ### Bug Fixes
 - **Checkpoint Directive Output**: Fixed `//checkpoint` directive to return empty string instead of status message (lib/aia/directives/configuration.rb:155)
   - Prevents checkpoint creation messages from entering AI context
   - Outputs confirmation to STDOUT instead for user feedback
   - Prevents potential AI manipulation of checkpoint system
 
-## [0.9.20] 2025-10-06
+## [0.9.20] - 2025-10-06
 ### Added
 - **Enhanced Multi-Model Role System (ADR-005)**: Implemented per-model role assignment with inline syntax
   - New inline syntax: `--model MODEL[=ROLE][,MODEL[=ROLE]]...`
@@ -605,7 +611,7 @@ If you used a 2.0 pre-release: the KBS rule engine, `/rules`, user-defined rule 
 - Enhanced `apply_file_config_to_struct` to detect and process model arrays with role hashes
 - Enhanced `envar_options` to parse inline syntax for `:model` key (lib/aia/config/base.rb:212-217)
 
-## [0.9.19] 2025-10-06
+## [0.9.19] - 2025-10-06
 
 ### Bug Fixes
 - **CRITICAL BUG FIX**: Fixed multi-model cross-talk issue (#118) where models could see each other's conversation history
@@ -668,7 +674,7 @@ bin/aia --chat --model lms/openai/gpt-oss-20b,ollama/gpt-oss:20b --tokens
 # (Previously: LMS would say "5 times", Ollama "6 times" due to cross-talk)
 ```
 
-## [0.9.18] 2025-10-05
+## [0.9.18] - 2025-10-05
 
 ### Bug Fixes
 - **BUG FIX**: Fixed RubyLLM provider error parsing to handle both OpenAI and LM Studio error formats
@@ -687,7 +693,7 @@ bin/aia --chat --model lms/openai/gpt-oss-20b,ollama/gpt-oss:20b --tokens
 - Cleaned up debug puts statements from RubyLLMAdapter and provider_fix
 - Added robust JSON parsing with fallback error handling
 
-## [0.9.17] 2025-10-04
+## [0.9.17] - 2025-10-04
 
 ### New Features
 - **NEW FEATURE**: Enhanced local model support with comprehensive validation and error handling
@@ -737,7 +743,7 @@ aia --model ollama/llama3.2 --chat
 > //models
 ```
 
-## [0.9.16] 2025-09-26
+## [0.9.16] - 2025-09-26
 
 ### New Features
 - **NEW FEATURE**: Added support for Ollama AI provider
@@ -748,7 +754,7 @@ aia --model ollama/llama3.2 --chat
 - **ENHANCEMENT**: Expanded AI provider ecosystem with three new local/self-hosted model options
 - **ENHANCEMENT**: Improved flexibility for users preferring local LLM deployments
 
-## [0.9.15] 2025-09-21
+## [0.9.15] - 2025-09-21
 
 ### New Features
 - **NEW FEATURE**: Added `//paste` directive to insert clipboard contents into prompts
@@ -758,7 +764,7 @@ aia --model ollama/llama3.2 --chat
 - Enhanced DirectiveProcessor with clipboard integration using the clipboard gem
 - Added comprehensive test coverage for paste directive functionality
 
-## [0.9.14] 2025-09-19
+## [0.9.14] - 2025-09-19
 
 ### New Features
 - **NEW FEATURE**: Added `//checkpoint` directive to create named snapshots of conversation context
@@ -784,7 +790,7 @@ aia --model ollama/llama3.2 --chat
 - Refactored help directive to collect directives from all registered modules
 - Added comprehensive test coverage for checkpoint and restore functionality
 
-## [0.9.13] 2025-09-02
+## [0.9.13] - 2025-09-02
 ### New Features
 - **NEW FEATURE**: Added `--tokens` flag to show token counts for each model
 - **NEW FEATURE**: Added `--cost` flag to enable cost estimation for each model
@@ -802,7 +808,7 @@ aia --model ollama/llama3.2 --chat
 - Enhanced test suite with improved assertions and coverage
 - Updated various gem dependencies to latest stable versions
 
-## [0.9.12] 2025-08-28
+## [0.9.12] - 2025-08-28
 
 ### New Features
 - **MAJOR NEW FEATURE**: Multi-model support - specify multiple AI models simultaneously with comma-separated syntax
@@ -869,15 +875,15 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - TODO: focus on log file consistency using Logger
 
 
-## [0.9.11] 2025-07-31
+## [0.9.11] - 2025-07-31
 - added a cost per 1 million input tokens to available_models query output
 - updated ruby_llm to version 1.4.0
 - updated all other gem dependencies to their latest versions
 
-## [0.9.10] 2025-07-18
+## [0.9.10] - 2025-07-18
 - updated ruby_llm-mcp to version 0.6.1 which solves problems with MCP tools not being installed
 
-## [0.9.9] 2025-07-10
+## [0.9.9] - 2025-07-10
 - refactored the Session and Config classes into more testable method_missing
 - updated the test suire for both the Session and Config classes
 - added support for MCP servers coming into AIA via the shared_tools gem
@@ -888,13 +894,13 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - //available_models now has context window size and capabilities for each model returned
 
 
-## [0.9.8] 2025-06-25
+## [0.9.8] - 2025-06-25
 - fixing an issue with pipelined prompts
 - now showing the complete modality of the model on the processing line.
 - changed -p option from prompts_dir to pipeline
 - found problem with simple cov and deep cov w/r/t their reported test coverage; they have problems with heredoc and complex conditionals.
 
-## [0.9.7] 2025-06-20
+## [0.9.7] - 2025-06-20
 
 - **NEW FEATURE**: Added `--available_models` CLI option to list all available AI models
 - **NEW FEATURE**: Added `//tools` to show a list of available tools and their description
@@ -905,7 +911,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - **DOCUMENTATION**: Updated README for better clarity and structure
 - **DEPENDENCY**: Updated Gemfile.lock with latest dependency versions
 
-## [0.9.6] 2025-06-13
+## [0.9.6] - 2025-06-13
 - fixed issue 84 with the //llms directive
 - changed the monkey patch to the RubyLLM::Model::Modalities class at the suggestions of the RubyLLM author in prep for a PR against that gem.
 - added the shared_tools gem - need to add examples on how to use it with the --tools option
@@ -913,11 +919,11 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - added images/aia.png to README.md
 - let claude code rewrite the README.md file.  Some details were dropped but overall in reads better.  Need to add the details to a wiki or other documentation site.
 
-## [0.9.5] 2025-06-04
+## [0.9.5] - 2025-06-04
 - changed the RubyLLM::Modalities class to use method_missing for mode query
 - hunting for why the //llms query directive is not finding image_to_image LLMs.
 
-## [0.9.4] 2025-06-03
+## [0.9.4] - 2025-06-03
 - using RubyLLM v1.3.0
 - setting up a docs infrastructure to behave like the ruby_llm gem's guides side
 - fixed bug in the text-to-image workflow
@@ -925,7 +931,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - need to pay attention to the test suite
 - also need to ensure the non text2text modes are working
 
-## [0.9.3rc1] 2025-05-24
+## [0.9.3rc1] - 2025-05-24
 - using ruby_llm v1.3.0rc1
 - added a models database refresh based on integer days interval with the --refresh option
 - config file now has a "last_refresh" String in format YYYY-MM-DD
@@ -934,41 +940,41 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - fixed a bug in the prompt_manager gem which is now at v0.5.5
 
 
-## [0.9.2] 2025-05-18
+## [0.9.2] - 2025-05-18
 - removing the MCP experiment
 - adding support for RubyLLM::Tool usage in place of the MCP stuff
 - updated prompt_manager to v0.5.4 which fixed shell integration problem
 
-## [0.9.1] 2025-05-16
+## [0.9.1] - 2025-05-16
 - rethink MCP approach in favor of just RubyLLM::Tool
 - fixed problem with //clear
 - fixed a problem with a priming prompt in a chat loop
 
-## [0.9.0] 2025-05-13
+## [0.9.0] - 2025-05-13
 - Adding experimental MCP Client support
 - removed the CLI options --erb and --shell but kept them in the config file with a default of true for both
 
-## [0.8.6] 2025-04-23
+## [0.8.6] - 2025-04-23
 - Added a client adapter for the ruby_llm gem
 - Added the adapter config item and the --adapter option to select at runtime which client to use ai_client or ruby_llm
 
-## [0.8.5] 2025-04-19
+## [0.8.5] - 2025-04-19
 - documentation updates
 - integrated the https://pure.md web service for inserting web pages into the context window
    - //include http?://example.com/stuff
    - //webpage http?://example.com/stuff
 
-## [0.8.2] 2025-04-18
+## [0.8.2] - 2025-04-18
 - fixed problems with pre-loaded context and chat repl
 - piped content into `aia --chat` is now a part of the context/instructions
 - content via "aia --chat < some_file" is added to the context/instructions
 - `aia --chat context_file.txt context_file2.txt` now works
 - `aia --chat prompt_id context)file.txt` also works
 
-## [0.8.1] 2025-04-17
+## [0.8.1] - 2025-04-17
 - bumped version to 0.8.1 after correcting merge conflicts
 
-## [0.8.0] WIP - 2025-04-15
+## [0.8.0] - 2025-04-15
 - Updated PromptManager to v0.5.1 which has some of the functionality that was originally developed in the AIA.
 - Enhanced README.md to include a comprehensive table of configuration options with defaults and associated environment variables.
 - Added a note in README.md about the expandability of configuration options from a config file for dynamic prompt generation.
@@ -976,7 +982,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - Ensured version consistency across `.version`, `aia.gemspec`, and `lib/aia/version.rb`.
 - Verified and updated documentation to ensure readiness for release on RubyGems.org.
 
-## [0.7.1] WIP - 2025-03-22
+## [0.7.1] - 2025-03-22
 - Added `UIPresenter` class for handling user interface presentation.
 - Added `DirectiveProcessor` class for processing chat-based directives.
 - Added `HistoryManager` class for managing conversation and variable history.
@@ -990,7 +996,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - Improved error handling and user feedback for directive processing.
 - Enhanced logging and output options for chat sessions.
 
-## [0.7.0] WIP - 2025-03-17
+## [0.7.0] - 2025-03-17
 - Major code refactoring for better organization and maintainability:
   - Extracted `DirectiveProcessor` class to handle chat-based directives
   - Extracted `HistoryManager` class for conversation and variable history management
@@ -1001,13 +1007,13 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - Improved output handling to suppress STDOUT when chat mode is off and output file is specified
 - Updated spinner format in the process_prompt method for better user experience
 
-## [0.6.?] WIP
+## [0.6.?] - WIP
 - Implemented Tony Stark's Clean Slate Protocol on the develop branch
 
-## [0.5.17] 2024-05-17
+## [0.5.17] - 2024-05-17
 - removed replaced `semver` with `versionaire`
 
-## [0.5.16] 2024-04-02
+## [0.5.16] - 2024-04-02
 - fixed prompt pipelines
 - added //next and //pipeline directives as shortcuts to //config [next,pipeline]
 - Added new backend "client" as an internal OpenAI client
@@ -1016,82 +1022,82 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
 - Added --voice default: alloy (if "siri" and Mac? then uses cli tool "say")
 - Added --image_size and --image_quality (--is --iq)
 
-## [0.5.15] 2024-03-30
+## [0.5.15] - 2024-03-30
 - Added the ability to accept piped in text to be appended to the end of the prompt text: curl $URL | aia ad_hoc
 - Fixed bugs with entering directives as follow-up prompts during a chat session
 
-## [0.5.14] 2024-03-09
+## [0.5.14] - 2024-03-09
 - Directly access OpenAI to do text to speech when using the `--speak` option
 - Added --voice to specify which voice to use
 - Added --speech_model to specify which TTS model to use
 
-## [0.5.13] 2024-03-03
+## [0.5.13] - 2024-03-03
 - Added CLI-utility `llm` as a backend processor
 
-## [0.5.12] 2024-02-24
+## [0.5.12] - 2024-02-24
 - Happy Birthday Ruby!
 - Added --next CLI option
 - Added --pipeline CLI option
 
-## [0.5.11] 2024-02-18
+## [0.5.11] - 2024-02-18
 - allow directives to return information that is inserted into the prompt text
 - added //shell command directive
 - added //ruby ruby_code directive
 - added //include path_to_file directive
 
-## [0.5.10] 2024-02-03
+## [0.5.10] - 2024-02-03
 - Added --roles_dir to isolate roles from other prompts if desired
 - Changed --prompts to --prompts_dir to be consistent
 - Refactored common fzf usage into its own tool class
 
-## [0.5.9] 2024-02-01
+## [0.5.9] - 2024-02-01
 - Added a "I'm working" spinner thing when "--verbose" is used as an indication that the backend is in the process of composing its response to the prompt.
 
-## [0.5.8] 2024-01-17
+## [0.5.8] - 2024-01-17
 - Changed the behavior of the --dump option.  It must now be followed by path/to/file.ext where ext is a supported config file format: yml, yaml, toml
 
-## [0.5.7] 2024-01-15
+## [0.5.7] - 2024-01-15
 - Added ERB processing to the config_file
 
-## [0.5.6] 2024-01-15
+## [0.5.6] - 2024-01-15
 - Adding processing for directives, shell integration and erb to the follow up prompt in a chat session
 - some code refactoring.
 
-## [0.5.3] 2024-01-14
+## [0.5.3] - 2024-01-14
 - adding ability to render markdown to the terminal using the "glow" CLI utility
 
-## [0.5.2] 2024-01-13
+## [0.5.2] - 2024-01-13
 - wrap response when its going to the terminal
 
-## [0.5.1] 2024-01-12
+## [0.5.1] - 2024-01-12
 - removed a wicked puts "loaded" statement
 - fixed missed code when the options were changed to --out_file and --log_file
 - fixed completion functions by updating $PROMPT_DIR to $AIA_PROMPTS_DIR to match the documentation.
 
-## [0.5.0] 2024-01-05
+## [0.5.0] - 2024-01-05
 - breaking changes:
     - changed `--config` to `--config_file`
     - changed `--env` to `--shell`
     - changed `--output` to `--out_file`
         - changed default `out_file` to `STDOUT`
 
-## [0.4.3] 2023-12-31
+## [0.4.3] - 2023-12-31
 - added --env to process embedded system environment variables and shell commands within a prompt.
 - added --erb to process Embedded RuBy within a prompt because have embedded shell commands will only get you in a trouble.  Having ERB will really get you into trouble.  Remember the simple prompt is usually the best prompt.
 
-## [0.4.2] 2023-12-31
+## [0.4.2] - 2023-12-31
 - added the --role CLI option to pre-pend a "role" prompt to the front of a primary prompt.
 
-## [0.4.1] 2023-12-31
+## [0.4.1] - 2023-12-31
 - added a chat mode
 - prompt directives now supported
 - version bumped to match the `prompt_manager` gem
 
-## [0.3.20] 2023-12-28
+## [0.3.20] - 2023-12-28
 - added work around to issue with multiple context files going to the `mods` backend
 - added shellwords gem to sanitize prompt text on the command line
 
-## [0.3.19] 2023-12-26
+## [0.3.19] - 2023-12-26
 - major code refactoring.
 - supports config files \*.yml, \*.yaml and \*.toml
 - usage implemented as a man page. --help will display the man page/
@@ -1104,7 +1110,7 @@ aia --chat -m gpt-4o-mini,gpt-3.5-turbo
     3. envar values             over-rides ...
     4. default values
 
-## [0.3.0] = 2023-11-23
+## [0.3.0] - 2023-11-23
 
 - Matching version to [prompt_manager](https://github.com/prompt_manager) This version allows for the user of history in the entry of values to prompt keywords.  KW_HISTORY_MAX is set at 5.  Changed CLI interaction to use historical selection and editing of prior keyword values.
 
