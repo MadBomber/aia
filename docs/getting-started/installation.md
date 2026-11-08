@@ -26,7 +26,7 @@ aia --version
 ```
 
 ```text
-2.0.0
+2.1.0
 ```
 
 ## Connect a model provider

@@ -6,7 +6,7 @@ AIA ("AI Assistant") is a command-line program for working with large language m
 ![AIA](assets/images/aia.png){ width="320" }
 </div>
 
-This manual covers AIA 2.0.0.
+This manual covers AIA 2.1.0.
 
 ## Who this manual is for
 
