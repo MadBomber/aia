@@ -74,15 +74,15 @@ For more information on AIA visit these locations:
 
 ```plain
 
-       ,      ,        AIA v2.0.0 is Online
+       ,      ,        AIA v2.1.0 is Online
        (\____/)
-        (_oo_)         Models: gpt-4o-mini
-         (O)               DB: refreshed 2026-03-19 at 10:56
-       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.5.0, simple_flow v0.4.0,
-     [/ Tobor \]  /            trak_flow v0.2.0, typed_bus v0.0.1
-    / \_______/ \/      Tools: none loaded
-   /    /___\             MCP: (none configured)
-  (\   /_____\           Crew: @tobor
+        (_oo_)         Models: claude-sonnet-4-6
+         (O)               DB: refreshed 2026-11-01 at 22:28
+       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.6.0, simple_flow v0.4.0, trak_flow v0.2.0, typed_bus v0.0.1
+     [/ Tobor \]  /     Tools: none loaded
+    / \_______/ \/        MCP: (none configured)
+   /    /___\            Crew: @tobor
+  (\   /_____\
      :::     :::
      :::     :::
 
@@ -1436,18 +1436,18 @@ mcp_servers:
 
 #### Verifying MCP Server Configuration
 
-When MCP servers are configured, AIA displays them in the startup robot:
+When MCP servers are configured, AIA lists them in the startup robot with each server's tool count in parentheses. Servers that failed to connect are named after `FAILED:`:
 
 ```
-       ,      ,        AIA v2.0.0 is Online
+       ,      ,        AIA v2.1.0 is Online
        (\____/)
-        (_oo_)         Models: gpt-4o-mini
-         (O)               DB: refreshed 2026-03-19 at 10:56
-       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.5.0, simple_flow v0.4.0,
-     [/ Tobor \]  /            trak_flow v0.2.0, typed_bus v0.0.1
-    / \_______/ \/      Tools: 24 tools loaded
-   /    /___\             MCP: github, htm
-  (\   /_____\           Crew: @tobor
+        (_oo_)         Models: claude-sonnet-4-6
+         (O)               DB: refreshed 2026-11-01 at 22:28
+       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.6.0, simple_flow v0.4.0, trak_flow v0.2.0, typed_bus v0.0.1
+     [/ Tobor \]  /     Tools: 109 tools loaded
+    / \_______/ \/        MCP: github(42), brew(14), redis(53) | FAILED: htm
+   /    /___\            Crew: @tobor
+  (\   /_____\
      :::     :::
      :::     :::
 

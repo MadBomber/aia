@@ -19,14 +19,17 @@ When you start with a prompt ID (or a [pipeline](../prompts/pipelines.md)), AIA 
 A chat opens with a banner showing the AIA version and the session's setup: the model(s), the libraries in use, how many tools are loaded, which MCP servers connected (or failed), and the crew of robots you can address with `@name`:
 
 ```text
-       ,      ,        AIA v2.0.0 is Online
+       ,      ,        AIA v2.1.0 is Online
        (\____/)
-        (_oo_)         Models: gpt-4o-mini
-         (O)              DB: refreshed 2026-10-30 at 09:12
-       __|||__    \)    Libs: ruby_llm v2.1.1, robot_lab v0.5.1, ...
-     [/ Tobor \]  /    Tools: none loaded
-    / \_______/ \/       MCP: (none configured)
-   ...                  Crew: @tobor
+        (_oo_)         Models: claude-sonnet-4-6
+         (O)               DB: refreshed 2026-11-01 at 22:28
+       __|||__    \)     Libs: ruby_llm v2.1.1, robot_lab v0.6.0, simple_flow v0.4.0, trak_flow v0.2.0, typed_bus v0.0.1
+     [/ Tobor \]  /     Tools: 56 tools loaded
+    / \_______/ \/        MCP: github(42), brew(14) | FAILED: htm
+   /    /___\            Crew: @tobor
+  (\   /_____\
+     :::     :::
+     :::     :::
 ```
 
 Then the conversation starts:
