@@ -402,7 +402,6 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `flags.speak` | `--speak` | `false` | `AIA_FLAGS__SPEAK` |
 | `flags.shell` | | `true` | `AIA_FLAGS__SHELL` |
 | `flags.erb` | | `true` | `AIA_FLAGS__ERB` |
-| `flags.clear` | `--clear` | `false` | `AIA_FLAGS__CLEAR` |
 | `flags.no_mcp` | `--no-mcp` | `false` | `AIA_FLAGS__NO_MCP` |
 
 **Model & LLM Parameters:**
@@ -411,8 +410,8 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 |-------------|-------------|---------|---------------------|
 | `models` | `-m`, `--model` | `gpt-4o-mini` | `AIA_MODEL` |
 | `llm.temperature` | `-t`, `--temperature` | `0.7` | `AIA_LLM__TEMPERATURE` |
-| `llm.max_tokens` | `--max-tokens` | `2048` | `AIA_LLM__MAX_TOKENS` |
-| `llm.top_p` | `--top-p` | `1.0` | `AIA_LLM__TOP_P` |
+| `llm.max_tokens` | `--max-tokens` | `32767` | `AIA_LLM__MAX_TOKENS` |
+| `llm.top_p` | `--top-p` | `~` (unset) | `AIA_LLM__TOP_P` |
 | `llm.frequency_penalty` | `--frequency-penalty` | `0.0` | `AIA_LLM__FREQUENCY_PENALTY` |
 | `llm.presence_penalty` | `--presence-penalty` | `0.0` | `AIA_LLM__PRESENCE_PENALTY` |
 
@@ -423,7 +422,6 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `prompts.dir` | `--prompts-dir` | `~/.prompts` | `AIA_PROMPTS__DIR` |
 | `prompts.extname` | | `.md` | `AIA_PROMPTS__EXTNAME` |
 | `prompts.roles_prefix` | `--roles-prefix` | `roles` | `AIA_PROMPTS__ROLES_PREFIX` |
-| `prompts.roles_dir` | | `~/.prompts/roles` | `AIA_PROMPTS__ROLES_DIR` |
 | `prompts.role` | `-r`, `--role` | | `AIA_PROMPTS__ROLE` |
 | `prompts.system_prompt` | `--system-prompt` | | `AIA_PROMPTS__SYSTEM_PROMPT` |
 | `pipeline` | `-p`, `--pipeline` | `[]` | |
@@ -435,10 +433,9 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 |-------------|-------------|---------|---------------------|
 | `output.file` | `-o`, `--[no-]output` | `temp.md` | `AIA_OUTPUT__FILE` |
 | `output.append` | `-a`, `--[no-]append` | `false` | `AIA_OUTPUT__APPEND` |
-| `output.markdown` | `--md`, `--[no-]markdown` | `true` | `AIA_OUTPUT__MARKDOWN` |
 | `output.history_file` | `--history-file` | `~/.prompts/_prompts.log` | `AIA_OUTPUT__HISTORY_FILE` |
 | `paths.aia_dir` | | `~/.config/aia` | `AIA_PATHS__AIA_DIR` |
-| `paths.config_file` | `-c`, `--config-file` | `~/.config/aia/aia.yml` | `AIA_PATHS__CONFIG_FILE` |
+| | `-c`, `--config-file` | | |
 
 **Audio & Image:**
 
@@ -451,7 +448,6 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `image.size` | `--is`, `--image-size` | `1024x1024` | `AIA_IMAGE__SIZE` |
 | `image.quality` | `--iq`, `--image-quality` | `standard` | `AIA_IMAGE__QUALITY` |
 | `image.style` | `--style`, `--image-style` | `vivid` | `AIA_IMAGE__STYLE` |
-| `embedding.model` | | `text-embedding-ada-002` | `AIA_EMBEDDING__MODEL` |
 
 **Tools & MCP:**
 
@@ -476,7 +472,7 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `logger.llm.level` | `--log-level` | `warn` | `AIA_LOGGER__LLM__LEVEL` |
 | `logger.llm.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__LLM__FILE` |
 | `logger.mcp.level` | `--log-level` | `warn` | `AIA_LOGGER__MCP__LEVEL` |
-| `logger.mcp.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__MCP__FILE` |
+| `logger.mcp.file` | `--log-to` | `~/.config/aia/logs/mcp.log` | `AIA_LOGGER__MCP__FILE` |
 | `registry.refresh` | `--refresh` | `7` (days) | `AIA_REGISTRY__REFRESH` |
 
 **Utility:**
