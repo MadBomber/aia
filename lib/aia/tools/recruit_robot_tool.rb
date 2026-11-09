@@ -57,17 +57,10 @@ module AIA
     # that reads as a filesystem path is refused.
     def split_skills(skills)
       ids = skills.to_s.split(',').map(&:strip).reject(&:empty?)
-      reject_path_ids(ids)
-      ids
-    end
-
-    # Guard that tool-supplied skill ids stay within the skills directory.
-    def reject_path_ids(ids)
       paths = ids.select { |id| AIA::SkillUtils.path_based_id?(id) }
-      return if paths.empty?
+      return ids if paths.empty?
 
-      raise AIA::CrewError,
-            "skills must be names within the skills directory, not file paths: #{paths.join(', ')}"
+      raise AIA::CrewError, "skills must be names within the skills directory, not file paths: #{paths.join(', ')}"
     end
   end
 end
