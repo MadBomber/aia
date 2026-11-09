@@ -36,9 +36,15 @@ module AIA
 
     private
 
-    # "testing, performance" => ["testing", "performance"]
+    # "testing, performance" => ["testing", "performance"]. Skill ids named by
+    # a tool must be plain ids looked up within the skills directory, so any id
+    # that reads as a filesystem path is refused.
     def split_skills(skills)
-      skills.to_s.split(',').map(&:strip).reject(&:empty?)
+      ids = skills.to_s.split(',').map(&:strip).reject(&:empty?)
+      paths = ids.select { |id| AIA::SkillUtils.path_based_id?(id) }
+      return ids if paths.empty?
+
+      raise AIA::CrewError, "skills must be names within the skills directory, not file paths: #{paths.join(', ')}"
     end
   end
 end
