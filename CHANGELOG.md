@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- **Recruit and reskill tools accept only skill-directory ids.** The `recruit_robot` and `reskill_robot` tools now take skill ids that name a skill within the configured skills directory and refuse ids written as filesystem paths (`/…`, `./…`, `../…`, `~/…`), returning the tool's usual error. Human-typed `/add_recruit` and `/reskill` directives are unchanged and still accept path-based skill ids.
+
 ## [2.1.0] - 2026-11-07
 
 Coding-agent CLIs (Claude Code, Codex, GitHub Copilot) can be used as models, and a prompt file can ask for a special mode such as `debate` in its front matter. Batch runs now exit 1 when an LLM call fails. The unit test suite runs without API keys, a UTF-8 locale or a particular Ruby patch level, and every test file runs on its own.

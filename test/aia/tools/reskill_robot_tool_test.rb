@@ -37,6 +37,17 @@ class ReskillRobotToolTest < Minitest::Test
     assert_match(/Could not reskill 'Tobor': Cannot reskill the chief/, out)
   end
 
+  def test_tool_rejects_filesystem_path_skill_ids
+    %w[./local-skill ../outside /etc/some-skill ~/skills/elsewhere].each do |path_id|
+      AIA::Crew.expects(:reskill).never
+
+      out = @tool.execute(name: 'larry', skills: "testing,#{path_id}")
+
+      assert_match(/Could not reskill 'larry'/, out, "expected #{path_id} to be refused")
+      assert_match(/not file paths/, out)
+    end
+  end
+
   private
 
   def stub_robot(name)
