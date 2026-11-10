@@ -518,10 +518,12 @@ Directives are special commands in prompt files and chat sessions that begin wit
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
-| `/ruby` | `/rb` | Execute Ruby code | `/ruby puts "Hello World"` |
+| `/ruby` | `/rb` | Execute Ruby code (disabled by default; see note) | `/ruby puts "Hello World"` |
 | `/shell` | | Execute a shell command | `/shell ls -la` |
 | `/say` | | Speak a string via text-to-speech | `/say Hello there` |
 | `/concurrent` | `/conc` | Enable concurrent MCP for the next prompt | `/concurrent` |
+
+> **Note:** `/ruby` (and `/rb`) is disabled by default because it executes arbitrary Ruby with full process privileges. Enable it by passing `--allow-ruby-eval` or by setting `flags: { allow_ruby_eval: true }` in `~/.config/aia/aia.yml`. When disabled, the directive prints an error and runs nothing.
 
 #### Agent Orchestration
 
@@ -596,7 +598,7 @@ Your prompt content here...
 # Execute shell commands
 /shell git log --oneline -10
 
-# Run Ruby code
+# Run Ruby code (requires --allow-ruby-eval or flags: { allow_ruby_eval: true })
 /ruby require 'json'; puts JSON.pretty_generate({status: "ready"})
 
 Analyze the above information and provide insights.
