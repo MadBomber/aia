@@ -1,6 +1,7 @@
 # lib/aia/skill_utils.rb
 
 require 'yaml'
+require_relative 'errors'
 
 module AIA
   module SkillUtils
@@ -8,6 +9,18 @@ module AIA
 
     def path_based_id?(id)
       id.to_s.start_with?('/', './', '../', '~/')
+    end
+
+    # Parse a comma-separated skills string into a list of plain skill ids.
+    # "security, ruby-style" => ["security", "ruby-style"]. Skill ids named by
+    # a tool must be plain ids looked up within the skills directory, so any id
+    # that reads as a filesystem path is refused with an AIA::CrewError.
+    def split_skills(skills)
+      ids = skills.to_s.split(',').map(&:strip).reject(&:empty?)
+      paths = ids.select { |id| path_based_id?(id) }
+      return ids if paths.empty?
+
+      raise AIA::CrewError, "skills must be names within the skills directory, not file paths: #{paths.join(', ')}"
     end
 
     # The file a prompt ID names. A path-based ID ("./x", "~/p/x.md") is

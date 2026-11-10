@@ -303,4 +303,27 @@ class SkillUtilsTest < Minitest::Test
       refute AIA::SkillUtils.non_markdown_skill_file?(dir)
     end
   end
+
+  # --- split_skills ---
+
+  def test_split_skills_trims_and_rejects_blanks
+    assert_equal %w[security ruby-style], AIA::SkillUtils.split_skills(' security , ruby-style ')
+    assert_equal %w[a b], AIA::SkillUtils.split_skills('a,,b, ')
+  end
+
+  def test_split_skills_blank_input_returns_empty
+    assert_empty AIA::SkillUtils.split_skills(nil)
+    assert_empty AIA::SkillUtils.split_skills('')
+    assert_empty AIA::SkillUtils.split_skills('  ,  ')
+  end
+
+  def test_split_skills_rejects_path_based_ids
+    ['./x', '/x', '~/x', '../x'].each do |path_id|
+      error = assert_raises(AIA::CrewError) { AIA::SkillUtils.split_skills("good,#{path_id}") }
+      assert_equal(
+        "skills must be names within the skills directory, not file paths: #{path_id}",
+        error.message
+      )
+    end
+  end
 end

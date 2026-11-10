@@ -26,25 +26,12 @@ module AIA
       prompt = system_prompt.to_s.strip
       robot = AIA::Crew.reskill(
         name,
-        skills:        split_skills(skills),
+        skills:        AIA::SkillUtils.split_skills(skills),
         system_prompt: prompt.empty? ? nil : prompt
       )
       "Reset '#{robot.name}' to a clean slate with its new role. Address it with @#{robot.name}."
     rescue AIA::CrewError => e
       "Could not reskill '#{name}': #{e.message}"
-    end
-
-    private
-
-    # "testing, performance" => ["testing", "performance"]. Skill ids named by
-    # a tool must be plain ids looked up within the skills directory, so any id
-    # that reads as a filesystem path is refused.
-    def split_skills(skills)
-      ids = skills.to_s.split(',').map(&:strip).reject(&:empty?)
-      paths = ids.select { |id| AIA::SkillUtils.path_based_id?(id) }
-      return ids if paths.empty?
-
-      raise AIA::CrewError, "skills must be names within the skills directory, not file paths: #{paths.join(', ')}"
     end
   end
 end
