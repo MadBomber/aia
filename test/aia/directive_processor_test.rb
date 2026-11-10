@@ -98,4 +98,15 @@ class DirectiveProcessorTest < Minitest::Test
     result = processor.process("/config model gpt-4", nil)
     assert_equal "", result
   end
+
+  def test_state_setting_recognizes_lowercase_name
+    assert @processor.state_setting?("/clear")
+  end
+
+  def test_state_setting_is_case_insensitive
+    # Directive names are case-insensitive (docs/reference/directives.md),
+    # matching #directive? and #process which both downcase the name.
+    assert @processor.state_setting?("/CLEAR")
+    assert @processor.state_setting?("/Debate")
+  end
 end
