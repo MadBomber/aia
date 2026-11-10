@@ -44,15 +44,16 @@ Minitest::Reporters.use! [
 ]
 
 # Prevent AIA's exit calls from terminating the test process mid-run.
-# Suppression ends once the suite has run, so Minitest's own exit status
-# (non-zero when a test fails) still reaches the shell.
+# The guard is active only while a test is executing (see Minitest::Test
+# hooks below), so it suppresses aia's exits but leaves Minitest's own exits
+# alone: its non-zero status when a test fails, and the exit it raises while
+# parsing an unknown command-line option, both reach the shell.
 module TestExitGuard
-  @active = true
+  @active = false
   class << self
     attr_accessor :active
   end
 end
-Minitest.after_run { TestExitGuard.active = false }
 
 module Kernel
   alias original_exit exit
@@ -84,7 +85,13 @@ module Minitest
   class Test
     def before_setup
       super
+      TestExitGuard.active = true
       AIA::LoggerManager.clear_test_logs! if AIA::LoggerManager.test_mode?
+    end
+
+    def after_teardown
+      TestExitGuard.active = false
+      super
     end
   end
 end
