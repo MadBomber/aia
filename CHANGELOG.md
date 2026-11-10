@@ -6,6 +6,8 @@
 
 - **A bad command-line option fails the test run.** `test_helper.rb` installed its `exit` guard at load time, so it swallowed the exit Minitest raises while parsing an unrecognized option: `ruby -Itest test/foo_test.rb --no-such-option` ran the suite anyway and exited 0. The guard is now active only while a test is executing, so Minitest's option-parsing exit reaches the shell while aia's own exits during a test stay suppressed. A failing test file still exits non-zero.
 
+- **Docs site no longer references missing assets or the dead polyfill.io CDN.** `mkdocs.yml` pointed `extra_css`/`extra_javascript` at `assets/css/custom.css` and `assets/js/mathjax.js`, which do not exist under `docs/assets/` (only `images/` is present), so each 404'd on the published site; it also loaded `https://polyfill.io/v3/polyfill.min.js`, a domain decommissioned in 2024. All three references are removed. `mkdocs build --strict` does not validate `extra_*` paths, so it passed before and after. The MathJax CDN entry is unchanged.
+
 ### Changed
 
 - **Recruit and reskill tools accept only skill-directory ids.** The `recruit_robot` and `reskill_robot` tools now take skill ids that name a skill within the configured skills directory and refuse ids written as filesystem paths (`/…`, `./…`, `../…`, `~/…`), returning the tool's usual error. Human-typed `/add_recruit` and `/reskill` directives are unchanged and still accept path-based skill ids.
