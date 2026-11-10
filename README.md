@@ -519,7 +519,6 @@ Directives are special commands in prompt files and chat sessions that begin wit
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
 | `/ruby` | `/rb` | Execute Ruby code (disabled by default; see note) | `/ruby puts "Hello World"` |
-| `/shell` | | Execute a shell command | `/shell ls -la` |
 | `/say` | | Speak a string via text-to-speech | `/say Hello there` |
 | `/concurrent` | `/conc` | Enable concurrent MCP for the next prompt | `/concurrent` |
 
@@ -537,10 +536,10 @@ Directives are special commands in prompt files and chat sessions that begin wit
 
 #### Prompt Workflows
 
-| Directive | Aliases | Description | Example |
-|-----------|---------|-------------|---------|
-| `/next` | | Set next prompt in sequence | `/next summary` |
-| `/pipeline` | | Set prompt workflow sequence | `/pipeline analyze,summarize,report` |
+Prompt sequencing is not driven by chat directives. Chain prompts with the
+`next:` and `pipeline:` front-matter keys in a prompt file, or with the `-n`/
+`--next` and `-p`/`--pipeline` command-line flags. See
+[Prompt Sequences](#prompt-sequences).
 
 #### Context & Checkpoints
 
@@ -595,8 +594,8 @@ Your prompt content here...
 # Paste clipboard contents
 /paste
 
-# Execute shell commands
-/shell git log --oneline -10
+# Insert shell command output via $(...) expansion
+Recent commits: $(git log --oneline -10)
 
 # Run Ruby code (requires --allow-ruby-eval or flags: { allow_ruby_eval: true })
 /ruby require 'json'; puts JSON.pretty_generate({status: "ready"})
@@ -1055,9 +1054,9 @@ Chain multiple prompts for complex workflows:
 # Command line
 aia analyze --next summarize --next report
 
-# In prompt files
-# analyze.md contains: /next summarize
-# summarize.md contains: /next report
+# In prompt files (front-matter key)
+# analyze.md front matter contains:   next: summarize
+# summarize.md front matter contains: next: report
 ```
 
 #### Using --pipeline
@@ -1066,16 +1065,19 @@ aia analyze --next summarize --next report
 # Command line
 aia research --pipeline analyze,summarize,report,present
 
-# In prompt file
-/pipeline analyze,summarize,report,present
+# In a prompt file (front-matter key)
+# research.md front matter contains:
+#   pipeline: [analyze, summarize, report, present]
 ```
 
 #### Example Workflow
 
 **research.md:**
 ```
+---
+next: analyze
+---
 /config model = gpt-4
-/next analyze
 
 Research the topic: [RESEARCH_TOPIC]
 Provide comprehensive background information.
@@ -1083,8 +1085,10 @@ Provide comprehensive background information.
 
 **analyze.md:**
 ```
+---
+next: summarize
+---
 /config output = analysis.md
-/next summarize
 
 Analyze the research data and identify key insights.
 ```
@@ -1543,7 +1547,6 @@ Usage: `aia code_review mycode.rb`
 ```bash
 # ~/.prompts/meeting_notes.md
 /config model = gpt-4o-mini
-/pipeline format,action_items
 
 Raw meeting notes:
 /include [NOTES_FILE]
@@ -1551,11 +1554,14 @@ Raw meeting notes:
 Please clean up and structure these meeting notes.
 ```
 
+Usage: `aia meeting_notes --pipeline format,action_items`
+
 #### Documentation Generator
 ```bash
 # ~/.prompts/document.md
 /config model = gpt-4o-mini
-/shell find [PROJECT_DIR] -name "*.rb" | head -10
+
+Ruby files: $(find [PROJECT_DIR] -name "*.rb" | head -10)
 
 Generate documentation for the Ruby project shown above.
 Include: API references, usage examples, and setup instructions.
@@ -1674,10 +1680,10 @@ AIA executes shell commands and Ruby code embedded in prompts. This provides pow
 /config api_key = sk-1234567890abcdef
 
 # ✅ Good: Validate shell commands
-/shell ls -la /safe/directory
+Files: $(ls -la /safe/directory)
 
-# ❌ Bad: Dangerous shell commands
-/shell rm -rf / # Never do this!
+# ❌ Bad: Never embed destructive commands — $(...) runs at render time.
+# Escape with a backslash to keep a dangerous example literal: \$(rm -rf /)
 ```
 
 ### Recommended Security Setup
