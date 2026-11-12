@@ -16,6 +16,10 @@
 
 - **Recruit and reskill tools accept only skill-directory ids.** The `recruit_robot` and `reskill_robot` tools now take skill ids that name a skill within the configured skills directory and refuse ids written as filesystem paths (`/…`, `./…`, `../…`, `~/…`), returning the tool's usual error. Human-typed `/add_recruit` and `/reskill` directives are unchanged and still accept path-based skill ids.
 
+### Removed
+
+- **`TurnState#active_mcp_servers` is gone.** Its only reader left with the KBS removal, so `ChatLoop` was resetting a value nothing read after every turn. The accessor, its reset in `TurnState#clear!`, and `ChatLoop#clear_turn_mcp_filter` are deleted. (#187)
+
 ### Documentation
 
 - **README log level options match the CLI.** The "Debug Mode and Log Level Options" table and examples listed `--info`, `--warn`, `--error` and `--fatal`, which the option parser does not define (`aia --info` fails with `invalid option`). They now use `--log-level LEVEL` and `--log-to FILE`, as registered in `lib/aia/config/cli_parser.rb` and documented in `docs/reference/cli.md`. The `mcp` logger bullet above the table now matches `lib/aia/logger.rb` instead of naming a nonexistent `RubyLLM::MCP.logger`. Fixes #186.

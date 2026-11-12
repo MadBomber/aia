@@ -11,7 +11,7 @@
 # clears it. The force_* flags are read-only from outside.
 
 module AIA
-  # :reek:TooManyInstanceVariables -- one boolean flag per exclusive mode plus spawn/mcp details; a Hash would lose the attr_accessor API
+  # :reek:TooManyInstanceVariables -- one boolean flag per exclusive mode plus spawn details; a Hash would lose the attr_accessor API
   class TurnState
     # Exclusive mode flags — only one may be active at a time via #request.
     EXCLUSIVE_MODES = %i[
@@ -21,9 +21,6 @@ module AIA
     attr_reader :force_verify, :force_decompose, :force_concurrent_mcp,
                 :force_debate, :force_delegate, :force_spawn, :spawn_type,
                 :spawn_spec, :force_orchestrate
-
-    # Per-turn MCP server filter; not an exclusive mode.
-    attr_accessor :active_mcp_servers
 
     def initialize
       clear!
@@ -86,7 +83,6 @@ module AIA
       @spawn_type          = nil
       @spawn_spec          = nil
       @force_orchestrate   = false
-      @active_mcp_servers  = nil
     end
 
     # Returns which exclusive mode is currently active, or nil if none.
