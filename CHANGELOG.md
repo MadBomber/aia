@@ -14,6 +14,8 @@
 
 ### Changed
 
+- **`SpawnHandler` reuses `Crew.model_opts`.** Its private copy of the model/provider override helper was identical to `Crew.model_opts` and is removed; `/spawn` behavior is unchanged. Fixes #181.
+
 - **Recruit and reskill tools accept only skill-directory ids.** The `recruit_robot` and `reskill_robot` tools now take skill ids that name a skill within the configured skills directory and refuse ids written as filesystem paths (`/…`, `./…`, `../…`, `~/…`), returning the tool's usual error. Human-typed `/add_recruit` and `/reskill` directives are unchanged and still accept path-based skill ids.
 
 ### Documentation
