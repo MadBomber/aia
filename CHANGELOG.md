@@ -20,6 +20,8 @@
 
 - **`TurnState#active_mcp_servers` is gone.** Its only reader left with the KBS removal, so `ChatLoop` was resetting a value nothing read after every turn. The accessor, its reset in `TurnState#clear!`, and `ChatLoop#clear_turn_mcp_filter` are deleted. (#187)
 
+- **Three private copies of the response model-id lookup are gone.** `MentionRouter#extract_model_id`, `ChatLoop#extract_model_id` and `SessionTracker#extract_model_id_from_raw` held the same "`model_id`, else `model`, else nil" logic. All three now call one `AIA::Utility.model_id_of(message)`, so a RubyLLM rename needs one edit. Behavior is unchanged. Fixes #182.
+
 ### Documentation
 
 - **README log level options match the CLI.** The "Debug Mode and Log Level Options" table and examples listed `--info`, `--warn`, `--error` and `--fatal`, which the option parser does not define (`aia --info` fails with `invalid option`). They now use `--log-level LEVEL` and `--log-to FILE`, as registered in `lib/aia/config/cli_parser.rb` and documented in `docs/reference/cli.md`. The `mcp` logger bullet above the table now matches `lib/aia/logger.rb` instead of naming a nonexistent `RubyLLM::MCP.logger`. Fixes #186.
