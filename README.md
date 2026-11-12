@@ -509,7 +509,7 @@ Directives are special commands in prompt files and chat sessions that begin wit
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
 | `/include` | | Insert file contents | `/include path/to/file.txt` |
-| `/paste` | | Insert clipboard contents | `/paste` |
+| `/paste` | `/clipboard` | Insert clipboard contents | `/paste` |
 | `/webpage` | `/web`, `/website` | Fetch and insert a webpage's text content | `/webpage https://example.com` |
 | `/skill` | | Include an AIA skill from the skills directory | `/skill code-quality` |
 | `/skills` | | List available AIA skills (supports search terms) | `/skills ruby -test` |
@@ -555,7 +555,7 @@ Prompt sequencing is not driven by chat directives. Chain prompts with the
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
-| `/available_models` | `/models`, `/llms`, `/am` | List available models | `/available_models` |
+| `/available_models` | `/models`, `/llms`, `/am`, `/available`, `/all_models` | List available models | `/available_models` |
 | `/compare` | `/cmp` | Compare responses from multiple models | `/compare` |
 | `/cost` | | Dump per-turn cost/token metrics as CSV | `/cost` |
 | `/tools` | | Show available tools (optional name filter) | `/tools` or `/tools github` |

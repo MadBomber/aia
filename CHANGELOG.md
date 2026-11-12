@@ -18,6 +18,8 @@
 
 - **README drops three chat directives that were never registered.** The README listed `/shell`, `/next` and `/pipeline` as chat directives and used them in examples, but none is registered (`directive?` returns false for each): shell runs through `$(...)` expansion, and sequencing uses the `next:`/`pipeline:` front-matter keys or the `-n`/`-p` CLI flags. The directive rows and examples now use those supported forms. Fixes #175.
 
+- **README directive table lists every registered alias.** The `/paste` row showed no aliases, though `web_and_file_directives.rb` registers `alias clipboard paste`, and the `/available_models` row omitted `/available` and `/all_models`, both registered in `model_directives.rb`. Both rows now match the registered aliases and `docs/reference/directives.md`. Fixes #180.
+
 - **README documents the `/ruby` security gate.** The `/ruby` (`/rb`) directive table row and example now state that it is disabled by default and requires `--allow-ruby-eval` (or `flags: { allow_ruby_eval: true }` in `~/.config/aia/aia.yml`), matching the gate in `lib/aia/directives/execution_directives.rb`.
 
 - **README configuration tables match `defaults.yml` and the CLI.** The "Complete Configuration Reference" tables listed options removed in 2.0 (`--clear`, `--md`/`--[no-]markdown`) and keys that do not exist (`prompts.roles_dir`, `paths.config_file`, `embedding.model`), and showed stale defaults for `llm.max_tokens` (`2048` → `32767`), `llm.top_p` (`1.0` → unset) and `logger.mcp.file` (`STDOUT` → `~/.config/aia/logs/mcp.log`). The rows now agree with `lib/aia/config/defaults.yml` and `docs/reference/config-keys.md`.
