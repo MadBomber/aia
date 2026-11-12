@@ -8,6 +8,8 @@
 
 - **A bad command-line option fails the test run.** `test_helper.rb` installed its `exit` guard at load time, so it swallowed the exit Minitest raises while parsing an unrecognized option: `ruby -Itest test/foo_test.rb --no-such-option` ran the suite anyway and exited 0. The guard is now active only while a test is executing, so Minitest's option-parsing exit reaches the shell while aia's own exits during a test stay suppressed. A failing test file still exits non-zero.
 
+- **The test suite no longer warns about redefined `VERSION` constants.** `test/aia/utility_test.rb` overrode `AIA::VERSION` and `RubyLLM::VERSION` with bare `const_set`, so every run printed four "already initialized constant" warnings, and an assertion failure skipped the restore. The test now swaps each constant through a `stub_const` helper that removes it before setting it and restores it in an `ensure`. (#179)
+
 - **Docs site no longer references missing assets or the dead polyfill.io CDN.** `mkdocs.yml` pointed `extra_css`/`extra_javascript` at `assets/css/custom.css` and `assets/js/mathjax.js`, which do not exist under `docs/assets/` (only `images/` is present), so each 404'd on the published site; it also loaded `https://polyfill.io/v3/polyfill.min.js`, a domain decommissioned in 2024. All three references are removed. `mkdocs build --strict` does not validate `extra_*` paths, so it passed before and after. The MathJax CDN entry is unchanged.
 
 ### Changed
