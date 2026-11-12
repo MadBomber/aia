@@ -179,27 +179,21 @@ class UtilityTest < Minitest::Test
   end
 
   def test_robot_string_interpolation
-    # Save original constants and config values
-    original_aia_version     = AIA::VERSION
-    original_rubyllm_version = RubyLLM::VERSION
-    original_models          = AIA.config.models
-
-    # Override for test
-    AIA.const_set(:VERSION, 'X.Y.Z')
-    RubyLLM.const_set(:VERSION, 'R.L.M')
+    original_models = AIA.config.models
     AIA.config.models = [OpenStruct.new(name: 'my-test-model')]
 
-    AIA::Utility.robot
+    stub_const(AIA, :VERSION, 'X.Y.Z') do
+      stub_const(RubyLLM, :VERSION, 'R.L.M') do
+        AIA::Utility.robot
+      end
+    end
     output = @captured_output.string
 
     # v2 format: "AIA vX.Y.Z is Online"
     assert_includes output, "AIA vX.Y.Z is Online"
     assert_includes output, "ruby_llm vR.L.M"
     assert_includes output, 'my-test-model'
-
-    # Restore originals
-    AIA.const_set(:VERSION, original_aia_version)
-    RubyLLM.const_set(:VERSION, original_rubyllm_version)
+  ensure
     AIA.config.models = original_models
   end
 
@@ -343,5 +337,18 @@ class UtilityTest < Minitest::Test
     AIA.config.connected_mcp_servers = %w[fs gh]
     AIA.config.mcp_server_tool_counts = { 'fs' => 14 }
     assert_equal %w[fs(14) gh], AIA::Utility.send(:mcp_client_labels)
+  end
+
+  private
+
+  # Temporarily replace a constant without "already initialized" warnings
+  def stub_const(mod, name, value)
+    original = mod.const_get(name)
+    mod.send(:remove_const, name)
+    mod.const_set(name, value)
+    yield
+  ensure
+    mod.send(:remove_const, name)
+    mod.const_set(name, original)
   end
 end
