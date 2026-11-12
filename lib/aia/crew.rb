@@ -141,9 +141,9 @@ module AIA
       AIA::SkillUtils.load_skills_content(ids, base)
     end
 
-    # Model/provider override for an explicit recruit. When a model is given the
-    # provider is passed too (even nil) so it overrides the inherited chief
-    # provider; with no model, {} lets the spawn inherit chief model + provider.
+    # Model/provider override for an explicit recruit or /spawn. When a model is
+    # given the provider is passed too (even nil) so it overrides the inherited
+    # chief provider; with no model, {} lets the spawn inherit chief model + provider.
     #
     # @return [Hash]
     def model_opts(spec)

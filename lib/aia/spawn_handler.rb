@@ -83,25 +83,13 @@ module AIA
     # @return [Array(String, String, Hash)] [role, instruction, spawn_opts]
     def resolve_specialist(context, primary, prompt)
       if (spec = context.spawn_spec)
-        [spec[:name], Crew.compose_system_prompt(spec), model_opts(spec)]
+        [spec[:name], Crew.compose_system_prompt(spec), Crew.model_opts(spec)]
       elsif (type = context.specialist_type)
         [type, "You are a #{type} specialist. Answer precisely within your domain of expertise.", {}]
       else
         role, instruction = detect_specialist(primary, prompt)
         [role, instruction, {}]
       end
-    end
-
-    # Model/provider override for an explicit spawn. When a model is given we
-    # pass the provider too (even nil) so it overrides the inherited parent
-    # provider — e.g. spawning a cloud model from a local-model parent. With no
-    # model, the spawned robot inherits its parent's model and provider.
-    #
-    # @return [Hash]
-    def model_opts(spec)
-      return {} unless spec[:model]
-
-      { model: spec[:model], provider: spec[:provider] }
     end
 
     # The chief's local tools and MCP servers, so a specialist can do the
