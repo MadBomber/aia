@@ -18,6 +18,8 @@
 
 ### Documentation
 
+- **README log level options match the CLI.** The "Debug Mode and Log Level Options" table and examples listed `--info`, `--warn`, `--error` and `--fatal`, which the option parser does not define (`aia --info` fails with `invalid option`). They now use `--log-level LEVEL` and `--log-to FILE`, as registered in `lib/aia/config/cli_parser.rb` and documented in `docs/reference/cli.md`. The `mcp` logger bullet above the table now matches `lib/aia/logger.rb` instead of naming a nonexistent `RubyLLM::MCP.logger`. Fixes #186.
+
 - **README drops three chat directives that were never registered.** The README listed `/shell`, `/next` and `/pipeline` as chat directives and used them in examples, but none is registered (`directive?` returns false for each): shell runs through `$(...)` expansion, and sequencing uses the `next:`/`pipeline:` front-matter keys or the `-n`/`-p` CLI flags. The directive rows and examples now use those supported forms. Fixes #175.
 
 - **README directive table lists every registered alias.** The `/paste` row showed no aliases, though `web_and_file_directives.rb` registers `alias clipboard paste`, and the `/available_models` row omitted `/available` and `/all_models`, both registered in `model_directives.rb`. Both rows now match the registered aliases and `docs/reference/directives.md`. Fixes #180.

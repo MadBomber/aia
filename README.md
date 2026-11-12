@@ -1750,16 +1750,14 @@ aia --debug my_prompt
 AIA provides multiple log level options to control the verbosity of logging output. These options set the log level for all three loggers:
 - **aia**: Used within the AIA codebase for application-level logging
 - **llm**: Passed to the RubyLLM gem's configuration (`RubyLLM.logger`)
-- **mcp**: Passed to the RubyLLM::MCP process (`RubyLLM::MCP.logger`)
+- **mcp**: MCP connection logging and `RobotLab.config.logger` (ruby_llm's own MCP client logs through `RubyLLM.logger`)
 
 | Option | Description |
 |--------|-------------|
 | `-d, --debug` | Enable debug output (most verbose) and set all loggers to DEBUG level |
 | `--no-debug` | Disable debug output |
-| `--info` | Set all loggers to INFO level |
-| `--warn` | Set all loggers to WARN level (default) |
-| `--error` | Set all loggers to ERROR level |
-| `--fatal` | Set all loggers to FATAL level (least verbose) |
+| `--log-level LEVEL` | Set all loggers to LEVEL: `debug`, `info`, `warn` (default), `error` or `fatal` |
+| `--log-to FILE` | Direct all loggers to FILE |
 
 ```bash
 # Enable debug mode (most verbose - shows all log messages)
@@ -1769,13 +1767,13 @@ aia --debug my_prompt
 aia --debug --verbose my_prompt
 
 # Use info level for moderate logging
-aia --info my_prompt
+aia --log-level info my_prompt
 
 # Use error level to only see errors and fatal messages
-aia --error my_prompt
+aia --log-level error my_prompt
 
 # Use fatal level for minimal logging (only critical errors)
-aia --fatal --chat
+aia --log-level fatal --chat
 ```
 
 **Log Level Hierarchy** (from most to least verbose):
