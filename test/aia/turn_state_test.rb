@@ -154,12 +154,6 @@ class TurnStateTest < Minitest::Test
     assert_nil @ts.spawn_type
   end
 
-  def test_clear_resets_active_mcp_servers
-    @ts.active_mcp_servers = [:server_a]
-    @ts.clear!
-    assert_nil @ts.active_mcp_servers
-  end
-
   # ---------------------------------------------------------------------------
   # consume! / clear_mode
   # ---------------------------------------------------------------------------
@@ -186,13 +180,6 @@ class TurnStateTest < Minitest::Test
     assert_equal({ mode: :spawn, spawn_type: "analyst", spawn_spec: nil }, @ts.consume!)
     assert_nil @ts.spawn_type
     refute @ts.force_spawn
-  end
-
-  def test_consume_leaves_active_mcp_servers_alone
-    @ts.active_mcp_servers = [:server_a]
-    @ts.request(:verify)
-    @ts.consume!
-    assert_equal [:server_a], @ts.active_mcp_servers
   end
 
   def test_clear_mode_clears_matching_active_mode

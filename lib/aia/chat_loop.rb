@@ -95,7 +95,6 @@ module AIA
         next if special_routing_handled?(processed_prompt, @robot)
 
         execute_and_present(processed_prompt, @robot)
-        clear_turn_mcp_filter
       end
     end
 
@@ -133,17 +132,8 @@ module AIA
     end
 
     def special_routing_handled?(processed_prompt, active_robot)
-      if @special_mode_handler.handle(processed_prompt)
-        clear_turn_mcp_filter
-        return true
-      end
-
-      if @mention_router.handle(HandlerContext.new(robot: active_robot, prompt: processed_prompt))
-        clear_turn_mcp_filter
-        return true
-      end
-
-      false
+      @special_mode_handler.handle(processed_prompt) ||
+        @mention_router.handle(HandlerContext.new(robot: active_robot, prompt: processed_prompt))
     end
 
     def execute_and_present(processed_prompt, active_robot)
@@ -172,7 +162,6 @@ module AIA
       @streaming_runner.run(turn_target, processed_prompt, tools: resolved_tools)
     rescue StandardError => e
       @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
-      clear_turn_mcp_filter
       nil
     end
 
@@ -182,11 +171,6 @@ module AIA
       data = @robot.memory.data
       count = data.respond_to?(:turn_count) ? (data.turn_count || 0) : 0
       data.turn_count = count + 1
-    end
-
-    # Clear per-turn MCP server filter so next turn sees all
-    def clear_turn_mcp_filter
-      AIA.turn_state.active_mcp_servers = nil
     end
 
     # Update robot reference after a model switch and propagate to sub-components

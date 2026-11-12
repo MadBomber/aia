@@ -154,7 +154,6 @@ class ChatLoopREPLTest < Minitest::Test
 
     @streaming_runner.stubs(:run).returns([result, nil, 0.5])
     @chat_loop.stubs(:present_result)
-    AIA.turn_state.stubs(:active_mcp_servers=)
 
     @tool_filter_strategy.expects(:resolve).with("what is Ruby?").returns(nil).once
     @chat_loop.start
@@ -173,7 +172,6 @@ class ChatLoopREPLTest < Minitest::Test
     @tool_filter_strategy.stubs(:resolve).returns(["tool_a"])
     @streaming_runner.expects(:run).with(@robot, "write a haiku", tools: ["tool_a"]).returns([result, nil, 0.3])
     @chat_loop.stubs(:present_result)
-    AIA.turn_state.stubs(:active_mcp_servers=)
 
     @chat_loop.start
   end
