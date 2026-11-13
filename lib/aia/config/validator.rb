@@ -515,10 +515,14 @@ module AIA
                     require 'yaml'
                     YAML.dump(config_hash.transform_keys(&:to_s))
                   else
-                    raise "Unsupported config file format: #{ext}. Use .yml or .yaml"
+                    raise ConfigurationError, "Unsupported config file format: #{ext}. Use .yml or .yaml"
                   end
 
-        File.write(file, content)
+        begin
+          File.write(file, content)
+        rescue SystemCallError => e
+          raise ConfigurationError, "Cannot write config dump to #{file}: #{e.message}"
+        end
         puts "Config successfully dumped to #{file}"
       end
     end
