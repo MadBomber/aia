@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **`--tokens` shows token counts again and `/cost` records them.** Every metrics site checked `result.raw.respond_to?(:input_tokens)`, but under ruby_llm 2 the raw `RubyLLM::Message` keeps its counts under `#tokens`. The check was always false, so `--tokens`/`--cost` printed nothing and `/cost` recorded 0 tokens. A new `AIA::Utility.token_usage(result)` reads the counts from `RobotLab::RobotResult` and the model id from the raw message. The chat loop, pipeline, @mention, decompose and session tracker paths all use it, and `/cost` prices each turn by that model id instead of the robot's name. Fixes #201.
+
 - **Uppercase chat directives are recognized again.** `DirectiveProcessor#state_setting?` extracted the directive name without downcasing it, unlike its siblings `#directive?` and `#process`. Since state-setting names are stored lowercase, typing `/CLEAR` or `/Debate` in chat was treated as a non-state directive and its wrapper text was forwarded to the model instead of silently setting the mode. The name is now downcased to match the other methods, restoring the case-insensitive directive names the docs promise. (#174)
 
 - **A bad command-line option fails the test run.** `test_helper.rb` installed its `exit` guard at load time, so it swallowed the exit Minitest raises while parsing an unrecognized option: `ruby -Itest test/foo_test.rb --no-such-option` ran the suite anyway and exited 0. The guard is now active only while a test is executing, so Minitest's option-parsing exit reaches the shell while aia's own exits during a test stay suppressed. A failing test file still exits non-zero.

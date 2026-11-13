@@ -304,6 +304,7 @@ class InputCollectorTest < Minitest::Test
 end
 
 class ChatLoopTest < Minitest::Test
+  include LLMResultFactory
   def setup
     @robot = mock('robot')
     @ui_presenter = mock('ui_presenter')
@@ -452,18 +453,7 @@ class ChatLoopTest < Minitest::Test
     )
     AIA.stubs(:config).returns(config)
 
-    raw = mock('raw')
-    raw.stubs(:respond_to?).with(:input_tokens).returns(true)
-    raw.stubs(:input_tokens).returns(100)
-    raw.stubs(:output_tokens).returns(50)
-    raw.stubs(:respond_to?).with(:model_id).returns(true)
-    raw.stubs(:model_id).returns('gpt-4o')
-    raw.stubs(:respond_to?).with(:model).returns(false)
-
-    result = mock('result')
-    result.stubs(:respond_to?).with(:raw).returns(true)
-    result.stubs(:raw).returns(raw)
-    result.stubs(:is_a?).returns(false)
+    result = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o')
 
     @ui_presenter.expects(:display_token_metrics).with(
       has_entries(model_id: 'gpt-4o', input_tokens: 100, output_tokens: 50)

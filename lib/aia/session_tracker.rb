@@ -128,12 +128,12 @@ module AIA
 
     # One turn entry for a single robot's result within a network flow.
     def network_robot_entry(task_name, robot_result, input:, decisions:, now:)
-      raw = robot_result.raw
-      input_tokens  = (raw.respond_to?(:input_tokens) && raw.input_tokens) || 0
-      output_tokens = (raw.respond_to?(:output_tokens) && raw.output_tokens) || 0
+      usage = Utility.token_usage(robot_result) || {}
+      input_tokens  = usage[:input_tokens]  || 0
+      output_tokens = usage[:output_tokens] || 0
       tokens = input_tokens + output_tokens
 
-      model_id = extract_model_id_from_raw(raw)
+      model_id = usage[:model_id]
       model_id ||= robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
 
       {
@@ -159,48 +159,31 @@ module AIA
       end
     end
 
-    def extract_model_id_from_raw(raw)
-      return nil unless raw
-      return raw.model_id if raw.respond_to?(:model_id) && raw.model_id
-      return raw.model    if raw.respond_to?(:model)    && raw.model
-      nil
-    end
-
     def compute_cost_for_model(model_id, input_tokens, output_tokens)
       result = CostCalculator.calculate(model_id: model_id, input_tokens: input_tokens, output_tokens: output_tokens)
       result[:available] ? result[:total_cost] : 0.0
     end
 
     def extract_metrics(result)
-      input_tokens = 0
-      output_tokens = 0
-
-      # Prefer raw RubyLLM::Message (has token data); fall back to output messages
-      source = if result.respond_to?(:raw) && result.raw.respond_to?(:input_tokens)
-                 result.raw
-               elsif result.respond_to?(:output) && result.output.respond_to?(:last)
-                 result.output.last
-               end
-
-      if source.respond_to?(:input_tokens) && source.input_tokens
-        input_tokens = source.input_tokens || 0
-        output_tokens = source.output_tokens || 0
-      end
+      usage = Utility.token_usage(result) || {}
+      input_tokens  = usage[:input_tokens]  || 0
+      output_tokens = usage[:output_tokens] || 0
 
       tokens = input_tokens + output_tokens
-      cost = tokens.positive? ? compute_cost(result, input_tokens, output_tokens) : 0.0
+      cost = tokens.positive? ? compute_cost(result, usage[:model_id], input_tokens, output_tokens) : 0.0
 
       { input_tokens: input_tokens, output_tokens: output_tokens, tokens: tokens, cost: cost }
     end
 
-    # Compute cost from token counts and model pricing.
-    # Falls back to 0.0 if pricing info is unavailable.
-    def compute_cost(result, input_tokens, output_tokens)
-      model_id = if result.respond_to?(:robot_name)
-                   result.robot_name
-                 elsif result.respond_to?(:model_id)
-                   result.model_id
-                 end
+    # Compute cost from token counts and model pricing, preferring the model
+    # id reported by the raw response. Falls back to 0.0 if pricing info is
+    # unavailable.
+    def compute_cost(result, model_id, input_tokens, output_tokens)
+      model_id ||= if result.respond_to?(:robot_name)
+                     result.robot_name
+                   elsif result.respond_to?(:model_id)
+                     result.model_id
+                   end
       compute_cost_for_model(model_id, input_tokens, output_tokens)
     end
   end

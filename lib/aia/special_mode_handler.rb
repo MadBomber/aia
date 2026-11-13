@@ -297,17 +297,12 @@ module AIA
       total_input  = 0
       total_output = 0
 
-      raw_subtasks.compact.each do |r|
-        raw = r.respond_to?(:raw) ? r.raw : nil
-        next unless raw.respond_to?(:input_tokens) && raw.input_tokens
-        total_input  += raw.input_tokens  || 0
-        total_output += raw.output_tokens || 0
-      end
+      [*raw_subtasks.compact, synthesis_result].each do |r|
+        usage = Utility.token_usage(r)
+        next unless usage
 
-      synth_raw = synthesis_result.respond_to?(:raw) ? synthesis_result.raw : nil
-      if synth_raw.respond_to?(:input_tokens) && synth_raw.input_tokens
-        total_input  += synth_raw.input_tokens  || 0
-        total_output += synth_raw.output_tokens || 0
+        total_input  += usage[:input_tokens]
+        total_output += usage[:output_tokens]
       end
 
       return if total_input.zero? && total_output.zero?
