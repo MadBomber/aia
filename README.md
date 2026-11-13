@@ -528,7 +528,7 @@ Directives are special commands in prompt files and chat sessions that begin wit
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
-| `/verify` | | Two independent answers + reconciliation | `/verify` |
+| `/verify` | | Two independent answers + reconciliation; optional temperature delta spreads the verifiers; uses up to three configured models | `/verify 0.3` |
 | `/decompose` | | Decompose prompt into **fully independent**, concurrent sub-tasks; runs normally if tasks cannot all run in parallel | `/decompose` |
 | `/debate` | | Multi-round debate between robots | `/debate` |
 | `/spawn` | | Spawn a specialist robot for a domain-specific question | `/spawn ruby-expert` |
