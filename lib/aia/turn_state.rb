@@ -75,18 +75,8 @@ module AIA
       clear_exclusive_flags! if active_mode == mode
     end
 
-    def clear!
-      @force_verify        = false
-      @force_decompose     = false
-      @force_concurrent_mcp = false
-      @force_debate        = false
-      @force_delegate      = false
-      @force_spawn         = false
-      @spawn_type          = nil
-      @spawn_spec          = nil
-      @force_orchestrate   = false
-      @verify_delta        = nil
-    end
+    # Clear every mode flag and its details.
+    def clear! = clear_exclusive_flags!
 
     # Returns which exclusive mode is currently active, or nil if none.
     def active_mode
