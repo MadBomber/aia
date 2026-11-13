@@ -122,6 +122,10 @@ module AIA
         @ui_presenter.display_info("Unknown directive: #{name}  (use /help to see available directives)")
         nil
       end
+    rescue StandardError => e
+      # A failing directive (e.g. /include of a missing file) must not end the session.
+      @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
+      nil
     end
 
     def parse_prompt_string(raw)
