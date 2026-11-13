@@ -5,6 +5,8 @@
 ### Fixed
 
 - **`/available_models` matches model IDs that contain capital letters.** Search terms were lowercased but compared against the entry as written, so `/available_models codestral` and `/available_models Codestral` both missed `Codestral-2501`. Positive terms now ignore case, as negative terms already did. Fixes #234.
+- **`-c FILE` reports a malformed or non-mapping config file in one line.** Malformed YAML raised `Psych::SyntaxError` and a top-level list raised `NoMethodError` from `load_extra_config`, so both printed a backtrace. Like a missing file, aia now prints `ERROR: Invalid config file PATH: REASON` and exits 1. Fixes #231.
+- **`--dump` reports a bad file name in one line.** An unsupported extension (`--dump x.json`) raised a bare `RuntimeError`, and a path whose directory does not exist let `Errno::ENOENT` escape, so both printed a backtrace. `ConfigValidator.dump_config` now raises `AIA::ConfigurationError` for both, naming the extension or the path. Fixes #230.
 - **`--tokens` shows token counts again and `/cost` records them.** Every metrics site checked `result.raw.respond_to?(:input_tokens)`, but under ruby_llm 2 the raw `RubyLLM::Message` keeps its counts under `#tokens`. The check was always false, so `--tokens`/`--cost` printed nothing and `/cost` recorded 0 tokens. A new `AIA::Utility.token_usage(result)` reads the counts from `RobotLab::RobotResult` and the model id from the raw message. The chat loop, pipeline, @mention, decompose and session tracker paths all use it, and `/cost` prices each turn by that model id instead of the robot's name. Fixes #201.
 - **A missing API key names the env var to set.** With no key for the chosen provider, aia printed ruby_llm's developer message with a `RubyLLM.configure` snippet. It now prints one line such as `OpenAI is not configured: set OPENAI_API_KEY`. For Vertex AI the hint names the variables robot_lab reads (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`) rather than the `VERTEXAI_*` names ruby_llm suggests. Providers whose key nothing reads from the environment (Cohere, Moonshot and others), and Bedrock and Azure, which raise their own message, keep ruby_llm's original message. Fixes #224.
 - MCP servers that fail to connect are now reported on stderr when it is not a terminal, where the connection spinner prints nothing.
@@ -33,12 +35,14 @@
 
 ### Changed
 
+- **`TurnState#clear!` and `#clear_exclusive_flags!` share one body.** The two methods held identical copies of the flag resets, so every new mode flag had to be added to both. `clear!` now calls `clear_exclusive_flags!`. Behavior is unchanged. Fixes #242.
 - **`SpawnHandler` reuses `Crew.model_opts`.** Its private copy of the model/provider override helper was identical to `Crew.model_opts` and is removed; `/spawn` behavior is unchanged. Fixes #181.
 
 - **Recruit and reskill tools accept only skill-directory ids.** The `recruit_robot` and `reskill_robot` tools now take skill ids that name a skill within the configured skills directory and refuse ids written as filesystem paths (`/…`, `./…`, `../…`, `~/…`), returning the tool's usual error. Human-typed `/add_recruit` and `/reskill` directives are unchanged and still accept path-based skill ids.
 
 ### Removed
 
+- **The kramdown man rake task is gone.** `Rakefile` required `kramdown/man/task`, which no Gemfile or gemspec declares, and the `man/` directory it built from was deleted, so every `rake` run printed `Skipping kramdown man task`. The block is deleted; `rake -T` lists the same tasks without the warning. Fixes #232.
 - **`TurnState#active_mcp_servers` is gone.** Its only reader left with the KBS removal, so `ChatLoop` was resetting a value nothing read after every turn. The accessor, its reset in `TurnState#clear!`, and `ChatLoop#clear_turn_mcp_filter` are deleted. (#187)
 
 - **`McpParser` no longer copies an MCP server's `topics` key.** The JSON MCP config parser (`--mcp FILE`) copied `topics` into each parsed server for KBS routing; nothing has read it since KBS was removed, and robot_lab ignores it. `group` is still copied for `McpGrouper`. (#227)
@@ -46,6 +50,7 @@
 
 ### Documentation
 
+- **README "Building" section uses commands that exist.** It told contributors to run `just install`, `just gen_doc` and `just flay`, but the repo has no `justfile`. It now lists `rake install`, `mkdocs serve`/`mkdocs build`, and `flay lib`/`flog lib`. Fixes #225.
 - **README examples use model IDs the bundled registry resolves, and Quick Start includes an API-key step.** The headline example `aia --chat -m gpt-4o,claude-3-5-sonnet,gemini-1.5-pro` stopped with `Unknown model`, and `gemini-1.5-pro` resolved to Vertex AI. README now uses `claude-sonnet-4-6` (anthropic) and `gemini-2.5-pro` (gemini) in place of `claude-3-5-sonnet`, `claude-3-sonnet`, `gemini-1.5-pro` and `gemini-pro`. Quick Start has a new step that exports a provider key and links to the installation page's list of variables. Fixes #205.
 - **`mcp_servers/README.md` describes the files that exist.** It named the deleted `imcp.json` (its own example printed "MCP config file not found"), described only 3 of the 7 sample files, and linked to three dead pages. It now covers all seven files, uses only existing files in its examples, and links to modelcontextprotocol.io and the MCP servers repository. `mcp_servers/filesystem.json` exposes `.` instead of a developer-machine path. Fixes #199.
 - **README tool and MCP examples point at files that exist.** The "Tool Examples" and "MCP Client Examples" blocks named `examples/tools/mcp/` (removed) and loaded MCP servers through `--tools`. They now point at `examples/tools/word_count_tool.rb`, `examples/plugins/` and `--mcp examples/mcp/filesystem.json`. Fixes #190.
