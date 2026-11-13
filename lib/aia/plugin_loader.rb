@@ -50,7 +50,12 @@ module AIA
           remove_definitions(registry[name]) if registry.key?(name)
 
           before = current_definitions
-          load(path)
+          begin
+            load(path)
+          rescue ScriptError, StandardError
+            discard_partial_load(name, before, config)
+            raise
+          end
           defined = diff_definitions(before, current_definitions)
 
           registry[name] = { path: path, signature: signature(path), defined: defined }
@@ -123,6 +128,16 @@ module AIA
           methods:   after[:methods]   - before[:methods],
           constants: after[:constants] - before[:constants]
         }
+      end
+
+      # A plugin file raised part way through loading: remove whatever it
+      # defined before the error and forget the plugin, so neither a failed
+      # first load nor a failed reload leaves stray definitions or a stale
+      # registry entry behind.
+      def discard_partial_load(name, before, config)
+        remove_definitions(defined: diff_definitions(before, current_definitions))
+        registry.delete(name)
+        sync_config(config)
       end
 
       # Remove the methods and constants a plugin defined, if still present and
