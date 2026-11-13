@@ -24,6 +24,8 @@
 
 ### Documentation
 
+- **README tool and MCP examples point at files that exist.** The "Tool Examples" and "MCP Client Examples" blocks named `examples/tools/mcp/` (removed) and loaded MCP servers through `--tools`. They now point at `examples/tools/word_count_tool.rb`, `examples/plugins/` and `--mcp examples/mcp/filesystem.json`. Fixes #190.
+
 - **README log level options match the CLI.** The "Debug Mode and Log Level Options" table and examples listed `--info`, `--warn`, `--error` and `--fatal`, which the option parser does not define (`aia --info` fails with `invalid option`). They now use `--log-level LEVEL` and `--log-to FILE`, as registered in `lib/aia/config/cli_parser.rb` and documented in `docs/reference/cli.md`. The `mcp` logger bullet above the table now matches `lib/aia/logger.rb` instead of naming a nonexistent `RubyLLM::MCP.logger`. Fixes #186.
 
 - **README drops three chat directives that were never registered.** The README listed `/shell`, `/next` and `/pipeline` as chat directives and used them in examples, but none is registered (`directive?` returns false for each): shell runs through `$(...)` expansion, and sequencing uses the `next:`/`pipeline:` front-matter keys or the `-n`/`-p` CLI flags. The directive rows and examples now use those supported forms. Fixes #175.
