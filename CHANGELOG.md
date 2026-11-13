@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **`--fuzzy` starts fzf, and cancelling it exits cleanly.** `AIA::Fzf` passed shell-quoted arguments to fzf through an argv array: `--prompt='Search term: '` split into three words (fzf rejected the stray `term:`), the header and prompt kept their backslashes, and the preview's `{1}` placeholder was escaped so fzf never filled it in. The arguments are now passed unquoted, with only the preview's directory and extension escaped. Cancelling the picker raises `AIA::PromptError`, so aia prints one line instead of a backtrace. Fixes #195.
+
 - **Uppercase chat directives are recognized again.** `DirectiveProcessor#state_setting?` extracted the directive name without downcasing it, unlike its siblings `#directive?` and `#process`. Since state-setting names are stored lowercase, typing `/CLEAR` or `/Debate` in chat was treated as a non-state directive and its wrapper text was forwarded to the model instead of silently setting the mode. The name is now downcased to match the other methods, restoring the case-insensitive directive names the docs promise. (#174)
 
 - **A bad command-line option fails the test run.** `test_helper.rb` installed its `exit` guard at load time, so it swallowed the exit Minitest raises while parsing an unrecognized option: `ruby -Itest test/foo_test.rb --no-such-option` ran the suite anyway and exited 0. The guard is now active only while a test is executing, so Minitest's option-parsing exit reaches the shell while aia's own exits during a test stay suppressed. A failing test file still exits non-zero.
