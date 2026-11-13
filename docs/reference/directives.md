@@ -249,7 +249,7 @@ Summarize the pros and cons of Postgres, MySQL and SQLite for a mobile backend.
 
 **Aliases:** `/del` · **Use in:** Chat · **Chat output:** Next prompt
 
-Breaks your next message into sub-tasks, assigns each one to a robot in the crew, records the plan in TrakFlow, and runs it. This needs more than one robot and an initialized TrakFlow project (`tf init`). Otherwise the message runs normally.
+Breaks your next message into sub-tasks, assigns each one to a robot in the crew, records the plan in TrakFlow, and runs it. This needs more than one robot and TrakFlow, which AIA starts on first use, creating the TrakFlow project if there is none. Otherwise the message runs normally.
 
 ```text
 /delegate
@@ -385,7 +385,7 @@ Fix the grammar in this paragraph:
 /plan DESCRIPTION
 ```
 
-Creates a TrakFlow item from the description. This needs an initialized TrakFlow project (`tf init`). Otherwise AIA prints `TrakFlow not available. Run 'tf init' to initialize a project.`
+Creates a TrakFlow item from the description. AIA starts TrakFlow on first use, creating the TrakFlow project if there is none. If TrakFlow cannot start, AIA prints `TrakFlow not available. Run 'tf init' to initialize a project.`
 
 ```text
 /plan Migrate the reporting jobs from cron to Solid Queue
