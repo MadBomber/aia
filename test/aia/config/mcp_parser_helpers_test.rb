@@ -50,4 +50,17 @@ class McpParserHelpersTest < Minitest::Test
     assert_equal 'g1', server[:group]
     refute server.key?(:topics)
   end
+
+  # =========================================================================
+  # json_type
+  # =========================================================================
+
+  def test_json_type_names_each_json_value_type
+    {
+      {} => 'an object', [] => 'an array', 'x' => 'a string',
+      1 => 'a number', 1.5 => 'a number', true => 'a boolean', false => 'a boolean', nil => 'null'
+    }.each do |value, expected|
+      assert_equal expected, AIA::McpParser.send(:json_type, value)
+    end
+  end
 end

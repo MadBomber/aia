@@ -247,6 +247,41 @@ class McpParserTest < Minitest::Test
     assert_equal server, result
   end
 
+  def test_top_level_array_is_rejected_with_a_plain_message
+    with_temp_json([{ "command" => "echo" }]) do |path|
+      result = nil
+      _out, err = capture_io { result = AIA::McpParser.parse_files([path]) }
+
+      assert_equal [], result
+      assert_match(/expected a JSON object/, err)
+      refute_match(/undefined method/, err)
+    end
+  end
+
+  def test_non_object_server_entry_is_skipped_and_valid_ones_kept
+    json = { "mcpServers" => { "a" => { "command" => "echo" }, "b" => "oops" } }
+
+    with_temp_json(json) do |path|
+      result = nil
+      _out, err = capture_io { result = AIA::McpParser.parse_files([path]) }
+
+      assert_equal(["a"], result.map { |s| s[:name] })
+      assert_match(/Skipping MCP server 'b'.*expected a JSON object/, err)
+    end
+  end
+
+  def test_simple_format_without_command_or_url_is_skipped
+    json = { "servers" => { "vscode" => { "command" => "echo" } } }
+
+    with_temp_json(json) do |path|
+      result = nil
+      _out, err = capture_io { result = AIA::McpParser.parse_files([path]) }
+
+      assert_equal [], result
+      assert_match(/neither 'mcpServers' nor a 'command' or 'url'/, err)
+    end
+  end
+
   private
 
   def with_temp_json(data, &block)
