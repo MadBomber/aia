@@ -174,6 +174,37 @@ class WebAndFileDirectivesTest < Minitest::Test
     end
   end
 
+  def test_skills_keeps_dashes_inside_a_front_matter_value
+    Dir.mktmpdir('aia_skills_test') do |tmpdir|
+      create_skill(tmpdir, 'demo', "---\nname: demo\ndescription: Review diffs---then summarize\n---\n")
+      with_skills_dir(tmpdir) do
+        @instance.skills
+        assert_includes @captured_stdout.string, 'Review diffs---then summarize'
+      end
+    end
+  end
+
+  def test_skills_search_sees_text_after_dashes_inside_a_value
+    Dir.mktmpdir('aia_skills_test') do |tmpdir|
+      create_skill(tmpdir, 'demo', "---\nname: demo\ndescription: Review diffs---then summarize\n---\n")
+      with_skills_dir(tmpdir) do
+        @instance.skills(['summarize'])
+        assert_match(/^demo: demo$/, @captured_stdout.string)
+      end
+    end
+  end
+
+  def test_skills_treats_non_mapping_front_matter_as_empty
+    Dir.mktmpdir('aia_skills_test') do |tmpdir|
+      create_skill(tmpdir, 'listy', "---\n- one\n- two\n---\n")
+      with_skills_dir(tmpdir) do
+        @instance.skills
+        assert_match(/^listy: $/, @captured_stdout.string)
+        assert_includes @captured_stdout.string, '(no description)'
+      end
+    end
+  end
+
   def test_skills_prints_no_skills_message_for_empty_dir
     Dir.mktmpdir('aia_skills_test') do |tmpdir|
       with_skills_dir(tmpdir) do
