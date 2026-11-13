@@ -226,8 +226,7 @@ class UtilityTest < Minitest::Test
       failed_mcp_servers: nil
     )
 
-    original_config_method = AIA.method(:config) rescue nil
-    AIA.define_singleton_method(:config) { real_config }
+    AIA.stubs(:config).returns(real_config)
 
     AIA::Utility.stubs(:models_last_refresh).returns('2024-12-26 14:30')
     TTY::Screen.expects(:width).returns(100).at_least_once
@@ -242,24 +241,6 @@ class UtilityTest < Minitest::Test
     assert_includes output, "gpt-4-turbo"
     assert_includes output, "ruby_llm"
     assert_includes output, "2024-12-26"
-  ensure
-    if original_config_method
-      AIA.define_singleton_method(:config, &original_config_method)
-    else
-      AIA.stubs(:config).returns(OpenStruct.new(
-                                   llm: OpenStruct.new(temperature: 0.7),
-                                   models: [OpenStruct.new(name: 'claude-3-sonnet')],
-                                   registry: OpenStruct.new(last_refresh: '2024-01-15'),
-                                   tools: OpenStruct.new(paths: []),
-                                   tool_names: 'calculator, weather_api, file_reader',
-                                   loaded_tools: [],
-                                   mcp_servers: [],
-                                   mcp_use: [],
-                                   mcp_skip: [],
-                                   connected_mcp_servers: nil,
-                                   failed_mcp_servers: nil
-                                 ))
-    end
   end
 
   def test_robot_executes_all_code_paths_without_tools

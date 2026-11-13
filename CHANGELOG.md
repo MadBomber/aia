@@ -12,6 +12,8 @@
 
 - **Docs site no longer references missing assets or the dead polyfill.io CDN.** `mkdocs.yml` pointed `extra_css`/`extra_javascript` at `assets/css/custom.css` and `assets/js/mathjax.js`, which do not exist under `docs/assets/` (only `images/` is present), so each 404'd on the published site; it also loaded `https://polyfill.io/v3/polyfill.min.js`, a domain decommissioned in 2024. All three references are removed. `mkdocs build --strict` does not validate `extra_*` paths, so it passed before and after. The MathJax CDN entry is unchanged.
 
+- **The test suite no longer warns about a redefined `AIA.config`.** `test/aia/utility_test.rb` swapped `AIA.config` with `define_singleton_method` and restored it the same way, so `ruby -w` printed two "method redefined" warnings. It now uses a mocha stub, which mocha removes after the test. Fixes #192.
+
 ### Changed
 
 - **`SpawnHandler` reuses `Crew.model_opts`.** Its private copy of the model/provider override helper was identical to `Crew.model_opts` and is removed; `/spawn` behavior is unchanged. Fixes #181.
