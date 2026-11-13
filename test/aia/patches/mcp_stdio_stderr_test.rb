@@ -90,6 +90,37 @@ class MCPStdioStderrTest < Minitest::Test
     end
   end
 
+  # ruby_llm 2.2 hands Stdio a lambda env (resolved by Stdio#environment) and
+  # spawns with unsetenv_others:/pgroup:; the patch must keep that behavior.
+  def test_lambda_env_child_starts_with_env_and_stderr_in_log
+    Dir.mktmpdir do |dir|
+      log = File.join(dir, 'servers.log')
+      Patch.stubs(:configured_setting).returns(log)
+
+      script = '$stderr.write "lambda noise\n"; $stdout.write ENV.fetch("AIA_PATCH_TEST", "missing") + "\n"'
+      stdio = RubyLLM::MCP::Stdio.new(['ruby', '-e', script], env: -> { { 'AIA_PATCH_TEST' => 'from-lambda' } })
+      stdio.send(:start)
+      out = stdio.instance_variable_get(:@stdout).read
+      stdio.instance_variable_get(:@process).join
+      stdio.send(:stop)
+
+      assert_equal "from-lambda\n", out
+      assert_includes File.read(log), 'lambda noise'
+    end
+  end
+
+  def test_popen2_outside_stdio_start_is_not_redirected
+    Dir.mktmpdir do |dir|
+      log = File.join(dir, 'servers.log')
+      Patch.stubs(:configured_setting).returns(log)
+
+      _stdin, stdout, wait = Open3.popen2('ruby', '-e', '$stdout.write "plain"')
+      assert_equal 'plain', stdout.read
+      wait.join
+      refute File.exist?(log)
+    end
+  end
+
   private
 
   def with_home(home)
