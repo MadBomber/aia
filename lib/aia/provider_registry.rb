@@ -145,27 +145,35 @@ module AIA
       end
     end
 
-    # RubyLLM settings that robot_lab reads from an env var not named after
-    # the setting (see RobotLab::Config#apply_provider_api_keys).
-    CONFIG_ENV_VARS = {
-      'vertexai_project_id' => 'GOOGLE_CLOUD_PROJECT',
-      'vertexai_location' => 'GOOGLE_CLOUD_LOCATION',
-      'bedrock_region' => 'AWS_REGION'
-    }.freeze
+    # The env var robot_lab reads for each RubyLLM provider setting
+    # (RobotLab::Config#apply_provider_api_keys). Keys for other providers
+    # are not read from the environment at all.
+    CONFIG_ENV_VARS = %w[anthropic openai gemini deepseek mistral perplexity openrouter gpustack xai]
+                      .to_h { |slug| ["#{slug}_api_key", "#{slug.upcase}_API_KEY"] }
+                      .merge('vertexai_project_id' => 'GOOGLE_CLOUD_PROJECT',
+                             'vertexai_location' => 'GOOGLE_CLOUD_LOCATION',
+                             'bedrock_region' => 'AWS_REGION')
+                      .freeze
 
     # A one-line hint naming the env vars to set when +error+ is RubyLLM's
     # "provider is not configured" error, whose message suggests a Ruby
-    # snippet instead. Returns nil for any other error.
+    # snippet instead. Returns nil for any other error, or when a missing
+    # setting has no env var that aia or robot_lab reads.
     def missing_config_hint(error)
       return unless error.is_a?(RubyLLM::ConfigurationError)
 
       message = error.message
       provider = message[/\A(.+?) provider is not configured/, 1]
-      settings = message.scan(/config\.(\w+) =/).flatten
-      return if provider.nil? || settings.empty?
+      env_vars = message.scan(/config\.(\w+) =/).flatten.map { |setting| config_env_var(setting) }
+      return if provider.nil? || env_vars.empty? || env_vars.include?(nil)
 
-      env_vars = settings.map { |key| CONFIG_ENV_VARS.fetch(key, key.upcase) }
       "#{provider} is not configured: set #{env_vars.join(' and ')}"
+    end
+
+    # The env var that supplies RubyLLM +setting+, or nil when none does.
+    # <SLUG>_API_BASE endpoints are read by apply_env_endpoints.
+    def config_env_var(setting)
+      CONFIG_ENV_VARS.fetch(setting) { setting.upcase if setting.end_with?('_api_base') }
     end
 
     # The default endpoint for +slug+ when RubyLLM has none configured.

@@ -36,6 +36,18 @@ class ProviderRegistryTest < Minitest::Test
                  AIA::ProviderRegistry.missing_config_hint(error)
   end
 
+  def test_missing_config_hint_is_nil_when_no_env_var_supplies_the_setting
+    error = RubyLLM::ConfigurationError.new(<<~MSG)
+      Cohere provider is not configured. Add this to your initialization:
+
+      RubyLLM.configure do |config|
+        config.cohere_api_key = ENV['COHERE_API_KEY']
+      end
+    MSG
+
+    assert_nil AIA::ProviderRegistry.missing_config_hint(error)
+  end
+
   def test_missing_config_hint_is_nil_for_other_configuration_errors
     error = RubyLLM::ConfigurationError.new('azure_deployments must be a Hash')
 
