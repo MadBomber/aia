@@ -2404,7 +2404,9 @@
 </tbody>
 </table>
 <h2 id="verify-get-a-second-opinion"><code>/verify</code>: get a second opinion<a class="headerlink" href="#verify-get-a-second-opinion" title="Permanent link">&para;</a></h2>
-<p>Two robots on your current model answer the question independently. A third robot, the reconciler, compares the answers, notes where they agree and disagree, and writes a final answer that flags anything uncertain.</p>
+<p>Two robots answer the question independently. A third robot, the reconciler, compares the answers, notes where they agree and disagree, and writes a final answer that flags anything uncertain.</p>
+<p>With one model, all three robots use it. With two models (<code>-m a,b</code>), verifier A uses the first, verifier B the second, and the first reconciles. A third model, if given, becomes the reconciler.</p>
+<p>On a single model the two answers are often nearly identical. Pass a temperature delta to spread them: <code>/verify 0.3</code> runs verifier A at the configured temperature minus 0.3 and verifier B at plus 0.3, clamped to 0.0–1.0. The reconciler keeps the configured temperature. Models that don't accept a temperature ignore the delta.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&gt; /verify
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&gt; What's the time complexity of Python's list.sort() on nearly-sorted data?
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Running verification (2 independent + reconciliation)...

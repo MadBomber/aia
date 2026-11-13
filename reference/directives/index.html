@@ -3634,17 +3634,21 @@
 <p>Sets top-p (nucleus) sampling for the rest of the session. This is the same as <code>/config top_p VALUE</code>. Like <code>/temperature</code>, it doesn't change the robot that is already running until you switch with <code>/model</code>. Some providers reject requests that set both temperature and top-p.</p>
 <h2 id="verify">/verify<a class="headerlink" href="#verify" title="Permanent link">&para;</a></h2>
 <p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
-<p>Gets two independent answers to your next message, then reconciles them into one answer. This is useful for questions where a single answer might be confidently wrong.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-54-1"><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>/verify
-</span><span id="__span-54-2"><a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a>How many weekdays are there between 2026-11-02 and 2026-12-25 inclusive?
+<div class="language-text highlight"><pre><span></span><code><span id="__span-54-1"><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>/verify [TEMPERATURE_DELTA]
 </span></code></pre></div>
+<p>Gets two independent answers to your next message, then reconciles them into one answer. This is useful for questions where a single answer might be confidently wrong.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-55-1"><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>/verify
+</span><span id="__span-55-2"><a id="__codelineno-55-2" name="__codelineno-55-2" href="#__codelineno-55-2"></a>How many weekdays are there between 2026-11-02 and 2026-12-25 inclusive?
+</span></code></pre></div>
+<p>With several models configured, the verifiers use the first and second models and the reconciler uses the third (or the first, if there are only two). With one model, all three use it.</p>
+<p>The optional <code>TEMPERATURE_DELTA</code> (a number of 0 or more) runs verifier A at the configured temperature minus the delta and verifier B at plus the delta, clamped to 0.0–1.0, so the two answers differ more. <code>/verify 0.3</code> with temperature 0.7 gives 0.4 and 1.0.</p>
 <h2 id="webpage">/webpage<a class="headerlink" href="#webpage" title="Permanent link">&para;</a></h2>
 <p><strong>Aliases:</strong> <code>/website</code>, <code>/web</code> · <strong>Use in:</strong> Both · <strong>Chat output:</strong> Sent</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-55-1"><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>/webpage URL
-</span><span id="__span-55-2"><a id="__codelineno-55-2" name="__codelineno-55-2" href="#__codelineno-55-2"></a>&lt;%= webpage 'URL' %&gt;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-56-1"><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>/webpage URL
+</span><span id="__span-56-2"><a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a>&lt;%= webpage 'URL' %&gt;
 </span></code></pre></div>
 <p>Fetches a web page through the <a href="https://pure.md">pure.md</a> service and inserts it as Markdown. This requires the <code>PUREMD_API_KEY</code> environment variable. Without it, AIA prints <code>ERROR: PUREMD_API_KEY is required in order to include a webpage</code>.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-56-1"><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>/web https://docs.ruby-lang.org/en/master/NEWS_md.html
+<div class="language-text highlight"><pre><span></span><code><span id="__span-57-1"><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a>/web https://docs.ruby-lang.org/en/master/NEWS_md.html
 </span></code></pre></div>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
