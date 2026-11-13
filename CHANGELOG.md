@@ -32,6 +32,7 @@
 
 ### Changed
 
+- **`TurnState#clear!` and `#clear_exclusive_flags!` share one body.** The two methods held identical copies of the flag resets, so every new mode flag had to be added to both. `clear!` now calls `clear_exclusive_flags!`. Behavior is unchanged. Fixes #242.
 - **`SpawnHandler` reuses `Crew.model_opts`.** Its private copy of the model/provider override helper was identical to `Crew.model_opts` and is removed; `/spawn` behavior is unchanged. Fixes #181.
 
 - **Recruit and reskill tools accept only skill-directory ids.** The `recruit_robot` and `reskill_robot` tools now take skill ids that name a skill within the configured skills directory and refuse ids written as filesystem paths (`/…`, `./…`, `../…`, `~/…`), returning the tool's usual error. Human-typed `/add_recruit` and `/reskill` directives are unchanged and still accept path-based skill ids.
