@@ -283,7 +283,57 @@ class ValidatorRequiredPromptIdTest < Minitest::Test
   end
 end
 
+class ValidatorRoleExistenceTest < Minitest::Test
+  def role_config(dir, role, chat: true, fuzzy: false)
+    OpenStruct.new(
+      prompts: OpenStruct.new(role: role, roles_prefix: 'roles', dir: dir, extname: '.md'),
+      flags: OpenStruct.new(chat: chat, fuzzy: fuzzy),
+      prompt_id: nil,
+      pipeline: []
+    )
+  end
+
+  def test_missing_role_raises_configuration_error
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, 'roles'))
+      File.write(File.join(dir, 'roles', 'editor.md'), 'You edit.')
+
+      error = assert_raises(AIA::ConfigurationError) do
+        AIA::ConfigValidator.send(:process_role_configuration, role_config(dir, 'typo'))
+      end
+      assert_match(%r{Role file not found: .*roles/typo\.md}, error.message)
+      assert_includes error.message, 'editor'
+    end
+  end
+
+  def test_existing_role_is_accepted
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, 'roles'))
+      File.write(File.join(dir, 'roles', 'editor.md'), 'You edit.')
+      config = role_config(dir, 'editor')
+
+      AIA::ConfigValidator.send(:process_role_configuration, config)
+      assert_equal 'roles/editor', config.prompts.role
+    end
+  end
+
+  def test_missing_role_is_left_to_the_fuzzy_picker
+    Dir.mktmpdir do |dir|
+      config = role_config(dir, 'typo', fuzzy: true)
+
+      AIA::ConfigValidator.send(:process_role_configuration, config)
+      assert_equal 'roles/typo', config.prompts.role
+    end
+  end
+end
+
 class ValidatorRoleConfigurationTest < Minitest::Test
+  # These tests cover prefixing and prompt-id promotion; role existence is
+  # covered by ValidatorRoleExistenceTest.
+  def setup
+    AIA::RoleCatalog.stubs(:validate!)
+  end
+
   def test_prepends_roles_prefix
     config = OpenStruct.new(
       prompts: OpenStruct.new(
@@ -659,6 +709,7 @@ class ValidatorPromptSelectionTest < Minitest::Test
   def test_role_alone_passes_required_prompt_check
     config = config_with
     config.prompts.role = 'tutor'
+    AIA::RoleCatalog.stubs(:validate!) # role existence is covered by ValidatorRoleExistenceTest
     AIA::ConfigValidator.send(:process_role_configuration, config)
     AIA::ConfigValidator.send(:validate_required_prompt_id, config)
     assert_equal 'roles/tutor', config.prompt_id
@@ -667,6 +718,7 @@ class ValidatorPromptSelectionTest < Minitest::Test
   def test_role_with_pipeline_stays_a_role
     config = config_with(pipeline: %w[first])
     config.prompts.role = 'tutor'
+    AIA::RoleCatalog.stubs(:validate!) # role existence is covered by ValidatorRoleExistenceTest
     AIA::ConfigValidator.send(:adopt_pipeline_head, config)
     AIA::ConfigValidator.send(:process_role_configuration, config)
     assert_equal 'first', config.prompt_id
