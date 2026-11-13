@@ -3450,7 +3450,7 @@
 </span></code></pre></div>
 <h2 id="delegate">/delegate<a class="headerlink" href="#delegate" title="Permanent link">&para;</a></h2>
 <p><strong>Aliases:</strong> <code>/del</code> · <strong>Use in:</strong> Chat · <strong>Chat output:</strong> Next prompt</p>
-<p>Breaks your next message into sub-tasks, assigns each one to a robot in the crew, records the plan in TrakFlow, and runs it. This needs more than one robot and an initialized TrakFlow project (<code>tf init</code>). Otherwise the message runs normally.</p>
+<p>Breaks your next message into sub-tasks, assigns each one to a robot in the crew, records the plan in TrakFlow, and runs it. This needs more than one robot and TrakFlow, which AIA starts on first use, creating the TrakFlow project if there is none. Otherwise the message runs normally.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>/delegate
 </span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>Design the database schema, write the migration, and write tests for it.
 </span></code></pre></div>
@@ -3529,7 +3529,7 @@
 <p><strong>Use in:</strong> Chat · <strong>Chat output:</strong> Sent</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>/plan DESCRIPTION
 </span></code></pre></div>
-<p>Creates a TrakFlow item from the description. This needs an initialized TrakFlow project (<code>tf init</code>). Otherwise AIA prints <code>TrakFlow not available. Run 'tf init' to initialize a project.</code></p>
+<p>Creates a TrakFlow item from the description. AIA starts TrakFlow on first use, creating the TrakFlow project if there is none. If TrakFlow cannot start, AIA prints <code>TrakFlow not available. Run 'tf init' to initialize a project.</code></p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>/plan Migrate the reporting jobs from cron to Solid Queue
 </span></code></pre></div>
 <h2 id="plugins">/plugins<a class="headerlink" href="#plugins" title="Permanent link">&para;</a></h2>
