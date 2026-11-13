@@ -195,6 +195,12 @@ class MCPConnectionManagerTest < Minitest::Test
     assert @manager.connected?
   end
 
+  def test_global_timeout_warns_about_stragglers_when_stderr_is_not_a_tty
+    _, err = capture_io { @manager.send(:handle_global_timeout, [config_for('hung')], 120) }
+
+    assert_match(/MCP server 'hung' failed to connect: global connection timeout \(120s\)/, err)
+  end
+
   # Queries
   def test_servers_for_returns_connected_servers_by_name_in_requested_order
     a = FakeServer.new('a')

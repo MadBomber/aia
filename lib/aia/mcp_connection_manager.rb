@@ -205,12 +205,15 @@ module AIA
     def handle_global_timeout(configs, global_limit)
       logger.warn("MCP: Global connection timeout (#{global_limit}s) reached")
 
-      @mutex.synchronize do
+      error = "global connection timeout (#{global_limit}s)"
+      stragglers = @mutex.synchronize do
         settled    = @servers.keys + @failed_servers.map { it[:name] }
         stragglers = configs.map { config_name(it) } - settled
-        @failed_servers.concat(stragglers.map { { name: it, error: "global connection timeout (#{global_limit}s)" } })
+        @failed_servers.concat(stragglers.map { { name: it, error: error } })
         @connected = true
+        stragglers
       end
+      stragglers.each { warn_off_tty(it, error) }
       self
     end
 
@@ -281,7 +284,11 @@ module AIA
       @mutex.synchronize { @failed_servers << { name: name, error: error } }
       logger.warn("MCP: '#{name}' error: #{error}")
       spinner.error(spinner_note)
-      # TTY::Spinner draws nothing when stderr is not a terminal, so say it plainly.
+      warn_off_tty(name, error)
+    end
+
+    # TTY::Spinner draws nothing when stderr is not a terminal, so say it plainly.
+    def warn_off_tty(name, error)
       warn "WARNING: MCP server '#{name}' failed to connect: #{error}" unless $stderr.tty?
     end
 
