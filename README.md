@@ -535,7 +535,7 @@ Directives are special commands in prompt files and chat sessions that begin wit
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
-| `/verify` | | Two independent answers + reconciliation | `/verify` |
+| `/verify` | | Two independent answers + reconciliation; optional temperature delta spreads the verifiers; uses up to three configured models | `/verify 0.3` |
 | `/decompose` | | Decompose prompt into **fully independent**, concurrent sub-tasks; runs normally if tasks cannot all run in parallel | `/decompose` |
 | `/debate` | | Multi-round debate between robots | `/debate` |
 | `/spawn` | | Spawn a specialist robot for a domain-specific question | `/spawn ruby-expert` |
@@ -1273,27 +1273,25 @@ aia --tools ~/tools/ --allowed-tools weather,calc
 aia --tools ~/tools/ --rejected-tools deprecated
 ```
 
-**Tool Examples** (see `examples/tools/` directory):
-- File operations (read, write, list)
-- Shell command execution
-- API integrations
-- Data processing utilities
-
-**MCP Client Examples** (see `examples/tools/mcp/` directory):
-
-AIA supports Model Context Protocol (MCP) clients for extended functionality:
+**Tool Examples:**
+- `examples/tools/word_count_tool.rb` - a minimal `RubyLLM::Tool` to copy from
+- `examples/plugins/` - ready-made tools (file search, search and replace, jq, git context, memory and more), loaded with `--plugins-dir`; see `examples/plugins/README.md`
+- `examples/18_tools.sh` and `examples/19_local_tools.sh` - runnable demos
 
 ```bash
-# GitHub MCP Server (requires: brew install github-mcp-server)
-# Set GITHUB_PERSONAL_ACCESS_TOKEN environment variable
-aia --tools examples/tools/mcp/github_mcp_server.rb --chat
-
-# iMCP for macOS (requires: brew install --cask loopwork/tap/iMCP)
-# Provides access to Notes, Calendar, Contacts, etc.
-aia --tools examples/tools/mcp/imcp.rb --chat
+aia --tools examples/tools/word_count_tool.rb --chat
+aia --plugins-dir examples/plugins --chat
 ```
 
-These MCP clients provide access to external services and data sources through the Model Context Protocol.
+**MCP Client Examples:**
+
+MCP servers are loaded with `--mcp FILE` (or the `mcp_servers:` config key), not `--tools`:
+
+```bash
+aia --mcp examples/mcp/filesystem.json --chat
+```
+
+See [MCP Server Configuration](#mcp-server-configuration) below and `examples/20_mcp_servers.sh` for a runnable demo.
 
 ### TrakFlow Task Integration
 

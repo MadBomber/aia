@@ -122,6 +122,10 @@ module AIA
         @ui_presenter.display_info("Unknown directive: #{name}  (use /help to see available directives)")
         nil
       end
+    rescue StandardError => e
+      # A failing directive (e.g. /include of a missing file) must not end the session.
+      @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
+      nil
     end
 
     def parse_prompt_string(raw)
@@ -235,7 +239,7 @@ module AIA
       raw = result.respond_to?(:raw) ? result.raw : nil
       return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
 
-      model_id = extract_model_id(raw) || AIA.config.models.first.name
+      model_id = Utility.model_id_of(raw) || AIA.config.models.first.name
       metrics = {
         model_id:      model_id,
         input_tokens:  raw.input_tokens,
@@ -265,7 +269,7 @@ module AIA
         raw = robot_result.raw
         next unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
 
-        model_id = extract_model_id(raw)
+        model_id = Utility.model_id_of(raw)
         display_name = robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
         elapsed = robot_result.respond_to?(:duration) ? robot_result.duration : nil
 
@@ -297,14 +301,6 @@ module AIA
       end
 
       @ui_presenter.display_multi_model_metrics(metrics_list)
-    end
-
-    # Pull the actual model identifier from a RubyLLM response message
-    # so cost calculation can look up pricing.
-    def extract_model_id(message)
-      return message.model_id if message.respond_to?(:model_id) && message.model_id
-      return message.model    if message.respond_to?(:model)    && message.model
-      nil
     end
 
     # Show the actual tools available to the robot.

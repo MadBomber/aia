@@ -449,4 +449,29 @@ class ConfigDefaultProviderTest < Minitest::Test
     ENV["AIA_MODEL"] = original_model if original_model
     file&.unlink
   end
+  # A bare model id that is also a provider slug ("mistral") means that
+  # provider's default model only when no --provider is given. With
+  # --provider it is an unprefixed model id like any other.
+  def test_cli_provider_applies_to_bare_model_that_matches_a_provider_slug
+    config = AIA::Config.new(overrides: { provider: "ollama", models: [{ name: "mistral" }] })
+
+    assert_equal %w[ollama mistral], [config.models.first.provider, config.models.first.name]
+  end
+
+  def test_cli_provider_keeps_bare_env_model_name
+    original_model = ENV.fetch("AIA_MODEL", nil)
+    ENV["AIA_MODEL"] = "mistral"
+
+    config = AIA::Config.new(overrides: { provider: "ollama" })
+
+    assert_equal %w[ollama mistral], [config.models.first.provider, config.models.first.name]
+  ensure
+    original_model ? ENV["AIA_MODEL"] = original_model : ENV.delete("AIA_MODEL")
+  end
+
+  def test_bare_provider_name_without_cli_provider_means_default_model
+    config = AIA::Config.new(overrides: { models: [{ name: "mistral" }] })
+
+    assert_equal ["mistral", AIA::ModelSpec::DEFAULT_MODEL], [config.models.first.provider, config.models.first.name]
+  end
 end
