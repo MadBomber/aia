@@ -14,14 +14,11 @@ module AIA
         ap cfg.to_h
       elsif args.length == 1
         config_item = args.first
-        local_cfg = {}
-        local_cfg[config_item] = if cfg.respond_to?(config_item)
-                                   cfg.send(config_item)
-                                 end
-        ap local_cfg
+        ap({ config_item => read_config_value(cfg, config_item) })
       else
         config_item = args.shift
-        new_value   = args.join(' ').gsub('=', '').strip
+        # Only the separator in "key = value" is dropped; '=' inside a value stays.
+        new_value   = args.join(' ').strip.sub(/\A=\s*/, '')
 
         # Resolve the leaf key name regardless of dot-notation (flags.debug → debug)
         leaf_key = config_item.to_s.split('.').last
@@ -182,15 +179,27 @@ module AIA
       if model_info
         puts "   Provider: #{model_info.provider || 'Unknown'}"
         puts "   Context window: #{model_info.context_window || 'Unknown'}"
-        puts "   Input cost: $#{model_info.input_cost || 'Unknown'}"
-        puts "   Output cost: $#{model_info.output_cost || 'Unknown'}"
-        puts "   Mode: #{model_info.modalities || 'Unknown'}"
+        puts "   Input cost: #{price_label(model_info.price(:input))}"
+        puts "   Output cost: #{price_label(model_info.price(:output))}"
+        puts "   Mode: #{modalities_label(model_info.modalities)}"
         puts "   Capabilities: #{(model_info.capabilities || []).join(', ')}" if model_info.capabilities&.any?
       else
         puts "   Details: Model not found in registry"
       end
     rescue StandardError => e
       puts "   Details: Unable to fetch (#{e.class.name}: #{e.message})"
+    end
+
+    def price_label(per_million)
+      per_million ? "$#{per_million} per 1M tokens" : 'Unknown'
+    end
+
+    def modalities_label(modalities)
+      input  = Array(modalities&.input)
+      output = Array(modalities&.output)
+      return 'Unknown' if input.empty? && output.empty?
+
+      "#{input.join(', ')} -> #{output.join(', ')}"
     end
 
     # Convert a typed /config value to the type of the key's default
@@ -201,6 +210,17 @@ module AIA
 
       schema_default = AIA::Config.schema.dig(*path)
       AIA::ValueCaster.cast(raw, AIA::ValueCaster.default_for(path.join('.'), schema_default))
+    end
+
+    # Current value for a /config key, resolving dot-notation and flat CLI
+    # keys (e.g. "temperature" -> llm.temperature). nil when unknown.
+    def read_config_value(cfg, config_item)
+      path = config_key_path(config_item) || [config_item.to_s]
+      path.reduce(cfg) do |obj, part|
+        break nil unless obj.respond_to?(part)
+
+        obj.public_send(part)
+      end
     end
 
     # The defaults.yml path for a /config key: "llm.temperature", a flat CLI

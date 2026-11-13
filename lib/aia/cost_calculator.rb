@@ -21,8 +21,8 @@ module AIA
       # returns nil), so the unknown-model case is handled by the rescue below.
       model_info = RubyLLM::Models.find(model_id)
 
-      input_price  = model_info.respond_to?(:input_price_per_million)  ? model_info.input_price_per_million  : nil
-      output_price = model_info.respond_to?(:output_price_per_million) ? model_info.output_price_per_million : nil
+      input_price  = model_info.price(:input)
+      output_price = model_info.price(:output)
       return { available: false } unless input_price && output_price
 
       input_cost  = input_tokens  * input_price  / 1_000_000.0

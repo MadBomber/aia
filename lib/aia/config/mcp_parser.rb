@@ -10,7 +10,6 @@
 #     name: "server_name",
 #     transport: { type: "stdio", command: "npx", args: [...], env: {...} },
 #     timeout: 8000,
-#     topics: ["routing"],     # AIA routing metadata (optional)
 #     group: "services"        # AIA grouping metadata (optional)
 #   }
 #
@@ -106,7 +105,8 @@ module AIA
         server = { name: name, transport: build_transport(config) }
         server[:timeout] = config['timeout'].to_i if config['timeout']
         SERVER_KEYS.each { |key| server[key.to_sym] = config[key] if config.key?(key) }
-        server.merge!(routing_metadata(config))
+        server[:group] = config['group'] if config['group'] # AIA-only; read by McpGrouper
+        server
       end
 
       # The transport hash. With no "type", a url means Streamable HTTP and
@@ -122,14 +122,6 @@ module AIA
         transport[:args] = Array(transport[:args]) if transport.key?(:args)
         transport[:type] ||= transport[:url] && !transport[:command] ? 'streamable-http' : 'stdio'
         transport
-      end
-
-      # Routing metadata preserved for KBS/AIA
-      def routing_metadata(config)
-        meta = {}
-        meta[:topics]      = Array(config['topics']) if config['topics']
-        meta[:group]       = config['group'] if config['group']
-        meta
       end
 
       # Convert simple format to robot_lab nested transport format. The
