@@ -35,6 +35,7 @@
 
 ### Documentation
 
+- **`mcp_servers/README.md` describes the files that exist.** It named the deleted `imcp.json` (its own example printed "MCP config file not found"), described only 3 of the 7 sample files, and linked to three dead pages. It now covers all seven files, uses only existing files in its examples, and links to modelcontextprotocol.io and the MCP servers repository. `mcp_servers/filesystem.json` exposes `.` instead of a developer-machine path. Fixes #199.
 - **README tool and MCP examples point at files that exist.** The "Tool Examples" and "MCP Client Examples" blocks named `examples/tools/mcp/` (removed) and loaded MCP servers through `--tools`. They now point at `examples/tools/word_count_tool.rb`, `examples/plugins/` and `--mcp examples/mcp/filesystem.json`. Fixes #190.
 
 - **README log level options match the CLI.** The "Debug Mode and Log Level Options" table and examples listed `--info`, `--warn`, `--error` and `--fatal`, which the option parser does not define (`aia --info` fails with `invalid option`). They now use `--log-level LEVEL` and `--log-to FILE`, as registered in `lib/aia/config/cli_parser.rb` and documented in `docs/reference/cli.md`. The `mcp` logger bullet above the table now matches `lib/aia/logger.rb` instead of naming a nonexistent `RubyLLM::MCP.logger`. Fixes #186.
