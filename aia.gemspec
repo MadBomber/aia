@@ -65,8 +65,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'faraday'                    # HTTP client for /webpage directive
   spec.add_dependency 'listen'                     # File-watch for live plugin reload (polling fallback if absent)
   spec.add_dependency 'shellwords'                 # Shell escaping
+  spec.add_dependency 'debug_me'                   # Required by lib/aia.rb at load time
 
-  spec.add_development_dependency 'debug_me'
   spec.add_development_dependency 'minitest'
   spec.add_development_dependency 'minitest-reporters'
   spec.add_development_dependency 'mocha'
