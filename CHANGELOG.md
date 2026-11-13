@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **Skill and role front matter may contain dates.** `SkillUtils.parse_front_matter` now permits `Date` and `Time` values, so a SKILL.md or role file whose front matter has a line such as `updated: 2026-01-15` no longer loses all of its front matter: `--list-skills` showed "No front matter found" and `--list-roles` dropped the role's details.
+- **`--list-skills` and `--list-roles` accept dates in front matter.** `SkillUtils.parse_front_matter` now permits `Date` and `Time` values, so a SKILL.md or role file whose front matter has a line such as `updated: 2026-01-15` no longer loses all of its front matter: `--list-skills` showed "No front matter found" and `--list-roles` dropped the role's details.
 
 - **Uppercase chat directives are recognized again.** `DirectiveProcessor#state_setting?` extracted the directive name without downcasing it, unlike its siblings `#directive?` and `#process`. Since state-setting names are stored lowercase, typing `/CLEAR` or `/Debate` in chat was treated as a non-state directive and its wrapper text was forwarded to the model instead of silently setting the mode. The name is now downcased to match the other methods, restoring the case-insensitive directive names the docs promise. (#174)
 
