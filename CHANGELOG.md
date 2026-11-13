@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- MCP servers that fail to connect are now reported on stderr when it is not a terminal, where the connection spinner prints nothing.
 - **`/skills` no longer cuts front matter at a `---` inside a value.** The directive had its own front-matter reader that ended at the first `---` anywhere after the opening line, so a `SKILL.md` with `description: Review diffs---then summarize` was listed as `Review diffs`, and a `/skills summarize` search missed it. The listing now uses the shared `SkillUtils#parse_front_matter`, and the search text ends at a `---` that starts a line. (#223)
 - **`--list-skills` and `--list-roles` accept dates in front matter.** `SkillUtils.parse_front_matter` now permits `Date` and `Time` values, so a SKILL.md or role file whose front matter has a line such as `updated: 2026-01-15` no longer loses all of its front matter: `--list-skills` showed "No front matter found" and `--list-roles` dropped the role's details.
 - **`/config` keeps `=` inside values and shows nested keys.** `/config output.file notes=v2.md` stored `notesv2.md` because every `=` was stripped. Now only the separator in `/config KEY = VALUE` is removed. `/config temperature`, `/config llm.temperature`, `/config top_p`, `/temperature` and `/top_p` showed `nil`; viewing a key now resolves dot-notation and flat CLI names the same way setting one does. Fixes #204.
