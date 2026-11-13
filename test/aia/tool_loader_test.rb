@@ -94,6 +94,22 @@ class ToolLoaderTest < Minitest::Test
     loader.require_libs(OpenStruct.new(require_libs: %w[set json]))
   end
 
+  def test_failing_tool_file_is_tried_and_reported_once
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'bad_tool.rb')
+      File.write(path, 'raise "boom from tool"')
+      config = OpenStruct.new(tools: OpenStruct.new(paths: [path]))
+      loader = AIA::ToolLoader.new
+
+      _out, err = capture_io do
+        loader.require_tool_files(config)
+        loader.require_tool_files(config)
+      end
+
+      assert_equal 1, err.scan('boom from tool').size
+    end
+  end
+
   def test_filtered_tools_applies_allowed_filter
     tool1 = mock('tool1')
     tool1.stubs(:name).returns('AllowedTool')

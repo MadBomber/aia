@@ -22,6 +22,14 @@ module AIA
         nil
       end
 
+      # The model that produced a RubyLLM response message: model_id
+      # when present, else model, else nil (also nil for a nil message).
+      def model_id_of(message)
+        return message.model_id if message.respond_to?(:model_id) && message.model_id
+        return message.model    if message.respond_to?(:model)    && message.model
+        nil
+      end
+
       def build_crew_line
         names = robot_names
         return '' if names.empty?
