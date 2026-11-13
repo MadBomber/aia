@@ -283,11 +283,12 @@ module AIA
 
         opts.on("--rq LIBS", "--require LIBS", "Require Ruby libraries for Ruby directive") do |libs|
           options[:require_libs] ||= []
-          options[:require_libs] += libs.split(',')
+          options[:require_libs] += libs.split(',').map(&:strip).reject(&:empty?)
         end
 
         opts.on("--tools PATH_LIST", "Load tool(s) from path") do |path_list|
-          options[:tool_paths] = process_tools_paths(path_list)
+          options[:tool_paths] ||= []
+          options[:tool_paths] |= process_tools_paths(path_list)
         end
 
         opts.on("--at", "--allowed-tools TOOLS_LIST", "Allow only these tools") do |tools_list|
