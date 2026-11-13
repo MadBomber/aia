@@ -547,6 +547,18 @@ class ValidatorDumpConfigTest < Minitest::Test
     # Should not raise or write anything
     AIA::ConfigValidator.send(:handle_dump_config, config)
   end
+
+  def test_dump_config_reports_unwritable_path_as_configuration_error
+    Dir.mktmpdir do |dir|
+      config = OpenStruct.new(setting: 'value')
+      path   = File.join(dir, 'missing', 'dump.yml')
+
+      error = assert_raises(AIA::ConfigurationError) do
+        AIA::ConfigValidator.send(:dump_config, config, path)
+      end
+      assert_includes error.message, path
+    end
+  end
 end
 
 class ValidatorMcpListTest < Minitest::Test

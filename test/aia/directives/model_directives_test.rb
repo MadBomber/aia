@@ -238,6 +238,19 @@ class ModelDirectivesTest < Minitest::Test
     assert_match(/1 LLMs matching your query/, output)
   end
 
+  def test_show_rubyllm_models_matches_mixed_case_model_ids
+    llm1 = build_fake_llm(id: 'Codestral-2501', provider: 'mistral')
+    llm2 = build_fake_llm(id: 'gpt-4', provider: 'openai')
+    stub_rubyllm_models([llm1, llm2])
+
+    @instance.show_rubyllm_models(['Codestral'], [])
+    output = @captured.string
+
+    assert_includes output, 'Codestral-2501'
+    refute_includes output, 'gpt-4'
+    assert_match(/1 LLMs matching your query/, output)
+  end
+
   def test_show_rubyllm_models_excludes_by_negative_term
     llm1 = build_fake_llm(id: 'gpt-4', provider: 'openai')
     llm2 = build_fake_llm(id: 'claude-3', provider: 'anthropic')

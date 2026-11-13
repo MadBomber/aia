@@ -66,7 +66,7 @@ class SpecialDirectivesTest < Minitest::Test
   end
 
   def test_tasks_returns_nil_and_prints_unavailable_when_not_initialized
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     directive = AIA::TrakFlowDirectives.new
     result = directive.tasks([], nil)
 
@@ -95,7 +95,7 @@ class SpecialDirectivesTest < Minitest::Test
   end
 
   def test_plan_returns_nil_and_prints_unavailable_when_not_initialized
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     directive = AIA::TrakFlowDirectives.new
     result = directive.plan([], nil)
 
@@ -123,7 +123,7 @@ class SpecialDirectivesTest < Minitest::Test
   end
 
   def test_task_returns_nil_and_prints_unavailable_when_not_initialized
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     directive = AIA::TrakFlowDirectives.new
     result = directive.task([], nil)
 

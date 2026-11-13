@@ -35,6 +35,8 @@ module AIA
       return true if TrakFlow.initialized?
 
       FileUtils.mkdir_p(TrakFlow.trak_flow_dir)
+      # trak_flow 0.2.0 does not create the database's directory itself
+      FileUtils.mkdir_p(File.dirname(TrakFlow.database_path))
       TrakFlow::Storage::Database.new.connect
       TrakFlow.reset_root!
       TrakFlow.initialized?

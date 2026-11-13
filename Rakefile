@@ -8,13 +8,6 @@ rescue LoadError, StandardError => e
 end
 
 begin
-  require 'kramdown/man/task'
-  Kramdown::Man::Task.new
-rescue LoadError, StandardError => e
-  warn "Skipping kramdown man task: #{e.message}"
-end
-
-begin
   require "bundler/gem_tasks"
 rescue LoadError, StandardError => e
   warn "Skipping bundler/gem_tasks: #{e.message}"

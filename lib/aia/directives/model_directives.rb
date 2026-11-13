@@ -187,7 +187,7 @@ module AIA
 
     def rubyllm_entry_visible?(llm, entry, modality_terms, substring_terms, negative_terms)
       modality_terms.all? { |q| ModalityQuery.matches?(llm.modalities, q) } &&
-        substring_terms.all? { |q| entry.include?(q) } &&
+        substring_terms.all? { |q| entry.downcase.include?(q) } &&
         negative_terms.none? { |q| entry.downcase.include?(q) }
     end
 

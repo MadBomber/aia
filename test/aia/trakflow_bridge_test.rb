@@ -15,7 +15,7 @@ class TrakFlowBridgeTest < Minitest::Test
   # =========================================================================
 
   def test_available_returns_false_when_not_initialized
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
 
     bridge = AIA::TrakFlowBridge.new
 
@@ -45,35 +45,35 @@ class TrakFlowBridgeTest < Minitest::Test
   # =========================================================================
 
   def test_create_plan_from_pipeline_returns_nil_when_unavailable
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     bridge = AIA::TrakFlowBridge.new
 
     assert_nil bridge.create_plan_from_pipeline(%w[a b])
   end
 
   def test_check_ready_tasks_returns_nil_when_unavailable
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     bridge = AIA::TrakFlowBridge.new
 
     assert_nil bridge.check_ready_tasks
   end
 
   def test_project_summary_returns_nil_when_unavailable
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     bridge = AIA::TrakFlowBridge.new
 
     assert_nil bridge.project_summary
   end
 
   def test_create_task_returns_nil_when_unavailable
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     bridge = AIA::TrakFlowBridge.new
 
     assert_nil bridge.create_task("Test task")
   end
 
   def test_update_step_status_does_nothing_when_unavailable
-    TrakFlow.stubs(:initialized?).returns(false)
+    AIA::TaskBoard.stubs(:ensure_project!).returns(false)
     bridge = AIA::TrakFlowBridge.new
 
     # Should not raise
