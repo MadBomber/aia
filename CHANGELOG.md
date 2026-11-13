@@ -34,6 +34,10 @@
 
 - **README configuration tables match `defaults.yml` and the CLI.** The "Complete Configuration Reference" tables listed options removed in 2.0 (`--clear`, `--md`/`--[no-]markdown`) and keys that do not exist (`prompts.roles_dir`, `paths.config_file`, `embedding.model`), and showed stale defaults for `llm.max_tokens` (`2048` → `32767`), `llm.top_p` (`1.0` → unset) and `logger.mcp.file` (`STDOUT` → `~/.config/aia/logs/mcp.log`). The rows now agree with `lib/aia/config/defaults.yml` and `docs/reference/config-keys.md`.
 
+### Added
+
+- `/verify` accepts an optional temperature delta (`/verify 0.3`) that runs the two verifiers below and above the configured temperature, and assigns verifier/reconciler robots to the first, second and third configured models when several are given (Fixes #154)
+
 ## [2.1.0] - 2026-11-07
 
 Coding-agent CLIs (Claude Code, Codex, GitHub Copilot) can be used as models, and a prompt file can ask for a special mode such as `debate` in its front matter. Batch runs now exit 1 when an LLM call fails. The unit test suite runs without API keys, a UTF-8 locale or a particular Ruby patch level, and every test file runs on its own.
