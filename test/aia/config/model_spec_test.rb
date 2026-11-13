@@ -183,6 +183,25 @@ class ModelSpecTest < Minitest::Test
     assert_equal 'ollama', spec.internal_id
   end
 
+def test_use_provider_restores_a_bare_provider_name
+  spec = AIA::ModelSpec.new(name: 'mistral')
+  assert spec.bare_provider_name?
+
+  spec.use_provider('ollama')
+
+  assert_equal %w[ollama mistral], [spec.provider, spec.name]
+  refute spec.bare_provider_name?
+end
+
+def test_use_provider_keeps_a_prefixed_name
+  spec = AIA::ModelSpec.new(name: 'ollama/llama3')
+  refute spec.bare_provider_name?
+
+  spec.use_provider('lms')
+
+  assert_equal %w[lms llama3], [spec.provider, spec.name]
+end
+
   def test_bare_unknown_name_untouched
     spec = AIA::ModelSpec.new(name: 'notaprovider')
     assert_equal 'notaprovider', spec.name
