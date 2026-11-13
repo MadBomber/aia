@@ -193,6 +193,7 @@ module AIA
           role = "#{roles_prefix}/#{role}"
           prompts.role = role
         end
+        validate_role(config, role)
 
         return if config.flags&.chat == true
 
@@ -200,6 +201,15 @@ module AIA
         config.prompt_id = role
         config.pipeline.prepend(role)
         prompts.role = ''
+      end
+
+      # A --role must exist, like a -m MODEL=ROLE role. With --fuzzy a
+      # missing role is left to the fzf role picker.
+      def validate_role(config, role)
+        return if config.flags&.fuzzy == true
+
+        prompts = config.prompts
+        AIA::RoleCatalog.validate!(role, dir: prompts.dir, prefix: prompts.roles_prefix, extname: prompts.extname)
       end
 
       def validate_plugins_dir(config)
@@ -515,10 +525,14 @@ module AIA
                     require 'yaml'
                     YAML.dump(config_hash.transform_keys(&:to_s))
                   else
-                    raise "Unsupported config file format: #{ext}. Use .yml or .yaml"
+                    raise ConfigurationError, "Unsupported config file format: #{ext}. Use .yml or .yaml"
                   end
 
-        File.write(file, content)
+        begin
+          File.write(file, content)
+        rescue SystemCallError => e
+          raise ConfigurationError, "Cannot write config dump to #{file}: #{e.message}"
+        end
         puts "Config successfully dumped to #{file}"
       end
     end
