@@ -5,6 +5,11 @@
 ### Fixed
 
 - **`--cost`, `/cost`, `/robots` and `/model` read prices through the ruby_llm 2 API.** `CostCalculator` and `wage_for` asked for `input_price_per_million`/`output_price_per_million`, which ruby_llm 2 removed, so every cost showed `N/A` or `$0.00000`. `/model` called `input_cost`/`output_cost`, which never existed, and printed an error for each model. All three now use `price(:input)`/`price(:output)`, and `/model` prints the modalities as `text, image, pdf -> text` instead of the raw object. Fixes #200.
+- **`debug_me` is a runtime dependency.** `lib/aia.rb` requires `debug_me` on every load, but the gemspec declared it only for development, so an installed aia worked only because `trak_flow` happens to depend on it. It is now a runtime dependency. Fixes #198.
+- **zsh and fish completion scripts complete prompt IDs.** The zsh script registered with the old `compctl -K` system but used `compsys` helpers, so TAB printed errors and completed nothing; it now registers with `compdef` (running `compinit` first when needed). The fish script's test was inverted, it re-registered a rule on every TAB, and it turned off file completion; it now offers prompt IDs for the first argument and leaves file completion on for later ones. Fixes #197.
+- **`--require` strips spaces in a comma-separated list, and repeated `--tools` flags add up.** `--require "json, yaml"` tried to require `" yaml"` because the handler split on commas without stripping, unlike every other list flag. A second `--tools` flag replaced the first instead of appending. Fixes #196.
+- **`--fuzzy` starts fzf, and cancelling it exits cleanly.** `AIA::Fzf` passed shell-quoted arguments to fzf through an argv array: `--prompt='Search term: '` split into three words (fzf rejected the stray `term:`), the header and prompt kept their backslashes, and the preview's `{1}` placeholder was escaped so fzf never filled it in. The arguments are now passed unquoted, with only the preview's directory and extension escaped. Cancelling the picker raises `AIA::PromptError`, so aia prints one line instead of a backtrace. Fixes #195.
+- **`--provider` keeps a model name that is also a provider name.** In 2.1.0 a bare model name that is a RubyLLM provider slug was read as that provider's default model before `--provider` applied, so `--provider ollama -m mistral` asked the provider `mistral` for its `default` model and `AIA_MODEL=mistral --provider ollama` asked ollama for `default`. With `--provider`, such a name is now an ordinary model id under that provider (`ollama/mistral`), as the README and `--provider` help describe. Without `--provider`, a bare provider name still means that provider's default model (`--model claude_code`). Fixes #194.
 
 - **Uppercase chat directives are recognized again.** `DirectiveProcessor#state_setting?` extracted the directive name without downcasing it, unlike its siblings `#directive?` and `#process`. Since state-setting names are stored lowercase, typing `/CLEAR` or `/Debate` in chat was treated as a non-state directive and its wrapper text was forwarded to the model instead of silently setting the mode. The name is now downcased to match the other methods, restoring the case-insensitive directive names the docs promise. (#174)
 
@@ -13,6 +18,9 @@
 - **The test suite no longer warns about redefined `VERSION` constants.** `test/aia/utility_test.rb` overrode `AIA::VERSION` and `RubyLLM::VERSION` with bare `const_set`, so every run printed four "already initialized constant" warnings, and an assertion failure skipped the restore. The test now swaps each constant through a `stub_const` helper that removes it before setting it and restores it in an `ensure`. (#179)
 
 - **Docs site no longer references missing assets or the dead polyfill.io CDN.** `mkdocs.yml` pointed `extra_css`/`extra_javascript` at `assets/css/custom.css` and `assets/js/mathjax.js`, which do not exist under `docs/assets/` (only `images/` is present), so each 404'd on the published site; it also loaded `https://polyfill.io/v3/polyfill.min.js`, a domain decommissioned in 2024. All three references are removed. `mkdocs build --strict` does not validate `extra_*` paths, so it passed before and after. The MathJax CDN entry is unchanged.
+
+- **The test suite no longer warns about a redefined `AIA.config`.** `test/aia/utility_test.rb` swapped `AIA.config` with `define_singleton_method` and restored it the same way, so `ruby -w` printed two "method redefined" warnings. It now uses a mocha stub, which mocha removes after the test. Fixes #192.
+- **`--tools` files load once.** `ConfigValidator#require_tool_files` and `ToolLoader#load_tools` each required every `--tools` file, so a file that failed to load ran twice and printed its warning twice. The loop now lives only in `ToolLoader#require_tool_files`, which the validator calls, and each path is attempted once. Fixes #191.
 
 ### Changed
 
@@ -24,7 +32,12 @@
 
 - **`TurnState#active_mcp_servers` is gone.** Its only reader left with the KBS removal, so `ChatLoop` was resetting a value nothing read after every turn. The accessor, its reset in `TurnState#clear!`, and `ChatLoop#clear_turn_mcp_filter` are deleted. (#187)
 
+- **Three private copies of the response model-id lookup are gone.** `MentionRouter#extract_model_id`, `ChatLoop#extract_model_id` and `SessionTracker#extract_model_id_from_raw` held the same "`model_id`, else `model`, else nil" logic. All three now call one `AIA::Utility.model_id_of(message)`, so a RubyLLM rename needs one edit. Behavior is unchanged. Fixes #182.
+
 ### Documentation
+
+- **`mcp_servers/README.md` describes the files that exist.** It named the deleted `imcp.json` (its own example printed "MCP config file not found"), described only 3 of the 7 sample files, and linked to three dead pages. It now covers all seven files, uses only existing files in its examples, and links to modelcontextprotocol.io and the MCP servers repository. `mcp_servers/filesystem.json` exposes `.` instead of a developer-machine path. Fixes #199.
+- **README tool and MCP examples point at files that exist.** The "Tool Examples" and "MCP Client Examples" blocks named `examples/tools/mcp/` (removed) and loaded MCP servers through `--tools`. They now point at `examples/tools/word_count_tool.rb`, `examples/plugins/` and `--mcp examples/mcp/filesystem.json`. Fixes #190.
 
 - **README log level options match the CLI.** The "Debug Mode and Log Level Options" table and examples listed `--info`, `--warn`, `--error` and `--fatal`, which the option parser does not define (`aia --info` fails with `invalid option`). They now use `--log-level LEVEL` and `--log-to FILE`, as registered in `lib/aia/config/cli_parser.rb` and documented in `docs/reference/cli.md`. The `mcp` logger bullet above the table now matches `lib/aia/logger.rb` instead of naming a nonexistent `RubyLLM::MCP.logger`. Fixes #186.
 
@@ -35,6 +48,10 @@
 - **README documents the `/ruby` security gate.** The `/ruby` (`/rb`) directive table row and example now state that it is disabled by default and requires `--allow-ruby-eval` (or `flags: { allow_ruby_eval: true }` in `~/.config/aia/aia.yml`), matching the gate in `lib/aia/directives/execution_directives.rb`.
 
 - **README configuration tables match `defaults.yml` and the CLI.** The "Complete Configuration Reference" tables listed options removed in 2.0 (`--clear`, `--md`/`--[no-]markdown`) and keys that do not exist (`prompts.roles_dir`, `paths.config_file`, `embedding.model`), and showed stale defaults for `llm.max_tokens` (`2048` → `32767`), `llm.top_p` (`1.0` → unset) and `logger.mcp.file` (`STDOUT` → `~/.config/aia/logs/mcp.log`). The rows now agree with `lib/aia/config/defaults.yml` and `docs/reference/config-keys.md`.
+
+### Added
+
+- `/verify` accepts an optional temperature delta (`/verify 0.3`) that runs the two verifiers below and above the configured temperature, and assigns verifier/reconciler robots to the first, second and third configured models when several are given (Fixes #154)
 
 ## [2.1.0] - 2026-11-07
 

@@ -133,7 +133,7 @@ module AIA
       output_tokens = (raw.respond_to?(:output_tokens) && raw.output_tokens) || 0
       tokens = input_tokens + output_tokens
 
-      model_id = extract_model_id_from_raw(raw)
+      model_id = Utility.model_id_of(raw)
       model_id ||= robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
 
       {
@@ -157,13 +157,6 @@ module AIA
       else
         ""
       end
-    end
-
-    def extract_model_id_from_raw(raw)
-      return nil unless raw
-      return raw.model_id if raw.respond_to?(:model_id) && raw.model_id
-      return raw.model    if raw.respond_to?(:model)    && raw.model
-      nil
     end
 
     def compute_cost_for_model(model_id, input_tokens, output_tokens)

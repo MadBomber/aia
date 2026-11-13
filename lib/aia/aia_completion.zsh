@@ -5,34 +5,21 @@
 # Prompt IDs come from $AIA_PROMPTS__DIR, or ~/.prompts when it is unset.
 
 _aia_completion() {
-  # The current word being completed
-  local cur_word="$words[$CURRENT]"
-
-  # The previous word before the current word
-  local prev_word="$words[$CURRENT-1]"
-
-  # Store the previous directory to return to it later
-  local initial_pwd=$PWD
-
-  # Check if we are currently completing the option that requires prompt IDs
-  if [[ "$prev_word" == "aia" ]]; then
-    # Change directory to the prompts directory
-    cd "${AIA_PROMPTS__DIR:-$HOME/.prompts}" || return
-
-    # Generate a list of relative paths from the ~/.prompts directory (without .md extension)
-    local files=($(find . -name "*.md" -type f | sed 's|^\./||' | sed 's/\.md$//'))
-
-    # Change back to the initial directory
-    cd "$initial_pwd" || return
-
-    # Generate possible matches and store them in an array
-    _describe 'prompt ID' files
+  # The first argument after aia is a prompt ID; everything else is a file.
+  if (( CURRENT == 2 )); then
+    local prompts_dir="${AIA_PROMPTS__DIR:-$HOME/.prompts}"
+    local -a prompt_ids
+    if [[ -d "$prompts_dir" ]]; then
+      prompt_ids=(${(f)"$(cd "$prompts_dir" && find . -name '*.md' -type f | sed -e 's|^\./||' -e 's/\.md$//')"})
+    fi
+    _describe 'prompt ID' prompt_ids
   else
-    # If not the specific option, use the standard filename completion
     _files
   fi
 }
 
-# Register the completion function for the aia command using compctl
-compctl -K _aia_completion aia
-
+# Register with the completion system, initializing it first if needed.
+if ! (( $+functions[compdef] )); then
+  autoload -Uz compinit && compinit
+fi
+compdef _aia_completion aia

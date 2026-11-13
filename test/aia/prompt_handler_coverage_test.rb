@@ -49,6 +49,15 @@ class PromptHandlerFetchPromptTest < Minitest::Test
     assert_equal 'roles/dev/architect', @handler.send(:search_role_id_with_fzf, 'arch')
   end
 
+  def test_cancelled_fuzzy_pickers_raise_prompt_error
+    fzf = mock('fzf')
+    fzf.stubs(:run).returns(nil)
+    AIA::Fzf.stubs(:new).returns(fzf)
+
+    assert_raises(AIA::PromptError) { @handler.send(:search_prompt_id_with_fzf, 'x') }
+    assert_raises(AIA::PromptError) { @handler.send(:search_role_id_with_fzf, 'x') }
+  end
+
   def test_fetch_fuzzy_search_sentinel
     mock_parsed = mock('parsed')
     mock_parsed.stubs(:metadata).returns(nil)
