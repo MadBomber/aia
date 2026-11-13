@@ -73,6 +73,21 @@ module AIA
       @instance > 1
     end
 
+    # Give this model +slug+ as its provider. A name that was read as a bare
+    # provider name ("mistral" as mistral/default) is an ordinary model id under
+    # an explicit provider, so it gets its name back: ollama/mistral.
+    def use_provider(slug)
+      @name = @bare_name if @bare_name
+      @bare_name = nil
+      @provider = slug
+    end
+
+    # True when the provider came from a bare provider name rather than an
+    # explicit "<provider>/<model-id>" prefix.
+    def bare_provider_name?
+      !@bare_name.nil?
+    end
+
     # Check if this model uses a local provider
     def local_provider?
       !@provider.nil?
@@ -96,6 +111,7 @@ module AIA
       return unless ProviderRegistry.available?(prefix)
 
       @provider = prefix
+      @bare_name = @name unless rest
       @name = rest || DEFAULT_MODEL
     end
   end

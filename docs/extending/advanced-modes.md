@@ -29,7 +29,11 @@ Verification mode enabled for next prompt.
 
 ## `/verify`: get a second opinion
 
-Two robots on your current model answer the question independently. A third robot, the reconciler, compares the answers, notes where they agree and disagree, and writes a final answer that flags anything uncertain.
+Two robots answer the question independently. A third robot, the reconciler, compares the answers, notes where they agree and disagree, and writes a final answer that flags anything uncertain.
+
+With one model, all three robots use it. With two models (`-m a,b`), verifier A uses the first, verifier B the second, and the first reconciles. A third model, if given, becomes the reconciler.
+
+On a single model the two answers are often nearly identical. Pass a temperature delta to spread them: `/verify 0.3` runs verifier A at the configured temperature minus 0.3 and verifier B at plus 0.3, clamped to 0.0–1.0. The reconciler keeps the configured temperature. Models that don't accept a temperature ignore the delta.
 
 ```text
 > /verify
