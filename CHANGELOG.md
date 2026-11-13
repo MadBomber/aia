@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **`--provider` keeps a model name that is also a provider name.** In 2.1.0 a bare model name that is a RubyLLM provider slug was read as that provider's default model before `--provider` applied, so `--provider ollama -m mistral` asked the provider `mistral` for its `default` model and `AIA_MODEL=mistral --provider ollama` asked ollama for `default`. With `--provider`, such a name is now an ordinary model id under that provider (`ollama/mistral`), as the README and `--provider` help describe. Without `--provider`, a bare provider name still means that provider's default model (`--model claude_code`). Fixes #194.
+
 - **Uppercase chat directives are recognized again.** `DirectiveProcessor#state_setting?` extracted the directive name without downcasing it, unlike its siblings `#directive?` and `#process`. Since state-setting names are stored lowercase, typing `/CLEAR` or `/Debate` in chat was treated as a non-state directive and its wrapper text was forwarded to the model instead of silently setting the mode. The name is now downcased to match the other methods, restoring the case-insensitive directive names the docs promise. (#174)
 
 - **A bad command-line option fails the test run.** `test_helper.rb` installed its `exit` guard at load time, so it swallowed the exit Minitest raises while parsing an unrecognized option: `ruby -Itest test/foo_test.rb --no-such-option` ran the suite anyway and exited 0. The guard is now active only while a test is executing, so Minitest's option-parsing exit reaches the shell while aia's own exits during a test stay suppressed. A failing test file still exits non-zero.
