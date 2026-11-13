@@ -150,7 +150,7 @@ class McpParserTest < Minitest::Test
     end
   end
 
-  def test_parse_preserves_topics_field
+  def test_parse_drops_topics_field
     json = {
       "mcpServers" => {
         "filesystem" => {
@@ -163,7 +163,7 @@ class McpParserTest < Minitest::Test
     with_temp_json(json) do |path|
       servers = AIA::McpParser.parse_files([path])
       assert_equal 1, servers.size
-      assert_equal %w[files code directory], servers.first[:topics]
+      refute servers.first.key?(:topics), 'topics is unused and should not be passed through'
     end
   end
 

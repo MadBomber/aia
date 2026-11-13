@@ -2,7 +2,7 @@
 
 # test/aia/config/mcp_parser_helpers_test.rb
 #
-# Isolation tests for the transport/metadata builders extracted from
+# Isolation tests for the transport and server builders extracted from
 # McpParser::convert_mcp_servers_format.
 
 require_relative '../../test_helper'
@@ -36,16 +36,18 @@ class McpParserHelpersTest < Minitest::Test
   end
 
   # =========================================================================
-  # routing_metadata
+  # build_server
   # =========================================================================
 
-  def test_routing_metadata_empty_when_absent
-    assert_equal({}, AIA::McpParser.send(:routing_metadata, {}))
+  def test_build_server_omits_group_when_absent
+    server = AIA::McpParser.send(:build_server, 's', { 'command' => 'x' })
+    refute server.key?(:group)
   end
 
-  def test_routing_metadata_keeps_topics_and_group
-    meta = AIA::McpParser.send(:routing_metadata,
-                               'topics' => 'files', 'independent' => false, 'group' => 'g1')
-    assert_equal({ topics: ['files'], group: 'g1' }, meta)
+  def test_build_server_keeps_group_and_drops_topics
+    server = AIA::McpParser.send(:build_server, 's',
+                                 { 'command' => 'x', 'topics' => 'files', 'group' => 'g1' })
+    assert_equal 'g1', server[:group]
+    refute server.key?(:topics)
   end
 end
