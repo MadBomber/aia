@@ -81,7 +81,29 @@ class ConfigurationDirectivesTest < Minitest::Test
     refute_empty output
   end
 
+  def test_config_single_arg_resolves_nested_keys
+    @instance.config(['llm.temperature'])
+    @instance.config(['top_p'])
+    @instance.temperature([])
+    output = @captured_output.string.gsub(/\e\[[\d;]*m/, '')
+
+    assert_includes output, '"llm.temperature" => 0.7'
+    assert_includes output, '"top_p" => 0.9'
+    assert_includes output, '"temperature" => 0.7'
+  end
+
   # --- /config with key and value ---
+
+  def test_config_value_keeps_embedded_equals
+    @test_config.output = OpenStruct.new(file: nil)
+    @instance.config(['output.file', 'notes=v2.md'])
+    assert_equal 'notes=v2.md', @test_config.output.file
+  end
+
+  def test_config_key_equals_value_form_still_works
+    @instance.config(['llm.temperature', '=', '0.9'])
+    assert_in_delta 0.9, @test_config.llm.temperature
+  end
 
   def test_config_sets_value
     # OpenStruct responds to any setter, so this should set the value
