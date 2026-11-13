@@ -22,6 +22,26 @@ class ProviderRegistryTest < Minitest::Test
     assert slugs.all?(String)
   end
 
+  def test_missing_config_hint_names_the_env_vars_robot_lab_reads_for_vertexai
+    error = RubyLLM::ConfigurationError.new(<<~MSG)
+      VertexAI provider is not configured. Add this to your initialization:
+
+      RubyLLM.configure do |config|
+        config.vertexai_project_id = ENV['VERTEXAI_PROJECT_ID']
+        config.vertexai_location = ENV['VERTEXAI_LOCATION']
+      end
+    MSG
+
+    assert_equal 'VertexAI is not configured: set GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION',
+                 AIA::ProviderRegistry.missing_config_hint(error)
+  end
+
+  def test_missing_config_hint_is_nil_for_other_configuration_errors
+    error = RubyLLM::ConfigurationError.new('azure_deployments must be a Hash')
+
+    assert_nil AIA::ProviderRegistry.missing_config_hint(error)
+  end
+
   def test_registered_for_builtin_provider
     assert AIA::ProviderRegistry.registered?('openai')
     assert AIA::ProviderRegistry.registered?(:anthropic)

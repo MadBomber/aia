@@ -145,6 +145,29 @@ module AIA
       end
     end
 
+    # RubyLLM settings that robot_lab reads from an env var not named after
+    # the setting (see RobotLab::Config#apply_provider_api_keys).
+    CONFIG_ENV_VARS = {
+      'vertexai_project_id' => 'GOOGLE_CLOUD_PROJECT',
+      'vertexai_location' => 'GOOGLE_CLOUD_LOCATION',
+      'bedrock_region' => 'AWS_REGION'
+    }.freeze
+
+    # A one-line hint naming the env vars to set when +error+ is RubyLLM's
+    # "provider is not configured" error, whose message suggests a Ruby
+    # snippet instead. Returns nil for any other error.
+    def missing_config_hint(error)
+      return unless error.is_a?(RubyLLM::ConfigurationError)
+
+      message = error.message
+      provider = message[/\A(.+?) provider is not configured/, 1]
+      settings = message.scan(/config\.(\w+) =/).flatten
+      return if provider.nil? || settings.empty?
+
+      env_vars = settings.map { |key| CONFIG_ENV_VARS.fetch(key, key.upcase) }
+      "#{provider} is not configured: set #{env_vars.join(' and ')}"
+    end
+
     # The default endpoint for +slug+ when RubyLLM has none configured.
     def default_endpoint(ruby_llm_config, slug)
       getter = :"#{slug}_api_base"
