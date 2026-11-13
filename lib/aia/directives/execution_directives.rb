@@ -54,10 +54,19 @@ module AIA
     end
     alias conc concurrent
 
-    desc "Run next prompt through verification (two independent answers + reconciliation)"
+    desc "Run next prompt through verification (two independent answers + reconciliation); " \
+         "optional TEMPERATURE_DELTA spreads the verifiers' temperatures"
     def verify(args, context_manager = nil)
-      AIA.turn_state.request(:verify)
-      "Verification mode enabled for next prompt."
+      arg = Array(args).first
+      delta = arg && Float(arg, exception: false)
+      if arg && (delta.nil? || delta.negative?)
+        return "Usage: /verify [TEMPERATURE_DELTA]  (a number >= 0, e.g. /verify 0.3)"
+      end
+
+      AIA.turn_state.request(:verify, delta: delta)
+      return "Verification mode enabled for next prompt." unless delta
+
+      "Verification mode enabled for next prompt (verifier temperatures: configured -/+ #{delta})."
     end
 
     desc "Decompose next prompt into parallel sub-tasks"

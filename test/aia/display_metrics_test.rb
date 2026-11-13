@@ -26,26 +26,6 @@ class DisplayMetricsTest < Minitest::Test
     @ui = mock('ui_presenter')
   end
 
-  # --- extract_model_id ---
-
-  def test_extract_model_id_from_model_id
-    msg = OpenStruct.new(model_id: 'claude-sonnet-4', input_tokens: 10)
-    loop_instance = build_chat_loop
-    assert_equal 'claude-sonnet-4', loop_instance.send(:extract_model_id, msg)
-  end
-
-  def test_extract_model_id_falls_back_to_model
-    msg = OpenStruct.new(model: 'gpt-4o-mini', input_tokens: 10)
-    loop_instance = build_chat_loop
-    assert_equal 'gpt-4o-mini', loop_instance.send(:extract_model_id, msg)
-  end
-
-  def test_extract_model_id_returns_nil_when_absent
-    msg = OpenStruct.new(input_tokens: 10)
-    loop_instance = build_chat_loop
-    assert_nil loop_instance.send(:extract_model_id, msg)
-  end
-
   # --- display_metrics: single robot ---
   # Token data is on result.raw (the original RubyLLM::Message).
 

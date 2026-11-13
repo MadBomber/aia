@@ -179,15 +179,27 @@ module AIA
       if model_info
         puts "   Provider: #{model_info.provider || 'Unknown'}"
         puts "   Context window: #{model_info.context_window || 'Unknown'}"
-        puts "   Input cost: $#{model_info.input_cost || 'Unknown'}"
-        puts "   Output cost: $#{model_info.output_cost || 'Unknown'}"
-        puts "   Mode: #{model_info.modalities || 'Unknown'}"
+        puts "   Input cost: #{price_label(model_info.price(:input))}"
+        puts "   Output cost: #{price_label(model_info.price(:output))}"
+        puts "   Mode: #{modalities_label(model_info.modalities)}"
         puts "   Capabilities: #{(model_info.capabilities || []).join(', ')}" if model_info.capabilities&.any?
       else
         puts "   Details: Model not found in registry"
       end
     rescue StandardError => e
       puts "   Details: Unable to fetch (#{e.class.name}: #{e.message})"
+    end
+
+    def price_label(per_million)
+      per_million ? "$#{per_million} per 1M tokens" : 'Unknown'
+    end
+
+    def modalities_label(modalities)
+      input  = Array(modalities&.input)
+      output = Array(modalities&.output)
+      return 'Unknown' if input.empty? && output.empty?
+
+      "#{input.join(', ')} -> #{output.join(', ')}"
     end
 
     # Convert a typed /config value to the type of the key's default
