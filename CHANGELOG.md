@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **Stdio MCP servers start again with ruby_llm 2.2.** The patch that sends MCP server stderr to the log replaced `RubyLLM::MCP::Stdio#start` with a copy of the ruby_llm 2.1 body. Under 2.2, `Stdio` gets a lambda `env`, so every stdio server failed with `no implicit conversion of Proc into String` and no MCP tools loaded. The patch now calls the original `#start` and adds only the `err:` redirect to its `Open3.popen2` call, so it follows upstream's environment handling and spawn options. Fixes #203.
+
 - **Uppercase chat directives are recognized again.** `DirectiveProcessor#state_setting?` extracted the directive name without downcasing it, unlike its siblings `#directive?` and `#process`. Since state-setting names are stored lowercase, typing `/CLEAR` or `/Debate` in chat was treated as a non-state directive and its wrapper text was forwarded to the model instead of silently setting the mode. The name is now downcased to match the other methods, restoring the case-insensitive directive names the docs promise. (#174)
 
 - **A bad command-line option fails the test run.** `test_helper.rb` installed its `exit` guard at load time, so it swallowed the exit Minitest raises while parsing an unrecognized option: `ruby -Itest test/foo_test.rb --no-such-option` ran the suite anyway and exited 0. The guard is now active only while a test is executing, so Minitest's option-parsing exit reaches the shell while aia's own exits during a test stay suppressed. A failing test file still exits non-zero.
