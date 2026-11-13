@@ -210,7 +210,7 @@ module AIA
       raw = result.respond_to?(:raw) ? result.raw : nil
       return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
 
-      model_id = extract_model_id(raw)
+      model_id = Utility.model_id_of(raw)
       model_id ||= result.respond_to?(:robot_name) ? result.robot_name : "unknown"
       metrics = {
         model_id:      model_id,
@@ -219,12 +219,6 @@ module AIA
         elapsed:       elapsed
       }
       @ui_presenter.display_token_metrics(metrics)
-    end
-
-    def extract_model_id(message)
-      return message.model_id if message.respond_to?(:model_id) && message.model_id
-      return message.model    if message.respond_to?(:model)    && message.model
-      nil
     end
   end
 end
