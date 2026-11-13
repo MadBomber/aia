@@ -315,11 +315,10 @@ module AIA
         return # rubocop:disable Lint/UnreachableCode -- exit is mocked in tests
       end
 
-      reset_to_defaults
+      raw = read_extra_config(path)
+      return unless raw # an error was reported; exit is mocked in tests
 
-      raw = YAML.safe_load_file(path, permitted_classes: [Symbol],
-        symbolize_names: true,
-        aliases: true) || {}
+      reset_to_defaults
 
       config_hash = raw.key?(:defaults) ? (raw[:defaults] || {}) : raw
 
@@ -342,6 +341,26 @@ module AIA
       end
 
       expand_paths
+    end
+
+    # Parse a -c config file. Returns its top-level Hash, or nil after
+    # reporting why the file cannot be used.
+    def read_extra_config(path)
+      raw = YAML.safe_load_file(path, permitted_classes: [Symbol],
+        symbolize_names: true,
+        aliases: true) || {}
+      return raw if raw.is_a?(Hash)
+
+      invalid_extra_config(path, "expected a YAML mapping at the top level, got #{raw.class}")
+      nil
+    rescue Psych::SyntaxError => e
+      invalid_extra_config(path, "#{e.problem} at line #{e.line} column #{e.column}")
+      nil
+    end
+
+    def invalid_extra_config(path, reason)
+      $stderr.puts "ERROR: Invalid config file #{path}: #{reason}"
+      exit 1
     end
 
     def reset_to_defaults

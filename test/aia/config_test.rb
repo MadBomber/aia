@@ -286,6 +286,28 @@ class ConfigTest < Minitest::Test
     ENV['AIA_MODEL'] = original_model if original_model
   end
 
+  def test_extra_config_file_with_malformed_yaml_reports_and_exits
+    config_file = create_temp_config("a: [1,\n")
+    AIA::Config.any_instance.expects(:exit).with(1)
+
+    _, err = capture_io do
+      AIA::Config.new(overrides: { extra_config_file: config_file })
+    end
+
+    assert_match(/ERROR: Invalid config file #{Regexp.escape(config_file)}: .*line 2/, err)
+  end
+
+  def test_extra_config_file_with_non_mapping_yaml_reports_and_exits
+    config_file = create_temp_config("- a\n")
+    AIA::Config.any_instance.expects(:exit).with(1)
+
+    _, err = capture_io do
+      AIA::Config.new(overrides: { extra_config_file: config_file })
+    end
+
+    assert_match(/ERROR: Invalid config file #{Regexp.escape(config_file)}: expected a YAML mapping/, err)
+  end
+
   def test_cli_overrides_take_precedence_over_extra_config
     config_file = create_temp_config(<<~YAML)
       llm:
