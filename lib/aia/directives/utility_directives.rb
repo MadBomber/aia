@@ -116,7 +116,10 @@ module AIA
       name = ToolIntrospection.tool_name(tool)
       puts "\n#{name}"
       puts "-" * name.size
-      puts WordWrapper::MinimumRaggedness.new(width, tool.description).wrap.split("\n").map { |s| spaces + s + "\n" }.join
+      desc = ToolIntrospection.tool_description(tool).strip
+      return if desc.empty?
+
+      puts WordWrapper::MinimumRaggedness.new(width, desc).wrap.split("\n").map { |s| spaces + s + "\n" }.join
     end
 
     def print_connected_servers(connected)

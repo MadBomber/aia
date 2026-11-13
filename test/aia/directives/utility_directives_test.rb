@@ -58,6 +58,27 @@ class UtilityDirectivesTest < Minitest::Test
     assert_includes output, "calculator tool"
   end
 
+  def test_tools_lists_tool_without_description_and_ignores_argv
+    mock_tool = mock('tool')
+    mock_tool.stubs(:name).returns('silent_tool')
+    mock_tool.stubs(:description).returns(nil)
+    @test_config.loaded_tools = [mock_tool]
+
+    saved_argv = ARGV.dup
+    [[], ['aia_test_argv_prompt']].each do |argv|
+      ARGV.replace(argv)
+      @captured_output.truncate(0)
+      @captured_output.rewind
+
+      assert_equal '', @instance.tools([])
+      output = @captured_output.string
+      assert_includes output, 'silent_tool'
+      refute_includes output, 'aia_test_argv_prompt'
+    end
+  ensure
+    ARGV.replace(saved_argv)
+  end
+
   def test_tools_filters_by_name
     tool_a = mock('tool_a')
     tool_a.stubs(:name).returns('calculator')
