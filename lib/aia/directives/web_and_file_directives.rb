@@ -113,7 +113,8 @@ module AIA
     end
 
     def print_skill_entry(dir, skill_id, wrap_width)
-      fm = parse_skill_front_matter(File.join(dir, skill_id, 'SKILL.md'))
+      fm = parse_front_matter(File.join(dir, skill_id, 'SKILL.md'))
+      fm = {} unless fm.is_a?(Hash)
       name        = fm['name']        || ''
       description = fm['description'] || '(no description)'
       puts "#{skill_id}: #{name}"
@@ -186,23 +187,10 @@ module AIA
       content = File.read(skill_md_path)
       return '' unless content.start_with?("---")
 
-      end_pos = content.index("---", 3)
+      end_pos = content.index("\n---", 3)
       return '' unless end_pos
 
       content[3...end_pos].downcase
-    end
-
-    def parse_skill_front_matter(skill_md_path)
-      require 'yaml'
-      content = File.read(skill_md_path)
-      return {} unless content.start_with?("---")
-
-      end_pos = content.index("---", 3)
-      return {} unless end_pos
-
-      yaml_text = content[3...end_pos].strip
-      parsed    = YAML.safe_load(yaml_text, symbolize_names: false) rescue {}
-      parsed.is_a?(Hash) ? parsed : {}
     end
   end
 end

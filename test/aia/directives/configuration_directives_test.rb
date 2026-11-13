@@ -36,6 +36,18 @@ class ConfigurationDirectivesTest < Minitest::Test
     super
   end
 
+  # --- model details ---
+
+  def test_show_model_details_prints_prices_and_modalities
+    @instance.send(:show_model_details, "gpt-4o")
+    output = @captured_output.string
+
+    refute_includes output, "Unable to fetch"
+    assert_includes output, "Input cost: $2.5 per 1M tokens"
+    assert_includes output, "Output cost: $10 per 1M tokens"
+    assert_includes output, "Mode: text, image, pdf -> text"
+  end
+
   # --- /model switching ---
 
   def test_model_switch_summarizes_history_by_default
@@ -81,7 +93,29 @@ class ConfigurationDirectivesTest < Minitest::Test
     refute_empty output
   end
 
+  def test_config_single_arg_resolves_nested_keys
+    @instance.config(['llm.temperature'])
+    @instance.config(['top_p'])
+    @instance.temperature([])
+    output = @captured_output.string.gsub(/\e\[[\d;]*m/, '')
+
+    assert_includes output, '"llm.temperature" => 0.7'
+    assert_includes output, '"top_p" => 0.9'
+    assert_includes output, '"temperature" => 0.7'
+  end
+
   # --- /config with key and value ---
+
+  def test_config_value_keeps_embedded_equals
+    @test_config.output = OpenStruct.new(file: nil)
+    @instance.config(['output.file', 'notes=v2.md'])
+    assert_equal 'notes=v2.md', @test_config.output.file
+  end
+
+  def test_config_key_equals_value_form_still_works
+    @instance.config(['llm.temperature', '=', '0.9'])
+    assert_in_delta 0.9, @test_config.llm.temperature
+  end
 
   def test_config_sets_value
     # OpenStruct responds to any setter, so this should set the value

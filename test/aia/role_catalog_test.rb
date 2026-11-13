@@ -72,6 +72,13 @@ class RoleCatalogTest < Minitest::Test
     refute_includes text, 'wip'
   end
 
+  def test_listing_shows_dated_front_matter
+    File.write(File.join(@dir, 'roles', 'dated.md'), "---\ndescription: Has a date\nupdated: 2026-01-15\n---\nHi.")
+    text = AIA::RoleCatalog.listing(@dir, 'roles')
+    assert_includes text, '| description | Has a date |'
+    assert_includes text, '| updated | 2026-01-15 |'
+  end
+
   def test_listing_without_roles
     assert_match(/No roles directory found/, AIA::RoleCatalog.listing('/nonexistent', 'roles'))
     Dir.mktmpdir do |empty|
