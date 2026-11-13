@@ -39,6 +39,7 @@
 
 ### Documentation
 
+- **README examples use model IDs the bundled registry resolves, and Quick Start includes an API-key step.** The headline example `aia --chat -m gpt-4o,claude-3-5-sonnet,gemini-1.5-pro` stopped with `Unknown model`, and `gemini-1.5-pro` resolved to Vertex AI. README now uses `claude-sonnet-4-6` (anthropic) and `gemini-2.5-pro` (gemini) in place of `claude-3-5-sonnet`, `claude-3-sonnet`, `gemini-1.5-pro` and `gemini-pro`. Quick Start has a new step that exports a provider key and links to the installation page's list of variables. Fixes #205.
 - **`mcp_servers/README.md` describes the files that exist.** It named the deleted `imcp.json` (its own example printed "MCP config file not found"), described only 3 of the 7 sample files, and linked to three dead pages. It now covers all seven files, uses only existing files in its examples, and links to modelcontextprotocol.io and the MCP servers repository. `mcp_servers/filesystem.json` exposes `.` instead of a developer-machine path. Fixes #199.
 - **README tool and MCP examples point at files that exist.** The "Tool Examples" and "MCP Client Examples" blocks named `examples/tools/mcp/` (removed) and loaded MCP servers through `--tools`. They now point at `examples/tools/word_count_tool.rb`, `examples/plugins/` and `--mcp examples/mcp/filesystem.json`. Fixes #190.
 
