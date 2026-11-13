@@ -1819,14 +1819,16 @@ open coverage/index.html
 ### Building
 
 ```bash
-# Install locally with documentation
-just install
+# Build the gem and install it locally
+rake install
 
-# Generate documentation
-just gen_doc
+# Preview the documentation site, or build it into site/
+mkdocs serve
+mkdocs build
 
 # Static code analysis
-just flay
+flay lib
+flog lib
 ```
 
 ### Architecture Notes
