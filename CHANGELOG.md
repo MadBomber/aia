@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **A plugin that fails part way through loading leaves nothing behind.** `PluginLoader#load_file` recorded what a plugin defined only after `load` returned, so methods defined before a `raise` stayed on `Object` after the file was deleted, and a failed reload of a working plugin kept it listed in `/plugins`. A failed load now removes the partial definitions and drops the plugin from the registry before the usual warning. Fixes #235.
 - **`/available_models` matches model IDs that contain capital letters.** Search terms were lowercased but compared against the entry as written, so `/available_models codestral` and `/available_models Codestral` both missed `Codestral-2501`. Positive terms now ignore case, as negative terms already did. Fixes #234.
 - **`-c FILE` reports a malformed or non-mapping config file in one line.** Malformed YAML raised `Psych::SyntaxError` and a top-level list raised `NoMethodError` from `load_extra_config`, so both printed a backtrace. Like a missing file, aia now prints `ERROR: Invalid config file PATH: REASON` and exits 1. Fixes #231.
 - **`--dump` reports a bad file name in one line.** An unsupported extension (`--dump x.json`) raised a bare `RuntimeError`, and a path whose directory does not exist let `Errno::ENOENT` escape, so both printed a backtrace. `ConfigValidator.dump_config` now raises `AIA::ConfigurationError` for both, naming the extension or the path. Fixes #230.
