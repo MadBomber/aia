@@ -36,6 +36,7 @@
 
 - **`TurnState#active_mcp_servers` is gone.** Its only reader left with the KBS removal, so `ChatLoop` was resetting a value nothing read after every turn. The accessor, its reset in `TurnState#clear!`, and `ChatLoop#clear_turn_mcp_filter` are deleted. (#187)
 
+- **`McpParser` no longer copies an MCP server's `topics` key.** The JSON MCP config parser (`--mcp FILE`) copied `topics` into each parsed server for KBS routing; nothing has read it since KBS was removed, and robot_lab ignores it. `group` is still copied for `McpGrouper`. (#227)
 - **Three private copies of the response model-id lookup are gone.** `MentionRouter#extract_model_id`, `ChatLoop#extract_model_id` and `SessionTracker#extract_model_id_from_raw` held the same "`model_id`, else `model`, else nil" logic. All three now call one `AIA::Utility.model_id_of(message)`, so a RubyLLM rename needs one edit. Behavior is unchanged. Fixes #182.
 
 ### Documentation
