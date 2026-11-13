@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **A missing API key names the env var to set.** With no key for the chosen provider, aia printed ruby_llm's developer message with a `RubyLLM.configure` snippet. It now prints one line such as `OpenAI is not configured: set OPENAI_API_KEY`. For Vertex AI the hint names the variables robot_lab reads (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`) rather than the `VERTEXAI_*` names ruby_llm suggests. Providers whose key nothing reads from the environment (Cohere, Moonshot and others), and Bedrock and Azure, which raise their own message, keep ruby_llm's original message. Fixes #224.
 - MCP servers that fail to connect are now reported on stderr when it is not a terminal, where the connection spinner prints nothing.
 - **`/skills` no longer cuts front matter at a `---` inside a value.** The directive had its own front-matter reader that ended at the first `---` anywhere after the opening line, so a `SKILL.md` with `description: Review diffs---then summarize` was listed as `Review diffs`, and a `/skills summarize` search missed it. The listing now uses the shared `SkillUtils#parse_front_matter`, and the search text ends at a `---` that starts a line. (#223)
 - **`--list-skills` and `--list-roles` accept dates in front matter.** `SkillUtils.parse_front_matter` now permits `Date` and `Time` values, so a SKILL.md or role file whose front matter has a line such as `updated: 2026-01-15` no longer loses all of its front matter: `--list-skills` showed "No front matter found" and `--list-roles` dropped the role's details.
