@@ -9,11 +9,12 @@ require_relative '../test_helper'
 # and elapsed time are extracted and shown for both single-robot and
 # multi-model network results.
 #
-# Token data lives on the raw RubyLLM::Message stored in
-# RobotResult#raw (RobotLab::Message objects do not carry usage info).
+# Results are real RobotLab::RobotResult objects wrapping ruby_llm 2.x
+# RubyLLM::Message objects, the shape aia receives at runtime.
 
 class DisplayMetricsTest < Minitest::Test
   include AIA::ContentExtractor
+  include LLMResultFactory
 
   def setup
     @config = OpenStruct.new(
@@ -26,12 +27,27 @@ class DisplayMetricsTest < Minitest::Test
     @ui = mock('ui_presenter')
   end
 
+  # --- Utility.token_usage ---
+
+  def test_token_usage_reads_robot_result_counts_and_raw_model
+    usage = AIA::Utility.token_usage(robot_result(input_tokens: 1000, output_tokens: 20, model_id: 'gpt-4o'))
+    assert_equal({ input_tokens: 1000, output_tokens: 20, model_id: 'gpt-4o' }, usage)
+  end
+
+  def test_token_usage_reads_ruby_llm_2_message_tokens
+    result = OpenStruct.new(raw: ruby_llm_message(input_tokens: 7, output_tokens: 3, model_id: 'gpt-4o-mini'))
+    assert_equal({ input_tokens: 7, output_tokens: 3, model_id: 'gpt-4o-mini' }, AIA::Utility.token_usage(result))
+  end
+
+  def test_token_usage_nil_when_no_tokens_reported
+    assert_nil AIA::Utility.token_usage(robot_result(input_tokens: 0, output_tokens: 0))
+    assert_nil AIA::Utility.token_usage(OpenStruct.new(raw: nil))
+  end
+
   # --- display_metrics: single robot ---
-  # Token data is on result.raw (the original RubyLLM::Message).
 
   def test_display_metrics_single_robot
-    raw_msg = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
-    result = OpenStruct.new(raw: raw_msg, robot_name: 'Spark')
+    result = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark')
 
     @ui.expects(:display_token_metrics).with(
       has_entries(model_id: 'gpt-4o-mini', input_tokens: 100, output_tokens: 50, elapsed: 3.5)
@@ -42,8 +58,7 @@ class DisplayMetricsTest < Minitest::Test
   end
 
   def test_display_metrics_single_robot_falls_back_to_config_model
-    raw_msg = OpenStruct.new(input_tokens: 100, output_tokens: 50)
-    result = OpenStruct.new(raw: raw_msg, robot_name: 'Spark')
+    result = robot_result(input_tokens: 100, output_tokens: 50, robot_name: 'Spark')
 
     @ui.expects(:display_token_metrics).with(
       has_entries(model_id: 'gpt-4o-mini')
@@ -54,8 +69,7 @@ class DisplayMetricsTest < Minitest::Test
   end
 
   def test_display_metrics_passes_nil_elapsed_by_default
-    raw_msg = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
-    result = OpenStruct.new(raw: raw_msg, robot_name: 'Spark')
+    result = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark')
 
     @ui.expects(:display_token_metrics).with(
       has_entries(elapsed: nil)
@@ -68,8 +82,7 @@ class DisplayMetricsTest < Minitest::Test
   def test_display_metrics_skipped_when_tokens_flag_off
     @config.flags.tokens = false
 
-    raw_msg = OpenStruct.new(input_tokens: 10, output_tokens: 5)
-    result = OpenStruct.new(raw: raw_msg)
+    result = robot_result(input_tokens: 10, output_tokens: 5)
     @ui.expects(:display_token_metrics).never
 
     loop_instance = build_chat_loop
@@ -85,16 +98,13 @@ class DisplayMetricsTest < Minitest::Test
   end
 
   # --- display_metrics: multi-model network ---
-  # Each robot_result.raw holds the original RubyLLM::Message with
-  # input_tokens, output_tokens, and model_id.
-  # Each robot_result.duration holds the elapsed seconds.
+  # Token counts come from each RobotResult, the model id from its raw
+  # RubyLLM::Message, and the elapsed seconds from RobotResult#duration.
 
   def test_display_metrics_network_result
-    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4')
-    raw_b = OpenStruct.new(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini')
 
-    robot_a = OpenStruct.new(raw: raw_a, robot_name: 'Lyric', duration: 4.2, reply: 'A answer')
-    robot_b = OpenStruct.new(raw: raw_b, robot_name: 'Spark', duration: 2.1, reply: 'B answer')
+    robot_a = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4', robot_name: 'Lyric', duration: 4.2, reply: 'A answer')
+    robot_b = robot_result(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 2.1, reply: 'B answer')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { lyric: robot_a, spark: robot_b }
@@ -117,8 +127,7 @@ class DisplayMetricsTest < Minitest::Test
   end
 
   def test_display_metrics_network_skips_run_params
-    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
-    robot_a = OpenStruct.new(raw: raw_a, robot_name: 'Spark', duration: 1.5, reply: 'Answer')
+    robot_a = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 1.5, reply: 'Answer')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { run_params: { message: 'test' }, spark: robot_a }
@@ -146,8 +155,7 @@ class DisplayMetricsTest < Minitest::Test
   end
 
   def test_display_metrics_network_handles_nil_duration
-    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
-    robot_a = OpenStruct.new(raw: raw_a, robot_name: 'Spark', reply: 'Answer')
+    robot_a = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark', reply: 'Answer')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { spark: robot_a }
@@ -164,17 +172,9 @@ class DisplayMetricsTest < Minitest::Test
   # --- similarity scoring in network metrics ---
 
   def test_display_network_metrics_includes_similarity_scores
-    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4')
-    raw_b = OpenStruct.new(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini')
 
-    robot_a = OpenStruct.new(
-      raw: raw_a, robot_name: 'Lyric', duration: 4.2,
-      reply: 'Ruby is a dynamic programming language designed for productivity.'
-    )
-    robot_b = OpenStruct.new(
-      raw: raw_b, robot_name: 'Spark', duration: 2.1,
-      reply: 'Ruby is a dynamic programming language designed for productivity.'
-    )
+    robot_a = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4', robot_name: 'Lyric', duration: 4.2, reply: 'Ruby is a dynamic programming language designed for productivity.')
+    robot_b = robot_result(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 2.1, reply: 'Ruby is a dynamic programming language designed for productivity.')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { lyric: robot_a, spark: robot_b }
@@ -191,8 +191,7 @@ class DisplayMetricsTest < Minitest::Test
   end
 
   def test_display_network_metrics_no_similarity_for_single_model
-    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
-    robot_a = OpenStruct.new(raw: raw_a, robot_name: 'Spark', duration: 1.5, reply: 'Answer')
+    robot_a = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 1.5, reply: 'Answer')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { spark: robot_a }

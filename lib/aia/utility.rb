@@ -153,6 +153,36 @@ module AIA
         return '' if names.empty?
         format_crew_mentions(names)
       end
+
+      public
+
+      # Token usage for one LLM result, or nil when the result reports none.
+      #
+      # RobotLab::RobotResult carries the counts directly. Under ruby_llm 2.x
+      # the raw RubyLLM::Message keeps them under #tokens, not #input_tokens.
+      #
+      # @return [Hash, nil] { input_tokens:, output_tokens:, model_id: }
+      def token_usage(result)
+        raw = result.respond_to?(:raw) ? result.raw : nil
+        input, output = token_counts(result, raw)
+        return nil if input.zero? && output.zero?
+
+        { input_tokens: input, output_tokens: output, model_id: model_id_of(raw) }
+      end
+
+      private
+
+      def token_counts(result, raw)
+        if result.respond_to?(:input_tokens)
+          [result.input_tokens.to_i, (result.respond_to?(:output_tokens) ? result.output_tokens : 0).to_i]
+        elsif raw.respond_to?(:tokens) && (tokens = raw.tokens)
+          [tokens.input.to_i, tokens.output.to_i]
+        elsif raw.respond_to?(:input_tokens)
+          [raw.input_tokens.to_i, (raw.respond_to?(:output_tokens) ? raw.output_tokens : 0).to_i]
+        else
+          [0, 0]
+        end
+      end
     end
   end
 end

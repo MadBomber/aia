@@ -207,15 +207,15 @@ module AIA
     def display_metrics(result, elapsed: nil)
       return unless AIA.config.flags.tokens
 
-      raw = result.respond_to?(:raw) ? result.raw : nil
-      return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+      usage = Utility.token_usage(result)
+      return unless usage
 
-      model_id = Utility.model_id_of(raw)
+      model_id = usage[:model_id]
       model_id ||= result.respond_to?(:robot_name) ? result.robot_name : "unknown"
       metrics = {
         model_id:      model_id,
-        input_tokens:  raw.input_tokens,
-        output_tokens: raw.output_tokens,
+        input_tokens:  usage[:input_tokens],
+        output_tokens: usage[:output_tokens],
         elapsed:       elapsed
       }
       @ui_presenter.display_token_metrics(metrics)
