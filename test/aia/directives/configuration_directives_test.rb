@@ -36,6 +36,18 @@ class ConfigurationDirectivesTest < Minitest::Test
     super
   end
 
+  # --- model details ---
+
+  def test_show_model_details_prints_prices_and_modalities
+    @instance.send(:show_model_details, "gpt-4o")
+    output = @captured_output.string
+
+    refute_includes output, "Unable to fetch"
+    assert_includes output, "Input cost: $2.5 per 1M tokens"
+    assert_includes output, "Output cost: $10 per 1M tokens"
+    assert_includes output, "Mode: text, image, pdf -> text"
+  end
+
   # --- /model switching ---
 
   def test_model_switch_summarizes_history_by_default
