@@ -320,6 +320,23 @@ class UtilityTest < Minitest::Test
     assert_equal %w[fs(14) gh], AIA::Utility.send(:mcp_client_labels)
   end
 
+  def test_model_id_of_prefers_model_id
+    msg = OpenStruct.new(model_id: 'claude-sonnet-4', model: 'gpt-4o-mini')
+    assert_equal 'claude-sonnet-4', AIA::Utility.model_id_of(msg)
+  end
+
+  def test_model_id_of_falls_back_to_model
+    assert_equal 'gpt-4o-mini', AIA::Utility.model_id_of(OpenStruct.new(model_id: nil, model: 'gpt-4o-mini'))
+  end
+
+  def test_model_id_of_returns_nil_when_absent
+    assert_nil AIA::Utility.model_id_of(OpenStruct.new(input_tokens: 10))
+  end
+
+  def test_model_id_of_returns_nil_for_nil
+    assert_nil AIA::Utility.model_id_of(nil)
+  end
+
   private
 
   # Temporarily replace a constant without "already initialized" warnings

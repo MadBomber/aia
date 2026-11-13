@@ -381,16 +381,7 @@ module AIA
       end
 
       def require_tool_files(config)
-        Array(config.tools&.paths).each do |path|
-          expanded = File.expand_path(path)
-          if File.exist?(expanded)
-            require expanded
-          else
-            $stderr.puts "Warning: Tool file not found: #{path}"
-          end
-        rescue LoadError, StandardError => e
-          $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
-        end
+        AIA::ToolLoader.require_tool_files(config)
       end
 
       # Canonical --list-skills handler. Runs after config is built (so a -c
