@@ -4,6 +4,6 @@
     "npx",
     "-y",
     "@modelcontextprotocol/server-filesystem",
-    "/Users/dewayne/sandbox/git_repos/madbomber/aia/develop"
+    "."
   ]
 }
