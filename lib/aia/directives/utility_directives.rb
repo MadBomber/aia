@@ -211,8 +211,8 @@ module AIA
     # Cost per 1K tokens (price_per_million * 1000 / 1_000_000)
     def wage_for(model_name)
       model_info = RubyLLM::Models.find(model_name)
-      input  = model_info&.input_price_per_million
-      output = model_info&.output_price_per_million
+      input  = model_info&.price(:input)
+      output = model_info&.price(:output)
       return 'N/A' unless input && output
 
       in_per_k  = input  * 1000.0 / 1_000_000

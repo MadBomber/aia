@@ -1,5 +1,6 @@
 # lib/aia/skill_utils.rb
 
+require 'date'
 require 'yaml'
 require_relative 'errors'
 
@@ -41,7 +42,7 @@ module AIA
       end_marker = content.index("\n---", 3)
       return {} unless end_marker
       yaml_text = content[3...end_marker]
-      YAML.safe_load(yaml_text) || {}
+      YAML.safe_load(yaml_text, permitted_classes: [Date, Time]) || {}
     rescue StandardError
       {}
     end

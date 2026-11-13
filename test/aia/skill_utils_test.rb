@@ -42,6 +42,17 @@ class SkillUtilsTest < Minitest::Test
     end
   end
 
+  def test_parses_front_matter_with_dates_and_times
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'dated.md')
+      File.write(path, "---\nname: Dated\nupdated: 2026-01-15\nreviewed: 2026-01-15 10:30:00 Z\n---\n# Body")
+      fm = AIA::SkillUtils.parse_front_matter(path)
+      assert_equal 'Dated', fm['name']
+      assert_equal Date.new(2026, 1, 15), fm['updated']
+      assert_equal Time.utc(2026, 1, 15, 10, 30), fm['reviewed']
+    end
+  end
+
   def test_returns_empty_hash_for_missing_file
     assert_equal({}, AIA::SkillUtils.parse_front_matter('/nonexistent/path.md'))
   end

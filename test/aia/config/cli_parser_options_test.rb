@@ -241,6 +241,26 @@ class CLIParserCreateOptionParserTest < Minitest::Test
     assert_equal %w[lib1 lib2], options[:require_libs]
   end
 
+  def test_require_libs_strips_spaces_around_commas
+    options = {}
+    parser = AIA::CLIParser.send(:create_option_parser, options)
+    parser.parse!(['--require', 'json, yaml,'])
+    assert_equal %w[json yaml], options[:require_libs]
+  end
+
+  def test_repeated_tools_flags_accumulate
+    Dir.mktmpdir do |dir|
+      a = File.join(dir, 'a.rb')
+      b = File.join(dir, 'b.rb')
+      File.write(a, '')
+      File.write(b, '')
+      options = {}
+      parser = AIA::CLIParser.send(:create_option_parser, options)
+      parser.parse!(['--tools', a, '--tools', b])
+      assert_equal [a, b], options[:tool_paths]
+    end
+  end
+
   def test_parses_allowed_tools
     options = {}
     parser = AIA::CLIParser.send(:create_option_parser, options)
