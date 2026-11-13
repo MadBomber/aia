@@ -395,9 +395,11 @@ module AIA
       return if provider.nil? || provider.to_s.empty?
 
       Array(models).each do |spec|
-        next unless spec.respond_to?(:provider)
+        next unless spec.respond_to?(:use_provider)
 
-        spec.provider = provider if mode == :replace || spec.provider.nil?
+        next unless mode == :replace || spec.provider.nil? || spec.bare_provider_name?
+
+        spec.use_provider(provider)
       end
     end
 

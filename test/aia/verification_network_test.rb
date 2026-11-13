@@ -53,7 +53,76 @@ class VerificationNetworkTest < Minitest::Test
     refute_nil result
   end
 
+  # --- model assignment and temperature delta (#154) ---
+
+  def test_single_model_is_used_for_all_three_robots
+    built = capture_robots(@config)
+    assert_equal %w[gpt-4o-mini gpt-4o-mini gpt-4o-mini], built.map { |b| b[:model].name }
+  end
+
+  def test_two_models_split_the_verifiers_and_first_reconciles
+    @config.models = [model('m0'), model('m1')]
+    built = capture_robots(@config)
+    assert_equal %w[m0 m1 m0], built.map { |b| b[:model].name }
+  end
+
+  def test_three_models_give_each_robot_its_own_model
+    @config.models = [model('m0'), model('m1'), model('m2')]
+    built = capture_robots(@config)
+    assert_equal %w[m0 m1 m2], built.map { |b| b[:model].name }
+    assert_equal %w[verifier-a verifier-b reconciler], built.map { |b| b[:name] }
+  end
+
+  def test_without_delta_every_robot_uses_the_configured_temperature
+    built = capture_robots(@config)
+    assert_equal [0.7, 0.7, 0.7], built.map { |b| b[:config].to_h[:temperature] }
+  end
+
+  def test_delta_spreads_verifier_temperatures_and_keeps_reconciler
+    built = capture_robots(@config, temperature_delta: 0.3)
+    assert_equal [0.4, 1.0, 0.7], built.map { |b| b[:config].to_h[:temperature] }
+    assert_equal 2048, built.first[:config].to_h[:max_tokens]
+  end
+
+  def test_delta_is_clamped_to_valid_temperature_range
+    built = capture_robots(@config, temperature_delta: 0.9)
+    assert_equal [0.0, 1.0], built.first(2).map { |b| b[:config].to_h[:temperature] }
+  end
+
+  def test_delta_is_ignored_when_model_has_no_temperature
+    built = capture_robots(@config, run_config: RobotLab::RunConfig.new(max_tokens: 2048),
+                                    temperature_delta: 0.3)
+    assert_equal [nil, nil, nil], built.map { |b| b[:config].to_h[:temperature] }
+  end
+
   private
+
+  class FakeDSL
+    def task(*) = nil
+  end
+
+  def model(name)
+    OpenStruct.new(name: name, role: nil, internal_id: name)
+  end
+
+  def capture_robots(config, run_config: RobotLab::RunConfig.new(temperature: 0.7, max_tokens: 2048),
+                     temperature_delta: nil)
+    built = []
+    AIA::RobotFactory.stubs(:build_run_config).returns(run_config)
+    AIA::ToolLoader.stubs(:filtered_tools).returns([])
+    AIA::RobotFactory.stubs(:mcp_servers).returns([])
+    AIA::RobotFactory.stubs(:build_robot).with do |model, **opts|
+      built << { model: model, name: opts[:name], config: opts[:config] }
+      true
+    end.returns(Object.new)
+
+    original = RobotLab.method(:create_network)
+    RobotLab.define_singleton_method(:create_network) { |**_, &blk| FakeDSL.new.instance_eval(&blk) || :network }
+    AIA::VerificationNetwork.build(config, temperature_delta: temperature_delta)
+    built
+  ensure
+    RobotLab.define_singleton_method(:create_network, original) if original
+  end
 
   def create_test_config
     OpenStruct.new(
