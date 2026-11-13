@@ -281,6 +281,8 @@ module AIA
       @mutex.synchronize { @failed_servers << { name: name, error: error } }
       logger.warn("MCP: '#{name}' error: #{error}")
       spinner.error(spinner_note)
+      # TTY::Spinner draws nothing when stderr is not a terminal, so say it plainly.
+      warn "WARNING: MCP server '#{name}' failed to connect: #{error}" unless $stderr.tty?
     end
 
     # Best-effort close; a server that never connected may raise.

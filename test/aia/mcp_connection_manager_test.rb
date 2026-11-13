@@ -43,6 +43,7 @@ class MCPConnectionManagerTest < Minitest::Test
     AIA.config.stubs(:mcp_server_tool_counts=)
     AIA.config.stubs(:failed_mcp_servers=)
     stub_spinners
+    $stderr.stubs(:tty?).returns(true) # failure warnings off; tests that check them use capture_io
   end
 
   def stub_spinners
@@ -127,6 +128,25 @@ class MCPConnectionManagerTest < Minitest::Test
     assert_equal ['dead'], @manager.failed_server_names
     assert_match(/spawn failed/, @manager.failed_servers.first[:error])
     assert dead.closed, 'a server that failed to connect is closed'
+  end
+
+  def test_connect_all_warns_about_failure_when_stderr_is_not_a_tty
+    stub_build(FakeServer.new('dead', error: RubyLLM::Error.new('spawn failed')))
+
+    _, err = capture_io { @manager.connect_all([config_for('dead')]) }
+
+    assert_match(/MCP server 'dead' failed to connect: spawn failed/, err)
+  end
+
+  def test_connect_all_leaves_failure_to_the_spinner_when_stderr_is_a_tty
+    stub_build(FakeServer.new('dead', error: RubyLLM::Error.new('spawn failed')))
+
+    _, err = capture_io do
+      $stderr.define_singleton_method(:tty?) { true }
+      @manager.connect_all([config_for('dead')])
+    end
+
+    assert_empty err
   end
 
   def test_connect_all_records_unbuildable_config_as_failed
