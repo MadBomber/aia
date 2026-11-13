@@ -24,6 +24,8 @@
 
 ### Documentation
 
+- **README examples use model IDs the bundled registry resolves, and Quick Start includes an API-key step.** The headline example `aia --chat -m gpt-4o,claude-3-5-sonnet,gemini-1.5-pro` stopped with `Unknown model`, and `gemini-1.5-pro` resolved to Vertex AI. README now uses `claude-sonnet-4-6` (anthropic) and `gemini-2.5-pro` (gemini) in place of `claude-3-5-sonnet`, `claude-3-sonnet`, `gemini-1.5-pro` and `gemini-pro`. Quick Start has a new step that exports a provider key and links to the installation page's list of variables. Fixes #205.
+
 - **README log level options match the CLI.** The "Debug Mode and Log Level Options" table and examples listed `--info`, `--warn`, `--error` and `--fatal`, which the option parser does not define (`aia --info` fails with `invalid option`). They now use `--log-level LEVEL` and `--log-to FILE`, as registered in `lib/aia/config/cli_parser.rb` and documented in `docs/reference/cli.md`. The `mcp` logger bullet above the table now matches `lib/aia/logger.rb` instead of naming a nonexistent `RubyLLM::MCP.logger`. Fixes #186.
 
 - **README drops three chat directives that were never registered.** The README listed `/shell`, `/next` and `/pipeline` as chat directives and used them in examples, but none is registered (`directive?` returns false for each): shell runs through `$(...)` expansion, and sequencing uses the `next:`/`pipeline:` front-matter keys or the `-n`/`-p` CLI flags. The directive rows and examples now use those supported forms. Fixes #175.

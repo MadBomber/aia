@@ -52,19 +52,26 @@ For more information on AIA visit these locations:
    brew install fzf
    ```
 
-3. **Create your first prompt:**
+3. **Set an API key** for at least one provider (in your `~/.bashrc`, `~/.zshrc` or equivalent):
+   ```bash
+   export OPENAI_API_KEY="sk-..."
+   # or ANTHROPIC_API_KEY, GEMINI_API_KEY, ...
+   ```
+   See [Connect a model provider](docs/getting-started/installation.md#connect-a-model-provider) for the full list of supported variables.
+
+4. **Create your first prompt:**
    ```bash
    mkdir -p ~/.prompts
    echo "What is [TOPIC]?" > ~/.prompts/what_is.md
    ```
 
-4. **Run your prompt:**
+5. **Run your prompt:**
    ```bash
    aia what_is
    ```
    You'll be prompted to enter a value for `[TOPIC]`, then AIA will send your question to the AI model.
 
-5. **Start an interactive chat:**
+6. **Start an interactive chat:**
    ```bash
    aia --chat
 
@@ -98,7 +105,7 @@ One of AIA's most powerful features is the ability to send a single prompt to mu
 
 ```bash
 # Compare responses from 3 models with token counts and cost estimates
-aia --chat -m gpt-4o,claude-3-5-sonnet,gemini-1.5-pro --tokens --cost
+aia --chat -m gpt-4o,claude-sonnet-4-6,gemini-2.5-pro --tokens --cost
 ```
 
 **Example output:**
@@ -108,18 +115,18 @@ You: What's the best approach for handling database migrations in a microservice
 from: gpt-4o
 Use a versioned migration strategy with backward compatibility...
 
-from: claude-3-5-sonnet
+from: claude-sonnet-4-6
 Consider the Expand-Contract pattern for zero-downtime migrations...
 
-from: gemini-1.5-pro
+from: gemini-2.5-pro
 Implement a schema registry with event-driven synchronization...
 
 ┌─────────────────────────────────────────────────────────────────┐
 │ Model               │ Input Tokens │ Output Tokens │ Cost      │
 ├─────────────────────────────────────────────────────────────────┤
 │ gpt-4o              │ 156          │ 342           │ $0.0089   │
-│ claude-3-5-sonnet   │ 156          │ 418           │ $0.0063   │
-│ gemini-1.5-pro      │ 156          │ 387           │ $0.0041   │
+│ claude-sonnet-4-6   │ 156          │ 418           │ $0.0063   │
+│ gemini-2.5-pro      │ 156          │ 387           │ $0.0041   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -788,10 +795,10 @@ one). The lead robot is the **chief**, and you can address other members
 directly by prefixing a name with `@`:
 
 ```bash
-aia --chat -m gpt-4o,claude-3-5-sonnet
+aia --chat -m gpt-4o,claude-sonnet-4-6
 
 # Address a specific robot in the crew
-> @claude-3-5-sonnet What do you think about this approach?
+> @claude-sonnet-4-6 What do you think about this approach?
 
 # Only the mentioned robot responds; the @mention is stripped from the prompt
 ```
@@ -803,11 +810,11 @@ give them). Use `/robots` to see the active crew and their `@mention` handles.
 
 ```bash
 # Leading address → concurrent: both run at once, replies render as they finish
-> @gpt-4o @claude-3-5-sonnet what are the trade-offs of optimistic locking?
+> @gpt-4o @claude-sonnet-4-6 what are the trade-offs of optimistic locking?
 
 # Body mention → sequential pipeline: each reply is shared into the others'
 # context, so later robots build on earlier ones
-> draft a plan @gpt-4o then have @claude-3-5-sonnet poke holes in it
+> draft a plan @gpt-4o then have @claude-sonnet-4-6 poke holes in it
 
 # @crew is a reserved handle that broadcasts to every member, concurrently
 > @crew in one sentence, what is your specialty?
@@ -823,7 +830,7 @@ answer to `@name`, and inherit the chief's tools and MCP servers.
 /add_recruit researcher
 
 # Explicit provider/model plus a system prompt (alias: /add)
-/add_recruit critic anthropic/claude-3-5-sonnet You are a ruthless design critic.
+/add_recruit critic anthropic/claude-sonnet-4-6 You are a ruthless design critic.
 
 # A local member
 /add_recruit local ollama/qwen3.6:latest You are concise and fast.
@@ -841,7 +848,7 @@ full picture.
 Switch models mid-session naturally — AIA detects the intent and rebuilds the robot with conversation history preserved:
 
 ```bash
-> Switch to claude-3-5-sonnet
+> Switch to claude-sonnet-4-6
 # AIA detects the model-change intent, rebuilds the robot,
 # and transfers the full conversation history automatically.
 ```
@@ -854,13 +861,13 @@ Monitor token consumption and estimate costs across all models with `--tokens` a
 
 ```bash
 # Display token usage for each model
-aia my_prompt -m gpt-4o,claude-3-sonnet --tokens
+aia my_prompt -m gpt-4o,claude-sonnet-4-6 --tokens
 
 # Include cost estimates (automatically enables --tokens)
-aia my_prompt -m gpt-4o,claude-3-sonnet --cost
+aia my_prompt -m gpt-4o,claude-sonnet-4-6 --cost
 
 # In chat mode with full tracking
-aia --chat -m gpt-4o,claude-3-sonnet,gemini-pro --cost
+aia --chat -m gpt-4o,claude-sonnet-4-6,gemini-2.5-pro --cost
 ```
 
 **Token Usage Output:**
@@ -868,11 +875,11 @@ aia --chat -m gpt-4o,claude-3-sonnet,gemini-pro --cost
 from: gpt-4o
 Here's my analysis of the code...
 
-from: claude-3-sonnet
+from: claude-sonnet-4-6
 Looking at this code, I notice...
 
-Tokens: gpt-4o: input=245, output=312 | claude-3-sonnet: input=245, output=287
-Cost: gpt-4o: $0.0078 | claude-3-sonnet: $0.0045 | Total: $0.0123
+Tokens: gpt-4o: input=245, output=312 | claude-sonnet-4-6: input=245, output=287
+Cost: gpt-4o: $0.0078 | claude-sonnet-4-6: $0.0045 | Total: $0.0123
 ```
 
 **Use Cases for Token/Cost Tracking:**
