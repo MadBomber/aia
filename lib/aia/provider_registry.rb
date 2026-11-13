@@ -151,8 +151,7 @@ module AIA
     CONFIG_ENV_VARS = %w[anthropic openai gemini deepseek mistral perplexity openrouter gpustack xai]
                       .to_h { |slug| ["#{slug}_api_key", "#{slug.upcase}_API_KEY"] }
                       .merge('vertexai_project_id' => 'GOOGLE_CLOUD_PROJECT',
-                             'vertexai_location' => 'GOOGLE_CLOUD_LOCATION',
-                             'bedrock_region' => 'AWS_REGION')
+                             'vertexai_location' => 'GOOGLE_CLOUD_LOCATION')
                       .freeze
 
     # A one-line hint naming the env vars to set when +error+ is RubyLLM's

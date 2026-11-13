@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **A missing API key names the env var to set.** With no key for the chosen provider, aia printed ruby_llm's developer message with a `RubyLLM.configure` snippet. It now prints one line such as `OpenAI is not configured: set OPENAI_API_KEY`. For Vertex AI and Bedrock the hint names the variables robot_lab reads (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `AWS_REGION`) rather than the `VERTEXAI_*`/`BEDROCK_*` names ruby_llm suggests. Providers whose key nothing reads from the environment (Cohere, Moonshot and others) keep ruby_llm's original message. Fixes #224.
+- **A missing API key names the env var to set.** With no key for the chosen provider, aia printed ruby_llm's developer message with a `RubyLLM.configure` snippet. It now prints one line such as `OpenAI is not configured: set OPENAI_API_KEY`. For Vertex AI the hint names the variables robot_lab reads (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`) rather than the `VERTEXAI_*` names ruby_llm suggests. Providers whose key nothing reads from the environment (Cohere, Moonshot and others), and Bedrock and Azure, which raise their own message, keep ruby_llm's original message. Fixes #224.
 
 - **Uppercase chat directives are recognized again.** `DirectiveProcessor#state_setting?` extracted the directive name without downcasing it, unlike its siblings `#directive?` and `#process`. Since state-setting names are stored lowercase, typing `/CLEAR` or `/Debate` in chat was treated as a non-state directive and its wrapper text was forwarded to the model instead of silently setting the mode. The name is now downcased to match the other methods, restoring the case-insensitive directive names the docs promise. (#174)
 
