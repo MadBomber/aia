@@ -6,7 +6,12 @@ require_relative '../test_helper'
 require_relative '../../lib/aia'
 
 class CostCalculatorTest < Minitest::Test
-  MockModelInfo = Struct.new(:input_price_per_million, :output_price_per_million)
+  # Same shape as RubyLLM::Model in ruby_llm 2.x: prices come from #price(kind).
+  MockModelInfo = Struct.new(:input, :output) do
+    def price(kind)
+      public_send(kind)
+    end
+  end
 
   def setup
     @model_info = MockModelInfo.new(3.0, 15.0)
@@ -62,5 +67,16 @@ class CostCalculatorTest < Minitest::Test
 
     result = AIA::CostCalculator.calculate(model_id: "some-model", input_tokens: 100, output_tokens: 100)
     refute result[:available]
+  end
+
+  def test_uses_bundled_registry_pricing
+    result = AIA::CostCalculator.calculate(
+      model_id:      "gpt-4o",
+      input_tokens:  1_000_000,
+      output_tokens: 1_000_000
+    )
+
+    assert result[:available]
+    assert_in_delta 12.5, result[:total_cost], 0.0001
   end
 end

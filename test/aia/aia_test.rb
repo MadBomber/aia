@@ -20,6 +20,22 @@ class AIATest < Minitest::Test
     assert_equal "LLM error: RubyLLM::ConfigurationError: Anthropic provider is not configured\n", err
   end
 
+  def test_run_names_the_env_var_for_a_missing_api_key
+    message = <<~MSG
+      OpenAI provider is not configured. Add this to your initialization:
+
+      RubyLLM.configure do |config|
+        config.openai_api_key = ENV['OPENAI_API_KEY']
+      end
+    MSG
+    AIA::CLIParser.stubs(:parse).raises(RubyLLM::ConfigurationError, message)
+    AIA.expects(:exit).with(1)
+
+    _, err = capture_io { AIA.run }
+
+    assert_equal "OpenAI is not configured: set OPENAI_API_KEY\n", err
+  end
+
   def test_config_method_exists
     assert_respond_to AIA, :config, "AIA should respond to the 'config' method"
   end
