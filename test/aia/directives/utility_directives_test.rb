@@ -28,6 +28,12 @@ class UtilityDirectivesTest < Minitest::Test
     super
   end
 
+  # --- wage_for ---
+
+  def test_wage_for_reads_ruby_llm_2_prices
+    assert_equal "$0.0025 in / $0.0100 out per 1K tokens", @instance.send(:wage_for, "gpt-4o")
+  end
+
   # --- /tools ---
 
   def test_tools_with_no_tools_loaded
