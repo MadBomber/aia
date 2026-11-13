@@ -39,6 +39,7 @@
 
 ### Removed
 
+- **The kramdown man rake task is gone.** `Rakefile` required `kramdown/man/task`, which no Gemfile or gemspec declares, and the `man/` directory it built from was deleted, so every `rake` run printed `Skipping kramdown man task`. The block is deleted; `rake -T` lists the same tasks without the warning. Fixes #232.
 - **`TurnState#active_mcp_servers` is gone.** Its only reader left with the KBS removal, so `ChatLoop` was resetting a value nothing read after every turn. The accessor, its reset in `TurnState#clear!`, and `ChatLoop#clear_turn_mcp_filter` are deleted. (#187)
 
 - **`McpParser` no longer copies an MCP server's `topics` key.** The JSON MCP config parser (`--mcp FILE`) copied `topics` into each parsed server for KBS routing; nothing has read it since KBS was removed, and robot_lab ignores it. `group` is still copied for `McpGrouper`. (#227)
