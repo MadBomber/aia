@@ -12,10 +12,10 @@
 # Configuration is read from AIA.config.logger section:
 #   logger:
 #     aia:
-#       file: STDOUT
+#       file: STDERR
 #       level: warn
 #     llm:
-#       file: STDOUT
+#       file: STDERR
 #       level: warn
 #     mcp:
 #       file: ~/.config/aia/logs/mcp.log
@@ -260,7 +260,7 @@ module AIA
         override = AIA.config&.log_file_override
         return override if override && !override.to_s.empty?
 
-        config&.file || 'STDOUT'
+        config&.file || 'STDERR'
       end
 
       # Get the effective log level, considering any override

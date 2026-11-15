@@ -104,6 +104,21 @@ class LoggerManagerTest < Minitest::Test
     assert_equal $stderr, AIA::LoggerManager.resolve_log_file_io('Stderr')
   end
 
+  # Logs must not mix into an answer piped from stdout (#240)
+  def test_default_aia_and_llm_logs_go_to_stderr
+    defaults = YAML.load_file(File.expand_path('../../lib/aia/config/defaults.yml', __dir__), aliases: true)
+    logger = defaults.dig('defaults', 'logger')
+
+    assert_equal 'STDERR', logger.dig('aia', 'file')
+    assert_equal 'STDERR', logger.dig('llm', 'file')
+  end
+
+  def test_effective_log_file_falls_back_to_stderr
+    AIA.stubs(:config).returns(nil)
+
+    assert_equal 'STDERR', AIA::LoggerManager.send(:effective_log_file, nil)
+  end
+
   def test_resolve_log_file_io_file_path
     result = AIA::LoggerManager.resolve_log_file_io('/tmp/test.log')
     assert_equal '/tmp/test.log', result

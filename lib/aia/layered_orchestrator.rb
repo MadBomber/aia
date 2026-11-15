@@ -452,11 +452,25 @@ module AIA
         code = m[1]
       end
 
-      dest = File.join(@build_dir, artifact_path)
+      dest = artifact_destination(artifact_path)
+      unless dest
+        say("    ⚠  Skipped artifact #{artifact_path.inspect}: path must be inside #{@build_dir}")
+        return
+      end
+
       FileUtils.mkdir_p(File.dirname(dest))
       File.write(dest, code)
     rescue StandardError => e
       say("    ⚠  Could not save #{artifact_path}: #{e.message}")
+    end
+
+    # Full path for an artifact under the build directory, or nil when the
+    # path is empty or resolves outside it. A leading "/" counts as the
+    # top of the build directory.
+    def artifact_destination(artifact_path)
+      build_root = File.expand_path(@build_dir)
+      dest = File.expand_path(artifact_path.to_s.sub(%r{\A/+}, ''), build_root)
+      dest if dest.start_with?(build_root + File::SEPARATOR)
     end
 
     # Write the integration report to BUILD_DIR/INTEGRATION_REPORT.md

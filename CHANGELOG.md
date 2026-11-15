@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **`/orchestrate` writes each artifact inside its build directory.** `LayeredOrchestrator#save_artifact` now resolves each artifact path against the build directory (a leading `/` still means the top of it, so `/a/b.rb` lands at `BUILD_DIR/a/b.rb`) and skips, with a warning, any artifact whose path is empty or resolves outside it.
 - **`--list-skills` and `--list-roles` no longer crash on plain-text front matter.** A `SKILL.md` or role file whose front matter was a line of text (`---\njust a note\n---`) made `SkillUtils.parse_front_matter` return that String, so `--list-skills` raised `undefined method 'each' for an instance of String` and `--list-roles` raised `undefined method 'map'`; a list printed each item as a key with an empty value. Front matter that is not a YAML mapping is now treated as no front matter, the same as malformed YAML.
 - **`--mcp` files with the wrong shape get a plain warning.** A top-level JSON array printed `undefined method 'key?' for an instance of Array`. A non-object entry under `mcpServers` raised `wrong number of arguments` and dropped the valid servers in the same file. A file with neither `mcpServers` nor a `command`/`url` (a VS Code style `servers` key, or a misspelt `mcpservers`) became a server with no command. `McpParser` now skips the file with "expected a JSON object", skips only the bad entry and names it, and skips a command-less file with a message naming the two expected shapes. Fixes #241.
 - **`/tools` lists a tool that has no description.** `print_tool_entry` passed `tool.description` straight to `WordWrapper`, which treats `nil` as "read `ARGV[0]`": with an empty `ARGV` the directive raised `You need to supply an input string or file`, and after `aia --chat my_prompt` the tool was described as `my_prompt` (or the contents of a file by that name). It now reads the description through `ToolIntrospection.tool_description` and prints no description block when it is empty, as `--list-tools` does. Fixes #239.
@@ -42,6 +43,7 @@
 
 ### Changed
 
+- **The `aia` and `llm` logs go to stderr by default.** `logger.aia.file` and `logger.llm.file` defaulted to `STDOUT`, and so did a logger with no `file`, so a warning such as `Role file not found` landed at the top of `aia ... > out.txt` or in the next command of a pipe. Both now default to `STDERR`, which keeps standard output for the answer. To get the old behavior, set `logger.aia.file: STDOUT` / `logger.llm.file: STDOUT` (or `AIA_LOGGER__AIA__FILE=STDOUT`), or send every log to a file with `--log-to FILE`. Fixes #240.
 - **`TurnState#clear!` and `#clear_exclusive_flags!` share one body.** The two methods held identical copies of the flag resets, so every new mode flag had to be added to both. `clear!` now calls `clear_exclusive_flags!`. Behavior is unchanged. Fixes #242.
 - **`SpawnHandler` reuses `Crew.model_opts`.** Its private copy of the model/provider override helper was identical to `Crew.model_opts` and is removed; `/spawn` behavior is unchanged. Fixes #181.
 

@@ -140,7 +140,7 @@ logger:
     level: warn
 ```
 
-`file` can be a path, `STDOUT` or `STDERR`. `--log-level` and `--log-to` override these settings for one run. In a chat you can change log levels on the fly with `/config`, for example `/config logger.llm.level debug`.
+`file` can be a path, `STDOUT` or `STDERR`. The `aia` and `llm` logs default to `STDERR`, so they stay out of an answer you pipe or redirect. `--log-level` and `--log-to` override these settings for one run. In a chat you can change log levels on the fly with `/config`, for example `/config logger.llm.level debug`.
 
 ## Saving your settings
 
