@@ -42,7 +42,8 @@ module AIA
       end_marker = content.index("\n---", 3)
       return {} unless end_marker
       yaml_text = content[3...end_marker]
-      YAML.safe_load(yaml_text, permitted_classes: [Date, Time]) || {}
+      front_matter = YAML.safe_load(yaml_text, permitted_classes: [Date, Time])
+      front_matter.is_a?(Hash) ? front_matter : {}
     rescue StandardError
       {}
     end
