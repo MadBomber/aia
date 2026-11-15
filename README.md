@@ -475,9 +475,9 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | Config Path | CLI Options | Default | Environment Variable |
 |-------------|-------------|---------|---------------------|
 | `logger.aia.level` | `--log-level` | `warn` | `AIA_LOGGER__AIA__LEVEL` |
-| `logger.aia.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__AIA__FILE` |
+| `logger.aia.file` | `--log-to` | `STDERR` | `AIA_LOGGER__AIA__FILE` |
 | `logger.llm.level` | `--log-level` | `warn` | `AIA_LOGGER__LLM__LEVEL` |
-| `logger.llm.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__LLM__FILE` |
+| `logger.llm.file` | `--log-to` | `STDERR` | `AIA_LOGGER__LLM__FILE` |
 | `logger.mcp.level` | `--log-level` | `warn` | `AIA_LOGGER__MCP__LEVEL` |
 | `logger.mcp.file` | `--log-to` | `~/.config/aia/logs/mcp.log` | `AIA_LOGGER__MCP__FILE` |
 | `registry.refresh` | `--refresh` | `7` (days) | `AIA_REGISTRY__REFRESH` |

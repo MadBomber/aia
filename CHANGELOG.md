@@ -41,6 +41,7 @@
 
 ### Changed
 
+- **The `aia` and `llm` logs go to stderr by default.** `logger.aia.file` and `logger.llm.file` defaulted to `STDOUT`, and so did a logger with no `file`, so a warning such as `Role file not found` landed at the top of `aia ... > out.txt` or in the next command of a pipe. Both now default to `STDERR`, which keeps standard output for the answer. To get the old behavior, set `logger.aia.file: STDOUT` / `logger.llm.file: STDOUT` (or `AIA_LOGGER__AIA__FILE=STDOUT`), or send every log to a file with `--log-to FILE`. Fixes #240.
 - **`TurnState#clear!` and `#clear_exclusive_flags!` share one body.** The two methods held identical copies of the flag resets, so every new mode flag had to be added to both. `clear!` now calls `clear_exclusive_flags!`. Behavior is unchanged. Fixes #242.
 - **`SpawnHandler` reuses `Crew.model_opts`.** Its private copy of the model/provider override helper was identical to `Crew.model_opts` and is removed; `/spawn` behavior is unchanged. Fixes #181.
 

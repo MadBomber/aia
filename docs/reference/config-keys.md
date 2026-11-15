@@ -142,10 +142,10 @@ aia keeps three logs: `aia` (aia itself), `llm` (requests to the model) and `mcp
 
 | Key | Type | Default | Env |
 |---|---|---|---|
-| `logger.aia.file` | `STDOUT`, `STDERR` or a path | `STDOUT` | `AIA_LOGGER__AIA__FILE` |
+| `logger.aia.file` | `STDOUT`, `STDERR` or a path | `STDERR` | `AIA_LOGGER__AIA__FILE` |
 | `logger.aia.level` | `debug` … `fatal` | `warn` | `AIA_LOGGER__AIA__LEVEL` |
 | `logger.aia.flush` | boolean | `true` | `AIA_LOGGER__AIA__FLUSH` |
-| `logger.llm.file` | as above | `STDOUT` | `AIA_LOGGER__LLM__FILE` |
+| `logger.llm.file` | as above | `STDERR` | `AIA_LOGGER__LLM__FILE` |
 | `logger.llm.level` | as above | `warn` | `AIA_LOGGER__LLM__LEVEL` |
 | `logger.llm.flush` | boolean | `true` | `AIA_LOGGER__LLM__FLUSH` |
 | `logger.mcp.file` | as above | `~/.config/aia/logs/mcp.log` | `AIA_LOGGER__MCP__FILE` |
