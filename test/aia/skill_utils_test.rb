@@ -82,6 +82,16 @@ class SkillUtilsTest < Minitest::Test
     end
   end
 
+  def test_returns_empty_hash_when_front_matter_is_not_a_mapping
+    Dir.mktmpdir do |dir|
+      { 'text.md' => "---\njust a note\n---\n", 'list.md' => "---\n- one\n- two\n---\n" }.each do |name, content|
+        path = File.join(dir, name)
+        File.write(path, content)
+        assert_equal({}, AIA::SkillUtils.parse_front_matter(path), name)
+      end
+    end
+  end
+
   # --- find_skill_dir ---
 
   def test_finds_exact_name_match

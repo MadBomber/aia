@@ -114,7 +114,6 @@ module AIA
 
     def print_skill_entry(dir, skill_id, wrap_width)
       fm = parse_front_matter(File.join(dir, skill_id, 'SKILL.md'))
-      fm = {} unless fm.is_a?(Hash)
       name        = fm['name']        || ''
       description = fm['description'] || '(no description)'
       puts "#{skill_id}: #{name}"
