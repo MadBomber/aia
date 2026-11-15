@@ -11,6 +11,8 @@ module AIA
 
     # :reek:TooManyStatements -- one Reline round-trip: question build, readline, Ctrl+D/empty fallbacks, prompt_proc restore
     def request_variable_value(variable_name:, default_value: nil)
+      return default_or_required(variable_name, default_value) unless terminal?
+
       Reline::HISTORY.clear
 
       question = if default_value.nil?
@@ -26,16 +28,10 @@ module AIA
       begin
         input = Reline.readline(question, true)
 
-        if input.nil? # Ctrl+D
-          return default_value if default_value
-          raise AIA::Error, "Parameter '#{variable_name}' is required."
-        end
+        return default_or_required(variable_name, default_value) if input.nil? # Ctrl+D
 
         value = input.strip
-        if value.empty?
-          return default_value if default_value
-          raise AIA::Error, "Parameter '#{variable_name}' is required."
-        end
+        return default_or_required(variable_name, default_value) if value.empty?
 
         value
       rescue Interrupt
@@ -43,6 +39,18 @@ module AIA
       ensure
         Reline.line_editor.prompt_proc = original_prompt_proc
       end
+    end
+
+    private
+
+    # No terminal to ask (piped stdin with no /dev/tty): fall back to defaults.
+    def terminal?
+      $stdin.tty?
+    end
+
+    def default_or_required(variable_name, default_value)
+      return default_value if default_value
+      raise AIA::Error, "Parameter '#{variable_name}' is required."
     end
   end
 end

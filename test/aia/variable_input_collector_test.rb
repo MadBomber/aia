@@ -6,6 +6,25 @@ require_relative '../../lib/aia'
 class VariableInputCollectorTest < Minitest::Test
   def setup
     @collector = AIA::VariableInputCollector.new
+    @collector.stubs(:terminal?).returns(true)
+  end
+
+  def test_without_terminal_uses_default_without_reading
+    @collector.stubs(:terminal?).returns(false)
+    Reline.expects(:readline).never
+
+    result = @collector.request_variable_value(variable_name: 'who', default_value: 'world')
+    assert_equal 'world', result
+  end
+
+  def test_without_terminal_raises_required_error_when_no_default
+    @collector.stubs(:terminal?).returns(false)
+    Reline.expects(:readline).never
+
+    err = assert_raises(AIA::Error) do
+      @collector.request_variable_value(variable_name: 'who', default_value: nil)
+    end
+    assert_equal "Parameter 'who' is required.", err.message
   end
 
   def test_initialization
