@@ -155,6 +155,25 @@ class ConfigurationDirectivesTest < Minitest::Test
 
   # --- /temperature ---
 
+  def test_temperature_rejects_non_numeric_value
+    real_config = AIA::Config.new
+    AIA.stubs(:config).returns(real_config)
+    original = real_config.llm.temperature
+
+    _, stderr = capture_io { @instance.temperature(['hot']) }
+
+    assert_equal original, real_config.llm.temperature
+    assert_includes stderr, "'temperature' needs a number, got 'hot'"
+  end
+
+  def test_config_rejects_non_numeric_max_tokens
+    @test_config.llm.max_tokens = 4096
+    _, stderr = capture_io { @instance.config(['llm.max_tokens', '=', 'lots']) }
+
+    assert_equal 4096, @test_config.llm.max_tokens
+    assert_includes stderr, "'llm.max_tokens' needs a number, got 'lots'"
+  end
+
   def test_temperature_delegates_to_config
     # temperature prepends 'temperature' to args and calls config
     @instance.expects(:config).with(['temperature', '0.5'], nil)

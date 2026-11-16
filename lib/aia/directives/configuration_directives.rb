@@ -30,6 +30,11 @@ module AIA
                       typed_config_value(config_item, new_value)
                     end
 
+        if new_value.is_a?(String) && numeric_config_key?(config_item)
+          $stderr.puts "Warning: '#{config_item}' needs a number, got '#{new_value}'"
+          return ""
+        end
+
         if write_config_value(config_item, new_value)
           AIA::LoggerManager.reconfigure_levels!
         else
@@ -210,6 +215,16 @@ module AIA
 
       schema_default = AIA::Config.schema.dig(*path)
       AIA::ValueCaster.cast(raw, AIA::ValueCaster.default_for(path.join('.'), schema_default))
+    end
+
+    # True when the key's default is a number, so a value that didn't cast
+    # (still a String) must not be stored.
+    def numeric_config_key?(config_item)
+      path = config_key_path(config_item)
+      return false unless path
+
+      schema_default = AIA::Config.schema.dig(*path)
+      AIA::ValueCaster.default_for(path.join('.'), schema_default).is_a?(Numeric)
     end
 
     # Current value for a /config key, resolving dot-notation and flat CLI

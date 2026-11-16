@@ -65,13 +65,24 @@ module AIA
         if !$stdin.tty? && !$stdin.closed?
           begin
             stdin_content << ("\n" + $stdin.read)
-            $stdin.reopen('/dev/tty')
+            reattach_stdin_to_terminal
           rescue => _
             # If we can't reopen, continue without error
           end
         end
 
         stdin_content
+      end
+
+      # Open /dev/tty before touching $stdin: with no controlling terminal
+      # (cron, CI, ssh without -t) a failed reopen leaves $stdin unusable.
+      def reattach_stdin_to_terminal
+        tty = File.open('/dev/tty')
+      rescue SystemCallError
+        nil
+      else
+        $stdin.reopen(tty)
+        tty.close
       end
 
       def process_prompt_id_from_args(config, remaining_args)
