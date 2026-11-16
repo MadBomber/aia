@@ -125,8 +125,12 @@ module AIA
       # - max_tokens remains a RobotLab::RunConfig field; AIA normalizes it at
       #   the RubyLLM/OpenAI provider boundary for models that need
       #   max_completion_tokens
-      def build_run_config(config)
-        params = llm_params(config)
+      #
+      # @param config [AIA::Config]
+      # @param model_spec [ModelSpec, nil] the model the robot will run; each
+      #   robot in a multi-model network needs its own (defaults to the first)
+      def build_run_config(config, model_spec = config.models.first)
+        params = llm_params(config, model_spec)
         params.merge!(ToolApprover.options(config))
 
         RobotLab::RunConfig.new(**params)
@@ -137,10 +141,10 @@ module AIA
       # Shared by build_run_config and RobotSync, which retunes a running robot.
       #
       # @param config [AIA::Config]
+      # @param model_spec [ModelSpec, nil] the model the params are for (defaults to the first)
       # @return [Hash{Symbol => Numeric}]
       # :reek:TooManyStatements -- one guarded param per LLM tuning knob, with provider-specific max_tokens handling
-      def llm_params(config)
-        model_spec = config.models.first
+      def llm_params(config, model_spec = config.models.first)
         llm        = config.llm
         params     = {}
 

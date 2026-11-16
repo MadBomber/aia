@@ -25,8 +25,9 @@ module AIA
       # :reek:TooManyStatements -- builds three robots, each with its own model and run config
       def build(config, temperature_delta: nil)
         model_a, model_b, reconciler_model = assign_models(config.models)
-        run_config = RobotFactory.build_run_config(config)
-        config_a, config_b = verifier_run_configs(run_config, temperature_delta)
+        run_config = RobotFactory.build_run_config(config, reconciler_model)
+        config_a = verifier_run_config(RobotFactory.build_run_config(config, model_a), temperature_delta, -1)
+        config_b = verifier_run_config(RobotFactory.build_run_config(config, model_b), temperature_delta, 1)
         tools = ToolLoader.filtered_tools(config)
         mcp = RobotFactory.mcp_servers(config)
 
@@ -75,17 +76,15 @@ module AIA
         [first, models[1] || first, models[2] || first]
       end
 
-      # Run configs for verifier-a and verifier-b. The delta is only applied
-      # when the base run config sets a temperature (models that reject
+      # Run config for one verifier, built for that verifier's own model.
+      # +direction+ is -1 (verifier-a) or 1 (verifier-b). The delta is only
+      # applied when the run config sets a temperature (models that reject
       # temperature get none).
-      def verifier_run_configs(run_config, delta)
+      def verifier_run_config(run_config, delta, direction)
         base = run_config.to_h[:temperature]
-        return [run_config, run_config] unless delta && base
+        return run_config unless delta && base
 
-        [
-          run_config.merge(temperature: clamp_temperature(base - delta)),
-          run_config.merge(temperature: clamp_temperature(base + delta))
-        ]
+        run_config.merge(temperature: clamp_temperature(base + (direction * delta)))
       end
 
       def clamp_temperature(value)

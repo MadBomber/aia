@@ -95,7 +95,30 @@ class VerificationNetworkTest < Minitest::Test
     assert_equal [nil, nil, nil], built.map { |b| b[:config].to_h[:temperature] }
   end
 
+  def test_each_robot_gets_a_run_config_for_its_own_model
+    @config.models = [model('warm'), model('cold')]
+    stub_temperature_support('warm' => true, 'cold' => false)
+
+    built = capture_robots(@config, run_config: nil, temperature_delta: 0.3)
+    assert_equal [0.4, nil, 0.7], built.map { |b| b[:config].to_h[:temperature] }
+  end
+
+  def test_delta_reaches_a_second_model_that_accepts_temperature
+    @config.models = [model('cold'), model('warm')]
+    stub_temperature_support('warm' => true, 'cold' => false)
+
+    built = capture_robots(@config, run_config: nil, temperature_delta: 0.3)
+    assert_equal [nil, 1.0, nil], built.map { |b| b[:config].to_h[:temperature] }
+  end
+
   private
+
+  def stub_temperature_support(support)
+    support.each do |name, supported|
+      AIA::RobotFactory.stubs(:model_supports_temperature?)
+                       .with { |spec| spec.name == name }.returns(supported)
+    end
+  end
 
   class FakeDSL
     def task(*) = nil
@@ -108,7 +131,7 @@ class VerificationNetworkTest < Minitest::Test
   def capture_robots(config, run_config: RobotLab::RunConfig.new(temperature: 0.7, max_tokens: 2048),
                      temperature_delta: nil)
     built = []
-    AIA::RobotFactory.stubs(:build_run_config).returns(run_config)
+    AIA::RobotFactory.stubs(:build_run_config).returns(run_config) if run_config
     AIA::ToolLoader.stubs(:filtered_tools).returns([])
     AIA::RobotFactory.stubs(:mcp_servers).returns([])
     AIA::RobotFactory.stubs(:build_robot).with do |model, **opts|

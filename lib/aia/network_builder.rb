@@ -47,12 +47,11 @@ module AIA
     # @param namer [RobotNamer]
     # @return [RobotLab::Network]
     def build_parallel_network(config, namer)
-      run_config = RobotFactory.build_run_config(config)
       tools = ToolLoader.filtered_tools(config)
       mcp = RobotFactory.mcp_servers(config)
       aia_config = config
       roster = config.models.map { |spec| { name: namer.name_for(spec.name), spec: spec } }
-      build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, run_config, aia_config) }
+      build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, aia_config) }
 
       RobotLab.create_network(name: "aia-parallel") do
         roster.each do |entry|
@@ -76,7 +75,7 @@ module AIA
       primary = models.first
       aia_config = config
       roster = models.map { |spec| { name: namer.name_for(spec.name), spec: spec } }
-      build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, run_config, aia_config) }
+      build_robot = ->(entry) { build_roster_robot(entry, roster, tools, mcp, aia_config) }
 
       RobotLab.create_network(name: "aia-consensus") do
         roster.each do |entry|
@@ -97,8 +96,10 @@ module AIA
     end
 
     # Shared helper: builds a single roster robot (used by parallel and consensus networks).
-    # :reek:LongParameterList { max_params: 6 } -- pass-through of the shared per-network build inputs
-    def build_roster_robot(entry, roster, tools, mcp, run_config, aia_config)
+    # Each robot gets a run config built for its own model, so a parameter one
+    # model rejects (e.g. temperature) is left out only for that model.
+    # :reek:LongParameterList { max_params: 5 } -- pass-through of the shared per-network build inputs
+    def build_roster_robot(entry, roster, tools, mcp, aia_config)
       spec = entry[:spec]
       identity = SystemPromptAssembler.build_identity_prompt(entry[:name], spec, roster)
       base_prompt = SystemPromptAssembler.resolve_system_prompt(aia_config, spec)
@@ -109,7 +110,7 @@ module AIA
         system_prompt: system_prompt,
         local_tools:   tools,
         mcp:           mcp,
-        config:        run_config
+        config:        RobotFactory.build_run_config(aia_config, spec)
       )
     end
 
