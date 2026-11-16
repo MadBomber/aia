@@ -2279,6 +2279,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>diff<span class="w"> </span><span class="p">|</span><span class="w"> </span>aia<span class="w"> </span>--no-output<span class="w"> </span>review_diff
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Value<span class="w"> </span><span class="k">for</span><span class="w"> </span>focus<span class="w"> </span><span class="o">(</span>correctness<span class="o">)</span>:<span class="w"> </span>security
 </span></code></pre></div>
+<p>With no terminal at all (cron, CI, <code>ssh host aia ...</code> without <code>-t</code>), AIA can't ask, so it uses each parameter's default and stops with <code>Parameter 'name' is required.</code> for a parameter that has none.</p>
 <div class="admonition note">
 <p class="admonition-title">Answers are not remembered</p>
 <p>AIA doesn't save your answers between runs. If you find yourself typing the same value every time, make it the default in the front matter.</p>
