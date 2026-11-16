@@ -183,6 +183,24 @@ class ValidatorExecutablePromptTest < Minitest::Test
   end
 end
 
+class ValidatorProcessStdinContentTest < Minitest::Test
+  def test_leaves_stdin_alone_when_no_terminal_is_available
+    fake_stdin = mock('stdin')
+    fake_stdin.stubs(:tty?).returns(false)
+    fake_stdin.stubs(:closed?).returns(false)
+    fake_stdin.stubs(:read).returns('piped')
+    fake_stdin.expects(:reopen).never
+    File.expects(:open).with('/dev/tty').raises(Errno::ENXIO)
+
+    original_stdin = $stdin
+    $stdin = fake_stdin
+    content = AIA::ConfigValidator.send(:process_stdin_content)
+    assert_equal "\npiped", content
+  ensure
+    $stdin = original_stdin
+  end
+end
+
 class ValidatorStdinAsPromptTest < Minitest::Test
   def test_stdin_content_becomes_executable_prompt
     config = OpenStruct.new(
