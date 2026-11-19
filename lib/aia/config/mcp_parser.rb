@@ -10,7 +10,6 @@
 #     name: "server_name",
 #     transport: { type: "stdio", command: "npx", args: [...], env: {...} },
 #     timeout: 8000,
-#     topics: ["routing"],     # AIA routing metadata (optional)
 #     group: "services"        # AIA grouping metadata (optional)
 #   }
 #
@@ -86,8 +85,13 @@ module AIA
       # @param file_path [String] original file path (for deriving server name)
       # @return [Array<Hash>] array of server configurations
       def convert_to_config_format(parsed, file_path)
+        unless parsed.is_a?(Hash)
+          warn_config(file_path, "expected a JSON object at the top level, got #{json_type(parsed)}")
+          return []
+        end
+
         if parsed.key?('mcpServers')
-          convert_mcp_servers_format(parsed['mcpServers'])
+          convert_mcp_servers_format(parsed['mcpServers'], file_path)
         else
           convert_simple_format(parsed, file_path)
         end
@@ -96,9 +100,20 @@ module AIA
       # Convert mcpServers format to robot_lab nested transport format
       #
       # @param mcp_servers [Hash] the mcpServers hash from JSON
+      # @param file_path [String] original file path (for warnings)
       # @return [Array<Hash>] array of server configurations
-      def convert_mcp_servers_format(mcp_servers)
-        mcp_servers.map { |name, config| build_server(name, config) }
+      def convert_mcp_servers_format(mcp_servers, file_path)
+        unless mcp_servers.is_a?(Hash)
+          warn_config(file_path, "'mcpServers' must be a JSON object, got #{json_type(mcp_servers)}")
+          return []
+        end
+
+        mcp_servers.filter_map do |name, config|
+          next build_server(name, config) if config.is_a?(Hash)
+
+          $stderr.puts "Warning: Skipping MCP server '#{name}' in '#{file_path}': expected a JSON object, got #{json_type(config)}"
+          nil
+        end
       end
 
       # One server in robot_lab's format. Both JSON forms accept the same keys.
@@ -106,7 +121,8 @@ module AIA
         server = { name: name, transport: build_transport(config) }
         server[:timeout] = config['timeout'].to_i if config['timeout']
         SERVER_KEYS.each { |key| server[key.to_sym] = config[key] if config.key?(key) }
-        server.merge!(routing_metadata(config))
+        server[:group] = config['group'] if config['group'] # AIA-only; read by McpGrouper
+        server
       end
 
       # The transport hash. With no "type", a url means Streamable HTTP and
@@ -124,14 +140,6 @@ module AIA
         transport
       end
 
-      # Routing metadata preserved for KBS/AIA
-      def routing_metadata(config)
-        meta = {}
-        meta[:topics]      = Array(config['topics']) if config['topics']
-        meta[:group]       = config['group'] if config['group']
-        meta
-      end
-
       # Convert simple format to robot_lab nested transport format. The
       # server is named after the file ("filesystem.json" -> "filesystem").
       #
@@ -139,7 +147,29 @@ module AIA
       # @param file_path [String] file path for deriving server name
       # @return [Array<Hash>] array with single server configuration
       def convert_simple_format(parsed, file_path)
+        unless parsed['command'] || parsed['url']
+          warn_config(file_path, "has neither 'mcpServers' nor a 'command' or 'url'. " \
+                                 'Expected {"mcpServers": {...}} or a single server with "command" or "url"')
+          return []
+        end
+
         [build_server(File.basename(file_path, '.*'), parsed)]
+      end
+
+      def warn_config(file_path, message)
+        $stderr.puts "Warning: Skipping MCP config file '#{file_path}': #{message}"
+      end
+
+      # The JSON name for a parsed value's type, for warnings.
+      def json_type(value)
+        case value
+        when Hash              then 'an object'
+        when Array             then 'an array'
+        when String            then 'a string'
+        when Numeric           then 'a number'
+        when true, false       then 'a boolean'
+        else 'null'
+        end
       end
     end
   end

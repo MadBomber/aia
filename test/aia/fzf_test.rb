@@ -42,12 +42,11 @@ class FzfTest < Minitest::Test
   end
 
   def test_default_parameters_constant
-    expected_defaults = %w[
-      --tabstop=2
-      --header-first
-      --prompt='Search term: '
-      --delimiter :
-      --preview-window=down:50%:wrap
+    expected_defaults = [
+      '--tabstop=2',
+      '--header-first',
+      '--delimiter', ':',
+      '--preview-window=down:50%:wrap'
     ]
 
     assert_equal expected_defaults, AIA::Fzf::DEFAULT_PARAMETERS
@@ -67,7 +66,7 @@ class FzfTest < Minitest::Test
     assert_includes joined, '--delimiter'
     assert_includes joined, '--preview-window=down:50%:wrap'
 
-    # Should include header with subject and query (shell-escaped)
+    # Should include header with subject and query 
     header_arg = fzf_args.find { |a| a.start_with?('--header=') }
     refute_nil header_arg
     assert_includes header_arg, 'Test'
@@ -93,8 +92,27 @@ class FzfTest < Minitest::Test
 
     fzf_args = fzf.instance_variable_get(:@fzf_args)
     prompt_args = fzf_args.select { |a| a.start_with?('--prompt=') }
-    # Shellwords.escape handles the special characters; the custom prompt is the last one
+    # The custom prompt is passed through as-is
     assert(prompt_args.any? { |a| a.include?('What') })
+  end
+
+  def test_build_command_passes_header_prompt_and_preview_unescaped
+    fzf = AIA::Fzf.new(list: @list, directory: '/my dir', query: 'q', subject: 'Prompt IDs', prompt: "What's next?")
+    args = fzf.instance_variable_get(:@fzf_args)
+
+    assert_includes args, "--header=Prompt IDs which contain: q\nPress ESC to cancel."
+    assert_includes args, "--prompt=What's next?"
+    assert_includes args, '--preview=cat /my\\ dir/{1}.md'
+    assert_equal 1, args.count { |a| a.start_with?('--prompt=') }
+  end
+
+  def test_real_fzf_accepts_the_arguments
+    fzf = AIA::Fzf.new(list: %w[hello world], directory: Dir.pwd, query: 'he')
+    out, status = Open3.capture2('fzf', *fzf.instance_variable_get(:@fzf_args), '--filter', 'hel',
+                                 stdin_data: fzf.list.join("\n"))
+
+    assert status.success?, "fzf rejected the arguments: #{out}"
+    assert_equal 'hello', out.strip
   end
 
   def test_run_passes_correct_stdin_data

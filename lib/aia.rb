@@ -190,7 +190,7 @@ module AIA
       fail_run(e.message)
     rescue RubyLLM::Error, RubyLLM::ConfigurationError => e
       # An LLM failure that nothing shielded (image generation, provider setup)
-      fail_run("LLM error: #{e.class}: #{e.message}")
+      fail_run(ProviderRegistry.missing_config_hint(e) || "LLM error: #{e.class}: #{e.message}")
     end
 
     private

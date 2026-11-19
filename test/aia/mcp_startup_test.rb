@@ -13,6 +13,8 @@ class MCPStartupTest < Minitest::Test
     @original_stdout = $stdout
     @captured_output = StringIO.new
     $stdout = @captured_output
+    @original_stderr = $stderr
+    $stderr = StringIO.new # keep MCP failure warnings out of test output
 
     AIA::LoggerManager.clear_test_logs!
 
@@ -69,6 +71,7 @@ class MCPStartupTest < Minitest::Test
 
   def teardown
     $stdout = @original_stdout
+    $stderr = @original_stderr
     AIA.mcp_manager = nil
     super
   end

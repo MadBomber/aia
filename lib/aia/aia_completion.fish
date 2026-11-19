@@ -3,33 +3,17 @@
 #
 # Prompt IDs come from $AIA_PROMPTS__DIR, or ~/.prompts when it is unset.
 
-function __fish_aia_complete
-  # Get the command line and current token
-  set -l cmd_line (commandline -opc)
-  set -l current_token (commandline -ct)
-  
-  # Check if we are currently completing the option that requires prompt IDs
-  if set -q cmd_line[2]
-    # Change directory to the prompts directory
-    set -l prompts_dir ~/.prompts
-    set -q AIA_PROMPTS__DIR; and set prompts_dir $AIA_PROMPTS__DIR
-    if test -d $prompts_dir
-      pushd $prompts_dir
-      # Generate completions based on .md files in the prompts directory
-      for file in (find . -name "*.md" -type f)
-        set file (string replace -r '\.md$' '' -- $file)
-        set file (string replace -r '^\./' '' -- $file)
-        printf "%s\n" $file
-      end
-      popd
-    end
-  else
-    # Use the default file completion if we are not completing a prompt ID
-    complete -f -c aia -a "(commandline -ct)"
+function __fish_aia_prompt_ids
+  set -l prompts_dir ~/.prompts
+  set -q AIA_PROMPTS__DIR; and set prompts_dir $AIA_PROMPTS__DIR
+  test -d $prompts_dir; or return
+
+  for file in (cd $prompts_dir; and find . -name "*.md" -type f)
+    set file (string replace -r '\.md$' '' -- $file)
+    string replace -r '^\./' '' -- $file
   end
 end
 
-# Register the completion function for the aia command
-complete -c aia -a '(__fish_aia_complete)' -f
-
-
+# The first argument after aia is a prompt ID; later arguments keep fish's
+# ordinary file completion.
+complete -c aia -n 'test (count (commandline -opc)) -eq 1' -f -a '(__fish_aia_prompt_ids)'

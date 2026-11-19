@@ -35,13 +35,28 @@ class TaskBoardTest < Minitest::Test
   def test_ensure_project_creates_the_project_on_first_use
     TrakFlow.stubs(:initialized?).returns(false).then.returns(true)
     TrakFlow.stubs(:trak_flow_dir).returns("/work/.trak_flow")
+    TrakFlow.stubs(:database_path).returns("/home/.config/trak_flow/tf.db")
     FileUtils.expects(:mkdir_p).with("/work/.trak_flow")
+    FileUtils.expects(:mkdir_p).with("/home/.config/trak_flow")
     db = mock('database')
     db.expects(:connect)
     TrakFlow::Storage::Database.stubs(:new).returns(db)
     TrakFlow.expects(:reset_root!)
 
     assert AIA::TaskBoard.ensure_project!
+  end
+
+  def test_ensure_project_creates_a_missing_database_directory
+    Dir.mktmpdir do |dir|
+      trak_dir = File.join(dir, 'project', '.trak_flow')
+      db_path  = File.join(dir, 'home', '.config', 'trak_flow', 'tf.db')
+      TrakFlow.stubs(:trak_flow_dir).returns(trak_dir)
+      TrakFlow.stubs(:database_path).returns(db_path)
+      TrakFlow.stubs(:reset_root!)
+
+      assert AIA::TaskBoard.ensure_project!
+      assert File.exist?(db_path)
+    end
   end
 
   def test_ensure_project_reports_failures_and_returns_false

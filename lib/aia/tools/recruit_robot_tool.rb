@@ -47,14 +47,9 @@ module AIA
         name:          name,
         model:         parsed_model,
         provider:      provider,
-        skills:        split_skills(skills),
+        skills:        AIA::SkillUtils.split_skills(skills),
         system_prompt: prompt.empty? ? nil : prompt
       }
-    end
-
-    # "security, ruby-style" => ["security", "ruby-style"]
-    def split_skills(skills)
-      skills.to_s.split(',').map(&:strip).reject(&:empty?)
     end
   end
 end

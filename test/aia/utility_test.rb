@@ -179,27 +179,21 @@ class UtilityTest < Minitest::Test
   end
 
   def test_robot_string_interpolation
-    # Save original constants and config values
-    original_aia_version     = AIA::VERSION
-    original_rubyllm_version = RubyLLM::VERSION
-    original_models          = AIA.config.models
-
-    # Override for test
-    AIA.const_set(:VERSION, 'X.Y.Z')
-    RubyLLM.const_set(:VERSION, 'R.L.M')
+    original_models = AIA.config.models
     AIA.config.models = [OpenStruct.new(name: 'my-test-model')]
 
-    AIA::Utility.robot
+    stub_const(AIA, :VERSION, 'X.Y.Z') do
+      stub_const(RubyLLM, :VERSION, 'R.L.M') do
+        AIA::Utility.robot
+      end
+    end
     output = @captured_output.string
 
     # v2 format: "AIA vX.Y.Z is Online"
     assert_includes output, "AIA vX.Y.Z is Online"
     assert_includes output, "ruby_llm vR.L.M"
     assert_includes output, 'my-test-model'
-
-    # Restore originals
-    AIA.const_set(:VERSION, original_aia_version)
-    RubyLLM.const_set(:VERSION, original_rubyllm_version)
+  ensure
     AIA.config.models = original_models
   end
 
@@ -232,8 +226,7 @@ class UtilityTest < Minitest::Test
       failed_mcp_servers: nil
     )
 
-    original_config_method = AIA.method(:config) rescue nil
-    AIA.define_singleton_method(:config) { real_config }
+    AIA.stubs(:config).returns(real_config)
 
     AIA::Utility.stubs(:models_last_refresh).returns('2024-12-26 14:30')
     TTY::Screen.expects(:width).returns(100).at_least_once
@@ -248,24 +241,6 @@ class UtilityTest < Minitest::Test
     assert_includes output, "gpt-4-turbo"
     assert_includes output, "ruby_llm"
     assert_includes output, "2024-12-26"
-  ensure
-    if original_config_method
-      AIA.define_singleton_method(:config, &original_config_method)
-    else
-      AIA.stubs(:config).returns(OpenStruct.new(
-                                   llm: OpenStruct.new(temperature: 0.7),
-                                   models: [OpenStruct.new(name: 'claude-3-sonnet')],
-                                   registry: OpenStruct.new(last_refresh: '2024-01-15'),
-                                   tools: OpenStruct.new(paths: []),
-                                   tool_names: 'calculator, weather_api, file_reader',
-                                   loaded_tools: [],
-                                   mcp_servers: [],
-                                   mcp_use: [],
-                                   mcp_skip: [],
-                                   connected_mcp_servers: nil,
-                                   failed_mcp_servers: nil
-                                 ))
-    end
   end
 
   def test_robot_executes_all_code_paths_without_tools
@@ -343,5 +318,35 @@ class UtilityTest < Minitest::Test
     AIA.config.connected_mcp_servers = %w[fs gh]
     AIA.config.mcp_server_tool_counts = { 'fs' => 14 }
     assert_equal %w[fs(14) gh], AIA::Utility.send(:mcp_client_labels)
+  end
+
+  def test_model_id_of_prefers_model_id
+    msg = OpenStruct.new(model_id: 'claude-sonnet-4', model: 'gpt-4o-mini')
+    assert_equal 'claude-sonnet-4', AIA::Utility.model_id_of(msg)
+  end
+
+  def test_model_id_of_falls_back_to_model
+    assert_equal 'gpt-4o-mini', AIA::Utility.model_id_of(OpenStruct.new(model_id: nil, model: 'gpt-4o-mini'))
+  end
+
+  def test_model_id_of_returns_nil_when_absent
+    assert_nil AIA::Utility.model_id_of(OpenStruct.new(input_tokens: 10))
+  end
+
+  def test_model_id_of_returns_nil_for_nil
+    assert_nil AIA::Utility.model_id_of(nil)
+  end
+
+  private
+
+  # Temporarily replace a constant without "already initialized" warnings
+  def stub_const(mod, name, value)
+    original = mod.const_get(name)
+    mod.send(:remove_const, name)
+    mod.const_set(name, value)
+    yield
+  ensure
+    mod.send(:remove_const, name)
+    mod.const_set(name, original)
   end
 end

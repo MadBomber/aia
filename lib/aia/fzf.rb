@@ -5,12 +5,13 @@ require 'shellwords'
 require 'open3'
 
 class AIA::Fzf
-  DEFAULT_PARAMETERS = %w[
-    --tabstop=2
-    --header-first
-    --prompt='Search term: '
-    --delimiter :
-    --preview-window=down:50%:wrap
+  # Passed to fzf as an argv array (no shell), so each element is one
+  # argument and nothing is quoted.
+  DEFAULT_PARAMETERS = [
+    '--tabstop=2',
+    '--header-first',
+    '--delimiter', ':',
+    '--preview-window=down:50%:wrap'
   ].freeze
 
   attr_reader :list, :directory, :query, :subject, :prompt, :extension, :command
@@ -37,9 +38,11 @@ class AIA::Fzf
     fzf_options = DEFAULT_PARAMETERS.dup
     escaped_dir = Shellwords.escape(directory)
     escaped_ext = Shellwords.escape(extension)
-    fzf_options << "--header=#{Shellwords.escape("#{subject} which contain: #{query}\nPress ESC to cancel.")}"
-    fzf_options << "--preview=#{Shellwords.escape("cat #{escaped_dir}/{1}#{escaped_ext}")}"
-    fzf_options << "--prompt=#{Shellwords.escape(prompt)}"
+    # The preview runs in a shell, so the directory and extension are escaped
+    # there; {1} is left bare for fzf to fill in with the selected item.
+    fzf_options << "--header=#{subject} which contain: #{query}\nPress ESC to cancel."
+    fzf_options << "--preview=cat #{escaped_dir}/{1}#{escaped_ext}"
+    fzf_options << "--prompt=#{prompt}"
 
     @fzf_args = fzf_options
   end

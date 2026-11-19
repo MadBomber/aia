@@ -29,6 +29,7 @@ module AIA
       def clear_cache!            = instance.clear_cache!
       def load_tools(config)      = instance.load_tools(config)
       def require_libs(config)    = instance.require_libs(config)
+      def require_tool_files(config) = instance.require_tool_files(config)
       def filtered_tools(config)  = instance.filtered_tools(config)
       def discover_tools          = instance.discover_tools
       def eager_load_gem_tools    = instance.eager_load_gem_tools
@@ -40,6 +41,7 @@ module AIA
 
     def initialize
       @tool_cache = nil
+      @attempted_tool_files = Set.new
     end
 
     # Clear the cached tool discovery results.
@@ -58,18 +60,7 @@ module AIA
     # :reek:TooManyStatements -- sequential phases: require_libs, tool files, eager loads, discovery cache
     def load_tools(config)
       require_libs(config)
-
-      # Load tool files from paths
-      Array(config.tools&.paths).each do |path|
-        expanded = File.expand_path(path)
-        if File.exist?(expanded)
-          require expanded
-        else
-          $stderr.puts "Warning: Tool file not found: #{path}"
-        end
-      rescue LoadError, StandardError => e
-        $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
-      end
+      require_tool_files(config)
 
       # Eagerly load tools from gems that use zeitwerk lazy loading
       # (e.g., shared_tools provides .load_all_tools for this purpose)
@@ -84,6 +75,24 @@ module AIA
       @tool_cache = tools
       config.loaded_tools = tools
       config.tool_names = tools.map { |t| ToolIntrospection.tool_name(t) }.join(', ')
+    end
+
+    # Require each --tools file. Each path is attempted once per instance:
+    # Kernel#require already skips files that loaded, and this also stops a
+    # file that failed from running (and warning) again on a later call.
+    def require_tool_files(config)
+      Array(config.tools&.paths).each do |path|
+        expanded = File.expand_path(path)
+        next unless @attempted_tool_files.add?(expanded)
+
+        if File.exist?(expanded)
+          require expanded
+        else
+          $stderr.puts "Warning: Tool file not found: #{path}"
+        end
+      rescue LoadError, StandardError => e
+        $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
+      end
     end
 
     # Require each --require library, activating an unbundled gem first when

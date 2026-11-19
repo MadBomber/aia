@@ -100,6 +100,19 @@ class ChatLoopREPLTest < Minitest::Test
     @chat_loop.start
   end
 
+  def test_failing_directive_reports_error_and_keeps_the_session_going
+    @ui.stubs(:ask_question).returns("/include /no/such/file.md", "/clear", "")
+    @directive_processor.stubs(:directive?).returns(true)
+    @directive_processor.stubs(:process).with("/include /no/such/file.md", nil)
+                        .raises(Errno::ENOENT, "/no/such/file.md")
+    @directive_processor.expects(:process).with("/clear", nil).returns(nil)
+    @directive_processor.stubs(:state_setting?).with("/clear").returns(true)
+    @ui.expects(:display_info).with(regexp_matches(%r{Errno::ENOENT: .*/no/such/file\.md})).once
+    @streaming_runner.expects(:run).never
+
+    @chat_loop.start
+  end
+
   def test_known_directive_nil_output_does_not_send_to_robot
     @ui.stubs(:ask_question).returns("/clear", "")
     @directive_processor.stubs(:directive?).with("/clear").returns(true)
@@ -154,7 +167,6 @@ class ChatLoopREPLTest < Minitest::Test
 
     @streaming_runner.stubs(:run).returns([result, nil, 0.5])
     @chat_loop.stubs(:present_result)
-    AIA.turn_state.stubs(:active_mcp_servers=)
 
     @tool_filter_strategy.expects(:resolve).with("what is Ruby?").returns(nil).once
     @chat_loop.start
@@ -173,7 +185,6 @@ class ChatLoopREPLTest < Minitest::Test
     @tool_filter_strategy.stubs(:resolve).returns(["tool_a"])
     @streaming_runner.expects(:run).with(@robot, "write a haiku", tools: ["tool_a"]).returns([result, nil, 0.3])
     @chat_loop.stubs(:present_result)
-    AIA.turn_state.stubs(:active_mcp_servers=)
 
     @chat_loop.start
   end

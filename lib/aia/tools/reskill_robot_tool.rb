@@ -26,19 +26,12 @@ module AIA
       prompt = system_prompt.to_s.strip
       robot = AIA::Crew.reskill(
         name,
-        skills:        split_skills(skills),
+        skills:        AIA::SkillUtils.split_skills(skills),
         system_prompt: prompt.empty? ? nil : prompt
       )
       "Reset '#{robot.name}' to a clean slate with its new role. Address it with @#{robot.name}."
     rescue AIA::CrewError => e
       "Could not reskill '#{name}': #{e.message}"
-    end
-
-    private
-
-    # "testing, performance" => ["testing", "performance"]
-    def split_skills(skills)
-      skills.to_s.split(',').map(&:strip).reject(&:empty?)
     end
   end
 end

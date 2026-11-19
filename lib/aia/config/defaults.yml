@@ -155,11 +155,11 @@ defaults:
   # ---------------------------------------------------------------------------
   logger:
     aia:
-      file: STDOUT
+      file: STDERR
       level: warn
       flush: true
     llm:
-      file: STDOUT
+      file: STDERR
       level: warn
       flush: true
     # MCP connection logging goes to a file so warnings never interleave

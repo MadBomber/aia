@@ -6,6 +6,7 @@ require_relative '../test_helper'
 require_relative '../../lib/aia'
 
 class SessionTrackerTest < Minitest::Test
+  include LLMResultFactory
   def setup
     @tracker = AIA::SessionTracker.new
   end
@@ -96,15 +97,8 @@ class SessionTrackerTest < Minitest::Test
     assert_equal 0, turn[:elapsed]
   end
 
-  def test_record_turn_extracts_from_raw_attribute
-    raw = mock('raw_message')
-    raw.stubs(:input_tokens).returns(100)
-    raw.stubs(:output_tokens).returns(50)
-
-    result = mock('result')
-    result.stubs(:raw).returns(raw)
-    result.stubs(:output).returns([])
-    result.stubs(:robot_name).returns('gpt-4o-mini')
+  def test_record_turn_extracts_tokens_from_robot_result
+    result = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark')
 
     @tracker.record_turn(model: "gpt-4o-mini", input: "test", result: result)
 
@@ -112,6 +106,17 @@ class SessionTrackerTest < Minitest::Test
     assert_equal 100, turn[:input_tokens]
     assert_equal 50, turn[:output_tokens]
     assert_equal 150, turn[:tokens]
+  end
+
+  def test_record_turn_prices_by_the_raw_model_id
+    result = robot_result(input_tokens: 1_000_000, output_tokens: 1_000_000, model_id: 'gpt-4o', robot_name: 'Spark')
+    AIA::CostCalculator.expects(:calculate)
+      .with(model_id: 'gpt-4o', input_tokens: 1_000_000, output_tokens: 1_000_000)
+      .returns(available: true, total_cost: 12.5)
+
+    @tracker.record_turn(model: "gpt-4o", input: "test", result: result)
+
+    assert_in_delta 12.5, @tracker.turns.first[:cost], 0.0001
   end
 
   def test_record_turn_records_decisions_when_provided
@@ -367,11 +372,9 @@ class SessionTrackerTest < Minitest::Test
   # =========================================================================
 
   def test_record_turn_expands_network_result_into_per_robot_entries
-    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4')
-    raw_b = OpenStruct.new(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini')
 
-    robot_a = OpenStruct.new(raw: raw_a, robot_name: 'Lyric', duration: 4.2, reply: 'Response A')
-    robot_b = OpenStruct.new(raw: raw_b, robot_name: 'Spark', duration: 2.1, reply: 'Response B')
+    robot_a = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4', robot_name: 'Lyric', duration: 4.2, reply: 'Response A')
+    robot_b = robot_result(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 2.1, reply: 'Response B')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { lyric: robot_a, spark: robot_b }
@@ -396,8 +399,7 @@ class SessionTrackerTest < Minitest::Test
   end
 
   def test_record_turn_network_skips_run_params
-    raw = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
-    robot = OpenStruct.new(raw: raw, robot_name: 'Spark', duration: 1.0)
+    robot = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 1.0)
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { run_params: { message: 'test' }, spark: robot }
@@ -410,8 +412,7 @@ class SessionTrackerTest < Minitest::Test
   end
 
   def test_record_turn_network_falls_back_to_robot_name_when_no_model_id
-    raw = OpenStruct.new(input_tokens: 100, output_tokens: 50)
-    robot = OpenStruct.new(raw: raw, robot_name: 'Slate', duration: 5.0, reply: 'text')
+    robot = robot_result(input_tokens: 100, output_tokens: 50, robot_name: 'Slate', duration: 5.0, reply: 'text')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { slate: robot }
@@ -427,17 +428,9 @@ class SessionTrackerTest < Minitest::Test
   # =========================================================================
 
   def test_record_turn_network_stores_similarity_scores
-    raw_a = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4')
-    raw_b = OpenStruct.new(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini')
 
-    robot_a = OpenStruct.new(
-      raw: raw_a, robot_name: 'Lyric', duration: 4.2,
-      reply: 'Ruby is a dynamic programming language focused on simplicity.'
-    )
-    robot_b = OpenStruct.new(
-      raw: raw_b, robot_name: 'Spark', duration: 2.1,
-      reply: 'Ruby is a dynamic programming language that focuses on simplicity.'
-    )
+    robot_a = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'claude-sonnet-4', robot_name: 'Lyric', duration: 4.2, reply: 'Ruby is a dynamic programming language focused on simplicity.')
+    robot_b = robot_result(input_tokens: 200, output_tokens: 80, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 2.1, reply: 'Ruby is a dynamic programming language that focuses on simplicity.')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { lyric: robot_a, spark: robot_b }
@@ -452,8 +445,7 @@ class SessionTrackerTest < Minitest::Test
   end
 
   def test_record_turn_network_single_robot_has_no_similarity
-    raw = OpenStruct.new(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini')
-    robot = OpenStruct.new(raw: raw, robot_name: 'Spark', duration: 1.0, reply: 'text')
+    robot = robot_result(input_tokens: 100, output_tokens: 50, model_id: 'gpt-4o-mini', robot_name: 'Spark', duration: 1.0, reply: 'text')
 
     flow_result = SimpleFlow::Result.new(
       :ok, context: { spark: robot }
@@ -466,17 +458,7 @@ class SessionTrackerTest < Minitest::Test
 
   private
 
-  # Build a mock LLM result with token counts that SessionTracker can extract.
-  # Mirrors the structure expected by SessionTracker#extract_metrics.
   def build_mock_result(input_tokens: 0, output_tokens: 0)
-    last_msg = mock('last_message')
-    last_msg.stubs(:input_tokens).returns(input_tokens)
-    last_msg.stubs(:output_tokens).returns(output_tokens)
-
-    output = [last_msg]
-
-    result = mock('result')
-    result.stubs(:output).returns(output)
-    result
+    robot_result(input_tokens: input_tokens, output_tokens: output_tokens)
   end
 end

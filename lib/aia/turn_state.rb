@@ -11,7 +11,7 @@
 # clears it. The force_* flags are read-only from outside.
 
 module AIA
-  # :reek:TooManyInstanceVariables -- one boolean flag per exclusive mode plus spawn/mcp details; a Hash would lose the attr_accessor API
+  # :reek:TooManyInstanceVariables -- one boolean flag per exclusive mode plus spawn details; a Hash would lose the attr_accessor API
   class TurnState
     # Exclusive mode flags — only one may be active at a time via #request.
     EXCLUSIVE_MODES = %i[
@@ -20,10 +20,7 @@ module AIA
 
     attr_reader :force_verify, :force_decompose, :force_concurrent_mcp,
                 :force_debate, :force_delegate, :force_spawn, :spawn_type,
-                :spawn_spec, :force_orchestrate
-
-    # Per-turn MCP server filter; not an exclusive mode.
-    attr_accessor :active_mcp_servers
+                :spawn_spec, :force_orchestrate, :verify_delta
 
     def initialize
       clear!
@@ -36,8 +33,9 @@ module AIA
     # @param mode [Symbol] one of EXCLUSIVE_MODES
     # @param type [String, nil] specialist type (only relevant for :spawn)
     # @param spec [Hash, nil] explicit specialist spec (only relevant for :spawn)
+    # @param delta [Numeric, nil] verifier temperature delta (only relevant for :verify)
     # @raise [ArgumentError] if mode is not one of EXCLUSIVE_MODES
-    def request(mode, type: nil, spec: nil)
+    def request(mode, type: nil, spec: nil, delta: nil)
       unless EXCLUSIVE_MODES.include?(mode)
         raise ArgumentError, "Unknown TurnState mode: #{mode.inspect}. Valid: #{EXCLUSIVE_MODES.join(', ')}"
       end
@@ -46,6 +44,7 @@ module AIA
 
       case mode
       when :verify         then @force_verify = true
+                                @verify_delta = delta
       when :decompose      then @force_decompose = true
       when :concurrent_mcp then @force_concurrent_mcp = true
       when :debate         then @force_debate          = true
@@ -59,12 +58,12 @@ module AIA
 
     # Take the active mode for handling and clear it.
     #
-    # @return [Hash, nil] { mode:, spawn_type:, spawn_spec: }, or nil when no mode is active
+    # @return [Hash, nil] { mode:, spawn_type:, spawn_spec:, verify_delta: }, or nil when no mode is active
     def consume!
       mode = active_mode
       return nil unless mode
 
-      taken = { mode: mode, spawn_type: @spawn_type, spawn_spec: @spawn_spec }
+      taken = { mode: mode, spawn_type: @spawn_type, spawn_spec: @spawn_spec, verify_delta: @verify_delta }
       clear_exclusive_flags!
       taken
     end
@@ -76,18 +75,8 @@ module AIA
       clear_exclusive_flags! if active_mode == mode
     end
 
-    def clear!
-      @force_verify        = false
-      @force_decompose     = false
-      @force_concurrent_mcp = false
-      @force_debate        = false
-      @force_delegate      = false
-      @force_spawn         = false
-      @spawn_type          = nil
-      @spawn_spec          = nil
-      @force_orchestrate   = false
-      @active_mcp_servers  = nil
-    end
+    # Clear every mode flag and its details.
+    def clear! = clear_exclusive_flags!
 
     # Returns which exclusive mode is currently active, or nil if none.
     def active_mode
@@ -113,6 +102,7 @@ module AIA
       @spawn_type           = nil
       @spawn_spec           = nil
       @force_orchestrate    = false
+      @verify_delta         = nil
     end
   end
 end

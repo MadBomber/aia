@@ -114,4 +114,32 @@ class PluginLoaderTest < Minitest::Test
     refute_includes Array(@config.loaded_plugins), 'broken'
     assert_match(/Failed to load plugin/, err)
   end
+
+  def test_partial_first_load_removes_methods_defined_before_the_error
+    path = File.join(@tmpdir, 'partial.rb')
+    File.write(path, "def aia_test_partial = 1\nraise 'x'\n")
+
+    _out, err = capture_io { @result = AIA::PluginLoader.load_file(path, @config) }
+
+    assert_nil @result
+    assert_match(/Failed to load plugin/, err)
+    refute Object.private_method_defined?(:aia_test_partial, false)
+    refute_includes AIA::PluginLoader.loaded_names, 'partial'
+  end
+
+  def test_failed_reload_forgets_plugin_and_removes_partial_definitions
+    path = File.join(@tmpdir, 'reloaded.rb')
+    File.write(path, "def aia_test_old = 1\n")
+    AIA::PluginLoader.load_file(path, @config)
+    assert_includes @config.loaded_plugins, 'reloaded'
+
+    File.write(path, "def aia_test_new = 2\nraise 'x'\n")
+    capture_io { @result = AIA::PluginLoader.load_file(path, @config) }
+
+    assert_nil @result
+    refute Object.private_method_defined?(:aia_test_old, false)
+    refute Object.private_method_defined?(:aia_test_new, false)
+    refute_includes AIA::PluginLoader.loaded_names, 'reloaded'
+    refute_includes Array(@config.loaded_plugins), 'reloaded'
+  end
 end

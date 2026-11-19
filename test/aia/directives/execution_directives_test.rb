@@ -122,6 +122,22 @@ class ExecutionDirectivesTest < Minitest::Test
   def test_verify_sets_turn_state_flag
     @instance.verify([])
     assert_equal true, AIA.turn_state.force_verify
+    assert_nil AIA.turn_state.verify_delta
+  end
+
+  def test_verify_with_delta_records_it
+    result = @instance.verify(['0.3'])
+    assert_equal true, AIA.turn_state.force_verify
+    assert_in_delta 0.3, AIA.turn_state.verify_delta
+    assert_match(/0\.3/, result)
+  end
+
+  def test_verify_rejects_invalid_delta
+    %w[abc -0.2].each do |arg|
+      result = @instance.verify([arg])
+      assert_match(/Usage: \/verify/, result)
+      assert_equal false, AIA.turn_state.force_verify
+    end
   end
 
   def test_decompose_sets_turn_state_flag

@@ -154,12 +154,6 @@ class TurnStateTest < Minitest::Test
     assert_nil @ts.spawn_type
   end
 
-  def test_clear_resets_active_mcp_servers
-    @ts.active_mcp_servers = [:server_a]
-    @ts.clear!
-    assert_nil @ts.active_mcp_servers
-  end
-
   # ---------------------------------------------------------------------------
   # consume! / clear_mode
   # ---------------------------------------------------------------------------
@@ -177,22 +171,27 @@ class TurnStateTest < Minitest::Test
 
   def test_consume_returns_active_mode_and_clears_it
     @ts.request(:debate)
-    assert_equal({ mode: :debate, spawn_type: nil, spawn_spec: nil }, @ts.consume!)
+    assert_equal({ mode: :debate, spawn_type: nil, spawn_spec: nil, verify_delta: nil }, @ts.consume!)
     assert_nil @ts.active_mode
   end
 
   def test_consume_returns_spawn_details_and_clears_them
     @ts.request(:spawn, type: "analyst")
-    assert_equal({ mode: :spawn, spawn_type: "analyst", spawn_spec: nil }, @ts.consume!)
+    assert_equal({ mode: :spawn, spawn_type: "analyst", spawn_spec: nil, verify_delta: nil }, @ts.consume!)
     assert_nil @ts.spawn_type
     refute @ts.force_spawn
   end
 
-  def test_consume_leaves_active_mcp_servers_alone
-    @ts.active_mcp_servers = [:server_a]
-    @ts.request(:verify)
-    @ts.consume!
-    assert_equal [:server_a], @ts.active_mcp_servers
+  def test_consume_returns_verify_delta_and_clears_it
+    @ts.request(:verify, delta: 0.2)
+    assert_equal 0.2, @ts.consume![:verify_delta]
+    assert_nil @ts.verify_delta
+  end
+
+  def test_requesting_another_mode_drops_verify_delta
+    @ts.request(:verify, delta: 0.2)
+    @ts.request(:debate)
+    assert_nil @ts.verify_delta
   end
 
   def test_clear_mode_clears_matching_active_mode

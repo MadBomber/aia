@@ -28,6 +28,12 @@ class UtilityDirectivesTest < Minitest::Test
     super
   end
 
+  # --- wage_for ---
+
+  def test_wage_for_reads_ruby_llm_2_prices
+    assert_equal "$0.0025 in / $0.0100 out per 1K tokens", @instance.send(:wage_for, "gpt-4o")
+  end
+
   # --- /tools ---
 
   def test_tools_with_no_tools_loaded
@@ -50,6 +56,27 @@ class UtilityDirectivesTest < Minitest::Test
     assert_includes output, "Available Tools"
     assert_includes output, "calculator"
     assert_includes output, "calculator tool"
+  end
+
+  def test_tools_lists_tool_without_description_and_ignores_argv
+    mock_tool = mock('tool')
+    mock_tool.stubs(:name).returns('silent_tool')
+    mock_tool.stubs(:description).returns(nil)
+    @test_config.loaded_tools = [mock_tool]
+
+    saved_argv = ARGV.dup
+    [[], ['aia_test_argv_prompt']].each do |argv|
+      ARGV.replace(argv)
+      @captured_output.truncate(0)
+      @captured_output.rewind
+
+      assert_equal '', @instance.tools([])
+      output = @captured_output.string
+      assert_includes output, 'silent_tool'
+      refute_includes output, 'aia_test_argv_prompt'
+    end
+  ensure
+    ARGV.replace(saved_argv)
   end
 
   def test_tools_filters_by_name

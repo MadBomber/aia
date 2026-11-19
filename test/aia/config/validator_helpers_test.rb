@@ -235,9 +235,10 @@ class ValidatorHelpersTest < Minitest::Test
 
   def test_dump_config_unsupported_format
     config = OpenStruct.new(setting: 'value')
-    assert_raises(RuntimeError) do
+    error = assert_raises(AIA::ConfigurationError) do
       AIA::ConfigValidator.send(:dump_config, config, '/tmp/config.txt')
     end
+    assert_match(/Unsupported config file format: \.txt/, error.message)
   end
 
   # =========================================================================

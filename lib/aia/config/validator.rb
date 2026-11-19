@@ -65,13 +65,24 @@ module AIA
         if !$stdin.tty? && !$stdin.closed?
           begin
             stdin_content << ("\n" + $stdin.read)
-            $stdin.reopen('/dev/tty')
+            reattach_stdin_to_terminal
           rescue => _
             # If we can't reopen, continue without error
           end
         end
 
         stdin_content
+      end
+
+      # Open /dev/tty before touching $stdin: with no controlling terminal
+      # (cron, CI, ssh without -t) a failed reopen leaves $stdin unusable.
+      def reattach_stdin_to_terminal
+        tty = File.open('/dev/tty')
+      rescue SystemCallError
+        nil
+      else
+        $stdin.reopen(tty)
+        tty.close
       end
 
       def process_prompt_id_from_args(config, remaining_args)
@@ -193,6 +204,7 @@ module AIA
           role = "#{roles_prefix}/#{role}"
           prompts.role = role
         end
+        validate_role(config, role)
 
         return if config.flags&.chat == true
 
@@ -200,6 +212,15 @@ module AIA
         config.prompt_id = role
         config.pipeline.prepend(role)
         prompts.role = ''
+      end
+
+      # A --role must exist, like a -m MODEL=ROLE role. With --fuzzy a
+      # missing role is left to the fzf role picker.
+      def validate_role(config, role)
+        return if config.flags&.fuzzy == true
+
+        prompts = config.prompts
+        AIA::RoleCatalog.validate!(role, dir: prompts.dir, prefix: prompts.roles_prefix, extname: prompts.extname)
       end
 
       def validate_plugins_dir(config)
@@ -381,16 +402,7 @@ module AIA
       end
 
       def require_tool_files(config)
-        Array(config.tools&.paths).each do |path|
-          expanded = File.expand_path(path)
-          if File.exist?(expanded)
-            require expanded
-          else
-            $stderr.puts "Warning: Tool file not found: #{path}"
-          end
-        rescue LoadError, StandardError => e
-          $stderr.puts "Warning: Failed to load tool '#{path}': #{e.message}"
-        end
+        AIA::ToolLoader.require_tool_files(config)
       end
 
       # Canonical --list-skills handler. Runs after config is built (so a -c
@@ -524,10 +536,14 @@ module AIA
                     require 'yaml'
                     YAML.dump(config_hash.transform_keys(&:to_s))
                   else
-                    raise "Unsupported config file format: #{ext}. Use .yml or .yaml"
+                    raise ConfigurationError, "Unsupported config file format: #{ext}. Use .yml or .yaml"
                   end
 
-        File.write(file, content)
+        begin
+          File.write(file, content)
+        rescue SystemCallError => e
+          raise ConfigurationError, "Cannot write config dump to #{file}: #{e.message}"
+        end
         puts "Config successfully dumped to #{file}"
       end
     end

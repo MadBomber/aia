@@ -305,16 +305,13 @@ module AIA
         return
       end
 
-      raw = result.respond_to?(:raw) ? result.raw : nil
-      return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+      usage = Utility.token_usage(result)
+      return unless usage
 
-      model_id = (raw.respond_to?(:model_id) && raw.model_id) ||
-                 (raw.respond_to?(:model) && raw.model) ||
-                 config.models.first.name
       @ui.display_token_metrics(
-        model_id:      model_id,
-        input_tokens:  raw.input_tokens,
-        output_tokens: raw.output_tokens
+        model_id:      usage[:model_id] || config.models.first.name,
+        input_tokens:  usage[:input_tokens],
+        output_tokens: usage[:output_tokens]
       )
     end
 
@@ -322,20 +319,15 @@ module AIA
       metrics_list = []
       flow_result.context.each do |task_name, robot_result|
         next if task_name == :run_params
-        next unless robot_result.respond_to?(:raw)
+        usage = Utility.token_usage(robot_result)
+        next unless usage
 
-        raw = robot_result.raw
-        next unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
-
-        model_id = (raw.respond_to?(:model_id) && raw.model_id) ||
-                   (raw.respond_to?(:model) && raw.model) ||
-                   task_name.to_s
         display_name = robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
         metrics_list << {
-          model_id:      model_id,
+          model_id:      usage[:model_id] || task_name.to_s,
           display_name:  display_name,
-          input_tokens:  raw.input_tokens || 0,
-          output_tokens: raw.output_tokens || 0,
+          input_tokens:  usage[:input_tokens],
+          output_tokens: usage[:output_tokens],
           elapsed:       robot_result.respond_to?(:duration) ? robot_result.duration : nil
         }
       end

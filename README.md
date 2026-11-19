@@ -53,19 +53,26 @@ For more information on AIA visit these locations:
    brew install fzf
    ```
 
-3. **Create your first prompt:**
+3. **Set an API key** for at least one provider (in your `~/.bashrc`, `~/.zshrc` or equivalent):
+   ```bash
+   export OPENAI_API_KEY="sk-..."
+   # or ANTHROPIC_API_KEY, GEMINI_API_KEY, ...
+   ```
+   See [Connect a model provider](docs/getting-started/installation.md#connect-a-model-provider) for the full list of supported variables.
+
+4. **Create your first prompt:**
    ```bash
    mkdir -p ~/.prompts
    echo "What is [TOPIC]?" > ~/.prompts/what_is.md
    ```
 
-4. **Run your prompt:**
+5. **Run your prompt:**
    ```bash
    aia what_is
    ```
    You'll be prompted to enter a value for `[TOPIC]`, then AIA will send your question to the AI model.
 
-5. **Start an interactive chat:**
+6. **Start an interactive chat:**
    ```bash
    aia --chat
 
@@ -99,7 +106,7 @@ One of AIA's most powerful features is the ability to send a single prompt to mu
 
 ```bash
 # Compare responses from 3 models with token counts and cost estimates
-aia --chat -m gpt-4o,claude-3-5-sonnet,gemini-1.5-pro --tokens --cost
+aia --chat -m gpt-4o,claude-sonnet-4-6,gemini-2.5-pro --tokens --cost
 ```
 
 **Example output:**
@@ -109,18 +116,18 @@ You: What's the best approach for handling database migrations in a microservice
 from: gpt-4o
 Use a versioned migration strategy with backward compatibility...
 
-from: claude-3-5-sonnet
+from: claude-sonnet-4-6
 Consider the Expand-Contract pattern for zero-downtime migrations...
 
-from: gemini-1.5-pro
+from: gemini-2.5-pro
 Implement a schema registry with event-driven synchronization...
 
 ┌─────────────────────────────────────────────────────────────────┐
 │ Model               │ Input Tokens │ Output Tokens │ Cost      │
 ├─────────────────────────────────────────────────────────────────┤
 │ gpt-4o              │ 156          │ 342           │ $0.0089   │
-│ claude-3-5-sonnet   │ 156          │ 418           │ $0.0063   │
-│ gemini-1.5-pro      │ 156          │ 387           │ $0.0041   │
+│ claude-sonnet-4-6   │ 156          │ 418           │ $0.0063   │
+│ gemini-2.5-pro      │ 156          │ 387           │ $0.0041   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -404,7 +411,6 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `flags.speak` | `--speak` | `false` | `AIA_FLAGS__SPEAK` |
 | `flags.shell` | | `true` | `AIA_FLAGS__SHELL` |
 | `flags.erb` | | `true` | `AIA_FLAGS__ERB` |
-| `flags.clear` | `--clear` | `false` | `AIA_FLAGS__CLEAR` |
 | `flags.no_mcp` | `--no-mcp` | `false` | `AIA_FLAGS__NO_MCP` |
 
 **Model & LLM Parameters:**
@@ -413,8 +419,8 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 |-------------|-------------|---------|---------------------|
 | `models` | `-m`, `--model` | `gpt-4o-mini` | `AIA_MODEL` |
 | `llm.temperature` | `-t`, `--temperature` | `0.7` | `AIA_LLM__TEMPERATURE` |
-| `llm.max_tokens` | `--max-tokens` | `2048` | `AIA_LLM__MAX_TOKENS` |
-| `llm.top_p` | `--top-p` | `1.0` | `AIA_LLM__TOP_P` |
+| `llm.max_tokens` | `--max-tokens` | `32767` | `AIA_LLM__MAX_TOKENS` |
+| `llm.top_p` | `--top-p` | `~` (unset) | `AIA_LLM__TOP_P` |
 | `llm.frequency_penalty` | `--frequency-penalty` | `0.0` | `AIA_LLM__FREQUENCY_PENALTY` |
 | `llm.presence_penalty` | `--presence-penalty` | `0.0` | `AIA_LLM__PRESENCE_PENALTY` |
 
@@ -425,7 +431,6 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `prompts.dir` | `--prompts-dir` | `~/.prompts` | `AIA_PROMPTS__DIR` |
 | `prompts.extname` | | `.md` | `AIA_PROMPTS__EXTNAME` |
 | `prompts.roles_prefix` | `--roles-prefix` | `roles` | `AIA_PROMPTS__ROLES_PREFIX` |
-| `prompts.roles_dir` | | `~/.prompts/roles` | `AIA_PROMPTS__ROLES_DIR` |
 | `prompts.role` | `-r`, `--role` | | `AIA_PROMPTS__ROLE` |
 | `prompts.system_prompt` | `--system-prompt` | | `AIA_PROMPTS__SYSTEM_PROMPT` |
 | `pipeline` | `-p`, `--pipeline` | `[]` | |
@@ -437,10 +442,9 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 |-------------|-------------|---------|---------------------|
 | `output.file` | `-o`, `--[no-]output` | `temp.md` | `AIA_OUTPUT__FILE` |
 | `output.append` | `-a`, `--[no-]append` | `false` | `AIA_OUTPUT__APPEND` |
-| `output.markdown` | `--md`, `--[no-]markdown` | `true` | `AIA_OUTPUT__MARKDOWN` |
 | `output.history_file` | `--history-file` | `~/.prompts/_prompts.log` | `AIA_OUTPUT__HISTORY_FILE` |
 | `paths.aia_dir` | | `~/.config/aia` | `AIA_PATHS__AIA_DIR` |
-| `paths.config_file` | `-c`, `--config-file` | `~/.config/aia/aia.yml` | `AIA_PATHS__CONFIG_FILE` |
+| | `-c`, `--config-file` | | |
 
 **Audio & Image:**
 
@@ -453,7 +457,6 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | `image.size` | `--is`, `--image-size` | `1024x1024` | `AIA_IMAGE__SIZE` |
 | `image.quality` | `--iq`, `--image-quality` | `standard` | `AIA_IMAGE__QUALITY` |
 | `image.style` | `--style`, `--image-style` | `vivid` | `AIA_IMAGE__STYLE` |
-| `embedding.model` | | `text-embedding-ada-002` | `AIA_EMBEDDING__MODEL` |
 
 **Tools & MCP:**
 
@@ -474,11 +477,11 @@ The configuration schema is defined in [defaults.yml](lib/aia/config/defaults.ym
 | Config Path | CLI Options | Default | Environment Variable |
 |-------------|-------------|---------|---------------------|
 | `logger.aia.level` | `--log-level` | `warn` | `AIA_LOGGER__AIA__LEVEL` |
-| `logger.aia.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__AIA__FILE` |
+| `logger.aia.file` | `--log-to` | `STDERR` | `AIA_LOGGER__AIA__FILE` |
 | `logger.llm.level` | `--log-level` | `warn` | `AIA_LOGGER__LLM__LEVEL` |
-| `logger.llm.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__LLM__FILE` |
+| `logger.llm.file` | `--log-to` | `STDERR` | `AIA_LOGGER__LLM__FILE` |
 | `logger.mcp.level` | `--log-level` | `warn` | `AIA_LOGGER__MCP__LEVEL` |
-| `logger.mcp.file` | `--log-to` | `STDOUT` | `AIA_LOGGER__MCP__FILE` |
+| `logger.mcp.file` | `--log-to` | `~/.config/aia/logs/mcp.log` | `AIA_LOGGER__MCP__FILE` |
 | `registry.refresh` | `--refresh` | `7` (days) | `AIA_REGISTRY__REFRESH` |
 
 **Utility:**
@@ -515,7 +518,7 @@ Directives are special commands in prompt files and chat sessions that begin wit
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
 | `/include` | | Insert file contents | `/include path/to/file.txt` |
-| `/paste` | | Insert clipboard contents | `/paste` |
+| `/paste` | `/clipboard` | Insert clipboard contents | `/paste` |
 | `/webpage` | `/web`, `/website` | Fetch and insert a webpage's text content | `/webpage https://example.com` |
 | `/skill` | | Include an AIA skill from the skills directory | `/skill code-quality` |
 | `/skills` | | List available AIA skills (supports search terms) | `/skills ruby -test` |
@@ -524,16 +527,17 @@ Directives are special commands in prompt files and chat sessions that begin wit
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
-| `/ruby` | `/rb` | Execute Ruby code | `/ruby puts "Hello World"` |
-| `/shell` | | Execute a shell command | `/shell ls -la` |
+| `/ruby` | `/rb` | Execute Ruby code (disabled by default; see note) | `/ruby puts "Hello World"` |
 | `/say` | | Speak a string via text-to-speech | `/say Hello there` |
 | `/concurrent` | `/conc` | Enable concurrent MCP for the next prompt | `/concurrent` |
+
+> **Note:** `/ruby` (and `/rb`) is disabled by default because it executes arbitrary Ruby with full process privileges. Enable it by passing `--allow-ruby-eval` or by setting `flags: { allow_ruby_eval: true }` in `~/.config/aia/aia.yml`. When disabled, the directive prints an error and runs nothing.
 
 #### Agent Orchestration
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
-| `/verify` | | Two independent answers + reconciliation | `/verify` |
+| `/verify` | | Two independent answers + reconciliation; optional temperature delta spreads the verifiers; uses up to three configured models | `/verify 0.3` |
 | `/decompose` | | Decompose prompt into **fully independent**, concurrent sub-tasks; runs normally if tasks cannot all run in parallel | `/decompose` |
 | `/debate` | | Multi-round debate between robots | `/debate` |
 | `/spawn` | | Spawn a specialist robot for a domain-specific question | `/spawn ruby-expert` |
@@ -541,10 +545,10 @@ Directives are special commands in prompt files and chat sessions that begin wit
 
 #### Prompt Workflows
 
-| Directive | Aliases | Description | Example |
-|-----------|---------|-------------|---------|
-| `/next` | | Set next prompt in sequence | `/next summary` |
-| `/pipeline` | | Set prompt workflow sequence | `/pipeline analyze,summarize,report` |
+Prompt sequencing is not driven by chat directives. Chain prompts with the
+`next:` and `pipeline:` front-matter keys in a prompt file, or with the `-n`/
+`--next` and `-p`/`--pipeline` command-line flags. See
+[Prompt Sequences](#prompt-sequences).
 
 #### Context & Checkpoints
 
@@ -560,7 +564,7 @@ Directives are special commands in prompt files and chat sessions that begin wit
 
 | Directive | Aliases | Description | Example |
 |-----------|---------|-------------|---------|
-| `/available_models` | `/models`, `/llms`, `/am` | List available models | `/available_models` |
+| `/available_models` | `/models`, `/llms`, `/am`, `/available`, `/all_models` | List available models | `/available_models` |
 | `/compare` | `/cmp` | Compare responses from multiple models | `/compare` |
 | `/cost` | | Dump per-turn cost/token metrics as CSV | `/cost` |
 | `/tools` | | Show available tools (optional name filter) | `/tools` or `/tools github` |
@@ -599,10 +603,10 @@ Your prompt content here...
 # Paste clipboard contents
 /paste
 
-# Execute shell commands
-/shell git log --oneline -10
+# Insert shell command output via $(...) expansion
+Recent commits: $(git log --oneline -10)
 
-# Run Ruby code
+# Run Ruby code (requires --allow-ruby-eval or flags: { allow_ruby_eval: true })
 /ruby require 'json'; puts JSON.pretty_generate({status: "ready"})
 
 Analyze the above information and provide insights.
@@ -793,10 +797,10 @@ one). The lead robot is the **chief**, and you can address other members
 directly by prefixing a name with `@`:
 
 ```bash
-aia --chat -m gpt-4o,claude-3-5-sonnet
+aia --chat -m gpt-4o,claude-sonnet-4-6
 
 # Address a specific robot in the crew
-> @claude-3-5-sonnet What do you think about this approach?
+> @claude-sonnet-4-6 What do you think about this approach?
 
 # Only the mentioned robot responds; the @mention is stripped from the prompt
 ```
@@ -808,11 +812,11 @@ give them). Use `/robots` to see the active crew and their `@mention` handles.
 
 ```bash
 # Leading address → concurrent: both run at once, replies render as they finish
-> @gpt-4o @claude-3-5-sonnet what are the trade-offs of optimistic locking?
+> @gpt-4o @claude-sonnet-4-6 what are the trade-offs of optimistic locking?
 
 # Body mention → sequential pipeline: each reply is shared into the others'
 # context, so later robots build on earlier ones
-> draft a plan @gpt-4o then have @claude-3-5-sonnet poke holes in it
+> draft a plan @gpt-4o then have @claude-sonnet-4-6 poke holes in it
 
 # @crew is a reserved handle that broadcasts to every member, concurrently
 > @crew in one sentence, what is your specialty?
@@ -828,7 +832,7 @@ answer to `@name`, and inherit the chief's tools and MCP servers.
 /add_recruit researcher
 
 # Explicit provider/model plus a system prompt (alias: /add)
-/add_recruit critic anthropic/claude-3-5-sonnet You are a ruthless design critic.
+/add_recruit critic anthropic/claude-sonnet-4-6 You are a ruthless design critic.
 
 # A local member
 /add_recruit local ollama/qwen3.6:latest You are concise and fast.
@@ -846,7 +850,7 @@ full picture.
 Switch models mid-session naturally — AIA detects the intent and rebuilds the robot with conversation history preserved:
 
 ```bash
-> Switch to claude-3-5-sonnet
+> Switch to claude-sonnet-4-6
 # AIA detects the model-change intent, rebuilds the robot,
 # and transfers the full conversation history automatically.
 ```
@@ -859,13 +863,13 @@ Monitor token consumption and estimate costs across all models with `--tokens` a
 
 ```bash
 # Display token usage for each model
-aia my_prompt -m gpt-4o,claude-3-sonnet --tokens
+aia my_prompt -m gpt-4o,claude-sonnet-4-6 --tokens
 
 # Include cost estimates (automatically enables --tokens)
-aia my_prompt -m gpt-4o,claude-3-sonnet --cost
+aia my_prompt -m gpt-4o,claude-sonnet-4-6 --cost
 
 # In chat mode with full tracking
-aia --chat -m gpt-4o,claude-3-sonnet,gemini-pro --cost
+aia --chat -m gpt-4o,claude-sonnet-4-6,gemini-2.5-pro --cost
 ```
 
 **Token Usage Output:**
@@ -873,11 +877,11 @@ aia --chat -m gpt-4o,claude-3-sonnet,gemini-pro --cost
 from: gpt-4o
 Here's my analysis of the code...
 
-from: claude-3-sonnet
+from: claude-sonnet-4-6
 Looking at this code, I notice...
 
-Tokens: gpt-4o: input=245, output=312 | claude-3-sonnet: input=245, output=287
-Cost: gpt-4o: $0.0078 | claude-3-sonnet: $0.0045 | Total: $0.0123
+Tokens: gpt-4o: input=245, output=312 | claude-sonnet-4-6: input=245, output=287
+Cost: gpt-4o: $0.0078 | claude-sonnet-4-6: $0.0045 | Total: $0.0123
 ```
 
 **Use Cases for Token/Cost Tracking:**
@@ -1059,9 +1063,9 @@ Chain multiple prompts for complex workflows:
 # Command line
 aia analyze --next summarize --next report
 
-# In prompt files
-# analyze.md contains: /next summarize
-# summarize.md contains: /next report
+# In prompt files (front-matter key)
+# analyze.md front matter contains:   next: summarize
+# summarize.md front matter contains: next: report
 ```
 
 #### Using --pipeline
@@ -1070,16 +1074,19 @@ aia analyze --next summarize --next report
 # Command line
 aia research --pipeline analyze,summarize,report,present
 
-# In prompt file
-/pipeline analyze,summarize,report,present
+# In a prompt file (front-matter key)
+# research.md front matter contains:
+#   pipeline: [analyze, summarize, report, present]
 ```
 
 #### Example Workflow
 
 **research.md:**
 ```
+---
+next: analyze
+---
 /config model = gpt-4
-/next analyze
 
 Research the topic: [RESEARCH_TOPIC]
 Provide comprehensive background information.
@@ -1087,8 +1094,10 @@ Provide comprehensive background information.
 
 **analyze.md:**
 ```
+---
+next: summarize
+---
 /config output = analysis.md
-/next summarize
 
 Analyze the research data and identify key insights.
 ```
@@ -1266,27 +1275,25 @@ aia --tools ~/tools/ --allowed-tools weather,calc
 aia --tools ~/tools/ --rejected-tools deprecated
 ```
 
-**Tool Examples** (see `examples/tools/` directory):
-- File operations (read, write, list)
-- Shell command execution
-- API integrations
-- Data processing utilities
-
-**MCP Client Examples** (see `examples/tools/mcp/` directory):
-
-AIA supports Model Context Protocol (MCP) clients for extended functionality:
+**Tool Examples:**
+- `examples/tools/word_count_tool.rb` - a minimal `RubyLLM::Tool` to copy from
+- `examples/plugins/` - ready-made tools (file search, search and replace, jq, git context, memory and more), loaded with `--plugins-dir`; see `examples/plugins/README.md`
+- `examples/18_tools.sh` and `examples/19_local_tools.sh` - runnable demos
 
 ```bash
-# GitHub MCP Server (requires: brew install github-mcp-server)
-# Set GITHUB_PERSONAL_ACCESS_TOKEN environment variable
-aia --tools examples/tools/mcp/github_mcp_server.rb --chat
-
-# iMCP for macOS (requires: brew install --cask loopwork/tap/iMCP)
-# Provides access to Notes, Calendar, Contacts, etc.
-aia --tools examples/tools/mcp/imcp.rb --chat
+aia --tools examples/tools/word_count_tool.rb --chat
+aia --plugins-dir examples/plugins --chat
 ```
 
-These MCP clients provide access to external services and data sources through the Model Context Protocol.
+**MCP Client Examples:**
+
+MCP servers are loaded with `--mcp FILE` (or the `mcp_servers:` config key), not `--tools`:
+
+```bash
+aia --mcp examples/mcp/filesystem.json --chat
+```
+
+See [MCP Server Configuration](#mcp-server-configuration) below and `examples/20_mcp_servers.sh` for a runnable demo.
 
 ### TrakFlow Task Integration
 
@@ -1547,7 +1554,6 @@ Usage: `aia code_review mycode.rb`
 ```bash
 # ~/.prompts/meeting_notes.md
 /config model = gpt-4o-mini
-/pipeline format,action_items
 
 Raw meeting notes:
 /include [NOTES_FILE]
@@ -1555,11 +1561,14 @@ Raw meeting notes:
 Please clean up and structure these meeting notes.
 ```
 
+Usage: `aia meeting_notes --pipeline format,action_items`
+
 #### Documentation Generator
 ```bash
 # ~/.prompts/document.md
 /config model = gpt-4o-mini
-/shell find [PROJECT_DIR] -name "*.rb" | head -10
+
+Ruby files: $(find [PROJECT_DIR] -name "*.rb" | head -10)
 
 Generate documentation for the Ruby project shown above.
 Include: API references, usage examples, and setup instructions.
@@ -1678,10 +1687,10 @@ AIA executes shell commands and Ruby code embedded in prompts. This provides pow
 /config api_key = sk-1234567890abcdef
 
 # ✅ Good: Validate shell commands
-/shell ls -la /safe/directory
+Files: $(ls -la /safe/directory)
 
-# ❌ Bad: Dangerous shell commands
-/shell rm -rf / # Never do this!
+# ❌ Bad: Never embed destructive commands — $(...) runs at render time.
+# Escape with a backslash to keep a dangerous example literal: \$(rm -rf /)
 ```
 
 ### Recommended Security Setup
@@ -1748,16 +1757,14 @@ aia --debug my_prompt
 AIA provides multiple log level options to control the verbosity of logging output. These options set the log level for all three loggers:
 - **aia**: Used within the AIA codebase for application-level logging
 - **llm**: Passed to the RubyLLM gem's configuration (`RubyLLM.logger`)
-- **mcp**: Passed to the RubyLLM::MCP process (`RubyLLM::MCP.logger`)
+- **mcp**: MCP connection logging and `RobotLab.config.logger` (ruby_llm's own MCP client logs through `RubyLLM.logger`)
 
 | Option | Description |
 |--------|-------------|
 | `-d, --debug` | Enable debug output (most verbose) and set all loggers to DEBUG level |
 | `--no-debug` | Disable debug output |
-| `--info` | Set all loggers to INFO level |
-| `--warn` | Set all loggers to WARN level (default) |
-| `--error` | Set all loggers to ERROR level |
-| `--fatal` | Set all loggers to FATAL level (least verbose) |
+| `--log-level LEVEL` | Set all loggers to LEVEL: `debug`, `info`, `warn` (default), `error` or `fatal` |
+| `--log-to FILE` | Direct all loggers to FILE |
 
 ```bash
 # Enable debug mode (most verbose - shows all log messages)
@@ -1767,13 +1774,13 @@ aia --debug my_prompt
 aia --debug --verbose my_prompt
 
 # Use info level for moderate logging
-aia --info my_prompt
+aia --log-level info my_prompt
 
 # Use error level to only see errors and fatal messages
-aia --error my_prompt
+aia --log-level error my_prompt
 
 # Use fatal level for minimal logging (only critical errors)
-aia --fatal --chat
+aia --log-level fatal --chat
 ```
 
 **Log Level Hierarchy** (from most to least verbose):
@@ -1814,14 +1821,16 @@ open coverage/index.html
 ### Building
 
 ```bash
-# Install locally with documentation
-just install
+# Build the gem and install it locally
+rake install
 
-# Generate documentation
-just gen_doc
+# Preview the documentation site, or build it into site/
+mkdocs serve
+mkdocs build
 
 # Static code analysis
-just flay
+flay lib
+flog lib
 ```
 
 ### Architecture Notes

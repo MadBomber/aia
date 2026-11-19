@@ -44,15 +44,16 @@ Minitest::Reporters.use! [
 ]
 
 # Prevent AIA's exit calls from terminating the test process mid-run.
-# Suppression ends once the suite has run, so Minitest's own exit status
-# (non-zero when a test fails) still reaches the shell.
+# The guard is active only while a test is executing (see Minitest::Test
+# hooks below), so it suppresses aia's exits but leaves Minitest's own exits
+# alone: its non-zero status when a test fails, and the exit it raises while
+# parsing an unknown command-line option, both reach the shell.
 module TestExitGuard
-  @active = true
+  @active = false
   class << self
     attr_accessor :active
   end
 end
-Minitest.after_run { TestExitGuard.active = false }
 
 module Kernel
   alias original_exit exit
@@ -80,11 +81,40 @@ require "aia"
 
 AIA::LoggerManager.test_mode!(level: :debug)
 
+# Builds LLM results with the same shape aia gets at runtime: a
+# RobotLab::RobotResult whose #raw is a ruby_llm 2.x RubyLLM::Message
+# (token counts under Message#tokens, not #input_tokens).
+module LLMResultFactory
+  def ruby_llm_message(input_tokens:, output_tokens:, model_id: nil, content: 'ok')
+    RubyLLM::Message.new(
+      role: :assistant, content: content, model: model_id,
+      input_tokens: input_tokens, output_tokens: output_tokens
+    )
+  end
+
+  def robot_result(input_tokens:, output_tokens:, model_id: nil, robot_name: 'Spark', reply: 'ok', duration: nil)
+    raw = ruby_llm_message(input_tokens: input_tokens, output_tokens: output_tokens, model_id: model_id, content: reply)
+    RobotLab::RobotResult.new(
+      robot_name: robot_name,
+      output: [RobotLab::TextMessage.new(role: 'assistant', content: reply)],
+      raw: raw,
+      input_tokens: input_tokens,
+      output_tokens: output_tokens
+    ).tap { |result| result.duration = duration }
+  end
+end
+
 module Minitest
   class Test
     def before_setup
       super
+      TestExitGuard.active = true
       AIA::LoggerManager.clear_test_logs! if AIA::LoggerManager.test_mode?
+    end
+
+    def after_teardown
+      TestExitGuard.active = false
+      super
     end
   end
 end

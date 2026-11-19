@@ -249,7 +249,7 @@ Summarize the pros and cons of Postgres, MySQL and SQLite for a mobile backend.
 
 **Aliases:** `/del` · **Use in:** Chat · **Chat output:** Next prompt
 
-Breaks your next message into sub-tasks, assigns each one to a robot in the crew, records the plan in TrakFlow, and runs it. This needs more than one robot and an initialized TrakFlow project (`tf init`). Otherwise the message runs normally.
+Breaks your next message into sub-tasks, assigns each one to a robot in the crew, records the plan in TrakFlow, and runs it. This needs more than one robot and TrakFlow, which AIA starts on first use, creating the TrakFlow project if there is none. Otherwise the message runs normally.
 
 ```text
 /delegate
@@ -385,7 +385,7 @@ Fix the grammar in this paragraph:
 /plan DESCRIPTION
 ```
 
-Creates a TrakFlow item from the description. This needs an initialized TrakFlow project (`tf init`). Otherwise AIA prints `TrakFlow not available. Run 'tf init' to initialize a project.`
+Creates a TrakFlow item from the description. AIA starts TrakFlow on first use, creating the TrakFlow project if there is none. If TrakFlow cannot start, AIA prints `TrakFlow not available. Run 'tf init' to initialize a project.`
 
 ```text
 /plan Migrate the reporting jobs from cron to Solid Queue
@@ -588,12 +588,20 @@ Sets top-p (nucleus) sampling for the rest of the session. This is the same as `
 
 **Use in:** Chat · **Chat output:** Next prompt
 
+```text
+/verify [TEMPERATURE_DELTA]
+```
+
 Gets two independent answers to your next message, then reconciles them into one answer. This is useful for questions where a single answer might be confidently wrong.
 
 ```text
 /verify
 How many weekdays are there between 2026-11-02 and 2026-12-25 inclusive?
 ```
+
+With several models configured, the verifiers use the first and second models and the reconciler uses the third (or the first, if there are only two). With one model, all three use it.
+
+The optional `TEMPERATURE_DELTA` (a number of 0 or more) runs verifier A at the configured temperature minus the delta and verifier B at plus the delta, clamped to 0.0–1.0, so the two answers differ more. `/verify 0.3` with temperature 0.7 gives 0.4 and 1.0.
 
 ## /webpage
 

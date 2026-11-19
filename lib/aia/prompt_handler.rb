@@ -343,7 +343,7 @@ module AIA
       new_prompt_id = search_prompt_id_with_fzf(prompt_id)
 
       if new_prompt_id.nil? || new_prompt_id.empty?
-        raise "Error: Could not find prompt with ID: #{prompt_id} even with fuzzy search"
+        raise AIA::PromptError, "Could not find prompt with ID: #{prompt_id} even with fuzzy search"
       end
 
       parse_prompt_file(new_prompt_id)
@@ -367,7 +367,7 @@ module AIA
     def fuzzy_search_role(role_id)
       new_role_id = search_role_id_with_fzf(role_id)
       if new_role_id.nil? || new_role_id.empty?
-        raise "Error: Could not find role with ID: #{role_id} even with fuzzy search"
+        raise AIA::PromptError, "Could not find role with ID: #{role_id} even with fuzzy search"
       end
 
       parse_prompt_file(new_role_id)
@@ -395,7 +395,7 @@ module AIA
         subject: 'Prompt IDs',
         prompt: 'Select a prompt ID:'
       )
-      fzf.run || (raise "No prompt ID selected")
+      fzf.run || raise(AIA::PromptError, "No prompt ID selected")
     end
 
     def search_role_id_with_fzf(initial_query)
@@ -413,7 +413,7 @@ module AIA
       role = fzf.run
 
       if role.nil? || role.empty?
-        raise "No role ID selected"
+        raise AIA::PromptError, "No role ID selected"
       end
 
       role = "#{prefix}/#{role}" unless role.start_with?(prefix)

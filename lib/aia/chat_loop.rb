@@ -95,7 +95,6 @@ module AIA
         next if special_routing_handled?(processed_prompt, @robot)
 
         execute_and_present(processed_prompt, @robot)
-        clear_turn_mcp_filter
       end
     end
 
@@ -123,6 +122,10 @@ module AIA
         @ui_presenter.display_info("Unknown directive: #{name}  (use /help to see available directives)")
         nil
       end
+    rescue StandardError => e
+      # A failing directive (e.g. /include of a missing file) must not end the session.
+      @ui_presenter.display_info("Error: #{e.class}: #{e.message}")
+      nil
     end
 
     def parse_prompt_string(raw)
@@ -133,17 +136,8 @@ module AIA
     end
 
     def special_routing_handled?(processed_prompt, active_robot)
-      if @special_mode_handler.handle(processed_prompt)
-        clear_turn_mcp_filter
-        return true
-      end
-
-      if @mention_router.handle(HandlerContext.new(robot: active_robot, prompt: processed_prompt))
-        clear_turn_mcp_filter
-        return true
-      end
-
-      false
+      @special_mode_handler.handle(processed_prompt) ||
+        @mention_router.handle(HandlerContext.new(robot: active_robot, prompt: processed_prompt))
     end
 
     def execute_and_present(processed_prompt, active_robot)
@@ -172,7 +166,6 @@ module AIA
       @streaming_runner.run(turn_target, processed_prompt, tools: resolved_tools)
     rescue StandardError => e
       @ui_presenter.display_info("Error communicating with AI: #{e.class}: #{e.message}")
-      clear_turn_mcp_filter
       nil
     end
 
@@ -182,11 +175,6 @@ module AIA
       data = @robot.memory.data
       count = data.respond_to?(:turn_count) ? (data.turn_count || 0) : 0
       data.turn_count = count + 1
-    end
-
-    # Clear per-turn MCP server filter so next turn sees all
-    def clear_turn_mcp_filter
-      AIA.turn_state.active_mcp_servers = nil
     end
 
     # Update robot reference after a model switch and propagate to sub-components
@@ -248,14 +236,13 @@ module AIA
         return
       end
 
-      raw = result.respond_to?(:raw) ? result.raw : nil
-      return unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
+      usage = Utility.token_usage(result)
+      return unless usage
 
-      model_id = extract_model_id(raw) || AIA.config.models.first.name
       metrics = {
-        model_id:      model_id,
-        input_tokens:  raw.input_tokens,
-        output_tokens: raw.output_tokens,
+        model_id:      usage[:model_id] || AIA.config.models.first.name,
+        input_tokens:  usage[:input_tokens],
+        output_tokens: usage[:output_tokens],
         elapsed:       elapsed
       }
       @ui_presenter.display_token_metrics(metrics)
@@ -264,8 +251,8 @@ module AIA
     # Extract per-robot metrics from a network SimpleFlow::Result
     # and display the multi-model cost table.
     #
-    # Each robot_result.raw holds the original RubyLLM::Message with
-    # input_tokens, output_tokens, and model_id.
+    # Token counts come from each RobotResult; the model id from its raw
+    # RubyLLM::Message (see Utility.token_usage).
     # Each robot_result.duration holds the elapsed seconds.
     # Similarity scores compare each model's response text against the
     # first model using TF-IDF cosine similarity.
@@ -276,12 +263,10 @@ module AIA
 
       flow_result.context.each do |task_name, robot_result|
         next if task_name == :run_params
-        next unless robot_result.respond_to?(:raw)
+        usage = Utility.token_usage(robot_result)
+        next unless usage
 
-        raw = robot_result.raw
-        next unless raw && raw.respond_to?(:input_tokens) && raw.input_tokens
-
-        model_id = extract_model_id(raw)
+        model_id = usage[:model_id]
         display_name = robot_result.respond_to?(:robot_name) ? robot_result.robot_name : task_name.to_s
         elapsed = robot_result.respond_to?(:duration) ? robot_result.duration : nil
 
@@ -298,8 +283,8 @@ module AIA
         metrics_list << {
           model_id:      model_id || display_name,
           display_name:  display_name,
-          input_tokens:  raw.input_tokens || 0,
-          output_tokens: raw.output_tokens || 0,
+          input_tokens:  usage[:input_tokens],
+          output_tokens: usage[:output_tokens],
           elapsed:       elapsed
         }
       end
@@ -317,11 +302,6 @@ module AIA
 
     # Pull the actual model identifier from a RubyLLM response message
     # so cost calculation can look up pricing.
-    def extract_model_id(message)
-      return message.model_id if message.respond_to?(:model_id) && message.model_id
-      return message.model    if message.respond_to?(:model)    && message.model
-      nil
-    end
 
     # Show the actual tools available to the robot.
     # Only prints when --debug is enabled.

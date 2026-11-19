@@ -286,6 +286,28 @@ class ConfigTest < Minitest::Test
     ENV['AIA_MODEL'] = original_model if original_model
   end
 
+  def test_extra_config_file_with_malformed_yaml_reports_and_exits
+    config_file = create_temp_config("a: [1,\n")
+    AIA::Config.any_instance.expects(:exit).with(1)
+
+    _, err = capture_io do
+      AIA::Config.new(overrides: { extra_config_file: config_file })
+    end
+
+    assert_match(/ERROR: Invalid config file #{Regexp.escape(config_file)}: .*line 2/, err)
+  end
+
+  def test_extra_config_file_with_non_mapping_yaml_reports_and_exits
+    config_file = create_temp_config("- a\n")
+    AIA::Config.any_instance.expects(:exit).with(1)
+
+    _, err = capture_io do
+      AIA::Config.new(overrides: { extra_config_file: config_file })
+    end
+
+    assert_match(/ERROR: Invalid config file #{Regexp.escape(config_file)}: expected a YAML mapping/, err)
+  end
+
   def test_cli_overrides_take_precedence_over_extra_config
     config_file = create_temp_config(<<~YAML)
       llm:
@@ -448,5 +470,30 @@ class ConfigDefaultProviderTest < Minitest::Test
   ensure
     ENV["AIA_MODEL"] = original_model if original_model
     file&.unlink
+  end
+  # A bare model id that is also a provider slug ("mistral") means that
+  # provider's default model only when no --provider is given. With
+  # --provider it is an unprefixed model id like any other.
+  def test_cli_provider_applies_to_bare_model_that_matches_a_provider_slug
+    config = AIA::Config.new(overrides: { provider: "ollama", models: [{ name: "mistral" }] })
+
+    assert_equal %w[ollama mistral], [config.models.first.provider, config.models.first.name]
+  end
+
+  def test_cli_provider_keeps_bare_env_model_name
+    original_model = ENV.fetch("AIA_MODEL", nil)
+    ENV["AIA_MODEL"] = "mistral"
+
+    config = AIA::Config.new(overrides: { provider: "ollama" })
+
+    assert_equal %w[ollama mistral], [config.models.first.provider, config.models.first.name]
+  ensure
+    original_model ? ENV["AIA_MODEL"] = original_model : ENV.delete("AIA_MODEL")
+  end
+
+  def test_bare_provider_name_without_cli_provider_means_default_model
+    config = AIA::Config.new(overrides: { models: [{ name: "mistral" }] })
+
+    assert_equal ["mistral", AIA::ModelSpec::DEFAULT_MODEL], [config.models.first.provider, config.models.first.name]
   end
 end

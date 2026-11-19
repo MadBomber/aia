@@ -39,7 +39,7 @@ module AIA
     # rather than returning text for the AI.  ChatLoop uses this to decide
     # whether to skip forwarding the directive output to the robot.
     def state_setting?(input)
-      name = extract_content(input).strip.split.first.to_s.delete_prefix('/')
+      name = extract_content(input).strip.split.first.to_s.delete_prefix('/').downcase
       AIA::Directive.subclasses.any? do |klass|
         klass.state_setting_methods.include?(name)
       end

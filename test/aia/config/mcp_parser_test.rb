@@ -150,7 +150,7 @@ class McpParserTest < Minitest::Test
     end
   end
 
-  def test_parse_preserves_topics_field
+  def test_parse_drops_topics_field
     json = {
       "mcpServers" => {
         "filesystem" => {
@@ -163,7 +163,7 @@ class McpParserTest < Minitest::Test
     with_temp_json(json) do |path|
       servers = AIA::McpParser.parse_files([path])
       assert_equal 1, servers.size
-      assert_equal %w[files code directory], servers.first[:topics]
+      refute servers.first.key?(:topics), 'topics is unused and should not be passed through'
     end
   end
 
@@ -245,6 +245,41 @@ class McpParserTest < Minitest::Test
 
     result = AIA::MCPConfigNormalizer.normalize(server)
     assert_equal server, result
+  end
+
+  def test_top_level_array_is_rejected_with_a_plain_message
+    with_temp_json([{ "command" => "echo" }]) do |path|
+      result = nil
+      _out, err = capture_io { result = AIA::McpParser.parse_files([path]) }
+
+      assert_equal [], result
+      assert_match(/expected a JSON object/, err)
+      refute_match(/undefined method/, err)
+    end
+  end
+
+  def test_non_object_server_entry_is_skipped_and_valid_ones_kept
+    json = { "mcpServers" => { "a" => { "command" => "echo" }, "b" => "oops" } }
+
+    with_temp_json(json) do |path|
+      result = nil
+      _out, err = capture_io { result = AIA::McpParser.parse_files([path]) }
+
+      assert_equal(["a"], result.map { |s| s[:name] })
+      assert_match(/Skipping MCP server 'b'.*expected a JSON object/, err)
+    end
+  end
+
+  def test_simple_format_without_command_or_url_is_skipped
+    json = { "servers" => { "vscode" => { "command" => "echo" } } }
+
+    with_temp_json(json) do |path|
+      result = nil
+      _out, err = capture_io { result = AIA::McpParser.parse_files([path]) }
+
+      assert_equal [], result
+      assert_match(/neither 'mcpServers' nor a 'command' or 'url'/, err)
+    end
   end
 
   private

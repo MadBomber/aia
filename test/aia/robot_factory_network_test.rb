@@ -60,6 +60,16 @@ class RobotFactoryNetworkTest < Minitest::Test
     assert_equal 2, network.robots.size
   end
 
+  def test_parallel_network_builds_a_run_config_per_model
+    AIA::RobotFactory.stubs(:model_supports_temperature?).with { |spec| spec.name == 'gpt-4o' }.returns(true)
+    AIA::RobotFactory.stubs(:model_supports_temperature?).with { |spec| spec.name == 'claude-sonnet-4-5' }.returns(false)
+
+    network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
+    temps = network.robots.values.map { |robot| robot.config.to_h[:temperature] }
+
+    assert_equal [@config.llm.temperature, nil], temps
+  end
+
   def test_parallel_network_robots_use_correct_models
     network = AIA::NetworkBuilder.build_parallel_network(@config, @namer)
 

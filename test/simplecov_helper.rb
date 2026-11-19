@@ -6,16 +6,19 @@ require "simplecov_lcov_formatter"
 SimpleCov.start do
   command_name(ENV.fetch('TEST_SUITE', 'unit'))
 
-  add_filter "/test/"
-  add_filter "/vendor/"
+  skip "/test/"
+  skip "/vendor/"
 
   enable_coverage :branch
-  track_files "lib/**/*.rb"
+  # `cover` restricts the report to the matching globs, so name bin/migrate_prompts
+  # explicitly to keep it in the report alongside lib/**/*.rb (the set the former
+  # `track_files "lib/**/*.rb"` produced once bin/migrate_prompts was loaded).
+  cover "lib/**/*.rb", "bin/migrate_prompts"
 
-  add_group "Core",    "lib/aia"
-  add_group "Config",  "lib/aia/config"
-  add_group "Directives", "lib/aia/directives"
-  add_group "Tools",   "lib/aia/tools"
+  group "Core",    "lib/aia"
+  group "Config",  "lib/aia/config"
+  group "Directives", "lib/aia/directives"
+  group "Tools",   "lib/aia/tools"
 
   SimpleCov.formatters = [
     SimpleCov::Formatter::HTMLFormatter,

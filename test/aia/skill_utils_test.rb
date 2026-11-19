@@ -42,6 +42,17 @@ class SkillUtilsTest < Minitest::Test
     end
   end
 
+  def test_parses_front_matter_with_dates_and_times
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'dated.md')
+      File.write(path, "---\nname: Dated\nupdated: 2026-01-15\nreviewed: 2026-01-15 10:30:00 Z\n---\n# Body")
+      fm = AIA::SkillUtils.parse_front_matter(path)
+      assert_equal 'Dated', fm['name']
+      assert_equal Date.new(2026, 1, 15), fm['updated']
+      assert_equal Time.utc(2026, 1, 15, 10, 30), fm['reviewed']
+    end
+  end
+
   def test_returns_empty_hash_for_missing_file
     assert_equal({}, AIA::SkillUtils.parse_front_matter('/nonexistent/path.md'))
   end
@@ -68,6 +79,16 @@ class SkillUtilsTest < Minitest::Test
       File.write(path, "---\n: invalid: yaml: [\n---\nbody")
       result = AIA::SkillUtils.parse_front_matter(path)
       assert_kind_of Hash, result
+    end
+  end
+
+  def test_returns_empty_hash_when_front_matter_is_not_a_mapping
+    Dir.mktmpdir do |dir|
+      { 'text.md' => "---\njust a note\n---\n", 'list.md' => "---\n- one\n- two\n---\n" }.each do |name, content|
+        path = File.join(dir, name)
+        File.write(path, content)
+        assert_equal({}, AIA::SkillUtils.parse_front_matter(path), name)
+      end
     end
   end
 
@@ -301,6 +322,29 @@ class SkillUtilsTest < Minitest::Test
       refute AIA::SkillUtils.non_markdown_skill_file?(File.join(dir, 'a.markdown'))
       assert AIA::SkillUtils.non_markdown_skill_file?(File.join(dir, 'a.rb'))
       refute AIA::SkillUtils.non_markdown_skill_file?(dir)
+    end
+  end
+
+  # --- split_skills ---
+
+  def test_split_skills_trims_and_rejects_blanks
+    assert_equal %w[security ruby-style], AIA::SkillUtils.split_skills(' security , ruby-style ')
+    assert_equal %w[a b], AIA::SkillUtils.split_skills('a,,b, ')
+  end
+
+  def test_split_skills_blank_input_returns_empty
+    assert_empty AIA::SkillUtils.split_skills(nil)
+    assert_empty AIA::SkillUtils.split_skills('')
+    assert_empty AIA::SkillUtils.split_skills('  ,  ')
+  end
+
+  def test_split_skills_rejects_path_based_ids
+    ['./x', '/x', '~/x', '../x'].each do |path_id|
+      error = assert_raises(AIA::CrewError) { AIA::SkillUtils.split_skills("good,#{path_id}") }
+      assert_equal(
+        "skills must be names within the skills directory, not file paths: #{path_id}",
+        error.message
+      )
     end
   end
 end

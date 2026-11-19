@@ -71,7 +71,7 @@ module AIA
       if row[:sub]
         run_sub_handler(row[:sub], prompt, taken)
       else
-        send(row[:run], prompt)
+        send(row[:run], prompt, taken)
       end
     end
 
@@ -92,11 +92,11 @@ module AIA
       false
     end
 
-    def handle_verification(prompt)
+    def handle_verification(prompt, taken = {})
       require_relative 'verification_network'
       @ui_presenter.display_info("Running verification (2 independent + reconciliation)...")
 
-      network = VerificationNetwork.build(AIA.config)
+      network = VerificationNetwork.build(AIA.config, temperature_delta: taken&.dig(:verify_delta))
       result = @ui_presenter.with_spinner("Verifying") { network.run(message: prompt) }
 
       present_result(result, prompt: prompt, ui_presenter: @ui_presenter, tracker: @tracker)
@@ -107,7 +107,7 @@ module AIA
     end
 
     # :reek:TooManyStatements -- benchmark-instrumented pipeline: decompose, concurrent fan-out, synthesis, reporting
-    def handle_decomposition(prompt)
+    def handle_decomposition(prompt, _taken = nil)
       require_relative 'prompt_decomposer'
       total_t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
@@ -200,7 +200,7 @@ module AIA
     end
 
     # :reek:TooManyStatements -- ordered eligibility gates (server count, discovery, grouping) before the network run
-    def handle_concurrent_mcp(prompt)
+    def handle_concurrent_mcp(prompt, _taken = nil)
       cfg = AIA.config
       return false unless (cfg.mcp_servers || []).size > 1
 
@@ -225,7 +225,7 @@ module AIA
       false
     end
 
-    def handle_orchestration(prompt)
+    def handle_orchestration(prompt, _taken = nil)
       @ui_presenter.display_info("Starting 3-tier layered orchestration...")
 
       content = layered_orchestrator.handle(HandlerContext.new(robot: @robot, prompt: prompt))
@@ -297,17 +297,12 @@ module AIA
       total_input  = 0
       total_output = 0
 
-      raw_subtasks.compact.each do |r|
-        raw = r.respond_to?(:raw) ? r.raw : nil
-        next unless raw.respond_to?(:input_tokens) && raw.input_tokens
-        total_input  += raw.input_tokens  || 0
-        total_output += raw.output_tokens || 0
-      end
+      [*raw_subtasks.compact, synthesis_result].each do |r|
+        usage = Utility.token_usage(r)
+        next unless usage
 
-      synth_raw = synthesis_result.respond_to?(:raw) ? synthesis_result.raw : nil
-      if synth_raw.respond_to?(:input_tokens) && synth_raw.input_tokens
-        total_input  += synth_raw.input_tokens  || 0
-        total_output += synth_raw.output_tokens || 0
+        total_input  += usage[:input_tokens]
+        total_output += usage[:output_tokens]
       end
 
       return if total_input.zero? && total_output.zero?

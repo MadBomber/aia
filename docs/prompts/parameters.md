@@ -47,6 +47,8 @@ git diff | aia --no-output review_diff
 Value for focus (correctness): security
 ```
 
+With no terminal at all (cron, CI, `ssh host aia ...` without `-t`), AIA can't ask, so it uses each parameter's default and stops with `Parameter 'name' is required.` for a parameter that has none.
+
 !!! note "Answers are not remembered"
     AIA doesn't save your answers between runs. If you find yourself typing the same value every time, make it the default in the front matter.
 

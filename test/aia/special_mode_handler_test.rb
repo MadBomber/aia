@@ -64,6 +64,19 @@ class SpecialModeHandlerTest < Minitest::Test
     assert_equal false, AIA.turn_state.force_verify
   end
 
+  def test_verification_passes_delta_to_network
+    AIA.turn_state.request(:verify, delta: 0.25)
+    network = mock('network')
+    result = mock('result')
+    result.stubs(:reply).returns('ok')
+    network.stubs(:run).returns(result)
+    AIA::VerificationNetwork.expects(:build).with(anything, temperature_delta: 0.25).returns(network)
+    @ui.stubs(:with_spinner).yields.returns(result)
+
+    assert_equal true, @handler.handle("q")
+    assert_nil AIA.turn_state.verify_delta
+  end
+
   def test_verification_clears_flag
     AIA.turn_state.request(:verify)
 

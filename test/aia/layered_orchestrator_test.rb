@@ -185,4 +185,46 @@ class LayeredOrchestratorTest < Minitest::Test
     assert_equal 'Infrastructure layer summary', result.first[:summary]
     assert_equal 'CREATE TABLE users', result.first[:tasks].first[:output]
   end
+  # =========================================================================
+  # save_artifact — writes each artifact under the build directory
+  # =========================================================================
+
+  def orchestrator_with_build_dir(build_dir)
+    orchestrator = AIA::LayeredOrchestrator.new(
+      robot: @robot, ui_presenter: @ui, tracker: @tracker, build_dir: build_dir
+    )
+    orchestrator.stubs(:say)
+    orchestrator
+  end
+
+  def test_save_artifact_keeps_files_inside_build_dir
+    build_dir = File.join(@tmp_dir, 'build')
+    orchestrator = orchestrator_with_build_dir(build_dir)
+
+    orchestrator.send(:save_artifact, 'a/b.rb', "```ruby\nputs 1\n```")
+    orchestrator.send(:save_artifact, '/c/d.rb', 'x = 1')
+
+    assert_equal 'puts 1', File.read(File.join(build_dir, 'a', 'b.rb'))
+    assert_equal 'x = 1',  File.read(File.join(build_dir, 'c', 'd.rb'))
+  end
+
+  def test_save_artifact_skips_path_outside_build_dir
+    build_dir = File.join(@tmp_dir, 'build')
+    orchestrator = orchestrator_with_build_dir(build_dir)
+    orchestrator.expects(:say).with(regexp_matches(/Skipped artifact/))
+
+    result = orchestrator.send(:save_artifact, '../outside.rb', 'x = 1')
+
+    assert_nil result
+    refute File.exist?(File.join(@tmp_dir, 'outside.rb'))
+  end
+
+  def test_save_artifact_skips_empty_path
+    build_dir = File.join(@tmp_dir, 'build')
+    orchestrator = orchestrator_with_build_dir(build_dir)
+    orchestrator.expects(:say).with(regexp_matches(/Skipped artifact/))
+
+    assert_nil orchestrator.send(:save_artifact, nil, 'x = 1')
+    assert_empty Dir.children(@tmp_dir)
+  end
 end
